@@ -117,7 +117,8 @@
         "Activate": {
           "ability": 0,
           "mana": [
-            "$s1"
+            "$s1",
+            null
           ],
           "object": "$duplicant",
           "targets": [

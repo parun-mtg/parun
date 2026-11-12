@@ -174,7 +174,7 @@
           "keyword": {
             "type": "Flying"
           },
-          "object": "$soulflayer"
+          "object": "Soulflayer"
         }
       },
       "player": "alice",
@@ -188,7 +188,7 @@
           "keyword": {
             "type": "FirstStrike"
           },
-          "object": "$soulflayer"
+          "object": "Soulflayer"
         }
       },
       "player": "alice",
@@ -209,7 +209,7 @@
               "spares": null
             }
           },
-          "object": "$soulflayer"
+          "object": "Soulflayer"
         }
       },
       "player": "alice",
@@ -223,7 +223,7 @@
           "keyword": {
             "type": "Trample"
           },
-          "object": "$soulflayer"
+          "object": "Soulflayer"
         }
       },
       "player": "alice",
@@ -237,7 +237,7 @@
           "keyword": {
             "type": "Haste"
           },
-          "object": "$soulflayer"
+          "object": "Soulflayer"
         }
       },
       "player": "alice",
@@ -251,7 +251,7 @@
           "keyword": {
             "type": "Reach"
           },
-          "object": "$soulflayer"
+          "object": "Soulflayer"
         }
       },
       "player": "alice",
@@ -265,7 +265,7 @@
           "keyword": {
             "type": "Deathtouch"
           },
-          "object": "$soulflayer"
+          "object": "Soulflayer"
         }
       },
       "player": "alice",

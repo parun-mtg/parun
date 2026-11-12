@@ -8801,6 +8801,7 @@
       "252": {"card":"Sol Ring"},
       "253": {"card":"Solemn Simulacrum"},
       "137": {"card":"Soul of Innistrad"},
+      "138": {"card":"Soulflayer"},
       "101": {"card":"Sun Titan"},
       "254": {"card":"Swiftfoot Boots"},
       "125": {"card":"Talrand, Sky Summoner"},
@@ -12981,6 +12982,7 @@
       "110": {"card":"Darksteel Forge"},
       "111": {"card":"Darksteel Gargoyle"},
       "112": {"card":"Darksteel Ingot"},
+      "115": {"card":"Death-Mask Duplicant"},
       "116": {"card":"Demon's Horn"},
       "117": {"card":"Dragon's Claw"},
       "120": {"card":"Eater of Days"},
@@ -15886,6 +15888,7 @@
       "171": {"card":"Scoured Barrens"},
       "52": {"card":"Shu Yun, the Silent Tempest"},
       "26": {"card":"Soul Summons"},
+      "84": {"card":"Soulflayer"},
       "180": {"card":"Swamp"},
       "181": {"card":"Swamp"},
       "172": {"card":"Swiftwater Cliffs"},
@@ -28426,7 +28429,8 @@
       "99": {"card":"Flamerush Rider"},
       "99s": {"card":"Flamerush Rider"},
       "100s": {"card":"Flamewake Phoenix"},
-      "52s": {"card":"Shu Yun, the Silent Tempest"}
+      "52s": {"card":"Shu Yun, the Silent Tempest"},
+      "84s": {"card":"Soulflayer"}
     },
     "PGPX": {
       "2013b": {"card":"All Is Dust"},
@@ -28643,6 +28647,7 @@
       "32": {"card":"Silence"},
       "276": {"card":"Simic Guildgate"},
       "343": {"card":"Smash to Smithereens"},
+      "110": {"card":"Soulflayer"},
       "34": {"card":"Sphere of Safety"},
       "287": {"card":"Sphinx's Tutelage"},
       "111": {"card":"Stab Wound"},
