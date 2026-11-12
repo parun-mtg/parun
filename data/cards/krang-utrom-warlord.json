@@ -1,0 +1,108 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Haste"
+        },
+        {
+          "type": "Indestructible"
+        },
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 9
+        }
+      ],
+      "name": "Krang, Utrom Warlord",
+      "oracleText": "Flying, trample, indestructible, haste\nOther artifact creatures you control have flying, trample, indestructible, and haste.",
+      "power": {
+        "type": "Literal",
+        "value": 9
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "Not",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                },
+                {
+                  "type": "HasCardType",
+                  "value": "Artifact"
+                },
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Flying"
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Trample"
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Indestructible"
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Haste"
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 9
+      },
+      "typeLine": {
+        "subtypes": [
+          "Robot",
+          "Utrom"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
