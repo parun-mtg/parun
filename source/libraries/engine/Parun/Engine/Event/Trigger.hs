@@ -586,7 +586,8 @@ resampleEntry oid gs = case Game.entryGroup oid gs of
 -- yet (Snapshots.boardAfterEvent). Called where an event is over with whatever
 -- else its instruction or action does: as each instruction of a resolution
 -- finishes (CR 608.2c, Resolve.applyEffectWith), as each part of a cost is paid
--- (CR 601.2h, Cost.payInOrder) and before each state-based action check
+-- (CR 601.2h, Cost.payInOrder), as each land is played (CR 305.1,
+-- Cast.playLand) and before each state-based action check
 -- (Sba.performStateBasedActions). The first filing stands, and a group a
 -- `simultaneously` bracket still holds open is left for the filing after it
 -- closes (CR 608.2f). Each board's own copy of the field is empty.
