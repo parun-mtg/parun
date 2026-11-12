@@ -34,16 +34,16 @@
                         "type": "MoveToZone",
                         "value": {
                           "ref": {
-                            "type": "AllOf",
-                            "value": [
-                              {
-                                "type": "InSlot",
-                                "value": "target"
-                              },
-                              {
-                                "type": "EachCardInGraveyard",
-                                "value": {
-                                  "filter": {
+                            "type": "EachCardInGraveyard",
+                            "value": {
+                              "filter": {
+                                "type": "Or",
+                                "value": [
+                                  {
+                                    "type": "IsBound",
+                                    "value": "target"
+                                  },
+                                  {
                                     "type": "Shares",
                                     "value": {
                                       "anchor": {
@@ -54,16 +54,16 @@
                                         "type": "Name"
                                       }
                                     }
-                                  },
-                                  "graveyards": {
-                                    "type": "Scoped",
-                                    "value": {
-                                      "type": "You"
-                                    }
                                   }
+                                ]
+                              },
+                              "graveyards": {
+                                "type": "Scoped",
+                                "value": {
+                                  "type": "You"
                                 }
                               }
-                            ]
+                            }
                           },
                           "riders": {
                             "tapped": "Tapped"
