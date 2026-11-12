@@ -1,0 +1,59 @@
+{
+  "faces": [
+    {
+      "additionalCosts": [
+        {
+          "type": "PayLife",
+          "value": {
+            "type": "Announced",
+            "value": "X"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Bond of Agony",
+      "oracleText": "As an additional cost to cast this spell, pay X life.\nEach other player loses X life.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "LoseLife",
+                    "value": {
+                      "player": {
+                        "type": "EachPlayerExcept",
+                        "value": "you"
+                      },
+                      "quantity": {
+                        "type": "InSlot",
+                        "value": "X"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
