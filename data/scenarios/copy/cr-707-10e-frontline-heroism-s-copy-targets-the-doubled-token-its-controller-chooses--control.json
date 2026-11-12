@@ -26,6 +26,12 @@
         "name": "alice"
       },
       {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "rival"
+          }
+        ],
         "name": "bob"
       }
     ],
@@ -57,6 +63,13 @@
       "View": {
         "is": [],
         "of": "Stack"
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "$rival",
+        "power": 2,
+        "toughness": 2
       }
     }
   ],
