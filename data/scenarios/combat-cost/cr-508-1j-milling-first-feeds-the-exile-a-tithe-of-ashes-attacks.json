@@ -57,19 +57,6 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "ChooseExilesFromGraveyard",
-          "with": [
-            "Island"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "check": {
         "Attackers": {
           "attackers": {
