@@ -77,14 +77,20 @@ Entries are ordered by the first rule each cites.
   controller, a planeswalker they control or a battle they protect. Sorrow's
   Path's printed "could block" is the pairwise half of the same gate; an
   exchange keeps every attacker's blocker count, so the set-shaped half
-  cannot bite there.
+  cannot bite there. General Jarkeld's printed "could be blocked by all
+  creatures that the other is blocked by" is the whole gate, asked of each
+  target's blockers after the switch.
 - **Rejected**: Any attacker, reading CR 509.4b's exemption as the rule for
   every road that is not a declaration: CR 101.2 lets a "can't" beat an
   effect that directs a block, and CR 509.4b is stated for one road only.
   Asking only the pairwise restrictions: menace and "can't be blocked by more
   than one creature" are "can't"s too. Allowing a tapped creature, which CR
   506.4b lets stay blocking but nothing lets begin to block.
-- **Site**: `Parun.Engine.Combat`'s `blockAttacker`.
+- **Site**: `Parun.Engine.Combat`'s `blockAttacker` and `switchBlockers`.
+  `data/scenarios/combat-cost/`'s
+  `cr-509-1b-a-switch-that-would-leave-charging-rhino-blocked-by-two-moves-nobody.json`
+  and
+  `cr-702-111b-a-switch-that-would-leave-a-menace-attacker-blocked-by-one-moves-nobody.json`;
   `data/scenarios/false-orders/`'s
   `cr-509-3a-false-orders-has-its-target-block-an-attacker-it-could-block.json`,
   `cr-509-1b-false-orders-never-has-its-target-block-charging-rhino-as-a-second-blocker.json`,

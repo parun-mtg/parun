@@ -1,0 +1,134 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Charging Rhino",
+            "label": "rhino",
+            "ready": true
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears1",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears2",
+            "ready": true
+          },
+          {
+            "card": "General Jarkeld",
+            "label": "jarkeld",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "CR 509.1b a switch that leaves Charging Rhino blocked by one happens",
+  "final": [
+    {
+      "Tapped": {
+        "object": "$jarkeld",
+        "tapped": true
+      }
+    }
+  ],
+  "note": "One Bears each on the Rhino and the Wurm: the switch leaves the Rhino blocked by one, so it happens.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$rhino",
+          "$wurm"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$bears1": [
+            "$rhino"
+          ],
+          "$bears2": [
+            "$wurm"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "object": "$jarkeld"
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$rhino",
+          "blockers": [
+            "$bears2"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$wurm",
+          "blockers": [
+            "$bears1"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}
