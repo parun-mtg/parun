@@ -4254,6 +4254,8 @@ filterReads f = case f of
   -- CR 723.3c / 109.3: how a spell was cast is no characteristic, WasCastFrom's
   -- reason.
   Filter.Type.IsPreparedSpell -> Set.empty
+  -- CR 716.2b / 721.2b / 723.2b: a copiable value, IsPrototyped's reason.
+  Filter.Type.HasInsetFrame _ -> Set.empty
   -- Reads nothing: CR 701.54b keeps the ring-bearer designation off the copiable
   -- values, so no Modification writes Object.ringBearerFor.
   Filter.Type.IsRingBearer -> Set.empty
@@ -4451,6 +4453,7 @@ filterReadsPeers f = case f of
   Filter.Type.Paid _ -> False
   Filter.Type.IsPrototyped -> False
   Filter.Type.IsPreparedSpell -> False
+  Filter.Type.HasInsetFrame _ -> False
   Filter.Type.IsRingBearer -> False
   Filter.Type.IsPaired -> False
   Filter.Type.IsPairedWithSource -> False

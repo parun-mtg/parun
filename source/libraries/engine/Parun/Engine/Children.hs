@@ -651,6 +651,7 @@ filterChildren children predicate = case predicate of
   Filter.Paid designator -> fmap Filter.Paid (designatorChildren children designator)
   Filter.IsPrototyped -> pure predicate
   Filter.IsPreparedSpell -> pure predicate
+  Filter.HasInsetFrame _ -> pure predicate
   Filter.And fs -> fmap Filter.And (traverse (connective children) fs)
   Filter.Or fs -> fmap Filter.Or (traverse (connective children) fs)
   Filter.Not f -> fmap Filter.Not (connective children f)

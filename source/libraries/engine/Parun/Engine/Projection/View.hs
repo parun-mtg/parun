@@ -311,6 +311,9 @@ viewOfCardLapsed lapsed face =
           Filter.prototyped = False,
           -- CR 723.3c casts a SPELL, and this builder describes a printed face.
           Filter.preparedSpell = False,
+          -- A Face is one set of characteristics, so the card's inset frame is
+          -- not in it; no printed card asks for one outside the game.
+          Filter.insetFrames = Set.empty,
           -- CR 601.2h pays the cost of a SPELL, and this builder describes a
           -- printed face.
           Filter.manaSpentTagColors = Map.empty,
@@ -856,6 +859,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.prototyped = PC.prototyped pc || any Object.prototyped (Game.lookupObject oid gs),
       -- CR 723.3c / 723.3d: read live off the object, `castUsing`'s posture.
       Filter.preparedSpell = any Object.castPrepared (Game.lookupObject oid gs),
+      -- CR 716.2b / 721.2b / 723.2b: copiable values, which `pc` carries.
+      Filter.insetFrames = Count.insetFramesOf pc,
       -- CR 400.7d / CR 107.4h: read live off the object like `castUsing`, and
       -- keyed by tag with CR 106.1a's colours beside it, which is the whole of what
       -- the vocabulary asks (see the field's own comment in Parun.Engine.Filter).

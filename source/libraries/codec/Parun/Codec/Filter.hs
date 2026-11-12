@@ -23,6 +23,7 @@ import qualified Parun.Codec.Hop as Hop
 import qualified Parun.Codec.KeywordCostPart as KeywordCostPart
 import qualified Parun.Codec.KeywordDesignator as KeywordDesignator
 import qualified Parun.Codec.KeywordFamily as KeywordFamily
+import qualified Parun.Codec.Layout as Layout
 import qualified Parun.Codec.LibraryDeparture as LibraryDeparture
 import qualified Parun.Codec.LoyaltyKind as LoyaltyKind
 import qualified Parun.Codec.ManaSymbolKind as ManaSymbolKind
@@ -195,6 +196,7 @@ codec keywordCodec =
       Arm.payload "Paid" (KeywordDesignator.codec keywordCodec) Filter.Paid (\x -> case x of Filter.Paid y -> Just y; _ -> Nothing),
       Arm.nullary "IsPrototyped" Filter.IsPrototyped,
       Arm.nullary "IsPreparedSpell" Filter.IsPreparedSpell,
+      Arm.payload "HasInsetFrame" Layout.codec Filter.HasInsetFrame (\x -> case x of Filter.HasInsetFrame y -> Just y; _ -> Nothing),
       Arm.payload "And" (Common.list (codec keywordCodec)) Filter.And (\x -> case x of Filter.And y -> Just y; _ -> Nothing),
       Arm.payload "Or" (Common.list (codec keywordCodec)) Filter.Or (\x -> case x of Filter.Or y -> Just y; _ -> Nothing),
       Arm.payload "Not" (codec keywordCodec) Filter.Not (\x -> case x of Filter.Not y -> Just y; _ -> Nothing),
@@ -380,6 +382,7 @@ tagOf x = case x of
   Filter.Paid {} -> "Paid"
   Filter.IsPrototyped {} -> "IsPrototyped"
   Filter.IsPreparedSpell {} -> "IsPreparedSpell"
+  Filter.HasInsetFrame {} -> "HasInsetFrame"
   Filter.And {} -> "And"
   Filter.Or {} -> "Or"
   Filter.Not {} -> "Not"
