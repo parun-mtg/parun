@@ -50,6 +50,7 @@ import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Play.Chance as Chance
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Spec as Spec
@@ -688,6 +689,14 @@ playedThrough :: (Monad m) => Natural -> [Observer.Observer m] -> Answerer.Answe
 playedThrough final observers answerer matchup = do
   (_, begun) <- Engine.runGameAsked (Driver.ask observers answerer) (Setup.gameWith GameSettings.plain (fmap fst matchup)) (Setup.newGame (Resolve.performHandAction Engine.playSubgame) matchup)
   Driver.drive observers answerer 100000 (\gs -> pure (TurnRegisters.turnNumber (GameState.turn gs) > final)) begun
+
+-- playedThrough for seats that answer without a monad, each library shuffled
+-- from `seed`: unshuffled, a deck's lands can sit under everything else and
+-- its first turns hold no play at all.
+opening :: Natural -> Word.Word32 -> (forall r. Prompt.Prompt r -> r) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> GameState.GameState
+opening final seed answer matchup =
+  let seat = Answerer.MkAnswerer (pure . answer . Asked.prompt)
+   in State.evalState (playedThrough final [] (Driver.bySeat (Map.fromList (NonEmpty.toList (fmap (\(pid, _) -> (pid, seat)) matchup))) Chance.chance) matchup) (seeded seed)
 
 -- Casts when legal, otherwise plays a land, otherwise passes.
 castAnswer :: Prompt.Prompt r -> r

@@ -250,7 +250,7 @@ setupSpec s registry = Spec.describe s "Setup" $ do
     Spec.assertEqWith s "active" (TurnRegisters.activePlayer (GameState.turn gs)) S.alice
 
   Spec.it s "runMatchPure derives the players from the matchup (#24)" $ do
-    matchup <- S.shortRedRed (S.printingOf s registry)
+    matchup <- S.landsOnly (S.printingOf s registry)
     let (result, final) = Engine.runMatchPure S.identityAnswer GameSettings.plain matchup
     Spec.assertBool s (Maybe.isJust (GameState.result final)) "has a result"
     Spec.assertEqWith s "both players have a life total" (Map.size (GameState.players final)) 2
@@ -260,7 +260,7 @@ setupSpec s registry = Spec.describe s "Setup" $ do
   -- ordinary entry point takes them, and the Brawl life total follows with no
   -- record update afterwards. The same matchup without the option is the control.
   Spec.it s "CR 903.12f a match started as Brawl starts its players at 25" $ do
-    matchup <- S.shortRedRed (S.printingOf s registry)
+    matchup <- S.landsOnly (S.printingOf s registry)
     let startingOf settings = fmap Player.startingLife (GameState.players (snd (Engine.runMatchPure S.identityAnswer settings matchup)))
     Spec.assertEqWith s "two-player Brawl: 25 each" (startingOf GameSettings.plain {GameSettings.brawl = True}) (Map.fromList [(S.alice, 25), (S.bob, 25)])
     Spec.assertEqWith s "the same matchup without the option: CR 103.4's twenty" (startingOf GameSettings.plain) (Map.fromList [(S.alice, 20), (S.bob, 20)])
