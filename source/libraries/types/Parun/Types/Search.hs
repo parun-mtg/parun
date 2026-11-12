@@ -92,9 +92,6 @@ data Search = MkSearch
     -- A constraint on the found SET, like `differentIn`: Underground Sea may
     -- answer for the Island or the Swamp, and a second Island card for
     -- neither once the first has taken the Island.
-    --
-    -- Not implemented: a find outside the game (CR 701.23j) is not held to it
-    -- (#6508).
     descriptions :: Seq.Seq (Filter.Filter Keyword.Keyword),
     -- | Whether the printed instruction says "up to", making the quantity a
     -- ceiling the searcher chooses within rather than one they must fill.
@@ -152,17 +149,11 @@ data Search = MkSearch
     -- | What no two found cards may share -- Gifts Ungiven's "with different
     -- names" (CR 201.2b), Threats Undetected's "with different powers". A
     -- constraint on the found SET, which no per-card filter can state.
-    --
-    -- Not implemented: a find outside the game (CR 701.23j) is not held to it
-    -- (#6508).
     differentIn :: Set.Set DifferentIn.DifferentIn,
     -- | Whether the printed count says "exactly" -- Burning-Rune Demon's
     -- "exactly two cards ... that have different names" -- which takes away CR
     -- 701.23b's permission to find fewer (CR 101.1). A library short of such
     -- cards still gives as many as it can (CR 609.3). Never set beside `upTo`.
-    --
-    -- Not implemented: cards outside the game (CR 701.23j) do not count toward
-    -- how many it can give (#6508).
     exactly :: Bool,
     -- | Whether the printed places are joined by "and/or" -- Delivery Moogle's
     -- "your library and/or graveyard" -- so the searcher picks which of them to

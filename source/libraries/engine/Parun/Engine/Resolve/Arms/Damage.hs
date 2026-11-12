@@ -9,6 +9,7 @@ import Control.Applicative ((<|>))
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Containers.ListUtils as ListUtils
+import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
@@ -114,6 +115,7 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RemoveFromCombat as RemoveFromCombat
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Result as Result
+import qualified Parun.Types.RevealWindow as RevealWindow
 import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.Scratch as Scratch
@@ -853,19 +855,42 @@ search settle performManaAbility runSubgame resolving source controller legal (S
                     -- card the filter admits is findable, and no more.
                     capHere = Maybe.fromMaybe (List.genericLength matches + outsideCopies) cap
                     decider = Decide.deciderFor searcher gs
+                    -- CR 701.23j: the found group is one group over both
+                    -- halves, so a card out there is held to Search.differentIn
+                    -- and Search.descriptions beside the zones' finds (Left),
+                    -- one candidate per copy (Right). Turtles Forever's
+                    -- cases in Parun.OutsideTheGameSpec are the proof.
+                    outsideCandidates = fmap Right (concatMap (\(card, n) -> List.genericReplicate n card) (Map.toAscList outsideAvailable))
+                    valuesOf = either (Common.differingValues differentIn gs) (\card -> Event.outsideDiffering differentIn card gs)
+                    fitsEither = either (fits searcher gs) (\card d -> Map.member card (Event.outsideOffer d source searcher gs))
+                    keptTogether = Common.matchDescriptions fitsEither descriptions . Event.differingKept valuesOf
                     -- Search.exactly: the answer must be a group of as many
-                    -- cards as the zones can give, up to the count (CR 101.1,
+                    -- cards as the places can give, up to the count (CR 101.1,
                     -- 609.3). Validated, not filled: which cards make up the
                     -- group is the searcher's choice. Search.descriptions'
                     -- half bounds the count by each constraint alone, not by
                     -- both together; a REGRESSION FENCE, no card printing
                     -- "exactly" beside several descriptions.
-                    required = min (Common.mostDiffering differentIn gs capHere matches) (List.genericLength (described searcher gs matches))
+                    candidates = fmap Left matches <> outsideCandidates
+                    required = min (Event.mostDifferingOf capHere (fmap valuesOf candidates)) (List.genericLength (Common.matchDescriptions fitsEither descriptions candidates))
+                    -- How many cards out there could still join a zone answer
+                    -- under Search.differentIn, toward `required`.
+                    outsideJoining given =
+                      let taken = foldMap (Foldable.fold . valuesOf . Left) given
+                          joins card = maybe False (Set.disjoint taken) (valuesOf card)
+                       in Event.mostDifferingOf required (fmap valuesOf (filter joins outsideCandidates))
                     -- CR 701.23a: a find is cards matching the description, so
                     -- an answer the filters below would cut down -- more than
                     -- the count, two sharing a Search.differentIn value, one
                     -- no description admits -- is asked again, not trimmed.
-                    admissible given = Common.differing differentIn gs given == given && described searcher gs given == given && (if exactly then List.genericLength given == required else List.genericLength given <= capHere)
+                    -- Under Search.exactly a zone answer the cards out there
+                    -- can complete is whole.
+                    admissible given =
+                      keptTogether (fmap Left given) == fmap Left given
+                        && ( if exactly
+                               then List.genericLength given <= required && List.genericLength given + outsideJoining given >= required
+                               else List.genericLength given <= capHere
+                           )
                     -- RE-ASKED when illegal, Parun.Engine.Engine's CR 603.3d
                     -- shape: a repeat of an answer already refused is taken
                     -- as it stands, since a pure decider repeats itself and
@@ -927,12 +952,17 @@ search settle performManaAbility runSubgame resolving source controller legal (S
                     -- card taken from outside is what spares a public zone's
                     -- match -- Invasion of Arcavios's searcher who wants her
                     -- sideboard's sorcery over her graveyard's.
+                    --
+                    -- Held to the group the zones' find began, and under
+                    -- Search.exactly owing what it left of `required`.
                     outsideRoom = min (capHere - min capHere (List.genericLength picked)) outsideCopies
+                    outsideLeast = if exactly then min outsideRoom (required - min required (List.genericLength picked)) else 0
+                    keepOutside outs = Either.rights (keptTogether (fmap Left picked <> fmap Right outs))
                 outsidePicked <- case NonEmpty.nonEmpty (Map.toList outsideAvailable) of
-                  Just candidates
+                  Just offered
                     | outsideRoom > 0 -> do
-                        outsideAnswer <- Game.choose (Prompt.ChooseFromOutsideTheGame decider searcher candidates 0 outsideRoom)
-                        pure (Event.settleOutside id outsideAvailable 0 outsideRoom outsideAnswer)
+                        outsideAnswer <- Game.choose (Prompt.ChooseFromOutsideTheGame decider searcher offered outsideLeast outsideRoom)
+                        pure (Event.settleOutside keepOutside outsideAvailable outsideLeast outsideRoom outsideAnswer)
                   _ -> pure []
                 let room = capHere - min capHere (List.genericLength picked + List.genericLength outsidePicked)
                 -- The completion keeps every description to one card: picked
@@ -980,10 +1010,17 @@ search settle performManaAbility runSubgame resolving source controller legal (S
               (True, Just agent) -> [] <$ (Common.exileFoundFor agent =<< Event.changeZoneInBatchReturning settle before oid Zone.Exile)
             pure (moved, if List.elem oid (Game.zoneMembers Zone.Hand owner before) then moved else [])
           -- CR 400.11b: a card found outside the game is brought in rather
-          -- than moved, the reveal riding along as it arrives (#2450).
+          -- than moved, the reveal riding along as it arrives (#2450). Where
+          -- the search leaves its finds for a later clause, the reveal lasts
+          -- the resolution, as putFound's Reveal arm keeps an in-zone find's
+          -- (CR 701.20a). A REGRESSION FENCE: no case reads the window while
+          -- the resolution runs, so removing it reddens nothing.
           fromOutside <- case (Common.outsideArrival destination, exiler) of
             (Nothing, _) -> pure []
-            (Just (arrival, revealIt), Nothing) -> Event.bringChosen arrival revealIt searcher foundOutside
+            (Just (arrival, revealIt), Nothing) -> do
+              brought <- Event.bringChosen arrival revealIt searcher foundOutside
+              Monad.when (revealIt && not (Common.shufflesAfter destination)) (Monad.mapM_ (Event.stampReveal (RevealWindow.WhileOnStack resolving)) brought)
+              pure brought
             (Just _, Just agent) -> [] <$ (Common.exileFoundFor agent . Seq.fromList =<< Event.bringChosen OutsideDestination.Exile False searcher foundOutside)
           pure (fromZones <> fromOutside, handArrivals)
         -- The shuffle is the CARD's instruction too (CR 701.23h, CR 701.24b).
