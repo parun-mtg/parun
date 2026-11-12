@@ -544,7 +544,7 @@ candidateCostsGiven permitted pid name oid gs =
       -- grant to "spells you cast" (Hunting Velociraptor) reaches it. Read by
       -- the arms whose keyword's own rule says it functions on the stack;
       -- evoke, bestow, prototype and the graveyard's keep `keywords`, their
-      -- rules naming the zone the card is cast from. Parun.CastSpec's "CR
+      -- rules naming the zone the card is cast from, and sneak is read off both. Parun.CastSpec's "CR
       -- 113.6d a Hunting Velociraptor's granted prowl buys a Ridgetop Raptor
       -- for {2}{R}" proves it.
       spell = asSpellProjected pid oid gs

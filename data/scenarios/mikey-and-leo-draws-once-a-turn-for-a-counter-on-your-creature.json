@@ -11,6 +11,21 @@
           {
             "card": "Grizzly Bears",
             "label": "bear"
+          },
+          {
+            "card": "Forest",
+            "label": "f0",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f2",
+            "ready": true
           }
         ],
         "hand": [
@@ -47,7 +62,6 @@
             "card": "Island"
           }
         ],
-        "manaPool": "GGG",
         "name": "alice"
       },
       {
@@ -82,12 +96,16 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.2h: Mikey & Leo draws for the first counter put on a creature you control each turn, and for none on an opponent's",
+  "description": "CR 603.2c: Mikey & Leo draws for the first counter put on a creature you control each turn, and for none on an opponent's",
+  "note": "Each count is read a step after its spell, so a trigger that should not have fired has resolved by then; the opponent's creature goes first, before the turn's one trigger is spent.",
   "timeline": [
     {
       "do": {
         "Cast": {
-          "mana": [],
+          "mana": [
+            "$f0",
+            null
+          ],
           "object": "$bg0",
           "targets": [
             "$giant"
@@ -115,7 +133,7 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "BeginningOfCombat",
       "turn": 1
     },
     {
@@ -128,13 +146,16 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "BeginningOfCombat",
       "turn": 1
     },
     {
       "do": {
         "Cast": {
-          "mana": [],
+          "mana": [
+            "$f1",
+            null
+          ],
           "object": "$bg1",
           "targets": [
             "$bear"
@@ -142,19 +163,19 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "BeginningOfCombat",
       "turn": 1
     },
     {
       "do": "Pass",
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "BeginningOfCombat",
       "turn": 1
     },
     {
       "do": "Pass",
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "BeginningOfCombat",
       "turn": 1
     },
     {
@@ -168,7 +189,7 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "BeginningOfCombat",
       "turn": 1
     },
     {
@@ -181,13 +202,15 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "BeginningOfCombat",
       "turn": 1
     },
     {
       "do": {
         "Cast": {
-          "mana": [],
+          "mana": [
+            "$f2"
+          ],
           "object": "$bg2",
           "targets": [
             "$bear"
@@ -195,13 +218,13 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "BeginningOfCombat",
       "turn": 1
     },
     {
       "do": "Pass",
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "BeginningOfCombat",
       "turn": 1
     },
     {
@@ -215,7 +238,7 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "PostcombatMain",
       "turn": 1
     },
     {
@@ -228,7 +251,7 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
+      "step": "PostcombatMain",
       "turn": 1
     }
   ]

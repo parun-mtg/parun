@@ -47,6 +47,26 @@
             "card": "Swamp",
             "label": "s6",
             "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s7",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s8",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s9",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m0",
+            "ready": true
           }
         ],
         "graveyard": [
@@ -103,7 +123,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 716.2a / 702.190a: Ninja Teen drains for a creature leaving, pumps at level 2, and at level 3 casts a creature card from the graveyard by sneak",
+  "description": "CR 717.2a / 702.190a: Ninja Teen drains for a creature leaving, pumps at level 2, and at level 3 casts a creature card from the graveyard by sneak",
+  "note": "The Mountain and three spare Swamps pay Hill Giant's own {3}{R}, so the refused main-phase cast is refused by the permission, which reaches only a sneak cost.",
   "timeline": [
     {
       "player": "alice",
@@ -190,6 +211,23 @@
       "turn": 1
     },
     {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$m0",
+            "$s7",
+            "$s8",
+            "$s9",
+            null
+          ],
+          "object": "$giant"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "Attack": [
           "$piker"
@@ -206,7 +244,8 @@
             "$s3",
             "$s4",
             "$s5",
-            "$s6"
+            "$s6",
+            null
           ],
           "object": "$giant"
         }

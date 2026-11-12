@@ -3468,7 +3468,8 @@ sneakWindowed castUsing = case castUsing of
 -- CR 702.190a: does this card hold a sneak at all? hasFlash's membership question
 -- for the one other keyword that widens WHEN a card may be cast rather than from
 -- where, and read the same way -- Parun.Engine.Cast.cardTimingOk asks it of the
--- proposed face's printed keywords and of the object's post-layer ones, so a
+-- proposed face's printed keywords and of the object's post-layer ones, on the
+-- stack and where it lies, so a
 -- granted sneak widens the window its grantee's cast is offered in.
 --
 -- MEMBERSHIP, not a cost, because the widening is the same whatever the cost is;
