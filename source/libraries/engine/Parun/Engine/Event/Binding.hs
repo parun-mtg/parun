@@ -729,10 +729,11 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- TriggerSource.Sourceless outright -- CR 726.2's and CR 702.179d's abilities
   -- hang on no Saga -- so every record it accepts carries an ObjectId, and every
   -- record carries a controller.
-  (TriggerCondition.SagaFinalChapterTriggers _, GameEvent.AbilityTriggered record) ->
-    case AbilityTriggered.source record of
-      TriggerSource.Sourceless -> Map.empty
-      TriggerSource.OfObject saga -> Binding.setBecame saga (Binding.setTriggerPlayer (AbilityTriggered.controller record) Map.empty)
+  --
+  -- ChapterMoment.Resolves's event carries the same record, read the same way:
+  -- Narci, Fable Singer's "that Saga's mana value" is the slot's reader.
+  (TriggerCondition.SagaFinalChapter _, GameEvent.AbilityTriggered record) -> sagaChapterBindings record
+  (TriggerCondition.SagaFinalChapter _, GameEvent.TriggeredAbilityFinished record) -> sagaChapterBindings record
   -- CR 120.3's "that much", read by the damage's RECIPIENT: Coalhauler Swine's
   -- "whenever this creature is dealt damage, it deals that much damage to each
   -- player". The same reserved slot CR 615.13's prevention and CR 119.9's life
@@ -1383,6 +1384,13 @@ setBecameArrivals m = case Moved.arrivals m of
   only Seq.:<| Seq.Empty -> Binding.setBecame only
   every -> Binding.setBecameGroup every
 
+-- CR 715.2d's watcher's bindings off either event's record: the Saga under
+-- CR 400.7e's slot and the chapter ability's controller (CR 603.3a).
+sagaChapterBindings :: AbilityTriggered.AbilityTriggered -> Map.Map SlotName.SlotName Binding
+sagaChapterBindings record = case AbilityTriggered.source record of
+  TriggerSource.Sourceless -> Map.empty
+  TriggerSource.OfObject saga -> Binding.setBecame saga (Binding.setTriggerPlayer (AbilityTriggered.controller record) Map.empty)
+
 -- Which slots eventBindings above can stamp for a condition, as a set. A
 -- CLASSIFICATION of a rule 603 trigger condition -- the sibling of
 -- zonesTriggeredFrom below, which asks the other structural question about the
@@ -1735,7 +1743,7 @@ eventBindingSlots cond = case cond of
   -- TriggerSource.Sourceless, so the record it accepts always carries an
   -- ObjectId, and every record carries a controller. Claimed for the CONDITION
   -- rather than for the printing, which is what a per-condition set means.
-  TriggerCondition.SagaFinalChapterTriggers _ -> Set.fromList [Binding.became, Binding.triggerPlayer]
+  TriggerCondition.SagaFinalChapter _ -> Set.fromList [Binding.became, Binding.triggerPlayer]
   -- CR 726.1's newly crowned player -- Garland, Royal Kidnapper watches an
   -- OPPONENT take the crown, so the seat is one nothing else on the ability
   -- names. Under the You relation it is also CR 109.5's "you", a second name for

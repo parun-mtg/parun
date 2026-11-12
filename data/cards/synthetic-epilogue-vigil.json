@@ -4,8 +4,11 @@
       "delayedAbilities": {
         "epilogue angel": {
           "condition": {
-            "type": "SagaFinalChapterTriggers",
-            "value": "You"
+            "type": "SagaFinalChapter",
+            "value": {
+              "controller": "You",
+              "moment": "Triggers"
+            }
           },
           "modal": {
             "modes": [

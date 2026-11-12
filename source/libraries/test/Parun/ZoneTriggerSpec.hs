@@ -77,6 +77,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CausedBy as CausedBy
+import qualified Parun.Types.ChapterMoment as ChapterMoment
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.ClassLevelChange as ClassLevelChange
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
@@ -196,6 +197,7 @@ import qualified Parun.Types.RevealTiming as RevealTiming
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.SagaFinalChapter as SagaFinalChapter
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellCast as SpellCast
@@ -2276,15 +2278,18 @@ representativeEvents cond =
         -- both whatever the projection says. The source is TriggerSource.OfObject
         -- deliberately, that being the only shape matchesTrigger accepts; a
         -- Sourceless one would pin the empty floor and say nothing.
-        TriggerCondition.SagaFinalChapterTriggers _ ->
-          one
-            ( GameEvent.AbilityTriggered
+        -- CR 608.2n's end of the resolution carries the same record, for the
+        -- Resolves moment.
+        TriggerCondition.SagaFinalChapter watcher ->
+          let record =
                 AbilityTriggered.MkAbilityTriggered
                   { AbilityTriggered.source = TriggerSource.OfObject departed,
                     AbilityTriggered.controller = S.alice,
                     AbilityTriggered.ability = bareAbility (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent))
                   }
-            )
+           in one $ case SagaFinalChapter.moment watcher of
+                ChapterMoment.Triggers -> GameEvent.AbilityTriggered record
+                ChapterMoment.Resolves -> GameEvent.TriggeredAbilityFinished record
         -- CR 726.1's own event, and the only one this condition admits. CR 726.3
         -- makes it name exactly one player, so there is no second shape of the
         -- event for the floor to differ on. bob rather than the perspective
@@ -2624,7 +2629,8 @@ everyTriggerCondition =
     TriggerCondition.PermanentSacrificed (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.And [])),
     TriggerCondition.PermanentSacrificed (PlayerActsOn.MkPlayerActsOn PlayerRelation.Opponent (Filter.Type.And [])),
     TriggerCondition.PermanentSacrificed (PlayerActsOn.MkPlayerActsOn PlayerRelation.AnyPlayer (Filter.Type.And [])),
-    TriggerCondition.SagaFinalChapterTriggers PlayerRelation.You,
+    TriggerCondition.SagaFinalChapter (SagaFinalChapter.MkSagaFinalChapter ChapterMoment.Triggers PlayerRelation.You),
+    TriggerCondition.SagaFinalChapter (SagaFinalChapter.MkSagaFinalChapter ChapterMoment.Resolves PlayerRelation.You),
     -- BOTH relations, on the SpellCast pair's reasoning above: an eventBindings
     -- arm that had cased on the relation and stamped nothing under one of them
     -- would go unseen if only one were listed. Custodi Lich prints the You form

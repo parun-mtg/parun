@@ -24,6 +24,7 @@ import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CausedBy as CausedBy
+import qualified Parun.Types.ChapterMoment as ChapterMoment
 import qualified Parun.Types.ClassLevel as ClassLevel
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
 import qualified Parun.Types.Color as Color
@@ -79,6 +80,7 @@ import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RoomIndex as RoomIndex
+import qualified Parun.Types.SagaFinalChapter as SagaFinalChapter
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StackObjectKind as StackObjectKind
@@ -610,20 +612,14 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       TriggerCondition.codec
       (TriggerCondition.PermanentSacrificed (PlayerActsOn.MkPlayerActsOn PlayerRelation.Opponent (Filter.HasCardType CardType.Artifact)))
       " {\"type\":\"PermanentSacrificed\",\"value\":{\"player\":\"Opponent\",\"filter\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}}} "
-  -- CR 603.3b's second class. The relation is the only payload: which Saga and
-  -- which chapter are read off the event and the source's projection.
-  Spec.it s "SagaFinalChapterTriggers round-trips its relation" $
+  -- CR 715.2d's watcher: which Saga and which chapter are read off the event
+  -- and the source's projection.
+  Spec.it s "SagaFinalChapter round-trips its moment and relation" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.SagaFinalChapterTriggers PlayerRelation.You)
-      " {\"type\":\"SagaFinalChapterTriggers\",\"value\":\"You\"} "
-  Spec.it s "SagaFinalChapterTriggers round-trips the opponent relation too" $
-    Common.assertCodec
-      s
-      TriggerCondition.codec
-      (TriggerCondition.SagaFinalChapterTriggers PlayerRelation.Opponent)
-      " {\"type\":\"SagaFinalChapterTriggers\",\"value\":\"Opponent\"} "
+      (TriggerCondition.SagaFinalChapter (SagaFinalChapter.MkSagaFinalChapter ChapterMoment.Triggers PlayerRelation.Opponent))
+      " {\"type\":\"SagaFinalChapter\",\"value\":{\"moment\":\"Triggers\",\"controller\":\"Opponent\"}} "
   -- CR 726.1's crowning. Both relations, since the PlayerRelation is the whole
   -- payload and the whole difference between "whenever you become the monarch"
   -- and "whenever an opponent becomes the monarch", so a codec that dropped it

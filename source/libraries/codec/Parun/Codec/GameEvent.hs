@@ -157,7 +157,8 @@ codec =
       -- 707.10b counts by, so the payload is the same record Parun.Types.Source's
       -- own OfAbility arm carries.
       Arm.payload "ActivatedAbilityResolved" ActivatedAbilitySource.codec GameEvent.ActivatedAbilityResolved (\x -> case x of GameEvent.ActivatedAbilityResolved y -> Just y; _ -> Nothing),
-      Arm.payload "TriggeredAbilityResolved" TriggeredAbilitySource.codec GameEvent.TriggeredAbilityResolved (\x -> case x of GameEvent.TriggeredAbilityResolved y -> Just y; _ -> Nothing)
+      Arm.payload "TriggeredAbilityResolved" TriggeredAbilitySource.codec GameEvent.TriggeredAbilityResolved (\x -> case x of GameEvent.TriggeredAbilityResolved y -> Just y; _ -> Nothing),
+      Arm.payload "TriggeredAbilityFinished" AbilityTriggered.codec GameEvent.TriggeredAbilityFinished (\x -> case x of GameEvent.TriggeredAbilityFinished y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: GameEvent.GameEvent -> String
@@ -236,3 +237,4 @@ tagOf x = case x of
   GameEvent.StickerPut {} -> "StickerPut"
   GameEvent.ActivatedAbilityResolved {} -> "ActivatedAbilityResolved"
   GameEvent.TriggeredAbilityResolved {} -> "TriggeredAbilityResolved"
+  GameEvent.TriggeredAbilityFinished {} -> "TriggeredAbilityFinished"

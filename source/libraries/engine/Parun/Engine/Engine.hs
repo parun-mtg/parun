@@ -785,7 +785,7 @@ reacts = Maybe.isJust . (Event.abilityTriggeredOf . LoggedEvent.event Monad.<=< 
 -- existing machinery applies unchanged. EVENT triggers and the CR 603.7 delayed
 -- store are scanned; state triggers are not, matching no event. No
 -- bound on the rounds, and none needed: the one condition of this class
--- (TriggerCondition.SagaFinalChapterTriggers) watches a Saga's final chapter ability,
+-- (TriggerCondition.SagaFinalChapter at ChapterMoment.Triggers) watches a Saga's final chapter ability,
 -- which triggers off lore counters (CR 715.2b), never off an ability
 -- triggering, so what reacts to it fires nothing further. Every round is
 -- filtered by `Event.withinTriggerLimit` first, the ONE place a "triggers only once"

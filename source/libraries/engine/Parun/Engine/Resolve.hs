@@ -36,6 +36,7 @@ import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Target as Target
 import qualified Parun.Extra.Natural as Natural
 import Parun.Types.AbilityName (AbilityName)
+import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
@@ -94,6 +95,7 @@ import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StoredEffects as StoredEffects
+import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnWindow as TurnWindow
@@ -961,6 +963,7 @@ resolveModesWith runSubgame stackId srcId modes = do
                 let took = any (\(_, _, ran) -> not (Set.null ran)) folds
                 Monad.when took (Monad.forM_ instruction (State.modify' . Event.instructionTaken))
             State.modify' (Game.cease stackId)
+            Monad.unless fizzles (recordAbilityFinished effectController obj)
 
 -- CR 608.2n / 608.2i: file this resolution against the ability that is
 -- resolving, so a clause of that very ability can ask how many times it has
@@ -981,6 +984,27 @@ recordAbilityResolution :: Object.Object -> Game ()
 recordAbilityResolution obj = case Object.source obj of
   Source.OfAbility activated -> State.modify' (Event.recordEvent (GameEvent.ActivatedAbilityResolved activated))
   Source.OfTrigger triggered -> State.modify' (Event.recordEvent (GameEvent.TriggeredAbilityResolved triggered))
+  _ -> pure ()
+
+-- CR 608.2n: file the END of an object-borne triggered ability's resolution,
+-- after rule 608.2n removed it from the stack -- the moment Tom Bombadil's
+-- ruling of 2023-06-16 triggers at, so a permanent its instructions put onto the
+-- battlefield sees it finish. A CLASSIFICATION off the Source, as
+-- recordAbilityResolution's; no card watches an activated ability or a sourceless
+-- inherent one finish.
+recordAbilityFinished :: PlayerId -> Object.Object -> Game ()
+recordAbilityFinished controller obj = case Object.source obj of
+  Source.OfTrigger triggered ->
+    State.modify'
+      ( Event.recordEvent
+          ( GameEvent.TriggeredAbilityFinished
+              AbilityTriggered.MkAbilityTriggered
+                { AbilityTriggered.source = TriggerSource.OfObject (TriggeredAbilitySource.source triggered),
+                  AbilityTriggered.controller = controller,
+                  AbilityTriggered.ability = TriggeredAbilitySource.ability triggered
+                }
+          )
+      )
   _ -> pure ()
 
 -- CR 118.12: does this clause's printed "If you do" hold? A clause naming no

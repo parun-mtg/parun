@@ -18,8 +18,11 @@
       "triggeredAbilities": [
         {
           "condition": {
-            "type": "SagaFinalChapterTriggers",
-            "value": "Opponent"
+            "type": "SagaFinalChapter",
+            "value": {
+              "controller": "Opponent",
+              "moment": "Triggers"
+            }
           },
           "modal": {
             "modes": [

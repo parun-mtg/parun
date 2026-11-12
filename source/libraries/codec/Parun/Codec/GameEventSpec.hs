@@ -813,3 +813,16 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
             }
       )
       " {\"type\":\"TriggeredAbilityResolved\",\"value\":{\"source\":7,\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"createdAt\":4}} "
+  -- CR 608.2n's end of the resolution: AbilityTriggered's record.
+  Spec.it s "TriggeredAbilityFinished" $
+    Common.assertCodec
+      s
+      GameEvent.codec
+      ( GameEvent.TriggeredAbilityFinished
+          AbilityTriggered.MkAbilityTriggered
+            { AbilityTriggered.source = TriggerSource.OfObject (ObjectId.MkObjectId 7),
+              AbilityTriggered.controller = PlayerId.MkPlayerId 1,
+              AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability
+            }
+      )
+      " {\"type\":\"TriggeredAbilityFinished\",\"value\":{\"source\":{\"type\":\"OfObject\",\"value\":7},\"controller\":1,\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}}} "

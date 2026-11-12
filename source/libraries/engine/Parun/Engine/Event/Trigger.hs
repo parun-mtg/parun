@@ -1070,7 +1070,7 @@ looksBack condition = case condition of
   -- ability triggering -- so CR 603.10a's four families cannot reach it. Its
   -- bearer is a permanent standing on the battlefield watching a Saga, and CR
   -- 603.10's first sentence is what reads it.
-  TriggerCondition.SagaFinalChapterTriggers _ -> False
+  TriggerCondition.SagaFinalChapter _ -> False
   -- CR 726.1's crowning names no zone change either -- it moves a DESIGNATION,
   -- not an object -- so none of CR 603.10a's four families reaches it.
   TriggerCondition.PlayerBecomesMonarch _ -> False
@@ -1308,7 +1308,7 @@ batchScoped condition = case condition of
   TriggerCondition.BecomesTargeted c -> BecomesTargetedTrigger.batching c == Batching.OneOrMore
   TriggerCondition.SelfHalfUnlocked _ -> False
   TriggerCondition.RoomFullyUnlocked _ -> False
-  TriggerCondition.SagaFinalChapterTriggers _ -> False
+  TriggerCondition.SagaFinalChapter _ -> False
   TriggerCondition.PlayerBecomesMonarch _ -> False
   TriggerCondition.LosesControl _ -> False
   TriggerCondition.Reflexive -> False
@@ -3069,7 +3069,7 @@ zonesTriggeredFrom cond =
         TriggerCondition.BecomesTargeted {} -> battlefield
         -- CR 113.6's default a last time: Historian's Boon is an enchantment watching
         -- the battlefield's Sagas, and a card in a graveyard sees no chapter fire.
-        TriggerCondition.SagaFinalChapterTriggers _ -> battlefield
+        TriggerCondition.SagaFinalChapter _ -> battlefield
         -- CR 113.6's default once more: Custodi Lich is a creature and watches the
         -- crown from the battlefield, so the card sees no crowning from a graveyard.
         TriggerCondition.PlayerBecomesMonarch _ -> battlefield
@@ -3230,7 +3230,7 @@ stateTriggersOn gs
             -- CR 603.3b's condition is an EVENT trigger too, and the event is
             -- another ability triggering: nothing about it is a state a settle
             -- could re-read.
-            TriggerCondition.SagaFinalChapterTriggers _ -> False
+            TriggerCondition.SagaFinalChapter _ -> False
             -- CR 603.2 event trigger, not a CR 603.8 state: this fires on a
             -- player BECOMING the monarch, and a settle re-reading "is the
             -- monarch" would fire it again every time until the crown moved.

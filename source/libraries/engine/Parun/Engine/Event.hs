@@ -11988,7 +11988,7 @@ controllerTurnScoped cond = case cond of
   -- nothing restricts this CONDITION to it: CR 715.3a's entry replacement can put
   -- a Saga's last lore counter on during anybody's turn, and the watcher is not
   -- even the Saga's controller under the Opponent relation.
-  TriggerCondition.SagaFinalChapterTriggers _ -> False
+  TriggerCondition.SagaFinalChapter _ -> False
   -- The condition carries no TurnScope, and CR 726 restricts a crowning to no
   -- turn at all: CR 726.1's "an effect instructs a player to become the monarch"
   -- can resolve on anybody's turn, and CR 726.2's crown steal happens in the
