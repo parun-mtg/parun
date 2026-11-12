@@ -22,6 +22,7 @@ import qualified Parun.Types.ChangeWord as ChangeWord
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostKeyword as CostKeyword
@@ -412,6 +413,7 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
                   Nothing
                   Nothing
                   Nothing
+                  Copyability.Copyable
               )
           )
       )

@@ -60,6 +60,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Claim as Claim.Type
 import qualified Parun.Types.ClaimAxis as ClaimAxis
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterName as CounterName
@@ -514,7 +515,8 @@ manaSpec s registry = Spec.describe s "Mana" $ do
               ActivatedAbility.activator = Activator.Related PlayerRelation.You,
               ActivatedAbility.condition = Nothing,
               ActivatedAbility.name = Nothing,
-              ActivatedAbility.keyword = Nothing
+              ActivatedAbility.keyword = Nothing,
+              ActivatedAbility.copyability = Copyability.Copyable
             }
      in Spec.assertBool s (ManaAbility.isManaAbility ab) "mana ability"
 
@@ -534,7 +536,8 @@ manaSpec s registry = Spec.describe s "Mana" $ do
               ActivatedAbility.activator = Activator.Related PlayerRelation.You,
               ActivatedAbility.condition = Nothing,
               ActivatedAbility.name = Nothing,
-              ActivatedAbility.keyword = Nothing
+              ActivatedAbility.keyword = Nothing,
+              ActivatedAbility.copyability = Copyability.Copyable
             }
      in Spec.assertBool s (not (ManaAbility.isManaAbility ab)) "targets -> not mana"
 
@@ -554,7 +557,8 @@ manaSpec s registry = Spec.describe s "Mana" $ do
               ActivatedAbility.activator = Activator.Related PlayerRelation.You,
               ActivatedAbility.condition = Nothing,
               ActivatedAbility.name = Nothing,
-              ActivatedAbility.keyword = Nothing
+              ActivatedAbility.keyword = Nothing,
+              ActivatedAbility.copyability = Copyability.Copyable
             }
      in Spec.assertBool s (not (ManaAbility.isManaAbility ab)) "no mana produced -> not mana"
 
@@ -4793,7 +4797,7 @@ atLife n gs = gs {GameState.players = Map.adjust (\p -> p {Player.life = n}) S.a
 theAbility :: Printing.Printing -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
 
 -- CR 106.3's count read off the BOARD rather than off the card: Cabal Coffers
 -- (Torment) prints "{2}, {T}: Add {B} for each Swamp you control." Oracle text

@@ -44,6 +44,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
@@ -102,7 +103,7 @@ answersFor answer gs game = snd (Replay.record answer gs game)
 theAbility :: Printing.Printing -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)
 theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneModeOf Map.empty Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneModeOf Map.empty Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
 
 wasAskedToReplace :: [Response.Response] -> Bool
 wasAskedToReplace responses =

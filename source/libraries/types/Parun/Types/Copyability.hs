@@ -1,8 +1,10 @@
 module Parun.Types.Copyability where
 
--- | Whether a spell can be copied (CR 707.10), CR 113.6g's second half beside
--- Parun.Types.Counterability, and on the card for the reason that type gives:
--- SELF-referential, functioning on the stack, with no layer to fold through.
+-- | Whether a spell or an ability can be copied (CR 707.10), CR 113.6g's second
+-- half beside Parun.Types.Counterability, and on the card (or on the activated
+-- ability, Parun.Types.ActivatedAbility.copyability) for the reason that type
+-- gives: SELF-referential, functioning on the stack, with no layer to fold
+-- through.
 --
 -- A field of its own and not a parameter on Counterability: each of
 -- Parun.Types.Face's prohibitions gates one act at that act's site
@@ -14,8 +16,8 @@ module Parun.Types.Copyability where
 -- Not a Bool, for Counterability's reason: CantBeCopied names the rule at the
 -- site that reads it (Parun.Engine.Resolve.Arms.Objects.copyStackObject).
 data Copyability
-  = -- | CR 707.10: an effect may copy the spell.
+  = -- | CR 707.10: an effect may copy the spell or ability.
     Copyable
-  | -- | CR 113.6g: an effect that would copy the spell creates no copy.
+  | -- | CR 113.6g: an effect that would copy the spell or ability creates no copy.
     CantBeCopied
   deriving (Bounded, Enum, Eq, Ord, Show)

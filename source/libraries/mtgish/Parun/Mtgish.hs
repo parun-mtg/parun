@@ -62,6 +62,7 @@ import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostChange as CostChange
@@ -449,7 +450,8 @@ activatedAbility c m =
       ActivatedAbility.activator = Activator.Related PlayerRelation.You,
       ActivatedAbility.condition = Nothing,
       ActivatedAbility.name = Nothing,
-      ActivatedAbility.keyword = Nothing
+      ActivatedAbility.keyword = Nothing,
+      ActivatedAbility.copyability = Copyability.Copyable
     }
 
 triggeredAbility :: TriggerCondition.TriggerCondition -> Modal -> TriggeredAbility.TriggeredAbility Card.Card Ability

@@ -12,6 +12,7 @@ import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Activator as Activator
 import Parun.Types.Card (Card)
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.Duration as Duration
@@ -62,7 +63,8 @@ ability =
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
           ActivatedAbility.condition = Nothing,
           ActivatedAbility.name = Nothing,
-          ActivatedAbility.keyword = Nothing
+          ActivatedAbility.keyword = Nothing,
+          ActivatedAbility.copyability = Copyability.Copyable
         }
 
 -- The slot CR 804.2's one target is chosen into.

@@ -59,6 +59,7 @@ import qualified Parun.Types.Choices as Choices
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
@@ -133,7 +134,7 @@ chooseNoModes p = case p of
 theAbility :: Printing.Printing -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Activate" $ do
@@ -399,7 +400,8 @@ spec s registry = Spec.describe s "Parun.Engine.Activate" $ do
               ActivatedAbility.activator = Activator.Related PlayerRelation.You,
               ActivatedAbility.condition = Nothing,
               ActivatedAbility.name = Nothing,
-              ActivatedAbility.keyword = Nothing
+              ActivatedAbility.keyword = Nothing,
+              ActivatedAbility.copyability = Copyability.Copyable
             }
     Spec.assertBool s (not (Activatable.activatable S.alice srcId costlyAbility gs1)) "one Mountain cannot pay {2}"
 
@@ -1062,6 +1064,7 @@ cyclingSpec s registry = Spec.describe s "Cycling" $ do
             Nothing
             Nothing
             Nothing
+            Copyability.Copyable
         after = S.runPure chooseNoModes gs (Activate.activateAbility S.alice oid twoModes)
     Spec.assertEqWith s "the activation was rejected: nothing on the stack" (TurnRegisters.stack (GameState.turn after)) []
     Spec.assertEqWith s "so no reveal survives it either" (S.revealsOf after) []

@@ -66,6 +66,7 @@ import qualified Parun.Types.CastWindow as CastWindow
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
@@ -147,7 +148,7 @@ import qualified Parun.Types.Zone as Zone
 theAbility :: Printing.Printing -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Face.spell (S.combinedFace p)) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Face.spell (S.combinedFace p)) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
 
 -- CR 607.2d: Doom Cannon's "{3}, {T}, Sacrifice a creature of the chosen type:
 -- This artifact deals 3 damage to any target" is linked to its "As this artifact

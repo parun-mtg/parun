@@ -10,6 +10,7 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Card as Card
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.ManaCost as ManaCost
@@ -39,6 +40,7 @@ ability =
     Nothing
     Nothing
     Nothing
+    Copyability.Copyable
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ActivatedAbilitySource" $ do

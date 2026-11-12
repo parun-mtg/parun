@@ -19,6 +19,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.Comparison as Comparison
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostDirection as CostDirection
@@ -82,6 +83,7 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
               Nothing
               Nothing
               Nothing
+              Copyability.Copyable
           )
       )
       " {\"type\":\"Activated\",\"value\":{\"cost\":{\"mana\":null,\"components\":[{\"type\":\"TapThis\"}]},\"modal\":{\"modes\":[{}]}}} "

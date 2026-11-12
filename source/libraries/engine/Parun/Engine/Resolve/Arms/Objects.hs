@@ -46,6 +46,8 @@ import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.Acquisition as Acquisition
+import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.ActiveAttackProhibition as ActiveAttackProhibition
 import qualified Parun.Types.ActiveAttackRequirement as ActiveAttackRequirement
 import qualified Parun.Types.ActiveBlockRequirement as ActiveBlockRequirement
@@ -158,6 +160,7 @@ import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.SkipPhase as SkipPhase
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
+import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellWasCopied as SpellWasCopied
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -616,15 +619,22 @@ becomeCopy resolving source controller legal (BecomeCopy.MkBecomeCopy original s
         let spellController = Maybe.fromMaybe (Projection.defaultControllerOf obj) (Projection.controllerOf spell g)
          in Common.chooseNewTargetsFor (Maybe.isNothing mOriginalOf) source spellController spellController spell
 
--- CR 113.6g: the spell's own "can't be copied", read off its projection as
--- Event.counterOne reads "can't be countered", so a copy effect's values (CR
--- 707.2) and a layer-6 wipe (CR 613.1f) both reach it -- through last known
--- information, since a ref can name a spell that has left the stack (CR
--- 608.2h). data/scenarios/transcantation proves the copy.
-cantBeCopied :: ObjectId -> GameState.GameState -> Bool
-cantBeCopied oid gs = case PC.copyability (Projection.projectWithLastKnown oid gs) of
-  Copyability.CantBeCopied -> True
-  Copyability.Copyable -> False
+-- CR 113.6g: the object's own "can't be copied". A spell's is read off its
+-- projection as Event.counterOne reads "can't be countered", so a copy effect's
+-- values (CR 707.2) and a layer-6 wipe (CR 613.1f) both reach it -- through
+-- last known information, since a ref can name a spell that has left the stack
+-- (CR 608.2h). data/scenarios/transcantation proves the copy. An activated
+-- ability has no card (CR 113.1c), so its own is read off the ability its
+-- Source carries; data/scenarios/gogo-master-of-mimicry proves it. No
+-- triggered ability says it.
+cantBeCopied :: ObjectId -> Object.Object -> StackObjectKind.StackObjectKind -> GameState.GameState -> Bool
+cantBeCopied oid obj kind gs =
+  Copyability.CantBeCopied == case kind of
+    StackObjectKind.Spell -> PC.copyability (Projection.projectWithLastKnown oid gs)
+    StackObjectKind.ActivatedAbility -> case Object.source obj of
+      Source.OfAbility a -> ActivatedAbility.copyability (ActivatedAbilitySource.ability a)
+      _ -> Copyability.Copyable
+    StackObjectKind.TriggeredAbility -> Copyability.Copyable
 
 copyStackObject :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> CopyStackObject.CopyStackObject (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackObject ref targets quantity copierRef exceptions) = do
@@ -667,10 +677,11 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
       -- Read off the same pre-effect `gs` as the objects (CR 608.2f), and
       -- PLURAL, one copy per seat the reference names; every producer names one,
       -- and the elided default names the resolving controller.
-      -- CR 113.6g: a spell whose own ability says it can't be copied yields no
-      -- copy, read off `gs` with the objects. data/scenarios/choreographed-sparks
-      -- proves it.
-      Monad.forM_ (playerRefPlayers legal resolving source controller gs copierRef) $ \copier -> Monad.forM_ (Common.copyOnStackOf (Object.source obj)) $ \(copySource, kind) -> Monad.unless (kind == StackObjectKind.Spell && cantBeCopied original gs) . Monad.replicateM_ copies $ do
+      -- CR 113.6g: a spell or ability whose own ability says it can't be copied
+      -- yields no copy, read off `gs` with the objects.
+      -- data/scenarios/choreographed-sparks and
+      -- data/scenarios/gogo-master-of-mimicry prove it.
+      Monad.forM_ (playerRefPlayers legal resolving source controller gs copierRef) $ \copier -> Monad.forM_ (Common.copyOnStackOf (Object.source obj)) $ \(copySource, kind) -> Monad.unless (cantBeCopied original obj kind gs) . Monad.replicateM_ copies $ do
         -- CR 707.10's answers, as the target maps to write: one EMPTY map
         -- where the copy keeps the decisions rule 707.10 copied (rule 707.10c
         -- included, its offer below being a separate act), CR 707.10d's one

@@ -1969,7 +1969,8 @@ oneEffectActivated mana effect =
       ActivatedAbility.activator = Activator.Related PlayerRelation.You,
       ActivatedAbility.condition = Nothing,
       ActivatedAbility.name = Nothing,
-      ActivatedAbility.keyword = Nothing
+      ActivatedAbility.keyword = Nothing,
+      ActivatedAbility.copyability = Copyability.Copyable
     }
 
 -- One CR 700.2 mode for the fixtures below: the effects it runs and the target
@@ -2003,7 +2004,8 @@ modalActivated modes =
       ActivatedAbility.activator = Activator.Related PlayerRelation.You,
       ActivatedAbility.condition = Nothing,
       ActivatedAbility.name = Nothing,
-      ActivatedAbility.keyword = Nothing
+      ActivatedAbility.keyword = Nothing,
+      ActivatedAbility.copyability = Copyability.Copyable
     }
 
 -- Parun.Engine.Binding's reserved slot names in full: the binding keys the engine
