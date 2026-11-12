@@ -2758,6 +2758,7 @@ modeSelectionChildren c selection = case selection of
   ModeSelection.ChooseBetweenWithRepeats _ -> pure selection
   ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead condition ordinary instead) -> fmap ModeSelection.ChooseInstead (ChooseInstead.MkChooseInstead <$> modalInstead c condition <*> modeSelectionChildren c ordinary <*> modeSelectionChildren c instead)
   ModeSelection.ChooseUpTo quantity -> ModeSelection.ChooseUpTo <$> modalQuantity c quantity
+  ModeSelection.ChoosePawprintsWithRepeats _ -> pure selection
 
 -- | A mode's children. Slots a visitor renames together merge.
 modeChildren :: (Applicative f) => ModalChildren card ability f -> Mode.Mode card ability -> f (Mode.Mode card ability)

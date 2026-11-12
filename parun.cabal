@@ -406,6 +406,8 @@ library codec
     Parun.Codec.ChooseInsteadSpec
     Parun.Codec.ChooseNumber
     Parun.Codec.ChooseNumberSpec
+    Parun.Codec.ChoosePawprints
+    Parun.Codec.ChoosePawprintsSpec
     Parun.Codec.ChoosePermanents
     Parun.Codec.ChoosePermanentsSpec
     Parun.Codec.ChoosePlayer
@@ -2792,6 +2794,7 @@ library types
     Parun.Types.ChooseGroup
     Parun.Types.ChooseInstead
     Parun.Types.ChooseNumber
+    Parun.Types.ChoosePawprints
     Parun.Types.ChoosePermanents
     Parun.Types.ChoosePlayer
     Parun.Types.ChoosePlayerAtRandom

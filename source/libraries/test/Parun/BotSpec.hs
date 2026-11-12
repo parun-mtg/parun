@@ -48,6 +48,7 @@ import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ChooseBetween as ChooseBetween
+import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Color as Color
@@ -399,6 +400,8 @@ spec s registry = Spec.describe s "Bot" $ do
         selections = Set.fromList . fmap (Seq.fromList . fmap ModeIndex.MkModeIndex)
     Spec.assertEqWith s "range" (drawn (Prompt.ChooseModes decider S.alice oid modes (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 2)))) (selections [[0], [1], [0, 1]])
     Spec.assertEqWith s "repeats" (drawn (Prompt.ChooseModes decider S.alice oid modes (ModeSelection.ChooseExactlyWithRepeats 2))) (selections [[0, 0], [0, 1], [1, 1]])
+    -- CR 700.2i: up to three pawprints over modes worth one and two.
+    Spec.assertEqWith s "pawprints" (drawn (Prompt.ChooseModes decider S.alice oid modes (ModeSelection.ChoosePawprintsWithRepeats (ChoosePawprints.MkChoosePawprints 3 (Seq.fromList [1, 2]))))) (selections [[], [0], [1], [0, 0], [0, 1], [0, 0, 0]])
 
   -- CR 601.2c: "up to three targets" with two legal is zero to two.
   Spec.it s "announces any target count the board can supply" $ do

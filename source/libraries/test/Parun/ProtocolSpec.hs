@@ -56,6 +56,7 @@ import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Color as Color
@@ -466,6 +467,8 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 700.2a the legal modes by index" (among modes) [R.Number 0, R.Number 2]
     Spec.assertEqWith s "CR 700.2d as many as the selection takes, one chosen again" (told modes ["least", "most", "repeats"]) [Just (R.Number 2), Just (R.Number 2), Just (R.Boolean True)]
     Spec.assertEqWith s "and null for a mode with no text" (told modes ["names"]) [Just (R.Array [R.Null, R.Null])]
+    Spec.assertEqWith s "CR 700.2i each listed mode's pawprints" (told (Prompt.ChooseModes alice S.alice o7 (Set.fromList [mode 0, mode 2]) (ModeSelection.ChoosePawprintsWithRepeats (ChoosePawprints.MkChoosePawprints 5 (Seq.fromList [1, 2, 3])))) ["most", "pawprints"]) [Just (R.Number 5), Just (R.Array [R.Number 1, R.Number 3])]
+    Spec.assertEqWith s "and none for a selection by count" (told modes ["pawprints"]) [Nothing]
     Spec.assertEqWith s "and a mode named twice reads back" (Protocol.decodeAnswer modes (R.Array (replicate 2 (R.Number 2)))) (Right (Seq.fromList [mode 2, mode 2]))
     Spec.assertEqWith s "CR 702.47a each card beside the splice cost it adds" (told splice ["costs"]) [Just (R.Array (fmap Protocol.payment [free, spliceCost]))]
     Spec.assertEqWith s "CR 702.47b the cards read back in the order named" (Protocol.decodeAnswer splice (R.Array (reverse (among splice)))) (Right [card, o9])

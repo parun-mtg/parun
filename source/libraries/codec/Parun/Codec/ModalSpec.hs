@@ -9,6 +9,7 @@ import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Filter as Filter
@@ -43,9 +44,10 @@ toJson = Codec.encode codec
 fromJson :: Value.Value -> Either Text.Text (Modal.Modal Text.Text Text.Text)
 fromJson = Codec.decode codec
 
--- One constructor, so four cases: a populated payload in CR 700.2's non-modal
+-- One constructor, so five cases: a populated payload in CR 700.2's non-modal
 -- shape, the `selection` field defaulted (`modes` is required and non-empty by
--- invariant), the `shared` clauses, and the empty-modes decode failure.
+-- invariant), the `shared` clauses, and the empty-modes and pawprint-count
+-- decode failures.
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.Modal" $ do
   Spec.it s "MkModal, rule 702.6a's equip payload" $
@@ -96,5 +98,16 @@ spec s = Spec.describe s "Parun.Codec.Modal" $ do
           (const True)
           (const False)
           (fromJson (Value.object [Value.pair "modes" (Value.array []), Value.pair "selection" (Codec.encode ModeSelection.codec (ModeSelection.ChooseExactly 1))]))
+      )
+      "left"
+  -- CR 700.2i: one pawprint weight per printed mode, so two weights over one
+  -- mode name a mode the card does not print.
+  Spec.it s "pawprints not matching the modes is a decode error" $
+    Spec.assertBool
+      s
+      ( either
+          (const True)
+          (const False)
+          (fromJson (Value.object [Value.pair "modes" (Value.array [Value.object []]), Value.pair "selection" (Codec.encode ModeSelection.codec (ModeSelection.ChoosePawprintsWithRepeats (ChoosePawprints.MkChoosePawprints 5 (Seq.fromList [1, 2]))))]))
       )
       "left"

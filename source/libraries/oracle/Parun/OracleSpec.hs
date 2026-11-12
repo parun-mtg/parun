@@ -36,6 +36,7 @@ import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.ChooseBetween as ChooseBetween
+import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
@@ -886,6 +887,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Choose one or both \8212\n\8226 Destroy target artifact.\n\8226 Destroy target land.")) (Oracle.render (chosen (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 2)) [destroying CardType.Artifact, destroying CardType.Land]))
     Spec.assertEq s (Just (Text.pack "Choose three. You may choose the same mode more than once.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseExactlyWithRepeats 3) [destroying CardType.Land, drawing]))
     Spec.assertEq s (Just (Text.pack "Choose up to four. You may choose the same mode more than once.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseBetweenWithRepeats (ChooseBetween.MkChooseBetween 0 4)) [destroying CardType.Land, drawing]))
+    -- CR 700.2i: each mode headed by its pawprints (CR 107.18), not a bullet.
+    Spec.assertEq s (Just (Text.pack "Choose up to five {P} worth of modes. You may choose the same mode more than once.\n{P} \8212 Draw a card.\n{P}{P} \8212 Destroy target land.")) (Oracle.render (chosen (ModeSelection.ChoosePawprintsWithRepeats (ChoosePawprints.MkChoosePawprints 5 (Seq.fromList [1, 2]))) [drawing, destroying CardType.Land]))
     let remembering memory = withFace (\f -> f {Face.spell = Modal.MkModal (Seq.fromList [destroying CardType.Artifact, drawing]) (ModeSelection.ChooseExactly 1) memory Seq.empty, Face.typeLine = TypeLine.MkTypeLine Set.empty (Set.singleton CardType.Instant) Set.empty})
     Spec.assertEq s (Just (Text.pack "Choose one that hasn't been chosen this turn \8212\n\8226 Destroy target artifact.\n\8226 Draw a card.")) (Oracle.render (remembering ModeMemory.ThisTurn))
     let three = [destroying CardType.Artifact, destroying CardType.Land, drawing]
