@@ -648,7 +648,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         Modification.ChosenSubtype mode family ->
           case Game.currentChoice Chosen.Subtype src gs of
             Nothing -> pc
-            Just s -> applyModification textBoxOf viewOf src stamp gs oid unitTypes affected (chosenSubtypeAs mode family s) pc
+            Just s -> maybe pc (\chosen -> applyModification textBoxOf viewOf src stamp gs oid unitTypes affected chosen pc) (chosenSubtypeAs mode family s)
         -- CR 612.1/612.2: a text-changing effect swaps a subtype word in the type
         -- line, the rules text, the keywords (CR 702.14a) and the CDA (CR 208.2a /
         -- 604.3), and a colour word in the rules text and keywords. Layer 3, so
@@ -1725,7 +1725,7 @@ freezeQuantities viewOf gs announcedOn source context m =
         -- by data/scenarios/'s Mystic Compass scenario, which Disenchants the
         -- Compass after it resolves.
         Modification.ChosenSubtype mode family ->
-          chosenSubtypeAs mode family <$> Game.choiceWithLastKnown Chosen.Subtype (Game.readingAcquisition announcedOn source gs source) source gs
+          chosenSubtypeAs mode family =<< Game.choiceWithLastKnown Chosen.Subtype (Game.readingAcquisition announcedOn source gs source) source gs
         Modification.CreatureSubtype {} -> Just m
         Modification.AddEveryCreatureSubtype -> Just m
         Modification.LoseEverySubtype _ -> Just m
@@ -1874,10 +1874,14 @@ referenceQueries gs = Set.fromList (Maybe.mapMaybe (referenceQuery . gModificati
 
 -- CR 613.1d: a ChosenSubtype with its source's choice written in, as the
 -- family says.
-chosenSubtypeAs :: ChangeMode.ChangeMode -> SubtypeFamily.SubtypeFamily -> Subtype.Type.Subtype -> Modification.Modification ability
+--
+-- A chosen planeswalker type applied as a type change is not implemented
+-- (#7008): it answers Nothing, and the modification changes nothing.
+chosenSubtypeAs :: ChangeMode.ChangeMode -> SubtypeFamily.SubtypeFamily -> Subtype.Type.Subtype -> Maybe (Modification.Modification ability)
 chosenSubtypeAs mode family s = case family of
-  SubtypeFamily.BasicLandType -> Modification.LandSubtype mode s
-  SubtypeFamily.CreatureType -> Modification.CreatureSubtype mode s
+  SubtypeFamily.BasicLandType -> Just (Modification.LandSubtype mode s)
+  SubtypeFamily.CreatureType -> Just (Modification.CreatureSubtype mode s)
+  SubtypeFamily.PlaneswalkerType -> Nothing
 
 -- CR 305.7: does this modification SET a land's subtype, and so strip the land's
 -- rules text? Total, like removesAbilities: a new subtype-setting Modification
@@ -1895,6 +1899,7 @@ setsLandSubtype m = case m of
   Modification.ChosenSubtype mode family -> case family of
     SubtypeFamily.BasicLandType -> setsLandSubtype (Modification.LandSubtype mode Subtype.Type.Forest)
     SubtypeFamily.CreatureType -> False
+    SubtypeFamily.PlaneswalkerType -> False
   -- An ability grant is layer 6 and sets no subtype at all.
   Modification.GainAbility _ -> False
   Modification.GainAbilitiesOfSource _ -> False
@@ -4530,7 +4535,7 @@ modificationWrites m = case m of
   Modification.LandSubtype mode _ -> case mode of
     ChangeMode.Replace -> Set.fromList [Subtypes, Keywords]
     ChangeMode.InAddition -> Set.singleton Subtypes
-  Modification.ChosenSubtype mode family -> modificationWrites (chosenSubtypeAs mode family Subtype.Type.Forest)
+  Modification.ChosenSubtype mode family -> maybe Set.empty modificationWrites (chosenSubtypeAs mode family Subtype.Type.Forest)
   Modification.CreatureSubtype {} -> Set.singleton Subtypes
   Modification.AddEveryCreatureSubtype -> Set.singleton Subtypes
   -- The honest answer -- the arm writes PC.subtypes and nothing else, and CR

@@ -94,7 +94,8 @@
               "rewrite": {
                 "type": "ChooseQuality",
                 "value": {
-                  "type": "CreatureType"
+                  "type": "Subtype",
+                  "value": "CreatureType"
                 }
               }
             }

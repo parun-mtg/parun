@@ -577,6 +577,8 @@ library codec
     Parun.Codec.CounterLinked
     Parun.Codec.CounterLinkedSpec
     Parun.Codec.CounterLinkSpec
+    Parun.Codec.CounterLossR
+    Parun.Codec.CounterLossRSpec
     Parun.Codec.CounterMotion
     Parun.Codec.CounterMotionSpec
     Parun.Codec.CounterName
@@ -2883,6 +2885,7 @@ library types
     Parun.Types.CounterKindFor
     Parun.Types.CounterLink
     Parun.Types.CounterLinked
+    Parun.Types.CounterLossR
     Parun.Types.CounterMotion
     Parun.Types.CounterName
     Parun.Types.CounterPattern

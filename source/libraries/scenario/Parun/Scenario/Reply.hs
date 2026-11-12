@@ -399,8 +399,7 @@ shapeOf prompt = case prompt of
   Prompt.ChooseTargets {} -> mapOf (viaCodec Codec.SlotName.codec) (setOf recipient)
   Prompt.AnnounceTargets {} -> mapOf (viaCodec Codec.SlotName.codec) natural
   Prompt.ChooseWordSwap {} -> pairOf textWord textWord
-  Prompt.ChooseBasicLandType {} -> subtype
-  Prompt.ChooseCreatureType {} -> subtype
+  Prompt.ChooseSubtype {} -> subtype
   Prompt.ChooseSearchZones {} -> setOf searchPlace
   Prompt.Search {} -> list object
   Prompt.CastWhileSearching {} -> maybeOf (tripleOf object (viaCodec Codec.CardName.codec) (viaCodec Codec.Facing.codec))

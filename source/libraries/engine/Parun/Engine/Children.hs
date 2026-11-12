@@ -145,6 +145,7 @@ import qualified Parun.Types.CounterDestination as CounterDestination
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
+import qualified Parun.Types.CounterLossR as CounterLossR
 import qualified Parun.Types.CounterPattern as CounterPattern
 import qualified Parun.Types.CounterProhibition as CounterProhibition
 import qualified Parun.Types.CounterR as CounterR
@@ -2280,6 +2281,8 @@ replacementEffectChildren c replacement = case replacement of
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR (LifeLossPattern.MkLifeLossPattern whose cause) rewrite) ->
     fmap ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR <$> (LifeLossPattern.MkLifeLossPattern <$> replacementWhose c whose <*> pure cause) <*> lifeLossRewriteChildren c rewrite)
   ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR whose rewrite) -> fmap ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR <$> replacementWhose c whose <*> lifeGainRewriteChildren c rewrite)
+  ReplacementEffect.CounterLossR (CounterLossR.MkCounterLossR onWhat kind floor_) ->
+    fmap ReplacementEffect.CounterLossR (CounterLossR.MkCounterLossR <$> replacementFilter c onWhat <*> replacementCounterKind c kind <*> pure floor_)
   -- CR 504.1: "except the first in your draw step" reads the turn's log back to the step's beginning.
   ReplacementEffect.DrawR (DrawR.MkDrawR whose exceptFirst rewrite) ->
     fmap ReplacementEffect.DrawR (DrawR.MkDrawR <$> replacementWhose c whose <*> (exceptFirst <$ Monad.when exceptFirst (replacementLooksBack c HistoryRead.StepBegins)) <*> drawRewriteChildren c rewrite)

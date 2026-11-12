@@ -108,9 +108,8 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseCardInHand _ _ _ candidates -> Generator.pick candidates
   Prompt.ChooseColor _ _ _ colors -> Generator.pick colors
   Prompt.ChooseManaType _ _ _ types -> Generator.pick types
-  -- CR 205.3m / 305.6: any creature type, any of the five basic land types.
-  Prompt.ChooseCreatureType {} -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter Subtype.isCreatureType [minBound ..])
-  Prompt.ChooseBasicLandType {} -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter Subtype.isBasicLandType [minBound ..])
+  -- CR 205.3: any member of the family.
+  Prompt.ChooseSubtype _ _ _ family -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (Subtype.inFamily family) [minBound ..])
   -- The printed "and/or": any nonempty group of the places.
   Prompt.ChooseSearchZones _ _ places -> someOf places
   Prompt.ChooseCost _ _ _ candidates _ -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) candidates

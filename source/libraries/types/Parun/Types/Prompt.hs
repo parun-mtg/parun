@@ -83,6 +83,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StickerRef as StickerRef
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.ThrowResult as ThrowResult
@@ -490,13 +491,10 @@ data Prompt r where
   -- slot swaps, asked as the effect is applied (CR 608.2d); the second Set is
   -- the words the new one may not be.
   ChooseWordSwap :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> SlotName.SlotName -> Set.Set WordFamily.WordFamily -> Set.Set TextWord.TextWord -> Prompt (TextWord.TextWord, TextWord.TextWord)
-  -- | CR 614.1c: the one basic land type an entering object's controller
-  -- chooses, written to Object.chosenSubtype; no candidate list (CR 305.6).
-  ChooseBasicLandType :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Prompt Subtype.Subtype
-  -- | CR 614.1c: the one creature type an entering object's controller chooses,
-  -- written to Object.chosenSubtype; no candidate list (CR 205.3m), the arm
-  -- above's posture.
-  ChooseCreatureType :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Prompt Subtype.Subtype
+  -- | CR 205.3: the one subtype of the family a player chooses for an object,
+  -- written to Object.chosenSubtype; no candidate list, since every member of
+  -- the family's closed list is legal (CR 305.6, 205.3m, 205.3j).
+  ChooseSubtype :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> SubtypeFamily.SubtypeFamily -> Prompt Subtype.Subtype
   -- | CR 607.2d: odd or even, for the object the ObjectId names
   -- (ChosenQuality.Parity, Gollum, Riddle Master). Both are always legal.
   ChooseParity :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Prompt Parity.Parity

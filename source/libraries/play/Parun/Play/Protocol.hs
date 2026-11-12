@@ -539,10 +539,8 @@ offerOf gs prompt = case prompt of
         ("filter", Reply.encode (Reply.viaCodec (Codec.Filter.codec Codec.Keyword.codec)) namer restriction),
         ("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.viaCodec Codec.CardName.codec))) namer earlier)
       ]
-  -- CR 305.6: the five basic land types.
-  Prompt.ChooseBasicLandType _ _ source -> choosing prompt "options" (Just source) [] (filter Subtype.isBasicLandType [minBound ..])
-  -- CR 205.3m: every creature type.
-  Prompt.ChooseCreatureType _ _ source -> choosing prompt "options" (Just source) [] (Set.toList Subtype.everyCreatureType)
+  -- CR 205.3: every member of the family.
+  Prompt.ChooseSubtype _ _ source family -> choosing prompt "options" (Just source) [] (filter (Subtype.inFamily family) [minBound ..])
   -- CR 612.2: the families the swap is drawn from and the words the new one
   -- may not be; not the pairs, which number in the tens of thousands for
   -- creature types.

@@ -79,6 +79,7 @@ import qualified Parun.Types.CopyDomain as CopyDomain
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterLossR as CounterLossR
 import qualified Parun.Types.CounterPattern as CounterPattern
 import qualified Parun.Types.CounterR as CounterR
 import qualified Parun.Types.CounterSubject as CounterSubject
@@ -201,6 +202,7 @@ asZoneChange event = case event of
   ProposedEvent.WouldDealDamage _ -> Nothing
   ProposedEvent.WouldBeDestroyed {} -> Nothing
   ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldPutPlayerCounters {} -> Nothing
   ProposedEvent.WouldCreateTokens {} -> Nothing
   ProposedEvent.WouldBeginPhase {} -> Nothing
@@ -789,6 +791,7 @@ affected event = case event of
   ProposedEvent.WouldDealDamage de -> (Maybe.maybeToList (Recipient.objectOf (DamageEvent.target de)), Maybe.maybeToList (Recipient.playerOf (DamageEvent.target de)))
   ProposedEvent.WouldBeDestroyed oid _ _ -> ([oid], [])
   ProposedEvent.WouldPutCounters _ oid _ _ -> ([oid], [])
+  ProposedEvent.WouldLoseCountersToDamage oid _ _ -> ([oid], [])
   ProposedEvent.WouldPutPlayerCounters _ pid _ _ -> ([], [pid])
   ProposedEvent.WouldCreateTokens pid _ -> ([], [pid])
   ProposedEvent.WouldBeginPhase _ pid -> ([], [pid])
@@ -1057,6 +1060,15 @@ matchesPrinted viewOf gs event candidate =
         (ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR pat _), ProposedEvent.WouldLoseLife cause pid _) ->
           maybe True (== cause) (LifeLossPattern.whichCause pat)
             && matchesPlayer gs candidate (LifeLossPattern.whose pat) pid
+        -- CR 614.1a / 120.4c: the kind and the permanent, matched as the damage
+        -- is processed, and only a removal that would leave fewer counters than
+        -- the floor: Deification's "would result in all loyalty counters on it
+        -- being removed" is the row's applicability, LifeLossR's third conjunct
+        -- one event class over.
+        (ReplacementEffect.CounterLossR row, ProposedEvent.WouldLoseCountersToDamage oid kind n) ->
+          kind == CounterLossR.whichKind row
+            && matchesFiltered viewOf gs candidate (CounterLossR.onWhat row) oid
+            && Natural.minusSaturating (countersOn kind oid gs) n < CounterLossR.leaveAtLeast row
         -- CR 614.1a / 119.10: whose life total the row watches (CR 109.5's
         -- "your"), and whether the rewrite would actually resize the gain. That
         -- second conjunct is LifeLossR's third above, and for its reason: a gain
@@ -1166,6 +1178,7 @@ matchesPrinted viewOf gs event candidate =
         (ReplacementEffect.AttachR {}, _) -> False
         (ReplacementEffect.UntapR _, _) -> False
         (ReplacementEffect.LifeLossR {}, _) -> False
+        (ReplacementEffect.CounterLossR {}, _) -> False
         (ReplacementEffect.LifeGainR {}, _) -> False
         (ReplacementEffect.DrawR {}, _) -> False
         (ReplacementEffect.DrawCountR {}, _) -> False
@@ -2174,6 +2187,7 @@ bucketOfEffect re = case re of
   ReplacementEffect.DamageR {} -> ReplacementBucket.Other
   ReplacementEffect.DestructionR _ -> ReplacementBucket.Other
   ReplacementEffect.CounterR {} -> ReplacementBucket.Other
+  ReplacementEffect.CounterLossR {} -> ReplacementBucket.Other
   ReplacementEffect.TokenR {} -> ReplacementBucket.Other
   -- CR 616.1b-d are all about entering the battlefield; turning face up is not,
   -- so CR 616.1e -- for the copy rewrite too, since CR 616.1c's copy is one made
@@ -2388,6 +2402,7 @@ readsApplier re = case re of
   -- event already named (Hardened Scales, Doubling Season); a computed AddMore
   -- is read against the candidate's Context, computedScaling's answer.
   ReplacementEffect.CounterR r -> computedScaling (CounterR.scaling r)
+  ReplacementEffect.CounterLossR {} -> False
   -- CR 614.16, the same shape one event class over: the player the tokens are
   -- created FOR rides the EVENT, not the candidate, so Doubling Season doubles
   -- the same player's tokens whoever's row applies, CounterR's answer.
@@ -2568,6 +2583,7 @@ substitutesAction effect = case effect of
   ReplacementEffect.DamageR {} -> False
   ReplacementEffect.DestructionR _ -> False
   ReplacementEffect.CounterR {} -> False
+  ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.TokenR {} -> False
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
@@ -2687,6 +2703,7 @@ readsSource effect = case effect of
   ReplacementEffect.DamageR {} -> False
   ReplacementEffect.DestructionR _ -> False
   ReplacementEffect.CounterR r -> computedScaling (CounterR.scaling r)
+  ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.TokenR r -> any computedScaling (TokenR.scaling r)
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
@@ -2887,6 +2904,7 @@ recordsAChoice effect = case effect of
   ReplacementEffect.DamageR {} -> False
   ReplacementEffect.DestructionR {} -> False
   ReplacementEffect.CounterR {} -> False
+  ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.TokenR {} -> False
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
@@ -2963,6 +2981,7 @@ affectedChooserOf gs event = case event of
     Recipient.ToPile _ -> Nothing
   ProposedEvent.WouldBeDestroyed oid _ _ -> Projection.controllerOf oid gs
   ProposedEvent.WouldPutCounters _ oid _ _ -> Projection.controllerOf oid gs
+  ProposedEvent.WouldLoseCountersToDamage oid _ _ -> Projection.controllerOf oid gs
   -- CR 616.1's affected player is the one the event happens to, which for a
   -- counter put on a PLAYER is that player -- not the one putting it.
   ProposedEvent.WouldPutPlayerCounters _ pid _ _ -> Just pid
@@ -4428,6 +4447,7 @@ contestedResource gs candidate = case ReplacementCandidate.effect candidate of
   ReplacementEffect.EntryR {} -> Nothing
   ReplacementEffect.DestructionR _ -> Nothing
   ReplacementEffect.CounterR {} -> Nothing
+  ReplacementEffect.CounterLossR {} -> Nothing
   ReplacementEffect.TokenR {} -> Nothing
   ReplacementEffect.TurnUpR {} -> Nothing
   ReplacementEffect.AttachR {} -> Nothing
@@ -4477,6 +4497,7 @@ asDamageEvent event = case event of
   ProposedEvent.WouldEnter _ -> Nothing
   ProposedEvent.WouldBeDestroyed {} -> Nothing
   ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldPutPlayerCounters {} -> Nothing
   ProposedEvent.WouldCreateTokens {} -> Nothing
   ProposedEvent.WouldBeginPhase {} -> Nothing
@@ -4498,6 +4519,7 @@ asDestruction event = case event of
   ProposedEvent.WouldEnter _ -> Nothing
   ProposedEvent.WouldDealDamage _ -> Nothing
   ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldPutPlayerCounters {} -> Nothing
   ProposedEvent.WouldCreateTokens {} -> Nothing
   ProposedEvent.WouldBeginPhase {} -> Nothing
@@ -4522,6 +4544,7 @@ asUntap event = case event of
   ProposedEvent.WouldDealDamage _ -> Nothing
   ProposedEvent.WouldBeDestroyed {} -> Nothing
   ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldPutPlayerCounters {} -> Nothing
   ProposedEvent.WouldCreateTokens {} -> Nothing
   ProposedEvent.WouldBeginPhase {} -> Nothing
@@ -4549,6 +4572,7 @@ asDraw event = case event of
   ProposedEvent.WouldDealDamage _ -> Nothing
   ProposedEvent.WouldBeDestroyed {} -> Nothing
   ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldPutPlayerCounters {} -> Nothing
   ProposedEvent.WouldCreateTokens {} -> Nothing
   ProposedEvent.WouldBeginPhase {} -> Nothing
@@ -4577,6 +4601,7 @@ asPerformed instruction event = case event of
   ProposedEvent.WouldDealDamage _ -> Nothing
   ProposedEvent.WouldBeDestroyed {} -> Nothing
   ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldPutPlayerCounters {} -> Nothing
   ProposedEvent.WouldCreateTokens {} -> Nothing
   ProposedEvent.WouldBeginPhase {} -> Nothing
@@ -4601,6 +4626,7 @@ asThrow event = case event of
   ProposedEvent.WouldDealDamage _ -> Nothing
   ProposedEvent.WouldBeDestroyed {} -> Nothing
   ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldPutPlayerCounters {} -> Nothing
   ProposedEvent.WouldCreateTokens {} -> Nothing
   ProposedEvent.WouldBeginPhase {} -> Nothing
@@ -4613,6 +4639,7 @@ asThrow event = case event of
 asCounters :: ProposedEvent -> Maybe (ObjectId, CounterKind.CounterKind Keyword.Type.Keyword, Natural)
 asCounters event = case event of
   ProposedEvent.WouldPutCounters _ oid kind n -> Just (oid, kind, n)
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldChangeZone {} -> Nothing
   ProposedEvent.WouldEnter _ -> Nothing
   ProposedEvent.WouldDealDamage _ -> Nothing
@@ -4642,6 +4669,7 @@ asPlayerCounters event = case event of
   ProposedEvent.WouldDealDamage _ -> Nothing
   ProposedEvent.WouldBeDestroyed {} -> Nothing
   ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldCreateTokens {} -> Nothing
   ProposedEvent.WouldBeginPhase {} -> Nothing
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
@@ -4669,6 +4697,7 @@ asLifeLoss event = case event of
   ProposedEvent.WouldDealDamage _ -> Nothing
   ProposedEvent.WouldBeDestroyed {} -> Nothing
   ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldPutPlayerCounters {} -> Nothing
   ProposedEvent.WouldCreateTokens {} -> Nothing
   ProposedEvent.WouldBeginPhase {} -> Nothing
@@ -4681,6 +4710,35 @@ asLifeLoss event = case event of
   ProposedEvent.WouldLoseGame {} -> Nothing
   ProposedEvent.WouldPlaneswalk {} -> Nothing
 
+-- asLifeLoss one event class over: the permanent losing counters to damage, the
+-- kind, and how many of them the replacements left the removal at.
+asCounterLoss :: ProposedEvent -> Maybe (ObjectId, CounterKind.CounterKind Keyword.Type.Keyword, Natural)
+asCounterLoss event = case event of
+  ProposedEvent.WouldLoseCountersToDamage oid kind n -> Just (oid, kind, n)
+  ProposedEvent.WouldLoseLife {} -> Nothing
+  ProposedEvent.WouldGainLife {} -> Nothing
+  ProposedEvent.WouldChangeZone {} -> Nothing
+  ProposedEvent.WouldEnter _ -> Nothing
+  ProposedEvent.WouldDealDamage _ -> Nothing
+  ProposedEvent.WouldBeDestroyed {} -> Nothing
+  ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldPutPlayerCounters {} -> Nothing
+  ProposedEvent.WouldCreateTokens {} -> Nothing
+  ProposedEvent.WouldBeginPhase {} -> Nothing
+  ProposedEvent.WouldTurnFaceUp {} -> Nothing
+  ProposedEvent.WouldBecomeAttached {} -> Nothing
+  ProposedEvent.WouldUntap _ -> Nothing
+  ProposedEvent.WouldDraw _ _ -> Nothing
+  ProposedEvent.WouldPerform {} -> Nothing
+  ProposedEvent.WouldThrow _ -> Nothing
+  ProposedEvent.WouldLoseGame {} -> Nothing
+  ProposedEvent.WouldPlaneswalk {} -> Nothing
+
+-- CR 122.1: how many counters of one kind an object has, zero for an object with
+-- none and zero for one that is not there.
+countersOn :: CounterKind.CounterKind Keyword.Type.Keyword -> ObjectId -> GameState -> Natural
+countersOn kind oid gs = maybe 0 (Map.findWithDefault 0 kind . Object.counters) (Game.lookupObject oid gs)
+
 -- asLifeLoss the other direction: the player who would gain life and how much of
 -- the gain has survived, or Nothing when a replacement took the event outright.
 asLifeGain :: ProposedEvent -> Maybe (PlayerId, Natural)
@@ -4692,6 +4750,7 @@ asLifeGain event = case event of
   ProposedEvent.WouldDealDamage _ -> Nothing
   ProposedEvent.WouldBeDestroyed {} -> Nothing
   ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldPutPlayerCounters {} -> Nothing
   ProposedEvent.WouldCreateTokens {} -> Nothing
   ProposedEvent.WouldBeginPhase {} -> Nothing
@@ -4712,6 +4771,7 @@ asTokens event = case event of
   ProposedEvent.WouldDealDamage _ -> Nothing
   ProposedEvent.WouldBeDestroyed {} -> Nothing
   ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldPutPlayerCounters {} -> Nothing
   ProposedEvent.WouldBeginPhase {} -> Nothing
   ProposedEvent.WouldTurnFaceUp {} -> Nothing
@@ -4925,6 +4985,7 @@ asPhaseBegin event = case event of
   ProposedEvent.WouldDealDamage _ -> Nothing
   ProposedEvent.WouldBeDestroyed {} -> Nothing
   ProposedEvent.WouldPutCounters {} -> Nothing
+  ProposedEvent.WouldLoseCountersToDamage {} -> Nothing
   ProposedEvent.WouldPutPlayerCounters {} -> Nothing
   ProposedEvent.WouldCreateTokens {} -> Nothing
   ProposedEvent.WouldTurnFaceUp {} -> Nothing

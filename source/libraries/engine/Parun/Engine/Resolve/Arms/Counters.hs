@@ -484,7 +484,8 @@ exileThisSpell settle resolving = do
   Monad.when (Maybe.isJust (Game.faceOf resolving gs)) (Event.changeZone settle resolving Zone.Exile)
 
 -- CR 122: PutCounters' mirror, deliberately NOT through a CR 614.16 gate --
--- that rule is about placing, and no ReplacementEffect class pairs with a removal.
+-- that rule is about placing, and no ReplacementEffect class pairs with a
+-- removal an effect makes.
 removeCounters :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RemoveCounters.RemoveCounters -> Game ()
 removeCounters resolving source controller legal (RemoveCounters.MkRemoveCounters kind quantity slot mTally) = do
   gs <- State.get

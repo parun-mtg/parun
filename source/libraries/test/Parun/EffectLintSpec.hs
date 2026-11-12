@@ -443,6 +443,7 @@ idleTokenRowOffends replacement = case replacement of
   ReplacementEffect.TokenR (TokenR.MkTokenR _ scaling plus) -> Maybe.isNothing scaling && Maybe.isNothing plus
   ReplacementEffect.DamageR {} -> False
   ReplacementEffect.CounterR {} -> False
+  ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
   ReplacementEffect.EntryR {} -> False
   ReplacementEffect.DestructionR _ -> False
@@ -508,6 +509,7 @@ phasePatternOffends replacement = case replacement of
     ControllerRelation.Related _ -> False
     ControllerRelation.EnchantedPlayers -> False
   ReplacementEffect.CounterR {} -> False
+  ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
   ReplacementEffect.EntryR {} -> False
   ReplacementEffect.DamageR {} -> False
@@ -558,6 +560,7 @@ instructionRowOffends replacement = case replacement of
       || rewriteOffends (PerformerR.instruction row) (PerformerR.rewrite row)
   ReplacementEffect.PhaseR _ -> False
   ReplacementEffect.CounterR {} -> False
+  ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
   ReplacementEffect.EntryR {} -> False
   ReplacementEffect.DamageR {} -> False
@@ -640,6 +643,7 @@ engineOnlyArmOffends replacement = case replacement of
     UntapRewrite.RemoveCounterToUntap _ -> False
   ReplacementEffect.PhaseR _ -> False
   ReplacementEffect.CounterR {} -> False
+  ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
   ReplacementEffect.EntryR {} -> False
   ReplacementEffect.TokenR {} -> False
@@ -767,6 +771,7 @@ turnUpRequiringOffends replacement = case replacement of
   ReplacementEffect.TurnUpR turnUpR -> Maybe.isJust (TurnUpR.requiring turnUpR) || Maybe.isJust (TurnUpR.paying turnUpR)
   ReplacementEffect.AttachR {} -> False
   ReplacementEffect.CounterR {} -> False
+  ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
   ReplacementEffect.EntryR {} -> False
   ReplacementEffect.DamageR {} -> False
@@ -818,6 +823,7 @@ riderWithoutPreventionOffends :: ReplacementEffect.ReplacementEffect Card.Type.C
 riderWithoutPreventionOffends replacement = case replacement of
   ReplacementEffect.DamageR (DamageR.MkDamageR _ rewrite riders) -> not (null riders) && not (preventsDamage rewrite)
   ReplacementEffect.CounterR {} -> False
+  ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.ZoneChangeR {} -> False
   ReplacementEffect.EntryR {} -> False
   ReplacementEffect.DestructionR _ -> False
@@ -874,6 +880,7 @@ shufflingOutsideLibraryOffends replacement = case replacement of
   ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR _ destination _ shuffling _ _ _) -> shuffling && destination /= Zone.Library
   ReplacementEffect.DamageR {} -> False
   ReplacementEffect.CounterR {} -> False
+  ReplacementEffect.CounterLossR {} -> False
   ReplacementEffect.EntryR {} -> False
   ReplacementEffect.DestructionR _ -> False
   ReplacementEffect.TokenR {} -> False

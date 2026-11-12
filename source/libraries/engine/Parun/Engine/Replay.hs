@@ -53,6 +53,7 @@ import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.Response (Response)
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord.Type
 import qualified Parun.Types.WordFamily as WordFamily
@@ -222,8 +223,7 @@ encode p answer = case p of
   Prompt.ChooseProtector {} -> Response.ChoseProtector answer
   Prompt.ChoosePlayer {} -> Response.ChosePlayer answer
   Prompt.ChooseActivePlayer {} -> Response.ChoseActivePlayer answer
-  Prompt.ChooseBasicLandType {} -> Response.ChoseBasicLandType answer
-  Prompt.ChooseCreatureType {} -> Response.ChoseCreatureType answer
+  Prompt.ChooseSubtype {} -> Response.ChoseSubtype answer
   Prompt.ChooseParity {} -> Response.ChoseParity answer
   Prompt.OrderTriggers {} -> Response.OrderedTriggers answer
   Prompt.OrderDamage {} -> Response.OrderedDamage answer
@@ -626,11 +626,8 @@ decode p response = case p of
   Prompt.ChooseActivePlayer {} -> case response of
     Response.ChoseActivePlayer pid -> Just pid
     _ -> Nothing
-  Prompt.ChooseBasicLandType {} -> case response of
-    Response.ChoseBasicLandType t -> Just t
-    _ -> Nothing
-  Prompt.ChooseCreatureType {} -> case response of
-    Response.ChoseCreatureType t -> Just t
+  Prompt.ChooseSubtype {} -> case response of
+    Response.ChoseSubtype t -> Just t
     _ -> Nothing
   Prompt.ChooseParity {} -> case response of
     Response.ChoseParity parity -> Just parity
@@ -1242,11 +1239,12 @@ defaultAnswer p = case p of
   Prompt.ChoosePlayer _ _ _ candidates -> NonEmpty.head candidates
   -- CR 726.4 / 727.4: every candidate is a live active player who may take it.
   Prompt.ChooseActivePlayer _ _ candidates -> NonEmpty.head candidates
-  -- CR 305.6: any of the five basic land types is legal.
-  Prompt.ChooseBasicLandType {} -> Subtype.Mountain
-  -- CR 205.3m: any creature type is legal, and Goblin is one -- the arm above's
-  -- posture, conjuring a type the prompt offered no list of.
-  Prompt.ChooseCreatureType {} -> Subtype.Goblin
+  -- CR 305.6 / 205.3m / 205.3j: any member of the family is legal, so one is
+  -- conjured from a list the prompt does not offer.
+  Prompt.ChooseSubtype _ _ _ family -> case family of
+    SubtypeFamily.BasicLandType -> Subtype.Mountain
+    SubtypeFamily.CreatureType -> Subtype.Goblin
+    SubtypeFamily.PlaneswalkerType -> Subtype.Gideon
   -- CR 607.2d: odd and even are both legal; a short transcript takes the one
   -- the card names first.
   Prompt.ChooseParity {} -> Parity.Odd

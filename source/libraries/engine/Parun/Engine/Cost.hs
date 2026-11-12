@@ -2405,14 +2405,7 @@ componentStatesHiddenQuality component = case component of
 -- Zero for an object with none, which CR 704.5i reads as loyalty 0 -- so this is
 -- only ever asked of something already known to be a planeswalker.
 loyaltyCountersOn :: ObjectId -> GameState -> Natural
-loyaltyCountersOn = countersOn CounterKind.Loyalty
-
--- CR 122.1: how many counters of one kind an object has, zero for an object with
--- none and zero for one that is not there. The general form of
--- loyaltyCountersOn above, which the +1\/+1 removal cost reads too.
-countersOn :: CounterKind.CounterKind Keyword.Type.Keyword -> ObjectId -> GameState -> Natural
-countersOn kind oid gs =
-  maybe 0 (Map.findWithDefault 0 kind . Object.counters) (Game.lookupObject oid gs)
+loyaltyCountersOn = Replacement.countersOn CounterKind.Loyalty
 
 -- CR 701.9a's discards of a DiscardCards cost, as ONE event group, binding
 -- Binding.discardedCard off what ARRIVED in a public zone (CR 400.7j),
@@ -2766,7 +2759,7 @@ mixedRemovalCandidates slots pid oid which criterion gs =
 -- The counters of the kinds `which` reaches on one object, by kind.
 removableCounters :: WhichCounters.WhichCounters Keyword.Type.Keyword -> ObjectId -> GameState -> Map.Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural
 removableCounters which candidate gs = Map.filter (> 0) $ case which of
-  WhichCounters.OfKind kind -> Map.singleton kind (countersOn kind candidate gs)
+  WhichCounters.OfKind kind -> Map.singleton kind (Replacement.countersOn kind candidate gs)
   WhichCounters.OfAnyKind -> maybe Map.empty Object.counters (Game.lookupObject candidate gs)
 
 -- The division of `owed` counters that takes them off the candidates in
@@ -3494,7 +3487,7 @@ repeatsOf pid oid cost gs =
       energyCeiling = case energyOwedBy components of
         0 -> []
         owed -> [div (Game.energyOf pid gs) owed]
-      counterCeiling = [div (countersOn kind oid gs) owed | (kind, owed) <- Map.toList (countersOwedBy components), owed > 0]
+      counterCeiling = [div (Replacement.countersOn kind oid gs) owed | (kind, owed) <- Map.toList (countersOwedBy components), owed > 0]
       ceilings = objectCeiling <> lifeCeiling <> energyCeiling <> counterCeiling <> Maybe.mapMaybe (uncountedCeiling pid oid claims gs) components
    in case Cost.mana cost of
         Just (ManaCost.MkManaCost []) -> case ceilings of
@@ -4363,7 +4356,7 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- proves an opponent's activation spends its counter.
   CostComponent.RemoveCountersFromThis removal ->
     Set.member oid (GameState.battlefield gs)
-      && countersOn (CountersOnThis.kind removal) oid gs >= CountersOnThis.count removal
+      && Replacement.countersOn (CountersOnThis.kind removal) oid gs >= CountersOnThis.count removal
   -- CR 118.3 again, asked of the payer's BOARD rather than of `oid`: payable
   -- only while some permanent the criterion admits carries at least that many
   -- +1\/+1 counters. What it decides is the OFFER -- an activated ability whose
@@ -7372,7 +7365,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- This half owes none of the CR 614.16-versus-CR 614.1 argument above: rule
   -- 614.16 is about REPLACING a placement, and Event.removeCounters runs no
   -- replacement loop at all -- its own Haddock gives the reason, that no
-  -- ReplacementEffect class in Parun.Types.ReplacementEffect pairs with a removal.
+  -- ReplacementEffect class pairs with a removal a cost makes.
   -- So the cause the placement above must carry has no analogue here; what this
   -- funnel adds is the record alone.
   --

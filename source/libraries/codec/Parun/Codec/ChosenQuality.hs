@@ -1,6 +1,7 @@
 module Parun.Codec.ChosenQuality where
 
 import qualified Parun.Codec.ChooseBetween as ChooseBetween
+import qualified Parun.Codec.SubtypeFamily as SubtypeFamily
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Types.ChosenQuality as ChosenQuality
@@ -10,8 +11,7 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.payload "Colors" ChooseBetween.codec ChosenQuality.Colors (\x -> case x of ChosenQuality.Colors y -> Just y; _ -> Nothing),
-      Arm.nullary "BasicLandType" ChosenQuality.BasicLandType,
-      Arm.nullary "CreatureType" ChosenQuality.CreatureType,
+      Arm.payload "Subtype" SubtypeFamily.codec ChosenQuality.Subtype (\x -> case x of ChosenQuality.Subtype y -> Just y; _ -> Nothing),
       Arm.nullary "CardType" ChosenQuality.CardType,
       Arm.payload "Number" ChooseBetween.codec ChosenQuality.Number (\x -> case x of ChosenQuality.Number y -> Just y; _ -> Nothing),
       Arm.nullary "Parity" ChosenQuality.Parity
@@ -20,8 +20,7 @@ codec =
 tagOf :: ChosenQuality.ChosenQuality -> String
 tagOf x = case x of
   ChosenQuality.Colors {} -> "Colors"
-  ChosenQuality.BasicLandType -> "BasicLandType"
+  ChosenQuality.Subtype {} -> "Subtype"
   ChosenQuality.Number {} -> "Number"
-  ChosenQuality.CreatureType -> "CreatureType"
   ChosenQuality.CardType -> "CardType"
   ChosenQuality.Parity -> "Parity"
