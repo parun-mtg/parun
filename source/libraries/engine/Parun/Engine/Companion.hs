@@ -293,7 +293,7 @@ take perform pid = do
           -- CR 702.139a names the hand, which is the whole of what the
           -- destination says here: this is the rulebook's own action, not a
           -- card's sentence.
-          _ <- Event.bringChosen OutsideDestination.Hand False pid [card]
+          _ <- Event.bringChosen (Event.arrivalOf OutsideDestination.Hand) False pid [card]
           State.modify' $ \gs ->
             gs
               { GameState.players =

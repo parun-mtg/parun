@@ -1240,7 +1240,7 @@ leftBattlefieldSpec s registry =
           (skittermawId, theirGiant, _, ready) <- board "Insatiable Skittermaw"
           hillGiant <- S.printingOf s registry "Hill Giant"
           let (buriedGiant, withBuried) = S.addGraveyardCard hillGiant S.bob ready
-              cross oid gs = Setup.applyCrossings (snd (Event.bringInFrom OutsideDestination.Hand S.bob oid (Setup.subgameStateFrom S.bob gs))) gs
+              cross oid gs = Setup.applyCrossings (snd (Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.bob oid (Setup.subgameStateFrom S.bob gs))) gs
               counters = S.counterOf CounterKind.PlusOnePlusOne skittermawId . endStepOf
           Spec.assertEqWith
             s

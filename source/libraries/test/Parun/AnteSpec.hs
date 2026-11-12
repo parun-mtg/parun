@@ -252,7 +252,7 @@ spec s registry = Spec.describe s "Ante" $ do
         bobs obj = obj {Object.identity = fmap (\i -> i {CardIdentity.startingOwner = S.bob}) (Object.identity obj)}
         parent = g1 {GameState.objects = Map.adjust bobs bearsId (GameState.objects g1)}
         sub = S.runPure S.identityAnswer (Setup.subgameStateFrom S.alice parent) (Setup.startGameFromCards S.performer Set.empty)
-        (_, crossed) = Event.bringInFrom OutsideDestination.Hand S.alice bearsId sub
+        (_, crossed) = Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.alice bearsId sub
         back = Setup.funnelBack crossed (Setup.applyCrossings crossed parent)
     Spec.assertEqWith s "CR 108.3 the Bears are still bob's to begin and alice's now" (changesOf back) [(S.bob, S.alice)]
   -- CR 800.4n / 730.5: bob wishes his own main-game Jeweled Bird into a
@@ -264,7 +264,7 @@ spec s registry = Spec.describe s "Ante" $ do
     let stock pid gs0 = foldr (\_ gs -> snd (S.addLibraryCard mountain pid gs)) gs0 (replicate 9 ())
         (birdId, parent) = S.addObjectIn Zone.Hand bird S.bob (stock S.carol (stock S.bob (stock S.alice (Setup.gameWith anteGame S.threePlayers))))
         sub = S.runPure S.identityAnswer (Setup.subgameStateFrom S.alice parent) (Setup.startGameFromCards S.performer Set.empty)
-    case Event.bringInFrom OutsideDestination.Hand S.bob birdId sub of
+    case Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.bob birdId sub of
       (Just (inSub NonEmpty.:| []), crossed) -> do
         let anted = S.departs Departure.Type.Conceded S.bob (S.runPure S.identityAnswer crossed (Event.changeZone (pure ()) inSub Zone.Ante))
             back = Setup.funnelBack anted (Setup.applyCrossings anted parent)
@@ -280,7 +280,7 @@ spec s registry = Spec.describe s "Ante" $ do
         pooled p = p {Player.outsideTheGame = Map.singleton birdPrinting 1}
         parent = g1 {GameState.players = Map.adjust pooled S.bob (GameState.players g1)}
         sub = S.runPure S.identityAnswer (Setup.subgameStateFrom S.alice parent) (Setup.startGameFromCards S.performer Set.empty)
-        (inSub, brought) = Event.bringIn OutsideDestination.Hand S.bob birdPrinting sub
+        (inSub, brought) = Event.bringIn (Event.arrivalOf OutsideDestination.Hand) S.bob birdPrinting sub
         anted = S.departs Departure.Type.Conceded S.bob (S.runPure S.identityAnswer brought (Event.changeZone (pure ()) inSub Zone.Ante))
         back = Setup.funnelBack anted (Setup.applyCrossings anted parent)
         poolOf pid gs = foldMap Player.outsideTheGame (Map.lookup pid (GameState.players gs))

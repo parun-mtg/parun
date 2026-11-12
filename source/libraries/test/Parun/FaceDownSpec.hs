@@ -3005,7 +3005,7 @@ unmaskingSpec s registry = Spec.describe s "Revealed as it leaves (CR 708.9)" $ 
     faceUpBoard <- departureBoard s registry False
     let cross board = case Game.zoneMembers Zone.Battlefield S.bob board of
           [taken] ->
-            let (_, crossedSub) = Event.bringInFrom OutsideDestination.Hand S.bob taken (Setup.subgameStateFrom S.alice board)
+            let (_, crossedSub) = Event.bringInFrom (Event.arrivalOf OutsideDestination.Hand) S.bob taken (Setup.subgameStateFrom S.alice board)
              in S.runPure S.identityAnswer (Setup.applyCrossings crossedSub board) Engine.priorityLoop
           _ -> board
         crossed = cross faceDownBoard

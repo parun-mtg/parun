@@ -44,6 +44,7 @@ import qualified Parun.Codec.Mana as Mana
 import qualified Parun.Codec.ManaType as ManaType
 import qualified Parun.Codec.Object as Object
 import qualified Parun.Codec.ObjectId as ObjectId
+import qualified Parun.Codec.OutsideCard as OutsideCard
 import qualified Parun.Codec.OutsideObject as OutsideObject
 import qualified Parun.Codec.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Codec.PendingReplacementEffect as PendingReplacementEffect
@@ -189,6 +190,7 @@ codec resolve = Fields.object $ do
   lookedUp <- Fields.defaulted "lookedUp" Set.empty (Common.set PrintingId.codec) (Bookkeeping.lookedUp . GameState.bookkeeping)
   referenceNames <- Fields.defaulted "referenceNames" Map.empty (Common.keyedList (Common.keyValue (Filter.codec Keyword.codec) (Common.set CardName.codec))) (Bookkeeping.referenceNames . GameState.bookkeeping)
   outsideCopies <- Fields.defaulted "outsideCopies" Set.empty (Common.set ObjectId.codec) GameState.outsideCopies
+  outsideFinds <- Fields.defaulted "outsideFinds" Map.empty (Common.naturalMap ObjectId.codec OutsideCard.codec) GameState.outsideFinds
   namedCopyChoices <- Fields.defaulted "namedCopyChoices" Map.empty (Common.naturalMap ObjectId.codec (Common.set CardName.codec)) GameState.namedCopyChoices
   notedCards <- Fields.defaulted "notedCards" Map.empty (Common.naturalMap ObjectId.codec PrintingId.codec) GameState.notedCards
   notedMana <- Fields.defaulted "notedMana" Map.empty (Common.naturalMap ObjectId.codec (Common.seq ManaType.codec)) GameState.notedMana
@@ -337,6 +339,7 @@ codec resolve = Fields.object $ do
         GameState.result = result,
         GameState.restartSignal = restartSignal,
         GameState.outsideCopies = outsideCopies,
+        GameState.outsideFinds = outsideFinds,
         GameState.namedCopyChoices = namedCopyChoices,
         GameState.notedCards = notedCards,
         GameState.notedMana = notedMana,
