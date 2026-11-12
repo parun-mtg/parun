@@ -1,6 +1,7 @@
 module Parun.Codec.Keyword where
 
 import qualified Parun.Codec.Backup as Backup
+import qualified Parun.Codec.BeamMeUp as BeamMeUp
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.ClassLevel as ClassLevel
 import qualified Parun.Codec.CompanionCondition as CompanionCondition
@@ -266,7 +267,7 @@ codec =
       Arm.payload "Encore" (Cost.codec codec) Keyword.Encore (\x -> case x of Keyword.Encore y -> Just y; _ -> Nothing),
       Arm.payload "Disturb" (Cost.codec codec) Keyword.Disturb (\x -> case x of Keyword.Disturb y -> Just y; _ -> Nothing),
       Arm.payload "Harmonize" (Cost.codec codec) Keyword.Harmonize (\x -> case x of Keyword.Harmonize y -> Just y; _ -> Nothing),
-      Arm.payload "BeamMeUp" (Cost.codec codec) Keyword.BeamMeUp (\x -> case x of Keyword.BeamMeUp y -> Just y; _ -> Nothing)
+      Arm.payload "BeamMeUp" (BeamMeUp.codec codec) Keyword.BeamMeUp (\x -> case x of Keyword.BeamMeUp y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: Keyword.Keyword -> String

@@ -82,6 +82,7 @@ import qualified Parun.Types.ActivationProhibition as ActivationProhibition.Type
 import qualified Parun.Types.Activations as Activations
 import qualified Parun.Types.AlternativeCost as AlternativeCost
 import qualified Parun.Types.AppliedReduction as AppliedReduction
+import qualified Parun.Types.BeamMeUp as BeamMeUp
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Bookkeeping as Bookkeeping
@@ -920,16 +921,21 @@ candidateCostsGiven permitted pid name oid gs =
                       -- owner's hand, paid as Meloku the Clouded Mirror's return is.
                       -- `Not (CantPayKeywordCost BeamMeUp)` is CR 702.196b, and
                       -- this is its ONLY minter, crew's posture (Keyword.crew):
-                      -- Meloku's printed return is no beam me up cost.
-                      beamedUp cost =
-                        let yourCreature =
+                      -- Meloku's printed return is no beam me up cost. The
+                      -- instance's own unreturnable (Scotty, Miracle Worker) is
+                      -- rule 702.196b scoped to this ability, already baked.
+                      beamedUp beamMeUp =
+                        let cost = BeamMeUp.cost beamMeUp
+                            yourCreature =
                               Filter.Type.And
-                                [ Filter.Type.HasCardType CardType.Creature,
-                                  Filter.Type.HeldBy Holder.Controller PlayerRelation.You,
-                                  Filter.Type.Not (Filter.Type.CantPayKeywordCost KeywordCostPart.BeamMeUp)
-                                ]
+                                ( [ Filter.Type.HasCardType CardType.Creature,
+                                    Filter.Type.HeldBy Holder.Controller PlayerRelation.You,
+                                    Filter.Type.Not (Filter.Type.CantPayKeywordCost KeywordCostPart.BeamMeUp)
+                                  ]
+                                    <> foldMap (pure . Filter.Type.Not) (BeamMeUp.unreturnable beamMeUp)
+                                )
                          in CandidateCost.plain
-                              (Just (Keyword.Type.BeamMeUp cost))
+                              (Just (Keyword.Type.BeamMeUp beamMeUp))
                               (withAdditional cost {Cost.components = Cost.components cost <> [CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents 1 yourCreature)]})
                       -- CR 702.187b's cost, read as flashback's is and wrapped by
                       -- `withAdditional` for the same reason, rule 702.187b sending
