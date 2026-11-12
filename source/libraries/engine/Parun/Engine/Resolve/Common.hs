@@ -4140,22 +4140,21 @@ changeLifeByDelta settle pid delta =
 -- move did not happen.
 -- CR 400.11b: where a card a search found outside the game arrives, and whether
 -- it is shown (CR 701.23e), for a destination that can take one: Invasion of
--- Arcavios's "reveal it, and put it into your hand", and Turtles Forever's
--- "then reveal those cards", whose later clauses then put each into a hand or
--- the library. Nothing for the rest, which then offers nothing out there --
--- MTGJSON dump of 2026-08-23, text "search" with "outside the game": those two
--- alone; a search sending a card from outside the game onto the battlefield
--- would refute it.
+-- Arcavios's "reveal it, and put it into your hand". Nothing for the rest, which
+-- then offers nothing out there -- MTGJSON dump of 2026-08-23, text "search"
+-- with "outside the game": Invasion of Arcavios and Turtles Forever alone; a
+-- search sending a card from outside the game onto the battlefield would
+-- refute it.
 --
--- A Reveal find is brought into the library, the zone the searched finds wait
--- in, so a later clause can bind and move it (CR 608.2c). Not implemented: it
--- stays outside the game until that clause, so its move to a hand is a move
--- from the library (#6988).
-outsideArrival :: SearchDestination.SearchDestination -> Maybe (OutsideDestination.OutsideDestination, Bool)
+-- Turtles Forever's "then reveal those cards", whose later clauses put each
+-- into a hand or the library, arrives nowhere (Just Nothing): CR 400.11 keeps
+-- the card out there until one of those clauses brings it in
+-- (Event.holdFound).
+outsideArrival :: SearchDestination.SearchDestination -> Maybe (Maybe OutsideDestination.OutsideDestination, Bool)
 outsideArrival destination = case destination of
-  SearchDestination.RevealThenHand -> Just (OutsideDestination.Hand, True)
-  SearchDestination.Hand -> Just (OutsideDestination.Hand, False)
-  SearchDestination.Reveal -> Just (OutsideDestination.LibraryTop, True)
+  SearchDestination.RevealThenHand -> Just (Just OutsideDestination.Hand, True)
+  SearchDestination.Hand -> Just (Just OutsideDestination.Hand, False)
+  SearchDestination.Reveal -> Just (Nothing, True)
   SearchDestination.Battlefield -> Nothing
   SearchDestination.BattlefieldTapped -> Nothing
   SearchDestination.Exile -> Nothing

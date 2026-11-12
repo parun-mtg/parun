@@ -115,7 +115,6 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RemoveFromCombat as RemoveFromCombat
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Result as Result
-import qualified Parun.Types.RevealWindow as RevealWindow
 import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
 import qualified Parun.Types.Scratch as Scratch
@@ -1011,17 +1010,20 @@ search settle performManaAbility runSubgame resolving source controller legal (S
             pure (moved, if List.elem oid (Game.zoneMembers Zone.Hand owner before) then moved else [])
           -- CR 400.11b: a card found outside the game is brought in rather
           -- than moved, the reveal riding along as it arrives (#2450). Where
-          -- the search leaves its finds for a later clause, the reveal lasts
-          -- the resolution, as putFound's Reveal arm keeps an in-zone find's
-          -- (CR 701.20a). A REGRESSION FENCE: no case reads the window while
+          -- the search leaves its finds for a later clause, the card stays out
+          -- there (CR 400.11), an object standing for it is what the slot binds
+          -- (Event.holdFound), and the reveal is of that object and lasts the
+          -- resolution, as putFound's Reveal arm keeps an in-zone find's (CR
+          -- 701.20a). The window is a REGRESSION FENCE: no case reads it while
           -- the resolution runs, so removing it reddens nothing.
           fromOutside <- case (Common.outsideArrival destination, exiler) of
             (Nothing, _) -> pure []
-            (Just (arrival, revealIt), Nothing) -> do
-              brought <- Event.bringChosen arrival revealIt searcher foundOutside
-              Monad.when (revealIt && not (Common.shufflesAfter destination)) (Monad.mapM_ (Event.stampReveal (RevealWindow.WhileOnStack resolving)) brought)
-              pure brought
-            (Just _, Just agent) -> [] <$ (Common.exileFoundFor agent . Seq.fromList =<< Event.bringChosen OutsideDestination.Exile False searcher foundOutside)
+            (Just (Just arrival, revealIt), Nothing) -> Event.bringChosen (Event.arrivalOf arrival) revealIt searcher foundOutside
+            (Just (Nothing, revealIt), Nothing) -> do
+              held <- Maybe.catMaybes <$> traverse (Event.holdFound searcher) foundOutside
+              Monad.when revealIt (Monad.mapM_ (Event.revealResolving resolving searcher) held)
+              pure held
+            (Just _, Just agent) -> [] <$ (Common.exileFoundFor agent . Seq.fromList =<< Event.bringChosen (Event.arrivalOf OutsideDestination.Exile) False searcher foundOutside)
           pure (fromZones <> fromOutside, handArrivals)
         -- The shuffle is the CARD's instruction too (CR 701.23h, CR 701.24b).
         -- The library shuffled is the one that was READ, so the seat is the

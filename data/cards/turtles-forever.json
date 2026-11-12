@@ -96,10 +96,16 @@
               {
                 "effects": [
                   {
-                    "type": "Shuffle",
+                    "type": "ShuffleIntoLibrary",
                     "value": {
-                      "type": "Relative",
-                      "value": "You"
+                      "library": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "found"
+                      }
                     }
                   }
                 ]
