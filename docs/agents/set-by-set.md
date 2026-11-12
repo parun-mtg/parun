@@ -143,6 +143,11 @@ assertion, and restores the file; its exit status is the outcome (`--help`).
 Keep the pattern narrow. Whether the assertion it names is the gameplay-level
 one is your judgement.
 
+- **A mutation of a data file needs no build.** A card or scenario is read
+  at run time: copy the file aside, edit it, run its subtree with the
+  ordinary `cabal run -v0 parun -- test -p PATTERN`, and copy it back.
+  `script/mutate.sh` is for Haskell, and its first run in a checkout builds
+  everything again at `-O0`.
 - **One mutation at a time, and read the failure.** It must go red for the
   intended reason in the intended place.
 - **Name the assertion it reddened.** If a cheap proxy ahead of the
@@ -269,6 +274,8 @@ so in the PR.
 
 ### Follow-ups: fold in or file
 
+- **A batch unit folds in no engine change** (its issue says so): the card
+  goes to a capability issue. The rest of this list is for the other units.
 - **Fold it in** unless it needs an owner design call, new engine state or a
   new core type, or would push the unit past ~300k tokens or ~300 tool uses.
   Fold anything costing one more proving test and roughly 30k tokens, even
