@@ -493,8 +493,10 @@ fallShort = State.modify' (\gs -> gs {GameState.bookkeeping = (GameState.bookkee
 -- bound AMOUNT, since a tally binds zero for an instruction that did nothing,
 -- and a slot holding nothing else is dropped, so a FIRST zero bind is no
 -- difference either: the scenario "CR 603.12 Synthetic Hollow Tithe taking no
--- life arms no reflexive". Vote tallies and detachedBindings' are erased alike,
--- a regression fence (gap #6974).
+-- life arms no reflexive", and for a tally CR 730.5's resumed resolution files
+-- in detachedBindings, Parun.OutsideTheGameSpec's "CR 603.12 / 730.5 gameplay: a
+-- zero tally a wish-taken spell files detached arms no reflexive". A vote tally
+-- is compared, as the vote arm binds one only once a ballot is cast.
 --
 -- Compared, as no instruction changes them without an act: damagePreventedBy
 -- (Damage.tallyPrevention runs only beside a DamagePrevented event),
@@ -514,7 +516,7 @@ fallShort = State.modify' (\gs -> gs {GameState.bookkeeping = (GameState.bookkee
 happenedBetween :: GameState -> GameState -> Bool
 happenedBetween before after =
   let tallyless :: Map.Map SlotName Binding.Type.Binding -> Map.Map SlotName Binding.Type.Binding
-      tallyless = Map.filter (/= Binding.Type.empty) . Map.map (\binding -> binding {Binding.Type.amount = Nothing, Binding.Type.votes = Nothing})
+      tallyless = Map.filter (/= Binding.Type.empty) . Map.map (\binding -> binding {Binding.Type.amount = Nothing})
       objectTallyless :: Map.Map ObjectId Object.Object -> Map.Map ObjectId Object.Object
       objectTallyless = Map.map (\obj -> obj {Object.bindings = tallyless (Object.bindings obj), Object.controlClock = Map.empty})
       comparable gs =
