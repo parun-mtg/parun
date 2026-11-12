@@ -1,6 +1,6 @@
 {
   "description": "CR 905.2b / 508.1d: Cogwork Tracker attacks each combat if able, and attacks a player its controller noted for cards named Cogwork Tracker if able",
-  "note": "Alice noted carol (seat 2). Declaring no attack is refused outright; an announcement against bob obeys one requirement where carol obeys two, so bob is not offered and only carol is attacked.",
+  "note": "Alice noted carol (seat 2). Declaring no attack is refused outright; an announcement against bob obeys one requirement where carol obeys two, so carol is the only announcement left and the Tracker attacks her.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",
@@ -13,8 +13,6 @@
   "timeline": [
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"Attack": []}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$tracker"]}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseAttackTarget", "with": ["Player", "bob"]}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseAttackTarget", "with": ["Player", "carol"]}}},
     {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "carol", "life": 16}}},
     {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 20}}}
   ]
