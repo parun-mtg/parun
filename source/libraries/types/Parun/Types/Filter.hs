@@ -359,8 +359,8 @@ data Filter keyword
     -- False wherever no caller supplies the set, the posture IsBound takes.
     --
     -- Not printed by any card: the keyword's cost builders are the only minters
-    -- (Parun.Engine.Keyword's `crew` and `beamMeUpCandidate`,
-    -- Parun.Engine.Cost's beam me up candidate), writing
+    -- (Parun.Engine.Keyword's `crew`, Parun.Engine.Cost.candidateCostsGiven's
+    -- `beamedUp`), writing
     -- @Not (CantPayKeywordCost part)@ into the keyword's cost criterion, which is
     -- what confines each rule to its keyword's cost -- the same cost components
     -- are printable outside one (data/cards/synthetic-crewed-battery.json,
