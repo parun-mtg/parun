@@ -2780,11 +2780,17 @@ castSpellWith perform timed offered applied widened pid oid name facing = Event.
           -- a rejected announcement spends none. Each candidate's own board, by
           -- CR 702.103d: a bestowed spell is no creature spell.
           --
-          -- A search cast (neither timed nor offered) is made under the search
-          -- permission alone, CR 601.3: Thundermane Dragon's row leaves the timing
-          -- as it is, so it admits nothing mid-resolution and gives no haste.
-          searching = not timed && not offered
-          permissions castFor = (if searching then const [] else lookedWays looks) <$> candidateWays (\src -> not (null (Event.permissionRiders src proposed oid))) offered pid oid castFrom face (proposedFor pid oid castFor proposed) castFor
+          -- CR 608.2g / 601.3: an untimed cast, one an effect offers or one made
+          -- while searching, is made under that instruction or the search
+          -- permission alone. A static permission leaves the timing as it is
+          -- (Thundermane Dragon's ruling of 2025-04-04; Mikey & Don, Party
+          -- Planners' "timing restrictions apply"), so it admits nothing
+          -- mid-resolution: no way is chosen, no budget spent, and no rider,
+          -- cost (Demonic Embrace's second ruling), reduction or entry counter
+          -- taken.
+          -- data/scenarios/cast-permission/cr-608-2g-a-turtle-djinn-of-wishes-offers-off-the-library-is-not-cast-under-mikey-and-don.json
+          -- proves it.
+          permissions castFor = (if timed then lookedWays looks else const []) <$> candidateWays (\src -> not (null (Event.permissionRiders src proposed oid))) pid oid castFrom face (proposedFor pid oid castFor proposed) castFor
           -- CR 400.7h / 611.3d: what the permission a cast is made under gives
           -- the spell it becomes, asked of the same PROPOSED state -- the board
           -- that source was offering it on.
@@ -2997,8 +3003,8 @@ exileLandEntry pid oid gs = case Game.lookupObject oid gs of
 -- CR 601.3: PlayerEffect.castPermissionOptions for a cast of `oid` out of
 -- `zone`, open without a grant where the card carries a permission of its own
 -- (exileOpen in exile; Object.playPermission or
--- PlayerEffect.mayPlayFromOwnGraveyard in a graveyard) as well as where
--- `offered` says so.
+-- PlayerEffect.mayPlayFromOwnGraveyard in a graveyard). For a timed cast
+-- alone: castSpellWith's `permissions` gives an untimed one no way.
 --
 -- The graveyard arm is a regression fence: no card in data/cards/ grants a
 -- budgeted graveyard cast an instant or sorcery could also be made under
@@ -3007,22 +3013,22 @@ exileLandEntry pid oid gs = case Game.lookupObject oid gs of
 -- `castFor` is the keyword the candidate's cost came from: a costless permission
 -- of the card's naming that keyword's family (Tenacious Underdog's "using its
 -- blitz ability") opens the zone for that cost alone.
-castWays :: (ObjectId -> Bool) -> Bool -> PlayerId -> ObjectId -> Zone.Zone -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
-castWays rides offered pid oid zone face gs castFor =
+castWays :: (ObjectId -> Bool) -> PlayerId -> ObjectId -> Zone.Zone -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
+castWays rides pid oid zone face gs castFor =
   let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFromGraveyard (Just family) [] <- Cost.permissionsOf oid face gs]
       ownOpen = case zone of
         Zone.Exile -> exileOpen pid oid face gs
         Zone.Graveyard -> permitsPlayUnderPermission pid oid gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty pid oid gs || named
         _ -> False
-      -- CR 118.8: not under an effect's offer, which is the permission that
-      -- cast is made under (Demonic Embrace's second ruling; StickerSpec's "a
-      -- stickered card offered by Chandra, Acolyte of Flame"). And only its
-      -- owner's, the permission's "your graveyard": a regression fence, since
+      -- CR 118.8: a cast an effect offers never asks, that offer being the
+      -- permission it is made under (StickerSpec's "a stickered card offered
+      -- by Chandra, Acolyte of Flame"). Only its owner's, the permission's
+      -- "your graveyard": a regression fence, since
       -- data/cards/ holds no CastFrom row and no graveyard GrantPlayFromExile over
       -- another player's graveyard outside an offer (jq, `from.player` other than
       -- You, 2026-11-01); a card standing over an opponent's graveyard would refute it.
-      own = if zone == Zone.Graveyard && not offered && ownedBy pid oid gs then ownPayingWays oid face gs else []
-   in PlayerEffect.castPermissionOptions rides (offered || ownOpen) own pid zone oid gs
+      own = if zone == Zone.Graveyard && ownedBy pid oid gs then ownPayingWays oid face gs else []
+   in PlayerEffect.castPermissionOptions rides ownOpen own pid zone oid gs
 
 -- CR 118.8 / 601.3: each graveyard permission the card carries for itself that
 -- states an additional cost, as the unlimited CastFrom row a way is: the choice
@@ -3050,8 +3056,8 @@ ownPayingWays oid face gs =
 -- one answer the gate and castProposed read. Nothing where the keyword's own
 -- sentence is the permission and the cost at once (escape, flashback, disturb):
 -- no way is chosen and none of a way's costs is paid. Otherwise castWays.
-candidateWays :: (ObjectId -> Bool) -> Bool -> PlayerId -> ObjectId -> Maybe Zone.Zone -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> Maybe [Maybe (ObjectId, CastFromZone.CastFromZone)]
-candidateWays rides offered pid oid zone face gs castFor =
+candidateWays :: (ObjectId -> Bool) -> PlayerId -> ObjectId -> Maybe Zone.Zone -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> Maybe [Maybe (ObjectId, CastFromZone.CastFromZone)]
+candidateWays rides pid oid zone face gs castFor =
   let cardTypes = PC.cardTypes (Projection.copiableCharacteristics oid gs)
       -- Keyword.permissionsFor answers [] for disturb, whose permission reaches
       -- only the back face (permitsDisturb).
@@ -3060,23 +3066,22 @@ candidateWays rides offered pid oid zone face gs castFor =
         then Nothing
         -- CR 601.3e / 719.3a: the permissions naming the spell this
         -- candidate makes, read off the board its choice produces.
-        else Just (foldMap (\from -> castWays rides offered pid oid from face (proposedFor pid oid castFor gs) castFor) zone)
+        else Just (foldMap (\from -> castWays rides pid oid from face (proposedFor pid oid castFor gs) castFor) zone)
 
 -- CR 601.3 / 702.103d: `candidates` less any no way admits on its own board, where
 -- another's way does: with only Muldrotha's creature permission left, Nyxborn
 -- Rollicker's printed cost and not its bestow cost. A list with no way at all is
 -- left alone, its cast being allowed by something no way names (CR 903.8).
 --
--- For a timed cast alone: one an effect offers has a way open for every candidate
--- by `offered`, and a search cast is admitted by no way (castSpellWith's
--- `permissions`).
+-- For a timed cast alone: one an effect offers and a search cast are admitted
+-- by no way (castSpellWith's `permissions`).
 candidatesWithWays :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> [CandidateCost.CandidateCost] -> [CandidateCost.CandidateCost]
 candidatesWithWays pid oid name proposed candidates = case proposedFace oid name proposed of
   Nothing -> candidates
   Just face ->
     let hasWay candidate =
           let castFor = CandidateCost.keyword candidate
-           in maybe True (not . null) (candidateWays (const False) False pid oid (Game.zoneOf oid proposed) face (proposedFor pid oid castFor proposed) castFor)
+           in maybe True (not . null) (candidateWays (const False) pid oid (Game.zoneOf oid proposed) face (proposedFor pid oid castFor proposed) castFor)
      in if any hasWay candidates then filter hasWay candidates else candidates
 
 -- CR 118.8 / 601.2f / 118.14 / 118.9: the additional costs, the reductions, the
@@ -3115,7 +3120,7 @@ underAlternative allowed face alternative candidate = case alternative of
 -- wayCosts at the gate, asked of the board castSpellWith asks: no spell's rider
 -- weighed, since the gate prices a cast and such a rider is no price.
 permissionCostChoices :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> Maybe Keyword -> [([CostComponent.CostComponent Keyword], [ManaCost.ManaCost], ManaSpending, Maybe PermissionCost.PermissionCost)]
-permissionCostChoices pid oid face gs = wayCosts . candidateWays (const False) False pid oid (Game.zoneOf oid gs) face gs
+permissionCostChoices pid oid face gs = wayCosts . candidateWays (const False) pid oid (Game.zoneOf oid gs) face gs
 
 -- CR 601.2f: `cost` with a permission's additional costs added to it.
 withPermissionCosts :: [CostComponent.CostComponent Keyword] -> Cost Keyword -> Cost Keyword

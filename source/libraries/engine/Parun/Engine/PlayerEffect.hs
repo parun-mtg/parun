@@ -2593,10 +2593,11 @@ unspentPermission pid source grant gs =
 -- or reversed cast (CR 601.2e, CR 734.1) spends nothing.
 --
 -- Open without any of them where something else is CR 601.3's "rule or effect"
--- allowing the cast: the rules for a card in its owner's hand, and an effect
--- offering the cast during resolution or a permission an exiled or graveyard card
--- carries for itself (`offered`, CR 608.2g; Parun.Engine.Cast.castWays), a
--- granted PlayFromGraveyard included (mayPlayFromOwnGraveyard). A keyword's
+-- allowing the cast: the rules for a card in its owner's hand, and a permission
+-- an exiled or graveyard card carries for itself (`open`;
+-- Parun.Engine.Cast.castWays), a granted PlayFromGraveyard included
+-- (mayPlayFromOwnGraveyard). A cast an effect offers during resolution is not
+-- asked here at all (CR 608.2g; Parun.Engine.Cast.castSpellWith). A keyword's
 -- permission is not weighed here: it offers its own CR 601.2b candidate
 -- (escape, flashback), so the candidate the cast chose says whether it was made
 -- under it -- Parun.Engine.Cast.castProposed asks nothing then, and
@@ -2606,9 +2607,9 @@ unspentPermission pid source grant gs =
 -- `own` is a permission the card carries for itself that adds a cost of its
 -- own, and so is a way like a player's (Parun.Engine.Cast.castWays).
 castPermissionOptions :: (ObjectId -> Bool) -> Bool -> [(Maybe ObjectId, CastFromZone.CastFromZone)] -> PlayerId -> Zone.Zone -> ObjectId -> GameState -> [Maybe (ObjectId, CastFromZone.CastFromZone)]
-castPermissionOptions rides offered own pid zone oid gs =
+castPermissionOptions rides open own pid zone oid gs =
   let owned = fmap Object.owner (Game.lookupObject oid gs) == Just pid
-   in permissionOptions rides (offered || (zone == Zone.Hand && owned)) (castPermissionsFrom pid zone oid gs <> own)
+   in permissionOptions rides (open || (zone == Zone.Hand && owned)) (castPermissionsFrom pid zone oid gs <> own)
 
 -- CR 601.3 / 305.1: the ways a play admitted by `usable` can be made, one per
 -- distinguishable outcome -- Nothing, where `open` says the play needs none of
