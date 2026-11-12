@@ -113,7 +113,9 @@ data ActiveReplacement = MkActiveReplacement
     -- Filter.IsBound name one object rather than a class (Dire Fleet Daredevil's
     -- "that spell"), which a printed Filter cannot do.
     --
-    -- EMPTY for a row installed outside a resolution: the projection's side of
+    -- EMPTY for a row installed outside a resolution, but for a cast
+    -- permission's entry rider, which names its spell
+    -- (Parun.Engine.Cast.installPermissionEntry): the projection's side of
     -- Parun.Engine.Replacement.collect carries none at all, a permanent's static
     -- ability having no resolution behind it.
     --

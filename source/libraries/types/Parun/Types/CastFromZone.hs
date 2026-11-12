@@ -56,8 +56,7 @@ data CastFromZone = MkCastFromZone
     -- cost". Nothing where it states none.
     alternativeCost :: Maybe PermissionCost.PermissionCost,
     -- | CR 614.1d: the counters the permanent a spell cast under it becomes
-    -- enters with -- Leonardo, Sewer Samurai's "that creature enters with a
-    -- finality counter on it". Nothing where it states none.
+    -- enters with (Leonardo, Sewer Samurai). Nothing where it states none.
     entersWith :: Maybe WithCounters.WithCounters
   }
   deriving (Eq, Ord, Show)
