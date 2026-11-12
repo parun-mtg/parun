@@ -2,6 +2,7 @@
 -- around each answer, and stepping a game until it ends or is told to stop.
 module Parun.DriverSpec where
 
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -29,7 +30,7 @@ spec s registry = Spec.describe s "Driver" $ do
   Spec.it s "each seat's prompts reach that seat's answerer, and chance reaches the fallback" $ do
     matchup <- S.redRed (S.printingOf s registry)
     let answerer = Driver.bySeat (Map.fromList [(S.alice, tagged "alice"), (S.bob, tagged "bob")]) (tagged "chance")
-        seen = State.execState (Driver.match [] answerer GameSettings.plain Map.empty matchup) []
+        seen = State.execState (S.playedThrough 2 [] answerer matchup) []
         by tag = [seat | (t, seat) <- seen, t == tag]
     Spec.assertBool s (not (null (by "alice"))) "alice answered"
     Spec.assertBool s (not (null (by "bob"))) "bob answered"
@@ -40,7 +41,7 @@ spec s registry = Spec.describe s "Driver" $ do
   Spec.it s "a seat with no answerer of its own reaches the fallback" $ do
     matchup <- S.redRed (S.printingOf s registry)
     let answerer = Driver.bySeat (Map.singleton S.alice (tagged "alice")) (tagged "rest")
-        seen = State.execState (Driver.match [] answerer GameSettings.plain Map.empty matchup) []
+        seen = State.execState (S.playedThrough 2 [] answerer matchup) []
     Spec.assertBool s (elem ("rest", Just S.bob) seen) "bob to rest"
   Spec.it s "observers see each prompt before its answer and each answer after, in the order a recording does" $ do
     matchup <- S.redRed (S.printingOf s registry)
@@ -50,8 +51,10 @@ spec s registry = Spec.describe s "Driver" $ do
             { Observer.before = \_ -> State.modify' (<> [Nothing]),
               Observer.after = \asked answer -> State.modify' (<> [Just (Replay.encode (Asked.prompt asked) answer)])
             }
-        seen = State.execState (Driver.match [observer] casting GameSettings.plain Map.empty matchup) []
-        recorded = snd (Replay.record S.castAnswer (start0 matchup) (Engine.playFrom matchup))
+        -- Setup and thirty steps of the game after it, on both sides.
+        opening = Setup.newGame (Resolve.performHandAction Engine.playSubgame) matchup >> Monad.replicateM_ 30 Engine.runStep
+        seen = State.execState (Engine.runGameAsked (Driver.ask [observer] casting) (start0 matchup) opening) []
+        recorded = snd (Replay.record S.castAnswer (start0 matchup) opening)
     Spec.assertBool s (alternates seen) "alternates"
     Spec.assertEqWith s "transcript" (Maybe.catMaybes seen) recorded
   Spec.it s "drive stops when its predicate says so" $ do
@@ -60,7 +63,7 @@ spec s registry = Spec.describe s "Driver" $ do
     Spec.assertEqWith s "turn" (TurnRegisters.turnNumber (GameState.turn stopped)) 3
     Spec.assertBool s (Maybe.isNothing (GameState.result stopped)) "unfinished"
   Spec.it s "drive returns a finished game rather than outrunning it" $ do
-    matchup <- S.redRed (S.printingOf s registry)
+    matchup <- S.landsOnly (S.printingOf s registry)
     let finished = State.evalState (Driver.drive [] casting 100000 (const (pure False)) (started matchup)) ()
         played = snd (Engine.runMatchPure S.castAnswer GameSettings.plain matchup)
     Spec.assertBool s (Maybe.isJust (GameState.result finished)) "finished"

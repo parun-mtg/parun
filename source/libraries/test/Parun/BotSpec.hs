@@ -147,13 +147,19 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEq s (seeded 1) (seeded 1)
     Spec.assertBool s (seeded 1 /= seeded 2) "by seed"
 
-  Spec.it s "two bots finish a game, answering only what each prompt offers" $ do
-    matchup <- bears s registry
+  Spec.it s "two bots finish a game, the same game from the same seed" $ do
+    matchup <- sevens s registry
     let ((result, gs), answers) = played 1 matchup
     Spec.assertBool s (GameState.result gs == Just result) "finished"
     Spec.assertBool s (all within answers) "within offer"
-    Spec.assertBool s (any attacked answers) "attacked"
     Spec.assertEq s (fst (played 1 matchup)) (result, gs)
+
+  Spec.it s "two bots answer only what each prompt offers, attacks among the answers" $ do
+    matchup <- bears s registry
+    -- Seed 3's game attacks on turn 5.
+    let answers = snd (playedTo 6 3 matchup)
+    Spec.assertBool s (all within answers) "within offer"
+    Spec.assertBool s (any attacked answers) "attacked"
 
   Spec.it s "picks among every mana a source's ability can produce" $ do
     let options = ReplaySpec.oneMana Color.Red NonEmpty.:| [ReplaySpec.oneMana Color.Green, ReplaySpec.oneMana Color.Blue]
@@ -682,10 +688,15 @@ oid = ObjectId.MkObjectId 7
 data Answered = MkAnswered {within :: Bool, attacked :: Bool}
 
 played :: Word.Word32 -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> ((Result.Result, GameState.GameState), [Answered])
-played seed matchup =
-  let seats :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (State.StateT Generator.Generator (State.State [Answered])))
-      seats = Map.fromList [(S.alice, Driver.seated (Bot.bot []) Chance.chance), (S.bob, Driver.seated (Bot.bot []) Chance.chance)]
-   in State.runState (State.evalStateT (Driver.match [watching] (Driver.bySeat seats Chance.chance) GameSettings.plain Map.empty matchup) (S.seeded seed)) []
+played seed matchup = State.runState (State.evalStateT (Driver.match [watching] seats GameSettings.plain Map.empty matchup) (S.seeded seed)) []
+
+-- played's game stopped where turn `turn` ends, with no result to wait for.
+playedTo :: Natural -> Word.Word32 -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (GameState.GameState, [Answered])
+playedTo turn seed matchup = State.runState (State.evalStateT (S.playedThrough turn [watching] seats matchup) (S.seeded seed)) []
+
+-- The random bot in both seats.
+seats :: Answerer.Answerer (Asked.Asked GameState.GameState) (State.StateT Generator.Generator (State.State [Answered]))
+seats = Driver.bySeat (Map.fromList [(S.alice, Driver.seated (Bot.bot []) Chance.chance), (S.bob, Driver.seated (Bot.bot []) Chance.chance)]) Chance.chance
 
 watching :: Observer.Observer (State.StateT Generator.Generator (State.State [Answered]))
 watching =

@@ -37,12 +37,12 @@ import qualified Parun.Types.When as When
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Match" $ do
   Spec.it s "the decks take turns playing first, game by game" $ do
-    decks <- pair <$> BotSpec.bears s registry
+    decks <- pair <$> BotSpec.sevens s registry
     starts <- mapM (\index -> firstToAct . snd <$> Match.game (S.fixtureRegistry []) Nothing (key 7) index decks) [0, 1, 2, 3]
     Spec.assertEqWith s "first to act on turn 1" starts (fmap (Just . Label.MkLabel . Text.pack) ["player1", "player2", "player1", "player2"])
 
   Spec.it s "each game of a match replays clean to its result" $ do
-    decks <- pair <$> BotSpec.bears s registry
+    decks <- pair <$> BotSpec.sevens s registry
     Foldable.for_ [0, 1, 2, 3] $ \index -> do
       (outcome, timeline) <- Match.game (S.fixtureRegistry []) Nothing (key 7) index decks
       let matchup = Command.seated (Match.firstAt index) decks
@@ -53,7 +53,7 @@ spec s registry = Spec.describe s "Match" $ do
         (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
 
   Spec.it s "a game's key is derived from the match's and its index" $ do
-    decks <- pair <$> BotSpec.bears s registry
+    decks <- pair <$> BotSpec.sevens s registry
     once <- Match.game (S.fixtureRegistry []) Nothing (key 7) 2 decks
     again <- Match.game (S.fixtureRegistry []) Nothing (key 7) 2 decks
     early <- Match.game (S.fixtureRegistry []) Nothing (key 7) 0 decks

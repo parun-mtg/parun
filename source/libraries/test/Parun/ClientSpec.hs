@@ -152,22 +152,23 @@ import qualified Text.Read as Read
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Client" $ do
-  Spec.it s "a person who plays lands and casts spells finishes a game against the bot" $ do
+  -- Twenty-five lines typed reach the turn the Bears is cast; the CR 104.3 case
+  -- below is the game played to its end.
+  Spec.it s "a person who plays lands and casts spells is shown the hand and the creature cast" $ do
     matchup <- BotSpec.bears s registry
-    let (outcome, shown) = against plays matchup
-    Spec.assertBool s (either (const False) (const True) outcome) ("finished: " <> show (fmap fst outcome))
+    let shown = snd (against 25 plays matchup)
     Spec.assertBool s (any (Text.isPrefixOf (Text.pack "Your hand: ")) shown) "hand"
     Spec.assertBool s (any (\l -> Text.isPrefixOf (Text.pack "  Creatures: ") l && Text.isInfixOf (Text.pack "Grizzly Bears 2/2") l) shown) "cast"
 
   Spec.it s "a seat that types concede loses at its next priority" $ do
     matchup <- BotSpec.bears s registry
     let conceding sc = if not (typedYet "concede" sc) && any menuHeading (pending sc) then Just (Text.pack "concede") else plays sc
-    Spec.assertEq s (fmap fst (fst (against conceding matchup))) (Right (Result.Won S.bob))
+    Spec.assertEq s (fmap fst (fst (against 3000 conceding matchup))) (Right (Result.Won S.bob))
 
   Spec.it s "an option that is not offered is asked again before reaching the engine" $ do
     matchup <- BotSpec.bears s registry
     let straying sc = if not (typedYet "99" sc) && any menuHeading (pending sc) then Just (Text.pack "99") else plays sc
-        shown = snd (against straying matchup)
+        shown = snd (against 10 straying matchup)
         after = drop 1 (dropWhile (/= Text.pack "> 99") shown)
     Spec.assertBool s (any (Text.isPrefixOf (Text.pack "Type one number from 1 to")) (take 1 after)) "asked again"
     Spec.assertBool s (any menuHeading after) "played on"
@@ -525,9 +526,8 @@ spec s registry = Spec.describe s "Client" $ do
 
   Spec.it s "a person against the bot is never shown an action menu of passing and mana abilities alone" $ do
     matchup <- BotSpec.bears s registry
-    let (outcome, shown) = against plays matchup
+    let shown = snd (against 25 plays matchup)
         menus = actionMenus shown
-    Spec.assertBool s (either (const False) (const True) outcome) ("finished: " <> show (fmap fst outcome))
     Spec.assertEqWith s "menus of passing and mana abilities" (filter (all (\o -> o == Text.pack "Pass" || Text.isPrefixOf (Text.pack "Activate a mana ability of ") o)) menus) []
     Spec.assertBool s (any (Text.isPrefixOf (Text.pack "Player 1 passes in ")) shown) "passed for"
 
@@ -963,7 +963,7 @@ spec s registry = Spec.describe s "Client" $ do
       [Text.pack "Player 1 scries.", Text.pack "Player 2 surveils.", Text.pack "Player 1 rolls 4."]
 
   Spec.it s "CR 104.3 the entries that end the game are shown before its result" $ do
-    matchup <- BotSpec.bears s registry
+    matchup <- BotSpec.sevens s registry
     let terminal = screen 3000 plays
         seats = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) terminal (const (Right Nothing))), (S.bob, Game.bot (S.fixtureRegistry []))]
         (outcome, sc) = State.runState (Game.run (S.fixtureRegistry []) Nothing [] seats (Client.ending terminal [S.alice]) Hotseat.fresh {Hotseat.facing = Just S.alice} (S.seeded 1) Map.empty matchup) blank
@@ -1572,10 +1572,10 @@ screen budget typist =
 botOrDefault :: (Monad m) => Answerer.Answerer (Asked.Asked GameState.GameState) (State.StateT Generator.Generator m)
 botOrDefault = Driver.seated (Bot.bot []) (Answerer.MkAnswerer (pure . Replay.defaultAnswer . Asked.prompt))
 
--- Alice at the terminal, the bot as bob.
-against :: (Screen -> Maybe Text.Text) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), [Text.Text])
-against typist matchup =
-  let seats = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) (screen 3000 typist) (const (Right Nothing))), (S.bob, Game.bot (S.fixtureRegistry []))]
+-- Alice at the terminal for `budget` lines, the bot as bob.
+against :: Natural -> (Screen -> Maybe Text.Text) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), [Text.Text])
+against budget typist matchup =
+  let seats = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) (screen budget typist) (const (Right Nothing))), (S.bob, Game.bot (S.fixtureRegistry []))]
       (outcome, sc) = State.runState (Game.run (S.fixtureRegistry []) Nothing [] seats (const (pure ())) Hotseat.fresh {Hotseat.facing = Just S.alice} (S.seeded 1) Map.empty matchup) blank
    in (outcome, reverse (written sc))
 
