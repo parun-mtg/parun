@@ -81,10 +81,7 @@
             "$forest-1",
             "$forest-2"
           ],
-          "object": "$lion-umbra",
-          "targets": [
-            "$bear"
-          ]
+          "object": "$lion-umbra"
         }
       },
       "player": "alice",

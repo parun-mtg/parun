@@ -53,6 +53,19 @@
             "attached": "bear",
             "card": "Hyena Umbra",
             "ready": true
+          },
+          {
+            "card": "Runeclaw Bear",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ],
+            "label": "carols-bear",
+            "ready": true
           }
         ],
         "name": "carol"
@@ -85,7 +98,7 @@
       }
     }
   ],
-  "note": "CR 700.9: carol's Hyena Umbra on bob's bear does not make it modified, since the bear's controller does not control that Aura. Alice's countered bear keeps Lion Umbra castable, so the refused target reaches the engine.",
+  "note": "CR 700.9: carol's Hyena Umbra on bob's bear does not make it modified, since the bear's controller does not control that Aura. Two countered bears keep a target prompt open, so the refused target reaches the engine.",
   "timeline": [
     {
       "player": "alice",
