@@ -85,8 +85,7 @@
       "do": {
         "Cast": {
           "mana": [
-            "$f1",
-            null
+            "$f1"
           ],
           "object": "$elves"
         }
