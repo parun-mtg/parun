@@ -70,6 +70,7 @@ import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.MatchScope as MatchScope
+import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.NoteFold as NoteFold
 import qualified Parun.Types.Object as Object
@@ -214,12 +215,20 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- settled at the projection's seed.
         --
         -- Nothing when the view cannot say: no object to ask, no power or toughness
-        -- (not a creature), or gone with no last known information kept. An
-        -- ability on the stack answers CR 202.3a's 0 like any other object
+        -- (not a creature, CR 208.3), or gone with no last known information kept.
+        -- An ability on the stack answers CR 202.3a's 0 like any other object
         -- (Projection.View.baseCharacteristics), and the CR 613 projection
         -- (Projection.fullView, Projection.viewUpTo) projects an object in any
         -- zone, so answers CR 202.3 off the battlefield too.
-        Quantity.Measure measure -> Filter.measureOf measure =<< mView
+        --
+        -- Under Filter.zeroMissingPowerToughness an OBJECT lacking power or
+        -- toughness reads CR 107.2's 0 instead (One with the Stars' ruling of
+        -- 2020-01-24); no object, or a player, still reads Nothing.
+        -- data/scenarios/condition's Yorvo pair is what proves it.
+        Quantity.Measure measure ->
+          mView >>= \view ->
+            Filter.measureOf measure view
+              <|> if Filter.zeroMissingPowerToughness context && Maybe.isNothing (Filter.playerIdentity view) && elem measure [Measure.Power, Measure.Toughness] then Just 0 else Nothing
         -- Alchemy's intensity, read off the same view in every zone: Static
         -- Discharge reads its own on the stack.
         Quantity.Intensity -> mView >>= Filter.intensity
@@ -422,14 +431,18 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- Terminating: the payload is a strictly smaller subterm.
         Quantity.AgainstLastCardExiledWith (AgainstLastCardExiledWith.MkAgainstLastCardExiledWith criterion inner) ->
           lastCardExiledWith viewOf context gs criterion >>= \o -> evaluateAgainst viewOf context gs announcedOn (Just o) (viewOf o) inner
-        -- Nothing propagates from any operand; CR 107.2's 0 is the reader's to apply,
-        -- and inside a calculation only determineWith applies it.
+        -- Nothing propagates from any operand rather than reading CR 107.2's 0,
+        -- because an operand's Nothing is also CR 608.2b's unfilled slot, which is
+        -- no number at all. A missing power or toughness gets its 0 at the leaf
+        -- (the Measure arm, under Filter.zeroMissingPowerToughness), and a CDA's
+        -- calculation from determineWith.
         Quantity.Arithmetic arithmetic -> fmap calculate (traverse recur arithmetic)
-        -- Nothing propagates from the value as from any operand (CR 107.2's 0 is the
-        -- reader's), but NOT from a limit: CR 107.2's 0 does not reach "not more than
-        -- the creature's toughness" when there is no creature (Parun.Types.AtMost), or
-        -- Drain Life at a creature would gain 0 against its ruling. A limit naming no
-        -- number is skipped, so Drain Life at a battle gains all the damage dealt.
+        -- Nothing propagates from the value as from any operand (the Arithmetic arm
+        -- says why), but NOT from a limit: "not more than the creature's toughness"
+        -- names no number when the target is no creature, which is not CR 107.2's
+        -- undeterminable number (Parun.Types.AtMost), or Drain Life at a planeswalker
+        -- would gain 0. A limit naming no number is skipped, so Drain Life at a
+        -- battle gains all the damage dealt.
         Quantity.AtMost (AtMost.MkAtMost inner limits) -> fmap (\n -> minimum (n : Maybe.mapMaybe recur (Foldable.toList limits))) (recur inner)
         -- CR 208.2a / 608.2h: delegate to the general Count fold (Parun.Engine.Count),
         -- which reads the CR 613 projection through the injected ViewOf. The second
@@ -1339,7 +1352,9 @@ calculate arithmetic = case arithmetic of
 -- SCOPED TO THE CHARACTERISTIC-DEFINING ABILITY, as CR 208.2a is: the caller is
 -- Projection.applyCharacteristicPT, which layer 7a runs for an object in any
 -- zone (CR 604.3 makes the ability function in all zones), and every other reader
--- of a quantity keeps evaluate's Nothing (gap #6219, #6220: CR 107.2 gives them 0).
+-- of a quantity keeps evaluate's Nothing (gap #6219, #7018: CR 107.2 gives them
+-- 0), but Condition.holds, whose missing power or toughness reads 0 at the
+-- Measure arm.
 --
 -- It does NOT descend into a Count, and does not need to: an undeterminable
 -- count IS the number CR 208.2a is talking about, so the 0 goes in whole here

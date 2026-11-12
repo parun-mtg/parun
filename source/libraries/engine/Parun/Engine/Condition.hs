@@ -3,13 +3,12 @@
 -- Parun.Engine.Expiry has over Parun.Types.Expiry and Parun.Engine.Projection over
 -- Modification.
 --
--- Total, so it must collapse the Maybe its two inputs carry: an undeterminable
--- quantity on EITHER side makes the condition FALSE.
---
--- Not implemented: CR 107.2's 0 for a noncreature's missing power or toughness
--- (CR 208.3; One with the Stars' ruling of 2020-01-24, "it uses 0"), so Yorvo made
--- an enchantment compares against nothing (#6220). An unfilled slot is CR 608.2b's
--- and is not that number.
+-- Total, so it must collapse the Maybe its two inputs carry: a quantity with no
+-- answer on EITHER side makes the condition FALSE. That is an unfilled slot (CR
+-- 608.2b) or an object gone with nothing known of it, not a number. An object's
+-- missing power or toughness (CR 208.3) is CR 107.2's 0 instead, which Compares
+-- asks the Measure arm for (Filter.zeroMissingPowerToughness; One with the Stars'
+-- ruling of 2020-01-24).
 --
 -- The VIEW is the caller's, and picking it is a rules decision rather than a
 -- detail. Three answers, one per kind of question:
@@ -55,7 +54,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 
 holds :: Count.ViewOf -> Filter.Context -> GameState -> ObjectId -> Condition.Type.Condition -> Bool
 holds viewOf context gs oid condition =
-  let evaluate = Quantity.evaluate viewOf context gs oid
+  let evaluate = Quantity.evaluate viewOf context {Filter.zeroMissingPowerToughness = True} gs oid
    in case condition of
         -- Both sides are evaluated against `oid` and with the same view, so a
         -- Quantity.Measure on either side reads the same object and a Quantity.Count on
