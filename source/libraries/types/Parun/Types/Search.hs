@@ -146,6 +146,10 @@ data Search = MkSearch
     -- 2026-10-26, text "Search" with "from (their|your) (hand|graveyard|library)
     -- this way", finds no card asking after another zone.
     handSlot :: Maybe SlotName.SlotName,
+    -- | CR 608.2c: the slot bound to each player whose library this search
+    -- looked through, for Aether Searcher's "If you search your library this
+    -- way, shuffle" printed after a later clause (Effect.Shuffle over it).
+    librarySlot :: Maybe SlotName.SlotName,
     -- | What no two found cards may share -- Gifts Ungiven's "with different
     -- names" (CR 201.2b), Threats Undetected's "with different powers". A
     -- constraint on the found SET, which no per-card filter can state.

@@ -43,12 +43,13 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.subject = Nothing,
             Search.slot = Just (SlotName.MkSlotName (Text.pack "found")),
             Search.handSlot = Just (SlotName.MkSlotName (Text.pack "hand")),
+            Search.librarySlot = Just (SlotName.MkSlotName (Text.pack "library")),
             Search.differentIn = Set.fromList [DifferentIn.Names, DifferentIn.Powers],
             Search.exactly = True,
             Search.andOr = True
           }
       )
-      " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"InSlot\",\"value\":\"player\"},\"zones\":[\"Library\",\"Graveyard\"],\"outsideTheGame\":true,\"andOr\":true,\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"descriptions\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HasCardType\",\"value\":\"Artifact\"}],\"upTo\":true,\"destination\":\"BattlefieldTapped\",\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":2}}],\"slot\":\"found\",\"handSlot\":\"hand\",\"differentIn\":[\"Names\",\"Powers\"],\"exactly\":true} "
+      " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"InSlot\",\"value\":\"player\"},\"zones\":[\"Library\",\"Graveyard\"],\"outsideTheGame\":true,\"andOr\":true,\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"descriptions\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HasCardType\",\"value\":\"Artifact\"}],\"upTo\":true,\"destination\":\"BattlefieldTapped\",\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":2}}],\"slot\":\"found\",\"handSlot\":\"hand\",\"librarySlot\":\"library\",\"differentIn\":[\"Names\",\"Powers\"],\"exactly\":true} "
   -- The other reading of the same count: no "upTo" key means the quantity is a
   -- quota. Paired with the case above so each key's absence is asserted, not
   -- just its presence -- a required key would have made every card file
@@ -72,6 +73,7 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.subject = Nothing,
             Search.slot = Nothing,
             Search.handSlot = Nothing,
+            Search.librarySlot = Nothing,
             Search.differentIn = Set.empty,
             Search.exactly = False,
             Search.andOr = False
@@ -100,6 +102,7 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.subject = Nothing,
             Search.slot = Nothing,
             Search.handSlot = Nothing,
+            Search.librarySlot = Nothing,
             Search.differentIn = Set.empty,
             Search.exactly = False,
             Search.andOr = False

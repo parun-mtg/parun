@@ -596,7 +596,7 @@ moveMana settle resolving source controller legal (MoveMana.MkMoveMana fromRef t
   Mana.moveMana settle (Common.apnapPlayersOf fromRef legal resolving source controller gs) (foldMap (\ref -> Common.apnapPlayersOf ref legal resolving source controller gs) toRef)
 
 search :: Game () -> (Game Result -> ManaAbilityPerformer.ManaAbilityPerformer) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Search.Search -> Game ()
-search settle performManaAbility runSubgame resolving source controller legal (Search.MkSearch searcherRef ownerRef zones outside quantity filter_ descriptions upTo destination counters subject foundSlot handSlot differentIn exactly andOr) =
+search settle performManaAbility runSubgame resolving source controller legal (Search.MkSearch searcherRef ownerRef zones outside quantity filter_ descriptions upTo destination counters subject foundSlot handSlot librarySlot differentIn exactly andOr) =
   -- CR 701.23a: match each candidate through its own CR 613 projection --
   -- rule 613.1 names no zone, so a card in any of the searched zones is folded
   -- exactly as a permanent is, and CR 208.2a's characteristic-defining power
@@ -1061,9 +1061,10 @@ search settle performManaAbility runSubgame resolving source controller legal (S
         -- and, unrevealed and one library per searcher,
         -- cr-701-24b-scheming-symmetry-puts-each-searcher-s-find-on-top-of-their-own-library
         -- are the proof.
-        let shuffled
+        let readLibraries = ListUtils.nubOrd [owner | (_, owner, chosenZones, _, _, _) <- decisions, Set.member Zone.Library chosenZones]
+            shuffled
               | not (Common.shufflesAfter destination) = []
-              | otherwise = ListUtils.nubOrd [owner | (_, owner, chosenZones, _, _, _) <- decisions, Set.member Zone.Library chosenZones]
+              | otherwise = readLibraries
             leftOut
               | Common.putsOnTop destination = Set.fromList arrivals
               | otherwise = Set.empty
@@ -1080,6 +1081,15 @@ search settle performManaAbility runSubgame resolving source controller legal (S
         -- this resolution arms (CR 603.7c), is what arrived.
         Common.bindObjects resolving foundSlot placed
         Common.bindObjects resolving handSlot fromHand
+        -- Search.librarySlot: the owners whose library a searcher chose, the
+        -- shuffle's own condition above, for a Stay search whose "If you
+        -- search your library this way, shuffle" follows a later clause (CR
+        -- 608.2c). The scenarios
+        -- aether-searcher-shuffles-after-casting-a-card-found-in-the-library
+        -- and aether-searcher-does-not-shuffle-after-searching-only-the-hand
+        -- are the proof.
+        Monad.forM_ librarySlot $ \slot ->
+          Monad.unless (null readLibraries) (State.modify' (Common.bindPlayerSlot resolving slot (Set.fromList readLibraries)))
 
 -- Exile every card in every graveyard as ONE event (CR 608.2f), so "one or
 -- more cards leave your graveyard" fires once (CR 603.2c). "Every graveyard"

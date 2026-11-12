@@ -978,7 +978,7 @@ effectChildren c effect = case effect of
   Effect.AddMana addition -> fmap Effect.AddMana (onManaAddition c addition)
   Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities who filter_) -> fmap Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities <$> onPlayer c who <*> onFilter c filter_)
   Effect.MoveMana (MoveMana.MkMoveMana from to) -> fmap Effect.MoveMana (MoveMana.MkMoveMana <$> onPlayer c from <*> traverse (onPlayer c) to)
-  Effect.Search (Search.MkSearch searcher owner zones outside quantity filter_ descriptions upTo destination counters subject named handSlot differentIn exactly andOr) ->
+  Effect.Search (Search.MkSearch searcher owner zones outside quantity filter_ descriptions upTo destination counters subject named handSlot librarySlot differentIn exactly andOr) ->
     fmap
       Effect.Search
       ( Search.MkSearch
@@ -995,6 +995,7 @@ effectChildren c effect = case effect of
           <*> traverse (onSlot c) subject
           <*> traverse (onSlot c) named
           <*> traverse (onSlot c) handSlot
+          <*> traverse (onSlot c) librarySlot
           <*> pure differentIn
           <*> pure exactly
           <*> pure andOr

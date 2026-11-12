@@ -849,7 +849,7 @@ playerRefPositions =
    in [ ("add-mana", Effect.AddMana (ManaAddition.MkManaAddition (plantedPlayer "am") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing), [plantedPlayer "am"]),
         ("add-mana-pooled", Effect.AddMana (ManaAddition.MkManaAddition (plantedPlayer "amp") (ManaProduction.Pooled (ManaCount.MkManaCount (plantedPlayer "amp-pool") ManaFilter.Any)) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing), [plantedPlayer "amp", plantedPlayer "amp-pool"]),
         ("firebend", Effect.Firebend (ManaAddition.MkManaAddition (plantedPlayer "fb") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing), [plantedPlayer "fb"]),
-        ("search", Effect.Search (Search.MkSearch (plantedPlayer "se-searcher") (plantedPlayer "se-owner") Set.empty False Nothing (Filter.Type.And []) Seq.empty False SearchDestination.Battlefield Map.empty Nothing Nothing Nothing Set.empty False False), [plantedPlayer "se-searcher", plantedPlayer "se-owner"]),
+        ("search", Effect.Search (Search.MkSearch (plantedPlayer "se-searcher") (plantedPlayer "se-owner") Set.empty False Nothing (Filter.Type.And []) Seq.empty False SearchDestination.Battlefield Map.empty Nothing Nothing Nothing Nothing Set.empty False False), [plantedPlayer "se-searcher", plantedPlayer "se-owner"]),
         ("draw", Effect.Draw (Draw.MkDraw (plantedPlayer "dr") one Nothing), [plantedPlayer "dr"]),
         ("mill", Effect.Mill (Mill.MkMill (plantedPlayer "mi") one Nothing Nothing), [plantedPlayer "mi"]),
         ("scry", Effect.Scry (playerQuantity "sc"), [plantedPlayer "sc"]),
@@ -4936,7 +4936,7 @@ effectFilters effect = case effect of
   -- THE one search-framed position. CR 701.3a from the candidate's side:
   -- Auratouched Mage's "an Aura card that could enchant it", where the host is
   -- fixed for the whole evaluation and the Aura varies per candidate.
-  Effect.Search (Search.MkSearch _ _ _ _ _ f descriptions _ _ counters _ _ _ _ _ _) ->
+  Effect.Search (Search.MkSearch _ _ _ _ _ f descriptions _ _ counters _ _ _ _ _ _ _) ->
     searchFramed (f : Foldable.toList descriptions)
       -- The entry counters' kinds and counts, riderFilters' first two halves.
       <> concatMap counterKindFilters (Map.keys counters)

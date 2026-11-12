@@ -60,6 +60,8 @@ codec = Fields.object $ do
   slot <- Fields.defaulted "slot" Nothing (Common.maybe SlotName.codec) Search.slot
   -- Defaulted: an absent key is a search that counts nothing by the hand.
   handSlot <- Fields.defaulted "handSlot" Nothing (Common.maybe SlotName.codec) Search.handSlot
+  -- Defaulted: an absent key is a search no later clause asks the library of.
+  librarySlot <- Fields.defaulted "librarySlot" Nothing (Common.maybe SlotName.codec) Search.librarySlot
   -- Defaulted: an absent key is a search that prints no "with different ...",
   -- which is most card files.
   differentIn <- Fields.defaulted "differentIn" Set.empty (Common.set DifferentIn.codec) Search.differentIn
@@ -81,6 +83,7 @@ codec = Fields.object $ do
         Search.subject = subject,
         Search.slot = slot,
         Search.handSlot = handSlot,
+        Search.librarySlot = librarySlot,
         Search.differentIn = differentIn,
         Search.exactly = exactly,
         Search.andOr = andOr
