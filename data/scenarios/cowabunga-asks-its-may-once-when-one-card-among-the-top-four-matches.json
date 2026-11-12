@@ -114,7 +114,7 @@
       "check": {
         "View": {
           "is": [
-            "$forest"
+            "Forest"
           ],
           "of": "Zone",
           "player": "alice",
