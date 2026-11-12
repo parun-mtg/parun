@@ -23,7 +23,7 @@ module Parun.Types.CarryOver where
 -- Parun.Engine.Stack.carryGrants stores that grant just before the move.
 --
 -- CR 400.7g's carriers are Parun.Engine.Cast.keywordsBefore and
--- Parun.Types.Object.castGrant, and CR 400.7i's for an exile permission's rider
+-- Parun.Types.Object.castGrants, and CR 400.7i's for an exile permission's rider
 -- is Parun.Engine.Cast.playLand's entry; neither comes through here.
 data CarryOver
   = Carried

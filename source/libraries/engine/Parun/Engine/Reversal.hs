@@ -504,7 +504,7 @@ objectWith before entry closed = do
   castFrom <- field Object.castFrom
   castBy <- field Object.castBy
   castUsing <- field Object.castUsing
-  castGrant <- field Object.castGrant
+  castGrants <- field Object.castGrants
   detainedUntil <- field Object.detainedUntil
   goadedBy <- field Object.goadedBy
   doesNotUntapFor <- field Object.doesNotUntapFor
@@ -576,7 +576,7 @@ objectWith before entry closed = do
         Object.castFrom = castFrom,
         Object.castBy = castBy,
         Object.castUsing = castUsing,
-        Object.castGrant = castGrant,
+        Object.castGrants = castGrants,
         Object.detainedUntil = detainedUntil,
         Object.goadedBy = goadedBy,
         Object.doesNotUntapFor = doesNotUntapFor,

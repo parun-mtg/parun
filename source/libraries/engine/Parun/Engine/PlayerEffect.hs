@@ -658,7 +658,7 @@ prohibitsCasting pid oid variable gs =
         -- 601.3 is about beginning to cast one: an uncounterable spell is not a
         -- spell anyone is more or less allowed to cast.
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         -- CR 615.12 edits what CR 615.1's shields do to a damage event, and CR
@@ -857,7 +857,7 @@ prohibitsPlayingLand pid oid gs =
         -- CR 305.1 again: a land is never put on the stack, so nothing about
         -- countering reaches a land play.
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -954,7 +954,7 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -1068,7 +1068,7 @@ prohibitsCounters pid kind gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -1162,7 +1162,7 @@ prohibitsBecomingMonarch pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -1227,7 +1227,7 @@ stateBasedActionDoesntApplyTo action pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -1293,7 +1293,7 @@ schemesCantBeSetInMotion gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -1364,7 +1364,7 @@ entryTriggerings pid entrant gs =
         PlayerEffect.LoyaltyGrant _ -> Nothing
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
-        PlayerEffect.NextSpell _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -1444,7 +1444,7 @@ additionalTriggers pid bearer gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -1510,7 +1510,7 @@ prohibitsAttackingWithCreatures pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -2215,7 +2215,7 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.SpendManaAsThough _ -> Nothing
   PlayerEffect.CantBeTargetedBy {} -> Nothing
   PlayerEffect.CantBeCountered _ -> Nothing
-  PlayerEffect.NextSpell _ -> Nothing
+  PlayerEffect.NextSpell _ _ -> Nothing
   PlayerEffect.RestrictTargeting _ -> Nothing
   PlayerEffect.TargetPastHexproof _ -> Nothing
   PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -2477,7 +2477,7 @@ castFromGrantOf effect = case effect of
   PlayerEffect.SpendManaAsThough _ -> Nothing
   PlayerEffect.CantBeTargetedBy {} -> Nothing
   PlayerEffect.CantBeCountered _ -> Nothing
-  PlayerEffect.NextSpell _ -> Nothing
+  PlayerEffect.NextSpell _ _ -> Nothing
   PlayerEffect.RestrictTargeting _ -> Nothing
   PlayerEffect.TargetPastHexproof _ -> Nothing
   PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -2838,7 +2838,7 @@ mayCastWithoutPayingManaCost pid oid gs =
         PlayerEffect.SpendManaAsThough _ -> False
         PlayerEffect.CantBeTargetedBy {} -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -2921,7 +2921,7 @@ playLandPiles pid gs =
         PlayerEffect.SpendManaAsThough _ -> []
         PlayerEffect.CantBeTargetedBy {} -> []
         PlayerEffect.CantBeCountered _ -> []
-        PlayerEffect.NextSpell _ -> []
+        PlayerEffect.NextSpell _ _ -> []
         PlayerEffect.RestrictTargeting _ -> []
         PlayerEffect.TargetPastHexproof _ -> []
         PlayerEffect.DamageCantBePrevented _ -> []
@@ -3040,7 +3040,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         -- says the same about CR 113.6g, and a Cancel at a spell Spider-Punk
         -- protects still targets it legally and still resolves.
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -3156,7 +3156,7 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -3254,7 +3254,7 @@ protectionCarriers gs =
         PlayerEffect.LoyaltyGrant _ -> Nothing
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
-        PlayerEffect.NextSpell _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -3343,7 +3343,7 @@ landPlaysAllowed pid gs =
         PlayerEffect.SpendManaAsThough _ -> Nothing
         PlayerEffect.CantBeTargetedBy {} -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
-        PlayerEffect.NextSpell _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -3805,7 +3805,7 @@ maximumHandSize pid gs =
         PlayerEffect.LoyaltyGrant _ -> current
         PlayerEffect.MayTapForMana _ -> current
         PlayerEffect.CantBeCountered _ -> current
-        PlayerEffect.NextSpell _ -> current
+        PlayerEffect.NextSpell _ _ -> current
         PlayerEffect.RestrictTargeting _ -> current
         PlayerEffect.TargetPastHexproof _ -> current
         PlayerEffect.DamageCantBePrevented _ -> current
@@ -3893,7 +3893,7 @@ keepsUnspentMana pid gs =
         PlayerEffect.LoyaltyGrant _ -> Nothing
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
-        PlayerEffect.NextSpell _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -3973,7 +3973,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -4057,7 +4057,7 @@ prohibitsGainingLife pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -4137,7 +4137,7 @@ prohibitsLosingLife pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -4216,7 +4216,7 @@ precludes outcome pid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
@@ -4293,7 +4293,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.LoyaltyGrant _ -> Nothing
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
-        PlayerEffect.NextSpell _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -4427,7 +4427,7 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.LoyaltyGrant _ -> False
         PlayerEffect.MayTapForMana _ -> False
         -- Theorist's Proxy's marker: it binds the spell this reads, and stops nothing.
-        PlayerEffect.NextSpell _ -> False
+        PlayerEffect.NextSpell _ _ -> False
         -- Autumn's Veil's OTHER clause, which CR 115 reads at targeting.
         PlayerEffect.RestrictTargeting _ -> False
         PlayerEffect.TargetPastHexproof _ -> False
@@ -4532,7 +4532,7 @@ targetingRestrictions =
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
-        PlayerEffect.NextSpell _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
    in Maybe.mapMaybe restriction
 
 -- CR 115 / 101.2: may a spell or ability of `kind`, whose projection is
@@ -4616,7 +4616,7 @@ hexproofExemptions =
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
-        PlayerEffect.NextSpell _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
    in Maybe.mapMaybe exemption
 
 -- CR 702.11e: may `you` target `candidate` as though it didn't have hexproof?
@@ -4711,7 +4711,7 @@ unpreventable gs =
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
-        PlayerEffect.NextSpell _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.CantCastSpells -> Nothing
@@ -4797,7 +4797,7 @@ unredirectable gs =
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
-        PlayerEffect.NextSpell _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.CantCastSpells -> Nothing
@@ -4878,7 +4878,7 @@ statedFlips pid gs =
         PlayerEffect.LoyaltyGrant _ -> Nothing
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
-        PlayerEffect.NextSpell _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -4960,7 +4960,7 @@ rollModifiers pid gs =
         PlayerEffect.LoyaltyGrant _ -> Nothing
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.CantBeCountered _ -> Nothing
-        PlayerEffect.NextSpell _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
         PlayerEffect.RestrictTargeting _ -> Nothing
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
@@ -5033,8 +5033,13 @@ castUse effect = case effect of
   -- under Duration.UntilUsed.
   PlayerEffect.CastWithoutPayingManaCost grant
     | Maybe.isNothing (FreeCast.amount grant) && Maybe.isNothing (FreeCast.from grant) -> Just (FreeCast.spells grant)
-  PlayerEffect.NextSpell criterion -> Just criterion
+  PlayerEffect.NextSpell criterion _ -> Just criterion
   _ -> fst <$> castFlashGrant effect
+
+-- CR 611.2f: the keywords the spent rows give the spell spending them, one per
+-- row and keyword, so two Dark Apostles' rows give two cascades.
+spellKeywordsOf :: [ActivePlayerEffect.ActivePlayerEffect] -> [Keyword]
+spellKeywordsOf spent = [keyword | row <- spent, PlayerEffect.NextSpell _ keywords <- [ActivePlayerEffect.effect row], keyword <- keywords]
 
 -- CR 611.2a / 601.1a's other half: the rows `pid` would spend by playing `oid`
 -- as a land. Asked of the pre-move state by Parun.Engine.Engine's Play arm for
@@ -5089,7 +5094,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.LoyaltyGrant _ -> pure effect
   PlayerEffect.MayTapForMana _ -> pure effect
   PlayerEffect.CantBeCountered _ -> pure effect
-  PlayerEffect.NextSpell _ -> pure effect
+  PlayerEffect.NextSpell _ _ -> pure effect
   PlayerEffect.RestrictTargeting _ -> pure effect
   PlayerEffect.TargetPastHexproof _ -> pure effect
   PlayerEffect.DamageCantBePrevented _ -> pure effect
@@ -5173,7 +5178,7 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.LoyaltyGrant _ -> pure effect
   PlayerEffect.MayTapForMana _ -> pure effect
   PlayerEffect.CantBeCountered _ -> pure effect
-  PlayerEffect.NextSpell _ -> pure effect
+  PlayerEffect.NextSpell _ _ -> pure effect
   PlayerEffect.RestrictTargeting _ -> pure effect
   PlayerEffect.TargetPastHexproof _ -> pure effect
   PlayerEffect.DamageCantBePrevented pattern_ -> fmap PlayerEffect.DamageCantBePrevented (f pattern_)

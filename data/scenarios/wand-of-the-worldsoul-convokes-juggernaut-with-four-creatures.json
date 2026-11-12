@@ -1,0 +1,161 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Wand of the Worldsoul",
+            "label": "wand",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p1",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p2",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p3",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p4",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Juggernaut",
+            "label": "jug"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 611.2f / 702.51a Wand of the Worldsoul's convoke pays for Juggernaut with four creatures",
+  "final": [
+    {
+      "Count": {
+        "card": "Juggernaut",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$p1",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$p4",
+        "tapped": true
+      }
+    },
+    {
+      "Keywords": {
+        "count": 0,
+        "keyword": {
+          "type": "Convoke"
+        },
+        "object": "Juggernaut"
+      }
+    }
+  ],
+  "note": "Alice has no land, only Goblin Pikers, so Juggernaut is castable only once the Wand's ability has resolved and only by convoke: the grant applies to the spell from CR 601.2a on, before its payment.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Activate $wand",
+            "ActivateManaAbility $wand"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "object": "$wand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $jug"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "cost": [],
+          "object": "$jug"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Convoke"
+          },
+          "object": "Juggernaut"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -9275,7 +9275,7 @@ arrangeComponents pid dest components =
 -- move, and this re-keys it. Parun.PlanechaseSpec's "CR 400.7b" group proves it.
 --
 -- CR 400.7g is implemented on Parun.Engine.Cast.keywordsBefore and
--- Parun.Types.Object.castGrant, and CR 400.7i for an exile permission's rider
+-- Parun.Types.Object.castGrants, and CR 400.7i for an exile permission's rider
 -- on Parun.Engine.Cast.playLand's entry, rather than here.
 carryOver :: CarryOver.CarryOver -> ObjectId -> ObjectId -> Game ()
 carryOver carrying oldId newId = case carrying of

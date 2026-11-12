@@ -158,7 +158,7 @@ codec = Fields.object $ do
   castFrom <- Fields.defaulted "castFrom" (Object.castFrom defaults) (Common.maybe Zone.codec) Object.castFrom
   castBy <- Fields.defaulted "castBy" (Object.castBy defaults) (Common.maybe PlayerId.codec) Object.castBy
   castUsing <- Fields.defaulted "castUsing" (Object.castUsing defaults) (Common.maybe Keyword.codec) Object.castUsing
-  castGrant <- Fields.defaulted "castGrant" (Object.castGrant defaults) (Common.maybe Keyword.codec) Object.castGrant
+  castGrants <- Fields.defaulted "castGrants" (Object.castGrants defaults) (Common.list Keyword.codec) Object.castGrants
   exileLookers <- Fields.defaulted "exileLookers" (Object.exileLookers defaults) (Common.set ExileLooker.codec) Object.exileLookers
   revealed <- Fields.defaulted "revealed" (Object.revealed defaults) (Common.set RevealWindow.codec) Object.revealed
   exposed <- Fields.defaulted "exposed" (Object.exposed defaults) Common.boolean Object.exposed
@@ -232,7 +232,7 @@ codec = Fields.object $ do
         Object.castFrom = castFrom,
         Object.castBy = castBy,
         Object.castUsing = castUsing,
-        Object.castGrant = castGrant,
+        Object.castGrants = castGrants,
         Object.exileLookers = exileLookers,
         Object.revealed = revealed,
         Object.exposed = exposed,

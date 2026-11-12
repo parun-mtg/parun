@@ -987,6 +987,7 @@ playerEffectNames asking =
           Children.playerSpending = Const.Const . spendManaAsThoughNames asking,
           Children.playerManaRestriction = Const.Const . manaRestrictionNames asking,
           Children.playerDamage = Const.Const . damagePatternNames asking,
+          Children.playerKeyword = Const.Const . keywordNames asking,
           Children.playerLooksBack = Const.Const . history asking
         }
 

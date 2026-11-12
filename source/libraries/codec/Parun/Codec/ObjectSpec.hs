@@ -207,7 +207,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           Object.castFrom = Just Zone.Graveyard,
           Object.castBy = Just (PlayerId.MkPlayerId 2),
           Object.castUsing = Just Keyword.JumpStart,
-          Object.castGrant = Just Keyword.Retrace,
+          Object.castGrants = [Keyword.Retrace, Keyword.Convoke],
           Object.exileLookers = Set.singleton (ExileLooker.ThePlayer (PlayerId.MkPlayerId 27)),
           Object.revealed = Set.fromList [RevealWindow.WhileOnStack (ObjectId.MkObjectId 32), RevealWindow.UntilFirstTurn],
           Object.exposed = True,
@@ -262,7 +262,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"announcedX\":20,\"castFrom\":\"Graveyard\""
           <> ",\"castBy\":2"
           <> ",\"castUsing\":{\"type\":\"JumpStart\"}"
-          <> ",\"castGrant\":{\"type\":\"Retrace\"}"
+          <> ",\"castGrants\":[{\"type\":\"Retrace\"},{\"type\":\"Convoke\"}]"
           <> ",\"exileLookers\":[{\"type\":\"ThePlayer\",\"value\":27}]"
           <> ",\"revealed\":[{\"type\":\"WhileOnStack\",\"value\":32},{\"type\":\"UntilFirstTurn\"}]"
           <> ",\"exposed\":true"
