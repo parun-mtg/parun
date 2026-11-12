@@ -1,0 +1,21 @@
+{
+  "description": "CR 700.5a Example: alice's Altar of the Pantheon, Purphoros, God of the Forge and Seismic Assault print four red symbols, and the Altar raises her devotion to red to five, so Purphoros is a creature",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Altar of the Pantheon", "label": "altar" },
+          { "card": "Purphoros, God of the Forge", "label": "purphoros" },
+          { "card": "Seismic Assault", "label": "assault" }
+        ]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Types": { "object": "$purphoros", "types": ["Creature", "Enchantment"] } } }
+  ]
+}

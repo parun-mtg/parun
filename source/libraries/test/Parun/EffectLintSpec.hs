@@ -1072,6 +1072,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.NoMaximumHandSize -> False
   PlayerEffect.SetMaximumHandSize _ -> False
   PlayerEffect.IncreaseMaximumHandSize _ -> False
+  PlayerEffect.IncreaseDevotion _ -> False
   PlayerEffect.ReduceMaximumHandSize _ -> False
   PlayerEffect.DontLoseUnspentMana _ -> False
   PlayerEffect.LoseLifeForUnspentMana -> False
@@ -1154,6 +1155,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.NoMaximumHandSize -> False
   PlayerEffect.SetMaximumHandSize _ -> False
   PlayerEffect.IncreaseMaximumHandSize _ -> False
+  PlayerEffect.IncreaseDevotion _ -> False
   PlayerEffect.ReduceMaximumHandSize _ -> False
   PlayerEffect.DontLoseUnspentMana _ -> False
   PlayerEffect.LoseLifeForUnspentMana -> False
@@ -1196,6 +1198,23 @@ isUnpreventable :: PlayerEffect.PlayerEffect -> Bool
 isUnpreventable playerEffect = case playerEffect of
   PlayerEffect.DamageCantBePrevented _ -> True
   PlayerEffect.DamageCantBeRedirected _ -> True
+  _ -> False
+
+-- CR 700.5a: does this face author a devotion increase that
+-- Parun.Engine.Devotion.bonusOf cannot see? That reader works off one
+-- permanent's view, so it counts only a PRINTED, "your", unconditional one; a
+-- stored one, another scope or an "as long as" would be dropped unread.
+devotionIncreaseOffends :: Face.Face Card.Type.Card -> Bool
+devotionIncreaseOffends card =
+  let printedOffends ability =
+        isDevotionIncrease (PlayerStaticAbility.effect ability)
+          && (PlayerStaticAbility.scope ability /= PlayerScope.Related PlayerRelation.You || Maybe.isJust (PlayerStaticAbility.condition ability))
+   in any printedOffends (Face.playerAbilities card)
+        || any (isDevotionIncrease . snd) (Maybe.mapMaybe storedPlayerScope (cardResolutionEffects card))
+
+isDevotionIncrease :: PlayerEffect.PlayerEffect -> Bool
+isDevotionIncrease playerEffect = case playerEffect of
+  PlayerEffect.IncreaseDevotion _ -> True
   _ -> False
 
 -- The pattern that narrows nothing: Spider-Punk's, and what a fixture below
@@ -3454,6 +3473,18 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- that prints one.
     Spec.assertBool s (any (anyFace (any (isUnpreventable . snd) . cardPlayerScopes) . Printing.card) ps) "the pool has a card printing unpreventable damage"
     Spec.assertEqWith s "CR 615.12 names no player, so its carrier is scoped to every player" (fmap (S.nameOf . Printing.card) offenders) []
+  -- See devotionIncreaseOffends; Altar of the Pantheon is the card that
+  -- prints one, and rescoped to every player it is what the lint rejects.
+  Spec.it s "no card authors a devotion increase Parun.Engine.Devotion cannot read" $ do
+    ps <- S.allPrintings s corpus
+    let offenders = filter (anyFace devotionIncreaseOffends . Printing.card) ps
+    altar <- S.printingOf s registry "Altar of the Pantheon"
+    let card = S.combinedFace altar
+        widen ability = ability {PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.AnyPlayer}
+        widened = card {Face.playerAbilities = fmap widen (Face.playerAbilities card)}
+    Spec.assertBool s (any (isDevotionIncrease . PlayerStaticAbility.effect) (Face.playerAbilities card)) "setup: Altar of the Pantheon prints a devotion increase"
+    Spec.assertBool s (devotionIncreaseOffends widened) "the lint rejects Altar rescoped to every player"
+    Spec.assertEqWith s "CR 700.5a: every devotion increase is printed, yours and unconditional" (fmap (S.nameOf . Printing.card) offenders) []
   -- The rejecting direction, proven against Spider-Punk rescoped rather than
   -- against a card file, exactly as the two cases above are.
   Spec.it s "the lint itself catches a narrowed unpreventable-damage carrier" $ do

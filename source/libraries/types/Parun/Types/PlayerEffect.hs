@@ -43,7 +43,9 @@ import qualified Parun.Types.TurnScope as TurnScope
 -- machine has run. There is no Layer constructor here.
 --
 -- Open-half card data. Parun.Engine.PlayerEffect is the only module that may case
--- on it to ask what an effect MEANS. Parun.Engine.Children.playerEffectChildren
+-- on it to ask what an effect MEANS, save one arm: Parun.Engine.Devotion reads
+-- IncreaseDevotion, below every module that could import this one's reader, for
+-- CR 700.5a's count. Parun.Engine.Children.playerEffectChildren
 -- cases on it too and reads nothing -- the structural walks' traversal, which
 -- reconstructs every arm, the same standing effectChildren has over
 -- Parun.Types.Effect.
@@ -97,6 +99,9 @@ data PlayerEffect
   | -- | CR 402.2 / 613.11 / Gnat Miser: this player's maximum hand size is REDUCED
     -- by this number, floored at zero by CR 107.1b.
     ReduceMaximumHandSize Natural.Natural
+  | -- | CR 700.5a / Altar of the Pantheon: this player's devotion to each colour and
+    -- each combination of colours is INCREASED by this number.
+    IncreaseDevotion Natural.Natural
   | -- | CR 500.5 / 703.4q / Upwelling, Omnath Locus of Mana: this player does not
     -- lose the mana the filter names as a step or phase ends.
     DontLoseUnspentMana ManaFilter.ManaFilter

@@ -3890,6 +3890,7 @@ playerEffectFilters playerEffect = case playerEffect of
   -- number moves, never which spells.
   PlayerEffect.SetMaximumHandSize _ -> []
   PlayerEffect.IncreaseMaximumHandSize _ -> []
+  PlayerEffect.IncreaseDevotion _ -> []
   PlayerEffect.ReduceMaximumHandSize _ -> []
   -- CR 500.5 carries a ManaFilter, not a Filter: the set it names is MANA, and
   -- this traversal is about the spells a player effect names.

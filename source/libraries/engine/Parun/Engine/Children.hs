@@ -2096,6 +2096,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.NoMaximumHandSize -> pure effect
   PlayerEffect.SetMaximumHandSize _ -> pure effect
   PlayerEffect.IncreaseMaximumHandSize _ -> pure effect
+  PlayerEffect.IncreaseDevotion _ -> pure effect
   PlayerEffect.ReduceMaximumHandSize _ -> pure effect
   PlayerEffect.DontLoseUnspentMana which -> PlayerEffect.DontLoseUnspentMana <$> playerManaFilter c which
   PlayerEffect.LoseLifeForUnspentMana -> pure effect

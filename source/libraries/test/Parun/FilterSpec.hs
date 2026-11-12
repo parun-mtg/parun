@@ -168,7 +168,8 @@ blackCreature =
       -- CR 602.1 / 605.1a: a vanilla creature as far as this axis goes, so the
       -- atom's own cases below say which view they want rather than inheriting it.
       Filter.activatedAbilityKinds = Set.empty,
-      Filter.grantsStationToughness = False
+      Filter.grantsStationToughness = False,
+      Filter.devotionBonus = 0
     }
 
 -- A colourless (devoid) creature with power 5, no controller recorded.
@@ -259,7 +260,8 @@ devoidBigCreature =
       Filter.manaSpent = Mana.MkMana [],
       Filter.manaSpentOnX = Mana.MkMana [],
       Filter.activatedAbilityKinds = Set.empty,
-      Filter.grantsStationToughness = False
+      Filter.grantsStationToughness = False,
+      Filter.devotionBonus = 0
     }
 
 -- A creature whose only ability is the given keyword -- the toxic N and landwalk
