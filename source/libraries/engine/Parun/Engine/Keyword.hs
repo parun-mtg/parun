@@ -5104,6 +5104,14 @@ timesPaid designator paid = case designator of
       KeywordInstance.Own _ -> True
       KeywordInstance.Granted {} -> False
 
+-- | Does an effect making an object lose `lost` take `keyword` away (CR
+-- 613.1f)? The keyword itself, and with banding every "bands with other"
+-- (CR 702.22b). data/scenarios' Synthetic Unbanding Ouphe scenario proves the
+-- second.
+removedWith :: Keyword -> Keyword -> Bool
+removedWith lost keyword =
+  keyword == lost || (lost == Keyword.Banding && familyOf keyword == Just KeywordFamily.BandsWithOther)
+
 -- CR 702: WHICH KEYWORD this is, with its payload dropped -- the classification
 -- Filter.HasKeywordFamily matches on, so that Flensing Raptor's "creature you
 -- control with toxic" reaches toxic 1 and toxic 3 alike (CR 702.164a).

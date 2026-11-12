@@ -526,12 +526,10 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- decrement: the clause takes the ABILITY away, and the CR has no
         -- removal that spends one instance of one, so every grant standing at
         -- this point in the timestamp order goes together. A later grant puts it
-        -- back, which is CR 613.7 and not this arm.
-        --
-        -- Not implemented: CR 702.22b's "bands with other" abilities going with
-        -- banding (#7000).
+        -- back, which is CR 613.7 and not this arm. Keyword.removedWith adds
+        -- CR 702.22b's "bands with other" abilities to banding.
         Modification.LoseKeyword k ->
-          pc {PC.keywords = Map.delete k (PC.keywords pc)}
+          pc {PC.keywords = Map.filterWithKey (\held _ -> not (Keyword.removedWith k held)) (PC.keywords pc)}
         -- CR 613.1f layer 6, scoped to CR 702.14a's generic term rather than to
         -- one written instance: every key whose family matches goes, so
         -- Hammerheim takes forestwalk and swampwalk off a Stalker Hag together.
