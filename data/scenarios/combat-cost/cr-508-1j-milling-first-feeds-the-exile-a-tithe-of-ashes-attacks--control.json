@@ -1,6 +1,6 @@
 {
   "description": "CR 508.1j milling first feeds the exile: a Tithe of Ashes attacks",
-  "note": "The control: the exile is ordered first, when the Plains is the only card it can take, and the Island is milled after it, so the Island stays in the graveyard.",
+  "note": "The control: the exile is ordered first, when the graveyard holds no card it can take, so the toll is refused before the mill and the declaration is reversed with the Island still in the library.",
   "board": {
     "active": "alice",
     "step": "DeclareAttackers",
@@ -20,12 +20,6 @@
           },
           {
             "card": "Swamp"
-          }
-        ],
-        "graveyard": [
-          {
-            "card": "Plains",
-            "label": "old"
           }
         ]
       },
@@ -63,11 +57,17 @@
       "turn": 1,
       "step": "DeclareAttackers",
       "player": "alice",
+      "do": {
+        "Attack": []
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
       "check": {
         "Attackers": {
-          "attackers": {
-            "$tithe": "$bob"
-          }
+          "attackers": {}
         }
       }
     },
@@ -79,8 +79,8 @@
         "Count": {
           "player": "alice",
           "zone": "Exile",
-          "card": "Plains",
-          "count": 1
+          "card": "Island",
+          "count": 0
         }
       }
     },
@@ -91,7 +91,7 @@
       "check": {
         "Count": {
           "player": "alice",
-          "zone": "Graveyard",
+          "zone": "Library",
           "card": "Island",
           "count": 1
         }

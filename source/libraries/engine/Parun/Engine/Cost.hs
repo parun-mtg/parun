@@ -140,6 +140,7 @@ import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordInstance as KeywordInstance
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana.Type
@@ -3174,6 +3175,38 @@ claimsOfGiven board slots pid oid components gs = Maybe.mapMaybe (\component -> 
 -- (Parun.Engine.FaceDown.canTurnFaceUp) -- pass their own permanent.
 canPay :: PaymentSubject.PaymentSubject -> PlayerId -> ObjectId -> Cost Keyword.Type.Keyword -> GameState -> Bool
 canPay = canPayReading Map.empty
+
+-- `canPay` for a combat toll, whose parts CR 508.1j and CR 509.1f pay in any
+-- order: payable as `canPay` measures it, or with its mills paid FIRST -- the
+-- rest measured against the board those mills leave, so a toll's own mill
+-- feeds its graveyard exile (`payTagged` pays in that order). CR 601.2h's
+-- second pass puts a spell's mill last, which is why `canPay` itself does not
+-- ask this. The combat-cost scenario
+-- cr-508-1j-milling-first-feeds-the-exile-a-tithe-of-ashes-attacks is the
+-- proof.
+--
+-- The milled board is the plain move, read off the library as `Event.millFrom`
+-- takes it: a replacement redirecting the mill (CR 614.1a) is the payment's
+-- refusal rather than the gate's, which a stretch the mill leaves survives
+-- (`payTagged`). Every mill goes first or none does, and the milled cards land
+-- in library order where CR 404.3 lets the owner arrange them; both are
+-- FENCES, no toll in `data/cards/` printing two mills or a part reading the
+-- graveyard's top.
+canPayToll :: PlayerId -> ObjectId -> Cost Keyword.Type.Keyword -> GameState -> Bool
+canPayToll pid oid cost gs =
+  let millOf component = case component of
+        CostComponent.MillCards n -> Just n
+        _ -> Nothing
+      (mills, rest) = List.partition (Maybe.isJust . millOf) (Cost.components cost)
+      milled = List.genericTake (sum (Maybe.mapMaybe millOf mills)) (Game.cardsIn Zone.Library pid gs)
+      toGraveyard board card =
+        let moved = Game.insertIntoZone Zone.Graveyard LibraryPosition.defaultValue pid card (Game.removeFromZones card board)
+         in moved {GameState.objects = Map.adjust (\o -> o {Object.zone = Zone.Graveyard}) card (GameState.objects moved)}
+      millsFirst =
+        not (null mills)
+          && all (\component -> canPayComponent Map.empty pid oid component gs) mills
+          && canPay PaymentSubject.ForNeither pid oid cost {Cost.components = rest} (List.foldl' toGraveyard gs milled)
+   in canPay PaymentSubject.ForNeither pid oid cost gs || millsFirst
 
 -- `canPay` with a slot map its components' criteria read, which is CR 118.12's
 -- resolution-time payment: the resolving object's slots, so Calim, Djinn
