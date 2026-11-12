@@ -34,7 +34,8 @@
                     }
                   }
                 }
-              ]
+              ],
+              "mana": []
             },
             "quality": null,
             "timesEachTurn": 1

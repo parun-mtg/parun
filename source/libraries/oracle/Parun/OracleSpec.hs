@@ -86,6 +86,8 @@ import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
+import qualified Parun.Types.Equip as Equip
+import qualified Parun.Types.EquipTarget as EquipTarget
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter
@@ -238,6 +240,17 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Protection from red")) (Oracle.render (card Layout.Normal [[Keyword.Protection (Protection.MkProtection (Filter.HasColor Color.Red) Nothing)]]))
     Spec.assertEq s (Just (Text.pack "Affinity for artifacts")) (Oracle.render (card Layout.Normal [[Keyword.Affinity (Filter.HasCardType CardType.Artifact)]]))
     Spec.assertEq s (Just (Text.pack "Nonbasic landwalk")) (Oracle.render (card Layout.Normal [[Keyword.Landwalk (Filter.Not (Filter.HasSupertype Supertype.Basic))]]))
+
+  -- CR 602.5b: a rider printed after equip is a sentence of its own, Leather
+  -- Armor's after a mana cost and Shredder's Armor's after a sentence.
+  Spec.it s "render prints an equip ability's once-each-turn rider" $ do
+    let equip cost = Keyword.Equip (Equip.MkEquip cost Nothing EquipTarget.Creature (Just 1))
+        another = Filter.And [Filter.Not Filter.IsSource, Filter.Not (Filter.HasCardType CardType.Land)]
+    Spec.assertEq s (Just (Text.pack "Equip {0}. Activate only once each turn.")) (Oracle.render (card Layout.Normal [[equip (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 0])) [])]]))
+    Spec.assertEq
+      s
+      (Just (Text.pack "Equip\8212Sacrifice another nonland permanent. Activate only once each turn."))
+      (Oracle.render (card Layout.Normal [[equip (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) another)])]]))
 
   -- CR 100.2a: a card's own deck limit, named by the card itself.
   Spec.it s "render prints a deck limit" $ do
