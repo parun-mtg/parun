@@ -28,6 +28,7 @@ import qualified Parun.Types.DamagePrevented as DamagePrevented
 import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.Drew as Drew
+import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.Exploited as Exploited
 import qualified Parun.Types.FacedDilemma as FacedDilemma
 import qualified Parun.Types.HalfUnlocked as HalfUnlocked
@@ -448,6 +449,8 @@ data GameEvent
     -- modal spell or ability (CR 700.2) as it was cast, activated or put on the
     -- stack.
     FacedDilemma FacedDilemma.FacedDilemma
+  | -- | CR 700.14: a player spent mana paying a cost to cast a spell.
+    Expended Expended.Expended
   | -- | CR 706.2: one die's result, after every modifier, recorded per die the
     -- instruction left unignored (CR 706.6) -- what "whenever you roll a 6"
     -- reads, where PlayerAction.RollDice is one entry per instruction.

@@ -53,6 +53,7 @@ import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.Exploited as Exploited
 import qualified Parun.Types.FacedDilemma as FacedDilemma
 import qualified Parun.Types.FloatingCandidate as FloatingCandidate
@@ -604,6 +605,14 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       GameEvent.codec
       (GameEvent.FacedDilemma (FacedDilemma.MkFacedDilemma (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 5)))
       " {\"type\":\"FacedDilemma\",\"value\":{\"player\":1,\"object\":5}} "
+  -- CR 700.14. Distinct totals, so a codec that swapped them would not
+  -- round-trip.
+  Spec.it s "Expended" $
+    Common.assertCodec
+      s
+      GameEvent.codec
+      (GameEvent.Expended (Expended.MkExpended (PlayerId.MkPlayerId 1) 2 5))
+      " {\"type\":\"Expended\",\"value\":{\"player\":1,\"before\":2,\"after\":5}} "
   -- CR 706.2. The roller and one die's result, distinct numbers so a codec that
   -- swapped them would not round-trip.
   Spec.it s "DieResultSettled" $
