@@ -442,6 +442,7 @@ expansionOf keyword = case keyword of
         KeywordExpansion.triggered = perInstance [ward w]
       }
   Keyword.Banding -> mempty
+  Keyword.BandsWithOther _ -> mempty
   Keyword.Rampage n -> mempty {KeywordExpansion.triggered = perInstance [rampage n]}
   Keyword.CumulativeUpkeep cost ->
     mempty
@@ -4856,6 +4857,7 @@ functionsOnBattlefield keyword = case keyword of
   Keyword.AuraSwap _ -> True
   Keyword.Backup _ -> True
   Keyword.Banding -> True
+  Keyword.BandsWithOther _ -> True
   Keyword.BattleCry -> True
   Keyword.Blitz _ -> True
   Keyword.Bloodthirst _ -> True
@@ -5221,6 +5223,7 @@ familyOf keyword = case keyword of
   Keyword.Vigilance -> Nothing
   Keyword.Ward _ -> Just KeywordFamily.Ward
   Keyword.Banding -> Nothing
+  Keyword.BandsWithOther _ -> Just KeywordFamily.BandsWithOther
   Keyword.Flanking -> Nothing
   Keyword.Haunt -> Nothing
   Keyword.Phasing -> Nothing

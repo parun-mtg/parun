@@ -104,6 +104,7 @@ printed self keyword = case keyword of
     (Nothing, options) -> fmap (\(second, _) -> Text.pack "Ward\8212" <> Prose.sentence second) (Cost.paymentChoice self (keywordWord self) options)
     (Just _, _) -> []
   Keyword.Banding -> [Text.pack "Banding"]
+  Keyword.BandsWithOther f -> fmap (Text.pack "Bands with other " <>) (Filter.phrase f (keywordWord self) >>= Filter.describe Filter.Plural (Filter.MkNoun (Text.pack "creature") (Just (Text.pack "creatures"))))
   Keyword.Rampage n -> [numbered "Rampage" n]
   Keyword.CumulativeUpkeep c -> Cost.keyworded self (keywordWord self) (Text.pack "Cumulative upkeep") c
   Keyword.Flanking -> [Text.pack "Flanking"]
@@ -319,6 +320,7 @@ printed self keyword = case keyword of
 family :: KeywordFamily.KeywordFamily -> [Text.Text]
 family f = case f of
   KeywordFamily.Landwalk -> [Text.pack "all landwalk abilities"]
+  KeywordFamily.BandsWithOther -> [Text.pack "all \"bands with other\" abilities"]
   _ ->
     let name = Text.pack (show f)
      in [Text.toLower name | Text.length (Text.filter Char.isUpper name) == 1]

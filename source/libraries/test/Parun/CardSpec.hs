@@ -2353,7 +2353,10 @@ namedTokens =
       -- named Wasp".
       CardName.MkCardName (Text.pack "Wasp"),
       -- CR 111.10q's Wicked Role (Witch's Mark, Twisted Fealty).
-      CardName.MkCardName (Text.pack "Wicked")
+      CardName.MkCardName (Text.pack "Wicked"),
+      -- Master of the Hunt's "a 1/1 green Wolf creature token named Wolves of
+      -- the Hunt".
+      CardName.MkCardName (Text.pack "Wolves of the Hunt")
     ]
 
 tokenNameOffends :: Face.Face Card.Type.Card -> Bool
@@ -2666,6 +2669,8 @@ keywordPayloadFilters keyword = case keyword of
   Keyword.Morph (Morph.MkMorph cost _) -> costFilters cost
   -- CR 702.22: plain banding names no quality, so it filters nothing.
   Keyword.Banding -> []
+  -- CR 702.22b's quality.
+  Keyword.BandsWithOther quality -> [quality]
   -- CR 702.26a: phasing names no quality -- who phases is "the permanents that
   -- player controls", written into the CR 502.1 turn-based action rather than
   -- into the keyword.

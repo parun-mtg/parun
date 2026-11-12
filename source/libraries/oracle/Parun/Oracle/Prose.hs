@@ -62,9 +62,11 @@ decapitalise text = case Text.uncons text of
   Just (c, rest) -> Text.cons (Char.toLower c) rest
   Nothing -> text
 
--- | A sentence: capitalised, with a full stop.
+-- | A sentence: capitalised, with a full stop, inside a closing quotation mark.
 sentence :: Text.Text -> Text.Text
-sentence text = capitalise text <> Text.pack "."
+sentence text = case Text.unsnoc text of
+  Just (body, '"') -> capitalise body <> Text.pack ".\""
+  _ -> capitalise text <> Text.pack "."
 
 -- | Items joined as English joins a list with the given conjunction: "a",
 -- "a or b", "a, b, or c".

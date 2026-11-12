@@ -450,7 +450,7 @@ attackerAssignment gs announced contested (attacker, target) = case Projection.c
               Just pid
                 | Projection.hasCombatDamageOption CombatDamageOption.AsThoughUnblocked attacker gs,
                   not (null live) || (not trample && Maybe.isJust attacked) ->
-                    let banded = any (\b -> Projection.hasKeyword Keyword.Banding b gs) live
+                    let banded = any (\b -> Projection.hasKeyword Keyword.Banding b gs) live || not (null (Combat.bandingWithOther live gs))
                      in offer CombatDamageOption.AsThoughUnblocked (if banded then Maybe.fromMaybe pid defending else pid) toDefender blocked
               _ -> blocked
         if not (Combat.isBlocked attacker gs)
@@ -475,8 +475,10 @@ attackerAssignment gs announced contested (attacker, target) = case Projection.c
               -- CR 702.19b: the attacker's controller chooses how to assign the
               -- excess -- unless CR 702.22j inverts it.
               Just pid -> do
-                -- CR 702.22j: with a banding creature among the blockers, the
-                -- DEFENDING player divides the attacking creature's damage. Trample's
+                -- CR 702.22j: with a banding creature among the blockers, or a
+                -- [quality] creature with "bands with other [quality]" and another
+                -- [quality] creature, the DEFENDING player divides the attacking
+                -- creature's damage. Trample's
                 -- thresholds and CR 510.1e's check are untouched, and the division
                 -- may pass the blockers; see docs/decisions.md, "Who sends a trampler's
                 -- excess past a banding blocker".
@@ -497,18 +499,17 @@ attackerAssignment gs announced contested (attacker, target) = case Projection.c
                 -- fallback is a battle still on the battlefield designating
                 -- nobody: its protector left mid-combat, and CR 704.5x withholds
                 -- the repair while it is being attacked.
-                let banded = any (\b -> Projection.hasKeyword Keyword.Banding b gs) blockers
+                let banded = any (\b -> Projection.hasKeyword Keyword.Banding b gs) blockers || not (null (Combat.bandingWithOther blockers gs))
                     chooser = if banded then Maybe.fromMaybe pid defending else pid
                     thresholdOf b = if trample then lethalFrom gs attacker b else 0
                     blockerEntries = fmap (\b -> (Recipient.ToCreature b, thresholdOf b)) blockers
                 divide chooser (blockerEntries <> (if trample then defenderEntries else []))
 
--- CR 702.22k: with a banding creature among the creatures it is blocking, the
--- ACTIVE player rather than the blocking creature's controller divides its
--- damage. Stated as an exception to CR 510.1d alone, so it moves WHO is asked and
--- nothing else. CR 702.22j is the mirror, on the attacking side.
---
--- Not implemented: the "bands with other [quality]" half of the rule (#6309).
+-- CR 702.22k: with a banding creature among the creatures it is blocking, or a
+-- [quality] creature with "bands with other [quality]" and another [quality]
+-- creature, the ACTIVE player rather than the blocking creature's controller
+-- divides its damage. Stated as an exception to CR 510.1d alone, so it moves WHO
+-- is asked and nothing else. CR 702.22j is the mirror, on the attacking side.
 --
 -- CR 805.9: under the shared team turns option "the active player" is one
 -- active player, chosen by the banding ability's controller -- the controller
@@ -536,7 +537,7 @@ blockerChooser gs attackers controller =
           live = filter (\pid -> List.elem pid (Game.stillPlaying gs) && any (\c -> Game.inRangeOf c pid gs) controllers) (Turn.activePlayers gs)
        in fmap (Maybe.fromMaybe (TurnRegisters.activePlayer (GameState.turn gs))) (Game.chooseAmong (\decider asked -> Prompt.ChoosePlayer decider asked source) chooser live)
   where
-    banding = filter (\attacker -> Projection.hasKeyword Keyword.Banding attacker gs) attackers
+    banding = filter (\attacker -> Projection.hasKeyword Keyword.Banding attacker gs) attackers <> Combat.bandingWithOther attackers gs
 
 -- CR 510.1d: a blocking creature assigns combat damage to the creatures it's
 -- blocking, and none at all if it isn't currently blocking any.
