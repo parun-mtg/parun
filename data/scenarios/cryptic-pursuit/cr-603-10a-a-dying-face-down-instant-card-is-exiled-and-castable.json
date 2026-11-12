@@ -22,9 +22,9 @@
     "step": "PrecombatMain"
   },
   "timeline": [
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bolt", "targets": ["$down"], "mana": ["$m1"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bolt", "targets": ["$down"], "mana": ["$m1", null] } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
-    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Opt", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Opt", "power": 2, "toughness": 2 } } },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Shock", "count": 1 } } },
@@ -35,7 +35,7 @@
     { "Life": { "player": "bob", "life": 18 } },
     { "Count": { "player": "alice", "zone": "Graveyard", "card": "Shock", "count": 1 } },
     { "Count": { "player": "alice", "zone": "Graveyard", "card": "Lightning Bolt", "count": 1 } },
-    { "Count": { "player": "alice", "zone": "Battlefield", "card": "Opt", "count": 1 } },
+    { "View": { "of": "Zone", "player": "alice", "zone": "Battlefield", "is": ["$pursuit", "$m1", "$m2", "Opt"] } },
     { "View": { "of": "Zone", "player": "alice", "zone": "Library", "is": ["Grizzly Bears"] } }
   ]
 }
