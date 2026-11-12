@@ -15,6 +15,7 @@ import qualified Parun.Codec.CostKeyword as CostKeyword
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.FullText as FullText
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.KeywordDesignator as KeywordDesignator
 import qualified Parun.Codec.KeywordFamily as KeywordFamily
 import qualified Parun.Codec.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Codec.NameInsertion as NameInsertion
@@ -55,6 +56,11 @@ codec abilityCodec =
           (,)
             <$> Fields.required "mode" ChangeMode.codec fst
             <*> Fields.required "family" SubtypeFamily.codec snd
+      keywordsAmong =
+        Fields.object $
+          (,)
+            <$> Fields.required "keyword" (KeywordDesignator.codec Keyword.codec) fst
+            <*> Fields.required "among" (Filter.codec Keyword.codec) snd
       cardType =
         Fields.object $
           (,)
@@ -69,6 +75,7 @@ codec abilityCodec =
           Arm.payload "LoseEnchant" TargetSlot.codec Modification.LoseEnchant (\x -> case x of Modification.LoseEnchant y -> Just y; _ -> Nothing),
           Arm.payload "GainCastingPermission" CastingPermission.codec Modification.GainCastingPermission (\x -> case x of Modification.GainCastingPermission y -> Just y; _ -> Nothing),
           Arm.payload "GainAbilitiesOfSource" (Common.set Keyword.codec) Modification.GainAbilitiesOfSource (\x -> case x of Modification.GainAbilitiesOfSource y -> Just y; _ -> Nothing),
+          Arm.payload "GainKeywordsAmong" keywordsAmong (uncurry Modification.GainKeywordsAmong) (\x -> case x of Modification.GainKeywordsAmong d f -> Just (d, f); _ -> Nothing),
           Arm.payload "GainCardAbilities" CardAbilities.codec Modification.GainCardAbilities (\x -> case x of Modification.GainCardAbilities y -> Just y; _ -> Nothing),
           Arm.nullary "GainAbilitiesOfStickers" Modification.GainAbilitiesOfStickers,
           Arm.nullary "LoseAllAbilities" Modification.LoseAllAbilities,
@@ -116,6 +123,7 @@ tagOf x = case x of
   Modification.LoseEnchant {} -> "LoseEnchant"
   Modification.GainCastingPermission {} -> "GainCastingPermission"
   Modification.GainAbilitiesOfSource {} -> "GainAbilitiesOfSource"
+  Modification.GainKeywordsAmong {} -> "GainKeywordsAmong"
   Modification.GainCardAbilities {} -> "GainCardAbilities"
   Modification.GainAbilitiesOfStickers -> "GainAbilitiesOfStickers"
   Modification.LoseAllAbilities {} -> "LoseAllAbilities"

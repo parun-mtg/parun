@@ -180,6 +180,7 @@ layer m = case m of
   Modification.GainCastingPermission _ -> Layer.Ability
   Modification.GainAbility _ -> Layer.Ability
   Modification.GainAbilitiesOfSource _ -> Layer.Ability
+  Modification.GainKeywordsAmong {} -> Layer.Ability
   Modification.GainCardAbilities _ -> Layer.Ability
   Modification.GainAbilitiesOfStickers -> Layer.Ability
   Modification.LoseAllAbilities -> Layer.Ability
@@ -390,12 +391,14 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
           -- which reads it off the projection of the card being cast.
           GrantedAbility.SelfSpendManaAsThough clause ->
             pc {PC.grantedSpendManaAsThough = PC.grantedSpendManaAsThough pc <> [clause]}
-        -- CR 702.165a's grant never reaches a STORED effect: Resolve.Effect's
-        -- expandGrant turns it into the ordinary GainKeyword and GainAbility arms
-        -- above as the ability resolves, so nothing with this modification is ever
-        -- put in StoredEffects.continuousEffects. The identity keeps the walk total,
-        -- which is the posture SetController's arm below takes.
+        -- CR 702.165a's and CR 702.1c's grants never reach a STORED effect:
+        -- Resolve.Common's expandGrant turns them into the ordinary GainKeyword
+        -- and GainAbility arms above as the ability resolves, so nothing with
+        -- these modifications is ever put in StoredEffects.continuousEffects.
+        -- The identity keeps the walk total, which is the posture
+        -- SetController's arm below takes.
         Modification.GainAbilitiesOfSource _ -> pc
+        Modification.GainKeywordsAmong {} -> pc
         -- CR 613.1f / 607.2a: the activated abilities of each card the payload
         -- walks that its Filter matches, framed by `src`, read off its copiable values
         -- (CR 707.2), each with the payload's restrictions added. Like
@@ -844,6 +847,7 @@ cardTypesAfter m types = case m of
   Modification.GainCastingPermission _ -> types
   Modification.GainAbility _ -> types
   Modification.GainAbilitiesOfSource _ -> types
+  Modification.GainKeywordsAmong {} -> types
   Modification.GainCardAbilities _ -> types
   Modification.GainAbilitiesOfStickers -> types
   Modification.LoseAllAbilities -> types
@@ -1720,6 +1724,7 @@ freezeQuantities viewOf gs announcedOn source context m =
         -- variable in this effect, not in a quoted ability's own future one.
         Modification.GainAbility _ -> Just m
         Modification.GainAbilitiesOfSource _ -> Just m
+        Modification.GainKeywordsAmong {} -> Just m
         Modification.GainCardAbilities _ -> Just m
         Modification.GainAbilitiesOfStickers -> Just m
         Modification.LoseAllAbilities -> Just m
@@ -1792,6 +1797,7 @@ quantitiesOf m = case m of
   -- The layer fold evaluates nothing inside a quoted ability.
   Modification.GainAbility _ -> []
   Modification.GainAbilitiesOfSource _ -> []
+  Modification.GainKeywordsAmong {} -> []
   Modification.GainCardAbilities _ -> []
   Modification.GainAbilitiesOfStickers -> []
   Modification.LoseAllAbilities -> []
@@ -1847,6 +1853,7 @@ referenceQuery m = case m of
   Modification.GainCastingPermission _ -> Nothing
   Modification.GainAbility _ -> Nothing
   Modification.GainAbilitiesOfSource _ -> Nothing
+  Modification.GainKeywordsAmong {} -> Nothing
   Modification.GainCardAbilities _ -> Nothing
   Modification.GainAbilitiesOfStickers -> Nothing
   Modification.LoseAllAbilities -> Nothing
@@ -1916,6 +1923,7 @@ setsLandSubtype m = case m of
   -- An ability grant is layer 6 and sets no subtype at all.
   Modification.GainAbility _ -> False
   Modification.GainAbilitiesOfSource _ -> False
+  Modification.GainKeywordsAmong {} -> False
   Modification.GainCardAbilities _ -> False
   Modification.GainAbilitiesOfStickers -> False
   Modification.GainKeyword _ -> False
@@ -3238,6 +3246,7 @@ removesAbilities m = case m of
   -- green.
   Modification.GainAbility _ -> False
   Modification.GainAbilitiesOfSource _ -> False
+  Modification.GainKeywordsAmong {} -> False
   Modification.GainCardAbilities _ -> False
   Modification.GainAbilitiesOfStickers -> False
   -- CR 305.7 strips a land's rules text, but as a layer-4 type change performed
@@ -4541,6 +4550,7 @@ modificationWrites m = case m of
   -- creature into the Ascent's set" proves it.
   Modification.GainAbility _ -> Set.singleton Keywords
   Modification.GainAbilitiesOfSource _ -> Set.singleton Keywords
+  Modification.GainKeywordsAmong {} -> Set.singleton Keywords
   Modification.GainCardAbilities _ -> Set.singleton Keywords
   Modification.GainAbilitiesOfStickers -> Set.singleton Keywords
   Modification.LoseAllAbilities -> Set.singleton Keywords
@@ -4651,6 +4661,7 @@ modificationReads m = case m of
   -- A quoted ability's quantities are read at ITS resolution.
   Modification.GainAbility _ -> Set.empty
   Modification.GainAbilitiesOfSource _ -> Set.empty
+  Modification.GainKeywordsAmong {} -> Set.empty
   Modification.GainCardAbilities _ -> Set.empty
   Modification.GainAbilitiesOfStickers -> Set.empty
   Modification.LoseAllAbilities -> Set.empty
@@ -6597,6 +6608,7 @@ grantsKeywordWhere p m = case m of
   -- one whose own modifications grant one.
   Modification.GainAbility g -> grantedStaticWrites (grantsKeywordWhere p) g
   Modification.GainAbilitiesOfSource _ -> False
+  Modification.GainKeywordsAmong {} -> False
   Modification.GainCardAbilities _ -> False
   -- The sticker data is not in the modification, so True over-approximates.
   Modification.GainAbilitiesOfStickers -> True
@@ -6684,6 +6696,7 @@ grantsMintingType m = case m of
   -- A granted static ability's own parts, grantsKeywordWhere's reason.
   Modification.GainAbility g -> grantedStaticWrites grantsMintingType g
   Modification.GainAbilitiesOfSource _ -> False
+  Modification.GainKeywordsAmong {} -> False
   Modification.GainCardAbilities _ -> False
   Modification.GainAbilitiesOfStickers -> False
   Modification.LoseAllAbilities -> False
@@ -6763,8 +6776,9 @@ grantsRuleAbilityAnywhere gs =
 
 -- Does this modification hand its affected objects a quoted ability `p` holds
 -- of? grantsMintingType's shape, and exhaustive for grantsKeywordWhere's
--- reason. GainAbilitiesOfSource never reaches a stored effect (Resolve.Effect's
--- expandGrant turns it into GainAbility arms first).
+-- reason. GainAbilitiesOfSource and GainKeywordsAmong never reach a stored
+-- effect (Resolve.Common's expandGrant turns them into GainKeyword and
+-- GainAbility arms first).
 grantsAbilityWhere :: (GrantedAbility.GrantedAbility Card.Type.Card -> Bool) -> Modification -> Bool
 grantsAbilityWhere p m = case m of
   -- A granted static ability's own parts count too, grantsKeywordWhere's
@@ -6781,6 +6795,7 @@ grantsAbilityWhere p m = case m of
   Modification.LoseEnchant _ -> False
   Modification.GainCastingPermission _ -> False
   Modification.GainAbilitiesOfSource _ -> False
+  Modification.GainKeywordsAmong {} -> False
   Modification.GainCardAbilities _ -> False
   -- The sticker data is not in the modification, so True over-approximates.
   Modification.GainAbilitiesOfStickers -> True

@@ -31,6 +31,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LentCards as LentCards
 import qualified Parun.Types.Modal as Modal
@@ -316,6 +317,13 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
       codec
       (Modification.GainAbilitiesOfSource (Set.singleton Keyword.Flash))
       " {\"type\":\"GainAbilitiesOfSource\",\"value\":[{\"type\":\"Flash\"}]} "
+  -- layer 6, CR 702.1c: which keywords to look for, and where.
+  Spec.it s "GainKeywordsAmong" $
+    Common.assertCodec
+      s
+      codec
+      (Modification.GainKeywordsAmong (KeywordDesignator.OfFamily KeywordFamily.Landwalk) (Filter.HasCardType CardType.Creature))
+      " {\"type\":\"GainKeywordsAmong\",\"value\":{\"among\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"keyword\":{\"type\":\"OfFamily\",\"value\":\"Landwalk\"}}} "
   -- layer 6, CR 607.2a: the abilities come off the linked cards, so the arm
   -- carries only which pile and the rider's restrictions.
   Spec.it s "GainCardAbilities" $

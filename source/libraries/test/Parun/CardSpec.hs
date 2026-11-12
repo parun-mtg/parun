@@ -290,6 +290,7 @@ import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Types.KeywordCount as KeywordCount
+import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordRiderGrant as KeywordRiderGrant
 import qualified Parun.Types.KeywordTally as KeywordTally
 import qualified Parun.Types.LaterPayment as LaterPayment
@@ -3538,10 +3539,10 @@ modificationFilters modification = case modification of
     CostKeyword.BeamMeUp unreturnable -> keywordFramed (Maybe.maybeToList unreturnable)
   -- CR 702.5a again: the granted slot's own Filter, which is card text like any
   -- other and has to be swept. NOT [] -- this, LoseEnchant beside it,
-  -- GainKeyword above, LoseKeyword, SetCreatureSubtypesOfLastCardExiledWith and
-  -- AddNamesMatching below are the arms that answer with something, and every
-  -- other one carries no Filter at all, LoseKeywordFamily's payload-free family
-  -- included.
+  -- GainKeyword above, GainKeywordsAmong, LoseKeyword,
+  -- SetCreatureSubtypesOfLastCardExiledWith and AddNamesMatching below are the
+  -- arms that answer with something, and every other one carries no Filter at
+  -- all, LoseKeywordFamily's payload-free family included.
   Modification.GainEnchant slot -> targetSlotFilters slot
   Modification.LoseEnchant slot -> targetSlotFilters slot
   Modification.GainCastingPermission permission -> concatMap conditionFilters (castingPermissionConditions permission) <> concatMap (unframed . costComponentFilters) (castingPermissionCosts permission)
@@ -3553,6 +3554,13 @@ modificationFilters modification = case modification of
   Modification.GainAbility _ -> []
   -- Minted, and swept as the Backup keyword -- see modificationCounts.
   Modification.GainAbilitiesOfSource _ -> []
+  -- The permanents swept for the keywords, and a written keyword's own Filter.
+  Modification.GainKeywordsAmong designator among ->
+    (Unframed, among) : case designator of
+      KeywordDesignator.OfKeyword keyword -> keywordFilters keyword
+      KeywordDesignator.OfInstance keyword _ -> keywordFilters keyword
+      KeywordDesignator.OfFamily _ -> []
+      KeywordDesignator.Printed _ -> []
   -- The rider's CR 602.5 conditions, as a printed ability's are swept, and the
   -- Filter naming the exiled cards.
   Modification.GainCardAbilities (CardAbilities.MkCardAbilities _ cards extra) -> (Unframed, cards) : frame Unframed (concatMap conditionFilters (concatMap restrictionConditions extra))
