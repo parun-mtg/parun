@@ -312,11 +312,12 @@ wiped m = case m of
   Modification.GainCastingPermission _ -> True
   _ -> False
 
--- | Does `removal` take `keyword` away (CR 613.1f)? A family removal takes
--- every keyword of the family (CR 702.11e, 702.14a); anything else, none.
+-- | Does `removal` take `keyword` away (CR 613.1f)? A removal of one keyword
+-- takes what Parun.Engine.Keyword.removedWith says, a family removal every
+-- keyword of the family (CR 702.11e, 702.14a); anything else, none.
 takes :: Modification.Modification ability -> Keyword.Type.Keyword -> Bool
 takes removal keyword = case removal of
-  Modification.LoseKeyword lost -> lost == keyword
+  Modification.LoseKeyword lost -> Keyword.removedWith lost keyword
   Modification.LoseKeywordFamily f -> Keyword.familyOf keyword == Just f
   _ -> False
 
