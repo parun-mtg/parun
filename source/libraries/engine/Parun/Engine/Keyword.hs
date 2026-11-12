@@ -5853,6 +5853,10 @@ soulbondOtherEnters =
         )
         (Mint.oneModeOf Map.empty (Seq.singleton clause))
 
+-- CR 702.100a, with CR 702.100c's bearer that is no creature asked for
+-- explicitly: Condition.holds reads its missing power and toughness as CR
+-- 107.2's 0, which a creature entering would exceed.
+-- data/scenarios/condition's One with the Stars Raptor pair proves it.
 evolve :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 evolve =
   let effect = Effect.CounterAndMark (PermanentActed.MkPermanentActed PermanentAction.Evolve Binding.triggerSource)
@@ -5865,7 +5869,7 @@ evolve =
           )
    in Mint.triggerIf
         (TriggerCondition.Enters (EntersTrigger.matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You])))
-        (Condition.Any (fmap (entrantExceeds . Quantity.Measure) [Measure.Power, Measure.Toughness]))
+        (Condition.All [sourceIsCreature, Condition.Any (fmap (entrantExceeds . Quantity.Measure) [Measure.Power, Measure.Toughness])])
         (Seq.singleton effect)
 
 -- CR 702.108a: whenever you cast a noncreature spell, this creature gets +1/+1
@@ -5941,6 +5945,18 @@ extortCost =
       Cost.components = []
     }
 
+-- "If this permanent is a creature", echo's spelling of a question about the
+-- bearer: a count of one over the battlefield, which answers 0 for a permanent
+-- that has left or stopped being a creature. Increment's and evolve's.
+sourceIsCreature :: Condition.Condition
+sourceIsCreature =
+  Condition.Compares
+    ( Compares.MkCompares
+        (Quantity.Count (Count.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) (Filter.And [Filter.IsSource, Filter.HasCardType CardType.Creature]) Aggregation.Members))
+        Comparison.AtLeast
+        (Quantity.Literal 1)
+    )
+
 -- CR 702.191a: whenever you cast a spell, if this permanent is a creature and the
 -- amount of mana spent to cast that spell is greater than this creature's power
 -- or its toughness, put a +1/+1 counter on it.
@@ -5964,19 +5980,9 @@ increment =
               Comparison.AtLeast
               (Quantity.Arithmetic (Arithmetic.Plus (Plus.MkPlus quantity (Quantity.Literal 1))))
           )
-      -- "If this permanent is a creature", echo's spelling of a question about the
-      -- bearer: a count of one over the battlefield, which answers 0 for a
-      -- permanent that has left or stopped being a creature.
-      isCreature =
-        Condition.Compares
-          ( Compares.MkCompares
-              (Quantity.Count (Count.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) (Filter.And [Filter.IsSource, Filter.HasCardType CardType.Creature]) Aggregation.Members))
-              Comparison.AtLeast
-              (Quantity.Literal 1)
-          )
    in Mint.triggerIf
         (Mint.spellCast (Filter.HeldBy Holder.Controller PlayerRelation.You))
-        (Condition.All [isCreature, Condition.Any (fmap (spentExceeds . Quantity.Measure) [Measure.Power, Measure.Toughness])])
+        (Condition.All [sourceIsCreature, Condition.Any (fmap (spentExceeds . Quantity.Measure) [Measure.Power, Measure.Toughness])])
         (Seq.singleton grow)
 
 -- CR 702.121a, on battle cry's condition with prowess' payload.
