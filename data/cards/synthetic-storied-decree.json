@@ -1,0 +1,88 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Synthetic Storied Decree",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "MatchingOffBattlefield",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "WasCastFrom",
+                      "value": "Library"
+                    },
+                    {
+                      "type": "WasCastFrom",
+                      "value": "Hand"
+                    },
+                    {
+                      "type": "WasCastFrom",
+                      "value": "Graveyard"
+                    },
+                    {
+                      "type": "WasCastFrom",
+                      "value": "Exile"
+                    },
+                    {
+                      "type": "WasCastFrom",
+                      "value": "Command"
+                    }
+                  ]
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Instant"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Sorcery"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "AddSupertype",
+              "value": "Legendary"
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

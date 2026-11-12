@@ -23,6 +23,22 @@ Entries take `docs/decisions.md`'s format and order.
   `cr-514-2-a-pumped-creature-with-damage-marked-on-it-neither-dies-to-its-own-shrinking`.
 - **Issue**: #491.
 
+## Whether CR 205.4e sees a supertype the spell gains on the stack
+
+- **Question**: CR 601.3 asks whether a player may begin to cast, while the card
+  is still where it lies; an effect making "spells you cast" legendary reaches it
+  only once CR 601.2a puts it on the stack. Is a nonlegendary instant made
+  legendary that way subject to CR 205.4e?
+- **Rules**: CR 205.4b, 205.4e, 601.2a, 601.3, 601.3e, 613.1d; CR of 2026-11-06.
+- **Decision**: Yes. The restriction reads the spell as it would be on the stack,
+  as the CR 601.3 printed restrictions and CR 601.2f's keywords already do.
+- **Rejected**: Reading the card where it lies, so the cast begins and the spell
+  becomes legendary only after CR 205.4e has been asked.
+- **Site**: `Parun.Engine.Cast.legendaryRestrictionOk`, proved on Synthetic
+  Storied Decree by the scenario
+  `cr-205-4e-a-bolt-made-legendary-needs-a-legendary-creature`.
+- **Issue**: #6529.
+
 ## Whether a target drawn out of a face-down pile is revealed
 
 - **Question**: CR 406.4 says a card drawn at random out of a face-down pile while

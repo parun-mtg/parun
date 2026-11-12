@@ -294,10 +294,10 @@ import qualified Parun.Types.ZoneScope as ZoneScope
 -- stack (CR 113.6), and the graveyard reads go through the projection
 -- (Cost.costsFor, Cast.projectedKeywords).
 --
--- Not implemented: beyond the cast scan's triggered abilities, the keywords the
--- cast itself reads (Cost.spellKeywords) and the fields a layer-6 wipe takes
--- (Projection.wipedFace), what is read while the object is on the STACK stays
--- printed (#6529).
+-- On the STACK the reads are projected too: the cast scan's triggered abilities,
+-- the keywords the cast itself reads (Cost.spellKeywords), split second
+-- (SplitSecond.inForce), the fields a layer-6 wipe takes (Projection.wipedFace)
+-- and CR 205.4e's supertype (Cast.legendaryRestrictionOk).
 
 -- CR 702: everything one keyword mints, one arm per keyword; each roster below
 -- (triggeredAbilitiesOf, handAbilitiesOf, graveyardAbilitiesOf,
