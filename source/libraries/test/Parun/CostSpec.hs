@@ -355,17 +355,17 @@ doorSpec s registry =
       Spec.assertEqWith s "one energy left" (S.playerCounterOf PlayerCounterKind.Energy S.alice after) 1
     -- CR 118.12's counter-placing cost (CR 701.63a's endure). The gate is the
     -- permanent still being on the battlefield to take the counters, and NOT
-    -- control -- Parun.CounterspellSpec's Fortress Kin-Guard cases prove the two
-    -- branches at gameplay level, and this is where the control reading is ruled
-    -- out, since those cases never separate the payer from the permanent's controller
-    -- (gap #6208).
+    -- control, CR 122.6 asking nothing of who controls it. Who pays is the
+    -- card's PayGate.payer: the scenario
+    -- fortress-kin-guard-stolen-in-response-endures-for-its-new-controller
+    -- proves the permanent's controller decides and gets the Spirit.
     Spec.it s "CR 118.12 PutCountersOnThis needs the permanent on the battlefield, whoever controls it" $ do
       piker <- S.printingOf s registry "Goblin Piker"
       let (onField, gs0) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
           (inHand, gs1) = S.addHandCard piker S.alice gs0
-      Spec.assertBool s (Cost.canPayComponent Map.empty S.alice onField (CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis CounterKind.PlusOnePlusOne 1)) gs1) "a permanent on the battlefield pays"
-      Spec.assertBool s (Cost.canPayComponent Map.empty S.bob onField (CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis CounterKind.PlusOnePlusOne 1)) gs1) "and pays for a player who does not control it"
-      Spec.assertBool s (not (Cost.canPayComponent Map.empty S.alice inHand (CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis CounterKind.PlusOnePlusOne 1)) gs1)) "a card in hand does not"
+      Spec.assertBool s (Cost.canPayComponent Map.empty S.alice onField (CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis CounterKind.PlusOnePlusOne (CostAmount.Fixed 1) Nothing)) gs1) "a permanent on the battlefield pays"
+      Spec.assertBool s (Cost.canPayComponent Map.empty S.bob onField (CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis CounterKind.PlusOnePlusOne (CostAmount.Fixed 1) Nothing)) gs1) "and pays for a player who does not control it"
+      Spec.assertBool s (not (Cost.canPayComponent Map.empty S.alice inHand (CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis CounterKind.PlusOnePlusOne (CostAmount.Fixed 1) Nothing)) gs1)) "a card in hand does not"
 
 -- Greed {3}{B} Enchantment: "{B}, Pay 2 life: Draw a card."
 --

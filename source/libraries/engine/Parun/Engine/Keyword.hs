@@ -6890,7 +6890,7 @@ fabricate n =
                     { -- CR 118.5, crew's note above: no mana part is `Just` an empty
                       -- one, never the Nothing that means unpayable.
                       Cost.mana = Just (ManaCost.MkManaCost []),
-                      Cost.components = [CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis CounterKind.PlusOnePlusOne n)]
+                      Cost.components = [CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis CounterKind.PlusOnePlusOne (CostAmount.Fixed n) Nothing)]
                     }
                     NonEmpty.:| []
                 ),

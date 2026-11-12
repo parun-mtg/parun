@@ -1866,8 +1866,9 @@ traverseAmount f component = case component of
   CostComponent.DiscardThis _ -> pure component
   CostComponent.PutCardFromHandOntoBattlefield _ -> pure component
   CostComponent.AddLoyaltyToThis _ -> pure component
-  CostComponent.RemoveCountersFromThis _ -> pure component
-  CostComponent.PutCountersOnThis _ -> pure component
+  CostComponent.RemoveCountersFromThis counters -> (\amount -> CostComponent.RemoveCountersFromThis counters {CountersOnThis.count = amount}) <$> f (CountersOnThis.count counters)
+  -- Krumar Initiate's "endures X" (CR 107.3a, 701.63a).
+  CostComponent.PutCountersOnThis counters -> (\amount -> CostComponent.PutCountersOnThis counters {CountersOnThis.count = amount}) <$> f (CountersOnThis.count counters)
   CostComponent.PutCountersOnPayer _ -> pure component
   -- Nullary: CR 701.61a states no number at all, so there is nothing for CR
   -- 601.2b to announce.
@@ -4081,7 +4082,11 @@ countersOwedBy components = Map.fromListWith (+) [(kind, owed) | component <- co
 
 countersOwedByComponent :: CostComponent.CostComponent Keyword.Type.Keyword -> [(CounterKind.CounterKind Keyword.Type.Keyword, Natural)]
 countersOwedByComponent component = case component of
-  CostComponent.RemoveCountersFromThis removal -> [(CountersOnThis.kind removal, CountersOnThis.count removal)]
+  CostComponent.RemoveCountersFromThis removal -> case removal of
+    CountersOnThis.MkCountersOnThis kind (CostAmount.Fixed n) Nothing -> [(kind, n)]
+    -- Off another permanent, RemoveCounters' reason below, or an amount not
+    -- yet announced, which fixes no number to divide by.
+    CountersOnThis.MkCountersOnThis {} -> []
   -- Zero, and that is the header's "off the object it is on": this component
   -- takes its counters off ANOTHER permanent, so `counterCeiling`'s division of
   -- `oid`'s counters has nothing to learn from it.
@@ -4354,9 +4359,11 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- player activating the ability. Mana Cache pairs this component with an
   -- Activator.AnyPlayer clause, and Parun.ManaSpec's Mana Cache group is what
   -- proves an opponent's activation spends its counter.
-  CostComponent.RemoveCountersFromThis removal ->
-    Set.member oid (GameState.battlefield gs)
-      && Replacement.countersOn (CountersOnThis.kind removal) oid gs >= CountersOnThis.count removal
+  CostComponent.RemoveCountersFromThis removal -> payableAnnounced (CountersOnThis.count removal) $ \n -> case counterHolder slots oid removal of
+    Nothing -> False
+    Just holder ->
+      Set.member holder (GameState.battlefield gs)
+        && Replacement.countersOn (CountersOnThis.kind removal) holder gs >= n
   -- CR 118.3 again, asked of the payer's BOARD rather than of `oid`: payable
   -- only while some permanent the criterion admits carries at least that many
   -- +1\/+1 counters. What it decides is the OFFER -- an activated ability whose
@@ -4383,15 +4390,17 @@ canPayComponentGiven board slots pid oid component gs = case component of
     -- Refused by Parun.Codec.CountersFromPermanents: no cost removes up to a
     -- count.
     CounterSpread.FromAmongAtMost -> False
-  -- CR 701.63a puts the counters on "that permanent", and Yisan, the Wanderer
-  -- Bard on itself, so what can make this unpayable is the permanent no longer
-  -- being there, or CR 118.3 with CR 101.2: an effect saying counters of that
-  -- kind can't be put on it (Suncleanser's ruling). Deliberately NOT gated on
-  -- control, unlike the loyalty arms above: CR 122.6 asks nothing of who controls
-  -- the permanent, and who pays is the card's `payer` (gap #6208).
-  CostComponent.PutCountersOnThis placement ->
-    Set.member oid (GameState.battlefield gs)
-      && not (CounterRestriction.prohibited oid (CountersOnThis.kind placement) gs)
+  -- CR 701.63a puts the counters on "that permanent" (`counterHolder`), and
+  -- Yisan, the Wanderer Bard on itself, so what can make this unpayable is the
+  -- permanent no longer being there, or CR 118.3 with CR 101.2: an effect saying
+  -- counters of that kind can't be put on it (Suncleanser's ruling). Deliberately
+  -- NOT gated on control, unlike the loyalty arms above: CR 122.6 asks nothing of
+  -- who controls the permanent, and who pays is the card's `payer`.
+  CostComponent.PutCountersOnThis placement -> payableAnnounced (CountersOnThis.count placement) $ \_ -> case counterHolder slots oid placement of
+    Nothing -> False
+    Just holder ->
+      Set.member holder (GameState.battlefield gs)
+        && not (CounterRestriction.prohibited holder (CountersOnThis.kind placement) gs)
   -- PutCountersOnThis' gate on CR 122.1's other holder: CR 118.3 with CR 101.2
   -- makes it unpayable while an effect says the payer can't get counters of
   -- that kind (Melira, Sylvok Outcast; Solemnity's ruling of 2017-07-14).
@@ -4446,6 +4455,17 @@ payableAnnounced :: CostAmount.CostAmount -> (Natural -> Bool) -> Bool
 payableAnnounced amount payable = case amount of
   CostAmount.Fixed n -> payable n
   CostAmount.Announced _ -> False
+
+-- The permanent a counter cost puts its counters on or takes them off: the one
+-- the cost is on, or the one object its slot names (CR 701.63a's "that
+-- permanent", Warden of the Grove's creature that entered). Nothing where the
+-- slot names none or several, which leaves the cost unpayable (CR 118.3).
+counterHolder :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> ObjectId -> CountersOnThis.CountersOnThis keyword -> Maybe ObjectId
+counterHolder slots oid counters = case CountersOnThis.holder counters of
+  Nothing -> Just oid
+  Just slot -> case fmap Set.toList (Map.lookup slot slots) of
+    Just [Recipient.ToObject holder] -> Just holder
+    _ -> Nothing
 
 -- `payableAnnounced`'s payment half: Unpaid rather than a guessed 0, which CR
 -- 734.1 turns into the reversal of the whole casting (CR 601.2h refusing it).
@@ -7388,9 +7408,11 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- The funnel saturates, which canPayComponent has already made unreachable
   -- through this door: CR 118.3 refuses an activation the permanent cannot pay
   -- for.
-  CostComponent.RemoveCountersFromThis removal -> do
-    Event.removeCounters oid (CountersOnThis.kind removal) (CountersOnThis.count removal)
-    pure bindsNothing
+  CostComponent.RemoveCountersFromThis removal -> paidAnnounced (CountersOnThis.count removal) $ \n -> case counterHolder slots oid removal of
+    Nothing -> pure Payment.Unpaid
+    Just holder -> do
+      Event.removeCounters holder (CountersOnThis.kind removal) n
+      pure bindsNothing
   -- The same removal aimed at ANOTHER permanent, so the payer chooses which one
   -- and this is a prompt -- elided at exactly one candidate, where the rules
   -- leave nothing to ask. Sacrifice's posture, read over one object rather than
@@ -7496,9 +7518,11 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- so it goes on before the ability resolves and its effect counts it. CR
   -- 614.1's passive subject -- Hardened Scales -- reaches the placement either
   -- way. Paid whatever the funnel then places.
-  CostComponent.PutCountersOnThis placement -> do
-    Monad.void (Event.putCounters (CounterCause.ByPayment pid) oid (CountersOnThis.kind placement) (CountersOnThis.count placement))
-    pure bindsNothing
+  CostComponent.PutCountersOnThis placement -> paidAnnounced (CountersOnThis.count placement) $ \n -> case counterHolder slots oid placement of
+    Nothing -> pure Payment.Unpaid
+    Just holder -> do
+      Monad.void (Event.putCounters (CounterCause.ByPayment pid) holder (CountersOnThis.kind placement) n)
+      pure bindsNothing
   -- The arm above on the payer, through Event.putPlayerCounters and with the
   -- same cause, so a cost's counters meet the replacements an effect's do.
   CostComponent.PutCountersOnPayer placement -> do

@@ -3,7 +3,9 @@
 module Parun.Codec.CountersOnThis where
 
 import qualified Data.Typeable as Typeable
+import qualified Parun.Codec.CostAmount as CostAmount
 import qualified Parun.Codec.CounterKind as CounterKind
+import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -13,5 +15,6 @@ import qualified Parun.Types.CountersOnThis as CountersOnThis
 codec :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (CountersOnThis.CountersOnThis keyword)
 codec keywordCodec = Fields.object $ do
   kind <- Fields.required "kind" (CounterKind.codec keywordCodec) CountersOnThis.kind
-  count <- Fields.required "count" Common.natural CountersOnThis.count
-  pure CountersOnThis.MkCountersOnThis {CountersOnThis.kind = kind, CountersOnThis.count = count}
+  count <- Fields.required "count" CostAmount.codec CountersOnThis.count
+  holder <- Fields.defaulted "holder" Nothing (Common.maybe SlotName.codec) CountersOnThis.holder
+  pure CountersOnThis.MkCountersOnThis {CountersOnThis.kind = kind, CountersOnThis.count = count, CountersOnThis.holder = holder}

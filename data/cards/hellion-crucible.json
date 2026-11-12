@@ -95,7 +95,10 @@
               {
                 "type": "RemoveCountersFromThis",
                 "value": {
-                  "count": 2,
+                  "count": {
+                    "type": "Fixed",
+                    "value": 2
+                  },
                   "kind": {
                     "type": "Named",
                     "value": "pressure"

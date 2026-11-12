@@ -8,7 +8,10 @@
               {
                 "type": "RemoveCountersFromThis",
                 "value": {
-                  "count": 5,
+                  "count": {
+                    "type": "Fixed",
+                    "value": 5
+                  },
                   "kind": {
                     "type": "PlusOnePlusOne"
                   }

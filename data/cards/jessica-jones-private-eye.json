@@ -11,7 +11,10 @@
               {
                 "type": "PutCountersOnThis",
                 "value": {
-                  "count": 1,
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
                   "kind": {
                     "type": "Stun"
                   }

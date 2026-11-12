@@ -181,8 +181,8 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.RemoveCountersFromThis (CountersOnThis.MkCountersOnThis CounterKind.PlusOnePlusOne 1))
-      " {\"type\":\"RemoveCountersFromThis\",\"value\":{\"count\":1,\"kind\":{\"type\":\"PlusOnePlusOne\"}}} "
+      (CostComponent.RemoveCountersFromThis (CountersOnThis.MkCountersOnThis CounterKind.PlusOnePlusOne (CostAmount.Fixed 1) Nothing))
+      " {\"type\":\"RemoveCountersFromThis\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"kind\":{\"type\":\"PlusOnePlusOne\"}}} "
   -- The same removal aimed at a permanent the payer chooses, Zameck Guildmage's.
   Spec.it s "RemoveCounters" $
     Common.assertCodec
@@ -209,15 +209,15 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis CounterKind.PlusOnePlusOne 1))
-      " {\"type\":\"PutCountersOnThis\",\"value\":{\"count\":1,\"kind\":{\"type\":\"PlusOnePlusOne\"}}} "
+      (CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis CounterKind.PlusOnePlusOne (CostAmount.Fixed 1) Nothing))
+      " {\"type\":\"PutCountersOnThis\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"kind\":{\"type\":\"PlusOnePlusOne\"}}} "
   -- Its named-counter form, Yisan, the Wanderer Bard's verse counter.
   Spec.it s "PutCountersOnThis of a named counter" $
     Common.assertCodec
       s
       codec
-      (CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis (CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "verse"))) 1))
-      " {\"type\":\"PutCountersOnThis\",\"value\":{\"count\":1,\"kind\":{\"type\":\"Named\",\"value\":\"verse\"}}} "
+      (CostComponent.PutCountersOnThis (CountersOnThis.MkCountersOnThis (CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "verse"))) (CostAmount.Fixed 1) Nothing))
+      " {\"type\":\"PutCountersOnThis\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"kind\":{\"type\":\"Named\",\"value\":\"verse\"}}} "
   -- The Serpent Society's ward: the payer gets the counters.
   Spec.it s "PutCountersOnPayer" $
     Common.assertCodec

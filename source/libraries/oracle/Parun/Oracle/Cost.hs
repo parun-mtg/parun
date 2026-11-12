@@ -161,7 +161,7 @@ component self named c = case c of
     p <- Filter.phrase f named
     exiled <- some (toInteger n) card (Filter.merge p (Filter.MkPhrase [] [card] []))
     [Text.pack "Exile " <> exiled <> Text.pack " from your graveyard"]
-  CostComponent.RemoveCountersFromThis (CountersOnThis.MkCountersOnThis kind n) -> do
+  CostComponent.RemoveCountersFromThis (CountersOnThis.MkCountersOnThis kind (CostAmount.Fixed n) Nothing) -> do
     word <- counterWord named kind
     removed <- counted (word <> Text.pack " ") (toInteger n)
     [Text.pack "Remove " <> removed <> Text.pack " from " <> self]
