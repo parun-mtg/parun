@@ -1873,15 +1873,17 @@ referenceQueries :: GameState -> Set (Filter.Type.Filter Keyword)
 referenceQueries gs = Set.fromList (Maybe.mapMaybe (referenceQuery . gModification) (gather gs))
 
 -- CR 613.1d: a ChosenSubtype with its source's choice written in, as the
--- family says.
+-- family says. A planeswalker type's add (CR 205.1b, 205.3j) is AddSubtype's.
 --
--- A chosen planeswalker type applied as a type change is not implemented
--- (#7008): it answers Nothing, and the modification changes nothing.
+-- A chosen planeswalker type SET, CR 205.1a's Replace mode, is not implemented
+-- (#7017): it answers Nothing, and the modification changes nothing.
 chosenSubtypeAs :: ChangeMode.ChangeMode -> SubtypeFamily.SubtypeFamily -> Subtype.Type.Subtype -> Maybe (Modification.Modification ability)
 chosenSubtypeAs mode family s = case family of
   SubtypeFamily.BasicLandType -> Just (Modification.LandSubtype mode s)
   SubtypeFamily.CreatureType -> Just (Modification.CreatureSubtype mode s)
-  SubtypeFamily.PlaneswalkerType -> Nothing
+  SubtypeFamily.PlaneswalkerType -> case mode of
+    ChangeMode.InAddition -> Just (Modification.AddSubtype s)
+    ChangeMode.Replace -> Nothing
 
 -- CR 305.7: does this modification SET a land's subtype, and so strip the land's
 -- rules text? Total, like removesAbilities: a new subtype-setting Modification
