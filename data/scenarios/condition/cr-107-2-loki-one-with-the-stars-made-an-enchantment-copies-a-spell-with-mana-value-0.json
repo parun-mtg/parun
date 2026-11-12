@@ -1,0 +1,146 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Loki Laufeyson",
+            "label": "loki",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i4",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i5",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "One with the Stars",
+            "label": "stars"
+          },
+          {
+            "card": "Pact of the Titan",
+            "label": "spell"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 107.2 Loki One with the Stars made an enchantment copies a spell with mana value 0",
+  "note": "One with the Stars leaves alice's Loki an enchantment with no power (CR 208.3) and his abilities (the Aura's ruling of 2020-01-24: it uses 0). Pact of the Titan's mana value 0 is not greater than CR 107.2's 0, so the delayed trigger copies it: two Giants, not one. The control scenario casts Lightning Bolt instead, whose mana value 1 is greater than 0.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            null
+          ],
+          "object": "$stars"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$i5",
+            null
+          ],
+          "object": "$loki"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [],
+          "object": "$spell"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Giant Token",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$loki",
+          "types": [
+            "Enchantment"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

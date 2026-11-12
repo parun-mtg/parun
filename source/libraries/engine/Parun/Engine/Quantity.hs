@@ -223,8 +223,9 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         --
         -- Under Filter.zeroMissingPowerToughness an OBJECT lacking power or
         -- toughness reads CR 107.2's 0 instead (One with the Stars' ruling of
-        -- 2020-01-24); no object, or a player, still reads Nothing.
-        -- data/scenarios/condition's Yorvo pair is what proves it.
+        -- 2020-01-24); no object, or a player, still reads Nothing. Proved in a
+        -- condition by data/scenarios/condition's Yorvo pair, and in an amount by
+        -- its Drizzt Do'Urden pair.
         Quantity.Measure measure ->
           mView >>= \view ->
             Filter.measureOf measure view
@@ -442,8 +443,11 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- names no number when the target is no creature, which is not CR 107.2's
         -- undeterminable number (Parun.Types.AtMost), or Drain Life at a planeswalker
         -- would gain 0. A limit naming no number is skipped, so Drain Life at a
-        -- battle gains all the damage dealt.
-        Quantity.AtMost (AtMost.MkAtMost inner limits) -> fmap (\n -> minimum (n : Maybe.mapMaybe recur (Foldable.toList limits))) (recur inner)
+        -- battle gains all the damage dealt. So a limit is read without
+        -- Filter.zeroMissingPowerToughness, which a resolution's context sets.
+        Quantity.AtMost (AtMost.MkAtMost inner limits) ->
+          let limit = evaluateAgainst viewOf context {Filter.zeroMissingPowerToughness = False} gs announcedOn mOid mView
+           in fmap (\n -> minimum (n : Maybe.mapMaybe limit (Foldable.toList limits))) (recur inner)
         -- CR 208.2a / 608.2h: delegate to the general Count fold (Parun.Engine.Count),
         -- which reads the CR 613 projection through the injected ViewOf. The second
         -- injection is this function itself, aimed at whichever CANDIDATE the fold is
@@ -1352,9 +1356,9 @@ calculate arithmetic = case arithmetic of
 -- SCOPED TO THE CHARACTERISTIC-DEFINING ABILITY, as CR 208.2a is: the caller is
 -- Projection.applyCharacteristicPT, which layer 7a runs for an object in any
 -- zone (CR 604.3 makes the ability function in all zones), and every other reader
--- of a quantity keeps evaluate's Nothing (gap #7018: CR 107.2 gives them 0),
--- but Condition.holds, whose missing power or toughness reads 0 at the Measure
--- arm.
+-- of a quantity keeps evaluate's Nothing, but a condition and a resolution,
+-- whose missing power or toughness reads 0 at the Measure arm
+-- (Filter.zeroMissingPowerToughness).
 --
 -- It does NOT descend into a Count, and does not need to: an undeterminable
 -- count IS the number CR 208.2a is talking about, so the 0 goes in whole here.

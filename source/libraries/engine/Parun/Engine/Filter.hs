@@ -1121,10 +1121,12 @@ data Context = MkContext
     source :: Maybe ObjectId.ObjectId,
     -- CR 202.3 / 208.1: the SOURCE's measures, for the Measures atom's OfSource
     -- operand (CR 702.134a's mentor, CR 702.85a's cascade, Ironclaw Curse); a
-    -- measure the source lacks has no key, `slotMeasures` below's posture. Not
-    -- derivable from `source` here -- this module holds no game state and cannot
-    -- project -- so Parun.Engine.Projection.withCharacteristicsOf fills it and the
-    -- two fields below together, through last known information (CR 608.2b's
+    -- measure the source lacks has no key, `slotMeasures` below's posture, but a
+    -- missing power or toughness is CR 107.2's 0 (CR 208.3; Loki Laufeyson made
+    -- an enchantment by One with the Stars). Not derivable from `source` here --
+    -- this module holds no game state and cannot project -- so
+    -- Parun.Engine.Projection.withCharacteristicsOf fills it and the two fields
+    -- below together, through last known information (CR 608.2b's
     -- re-check, CR 608.2h's effects): in every context
     -- Parun.Engine.Projection.sourceContext frames, and in CR 509.1b's pairwise
     -- restrictions, which frame by the creature being compared
@@ -1755,9 +1757,10 @@ data Context = MkContext
     -- Parun.FilterPositionLintSpec keeps a card to the positions it is filled in.
     battlefieldViews :: Seq.Seq View,
     -- | CR 107.2 / 208.3: an object's missing power or toughness reads 0 in
-    -- Parun.Engine.Quantity's Measure arm rather than Nothing. Set only by
-    -- Parun.Engine.Condition.holds; False in contextFor below, so a BindAmount
-    -- or an AtMost limit still skips a number its object lacks (Drain Life).
+    -- Parun.Engine.Quantity's Measure arm rather than Nothing. Set by
+    -- Parun.Engine.Condition.holds and Parun.Engine.Resolve.Slots.effectContext,
+    -- and cleared for an AtMost limit, which skips a number its object lacks
+    -- (Drain Life); False in contextFor below.
     zeroMissingPowerToughness :: Bool
   }
 

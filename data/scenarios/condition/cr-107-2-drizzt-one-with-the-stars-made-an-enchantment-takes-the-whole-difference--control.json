@@ -1,0 +1,118 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Drizzt Do'Urden",
+            "label": "drizzt"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Doom Blade",
+            "label": "blade"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Spined Wurm",
+            "label": "wurm"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 107.2 Drizzt as a creature takes the difference between the dead creature's power and its own",
+  "note": "The control for the One with the Stars scenario: Drizzt is a 3/3 creature, so the Spined Wurm's power 5 exceeds it by two.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1",
+            "$s2",
+            null
+          ],
+          "object": "$blade",
+          "targets": [
+            "$wurm"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Spined Wurm",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$drizzt"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$drizzt",
+          "types": [
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

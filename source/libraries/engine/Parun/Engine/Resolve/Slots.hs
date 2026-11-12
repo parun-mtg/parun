@@ -3343,7 +3343,11 @@ effectContext gs resolving controller source legal bindings =
         -- ability in data/cards/ an object can acquire reads a quantity or a
         -- filter of its pile as it resolves; its EachCardInExiledPile is
         -- objectRefObjects' own resolvingAbilityName read.
-        Filter.reader = resolvingAbilityName resolving gs
+        Filter.reader = resolvingAbilityName resolving gs,
+        -- CR 107.2 / 208.3: an amount over a noncreature's missing power or
+        -- toughness reads 0 for that operand (Drizzt Do'Urden made an
+        -- enchantment by One with the Stars).
+        Filter.zeroMissingPowerToughness = True
       }
 
 -- effectContext with `slot` naming `oid` alone, for an effect applied once per

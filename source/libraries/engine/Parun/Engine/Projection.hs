@@ -1435,7 +1435,7 @@ withCharacteristicsOf :: ObjectId -> GameState -> Filter.Context -> Filter.Conte
 withCharacteristicsOf object gs context =
   let view = viewWithLastKnownAnywhere gs object
    in context
-        { Filter.sourceMeasures = foldMap Filter.measuresOf view,
+        { Filter.sourceMeasures = foldMap (\v -> Map.union (Filter.measuresOf v) (Map.fromList [(Measure.Power, 0), (Measure.Toughness, 0)])) view,
           Filter.sourceColors = foldMap Filter.colors view,
           Filter.sourceSectors = foldMap (Sector.sectorsIn . Filter.designations) view,
           Filter.sourceNames = foldMap Filter.names view,
