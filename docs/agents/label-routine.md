@@ -28,15 +28,18 @@ Start:
 - A slow cold build is expected. Never stop for build time; build, and if you're blocked, say what failed.
 
 Finish:
-- Do the self-review and run the full suite. Read the result before doing
-  anything else; never chain the suite with marking ready or enabling auto-merge.
+- Do the self-review and run the tests your change can reach, not the whole
+  suite: CI runs that. Read the result before doing anything else; never
+  chain a test run with marking ready or enabling auto-merge.
 - Once it is green, open the PR. Last thing before marking it ready, add a
   "Cost:" line to its body: the "total" row of script/session-tokens.sh over
   your own transcript (the newest ~/.claude/projects/*/*.jsonl, and its
   subagents/ directory if any), and the wall clock since you started. If no
   transcript is reachable, say that and what you looked for; never estimate.
 - Mark the PR ready and enable auto-merge with gh pr merge --auto. The repo
-  uses a merge queue.
+  uses a merge queue. Then start the whole suite once in the background, its
+  output in a file, so a CI failure finds the build warm; read the file only
+  if the PR comes back.
 
 Wait:
 - Wait with script/wait-pr.sh <PR>, run in the foreground with a timeout

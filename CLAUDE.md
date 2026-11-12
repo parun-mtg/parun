@@ -101,8 +101,8 @@ to agents as written. What it doesn't say:
     to #N". A keyword in any branch commit survives the squash.
   - the CR citations behind it
   - the design calls made, and the alternatives rejected
-  - how it was verified: suite count before -> after, the proving test, and
-    for each mutation the assertion it reddened, named.
+  - how it was verified: the tests run (the whole suite is CI's), the proving
+    test, and for each mutation the assertion it reddened, named.
   - whether the rules core cases on an effect's *identity* --- an explicit "no"
   - what was deferred
 
@@ -115,8 +115,9 @@ to agents as written. What it doesn't say:
 - Mention no one: everything is posted as the owner, the only person on the
   project. Put any `@` or `#` not meant to link in a code span.
 
-- Mark the PR ready once the self-review's fixes are pushed and the suite is
-  green, report it, and stop: don't wait for CI, don't start the next unit.
+- Mark the PR ready once the self-review's fixes are pushed and the tests
+  your change reaches are green, report it, and stop: don't wait for CI,
+  don't start the next unit.
   One unit at a time per checkout.
 
 - STAGE, then `hooky fix` (staged files only; it runs every `.hooky.kdl` check
