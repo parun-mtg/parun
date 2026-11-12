@@ -3992,6 +3992,14 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               -- one predicate over one cost instead of two spellings of when the
               -- gate applies.
               let announcedAtX = maybe chargedCost (\x -> Cost.substituteX x chargedCost) mAmount
+                  -- CR 107.3b: the X CR 601.2c's record stamps on the spell, which
+                  -- is 0 where the face's mana cost has an {X} and the chosen cost
+                  -- left none to announce, so a Filter measuring against X at
+                  -- resolution (Operand.AmountInSlot) reads a number. The scenario
+                  -- mind-into-matter-cast-free-* proves it.
+                  boundX = case mAmount of
+                    Nothing | Cost.hasVariable (Cost.Type.MkCost (Face.manaCost face) []) -> Just 0
+                    _ -> mAmount
                   -- CR 601.2e / 202.3e: the spell's mana value with X announced,
                   -- read off the stack incarnation as CR 601.2c's record will
                   -- stamp it. PlayerEffect.choiceCouldEscape let the cast
@@ -4153,7 +4161,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                             g
                               { GameState.objects =
                                   Map.adjust
-                                    (\o -> o {Object.bindings = stampChooser (Binding.setAnnouncedTargets chosen (Binding.setYou pid (Binding.setTriggerSource sid (Target.stampDefendingPlayers sid chosen g (Map.union (Binding.fromAnnounced counts) (Binding.setDivisions divisions (Binding.fromChoices chosen mAmount chosenModes)))))))})
+                                    (\o -> o {Object.bindings = stampChooser (Binding.setAnnouncedTargets chosen (Binding.setYou pid (Binding.setTriggerSource sid (Target.stampDefendingPlayers sid chosen g (Map.union (Binding.fromAnnounced counts) (Binding.setDivisions divisions (Binding.fromChoices chosen boundX chosenModes)))))))})
                                     sid
                                     (GameState.objects g)
                               }
