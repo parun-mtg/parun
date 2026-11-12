@@ -236,6 +236,20 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
       s
       (Codec.encode (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec))) (EntryRewrite.Compleated 1) /= Codec.encode (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec))) (EntryRewrite.Bloodthirst (Just 1)))
       "one Phyrexian symbol paid with life is not bloodthirst 1"
+  -- CR 614.1c / 119.4: paying any amount of life as it enters, uncapped.
+  Spec.it s "PayAnyLife (Phyrexian Processor)" $
+    Common.assertCodec
+      s
+      (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
+      (EntryRewrite.PayAnyLife Nothing)
+      " {\"type\":\"PayAnyLife\"} "
+  -- The cap a printing states, a Quantity.
+  Spec.it s "PayAnyLife with a cap" $
+    Common.assertCodec
+      s
+      (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
+      (EntryRewrite.PayAnyLife (Just (Quantity.Literal 2)))
+      " {\"type\":\"PayAnyLife\",\"value\":{\"type\":\"Literal\",\"value\":2}} "
   -- CR 614.1d: the tap-state rewrite a permanent's own text prints, payload-free
   -- because rule 614.1d and CR 110.5b fix both halves.
   Spec.it s "Tapped (Zof Bloodbog)" $

@@ -4114,6 +4114,8 @@ entryRewriteFilters entryRewrite = case entryRewrite of
   EntryRewrite.Tapped -> []
   EntryRewrite.Prepared -> []
   EntryRewrite.OrTapped (EntryPrice.PayLife _) -> []
+  -- The cap is a Quantity, reaching Filters the way withCountersFilters' do.
+  EntryRewrite.PayAnyLife cap -> foldMap quantityFilters cap
   EntryRewrite.EntersTransformed -> []
   -- ALL THREE fields: the permanents the sacrifice may take, CR 122.1b's kind
   -- the entering permanent takes one of per sacrifice, which may be a whole

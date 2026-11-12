@@ -1672,6 +1672,8 @@ entryRewriteReads rewrite = case rewrite of
   EntryRewrite.OrTapped (EntryPrice.PayLife _) -> ([], [])
   EntryRewrite.OrTapped (EntryPrice.Reveal filter_) -> ([filter_], [])
   EntryRewrite.OrTapped (EntryPrice.Behold filter_) -> ([filter_], [])
+  -- The cap, a Quantity read at the entry as the WithCounters arm's is.
+  EntryRewrite.PayAnyLife cap -> ([], Foldable.toList cap)
   EntryRewrite.EntersTransformed -> ([], [])
   -- The nested effects' reads are replacementRowEffects' answer rather than this
   -- one's, for the reason replacementRowReads' header gives.
@@ -1887,6 +1889,7 @@ entryRewriteEffects rewrite = case rewrite of
   EntryRewrite.Tapped -> []
   EntryRewrite.Prepared -> []
   EntryRewrite.OrTapped _ -> []
+  EntryRewrite.PayAnyLife _ -> []
   EntryRewrite.EntersTransformed -> []
 
 -- The program a DAMAGE rewrite runs. entryRewriteEffects' twin, and its

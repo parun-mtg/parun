@@ -816,12 +816,18 @@ canPayLife :: PlayerId -> Natural -> GameState -> Bool
 canPayLife pid n gs = lifePayable pid gs n
 
 -- The same question with the amount last, so a caller asking it of many amounts
--- walks the player effects once: a partial application shares `prohibited`.
+-- walks the player effects once: a partial application shares `most`.
 lifePayable :: PlayerId -> GameState -> Natural -> Bool
 lifePayable pid gs =
-  let prohibited = PlayerEffect.prohibitsLosingLife pid gs
-      total = fmap Player.life (Map.lookup pid (GameState.players gs))
-   in \n -> n == 0 || (not prohibited && maybe False (>= toInteger n) total)
+  let most = mostLifePayable pid gs
+   in (<= most)
+
+-- CR 119.4 / 119.8: the most life `pid` may pay -- their life total, or only
+-- CR 119.4b's 0 where that is not positive or they can't lose life.
+mostLifePayable :: PlayerId -> GameState -> Natural
+mostLifePayable pid gs
+  | PlayerEffect.prohibitsLosingLife pid gs = 0
+  | otherwise = maybe 0 (Integer.toNaturalSaturating . Player.life) (Map.lookup pid (GameState.players gs))
 
 -- CR 119.4: the payment is subtracted from the player's life total. The CR 704.5a
 -- state-based action that may follow is the existing one in Parun.Engine.Sba --
@@ -838,9 +844,10 @@ lifePayable pid gs =
 -- attempt to pay an amount of life greater than your current life total".
 --
 -- Monadic, unlike the pure writes beside it, because applying a replacement can
--- ask a player a CR 616.1 question. All three callers -- the mana-and-life
+-- ask a player a CR 616.1 question. All four callers -- the mana-and-life
 -- settlement and the CostComponent.PayLife arm in Parun.Engine.Cost, and the CR
--- 614.1c pay-or-enter-tapped rewrite above -- already run in Game.
+-- 614.1c pay-or-enter-tapped and pay-any-amount rewrites below -- already run in
+-- Game.
 --
 -- CR 119.4b's always-payable 0 loses nothing: resolveLifeLoss declines a zero
 -- itself, so it records nothing and writes nothing.
@@ -4258,6 +4265,33 @@ apply settle batch applied batchPrevented candidate event =
                   | List.elem shown candidates ->
                       Monad.when (fmap Object.zone (Game.lookupObject shown gs) == Just Zone.Hand) (reveal RevealCause.Ordinary controller shown)
                 _ -> enterTapped oid
+        pure (Just event)
+      -- CR 614.1c / 119.4: "As this enters, pay any amount of life" (Phyrexian
+      -- Processor), at most the cap where one is printed (Nameless Race), the
+      -- cap read as SacrificeAnyNumber's multiplier is. Where CR 119.4 or 119.8
+      -- leaves only 0 payable, nothing is asked.
+      --
+      -- CR 607.2g: the amount CHOSEN is recorded under the entering acquisition
+      -- (CR 607.5) as the life paid as it entered, even where Ashiok, Wicked
+      -- Manipulator replaces the loss (CR 118.11). Through payLife, for
+      -- OrTapped's reasons.
+      EntryRewrite.PayAnyLife cap -> do
+        Replacement.consume (ReplacementCandidate.identity candidate)
+        gs <- State.get
+        -- Unreachable, and defensive for the arms above's reason: nobody to
+        -- ask pays nothing and records nothing.
+        Foldable.for_ (Projection.controllerOf oid gs) $ \controller -> do
+          let viewOf = Projection.viewWithLastKnown oid gs
+              context = Replacement.candidateContext gs candidate
+              capped = fmap (maybe 0 Integer.toNaturalSaturating . Quantity.evaluate viewOf context (Projection.boardAsEntering gs) oid) cap
+              most = maybe id min capped (mostLifePayable controller gs)
+          answer <-
+            if most == 0
+              then pure 0
+              else Game.choose (Prompt.ChooseNumber (Decide.deciderFor controller gs) controller oid 0 NumberFloor.Least (Just most))
+          let paid = min most answer
+          State.modify' (Game.recordChoice Chosen.Number (Game.acquisitionOf oid gs) (const (Just paid)) oid)
+          payLife settle controller paid
         pure (Just event)
       -- CR 702.145b's first static ability: "if it is night and this permanent
       -- is represented by a double-faced card, it enters transformed." The one

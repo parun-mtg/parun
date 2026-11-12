@@ -292,7 +292,8 @@ data Object = MkObject
     -- spell becomes.
     chosenPlayers :: Map.Map Acquisition.Acquisition (Map.Map PlayerChoice.PlayerChoice PlayerId.PlayerId),
     -- | CR 607.2d: the last number chosen for this object, assigned by each choice
-    -- (Shapeshifter's as it enters and each upkeep). Read by Quantity.ChosenNumber
+    -- (Shapeshifter's as it enters and each upkeep), and CR 607.2g's life paid as
+    -- it entered (Phyrexian Processor). Read by Quantity.ChosenNumber
     -- off the effect's SOURCE. Not a copiable value and per-incarnation, for
     -- chosenColors's reasons.
     chosenNumber :: Map.Map Acquisition.Acquisition Natural.Natural,

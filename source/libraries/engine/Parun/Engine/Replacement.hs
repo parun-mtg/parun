@@ -1443,6 +1443,7 @@ admitsEntry gs oid rewrite = case rewrite of
   -- entry has settled so far (CR 723.2b).
   EntryRewrite.Prepared -> Prepare.hasPrepareSpell oid gs
   EntryRewrite.OrTapped _ -> True
+  EntryRewrite.PayAnyLife _ -> True
   -- CR 614.1c's "as [this permanent] enters, [do something]". No condition here
   -- and Bloodthirst above is the contrast: rule 702.54a's condition is a RULE's,
   -- so it has nowhere else to live, while Monstrous War-Leech's "if it was
@@ -1521,6 +1522,7 @@ entryCostOf rewrite = case rewrite of
   EntryRewrite.Tapped -> Nothing
   EntryRewrite.Prepared -> Nothing
   EntryRewrite.OrTapped _ -> Nothing
+  EntryRewrite.PayAnyLife _ -> Nothing
   EntryRewrite.EntersTransformed -> Nothing
   EntryRewrite.RunEffects _ -> Nothing
 
@@ -2164,6 +2166,9 @@ bucketOfEffect re = case re of
   -- the STATUS the permanent enters with (CR 110.5b), and CR 701.20b makes a
   -- reveal change nothing at all. So CR 616.1e.
   ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.OrTapped _)) -> ReplacementBucket.Other
+  -- CR 616.1e: paying life as it enters is none of CR 616.1a-d -- not whose the
+  -- permanent is, what it copies nor which face is up.
+  ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.PayAnyLife _)) -> ReplacementBucket.Other
   -- CR 616.1b: a control-on-entry rewrite is one step ABOVE the copy bucket, and
   -- Gather Specimens racing an entering Clone is the board where the two orders
   -- disagree: taking the control rewrite first hands Clone's own CR 109.5 copy
@@ -2369,6 +2374,9 @@ readsApplier re = case re of
   -- price rides the effect. Two such rows are always on the same object and
   -- would offer that object's controller the same price.
   ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.OrTapped _)) -> False
+  -- CR 614.1c: NO, for the arm above's reason -- the payer is the ENTERING
+  -- object's controller and the cap rides the effect.
+  ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.PayAnyLife _)) -> False
   -- THE ENTRY ARM THAT ANSWERS YES. CR 616.1b / 110.2 / 109.5: the rewrite hands
   -- the permanent to the candidate's own `controller`, baked when the row was
   -- installed. Two Gather Specimens are one card, so their `effect` values are
@@ -2898,6 +2906,8 @@ recordsAChoice effect = case effect of
     EntryRewrite.Tapped -> False
     EntryRewrite.Prepared -> False
     EntryRewrite.OrTapped _ -> False
+    -- Records the amount, but spends life to do it.
+    EntryRewrite.PayAnyLife _ -> False
     EntryRewrite.EntersTransformed -> False
     EntryRewrite.RunEffects _ -> False
   ReplacementEffect.ZoneChangeR {} -> False
