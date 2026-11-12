@@ -18498,6 +18498,8 @@
       "80": {"card":"Wood Elves"}
     },
     "KHM": {
+      "120": {"card":"Arni Brokenbrow"},
+      "310": {"card":"Arni Brokenbrow"},
       "44": {"card":"Augury Raven"},
       "121": {"card":"Axgard Cavalry"},
       "3": {"card":"Battlefield Raptor"},
@@ -28098,6 +28100,8 @@
       "2E07": {"card":"Whirling Dervish"}
     },
     "PKHM": {
+      "120p": {"card":"Arni Brokenbrow"},
+      "120s": {"card":"Arni Brokenbrow"},
       "123s": {"card":"Birgi, God of Storytelling // Harnfel, Horn of Bounty"},
       "81p": {"card":"Burning-Rune Demon"},
       "81s": {"card":"Burning-Rune Demon"},
@@ -31177,6 +31181,7 @@
       "90016": {"card":"Archmage Emeritus"},
       "90018": {"card":"Archmage Emeritus"},
       "31413": {"card":"Armageddon"},
+      "88308": {"card":"Arni Brokenbrow"},
       "36246": {"card":"Arrogant Wurm"},
       "69983": {"card":"Ash Barrens"},
       "83778": {"card":"Ashaya, Soul of the Wild"},

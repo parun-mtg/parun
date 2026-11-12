@@ -347,21 +347,9 @@ spec s registry = Spec.describe s "Parun.Engine.Count" $ do
             Aggregation.Members
     Spec.assertEqWith s "one card" (S.countOf viewOf (Filter.contextFor Teams.none Nothing (Just srcId)) gs count) $ Just 1
 
-  -- The three cases below are Aggregation.Greatest at the fold, where the
-  -- answers Parun.ResolveSpec's One with the Machine cases cannot tell apart
-  -- are visible: an undeterminable maximum is Nothing there and 0 draws
-  -- here, but Nothing and Just 0 are different values.
-  Spec.it s "CR 208.2a Greatest over an EMPTY matched set is Nothing, not 0" $ do
-    -- No rule in the CR gives a maximum over nothing a value. CR 208.2a's
-    -- "if the ability needs to use a number that can't be determined ... use
-    -- 0 instead" is scoped to a characteristic-defining ability, and it is
-    -- applied THERE (Parun.Engine.Quantity.determine) rather than in this fold;
-    -- where the CR does want an empty maximum to be 0 it otherwise legislates
-    -- it card-shape by card-shape (CR 715.2d, a Saga with no chapter
-    -- abilities). So the honest answer here is the one this codebase
-    -- propagates everywhere else, and Parun.PowerToughnessSpec's Monstrous
-    -- War-Leech is where it becomes a 0. THE FALSIFIER for reaching for
-    -- `maximum (0 : values)`.
+  -- The three cases below are Aggregation.Greatest at the fold.
+  Spec.it s "CR 107.2 Greatest over an EMPTY matched set is 0" $ do
+    -- Arni Brokenbrow's ruling of 2021-02-05.
     swampPrinting <- S.printingOf s registry "Swamp"
     let gs0 = Setup.emptyGame S.bothPlayers
         (b1, gs) = S.addPermanent swampPrinting S.bob gs0
@@ -372,11 +360,8 @@ spec s registry = Spec.describe s "Parun.Engine.Count" $ do
             (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer)))
             (Filter.Type.And [Filter.Type.HasSubtype Subtype.Swamp, Filter.Type.HeldBy Holder.Controller PlayerRelation.You])
             (Aggregation.Greatest (Quantity.Type.Measure Measure.ManaValue))
-    -- Alice keeps none of Bob's one Swamp, so the fold has no members. The
-    -- same count with Aggregation.Members is Just 0 -- a count of nothing IS
-    -- zero -- which is exactly the answer a maximum must NOT borrow.
-    Spec.assertEqWith s "no maximum" (S.countOf viewOf (Filter.contextFor Teams.none (Just S.alice) Nothing) gs count) Nothing
-    Spec.assertEqWith s "though counting the same empty set is 0" (S.countOf viewOf (Filter.contextFor Teams.none (Just S.alice) Nothing) gs swampsYouControl) (Just 0)
+    -- Alice keeps none of Bob's one Swamp, so the fold has no members.
+    Spec.assertEqWith s "the maximum of nothing" (S.countOf viewOf (Filter.contextFor Teams.none (Just S.alice) Nothing) gs count) (Just 0)
 
   Spec.it s "CR 208.1 Greatest reads the PROJECTED power, not the printed one" $ do
     -- The one case here driven against a real projection rather than
@@ -404,12 +389,9 @@ spec s registry = Spec.describe s "Parun.Engine.Count" $ do
     Spec.assertEqWith s "the Mammoth's 3" (greatestPower printed) $ Just 3
     Spec.assertEqWith s "and the pumped Piker's 4" (greatestPower pumped) $ Just 4
 
-  Spec.it s "a member whose quantity cannot be determined makes the whole maximum Nothing" $ do
-    -- The Filter and the folded quantity are independent, so a card can ask
-    -- for a value a kept member has no answer for -- here a power read off a
-    -- Swamp (CR 208.3: a noncreature permanent has no power). Nothing
-    -- propagates rather than the member being silently dropped, which would
-    -- report the maximum of a set the card never named.
+  Spec.it s "CR 107.2 a member whose quantity cannot be determined counts 0" $ do
+    -- A power read off a Swamp (CR 208.3: a noncreature permanent has no
+    -- power).
     swampPrinting <- S.printingOf s registry "Swamp"
     let gs0 = Setup.emptyGame S.bothPlayers
         (a1, gs) = S.addPermanent swampPrinting S.alice gs0
@@ -419,7 +401,7 @@ spec s registry = Spec.describe s "Parun.Engine.Count" $ do
             (Filter.Type.HeldBy Holder.Controller PlayerRelation.You)
             (Aggregation.Greatest (Quantity.Type.Measure Measure.Power))
         viewOf = S.stubView [(a1, Set.singleton CardType.Land, Set.singleton Subtype.Swamp, Just S.alice)]
-    Spec.assertEqWith s "undeterminable" (S.countOf viewOf (Filter.contextFor Teams.none (Just S.alice) Nothing) gs count) Nothing
+    Spec.assertEqWith s "the Swamp's 0" (S.countOf viewOf (Filter.contextFor Teams.none (Just S.alice) Nothing) gs count) (Just 0)
 
   approachSpec s registry
   tobiasSpec s registry

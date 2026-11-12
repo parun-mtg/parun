@@ -158,10 +158,8 @@ chaptersOf = Maybe.mapMaybe chapterOf . PC.triggeredAbilities
 -- abilities it has. If a Saga somehow has no chapter abilities, its final chapter
 -- number is 0."
 --
--- The rule legislates the empty maximum card-shape by card-shape, which is why
--- this returns a Natural where Parun.Engine.Count's Aggregation.Greatest returns
--- Nothing over an empty set. Both are right: that fold has no rule handing it a
--- value and this one does.
+-- The same 0 CR 107.2 gives Parun.Engine.Count's Aggregation.Greatest over an
+-- empty set, stated here for this one maximum.
 finalChapterOf :: PC.ProjectedCharacteristics -> Natural
 finalChapterOf pc = case chaptersOf pc of
   [] -> 0

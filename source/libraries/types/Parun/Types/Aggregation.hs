@@ -44,9 +44,8 @@ data Aggregation quantity
     -- same per-member Quantity, folded with (+) rather than max, and for the same
     -- reason parameterized rather than named concretely.
     --
-    -- Unlike Greatest it answers over an EMPTY matched set, because a sum has an
-    -- identity and a maximum does not. Parun.PlaneswalkerSpec's AshiokLoyalty
-    -- group is what proves the three aggregations come apart: two exiled cards of
-    -- unequal mana value read differently under Members, Greatest and this.
+    -- Parun.PlaneswalkerSpec's AshiokLoyalty group is what proves the three
+    -- aggregations come apart: two exiled cards of unequal mana value read
+    -- differently under Members, Greatest and this.
     Total quantity
   deriving (Eq, Ord, Show)

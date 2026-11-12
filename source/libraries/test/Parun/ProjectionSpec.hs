@@ -273,18 +273,16 @@ ashayaZhao forest tundra bears ashaya zhao ashayaFirst =
       conqueror = CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "conqueror"))
    in ([forestId, tundraId, bearsId, ashayaId, zhaoId], S.addCounter conqueror 1 zhaoId g4)
 
--- Two Synthetic Echoing Mimics and a Goblin Piker, all Alice's, with the
--- state-based actions swept. Each Mimic's CDA reads the other's power, which is
--- CR 613.8a's loop at layer 7a; fresh timestamps ascend with placement, so the
--- first returned id is the older. No swapped-order sibling, unlike wasteLoop:
--- the two permanents are printings of the SAME card, so swapping them is an
--- automorphism of the board and could only restate this case.
-mimicLoop :: Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-mimicLoop piker mimic =
-  let (older, g1) = S.addPermanent mimic S.alice (Setup.emptyGame S.bothPlayers)
-      (younger, g2) = S.addPermanent mimic S.alice g1
-      (_, g3) = S.addPermanent piker S.alice g2
-   in (older, younger, snd (Engine.runGamePure S.identityAnswer g3 Engine.settleForPriority))
+-- Two Synthetic Echoing Elders, Alice's, with the state-based actions swept.
+-- Each CDA reads the other's power, which is CR 613.8a's loop at layer 7a; fresh
+-- timestamps ascend with placement, so the first returned id is the older. No
+-- swapped-order sibling, unlike wasteLoop: the two permanents are printings of
+-- the SAME card, so swapping them is an automorphism of the board.
+elderLoop :: Printing.Printing -> (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
+elderLoop elder =
+  let (older, g1) = S.addPermanent elder S.alice (Setup.emptyGame S.bothPlayers)
+      (younger, g2) = S.addPermanent elder S.alice g1
+   in (older, younger, snd (Engine.runGamePure S.identityAnswer g2 Engine.settleForPriority))
 
 -- Blood Moon, Urborg, and a Forest on the battlefield. `urborgFirst` controls
 -- the timestamp order (fresh timestamps ascend with placement), to prove the
@@ -1980,22 +1978,16 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
         (claimId, gs) = S.addPermanent claim S.alice g1
     Spec.assertEqWith s "the older Blood Moon applies first: a Mountain" (Projection.subtypesOf claimId gs) (Set.singleton Subtype.Type.Mountain)
 
-  -- CR 613.8b's last sentence at layer 7a: two Mimics each read the other's
+  -- CR 613.8b's last sentence at layer 7a: two Elders each read the other's
   -- power, so each depends on the other (CR 613.8a clauses (a), (b) and (c)) and
   -- the loop falls back to timestamp order. The older one applies while the
-  -- younger still has no power, so CR 208.2a makes it 0/0 and CR 704.5f buries
-  -- it; the younger then reads the Piker's 2 and lives.
-  --
-  -- The Piker is what makes the two outcomes DIFFER: with only the pair on the
-  -- board both maxima would be undeterminable and both would be 0/0, which is
-  -- also what the layer-bounded reading gives -- an order-blind board.
+  -- younger still has no power, which CR 107.2 reads as 0, so it is 1/1; the
+  -- younger then reads its 1 and is 2/2.
   Spec.it s "CR 613.8b two P/T-defining abilities in a loop apply in timestamp order" $ do
-    piker <- S.printingOf s registry "Goblin Piker"
-    mimic <- S.printingOf s registry "Synthetic Echoing Mimic"
-    let (olderId, youngerId, settled) = mimicLoop piker mimic
-    Spec.assertBool s (not (Set.member olderId (GameState.battlefield settled))) "the older Mimic was 0/0 and CR 704.5f buried it"
-    Spec.assertBool s (Set.member youngerId (GameState.battlefield settled)) "the younger Mimic lived"
-    Spec.assertEqWith s "the younger Mimic read the Piker's 2" (Projection.powerOf youngerId settled) (Just 2)
+    elder <- S.printingOf s registry "Synthetic Echoing Elder"
+    let (olderId, youngerId, settled) = elderLoop elder
+    Spec.assertEqWith s "the older Elder read 0 for the younger" (Projection.powerOf olderId settled) (Just 1)
+    Spec.assertEqWith s "the younger Elder read the older's 1" (Projection.powerOf youngerId settled) (Just 2)
 
   -- CR 305.7's GATE half, which applyModification structurally cannot do:
   -- Urborg's ability lands on OTHER objects, so a stripped Urborg has to be kept
@@ -2699,9 +2691,9 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
   -- touches it, its power is the printed 2 under either reading, and the Measure
   -- writes 2/2 -- so the count, the zone it folds over and the 7b setter all work
   -- and the case above is not passing on a dead fixture. An EMPTY graveyard is the
-  -- other: Count.evaluate answers Nothing over no members, setPT keeps the base,
-  -- and the Giant is its printed 3/3 -- which rules out reading the 1/1 above as
-  -- "the Measure writes something whatever it counts".
+  -- other: the greatest power among no cards is 0 (CR 107.2), and the Giant is a
+  -- 0/0 -- which rules out reading the 1/1 above as "the Measure writes something
+  -- whatever it counts".
   Spec.it s "CR 613.4b control: an ordinary graveyard creature card is read at its printed power" $ do
     (charnel, _, giant) <- charnelPrintings s registry
     piker <- S.printingOf s registry "Goblin Piker"
@@ -2710,11 +2702,11 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     Spec.assertEqWith s "the Piker's printed 2" (Projection.powerOf giantId gs) (Just 2)
     Spec.assertEqWith s "the Piker's printed 2" (Projection.toughnessOf giantId gs) (Just 2)
 
-  Spec.it s "CR 613.4b control: an empty graveyard leaves the count unevaluable and the base alone" $ do
+  Spec.it s "CR 613.4b control: an empty graveyard sets the base to 0/0" $ do
     (charnel, _, giant) <- charnelPrintings s registry
     let (giantId, gs) = S.addPermanent giant S.alice (snd (S.addPermanent charnel S.alice (Setup.emptyGame S.bothPlayers)))
-    Spec.assertEqWith s "the Giant is its printed 3/3" (Projection.powerOf giantId gs) (Just 3)
-    Spec.assertEqWith s "the Giant is its printed 3/3" (Projection.toughnessOf giantId gs) (Just 3)
+    Spec.assertEqWith s "the Giant is 0/0" (Projection.powerOf giantId gs) (Just 0)
+    Spec.assertEqWith s "the Giant is 0/0" (Projection.toughnessOf giantId gs) (Just 0)
 
   -- The card-level proof of the layer-4 CreatureSubtype InAddition arm: Life and Limb
   -- makes a basic Forest a 1/1 green Saproling creature land, and the Saproling
