@@ -217,10 +217,21 @@ unpayable = Cost.MkCost {Cost.mana = Nothing, Cost.components = []}
 -- cost: every caller passes the result through `choiceVariants`.
 insteadOfManaCost :: ManaCost.ManaCost -> Face.Face card -> Cost Keyword.Type.Keyword
 insteadOfManaCost mana face =
-  Cost.MkCost
-    { Cost.mana = Just mana,
-      Cost.components = Face.additionalCosts face
-    }
+  fixedXUnlessPaid face $
+    Cost.MkCost
+      { Cost.mana = Just mana,
+        Cost.components = Face.additionalCosts face
+      }
+
+-- CR 107.3b: `cost`, laid in place of the face's mana cost, with the X its kept
+-- additional costs carry fixed at 0 where the face's mana cost has an {X} and
+-- `cost`'s mana has none: Bond of Agony cast free pays 0 life. A face without
+-- {X} keeps its X (Hatred cast free still names one). The scenarios
+-- bond-of-agony-cast-free-* prove it.
+fixedXUnlessPaid :: Face.Face card -> Cost Keyword.Type.Keyword -> Cost Keyword.Type.Keyword
+fixedXUnlessPaid face cost
+  | manaHasVariable (Cost.MkCost (Face.manaCost face) []) && not (manaHasVariable cost) = substituteAnnounced Binding.variableX 0 cost
+  | otherwise = cost
 
 -- CR 118.9: the alternative cost a CR 601.3 permission states, settled against
 -- the face being cast.
@@ -230,8 +241,8 @@ insteadOfManaCost mana face =
 -- a life payment is CR 119.4's, beside an empty mana cost. Either amount is
 -- read off the FACE and not the card, so a split card's half is priced at its
 -- own mana value (CR 202.3d, 709.3b), and X in that face's own cost counts 0
--- (CR 202.3e); the rulings' "the only legal choice for X is 0" is CR 107.3b
--- and falls out, neither cost having a variable.
+-- (CR 202.3e); the rulings' "the only legal choice for X is 0" is CR 107.3b,
+-- fixedXUnlessPaid's.
 permissionCost :: PermissionCost.PermissionCost -> Face.Face card -> Cost Keyword.Type.Keyword
 permissionCost alternative face = paidInstead alternative face Cost.MkCost {Cost.mana = Nothing, Cost.components = Face.additionalCosts face}
 
@@ -239,7 +250,7 @@ permissionCost alternative face = paidInstead alternative face Cost.MkCost {Cost
 -- its mana replaced, its components kept (CR 118.9d), so a choice cost
 -- `choiceVariants` expanded survives (Parun.Types.CastFromZone.alternativeCost).
 paidInstead :: PermissionCost.PermissionCost -> Face.Face card -> Cost Keyword.Type.Keyword -> Cost Keyword.Type.Keyword
-paidInstead alternative face cost = case alternative of
+paidInstead alternative face cost = fixedXUnlessPaid face $ case alternative of
   PermissionCost.InsteadOfManaCost mana -> cost {Cost.mana = Just mana}
   PermissionCost.WaterbendManaValue ->
     Cost.MkCost
@@ -857,9 +868,8 @@ candidateCostsGiven permitted pid name oid gs =
               -- there too, LAST so that `firstOffered` still reads the printed
               -- cost: a STANDING grant (Omniscience) or a one-shot one (World War
               -- Hulk) no per-card list can hold. Untagged, `untagged`'s reason.
-              -- CR 107.3b's "the only legal choice for X is 0" falls out rather
-              -- than being enforced: withoutPayingManaCost carries an empty
-              -- ManaCost, which has no variable to prompt for.
+              -- CR 107.3b's "the only legal choice for X is 0" is
+              -- fixedXUnlessPaid's, which insteadOfManaCost applies.
               freeCast = if PlayerEffect.mayCastWithoutPayingManaCost pid oid gs then [untagged (withoutPayingManaCost face)] else []
               ordinary = fmap untagged (printed : alternatives) <> bestowed <> prototyped <> mutated <> evoked <> emerged <> surged <> spectacled <> prowled <> freerun <> freeCast
            in -- CR 118.8 / 601.2b: every candidate below owes this face's choice
