@@ -51,7 +51,7 @@ Finished 2026-11-11.
   #6946), #6942 (an ability that can't be copied; open, Gogo, Master of
   Mimicry), #6947 (a departed spell's mana spent, #6954), #6948 (an attack
   trigger's "while" left unproven, #6961), #6958 (Bond of Agony's X under a
-  free cast; outside the set, open).
+  free cast; outside the set, #6986).
 - Audits: 5 of 8 capability PRs, 5 of 11 batch PRs and 4 of 8 fix PRs; 4
   found rules defects. Skipped the census, data-only batches and fixes, and
   the one-arm capability PRs #6956, #6963 and #6964, each recorded on #6902.
