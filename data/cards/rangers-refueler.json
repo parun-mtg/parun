@@ -116,29 +116,27 @@
           "condition": {
             "type": "AbilityActivated",
             "value": {
-              "filter": {
-                "type": "And",
-                "value": [
-                  {
-                    "type": "HeldBy",
-                    "value": {
-                      "holder": "Controller",
-                      "relation": "You"
-                    }
-                  },
-                  {
-                    "type": "IsActivatedAbility",
-                    "value": {
-                      "grantedBy": {
-                        "type": "OfKeyword",
-                        "value": {
-                          "type": "Exhaust"
-                        }
+              "type": "And",
+              "value": [
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                {
+                  "type": "IsActivatedAbility",
+                  "value": {
+                    "grantedBy": {
+                      "type": "OfKeyword",
+                      "value": {
+                        "type": "Exhaust"
                       }
                     }
                   }
-                ]
-              }
+                }
+              ]
             }
           },
           "modal": {

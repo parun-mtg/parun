@@ -5,7 +5,6 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.TriggerCondition as TriggerCondition
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
-import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.AttachDirection as AttachDirection
@@ -453,8 +452,8 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger (Filter.HeldBy Holder.Controller PlayerRelation.You) Nothing))
-      " {\"type\":\"AbilityActivated\",\"value\":{\"filter\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}} "
+      (TriggerCondition.AbilityActivated (Filter.HeldBy Holder.Controller PlayerRelation.You))
+      " {\"type\":\"AbilityActivated\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}} "
   -- CR 709.5h. The payload is the DOOR's own name (CR 709.4a), which is what
   -- separates two unlock triggers printed on one Room.
   Spec.it s "SelfHalfUnlocked round-trips its door" $

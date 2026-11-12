@@ -85,44 +85,42 @@
           "condition": {
             "type": "AbilityActivated",
             "value": {
-              "filter": {
-                "type": "And",
-                "value": [
-                  {
-                    "type": "HeldBy",
-                    "value": {
-                      "holder": "Controller",
-                      "relation": "You"
-                    }
-                  },
-                  {
-                    "type": "IsActivatedAbility",
-                    "value": {
-                      "whichLoyalty": "LoyaltyAbility"
-                    }
-                  },
-                  {
-                    "type": "FromSource",
-                    "value": {
-                      "type": "And",
-                      "value": [
-                        {
-                          "type": "HasCardType",
-                          "value": "Planeswalker"
-                        },
-                        {
-                          "type": "HasSubtype",
-                          "value": "Chandra"
-                        },
-                        {
-                          "type": "IsInZone",
-                          "value": "Battlefield"
-                        }
-                      ]
-                    }
+              "type": "And",
+              "value": [
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
                   }
-                ]
-              }
+                },
+                {
+                  "type": "IsActivatedAbility",
+                  "value": {
+                    "whichLoyalty": "LoyaltyAbility"
+                  }
+                },
+                {
+                  "type": "FromSource",
+                  "value": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Planeswalker"
+                      },
+                      {
+                        "type": "HasSubtype",
+                        "value": "Chandra"
+                      },
+                      {
+                        "type": "IsInZone",
+                        "value": "Battlefield"
+                      }
+                    ]
+                  }
+                }
+              ]
             }
           },
           "modal": {

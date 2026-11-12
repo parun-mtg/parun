@@ -5,7 +5,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Binding as Binding.Engine
-import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActingPermanent as ActingPermanent
@@ -1570,7 +1569,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.SelfBecomesClassLevel _ -> pure condition
   TriggerCondition.SpellCast (SpellCast.MkSpellCast spell turn zone ordinal phase copies while_) ->
     fmap TriggerCondition.SpellCast (SpellCast.MkSpellCast <$> actingChildren c spell <*> triggerTurn c turn <*> pure zone <*> traverse (triggerOrdinal c HistoryRead.Casts) ordinal <*> pure phase <*> pure copies <*> traverse (triggerState c) while_)
-  TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger filter_ kind) -> fmap (\renamed -> TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger renamed kind)) (triggerFilter c filter_)
+  TriggerCondition.AbilityActivated filter_ -> fmap TriggerCondition.AbilityActivated (triggerFilter c filter_)
   TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger subject relation kinds batching) ->
     fmap
       (\renamed -> TriggerCondition.BecomesTargeted (BecomesTargetedTrigger.MkBecomesTargetedTrigger renamed relation kinds batching))

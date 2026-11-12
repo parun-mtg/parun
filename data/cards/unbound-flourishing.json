@@ -155,24 +155,22 @@
               {
                 "type": "AbilityActivated",
                 "value": {
-                  "filter": {
-                    "type": "And",
-                    "value": [
-                      {
-                        "type": "HeldBy",
-                        "value": {
-                          "holder": "Controller",
-                          "relation": "You"
-                        }
-                      },
-                      {
-                        "type": "ManaCostHasSymbol",
-                        "value": {
-                          "type": "VariableSymbol"
-                        }
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
                       }
-                    ]
-                  }
+                    },
+                    {
+                      "type": "ManaCostHasSymbol",
+                      "value": {
+                        "type": "VariableSymbol"
+                      }
+                    }
+                  ]
                 }
               }
             ]
