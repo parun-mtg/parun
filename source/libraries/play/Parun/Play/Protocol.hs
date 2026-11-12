@@ -165,16 +165,14 @@ onOffer offer prompt answer
 -- 508.1c, 508.1d) or blockers (CR 509.1b, 509.1c) is refused with why, where
 -- the engine's rewind would ask again with no reason and degrade a repeat to a
 -- declaration the player did not make. Attackers are judged before CR 508.1b's
--- announcements, so refused only where no announcement makes them legal.
--- ProtocolSpec's Wind Drake, Bonded Construct and Jace Beleren cases are the
--- proof.
---
--- Not implemented: refusing CR 508.1b announcements that make a declaration of
--- legal attackers illegal (#6996).
+-- announcements, so refused only where no announcement makes them legal; the
+-- engine then offers only announcements that keep them legal
+-- (Combat.attemptAttackDeclaration). ProtocolSpec's Wind Drake, Bonded
+-- Construct, Jace Beleren and Alluring Siren cases are the proof.
 lawful :: (ObjectId.ObjectId -> Text.Text) -> GameState.GameState -> Prompt.Prompt r -> r -> Either Text.Text r
 lawful named gs prompt answer = case prompt of
   Prompt.DeclareAttackers _ pid _
-    | not (Combat.attackCreaturesAllowed pid answer gs) ->
+    | not (Combat.attackCreaturesAllowed pid (\_ _ -> True) answer gs) ->
         Left (Text.pack "the declaration of attackers is illegal")
   Prompt.DeclareBlockers _ pid _ _
     | not (Combat.legalBlockDeclaration pid answer gs) ->

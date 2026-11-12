@@ -43,7 +43,7 @@
     "step": "BeginningOfCombat"
   },
   "description": "CR 508.1c Tomik lets one creature attack each planeswalker",
-  "note": "Both Pikers announced at Jace break the granted bound, so the declaration is rewound and asked again; one at Jace and one at bob is legal. Tomik is tapped so bob has no block to declare.",
+  "note": "With one Piker announced at Jace, Jace is not offered to the other, whose announcement at bob is then made unasked. Tomik is tapped so bob has no block to declare.",
   "timeline": [
     {
       "do": {
@@ -62,44 +62,6 @@
       },
       "player": "alice",
       "source": "$one",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "do": {
-        "ChooseAttackTarget": "$jace"
-      },
-      "player": "alice",
-      "source": "$two",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Attack": [
-          "$one",
-          "$two"
-        ]
-      },
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "do": {
-        "ChooseAttackTarget": "$jace"
-      },
-      "player": "alice",
-      "source": "$one",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
-      "do": {
-        "ChooseAttackTarget": "$bob"
-      },
-      "player": "alice",
-      "source": "$two",
       "step": "DeclareAttackers",
       "turn": 1
     },

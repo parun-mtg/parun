@@ -2405,23 +2405,27 @@ attackProposalAllowed pid proposal gs =
       limits = CombatRestriction.attackLimit gs
    in attackProposalAllowedGiven limits alone (attackCeilingGiven limits alone barred candidates gs) proposal gs
 
--- CR 508.1b-d: whether some announcement for exactly `chosen` makes a
--- declaration attackProposalAllowed lets stand, for a caller judging the
--- creatures before CR 508.1b asks where each attacks. couldAttack's boost: a
--- requirement on each of `chosen`'s announcements heavier than every other
--- together, over a search confined to `chosen`, makes the ceiling's witness
--- hold every chosen creature exactly when some such declaration exists.
--- ProtocolSpec's Jace Beleren case is the proof.
-attackCreaturesAllowed :: PlayerId -> [ObjectId] -> GameState -> Bool
-attackCreaturesAllowed pid chosen gs =
+-- CR 508.1b-d: whether some announcement for exactly `chosen`, each one
+-- `admits`, makes a declaration attackProposalAllowed lets stand, for a caller
+-- judging the creatures, or some of their announcements, before CR 508.1b has
+-- asked where each attacks. couldAttack's boost: a requirement on each of
+-- `chosen`'s announcements heavier than every other together, over a search
+-- confined to `chosen` and `admits`, makes the ceiling's witness hold every
+-- chosen creature exactly when some such declaration exists. ProtocolSpec's
+-- Jace Beleren and Alluring Siren cases are the proof.
+attackCreaturesAllowed :: PlayerId -> (ObjectId -> AttackTarget.AttackTarget -> Bool) -> [ObjectId] -> GameState -> Bool
+attackCreaturesAllowed pid admits chosen gs =
   let (candidates, barred) = attackCandidates pid gs
       alone = aloneAnnouncements candidates gs
       limits = CombatRestriction.attackLimit gs
-      (required, _) = attackCeilingGiven limits alone barred candidates gs
-      wanted = Set.fromList chosen
-      (_, boosted) = Requirement.boosted [(oid, target) | oid <- Set.toList wanted, target <- declarableTargets gs] required
-      (_, witness) = ceilingUnder (\oid _ -> Set.member oid wanted) boosted limits alone barred candidates gs
-   in Map.keysSet witness == wanted && attackProposalAllowed pid witness gs
+   in attackCreaturesAllowedGiven limits alone barred candidates (attackCeilingGiven limits alone barred candidates gs) admits chosen gs
+
+attackCreaturesAllowedGiven :: CombatRestriction.AttackLimits -> Map (ObjectId, AttackTarget.AttackTarget) [CombatRestriction.Company] -> Set (ObjectId, AttackTarget.AttackTarget) -> [ObjectId] -> (Requirement.Instances (ObjectId, AttackTarget.AttackTarget), Map ObjectId AttackTarget.AttackTarget) -> (ObjectId -> AttackTarget.AttackTarget -> Bool) -> [ObjectId] -> GameState -> Bool
+attackCreaturesAllowedGiven limits alone barred candidates bound admits chosen gs =
+  let wanted = Set.fromList chosen
+      (_, boosted) = Requirement.boosted [(oid, target) | oid <- Set.toList wanted, target <- declarableTargets gs] (fst bound)
+      (_, witness) = ceilingUnder (\oid target -> Set.member oid wanted && admits oid target) boosted limits alone barred candidates gs
+   in Map.keysSet witness == wanted && attackProposalAllowedGiven limits alone bound witness gs
 
 attackProposalAllowedGiven :: CombatRestriction.AttackLimits -> Map (ObjectId, AttackTarget.AttackTarget) [CombatRestriction.Company] -> (Requirement.Instances (ObjectId, AttackTarget.AttackTarget), Map ObjectId AttackTarget.AttackTarget) -> Map ObjectId AttackTarget.AttackTarget -> GameState -> Bool
 attackProposalAllowedGiven limits alone bound proposal gs =
@@ -2595,7 +2599,28 @@ attemptAttackDeclaration perform pid asked forced rejected = do
           -- player is never offered. `targets` is the fallback the list cannot need --
           -- `offered` is filtered to `offerable`, each of which has at least one
           -- announcement -- and is what keeps this total.
-          Monad.mapM (\oid -> fmap ((,) oid) (announceAttackTarget pid oid (Maybe.fromMaybe targets (NonEmpty.nonEmpty (announceableFor oid))))) offered
+          --
+          -- Narrower still where the chosen creatures have a legal declaration at
+          -- all: only an announcement that, beside the ones already made, some
+          -- announcements for the rest complete into a declaration CR 508.1c and
+          -- 508.1d let stand. Any other is one the preamble would rewind (Alluring
+          -- Siren's lured creature at a planeswalker), and every legal declaration
+          -- stays reachable, since its own announcements complete each other. A set
+          -- of creatures with no legal declaration keeps the whole list, and the
+          -- rewind below. ProtocolSpec's and CombatCostSpec's Alluring Siren cases
+          -- are the proof.
+          let announceFrom earlier pending = case pending of
+                [] -> pure (reverse earlier)
+                oid : later -> do
+                  let open = Map.fromList ([(o, Set.singleton t) | (o, t) <- earlier] <> [(o, Set.fromList (announceableFor o)) | o <- later])
+                      completes target = attackCreaturesAllowedGiven limits alone barred candidates bound (\o t -> maybe False (Set.member t) (Map.lookup o (Map.insert oid (Set.singleton target) open))) offered gs
+                      own = announceableFor oid
+                      -- One announcement is asked nothing either way, so not searched.
+                      kept = if null (drop 1 own) then own else filter completes own
+                      options = Maybe.fromMaybe targets (NonEmpty.nonEmpty kept Applicative.<|> NonEmpty.nonEmpty own)
+                  target <- announceAttackTarget pid oid options
+                  announceFrom ((oid, target) : earlier) later
+          announceFrom [] offered
     let -- CR 508.1a-d's declaration, announcements included, as a map -- the
         -- key `rejected` is taken on, since it is the declaration the preamble
         -- rewinds rather than the interpreter's raw answer.
