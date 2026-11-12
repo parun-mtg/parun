@@ -5,6 +5,7 @@ import qualified Parun.Codec.Fight as Fight
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Fight as Fight
+import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.SlotName as SlotName
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -15,6 +16,13 @@ spec s = Spec.describe s "Parun.Codec.Fight" $ do
     Common.assertCodec
       s
       Fight.codec
-      (Fight.MkFight (SlotName.MkSlotName (Text.pack "mine")) (SlotName.MkSlotName (Text.pack "theirs")))
+      (Fight.MkFight (SlotName.MkSlotName (Text.pack "mine")) (SlotName.MkSlotName (Text.pack "theirs")) Hop.Itself)
       " {\"first\":\"mine\",\"second\":\"theirs\"} "
+  -- Novel Nunchaku's "equipped creature fights".
+  Spec.it s "MkFight, the first slot's host" $
+    Common.assertCodec
+      s
+      Fight.codec
+      (Fight.MkFight (SlotName.MkSlotName (Text.pack "self")) (SlotName.MkSlotName (Text.pack "victim")) Hop.Host)
+      " {\"first\":\"self\",\"hop\":\"Host\",\"second\":\"victim\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Fight.codec

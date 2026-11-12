@@ -86,6 +86,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Grouping as Grouping
 import qualified Parun.Types.HandActionPerformer as HandActionPerformer
+import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.Layer as Layer
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Mana as Mana.Type
@@ -238,7 +239,7 @@ dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source
 -- read of what the effect IS: the amounts come off the projection, the kind is
 -- data, and the pair guard is arithmetic on two Maybes.
 fight :: (Game Result -> Game ()) -> (Game Result -> Game ()) -> Game Result -> Map.Map SlotName (Set Recipient) -> Fight.Fight -> Game ()
-fight runPreventionRiders runReplacementEffects runSubgame legal (Fight.MkFight firstSlot secondSlot) = do
+fight runPreventionRiders runReplacementEffects runSubgame legal (Fight.MkFight firstSlot secondSlot firstHop) = do
   gs <- State.get
   -- CR 701.14b, and it is a guard on the PAIR: "if one or both creatures
   -- instructed to fight are no longer on the battlefield or are no longer
@@ -249,14 +250,22 @@ fight runPreventionRiders runReplacementEffects runSubgame legal (Fight.MkFight 
   -- Both powers read off the SAME pre-effect state, which is CR 701.14a's
   -- "each of those creatures deals damage equal to its power": a fight whose
   -- first blow shrank the second creature would read the wrong number.
-  let fighter slot = do
+  --
+  -- CR 608.2h: Hop.Host is read HERE, as the effect is applied, so "equipped
+  -- creature" is whatever the Equipment is attached to now, or was as it left
+  -- (CR 113.7a). Proved by
+  -- data/scenarios/novel-nunchaku-moved-in-response-its-new-creature-fights.json.
+  let fighter hop slot = do
         recipient <- legalOne slot legal
-        oid <- Recipient.objectOf recipient
+        named <- Recipient.objectOf recipient
+        oid <- case hop of
+          Hop.Itself -> Just named
+          Hop.Host -> Game.hostWithLastKnown named gs
         Monad.guard (Set.member oid (GameState.battlefield gs))
         Monad.guard (Projection.isCreatureOf oid gs)
         power <- Projection.powerOf oid gs
         pure (oid, power)
-  case (fighter firstSlot, fighter secondSlot) of
+  case (fighter firstHop firstSlot, fighter Hop.Itself secondSlot) of
     (Just (oneId, onePower), Just (twoId, twoPower)) -> do
       -- CR 701.14d: "the damage dealt when a creature fights ISN'T COMBAT
       -- DAMAGE", so DamageKind.Noncombat and never the combat damage path.

@@ -1,5 +1,6 @@
 module Parun.Types.Fight where
 
+import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.SlotName as SlotName
 
 -- | The payload of Parun.Types.Effect's Fight arm.
@@ -18,6 +19,10 @@ import qualified Parun.Types.SlotName as SlotName
 -- than a sequence.
 data Fight = MkFight
   { first :: SlotName.SlotName,
-    second :: SlotName.SlotName
+    second :: SlotName.SlotName,
+    -- | CR 301.5a / 303.4b / 608.2h: which object `first` names, its slot's own
+    -- or the permanent that one is attached to as the fight happens (Novel
+    -- Nunchaku's "equipped creature fights"). Elided when Hop.Itself.
+    hop :: Hop.Hop
   }
   deriving (Eq, Ord, Show)
