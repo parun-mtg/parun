@@ -707,6 +707,16 @@ setUp :: Answerer.Answerer (Asked.Asked GameState.GameState) (State.State Genera
 setUp answerer matchup =
   fmap snd (Engine.runGameAsked (Answerer.unwrap answerer) (Setup.gameWith GameSettings.plain (fmap fst matchup)) (Setup.newGame (Resolve.performHandAction Engine.playSubgame) matchup))
 
+-- Four Grizzly Bears and three Forests apiece: the opening hands empty both
+-- libraries, so the game ends at the second turn's draw (CR 704.5b). For a
+-- case that needs a result and nothing of the play before it.
+sevens :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck))
+sevens s registry = do
+  bear <- S.printingOf s registry "Grizzly Bears"
+  forest <- S.printingOf s registry "Forest"
+  let deck = Deck.fromCards (Map.fromList [(bear, 4), (forest, 3)])
+  pure ((S.alice, deck) NonEmpty.:| [(S.bob, deck)])
+
 -- Twelve Grizzly Bears and eight Forests apiece: short enough to deck out.
 bears :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck))
 bears s registry = do
