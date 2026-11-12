@@ -7636,6 +7636,11 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- Parun.CostSpec's "CR 601.2h delving three cards fires Rakshasa Vizier once,
   -- for three counters" proves it; ExileMaterials and CollectEvidence below
   -- follow.
+  --
+  -- LINKS the cards to `oid` when the cost is a spell's (`paidFor` is `oid`
+  -- only on the casting road), BeholdAndExile's CR 607.2q link. An activated
+  -- ability's `oid` is its source, which CR 607.2q links nothing to. Skyway
+  -- Robber's scenarios are the proof; no test observes the gate.
   CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n criterion) -> do
     gs <- State.get
     let candidates = exileCandidates slots pid oid criterion gs
@@ -7646,7 +7651,10 @@ payPayable perform moment paidFor slots pid oid component = case component of
         else Game.choose (Prompt.ChooseExilesFromGraveyard decider pid oid candidates n)
     if Set.isSubsetOf chosen (Set.fromList candidates) && Natural.length chosen == n
       then do
-        Monad.void (Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\c -> (c, Zone.Exile)) (Set.toAscList chosen)))
+        arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\c -> (c, Zone.Exile)) (Set.toAscList chosen))
+        Monad.when (paidFor == Just oid) $ do
+          let link = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own}
+          State.modify' (\g -> g {GameState.exiledWith = foldr (`Map.insert` link) (GameState.exiledWith g) (foldMap Foldable.toList arrived)})
         pure bindsNothing
       else pure Payment.Unpaid
   -- CR 702.167a's [materials]: the arm above over the battlefield and the

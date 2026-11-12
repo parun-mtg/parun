@@ -1,0 +1,188 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i0",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i3",
+            "ready": true
+          }
+        ],
+        "exile": [
+          {
+            "card": "Shock",
+            "label": "shock"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Skyway Robber",
+            "label": "robber"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p0"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p1"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p2"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p3"
+          },
+          {
+            "card": "Opt",
+            "label": "opt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 607.2q the escaped Skyway Robber's combat damage offers the instant exiled to pay its escape cost",
+  "final": [
+    {
+      "Life": {
+        "life": 14,
+        "player": "bob"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "$shock",
+          "Goblin Piker",
+          "Goblin Piker#2",
+          "Goblin Piker#3",
+          "Goblin Piker#4"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Exile"
+      }
+    },
+    {
+      "Count": {
+        "card": "Lightning Bolt",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    }
+  ],
+  "note": "Shock was exiled linked to nothing and Opt stays in the graveyard; were either offered, or the four exiled Pikers past the artifact, instant, or sorcery filter, an unscheduled ChooseOfferedCastSpell would fail the run.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExilesFromGraveyard",
+          "with": [
+            "$bolt",
+            "$p0",
+            "$p1",
+            "$p2",
+            "$p3"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i0",
+            "$i1",
+            "$i2",
+            "$i3"
+          ],
+          "object": "$robber"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "Skyway Robber"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Exercises"
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 3
+    }
+  ]
+}
