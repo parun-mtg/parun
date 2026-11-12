@@ -795,7 +795,10 @@ chosenValueCounts admitted answers tag card =
       answered = afterChoice answers (Face.spell card)
       inSpell = total admitted spellPairs - total admitted answered
       abilityModals = fmap TriggeredAbility.modal (Face.triggeredAbilities card) <> fmap ActivatedAbility.modal (Face.activatedAbilities card)
-      inAbility = total (not . admitted) (concatMap (afterChoice answers) abilityModals)
+      -- A keyword's own filter is read off the keyword long after the
+      -- resolution, so the choice answers it only where it is baked
+      -- (grantedChosenColors).
+      inAbility = total (\framing -> not (admitted framing) && framing /= KeywordFramed) (concatMap (afterChoice answers) abilityModals)
    in (total admitted (cardFilters card) - inSpell + inAbility, total (not . admitted) (cardFilters card) + inSpell - inAbility)
 
 -- The filters a spell's mode reads after its first `Effect.ChooseQuality q`
@@ -860,7 +863,8 @@ hasChosenColorCounts card =
       granted = grantedChosenColors card
    in (framed + granted, elsewhere - granted)
 
--- CR 607.2d's "protection from the chosen color" granted by a STATIC ability
+-- CR 607.2d's "protection from the chosen color", or CR 702.11d's hexproof
+-- from it, granted by a STATIC ability
 -- or by a resolution's ModifyTarget: the keyword positions the colour is
 -- answered at, since Parun.Engine.Keyword.withChosenColors bakes the choice
 -- into a BARE quality -- as Parun.Engine.Projection applies a static grant
@@ -870,6 +874,7 @@ grantedChosenColors :: Face.Face Card.Type.Card -> Int
 grantedChosenColors card =
   let bare m = case m of
         Modification.GainKeyword (Keyword.Protection protection) -> Protection.quality protection == Filter.Type.HasChosenColor
+        Modification.GainKeyword (Keyword.Hexproof quality) -> quality == Just Filter.Type.HasChosenColor
         _ -> False
    in length
         ( [() | ability <- Face.staticAbilities card, m <- NonEmpty.toList (StaticAbility.modifications ability), bare m]

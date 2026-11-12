@@ -197,10 +197,11 @@ timingWith flash pid oid name gs = case proposedFace oid name gs of
 -- sorcery with sneak may begin one in that step; which COST may then be announced
 -- is the per-candidate question, and rule 702.190a's window admits only its own.
 --
--- The keyword is read two ways -- the proposed half's printed keywords and the
+-- The keyword is read three ways -- the proposed half's printed keywords, the
 -- spell's post-layer ones on the stack (Cost.spellKeywords), where rule
--- 702.190a's ability functions -- so a granted sneak widens the window as a
--- printed one does. Offering's window reads the latter for rule 702.48a's
+-- 702.190a's ability functions, and the card's where it lies -- so a granted
+-- sneak widens the window as a printed one does. Offering's window reads the
+-- stack's for rule 702.48a's
 -- same reason.
 cardTimingOk :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
 cardTimingOk pid oid name gs = cardTimingWith (timingOk pid oid name gs) pid oid name gs
@@ -215,7 +216,12 @@ cardTimingWith window pid oid name gs = case proposedFace oid name gs of
       -- first: the window is False at all but one step of one player's turn, and
       -- the projection fold behind the second limb then never runs.
       || ( Turn.declareBlockersWindow pid gs
-             && (Keyword.hasSneak (Face.keywordSet face) || Keyword.hasSneak (Map.keysSet (Cost.spellKeywords pid oid gs)))
+             && ( Keyword.hasSneak (Face.keywordSet face)
+                    || Keyword.hasSneak (Map.keysSet (Cost.spellKeywords pid oid gs))
+                    -- Ninja Teen's "creature cards in your graveyard have
+                    -- sneak": a grant confined to the zone the card lies in.
+                    || Keyword.hasSneak (projectedKeywords oid gs)
+                )
          )
       -- CR 702.48a: offering's window, and CR 601.3c / 601.3d's card's own
       -- flash permission, open only while some candidate carrying the window
