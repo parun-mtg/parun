@@ -240,9 +240,10 @@ data Modification ability
     -- it in addition to its others, as the mode says (Blood Moon -> Mountain,
     -- Urborg -> Swamp). CR 305.7's ability strip is the Replace mode's alone.
     LandSubtype ChangeMode.ChangeMode Subtype.Subtype
-  | -- | layer 4, CR 613.1d / 205.1a / 205.1b: LandSubtype or CreatureSubtype, as
-    -- the family says, with the subtype chosen for THIS effect's SOURCE
-    -- (Object.chosenSubtype), as it entered or by Effect.ChooseQuality.
+  | -- | layer 4, CR 613.1d / 205.1a / 205.1b: LandSubtype, CreatureSubtype or
+    -- (a planeswalker type's add) AddSubtype, as the family says, with the
+    -- subtype chosen for THIS effect's SOURCE (Object.chosenSubtype), as it
+    -- entered or by Effect.ChooseQuality.
     -- Convincing Mirage's "enchanted land is the chosen type"; Mystic Compass's,
     -- which a resolution bakes; Adaptive Automaton's "is the chosen type in
     -- addition to its other types".
