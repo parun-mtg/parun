@@ -569,8 +569,7 @@ redRed fetch = do
   deck <- Cards.redDeck fetch
   pure (Setup.mirror deck bothPlayers)
 
--- The red mirror at half the counts, for the specs that play a whole game out.
--- They need a deck-out, not a tournament-length one.
+-- The red mirror at half the counts.
 shortRedRed :: (Monad m) => Cards.Fetch m -> m (NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck))
 shortRedRed fetch = do
   deck <- Cards.redDeck fetch
