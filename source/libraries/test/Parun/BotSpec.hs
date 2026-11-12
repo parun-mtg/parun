@@ -535,6 +535,8 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "designations" (drawn (Prompt.ChooseDesignation decider S.alice oid (Designation.AlphaSector NonEmpty.:| [Designation.BetaSector, Designation.GammaSector]))) (Set.fromList [Designation.AlphaSector, Designation.BetaSector, Designation.GammaSector])
     Spec.assertEqWith s "dungeons" (drawn (Prompt.ChooseDungeon decider S.alice printings)) (every printings)
     Spec.assertEqWith s "halves" (drawn (Prompt.ChooseHalf decider S.alice oid names)) (every names)
+    let anchors = fmap Text.pack ("Khans" NonEmpty.:| ["Dragons"])
+    Spec.assertEqWith s "words" (drawn (Prompt.ChooseWord decider S.alice oid anchors)) (every anchors)
     Spec.assertEqWith s "legends" (drawn (Prompt.ChooseLegend decider S.alice objects)) (every objects)
     Spec.assertEqWith s "name positions" (drawn (Prompt.ChooseNamePosition decider S.alice oid (0 NonEmpty.:| [1, 2]))) (Set.fromList [0, 1, 2])
     Spec.assertEqWith s "opponents" (drawn (Prompt.ChooseOpponent decider S.alice oid Nothing players)) (every players)

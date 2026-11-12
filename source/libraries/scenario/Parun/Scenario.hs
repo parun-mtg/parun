@@ -1062,6 +1062,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseCompanion _ _ companions -> all (`elem` companions) chosen
   Prompt.Type.ChooseRoom _ _ _ rooms -> chosen `elem` rooms
   Prompt.Type.ChooseHalf _ _ _ names -> chosen `elem` names
+  Prompt.Type.ChooseWord _ _ _ offered -> chosen `elem` offered
   Prompt.Type.ChooseLegend _ _ objects -> chosen `elem` objects
   Prompt.Type.ChooseAttackTarget _ _ _ targets -> chosen `elem` targets
   Prompt.Type.ChooseEnlist _ _ _ objects -> all (`elem` objects) chosen

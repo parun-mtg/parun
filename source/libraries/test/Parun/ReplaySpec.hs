@@ -1863,6 +1863,15 @@ combatReplaySpec s =
           -- Discriminating: a decode that ignored the response and answered the
           -- short transcript's odd would pass one leg by accident.
           Spec.assertEqWith s "odd round trips" (Replay.decode p (Replay.encode p Parity.Odd)) (Just Parity.Odd)
+        -- CR 607.2f: so is one of the card's words (Citadel Siege).
+        Spec.it s "ChooseWord round-trips through the transcript" $ do
+          let khans = Text.pack "Khans"
+              dragons = Text.pack "Dragons"
+              p = Prompt.ChooseWord decider S.alice oid (khans NonEmpty.:| [dragons])
+          Spec.assertEqWith s "Dragons round trips" (Replay.decode p (Replay.encode p dragons)) (Just dragons)
+          -- Discriminating: a decode that ignored the response and answered the
+          -- short transcript's first word would pass one leg by accident.
+          Spec.assertEqWith s "Khans round trips" (Replay.decode p (Replay.encode p khans)) (Just khans)
         -- CR 701.48a: so is which branch of learning the learner took, declining
         -- included.
         Spec.it s "ChooseLearn round-trips through the transcript" $ do

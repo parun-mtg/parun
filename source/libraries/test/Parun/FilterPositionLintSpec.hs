@@ -827,6 +827,7 @@ writesColors quality = case quality of
   ChosenQuality.CardType -> False
   ChosenQuality.Number _ -> False
   ChosenQuality.Parity -> False
+  ChosenQuality.Word _ -> False
 
 -- Whether a choice of this quality answers HasChosenSubtype, writesColors' twin.
 writesSubtype :: ChosenQuality.ChosenQuality -> Bool
@@ -836,6 +837,7 @@ writesSubtype quality = case quality of
   ChosenQuality.CardType -> False
   ChosenQuality.Number _ -> False
   ChosenQuality.Parity -> False
+  ChosenQuality.Word _ -> False
 
 -- Whether a choice of this quality answers HasChosenCardType, writesColors' twin.
 writesCardType :: ChosenQuality.ChosenQuality -> Bool
@@ -845,6 +847,7 @@ writesCardType quality = case quality of
   ChosenQuality.CardType -> True
   ChosenQuality.Number _ -> False
   ChosenQuality.Parity -> False
+  ChosenQuality.Word _ -> False
 
 -- CR 105.2's chosen colour is answerable only where Filter.Context.sourceChosenColors
 -- is filled: every source-framed position (sourceFramed), plus a static grant's

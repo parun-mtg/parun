@@ -6,6 +6,7 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
@@ -498,6 +499,9 @@ data Prompt r where
   -- | CR 607.2d: odd or even, for the object the ObjectId names
   -- (ChosenQuality.Parity, Gollum, Riddle Master). Both are always legal.
   ChooseParity :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Prompt Parity.Parity
+  -- | CR 607.2f / 614.12c: one of the card's words, for the object the
+  -- ObjectId names (ChosenQuality.Word, Citadel Siege). Every one is legal.
+  ChooseWord :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty Text.Text -> Prompt Text.Text
   -- | The printed "and/or" of a multi-place search: which of the offered places
   -- (CR 701.23a's zones, CR 701.23j's outside the game) this searcher looks
   -- through, a nonempty subset (Boonweaver Giant's "may" is why nonempty).
