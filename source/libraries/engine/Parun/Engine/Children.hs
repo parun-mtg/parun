@@ -3448,8 +3448,8 @@ modificationChildren c modification = case modification of
   Modification.GainCastingPermission permission -> Modification.GainCastingPermission <$> modificationCastingPermission c permission
   Modification.GainAbility ability -> Modification.GainAbility <$> modificationAbility c ability
   Modification.GainAbilitiesOfSource keywords -> Modification.GainAbilitiesOfSource . Set.fromList <$> traverse (modificationStampedKeyword c) (Set.toList keywords)
-  Modification.GainKeywordsAmong designator among ->
-    Modification.GainKeywordsAmong
+  Modification.GainKeywordsAmong designator zone among ->
+    (\d -> Modification.GainKeywordsAmong d zone)
       <$> ( case designator of
               KeywordDesignator.OfKeyword k -> KeywordDesignator.OfKeyword <$> modificationKeyword c k
               KeywordDesignator.OfInstance k n -> (`KeywordDesignator.OfInstance` n) <$> modificationKeyword c k

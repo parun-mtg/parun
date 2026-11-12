@@ -1,0 +1,309 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Cairn Wanderer",
+            "label": "wanderer"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Anaconda",
+            "label": "anaconda"
+          },
+          {
+            "card": "Black Knight",
+            "label": "knight"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Raise Dead",
+            "label": "raise"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "a1"
+          },
+          {
+            "card": "Island",
+            "label": "a2"
+          },
+          {
+            "card": "Island",
+            "label": "a3"
+          },
+          {
+            "card": "Island",
+            "label": "a4"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Cat Warriors",
+            "label": "cats"
+          },
+          {
+            "card": "Abbey Gargoyles",
+            "label": "gargoyles"
+          },
+          {
+            "card": "Air Elemental",
+            "label": "elemental"
+          },
+          {
+            "card": "Ovalchase Dragster",
+            "label": "dragster"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "b1"
+          },
+          {
+            "card": "Island",
+            "label": "b2"
+          },
+          {
+            "card": "Island",
+            "label": "b3"
+          },
+          {
+            "card": "Island",
+            "label": "b4"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.1c: Cairn Wanderer has every landwalk and protection found on a creature card in any graveyard, for as long as the card is there",
+  "note": "Anaconda's swampwalk and Black Knight's first strike and protection from white are in Alice's graveyard; Cat Warriors' forestwalk and Abbey Gargoyles' flying and protection from red are in Bob's. Flying is found on two cards and held once. Ovalchase Dragster is no creature card, so its trample and haste are not found. Raise Dead then returns Anaconda, and the swampwalk goes with it while the forestwalk stays.",
+  "timeline": [
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Landwalk",
+            "value": {
+              "type": "HasSubtype",
+              "value": "Swamp"
+            }
+          },
+          "object": "$wanderer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Landwalk",
+            "value": {
+              "type": "HasSubtype",
+              "value": "Forest"
+            }
+          },
+          "object": "$wanderer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Protection",
+            "value": {
+              "quality": {
+                "type": "HasColor",
+                "value": "White"
+              },
+              "spares": null
+            }
+          },
+          "object": "$wanderer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Protection",
+            "value": {
+              "quality": {
+                "type": "HasColor",
+                "value": "Red"
+              },
+              "spares": null
+            }
+          },
+          "object": "$wanderer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "FirstStrike"
+          },
+          "object": "$wanderer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Flying"
+          },
+          "object": "$wanderer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Trample"
+          },
+          "object": "$wanderer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Haste"
+          },
+          "object": "$wanderer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s1"
+          ],
+          "object": "$raise",
+          "targets": [
+            "$anaconda"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Anaconda",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Landwalk",
+            "value": {
+              "type": "HasSubtype",
+              "value": "Swamp"
+            }
+          },
+          "object": "$wanderer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Landwalk",
+            "value": {
+              "type": "HasSubtype",
+              "value": "Forest"
+            }
+          },
+          "object": "$wanderer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

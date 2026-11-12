@@ -3556,7 +3556,7 @@ modificationFilters modification = case modification of
   -- Minted, and swept as the Backup keyword -- see modificationCounts.
   Modification.GainAbilitiesOfSource _ -> []
   -- The permanents swept for the keywords, and a written keyword's own Filter.
-  Modification.GainKeywordsAmong designator among ->
+  Modification.GainKeywordsAmong designator _ among ->
     (Unframed, among) : case designator of
       KeywordDesignator.OfKeyword keyword -> keywordFilters keyword
       KeywordDesignator.OfInstance keyword _ -> keywordFilters keyword
