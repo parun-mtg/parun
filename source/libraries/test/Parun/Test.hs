@@ -582,6 +582,7 @@ import qualified Parun.Codec.OutsidePickSpec
 import qualified Parun.Codec.OwnedZoneSpec
 import qualified Parun.Codec.PaidExpirySpec
 import qualified Parun.Codec.PairingSpec
+import qualified Parun.Codec.PairwiseFrameSpec
 import qualified Parun.Codec.ParityOperandSpec
 import qualified Parun.Codec.ParitySpec
 import qualified Parun.Codec.PartnerTextSpec
@@ -1629,6 +1630,7 @@ spec s registry corpus = do
   Parun.Codec.PaidExpirySpec.spec s
   Parun.Codec.UntilPaidSpec.spec s
   Parun.Codec.PairingSpec.spec s
+  Parun.Codec.PairwiseFrameSpec.spec s
   Parun.Codec.PartnerTextSpec.spec s
   Parun.Codec.PastActivationSpec.spec s
   Parun.Codec.PayBranchSpec.spec s

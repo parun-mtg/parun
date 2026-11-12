@@ -129,6 +129,7 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.OrElse as OrElse
 import qualified Parun.Types.OwnedZone as OwnedZone
+import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
@@ -1045,7 +1046,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- CR 509.1b: a creature that can't be blocked, by any creature, by
   -- creatures of a description, or except by them.
   Spec.it s "render prints a creature that can't be blocked" $ do
-    let unblockable f = CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy (Affected.Matching Filter.IsSource) f Nothing Nothing)
+    let unblockable f = CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy (Affected.Matching Filter.IsSource) f PairwiseFrame.Attacker Nothing Nothing)
         combat rs = withFace (\f -> f {Face.combatRestrictions = rs})
     Spec.assertEq s (Just (Text.pack "Spark can't be blocked.")) (Oracle.render (combat [unblockable (Filter.And [])]))
     Spec.assertEq s [[Text.pack "Spark can't be blocked by Walls."]] (Oracle.abilities (combat [unblockable (Filter.HasSubtype Subtype.Wall)]))
@@ -1056,7 +1057,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- objects are one sentence.
   Spec.it s "render reads a static ability and a can't be blocked of its objects as one" $ do
     let enchanted = Affected.Matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HasAttached Filter.IsSource])
-        aura changes = withFace (\f -> (typed [CardType.Enchantment] [Subtype.Aura] f) {Face.enchant = [TargetSlot.required Pool.Creatures Nothing], Face.staticAbilities = [static enchanted changes], Face.combatRestrictions = [CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy (Affected.Matching (Filter.HasAttached Filter.IsSource)) (Filter.Not (Filter.HasKeyword Keyword.Flying)) Nothing Nothing)]})
+        aura changes = withFace (\f -> (typed [CardType.Enchantment] [Subtype.Aura] f) {Face.enchant = [TargetSlot.required Pool.Creatures Nothing], Face.staticAbilities = [static enchanted changes], Face.combatRestrictions = [CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy (Affected.Matching (Filter.HasAttached Filter.IsSource)) (Filter.Not (Filter.HasKeyword Keyword.Flying)) PairwiseFrame.Attacker Nothing Nothing)]})
     Spec.assertEq s (Just (Text.pack "Enchant creature\nEnchanted creature gets +1/+1 and can't be blocked except by creatures with flying.")) (Oracle.render (aura [pt 1 1]))
     Spec.assertEq s [[Text.pack "Enchant creature"], [Text.pack "Enchanted creature can't be blocked except by creatures with flying and has shroud."]] (Oracle.abilities (aura [Modification.GainKeyword Keyword.Shroud]))
 

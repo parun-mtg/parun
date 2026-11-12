@@ -3471,8 +3471,8 @@ combatRestrictionChildren :: (Applicative f) => RuleChildren f -> CombatRestrict
 combatRestrictionChildren c restriction = case restriction of
   CombatRestriction.CantAttack x -> CombatRestriction.CantAttack <$> affectedUnlessChildren x
   CombatRestriction.CantBlock x -> CombatRestriction.CantBlock <$> affectedUnlessChildren x
-  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected blockers unless name) ->
-    fmap CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy <$> ruleAffected c affected <*> ruleFilter c blockers <*> traverse (ruleCondition c) unless <*> pure name)
+  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected blockers frame unless name) ->
+    fmap CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy <$> ruleAffected c affected <*> ruleFilter c blockers <*> pure frame <*> traverse (ruleCondition c) unless <*> pure name)
   CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures affected attackers unless name) ->
     fmap CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures <$> ruleAffected c affected <*> ruleFilter c attackers <*> traverse (ruleCondition c) unless <*> pure name)
   CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer affected defenders kinds unless name) ->

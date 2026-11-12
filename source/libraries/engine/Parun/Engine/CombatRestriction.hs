@@ -80,6 +80,7 @@ import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.PlayerChoice as PlayerChoice
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerScope as PlayerScope
@@ -555,13 +556,14 @@ blockingAlone cr = case cr of
 
 -- The PAIRWISE selector. Its own, and not another of the ones above, because
 -- what it answers is an Affected TOGETHER WITH the Filter describing the blockers
--- barred from it: the two are one sentence, and an Affected alone would say "this
--- creature can't be blocked" full stop.
-blockedBy :: CombatRestriction.CombatRestriction -> Maybe (Affected.Affected, Filter.Type.Filter Keyword.Type.Keyword)
+-- barred from it and the object that Filter is read from: the three are one
+-- sentence, and an Affected alone would say "this creature can't be blocked" full
+-- stop.
+blockedBy :: CombatRestriction.CombatRestriction -> Maybe (Affected.Affected, Filter.Type.Filter Keyword.Type.Keyword, PairwiseFrame.PairwiseFrame)
 blockedBy cr = case cr of
   CombatRestriction.CantAttack {} -> Nothing
   CombatRestriction.CantBlock {} -> Nothing
-  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy a f _ _) -> Just (a, f)
+  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy a f frame _ _) -> Just (a, f, frame)
   CombatRestriction.CantBlockCreatures {} -> Nothing
   CombatRestriction.CantAttackPlayer {} -> Nothing
   CombatRestriction.CantAttackAlone {} -> Nothing
@@ -643,7 +645,7 @@ gate :: CombatRestriction.CombatRestriction -> Maybe Condition.Type.Condition
 gate cr = case cr of
   CombatRestriction.CantAttack (AffectedUnless.MkAffectedUnless _ c _ _) -> c
   CombatRestriction.CantBlock (AffectedUnless.MkAffectedUnless _ c _ _) -> c
-  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy _ _ c _) -> c
+  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy _ _ _ c _) -> c
   CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures _ _ c _) -> c
   CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer _ _ _ c _) -> c
   CombatRestriction.CantAttackAlone (AloneUnless.MkAloneUnless _ _ _ c _) -> c
@@ -1095,7 +1097,7 @@ subjectOf :: CombatRestriction.CombatRestriction -> Maybe Affected.Affected
 subjectOf cr = case cr of
   CombatRestriction.CantAttack (AffectedUnless.MkAffectedUnless a _ _ _) -> Just a
   CombatRestriction.CantBlock (AffectedUnless.MkAffectedUnless a _ _ _) -> Just a
-  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy a _ _ _) -> Just a
+  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy a _ _ _ _) -> Just a
   CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures a _ _ _) -> Just a
   CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer a _ _ _ _) -> Just a
   CombatRestriction.CantAttackAlone (AloneUnless.MkAloneUnless a _ _ _ _) -> Just a
@@ -1123,18 +1125,15 @@ subjectOf cr = case cr of
 -- that actually states such a restriction -- `inForce` yields nothing on every
 -- other board, so the fold never reaches a candidate.
 --
--- THE FILTER'S CONTEXT IS THE ATTACKER'S: its source is the attacker and its
--- perspective that attacker's controller, the pairing
--- Parun.Engine.Combat.landwalkAllowsGiven gives a keyword-borne Filter. CR 109.5's
--- "you" would instead be the SOURCE's controller, as it is for the gate in
--- `inForce` and the affected set in `restricted`, and the two readings are
--- indistinguishable on every one of the pool's producers: CR 701.54c's affected
--- set carries HeldBy Controller You, so the Ring-bearer's controller IS the emblem's,
--- and Questing Beast's and Relic Runner's carry IsSource, so the attacker IS the
--- source. What is not
--- a choice is the source POWER, which CR 701.54c compares the blocker against:
--- the emblem has no power at all (CR 114.3), so only the attacker's makes the
--- comparison mean anything.
+-- THE FILTER'S CONTEXT IS THE ROW'S FRAME (Parun.Types.PairwiseFrame). Attacker:
+-- its source is the attacker and its perspective that attacker's controller, the
+-- pairing Parun.Engine.Combat.landwalkAllowsGiven gives a keyword-borne Filter;
+-- CR 701.54c compares the blocker with the Ring-bearer's power, the emblem having
+-- none (CR 114.3). Source: the permanent stating the row and its controller (CR
+-- 109.5), so Champion of Lambholt compares every blocker with its own power
+-- whether or not it attacks. data/scenarios's
+-- champion-of-lambholt-bars-blockers-weaker-than-itself-while-not-attacking
+-- proves the second.
 --
 -- The power is read off the full projection (CR 613), as skulk's is in
 -- Parun.Engine.Combat.skulkAllowsGiven, and read at the moment the declaration is
@@ -1159,18 +1158,21 @@ cantBeBlockedBy defending blockers attackers gs =
       -- the second position added.
       fromRestriction (source, changes, restriction) = case blockedBy restriction of
         Nothing -> []
-        Just (affected, criterion) ->
+        Just (affected, criterion, frame) ->
           let subject = if null changes then affected else Projection.rewriteAffected changes affected
               wanted = if null changes then criterion else Filter.rewrite changes criterion
+              stating = Projection.sourceContext gs (Projection.controllerOf source gs) source
               -- Lazy in the power and toughness, which a filter naming no
               -- source-power or source-toughness atom never forces.
               -- CR 702.16k: the carrier of rule 702.16f's minted row IS the
               -- attacker (Affected.Matching Filter.IsSource), so the chosen
               -- player comes off the same object the power does.
-              context attacker =
-                (Projection.pairwiseContext gs attacker)
-                  { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players attacker gs >>= Map.lookup PlayerChoice.AsEnters
-                  }
+              context attacker = case frame of
+                PairwiseFrame.Attacker ->
+                  (Projection.pairwiseContext gs attacker)
+                    { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players attacker gs >>= Map.lookup PlayerChoice.AsEnters
+                    }
+                PairwiseFrame.Source -> stating
               matched attacker blocker = Filter.matches (context attacker) (Projection.viewOfObject blocker gs) wanted
               barred attacker = fmap (\blocker -> (blocker, attacker)) (filter (matched attacker) blockers)
               -- CR 116.2d, `restrictedIn`'s filter on this arm's subject: the

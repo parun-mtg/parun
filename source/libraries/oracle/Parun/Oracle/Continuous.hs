@@ -38,6 +38,7 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.PairwiseFrame as PairwiseFrame
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
@@ -170,7 +171,7 @@ powerToughness context power toughness =
 unblockable :: Ability -> Maybe (Filter.Type.Filter Keyword.Keyword)
 unblockable a = case a of
   GrantedAbility.Rules rules
-    | [CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy (Affected.Matching Filter.Type.IsSource) blockers Nothing Nothing)] <- RuleAbilities.combatRestrictions rules,
+    | [CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy (Affected.Matching Filter.Type.IsSource) blockers PairwiseFrame.Attacker Nothing Nothing)] <- RuleAbilities.combatRestrictions rules,
       rules == mempty {RuleAbilities.combatRestrictions = RuleAbilities.combatRestrictions rules} ->
         Just blockers
   _ -> Nothing
@@ -275,7 +276,7 @@ evasive context attached enchants statics rs =
     [] -> (statics, rs, [])
   where
     restricts r = case r of
-      CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy a b Nothing Nothing) -> [(a, fmap (Text.pack "can't be blocked" <>) (blockedBy context b))]
+      CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy a b PairwiseFrame.Attacker Nothing Nothing) -> [(a, fmap (Text.pack "can't be blocked" <>) (blockedBy context b))]
       CombatRestriction.CantBlock (AffectedUnless.MkAffectedUnless a Nothing Nothing Nothing) -> [(a, [Text.pack "can't block"])]
       _ -> []
     together s a restrictions = do
@@ -321,14 +322,14 @@ combatRestrictions context attached enchants rs = case rs of
   [] -> []
   CombatRestriction.CantAttack a : CombatRestriction.CantBlock b : rest
     | a == b -> restricted a (Text.pack "can't attack or block") : combatRestrictions context attached enchants rest
-  CombatRestriction.CantBlock a@(AffectedUnless.MkAffectedUnless affected' Nothing Nothing Nothing) : CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected'' (Filter.Type.And []) Nothing Nothing) : rest
+  CombatRestriction.CantBlock a@(AffectedUnless.MkAffectedUnless affected' Nothing Nothing Nothing) : CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected'' (Filter.Type.And []) PairwiseFrame.Attacker Nothing Nothing) : rest
     | affected' == affected'' -> restricted a (Text.pack "can't block and can't be blocked") : combatRestrictions context attached enchants rest
   r : rest -> one r : combatRestrictions context attached enchants rest
   where
     one r = case r of
       CombatRestriction.CantAttack a -> restricted a (Text.pack "can't attack")
       CombatRestriction.CantBlock a -> restricted a (Text.pack "can't block")
-      CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected' blockers Nothing Nothing) -> do
+      CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected' blockers PairwiseFrame.Attacker Nothing Nothing) -> do
         subject <- ruled context attached enchants affected'
         by <- blockedBy context blockers
         [Prose.sentence (Target.wording subject <> Text.pack " can't be blocked" <> by)]
