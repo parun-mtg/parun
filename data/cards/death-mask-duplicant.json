@@ -1,0 +1,234 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "zone": "Exile"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    "pool": {
+                      "type": "CardsInGraveyard",
+                      "value": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "You"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 7
+        }
+      ],
+      "name": "Death-Mask Duplicant",
+      "oracleText": "Imprint — {1}: Exile target creature card from your graveyard.\nAs long as a card exiled with this creature has flying, this creature has flying. The same is true for fear, first strike, double strike, haste, landwalk, protection, and trample.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Flying"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Fear"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "FirstStrike"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "DoubleStrike"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Haste"
+                  }
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfFamily",
+                  "value": "Landwalk"
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfFamily",
+                  "value": "Protection"
+                },
+                "zone": "Exile"
+              }
+            },
+            {
+              "type": "GainKeywordsAmong",
+              "value": {
+                "among": {
+                  "type": "IsExiledWithSource",
+                  "value": {
+                    "type": "OwnAbilities"
+                  }
+                },
+                "keyword": {
+                  "type": "OfKeyword",
+                  "value": {
+                    "type": "Trample"
+                  }
+                },
+                "zone": "Exile"
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "typeLine": {
+        "subtypes": [
+          "Shapeshifter"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
