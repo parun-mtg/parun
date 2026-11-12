@@ -152,6 +152,7 @@ bare n t c i l p x k =
       Face.activationProhibitions = [],
       Face.attackCosts = [],
       Face.blockCosts = [],
+      Face.counterLimits = [],
       Face.mulliganActions = [],
       Face.openingHandActions = [],
       Face.specialActions = []

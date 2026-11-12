@@ -1,0 +1,150 @@
+{
+  "description": "CR 603.4 / 122.4 / 704.5r: Rasputin Dreamweaver, untapped as each of its controller's turns begins, gains a dream counter each upkeep, and an eighth is removed as a state-based action",
+  "note": "Placed with six, it has six through bob's upkeep, seven after alice's next and still seven after the one after: the eighth went on and came off.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Rasputin Dreamweaver",
+            "label": "rasputin",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "dream"
+                },
+                "value": 6
+              }
+            ]
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "bob",
+      "check": {
+        "Counters": {
+          "object": "$rasputin",
+          "kind": {
+            "type": "Named",
+            "value": "dream"
+          },
+          "count": 6
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$rasputin",
+          "kind": {
+            "type": "Named",
+            "value": "dream"
+          },
+          "count": 7
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": []
+      }
+    },
+    {
+      "turn": 5,
+      "step": "Upkeep",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 5,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$rasputin",
+          "kind": {
+            "type": "Named",
+            "value": "dream"
+          },
+          "count": 7
+        }
+      }
+    }
+  ]
+}

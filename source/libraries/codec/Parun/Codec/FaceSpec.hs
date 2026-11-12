@@ -46,6 +46,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostDirection as CostDirection
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterLimit as CounterLimit
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.DeckLimit as DeckLimit
@@ -192,6 +193,7 @@ baseFace =
       Face.entryRestrictions = [],
       Face.attackCosts = [],
       Face.blockCosts = [],
+      Face.counterLimits = [],
       Face.additionalCosts = [],
       Face.additionalCostChoices = [],
       Face.modeCosts = Map.empty,
@@ -270,6 +272,7 @@ minimalFace =
       Face.entryRestrictions = [],
       Face.attackCosts = [],
       Face.blockCosts = [],
+      Face.counterLimits = [],
       Face.mulliganActions = [],
       Face.openingHandActions = [],
       Face.specialActions = []
@@ -325,6 +328,7 @@ populatedFace =
       Face.entryRestrictions = [EntryRestriction.MkEntryRestriction Affected.Attached (Set.singleton Zone.Graveyard)],
       Face.attackCosts = [AttackCost.MkAttackCost Affected.Attached (PerCreature.Fixed (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) [])) AttackCostScope.Controller Nothing],
       Face.blockCosts = [BlockCost.MkBlockCost Affected.Attached (PerCreature.Fixed (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 3])) [])) Nothing Nothing],
+      Face.counterLimits = [CounterLimit.MkCounterLimit CounterKind.Age 7],
       Face.additionalCosts = [CostComponent.TapThis],
       Face.additionalCostChoices = [],
       Face.modeCosts = Map.empty,
@@ -371,6 +375,7 @@ populatedFaceJson =
     <> "\"entryRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"origins\":[\"Graveyard\"]}],"
     <> "\"attackCosts\":[{\"subject\":{\"type\":\"Attached\"},\"perAttacker\":{\"type\":\"Fixed\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":2}]}},\"scope\":\"Controller\"}],"
     <> "\"blockCosts\":[{\"subject\":{\"type\":\"Attached\"},\"perBlocker\":{\"type\":\"Fixed\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":3}]}}}],"
+    <> "\"counterLimits\":[{\"atMost\":7,\"kind\":{\"type\":\"Age\"}}],"
     <> "\"additionalCosts\":[{\"type\":\"TapThis\"}],"
     <> "\"maximumX\":[{\"type\":\"Measure\",\"value\":\"ManaValue\"}],"
     <> "\"minimumX\":1,"
@@ -639,6 +644,13 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
         decodeFace
         baseFace {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction Affected.Attached (Just CounterKind.MinusOneMinusOne)]}
         (init baseFaceJson <> ",\"counterRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"kind\":{\"type\":\"MinusOneMinusOne\"}}]}")
+    Spec.it s "counterLimits" $
+      Common.assertJsonCodec
+        s
+        encodeFace
+        decodeFace
+        baseFace {Face.counterLimits = [CounterLimit.MkCounterLimit CounterKind.Age 7]}
+        (init baseFaceJson <> ",\"counterLimits\":[{\"atMost\":7,\"kind\":{\"type\":\"Age\"}}]}")
     Spec.it s "activationProhibitions" $
       Common.assertJsonCodec
         s

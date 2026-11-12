@@ -11,6 +11,7 @@ import qualified Parun.Codec.BlockCost as BlockCost
 import qualified Parun.Codec.BlockPermission as BlockPermission
 import qualified Parun.Codec.BlockRequirement as BlockRequirement
 import qualified Parun.Codec.CombatRestriction as CombatRestriction
+import qualified Parun.Codec.CounterLimit as CounterLimit
 import qualified Parun.Codec.CounterRestriction as CounterRestriction
 import qualified Parun.Codec.EntryRestriction as EntryRestriction
 import qualified Parun.Codec.KeywordCostRestriction as KeywordCostRestriction
@@ -42,6 +43,7 @@ codec = Fields.object $ do
   sacrificeRestrictions <- Fields.defaulted "sacrificeRestrictions" [] (Common.list SacrificeRestriction.codec) RuleAbilities.sacrificeRestrictions
   targetRestrictions <- Fields.defaulted "targetRestrictions" [] (Common.list (TargetRestriction.codec Affected.codec)) RuleAbilities.targetRestrictions
   untapRestrictions <- Fields.defaulted "untapRestrictions" [] (Common.list UntapRestriction.codec) RuleAbilities.untapRestrictions
+  counterLimits <- Fields.defaulted "counterLimits" [] (Common.list CounterLimit.codec) RuleAbilities.counterLimits
   pure
     RuleAbilities.MkRuleAbilities
       { RuleAbilities.activationProhibitions = activationProhibitions,
@@ -58,5 +60,6 @@ codec = Fields.object $ do
         RuleAbilities.entryRestrictions = entryRestrictions,
         RuleAbilities.sacrificeRestrictions = sacrificeRestrictions,
         RuleAbilities.targetRestrictions = targetRestrictions,
-        RuleAbilities.untapRestrictions = untapRestrictions
+        RuleAbilities.untapRestrictions = untapRestrictions,
+        RuleAbilities.counterLimits = counterLimits
       }

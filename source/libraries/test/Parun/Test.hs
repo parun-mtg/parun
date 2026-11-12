@@ -253,6 +253,7 @@ import qualified Parun.Codec.CounterDestinationSpec
 import qualified Parun.Codec.CounterGroupingSpec
 import qualified Parun.Codec.CounterHolderSpec
 import qualified Parun.Codec.CounterKindSpec
+import qualified Parun.Codec.CounterLimitSpec
 import qualified Parun.Codec.CounterLinkSpec
 import qualified Parun.Codec.CounterLinkedSpec
 import qualified Parun.Codec.CounterLossRSpec
@@ -1308,6 +1309,7 @@ spec s registry corpus = do
   Parun.Codec.CounterTriggerSpec.spec s
   Parun.Codec.CountersPlacedSpec.spec s
   Parun.Codec.CounterProhibitionSpec.spec s
+  Parun.Codec.CounterLimitSpec.spec s
   Parun.Codec.CounterRestrictionSpec.spec s
   Parun.Codec.CounterRSpec.spec s
   Parun.Codec.CountersAreSpec.spec s

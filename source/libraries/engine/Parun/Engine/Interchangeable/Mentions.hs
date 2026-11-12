@@ -24,7 +24,7 @@
 -- Pending* effects and Expiry with its While, PaidExpiry and EventExpiry,
 -- ObjectRef with ChosenPermanents, the rule-affecting rows: RuleAbilities
 -- with its ActivationProhibition, AttachRestriction, RulePermission,
--- AttackRequirement, BlockPermission, BlockRequirement, CounterRestriction,
+-- AttackRequirement, BlockPermission, BlockRequirement, CounterRestriction, CounterLimit,
 -- KeywordCostRestriction, EntryRestriction, SacrificeRestriction, TargetRestriction
 -- and UntapRestriction, the combat rules CombatRestriction, AttackCost,
 -- BlockCost and PerCreature, Affected, the mana payloads: ManaAddition with
@@ -101,6 +101,7 @@ import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterLimit as CounterLimit
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.DamagePattern as DamagePattern
@@ -590,6 +591,9 @@ counterKindNames _asking onKeyword x = case x of
 counterRestrictionNames :: (Monoid r) => Asking r -> CounterRestriction.CounterRestriction -> r
 counterRestrictionNames asking = Const.getConst . Children.counterRestrictionChildren (ruleVisitors asking)
 
+counterLimitNames :: (Monoid r) => Asking r -> CounterLimit.CounterLimit -> r
+counterLimitNames asking = Const.getConst . Children.counterLimitChildren (ruleVisitors asking)
+
 commanderDeckRuleNames :: (Monoid r) => Asking r -> CommanderDeckRule.CommanderDeckRule -> r
 commanderDeckRuleNames asking x = case x of
   CommanderDeckRule.NoMaximumDeckSize -> mempty
@@ -765,6 +769,7 @@ faceNames asking onCard =
           Children.faceActivationProhibition = Const.Const . activationProhibitionNames asking,
           Children.faceAttackCost = Const.Const . attackCostNames asking,
           Children.faceBlockCost = Const.Const . blockCostNames asking,
+          Children.faceCounterLimit = Const.Const . counterLimitNames asking,
           Children.faceHandAction = Const.Const . handActionNames asking onCard,
           Children.faceSpecialAction = Const.Const . specialActionNames asking
         }

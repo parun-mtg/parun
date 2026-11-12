@@ -1071,7 +1071,7 @@ withoutExceptedAbility pc exception = case exception of
   CopyException.NoManaCost -> pc
   CopyException.DontCopyColors -> pc
 
--- withoutExceptedAbility's subtraction over each of the fifteen lists.
+-- withoutExceptedAbility's subtraction over each of the sixteen lists.
 withoutRuleAbilities :: RuleAbilities.RuleAbilities -> RuleAbilities.RuleAbilities -> RuleAbilities.RuleAbilities
 withoutRuleAbilities gone have =
   let less :: (Eq a) => (RuleAbilities.RuleAbilities -> [a]) -> [a]
@@ -1091,7 +1091,8 @@ withoutRuleAbilities gone have =
           RuleAbilities.entryRestrictions = less RuleAbilities.entryRestrictions,
           RuleAbilities.sacrificeRestrictions = less RuleAbilities.sacrificeRestrictions,
           RuleAbilities.targetRestrictions = less RuleAbilities.targetRestrictions,
-          RuleAbilities.untapRestrictions = less RuleAbilities.untapRestrictions
+          RuleAbilities.untapRestrictions = less RuleAbilities.untapRestrictions,
+          RuleAbilities.counterLimits = less RuleAbilities.counterLimits
         }
 
 -- The list without its last element equal to `x`, unchanged when none is.
@@ -1708,12 +1709,12 @@ copiableSpecialActionsOf carrier gs =
         -- The printed read reaches a copied Room too, for staticAbilitiesOf's reason.
         Nothing -> foldMap Face.specialActions (Game.faceOf oid gs)
 
--- CR 613.11: the fifteen rule-affecting ability families this object's copiable
+-- CR 613.11: the sixteen rule-affecting ability families this object's copiable
 -- rules text gives it -- its copy snapshot's when it has one, its printed face's
 -- otherwise. copiableSpecialActionsOf above in every respect, and split out for
 -- the same two structural reasons.
 --
--- THE reader for all fifteen gatherer modules (Parun.Engine.CombatRestriction and
+-- THE reader for all sixteen gatherer modules (Parun.Engine.CombatRestriction and
 -- its fourteen siblings), through Parun.Engine.Projection.ruleAbilitiesOf, which
 -- is what makes the two rules it settles settle once:
 -- CR 707.2a, so a permanent that became a copy of Silent Arbiter limits attackers
@@ -1738,7 +1739,7 @@ copiableRuleAbilitiesOf carrier gs =
         -- The printed read reaches a copied Room too, for staticAbilitiesOf's reason.
         Nothing -> foldMap ruleAbilitiesOfFace (Game.faceOf oid gs)
 
--- The fifteen lists a printed face declares. Its own function so that the seed
+-- The sixteen lists a printed face declares. Its own function so that the seed
 -- above and copiableRuleAbilitiesOf's fallback cannot drift on what a face
 -- contributes.
 ruleAbilitiesOfFace :: Face.Face Card.Type.Card -> RuleAbilities.RuleAbilities
@@ -1758,7 +1759,8 @@ ruleAbilitiesOfFace face =
       RuleAbilities.entryRestrictions = Face.entryRestrictions face,
       RuleAbilities.sacrificeRestrictions = Face.sacrificeRestrictions face,
       RuleAbilities.targetRestrictions = Face.targetRestrictions face,
-      RuleAbilities.untapRestrictions = Face.untapRestrictions face
+      RuleAbilities.untapRestrictions = Face.untapRestrictions face,
+      RuleAbilities.counterLimits = Face.counterLimits face
     }
 
 -- CR 208.2 / 604.3: the card's characteristic-defining P/T, with the printed star
@@ -1821,7 +1823,7 @@ noCharacteristics =
       PC.delayedAbilities = Map.empty,
       PC.enchant = [],
       PC.castingPermissions = [],
-      -- CR 613.11: no characteristics, so none of the fifteen families either.
+      -- CR 613.11: no characteristics, so none of the sixteen families either.
       PC.ruleAbilities = mempty,
       PC.lostAllAbilities = False,
       PC.hasFullText = False,
@@ -2002,7 +2004,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               -- CR 601.3: the printed permissions, in the seed for enchant's
               -- reason, so a granted one is not copiable.
               PC.castingPermissions = Face.castingPermissions face,
-              -- CR 613.11: the fifteen families CR 613.11 applies after the layer
+              -- CR 613.11: the sixteen families CR 613.11 applies after the layer
               -- system, off `face` for enchant's reason -- and copiable for
               -- enchant's reason too, which is what carries them to a copy and,
               -- through withMergedAbilities below, to a merged permanent's other
@@ -2192,7 +2194,7 @@ withMergedAbilities donor base =
       PC.delayedAbilities = Map.union (PC.delayedAbilities base) (PC.delayedAbilities donor),
       PC.enchant = PC.enchant base <> PC.enchant donor,
       PC.castingPermissions = PC.castingPermissions base <> PC.castingPermissions donor,
-      -- CR 613.11's fifteen families, whose Semigroup is the same concatenation
+      -- CR 613.11's sixteen families, whose Semigroup is the same concatenation
       -- the eight fields above are written out with; Parun.Types.RuleAbilities
       -- carries it so a new family cannot be added and left out here.
       PC.ruleAbilities = PC.ruleAbilities base <> PC.ruleAbilities donor,
