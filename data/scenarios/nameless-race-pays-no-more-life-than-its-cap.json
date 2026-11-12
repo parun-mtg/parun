@@ -1,0 +1,101 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Suntail Hawk"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Nameless Race",
+            "label": "race"
+          }
+        ],
+        "manaPool": "BBBB",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Savannah Lions"
+          },
+          {
+            "card": "White Knight",
+            "token": true
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "White Knight"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1c / 119.4 Nameless Race pays no more life than its cap, and its power and toughness are the life paid",
+  "note": "bob controls one white nontoken permanent (Savannah Lions), a white token and a green creature, and has one white and one green card in his graveyard; alice's own Suntail Hawk is not her opponent's. The cap is 2: 3 is not offered, the answer falls back to the bound, and Nameless Race is 2/2.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$race"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseNumber",
+          "unoffered": true,
+          "with": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Nameless Race",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

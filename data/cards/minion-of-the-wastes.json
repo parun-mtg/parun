@@ -1,0 +1,77 @@
+{
+  "faces": [
+    {
+      "characteristicPT": {
+        "power": {
+          "type": "ChosenNumber"
+        },
+        "toughness": {
+          "type": "ChosenNumber"
+        }
+      },
+      "keywords": [
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Minion of the Wastes",
+      "oracleText": "Trample\nAs this creature enters, pay any amount of life.\nMinion of the Wastes's power and toughness are each equal to the life paid as it entered.",
+      "power": {
+        "type": "Star"
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "PayAnyLife"
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Star"
+      },
+      "typeLine": {
+        "subtypes": [
+          "Minion"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

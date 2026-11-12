@@ -12,6 +12,7 @@ import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.WithCounters as WithCounters
@@ -30,10 +31,10 @@ import qualified Parun.Types.WithCounters as WithCounters
 -- below carries a card's effects, and neither module may name the other. And in
 -- the ABILITY for Parun.Types.CopyException's GainAbility, which AsCopy carries.
 --
--- SacrificeAnyNumber, ExileFromGraveyard, OrTapped's life price and
+-- SacrificeAnyNumber, ExileFromGraveyard, OrTapped's life price, PayAnyLife and
 -- SacrificeToEnter are the constructors whose choice SPENDS something. Each is paid inside the
 -- entry loop that made it, so the next member of a batch cannot choose what an
--- earlier one already spent (CR 614.13a). The first three cannot be left owing
+-- earlier one already spent (CR 614.13a). The first four cannot be left owing
 -- what they cannot pay; SacrificeToEnter's fixed count can, so its arm carries
 -- CR 614.12b's forward check -- Parun.Engine.Event states it. CR 614.13a is a
 -- separate exclusion and does NOT fall out with it --
@@ -173,6 +174,10 @@ data EntryRewrite ability effect
     -- don't, it enters tapped" -- the arm above's rewrite with a price on
     -- avoiding it.
     OrTapped EntryPrice.EntryPrice
+  | -- | CR 614.1c / 119.4 / 607.2g / Phyrexian Processor: pay any amount of
+    -- life as this enters, at most the Quantity (Nameless Race), written to
+    -- Object.chosenNumber.
+    PayAnyLife (Maybe Quantity.Quantity)
   | -- | CR 702.145b via CR 614.1d: daybound's static ability making a permanent
     -- enter transformed, ranked its own CR 616.1d bucket. Collected on every entry
     -- and not only the stack's, which is what lets Parun.MeldSpec's "CR 701.27h a

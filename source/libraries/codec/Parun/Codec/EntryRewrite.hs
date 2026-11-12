@@ -11,6 +11,7 @@ import qualified Parun.Codec.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
+import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Codec.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Codec.WithCounters as WithCounters
@@ -59,6 +60,8 @@ codec abilityCodec effectCodec =
       Arm.nullary "Prepared" EntryRewrite.Prepared,
       Arm.nullary "EntersTransformed" EntryRewrite.EntersTransformed,
       Arm.payload "OrTapped" EntryPrice.codec EntryRewrite.OrTapped (\x -> case x of EntryRewrite.OrTapped y -> Just y; _ -> Nothing),
+      -- Optional: the absent "value" key is the uncapped "any amount".
+      Arm.optionalPayload "PayAnyLife" Quantity.codec EntryRewrite.PayAnyLife (\x -> case x of EntryRewrite.PayAnyLife y -> Just y; _ -> Nothing),
       Arm.payload "SacrificeAnyNumber" SacrificeAnyNumber.codec EntryRewrite.SacrificeAnyNumber (\x -> case x of EntryRewrite.SacrificeAnyNumber y -> Just y; _ -> Nothing),
       Arm.payload "SacrificeToEnter" SacrificeToEnter.codec EntryRewrite.SacrificeToEnter (\x -> case x of EntryRewrite.SacrificeToEnter y -> Just y; _ -> Nothing),
       Arm.payload "ExileFromGraveyard" ExileFromGraveyard.codec EntryRewrite.ExileFromGraveyard (\x -> case x of EntryRewrite.ExileFromGraveyard y -> Just y; _ -> Nothing),
@@ -91,6 +94,7 @@ tagOf x = case x of
   EntryRewrite.Prepared {} -> "Prepared"
   EntryRewrite.EntersTransformed {} -> "EntersTransformed"
   EntryRewrite.OrTapped {} -> "OrTapped"
+  EntryRewrite.PayAnyLife {} -> "PayAnyLife"
   EntryRewrite.SacrificeAnyNumber {} -> "SacrificeAnyNumber"
   EntryRewrite.SacrificeToEnter {} -> "SacrificeToEnter"
   EntryRewrite.ExileFromGraveyard {} -> "ExileFromGraveyard"
