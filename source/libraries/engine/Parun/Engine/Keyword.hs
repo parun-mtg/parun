@@ -2914,7 +2914,8 @@ equip payload =
           ActivatedAbility.maximumX = [],
           ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
-          ActivatedAbility.restrictions = [ActivationRestriction.SorcerySpeed],
+          -- CR 602.5b: the rider the card prints after the keyword joins the rule's.
+          ActivatedAbility.restrictions = ActivationRestriction.SorcerySpeed : fmap ActivationRestriction.TimesEachTurn (Maybe.maybeToList (Equip.timesEachTurn payload)),
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
           ActivatedAbility.condition = Nothing,
           -- Nothing on every keyword-minted ability: no clause of a card refers to

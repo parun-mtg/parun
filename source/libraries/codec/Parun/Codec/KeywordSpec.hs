@@ -540,8 +540,8 @@ spec s = Spec.describe s "Parun.Codec.Keyword" $ do
   -- guards the encode, since Arm.tagged forces a constructor's TAG and not its
   -- arm, so a missing arm compiles.
   Spec.it s "Equip carries its cost and its quality" $ do
-    let equip n = Keyword.Equip (Equip.MkEquip (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) []) Nothing EquipTarget.Creature)
-        equipHuman n = Keyword.Equip (Equip.MkEquip (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) []) (Just (Filter.HasSubtype Subtype.Human)) EquipTarget.Creature)
+    let equip n = Keyword.Equip (Equip.MkEquip (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) []) Nothing EquipTarget.Creature Nothing)
+        equipHuman n = Keyword.Equip (Equip.MkEquip (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic n])) []) (Just (Filter.HasSubtype Subtype.Human)) EquipTarget.Creature Nothing)
     Common.assertCodec
       s
       Keyword.codec
@@ -559,7 +559,7 @@ spec s = Spec.describe s "Parun.Codec.Keyword" $ do
       Keyword.codec
       (fortify 3)
       " {\"type\":\"Fortify\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":3}]}} "
-    Spec.assertBool s (Codec.encode Keyword.codec (fortify 3) /= Codec.encode Keyword.codec (Keyword.Equip (Equip.MkEquip (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 3])) []) Nothing EquipTarget.Creature))) "and is not equip"
+    Spec.assertBool s (Codec.encode Keyword.codec (fortify 3) /= Codec.encode Keyword.codec (Keyword.Equip (Equip.MkEquip (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 3])) []) Nothing EquipTarget.Creature Nothing))) "and is not equip"
   -- CR 702.49a's payload is a cost and CR 702.49d's variant, and the arm is
   -- Arm.tagged: a Keyword constructor ships with no wire format and nothing red
   -- unless a case like this one is written (#1715).

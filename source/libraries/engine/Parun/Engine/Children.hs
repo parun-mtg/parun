@@ -1708,7 +1708,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.Deathtouch -> pure keyword_
   Keyword.Defender -> pure keyword_
   Keyword.DoubleStrike -> pure keyword_
-  Keyword.Equip (Equip.MkEquip cost quality onto) -> fmap Keyword.Equip (Equip.MkEquip <$> keywordCost c cost <*> traverse (keywordFilter c) quality <*> pure onto)
+  Keyword.Equip (Equip.MkEquip cost quality onto limit) -> fmap Keyword.Equip (Equip.MkEquip <$> keywordCost c cost <*> traverse (keywordFilter c) quality <*> pure onto <*> pure limit)
   Keyword.FirstStrike -> pure keyword_
   Keyword.Flash -> pure keyword_
   Keyword.Flying -> pure keyword_

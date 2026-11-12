@@ -1618,7 +1618,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- Buried under both combinators, so a lint reading only the top of a
         -- Filter would miss it.
         buried = Filter.Type.And [Filter.Type.Or [creatures, Filter.Type.OfChosenPlayer]]
-        equipping quality = Keyword.Equip (Equip.MkEquip (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) quality EquipTarget.Creature)
+        equipping quality = Keyword.Equip (Equip.MkEquip (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) quality EquipTarget.Creature Nothing)
         offending = base {Face.keywords = Map.singleton (equipping (Just buried)) 1}
         protecting = base {Face.keywords = Map.singleton (Keyword.Protection Protection.MkProtection {Protection.quality = buried, Protection.spares = Nothing}) 1}
     -- Ordered FIRST, and the assertion this framing exists for.

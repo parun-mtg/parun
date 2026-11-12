@@ -30,7 +30,8 @@ spec s = Spec.describe s "Parun.Codec.Equip" $ do
       ( Equip.MkEquip
           { Equip.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 3]), Cost.components = []},
             Equip.quality = Nothing,
-            Equip.target = EquipTarget.Creature
+            Equip.target = EquipTarget.Creature,
+            Equip.timesEachTurn = Nothing
           }
       )
       " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":3}]},\"quality\":null} "
@@ -42,7 +43,8 @@ spec s = Spec.describe s "Parun.Codec.Equip" $ do
       ( Equip.MkEquip
           { Equip.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]), Cost.components = []},
             Equip.quality = Just (Filter.HasSubtype Subtype.Human),
-            Equip.target = EquipTarget.Creature
+            Equip.target = EquipTarget.Creature,
+            Equip.timesEachTurn = Nothing
           }
       )
       " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]},\"quality\":{\"type\":\"HasSubtype\",\"value\":\"Human\"}} "
@@ -54,10 +56,24 @@ spec s = Spec.describe s "Parun.Codec.Equip" $ do
       ( Equip.MkEquip
           { Equip.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]), Cost.components = []},
             Equip.quality = Nothing,
-            Equip.target = EquipTarget.Planeswalker
+            Equip.target = EquipTarget.Planeswalker,
+            Equip.timesEachTurn = Nothing
           }
       )
       " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]},\"quality\":null,\"target\":\"Planeswalker\"} "
+  -- CR 602.5b: Leather Armor's "Equip {0}. Activate only once each turn."
+  Spec.it s "MkEquip limited each turn" $
+    Common.assertCodec
+      s
+      codec
+      ( Equip.MkEquip
+          { Equip.cost = Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 0]), Cost.components = []},
+            Equip.quality = Nothing,
+            Equip.target = EquipTarget.Creature,
+            Equip.timesEachTurn = Just 1
+          }
+      )
+      " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":0}]},\"quality\":null,\"timesEachTurn\":1} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec
   -- Arm.enum derives the target's arms from the type, so this is what would
   -- catch two constructors that encode alike.

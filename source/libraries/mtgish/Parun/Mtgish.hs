@@ -407,7 +407,7 @@ rule face n = case Node.tag n of
     f <- permanents outermost quality
     Monad.unless (f == Filter.HasCardType CardType.Creature) (Node.untranslated n)
     c <- costOf price
-    keyword (Keyword.Equip Equip.MkEquip {Equip.cost = c, Equip.quality = Nothing, Equip.target = EquipTarget.Creature})
+    keyword (Keyword.Equip Equip.MkEquip {Equip.cost = c, Equip.quality = Nothing, Equip.target = EquipTarget.Creature, Equip.timesEachTurn = Nothing})
   _ -> keywordRule n >>= keyword
   where
     static f affected modifications = case modifications of
