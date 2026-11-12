@@ -1,0 +1,133 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Assimilation Assessor",
+      "oracleText": "When this creature enters, exile target opponent's graveyard.\nWhenever this creature attacks, assimilate a creature card exiled with it. (Put it onto the battlefield under your control with a +1/+1 counter. It's a Borg artifact creature and loses all other creature types.)",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "EachCardInGraveyard",
+                            "value": {
+                              "filter": {
+                                "type": "And",
+                                "value": []
+                              },
+                              "graveyards": {
+                                "type": "InSlot",
+                                "value": "player"
+                              }
+                            }
+                          },
+                          "zone": "Exile"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "player": {
+                    "filter": {
+                      "type": "IsPlayer",
+                      "value": "Opponent"
+                    },
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Assimilate",
+                        "value": {
+                          "type": "ChosenPermanents",
+                          "value": {
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "IsExiledWithSource",
+                                  "value": {
+                                    "type": "OwnAbilities"
+                                  }
+                                }
+                              ]
+                            },
+                            "zone": "Exile"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Borg"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
