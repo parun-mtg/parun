@@ -58,6 +58,7 @@ import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.DistinctOf as DistinctOf
 import qualified Parun.Types.EventShape as EventShape
+import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
@@ -69,6 +70,7 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LastKnown as LastKnown
+import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.LoggedEvent as LoggedEvent
@@ -94,8 +96,10 @@ import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellWasCast as SpellWasCast
+import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -1333,6 +1337,22 @@ abilityMeets criteria stamp named kind loyalty =
     && maybe True (== kind) (ActivationCriteria.whichKind criteria)
     && maybe True (== loyalty) (ActivationCriteria.whichLoyalty criteria)
 
+-- CR 716.2a / 721.2a / 723.2a: the layouts whose inset frame these copiable
+-- values carry (CR 716.2b / 721.2b / 723.2b), Filter.View's `insetFrames`.
+-- PC.alternativeSpell holds an Adventure or an Omen half, told apart by its spell
+-- type (CR 205.3k), which the glossary's "Adventurer Card" and "Omen Card" make
+-- the defining trait.
+insetFramesOf :: PC.ProjectedCharacteristics -> Set.Set Layout.Layout
+insetFramesOf pc =
+  Set.fromList
+    ( [ layout
+      | half <- Maybe.maybeToList (PC.alternativeSpell pc),
+        (spellType, layout) <- [(Subtype.Type.Adventure, Layout.Adventure), (Subtype.Type.Omen, Layout.Omen)],
+        Set.member spellType (TypeLine.subtypes (Face.typeLine half))
+      ]
+        <> [Layout.Preparation | Maybe.isJust (PC.prepare pc)]
+    )
+
 -- The Filter.View a recorded snapshot yields, shared by every arm of
 -- snapshotView above so that two shapes of event cannot disagree about what a
 -- snapshot says. The `controller`, the OWNER, the tokenhood flag and the counters
@@ -1550,6 +1570,8 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.prototyped = PC.prototyped snapshot,
       -- CR 723.3c's record is a field of an OBJECT -- `tributePaid` above.
       Filter.preparedSpell = False,
+      -- CR 716.2b / 721.2b / 723.2b: copiable values, which the snapshot carries.
+      Filter.insetFrames = insetFramesOf snapshot,
       -- CR 400.7d's mana record is a field of an OBJECT, which a
       -- ProjectedCharacteristics does not carry -- `designations` above, same
       -- sentence -- so a past event reports none.

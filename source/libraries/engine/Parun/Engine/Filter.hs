@@ -53,6 +53,7 @@ import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordInstance as KeywordInstance
+import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.Lookback as Lookback
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
@@ -799,6 +800,13 @@ data View = MkView
     -- copy of one? Read off Object.castPrepared, and False where there is no live
     -- object, as `castUsing` above. Filter.IsPreparedSpell is the reader.
     preparedSpell :: Bool,
+    -- CR 716.2a / 721.2a / 723.2a: the layouts whose inset frame this candidate
+    -- has, used or not -- a spell cast as its Adventure included, CR 716.3b
+    -- leaving it those characteristics. A copiable value (CR 716.2b), so a Clone
+    -- of an adventurer has one: Count.insetFramesOf over the copiable values, and
+    -- empty where there are none. Filter.HasInsetFrame is the reader;
+    -- data/scenarios/mysterious-pathlighter-* proves the Clone.
+    insetFrames :: Set.Set Layout.Layout,
     -- CR 400.7d / CR 107.4h: the production tags of the mana that was spent to
     -- cast the spell this candidate is, or was, or to activate the CR 602.2a
     -- ability it is -- read off Object.manaSpent, or LastKnown.manaSpent for one
@@ -1080,6 +1088,8 @@ playerView pid =
       foretold = False,
       prototyped = False,
       preparedSpell = False,
+      -- CR 109.1: a player is no object to have characteristics.
+      insetFrames = Set.empty,
       -- CR 202.1a's mana cost is spent to cast a CARD, and CR 109.1's list of
       -- what an object is has no player in it -- `manaValue` above, same rule.
       manaSpentTagColors = Map.empty,
@@ -2629,6 +2639,7 @@ matches context view predicate = case predicate of
   Filter.Paid designator -> Keyword.timesPaid designator (paidCosts view) > 0 || any (Keyword.designates designator) (castUsing view)
   Filter.IsPrototyped -> prototyped view
   Filter.IsPreparedSpell -> preparedSpell view
+  Filter.HasInsetFrame layout -> Set.member layout (insetFrames view)
   -- CR 701.54e's designation conjunct, asked of the perspective (CR 109.5's
   -- "you"). A live read of Object.ringBearerFor, never a stamp on the candidate:
   -- CR 701.54a ends the designation when another creature takes it, and the next
@@ -3098,6 +3109,7 @@ manaValueThresholds predicate = case predicate of
   Filter.Paid _ -> []
   Filter.IsPrototyped -> []
   Filter.IsPreparedSpell -> []
+  Filter.HasInsetFrame _ -> []
 
 -- CR 701.23b vs CR 701.23d: does this predicate state a QUALITY? A search whose
 -- filter states one may find fewer cards than it asks for, or none, even when the
@@ -3293,6 +3305,7 @@ statesAQuality predicate = case predicate of
   Filter.Paid _ -> True
   Filter.IsPrototyped -> True
   Filter.IsPreparedSpell -> True
+  Filter.HasInsetFrame _ -> True
 
 -- Does the Filter compare a candidate against anything Context holds about
 -- the SOURCE that a printed face can be told apart by -- its projected power,
@@ -3445,6 +3458,7 @@ readsSourceValues predicate = case predicate of
   Filter.Paid _ -> False
   Filter.IsPrototyped -> False
   Filter.IsPreparedSpell -> False
+  Filter.HasInsetFrame _ -> False
 
 -- The slots a Filter READS. Parun.Engine.Resolve.Slots.modeSlots folds this over a
 -- mode's target slots, which is what makes the card dataflow lint see a slot
