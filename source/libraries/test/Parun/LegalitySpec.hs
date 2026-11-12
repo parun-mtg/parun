@@ -13,7 +13,6 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import qualified Numeric.Natural as Natural
-import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.DeckList as DeckList
 import qualified Parun.Legality as Legality
 import qualified Parun.Play.Command as Command
@@ -22,23 +21,17 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Support as S
-import qualified Parun.Types.Answer as Answer
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.DraftBooster as DraftBooster
-import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.LegalityTable as LegalityTable
-import qualified Parun.Types.Move as Move
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.RuleFamily as RuleFamily
-import qualified Parun.Types.Scenario as Scenario
 import qualified Parun.Types.SideDeck as SideDeck
-import qualified Parun.Types.Start as Start
 import qualified Parun.Types.StickerSheet as StickerSheet
-import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.Violation as Violation
 import qualified System.Directory as Directory
 import qualified System.Exit as Exit
@@ -638,23 +631,20 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
       result <- Exception.try (Match.main ["--games", "1", "--seed", seed, dir <> "/small.txt", dir <> "/legal.txt"])
       Spec.assertEqWith s "exit" result (Left (Exit.ExitFailure 1))
 
-  -- CR 702.139a: Yorion, Sky Nomad's condition reads the game's format, so a
-  -- seat is asked to choose it only under the headers' constructed (#6724).
-  Spec.it s "CR 100.2a parun play with no --format starts the game under the format both headers name"
+  -- The format a game starts under when no --format names one. Neither
+  -- command's game is played here: RecordSpec's Yorion, Sky Nomad case is a
+  -- format reaching the game and being read there (CR 702.139a, #6724).
+  Spec.it s "CR 100.2a parun play with no --format settles on the format both headers name"
     . S.withCorpusDir "legality-play-header-game" [("one.txt", yorionList (Just "constructed")), ("two.txt", yorionList (Just "constructed"))]
     $ \dir -> do
-      Command.main ["--seed", seed, "--first", "1", "--bot", "1", "--bot", "2", "--save", dir <> "/game.json", dir <> "/one.txt", dir <> "/two.txt"]
-      (format, offers) <- savedGame s (dir <> "/game.json")
+      format <- settled [dir <> "/one.txt", dir <> "/two.txt"]
       Spec.assertEqWith s "the headers' format" format (Just (Format.MkFormat RuleFamily.Constructed Nothing Set.empty))
-      Spec.assertEqWith s "CR 103.2b: each seat is offered Yorion" offers 2
 
-  Spec.it s "CR 100.2a parun match starts each game under the format one header names"
+  Spec.it s "CR 100.2a parun match settles on the format one header names"
     . S.withCorpusDir "legality-match-header-game" [("one.txt", yorionList Nothing), ("two.txt", yorionList (Just "constructed"))]
     $ \dir -> do
-      Match.main ["--games", "1", "--seed", seed, "--save", dir <> "/games", dir <> "/one.txt", dir <> "/two.txt"]
-      (format, offers) <- savedGame s (dir <> "/games/game-1.json")
+      format <- settled [dir <> "/one.txt", dir <> "/two.txt"]
       Spec.assertEqWith s "the header's format" format (Just (Format.MkFormat RuleFamily.Constructed Nothing Set.empty))
-      Spec.assertEqWith s "CR 103.2b: each seat is offered Yorion" offers 2
 
   Spec.it s "parun play refuses lists whose headers name different formats"
     . S.withCorpusDir "legality-play-headers-disagree" [("constructed.txt", Text.pack "Format: constructed\n60 Mountain\n"), ("limited.txt", Text.pack "Format: limited\n60 Mountain\n")]
@@ -677,16 +667,10 @@ seed = replicate 63 '0' <> "1"
 yorionList :: Maybe String -> Text.Text
 yorionList format = Text.pack (foldMap (\name -> "Format: " <> name <> "\n") format <> "4 Grizzly Bears\n76 Forest\nCompanion\n1 Yorion, Sky Nomad\n")
 
--- The format the game saved at `path` starts under, and how many times a seat
--- was asked to choose a companion in it.
-savedGame :: Spec.Spec IO n -> FilePath -> IO (Maybe Format.Format, Int)
-savedGame s path = do
-  bytes <- ByteString.readFile path
-  scenario <- either (Spec.assertFailure s . Text.unpack) pure (Legality.decodeWith Codec.Scenario.codec bytes)
-  let format = case Scenario.start scenario of
-        Start.FromDecks named _ -> named
-        Start.FromBoard _ -> Nothing
-      companion timed = case Timed.entry timed of
-        Entry.Do (Move.Answer answer) -> Answer.prompt answer == Text.pack "ChooseCompanion"
-        _ -> False
-  pure (format, Seq.length (Seq.filter companion (Scenario.timeline scenario)))
+-- The format `parun play` and `parun match` start a game between these lists
+-- under, when none is asked for (Command.settle).
+settled :: [FilePath] -> IO (Maybe Format.Format)
+settled paths = do
+  registry <- Registry.defaultRegistry
+  lists <- traverse (Command.load registry) paths
+  Command.settle Nothing (zip paths lists)
