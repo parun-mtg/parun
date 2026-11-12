@@ -560,7 +560,13 @@ viewOfCharacteristics peers oid pc controller counters gs =
               (List.any (\defending -> controllerOf pw gs == Just defending) (Defender.defendingPlayers gs))
               (\seat -> controllerOf pw gs == Just seat)
               (Map.lookup oid (Combat.attackedUnder (TurnRegisters.combat (GameState.turn gs)))),
-            any (Set.member CardType.Planeswalker . Filter.cardTypes) (peers pw) ->
+            any (Set.member CardType.Planeswalker . Filter.cardTypes) (peers pw),
+            -- CR 506.4e's second sentence, Parun.Engine.Combat.noteAttackingNothing's
+            -- walkerUnprotected asked live. A regression fence: no test reads this
+            -- field mid-resolution on that board.
+            Map.notMember oid (Combat.attackedControlledBy (TurnRegisters.combat (GameState.turn gs)))
+              || any (Set.member CardType.Battle . Filter.cardTypes) (peers pw)
+              || controllerOf pw gs == Battle.protectorOf pw gs ->
               controllerOf pw gs
         -- CR 506.4e: a battle announcement whose permanent stopped being a
         -- battle but is still a planeswalker its protector controls, the second
@@ -632,13 +638,12 @@ viewOfCharacteristics peers oid pc controller counters gs =
               Battle.protectorOf battle gs
         -- CR 506.4e: a planeswalker announcement whose permanent is a battle
         -- too, or stopped being a planeswalker but is still a battle, is a battle
-        -- being attacked. Parun.PlaneswalkerCombatSpec's PlaneswalkerBattleInCombat
-        -- is the board.
+        -- being attacked, whether or not its protector defends.
+        -- Parun.PlaneswalkerCombatSpec's PlaneswalkerBattleInCombat is the board.
         Just target@(AttackTarget.OfPlaneswalker battle)
           | Set.notMember oid (Combat.attackingNothing (TurnRegisters.combat (GameState.turn gs))),
             Set.member battle (GameState.battlefield gs),
             attackedControllerHeld oid target gs,
-            List.any (\defending -> Battle.protectorOf battle gs == Just defending) (Defender.defendingPlayers gs),
             any (Set.member CardType.Battle . Filter.cardTypes) (peers battle) ->
               Battle.protectorOf battle gs
         _ -> Nothing,
