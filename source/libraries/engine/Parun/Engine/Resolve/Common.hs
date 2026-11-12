@@ -2666,12 +2666,13 @@ lastKnownOriginal original gs = case (Game.lookupObject original gs, Map.lookup 
 --
 -- A ref naming none also answers the empty list: it has said nothing. Ivy, Gleeful
 -- Spellthief's ref is the effect's own source, so a departed source reaches it. A
--- ref naming several (Frontline Heroism with Anointed Procession) answers the empty
--- list too, where rule 707.10e has the copy's controller choose one (gap #6256); no
--- pool card's ref does.
---
--- No prompt of any kind: rule 707.10d's order is a choice among several copies,
--- and there is only ever one here.
+-- ref naming several, which a replacement effect makes of "that token" (Frontline
+-- Heroism with Anointed Procession), has `copier` choose one of those that are
+-- legal targets, through Game.chooseAmong, which elides one; a choice among
+-- several players is unreachable, no replacement multiplying a player. Rule
+-- 707.10d's order is never asked: there is only ever one copy here. The
+-- scenario "CR 707.10e Frontline Heroism's copy targets the doubled token its
+-- controller chooses" proves the choice.
 --
 -- TWO SEATS: the ref is the effect's text, read from `controller`, and rule
 -- 707.10e's "legal target" is the copy's, judged from `copier`, its controller.
@@ -2679,9 +2680,11 @@ lastKnownOriginal original gs = case (Game.lookupObject original gs, Map.lookup 
 copyStatedTargets :: PlayerId -> PlayerId -> ObjectId -> ObjectId -> Map.Map SlotName (Set Recipient) -> ObjectId -> ObjectRef -> Game [Map.Map SlotName (Set Recipient)]
 copyStatedTargets controller copier resolving source legal original newRef = do
   gs <- State.get
-  pure $ case objectRefRecipients legal resolving controller source gs newRef of
-    [new] -> fmap snd (copyRetargets copier original gs [new])
-    _ -> []
+  let picks = copyRetargets copier original gs (objectRefRecipients legal resolving controller source gs newRef)
+  chosen <- Game.chooseAmong (\decider who -> Prompt.ChooseCardFromAmong decider who resolving) copier (Maybe.mapMaybe (Recipient.objectOf . fst) picks)
+  pure $ case picks of
+    [(_, slots)] -> [slots]
+    _ -> take 1 [slots | (new, slots) <- picks, Recipient.objectOf new == chosen]
 
 -- The objects an Effect.CopyStackObject names: objectRefObjects' live answer,
 -- plus CR 608.2h's last known information for the ABILITY'S OWN SOURCE where the
