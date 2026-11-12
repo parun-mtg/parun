@@ -220,6 +220,7 @@ import qualified Parun.Types.MeldSource as MeldSource
 import qualified Parun.Types.MergeComponent as MergeComponent
 import qualified Parun.Types.Milled as Milled
 import qualified Parun.Types.Modification as Modification
+import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.NumberFloor as NumberFloor
@@ -6506,6 +6507,14 @@ putCounters = putCountersWithin Nothing
 -- whole and Hardened Scales and Doubling Season are never ordered.
 putCountersWithin :: Maybe Natural -> CounterCause.CounterCause -> ObjectId -> CounterKind.CounterKind Keyword.Type.Keyword -> Natural -> Game Natural
 putCountersWithin totalAtMost cause oid kind n = do
+  asToughness <- State.gets (loyaltyAsToughness oid kind)
+  if asToughness
+    then n <$ State.modify' (moveToughness oid (toInteger n))
+    else putCountersSettled totalAtMost cause oid kind n
+
+-- putCountersWithin past Modification.LoyaltyIsToughness's redirect.
+putCountersSettled :: Maybe Natural -> CounterCause.CounterCause -> ObjectId -> CounterKind.CounterKind Keyword.Type.Keyword -> Natural -> Game Natural
+putCountersSettled totalAtMost cause oid kind n = do
   prohibited <- State.gets (CounterRestriction.prohibited oid kind)
   resolved <- if prohibited then pure Nothing else resolveCounters cause oid kind n
   case resolved of
@@ -6704,10 +6713,38 @@ takeBackCopyException oid = State.modify' $ \gs ->
 removeCounters :: ObjectId -> CounterKind.CounterKind Keyword.Type.Keyword -> Natural -> Game ()
 removeCounters oid kind n = State.modify' (removeCountersPure oid kind n)
 
+-- Modification.LoyaltyIsToughness: are these counters this permanent's loyalty,
+-- which its toughness is (docs/decisions.md, "What a toughness that is loyalty
+-- does")? Then no counter moves, and `moveToughness` does instead.
+loyaltyAsToughness :: ObjectId -> CounterKind.CounterKind Keyword.Type.Keyword -> GameState -> Bool
+loyaltyAsToughness oid kind gs =
+  kind == CounterKind.Loyalty
+    && Set.member oid (GameState.battlefield gs)
+    && PC.loyaltyIsToughness (Projection.project oid gs)
+
+-- CR 613.4c: a layer 7c change to this permanent's toughness that lasts (CR
+-- 611.2a), timestamped now (CR 613.7a); the permanent is its own source.
+moveToughness :: ObjectId -> Integer -> GameState -> GameState
+moveToughness oid delta gs =
+  let (ts, gs2) = Game.freshTimestamp gs
+      effect =
+        ContinuousEffect.MkContinuousEffect
+          { ContinuousEffect.source = oid,
+            ContinuousEffect.timestamp = ts,
+            ContinuousEffect.expiry = Expiry.Type.Never,
+            ContinuousEffect.modification = Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Type.Literal 0) (Quantity.Type.Literal delta)),
+            ContinuousEffect.affected = Affected.TheseObjects (Set.singleton oid)
+          }
+   in gs2 {GameState.stored = (GameState.stored gs2) {StoredEffects.continuousEffects = effect : StoredEffects.continuousEffects (GameState.stored gs2)}}
+
 -- `removeCounters` over a bare state, for a caller inside a pure fold.
+--
+-- Modification.LoyaltyIsToughness: loyalty counters this permanent would lose
+-- lower its toughness instead, putCountersWithin's redirect.
 removeCountersPure :: ObjectId -> CounterKind.CounterKind Keyword.Type.Keyword -> Natural -> GameState -> GameState
 removeCountersPure oid kind n gs
   | n == 0 = gs
+  | loyaltyAsToughness oid kind gs = moveToughness oid (negate (toInteger n)) gs
   | otherwise =
       -- ONE lookup answers both questions -- whether the object is there, and how
       -- many of the kind it has -- for putCounters' reason: Map.adjust on a

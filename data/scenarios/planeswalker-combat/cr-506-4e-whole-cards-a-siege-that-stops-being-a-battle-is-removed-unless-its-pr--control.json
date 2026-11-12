@@ -84,7 +84,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 506.4e whole cards: attacked as a planeswalker, a battle that stops being one stays attacked when its protector controls it",
-  "note": "Control: the same board with Synthetic Besiege the Front, a battle with no battle type, in place of Synthetic Raise the Siege, so bob protects Jace (CR 310.9a, 704.5x). Lifted, Jace is a planeswalker its protector controls, still attacked, and the Elf's 1 comes off its loyalty.",
+  "note": "Control for the Siege case: alice makes bob's Jace a 3/3 artifact creature planeswalker (Liquimetal Coating, Karn's Touch) and a battle with no battle type (Synthetic Besiege the Front), so bob protects Jace (CR 310.9a, 704.5x). Lifted, Jace is a planeswalker its protector controls, still attacked, and the Elf's 1 comes off its loyalty.",
   "timeline": [
     {
       "do": {

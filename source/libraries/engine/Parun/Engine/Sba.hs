@@ -167,9 +167,10 @@ zeroToughness pc =
 --
 -- Takes the GameState as well as the projection, unlike zeroToughness above,
 -- because CR 306.5c puts a permanent's loyalty in its COUNTERS and no layer
--- projects it. A planeswalker that never received counters reads 0 here and is
--- buried, which is the rule and not an accident: CR 306.5b gives a planeswalker
--- its counters as it enters, so it has them unless something removed them.
+-- projects it (Projection.loyaltyOf). A planeswalker that never received
+-- counters reads 0 here and is buried, which is the rule and not an accident:
+-- CR 306.5b gives a planeswalker its counters as it enters, so it has them
+-- unless something removed them.
 --
 -- The card-type guard is load-bearing rather than defensive, and in the opposite
 -- direction to zeroToughness's: Object.counters is keyed by kind for EVERY
@@ -184,7 +185,7 @@ zeroLoyalty gs pc oid =
   Set.member CardType.Planeswalker (PC.cardTypes pc)
     && case Game.lookupObject oid gs of
       Nothing -> False
-      Just obj -> Map.findWithDefault 0 CounterKind.Loyalty (Object.counters obj) == 0
+      Just obj -> Projection.loyaltyOf pc obj == 0
     && case Projection.controllerOf oid gs of
       Nothing -> True
       Just controller -> not (PlayerEffect.stateBasedActionDoesntApplyTo StateBasedAction.ZeroLoyalty controller gs)

@@ -3600,6 +3600,7 @@ modificationFilters modification = case modification of
   -- Payload-free, both of them, so there is no Filter to sweep.
   Modification.AssignCombatDamage _ -> []
   Modification.GrantsStationToughness -> []
+  Modification.LoyaltyIsToughness -> []
   -- An enum payload holds neither.
   Modification.MayAssignCombatDamage _ -> []
 

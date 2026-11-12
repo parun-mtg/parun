@@ -40,6 +40,7 @@ import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.Vanguard as Vanguard
+import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.AbilitySticker as AbilitySticker
@@ -240,6 +241,7 @@ layer m = case m of
   -- No CR 613.1 layer: intensity is not a characteristic (CR 109.3), so it
   -- applies after every layer, with CR 613.11's rules-modifying effects.
   Modification.Intensify _ -> Layer.Rules
+  Modification.LoyaltyIsToughness -> Layer.Rules
 
 -- Apply one modification to characteristics-in-progress. P/T quantities are
 -- evaluated against the CURRENT state (CR 611.3a); Resolve freezes a
@@ -791,6 +793,10 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- counts from 0.
         Modification.Intensify n ->
           pc {PC.intensity = fmap (Maybe.fromMaybe 0 (PC.intensity pc) +) (Quantity.evaluate viewOf context gs oid n)}
+        -- GrantsStationToughness's posture: a bare marker, so a second grant adds
+        -- nothing.
+        Modification.LoyaltyIsToughness ->
+          pc {PC.loyaltyIsToughness = True}
 
 -- One grant, dropped when CR 205.3d refuses it. The refusal is proved at the
 -- land-type direction (Parun.ProjectionSpec's Synthetic Marsh Song case) and is a
@@ -850,6 +856,7 @@ cardTypesAfter m types = case m of
   Modification.MayAssignCombatDamage _ -> types
   Modification.GrantsStationToughness -> types
   Modification.Intensify _ -> types
+  Modification.LoyaltyIsToughness -> types
   Modification.LandSubtype {} -> types
   Modification.ChosenSubtype {} -> types
   Modification.CreatureSubtype {} -> types
@@ -1765,6 +1772,7 @@ freezeQuantities viewOf gs announcedOn source context m =
         -- An enum payload, so no quantity either.
         Modification.MayAssignCombatDamage _ -> Just m
         Modification.Intensify n -> fmap Modification.Intensify (freeze n)
+        Modification.LoyaltyIsToughness -> Just m
 
 -- Every Quantity a modification carries, in order. A new Quantity field goes here
 -- as well as in freezeQuantities -- the compiler forces the arm, not its content.
@@ -1817,6 +1825,7 @@ quantitiesOf m = case m of
   Modification.GrantsStationToughness -> []
   Modification.MayAssignCombatDamage _ -> []
   Modification.Intensify n -> [n]
+  Modification.LoyaltyIsToughness -> []
 
 -- CR 612.7 / 108.1: the filter over the Oracle card reference this modification
 -- grants the names of, which the projection cannot ask the interpreter about
@@ -1866,6 +1875,7 @@ referenceQuery m = case m of
   Modification.GrantsStationToughness -> Nothing
   Modification.MayAssignCombatDamage _ -> Nothing
   Modification.Intensify _ -> Nothing
+  Modification.LoyaltyIsToughness -> Nothing
 
 -- Every filter a live continuous effect asks the reference about
 -- (referenceQuery), each once.
@@ -1957,6 +1967,7 @@ setsLandSubtype m = case m of
   Modification.GrantsStationToughness -> False
   -- Not a characteristic at all.
   Modification.Intensify _ -> False
+  Modification.LoyaltyIsToughness -> False
 
 -- One CR 305.7 subtype-setting effect: its source, the source's static ability
 -- generating it (permanentParts' index; Nothing for a stored effect), and its
@@ -3259,6 +3270,7 @@ removesAbilities m = case m of
   -- A grant, GainKeyword's answer above: not a removal.
   Modification.GrantsStationToughness -> False
   Modification.Intensify _ -> False
+  Modification.LoyaltyIsToughness -> False
   Modification.ChangeWord {} -> False
   -- CR 205.1a's card-type set has no ability clause: Song of the Dryads strips
   -- rules text through the LandSubtype Replace it carries beside this.
@@ -4603,6 +4615,7 @@ modificationWrites m = case m of
   Modification.GrantsStationToughness -> Set.singleton Keywords
   -- Writes PC.intensity, which no Aspect names: no Filter atom reads it.
   Modification.Intensify _ -> Set.empty
+  Modification.LoyaltyIsToughness -> Set.singleton Keywords
 
 -- Which aspects a Modification reads -- CR 613.8a clause (b)'s last limb:
 -- applying another effect can change "what it does to any of the things it
@@ -4664,6 +4677,7 @@ modificationReads m = case m of
   Modification.MayAssignCombatDamage _ -> Set.empty
   Modification.GrantsStationToughness -> Set.empty
   Modification.Intensify n -> quantityReads n
+  Modification.LoyaltyIsToughness -> Set.empty
   Modification.LandSubtype {} -> Set.empty
   Modification.ChosenSubtype {} -> Set.empty
   Modification.CreatureSubtype {} -> Set.empty
@@ -5662,6 +5676,19 @@ powerGiven pcs oid gs = PC.power (projectGiven pcs oid gs)
 toughnessOf :: ObjectId -> GameState -> Maybe Integer
 toughnessOf oid gs = PC.toughness (project oid gs)
 
+-- CR 306.5c: a permanent's loyalty is the number of loyalty counters on it, or
+-- its toughness floored at 0 under Modification.LoyaltyIsToughness
+-- (docs/decisions.md, "What a toughness that is loyalty does"). Zero for an
+-- object with neither, which CR 704.5i reads as loyalty 0.
+loyaltyOf :: ProjectedCharacteristics -> Object.Object -> Natural
+loyaltyOf pc obj
+  | PC.loyaltyIsToughness pc = maybe 0 Integer.toNaturalSaturating (PC.toughness pc)
+  | otherwise = Map.findWithDefault 0 CounterKind.Loyalty (Object.counters obj)
+
+-- `loyaltyOf` off the board, zero for an object that is not there.
+loyaltyOn :: ObjectId -> GameState -> Natural
+loyaltyOn oid gs = maybe 0 (loyaltyOf (project oid gs)) (Game.lookupObject oid gs)
+
 -- CR 510.1a: the amount this creature assigns as combat damage. A card can
 -- substitute toughness, nothing, or a negative power read as positive (CR
 -- 107.1b); power remains the rules default.
@@ -6601,6 +6628,7 @@ grantsKeywordWhere p m = case m of
   Modification.GrantsStationToughness -> False
   Modification.MayAssignCombatDamage _ -> False
   Modification.Intensify _ -> False
+  Modification.LoyaltyIsToughness -> False
 
 -- Does this modification write a card type or subtype that intrinsicReplacementsOf
 -- mints an entry replacement from -- CR 306.5b's planeswalker, CR 310.4b's battle
@@ -6681,6 +6709,7 @@ grantsMintingType m = case m of
   Modification.GrantsStationToughness -> False
   Modification.MayAssignCombatDamage _ -> False
   Modification.Intensify _ -> False
+  Modification.LoyaltyIsToughness -> False
 
 -- CR 614.1 / 613.1f: does this modification hand its affected objects a quoted
 -- replacement ability? replacementsAffecting's grantor disjunct for a GRANTED
@@ -6772,6 +6801,7 @@ grantsAbilityWhere p m = case m of
   Modification.GrantsStationToughness -> False
   Modification.MayAssignCombatDamage _ -> False
   Modification.Intensify _ -> False
+  Modification.LoyaltyIsToughness -> False
 
 -- CR 306.5b / 310.4b: the card types intrinsicReplacementsOf mints a CR 614.1c row
 -- from. Rule 715.3a's Saga is a SUBTYPE and so is asked one function up.

@@ -2014,7 +2014,8 @@ stubView table oid =
                 Filter.activatedAbilityKinds = Set.empty,
                 -- CR 702.184c: the table registers no such grant, and no Count
                 -- in the pool reads this stub through Quantity.StationMeasure.
-                Filter.grantsStationToughness = False
+                Filter.grantsStationToughness = False,
+                Filter.loyaltyIsToughness = False
               }
         [] -> Nothing
 

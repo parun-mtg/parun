@@ -881,7 +881,10 @@ data View = MkView
     --
     -- False on a player view: CR 109.1 gives a player no controller and so no
     -- permanent whose Modification this could be.
-    grantsStationToughness :: Bool
+    grantsStationToughness :: Bool,
+    -- The projected mirror of ProjectedCharacteristics.loyaltyIsToughness, read
+    -- by Measure.Loyalty; False wherever no projection stands behind the view.
+    loyaltyIsToughness :: Bool
   }
 
 -- CR 400.7d / 107.4h: `manaSpentTagColors` of a mana-spent record, for the
@@ -1103,7 +1106,8 @@ playerView pid =
       activatedAbilityKinds = Set.empty,
       -- CR 702.184c reaches a permanent's controller, and a player view built
       -- from a bare PlayerId has no permanent behind it to grant this at all.
-      grantsStationToughness = False
+      grantsStationToughness = False,
+      loyaltyIsToughness = False
     }
 
 -- The perspective the match is relative to: who counts as "you" (CR 109.5), and
@@ -1866,11 +1870,18 @@ measureOf measure = case measure of
   Measure.ManaValue -> manaValue
   Measure.ColorCount -> Just . toInteger . Set.size . colors
   -- CR 306.5: only a planeswalker has loyalty, and CR 306.5c's counters are its
-  -- loyalty on the battlefield (Drain Life's target).
+  -- loyalty on the battlefield (Drain Life's target), its toughness under
+  -- Modification.LoyaltyIsToughness, as Projection.loyaltyOf answers.
   --
   -- A planeswalker card's printed loyalty off the battlefield (CR 306.5a) is not
   -- implemented (#5972).
-  Measure.Loyalty -> \view -> if Set.member CardType.Planeswalker (cardTypes view) then Just (toInteger (Map.findWithDefault 0 CounterKind.Loyalty (counters view))) else Nothing
+  Measure.Loyalty -> \view ->
+    if Set.member CardType.Planeswalker (cardTypes view)
+      then
+        if loyaltyIsToughness view
+          then Just (maybe 0 (max 0) (toughness view))
+          else Just (toInteger (Map.findWithDefault 0 CounterKind.Loyalty (counters view)))
+      else Nothing
 
 -- What a Measures atom's operand reads: a literal, the candidate's own view, or
 -- a number the Context carries, Nothing where the Context carries none.

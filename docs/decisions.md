@@ -676,6 +676,33 @@ Entries are ordered by the first rule each cites.
   `thieves-auction-goes-on-for-an-aura-that-can-enter-and-ends-on-one-that-cannot`.
 - **Issue**: #6179.
 
+## What a toughness that is loyalty does
+
+- **Question**: Planeswalkerificate's "its toughness becomes its loyalty" is
+  in no rule. What reads the loyalty, what does moving it do, and does damage
+  to the permanent still mark damage?
+- **Rules**: CR 120.3c, 120.3e, 207.2a, 306.5c, 606.4, 606.6, 613.4c,
+  704.5f, 704.5i; CR of 2026-11-06. The card has no rulings.
+- **Decision**: Its loyalty is its toughness, floored at 0, wherever CR
+  306.5c would count loyalty counters: CR 606.6's payability, CR 704.5i,
+  trample over it and "its loyalty". What would put or remove loyalty
+  counters on it (CR 606.4's costs, CR 120.3c's damage result, an effect)
+  instead changes its toughness by as much, a layer 7c effect that lasts and
+  outlives the Aura. Damage both lowers its toughness and, it being a
+  creature, is marked (CR 120.3e).
+- **Rejected**: Damage only lowering toughness, as the reminder text
+  suggests: CR 207.2a gives reminder text no rules force, and nothing in the
+  card's rules text turns off CR 120.3e. The toughness change ending with the
+  Aura: nothing in the text gives it a duration. Loyalty counters still
+  counting beside toughness: the card says the toughness becomes the loyalty.
+- **Site**: `Parun.Engine.Projection.loyaltyOf`;
+  `Parun.Engine.Event.loyaltyAsToughness` and `moveToughness`, read by
+  `Event.putCountersWithin`, `Event.removeCountersPure` and
+  `Parun.Engine.Damage`'s counter loss. Proved by the scenarios
+  `planeswalkerificate-makes-toughness-the-loyalty-its-abilities-move` and
+  `planeswalkerificate-damage-lowers-toughness-and-marks-damage`.
+- **Issue**: #7022.
+
 ## Which board an entry inside a batch collects replacement effects from
 
 - **Question**: When an entry is contained in a CR 608.2f batch, does its CR

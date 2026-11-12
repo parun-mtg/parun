@@ -1579,7 +1579,8 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.activatedAbilityKinds = ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf snapshot) (snapshotRoster deploy zone home lapsed snapshot),
       -- CR 702.184c off the snapshot, which carries the field: the marker
       -- outlives the object exactly as a keyword or a P/T does.
-      Filter.grantsStationToughness = PC.grantsStationToughness snapshot
+      Filter.grantsStationToughness = PC.grantsStationToughness snapshot,
+      Filter.loyaltyIsToughness = PC.loyaltyIsToughness snapshot
     }
 
 -- CR 604.2: a snapshot's activated abilities less those whose "as long as"
@@ -1636,7 +1637,8 @@ overlaySnapshot deploy zone home lapsed snapshot live =
           Filter.manaValue = Filter.manaValue sampled,
           Filter.manaCost = Filter.manaCost sampled,
           Filter.activatedAbilityKinds = Filter.activatedAbilityKinds sampled,
-          Filter.grantsStationToughness = Filter.grantsStationToughness sampled
+          Filter.grantsStationToughness = Filter.grantsStationToughness sampled,
+          Filter.loyaltyIsToughness = Filter.loyaltyIsToughness sampled
         }
 
 -- CR 608.2i: an object an event snapshotted, as the snapshot shows it -- its

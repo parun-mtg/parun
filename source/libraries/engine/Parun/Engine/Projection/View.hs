@@ -335,7 +335,8 @@ viewOfCardLapsed lapsed face =
           Filter.activatedAbilityKinds = ManaAbility.abilityKinds (Subtype.intrinsicManaAbility (TypeLine.types typeLine) (TypeLine.subtypes typeLine)) roster,
           -- CR 702.184c reaches a permanent's CONTROLLER; this builder describes
           -- a printed FACE with no controller and no board to grant it one.
-          Filter.grantsStationToughness = False
+          Filter.grantsStationToughness = False,
+          Filter.loyaltyIsToughness = False
         }
 
 -- viewOfCard's activated-ability roster: the face's own list and rule 702's.
@@ -886,7 +887,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.activatedAbilityKinds = ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf pc) (abilitiesFromCharacteristics peers pc oid gs),
       -- CR 702.184c off the PROJECTION, applyModification's GrantsStationToughness
       -- arm being layer 6's only writer.
-      Filter.grantsStationToughness = PC.grantsStationToughness pc
+      Filter.grantsStationToughness = PC.grantsStationToughness pc,
+      Filter.loyaltyIsToughness = PC.loyaltyIsToughness pc
     }
 
 -- CR 506.5 / 506.6: the AloneAmong groups among which this attacker is alone
@@ -1839,6 +1841,7 @@ noCharacteristics =
       -- CR 702.184c: an ability on the stack grants nothing to its
       -- controller's station abilities of its own.
       PC.grantsStationToughness = False,
+      PC.loyaltyIsToughness = False,
       -- CR 601.2b / 601.2f: no card, so no printed costs either.
       PC.additionalCosts = [],
       PC.additionalCostChoices = [],
@@ -2029,6 +2032,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               -- CR 613.1's starting point, before layer 6 has run:
               -- applyModification's GrantsStationToughness arm is the only writer.
               PC.grantsStationToughness = False,
+              PC.loyaltyIsToughness = False,
               -- CR 707.2: the cast-time costs printed in the rules text, copiable
               -- with it, so a card carrying a copy stamp or a conjured
               -- duplicate's values is cast with them (Game.castingFaceOf).

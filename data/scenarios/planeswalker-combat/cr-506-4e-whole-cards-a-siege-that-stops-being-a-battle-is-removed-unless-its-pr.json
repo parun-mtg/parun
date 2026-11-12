@@ -6,9 +6,17 @@
       {
         "battlefield": [
           {
-            "card": "Llanowar Elves",
-            "label": "elf",
-            "ready": true
+            "card": "Invasion of Dominaria",
+            "counters": [
+              {
+                "key": {
+                  "type": "Defense"
+                },
+                "value": 5
+              }
+            ],
+            "label": "invasion",
+            "protector": "carol"
           },
           {
             "card": "Liquimetal Coating",
@@ -28,12 +36,20 @@
             "label": "i3"
           },
           {
-            "card": "Island",
-            "label": "i4"
+            "card": "Mountain",
+            "label": "m1"
           },
           {
-            "card": "Island",
-            "label": "i5"
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
           },
           {
             "card": "Plains",
@@ -41,17 +57,17 @@
           },
           {
             "card": "Island",
-            "label": "i6"
+            "label": "i4"
           }
         ],
         "hand": [
           {
-            "card": "Karn's Touch",
-            "label": "touch"
+            "card": "Skilled Animator",
+            "label": "animator"
           },
           {
-            "card": "Synthetic Raise the Siege",
-            "label": "siege"
+            "card": "Planeswalkerificate",
+            "label": "pw"
           },
           {
             "card": "Synthetic Lift the Siege",
@@ -63,16 +79,14 @@
       {
         "battlefield": [
           {
-            "card": "Jace Beleren",
-            "counters": [
-              {
-                "key": {
-                  "type": "Loyalty"
-                },
-                "value": 5
-              }
-            ],
-            "label": "jace"
+            "card": "Llanowar Elves",
+            "label": "elf",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
           }
         ],
         "name": "bob"
@@ -84,14 +98,14 @@
     "step": "PrecombatMain"
   },
   "description": "CR 506.4e whole cards: attacked as a planeswalker, a Siege that stops being a battle is removed from combat when its protector doesn't control it",
-  "note": "The board of the Luxior case, with Synthetic Lift the Siege cast in the declare blockers step instead: Jace is still a planeswalker but no battle, and carol, its protector (CR 310.9g), doesn't control it, so it is removed from combat and the Elf deals no damage.",
+  "note": "The board of the Luxior case, with Synthetic Lift the Siege cast in the declare blockers step instead: the Siege is still a planeswalker but no battle, and carol, its protector (CR 310.9g), doesn't control it, so it is removed from combat and the Elf deals no damage.",
   "timeline": [
     {
       "do": {
         "Activate": {
           "object": "$coating",
           "targets": [
-            "$jace"
+            "$invasion"
           ]
         }
       },
@@ -111,11 +125,27 @@
           "mana": [
             "$i1",
             "$i2",
+            "$i3",
             null
           ],
-          "object": "$touch",
-          "targets": [
-            "$jace"
+          "object": "$animator"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$invasion"
           ]
         }
       },
@@ -131,27 +161,17 @@
     },
     {
       "do": {
-        "Answer": {
-          "prompt": "ChooseProtector",
-          "with": "carol"
-        }
-      },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
         "Cast": {
           "mana": [
-            "$i3",
-            "$i4",
-            "$i5",
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4",
             null
           ],
-          "object": "$siege",
+          "object": "$pw",
           "targets": [
-            "$jace"
+            "$invasion"
           ]
         }
       },
@@ -178,8 +198,20 @@
     },
     {
       "check": {
+        "View": {
+          "is": "$invasion",
+          "object": "Planeswalkerificate",
+          "of": "AttachedTo"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
         "Types": {
-          "object": "$jace",
+          "object": "$invasion",
           "types": [
             "Artifact",
             "Battle",
@@ -194,24 +226,10 @@
     },
     {
       "check": {
-        "View": {
-          "is": "carol",
-          "object": "$jace",
-          "of": "Protector"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "Counters": {
-          "count": 5,
-          "kind": {
-            "type": "Defense"
-          },
-          "object": "$jace"
+        "PowerToughness": {
+          "object": "$invasion",
+          "power": 5,
+          "toughness": 5
         }
       },
       "player": "alice",
@@ -228,66 +246,82 @@
     },
     {
       "do": {
+        "ChooseDefender": "alice"
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 2
+    },
+    {
+      "do": {
         "Attack": [
           "$elf"
         ]
       },
-      "player": "alice",
+      "player": "bob",
       "step": "DeclareAttackers",
-      "turn": 1
+      "turn": 2
     },
     {
       "do": {
-        "ChooseAttackTarget": "$jace"
+        "ChooseAttackTarget": "$invasion"
       },
-      "player": "alice",
+      "player": "bob",
       "source": "$elf",
       "step": "DeclareAttackers",
-      "turn": 1
+      "turn": 2
     },
     {
       "check": {
         "Attackers": {
           "attackers": {
-            "$elf": "$jace"
+            "$elf": "$invasion"
           }
         }
       },
-      "player": "alice",
+      "player": "bob",
       "step": "DeclareAttackers",
-      "turn": 1
+      "turn": 2
     },
     {
       "check": {
         "Defenders": {
           "players": [
-            "bob"
+            "alice"
           ]
         }
       },
-      "player": "alice",
+      "player": "bob",
       "step": "DeclareAttackers",
-      "turn": 1
+      "turn": 2
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
     },
     {
       "do": {
         "Cast": {
           "mana": [
             "$plains",
-            "$i6"
+            "$i4"
           ],
           "object": "$lift"
         }
       },
       "player": "alice",
       "step": "DeclareBlockers",
-      "turn": 1
+      "turn": 2
     },
     {
       "do": "Pass",
       "player": "alice",
       "step": "DeclareBlockers",
-      "turn": 1
+      "turn": 2
     },
     {
       "check": {
@@ -298,21 +332,30 @@
       },
       "player": "alice",
       "step": "DeclareBlockers",
-      "turn": 1
+      "turn": 2
     },
     {
       "check": {
-        "Counters": {
-          "count": 5,
-          "kind": {
-            "type": "Loyalty"
-          },
-          "object": "$jace"
+        "PowerToughness": {
+          "object": "$invasion",
+          "power": 5,
+          "toughness": 5
         }
       },
       "player": "alice",
       "step": "EndOfCombat",
-      "turn": 1
+      "turn": 2
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 0,
+          "object": "$invasion"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 2
     },
     {
       "check": {
@@ -321,17 +364,17 @@
           "kind": {
             "type": "Defense"
           },
-          "object": "$jace"
+          "object": "$invasion"
         }
       },
       "player": "alice",
       "step": "EndOfCombat",
-      "turn": 1
+      "turn": 2
     },
     {
       "check": {
         "Types": {
-          "object": "$jace",
+          "object": "$invasion",
           "types": [
             "Artifact",
             "Creature",
@@ -341,31 +384,31 @@
       },
       "player": "alice",
       "step": "EndOfCombat",
-      "turn": 1
+      "turn": 2
     },
     {
       "check": {
         "View": {
           "is": "carol",
-          "object": "$jace",
+          "object": "$invasion",
           "of": "Protector"
         }
       },
       "player": "alice",
       "step": "EndOfCombat",
-      "turn": 1
+      "turn": 2
     },
     {
       "check": {
         "View": {
-          "is": "bob",
-          "object": "$jace",
+          "is": "alice",
+          "object": "$invasion",
           "of": "Controller"
         }
       },
       "player": "alice",
       "step": "EndOfCombat",
-      "turn": 1
+      "turn": 2
     }
   ]
 }

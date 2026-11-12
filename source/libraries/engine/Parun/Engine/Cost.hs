@@ -2401,12 +2401,6 @@ componentStatesHiddenQuality component = case component of
   CostComponent.MillCards _ -> False
   CostComponent.RevealTopOfLibrary _ -> False
 
--- CR 306.5c: a planeswalker's loyalty is the number of loyalty counters on it.
--- Zero for an object with none, which CR 704.5i reads as loyalty 0 -- so this is
--- only ever asked of something already known to be a planeswalker.
-loyaltyCountersOn :: ObjectId -> GameState -> Natural
-loyaltyCountersOn = Replacement.countersOn CounterKind.Loyalty
-
 -- CR 701.9a's discards of a DiscardCards cost, as ONE event group, binding
 -- Binding.discardedCard off what ARRIVED in a public zone (CR 400.7j),
 -- DiscardThis's posture: Necromancer's Stockpile's "the discarded card".
@@ -4328,20 +4322,22 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- battlefield, rule 606.4 putting the counters on "that permanent". CR
   -- 614.17b with CR 101.2: a prohibition on loyalty counters going on it makes
   -- a nonzero one unpayable, PutCountersOnThis below's gate; CR 107.7's [0]
-  -- puts none and stays payable.
+  -- puts none and stays payable, and so does a loyalty that is toughness
+  -- (Event.loyaltyAsToughness), no counter moving.
   CostComponent.AddLoyaltyToThis n ->
     Set.member oid (GameState.battlefield gs)
       && Projection.controllerOf oid gs == Just pid
-      && (n == 0 || not (CounterRestriction.prohibited oid CounterKind.Loyalty gs))
+      && (n == 0 || Event.loyaltyAsToughness oid CounterKind.Loyalty gs || not (CounterRestriction.prohibited oid CounterKind.Loyalty gs))
   -- CR 606.6: a negative loyalty cost can't be activated unless the permanent
-  -- has at least that many loyalty counters. "At least that many" is >=, so a -1
-  -- at exactly 1 loyalty IS activatable and CR 704.5i then buries the
-  -- planeswalker. Rule 606.6's "taking into account any additional costs" is
+  -- has at least that many loyalty counters -- its loyalty,
+  -- Projection.loyaltyOn. "At least that many" is >=, so a -1 at exactly 1
+  -- loyalty IS activatable and CR 704.5i then buries the planeswalker. Rule
+  -- 606.6's "taking into account any additional costs" is
   -- already answered, `plusComponents` having combined the symbols (CR 606.5).
   CostComponent.RemoveLoyaltyFromThis amount -> payableAnnounced amount $ \n ->
     Set.member oid (GameState.battlefield gs)
       && Projection.controllerOf oid gs == Just pid
-      && loyaltyCountersOn oid gs >= n
+      && Projection.loyaltyOn oid gs >= n
   -- CR 118.3: payable only while the permanent still carries at least that many
   -- counters of the kind -- "a player can't pay a cost without having the necessary
   -- resources to pay it fully". CR 606.6 is the loyalty-only analogue and is NOT

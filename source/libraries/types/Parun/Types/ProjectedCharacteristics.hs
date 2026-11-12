@@ -349,6 +349,8 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- permanent the ability's controller controls, so the fact is per-object
     -- here and folded to a per-player question at the one site that asks it.
     grantsStationToughness :: Bool,
+    -- | Is this object's loyalty its toughness (Modification.LoyaltyIsToughness)?
+    loyaltyIsToughness :: Bool,
     -- | CR 707.2 / 601.2b: the printed additional costs the copiable face
     -- carries (Face.additionalCosts), read by Game.castingFaceOf.
     additionalCosts :: [CostComponent.CostComponent Keyword.Keyword],

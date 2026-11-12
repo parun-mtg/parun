@@ -58,6 +58,7 @@ sampleSnapshot =
       PC.combatDamageAmount = Nothing,
       PC.combatDamageOptions = Set.empty,
       PC.grantsStationToughness = False,
+      PC.loyaltyIsToughness = False,
       PC.additionalCosts = [],
       PC.additionalCostChoices = [],
       PC.alternativeCosts = [],
