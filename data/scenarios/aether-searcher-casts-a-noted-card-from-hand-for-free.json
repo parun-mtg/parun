@@ -1,0 +1,25 @@
+{
+  "description": "CR 905.2b / 608.2g: Aether Searcher's entry search finds a card with a name noted for cards named Aether Searcher in its controller's hand, and offers its cast without paying its mana cost",
+  "note": "Alice noted Craw Wurm. She searches only her hand, so nothing shuffles, finds the Wurm there rather than the Grizzly Bears beside it, and casts it with no mana left in her pool.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "manaPool": "CCCCCCC", "draftNotes": [{"key": "Aether Searcher", "value": [{"type": "Name", "value": "Craw Wurm"}]}], "hand": [{"card": "Aether Searcher", "label": "searcher"}, {"card": "Craw Wurm", "label": "wurm"}, {"card": "Grizzly Bears", "label": "bears"}], "library": [{"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$searcher"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseSearchZones", "with": ["Hand"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "Search", "with": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Search", "with": ["$wurm"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OfferedCast", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Craw Wurm", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1}}}
+  ]
+}

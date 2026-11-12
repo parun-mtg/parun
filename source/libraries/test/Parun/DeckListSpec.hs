@@ -18,6 +18,9 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Support as S
+import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
@@ -45,7 +48,8 @@ withPool label action = do
   cars <- S.committedJson "bumper-cars.json"
   spires <- S.committedJson "cryptic-spires.json"
   piper <- S.committedJson "the-prismatic-piper.json"
-  S.withCorpusDir label [("goblin-piker.json", piker), ("wax-wane.json", waxWane), (angelFile, angel), ("emergency-phytomedic-seed-suture.json", phytomedic), ("bumper-cars.json", cars), ("cryptic-spires.json", spires), ("the-prismatic-piper.json", piper)] (Registry.fileRegistry Monad.>=> action . withData bySlug)
+  noted <- traverse (\file -> fmap ((,) file) (S.committedJson file)) ["regicide.json", "smuggler-captain.json", "paliano-vanguard.json", "cogwork-tracker.json"]
+  S.withCorpusDir label ([("goblin-piker.json", piker), ("wax-wane.json", waxWane), (angelFile, angel), ("emergency-phytomedic-seed-suture.json", phytomedic), ("bumper-cars.json", cars), ("cryptic-spires.json", spires), ("the-prismatic-piper.json", piper)] <> noted) (Registry.fileRegistry Monad.>=> action . withData bySlug)
   where
     angelFile = "blossom-blessed-angel-seed-suture.json"
     withData bySlug registry = registry {Registry.printings = printings, Registry.stickerSheets = bySlug}
@@ -359,12 +363,54 @@ spec s = Spec.describe s "Parun.DeckList" $ do
     . withPool "draft-notes"
     $ \registry -> do
       deck <- deckOf s "draft-notes" registry "4 Goblin Piker\n\nDraft Notes\n3 Goblin Piker\n0 Goblin Piker\n"
-      Spec.assertEqWith s "the notes, in order" (Deck.draftNotes deck) (Map.singleton (CardName.MkCardName (Text.pack "Goblin Piker")) (Seq.fromList [3, 0]))
+      Spec.assertEqWith s "the notes, in order" (Deck.draftNotes deck) (Map.singleton (CardName.MkCardName (Text.pack "Goblin Piker")) (Seq.fromList [DraftNote.Number 3, DraftNote.Number 0]))
       Spec.assertEqWith s "and the deck" (entriesOf (Deck.cards deck)) [(Text.pack "Goblin Piker", 4)]
       let text = DeckList.render (Registry.printings registry) Nothing deck
       Spec.assertBool s (Text.isInfixOf (Text.pack "\nDraft Notes\n3 Goblin Piker\n0 Goblin Piker\n") text) ("in order: " <> show text)
       again <- deckOf s "draft-notes-again" registry (Text.unpack text)
       Spec.assertEqWith s "the same deck" again deck
+
+  -- CR 905.2b: a note that is no number is braced after the card's name, one
+  -- kind each, a noted name resolved as a card's is; a rendered list writes
+  -- one note a line, in order, and reads back the same.
+  Spec.it s "CR 905.2b a Draft Notes section notes colours, names, creature types and players, and a rendered list writes them back"
+    . withPool "draft-notes-braced"
+    $ \registry -> do
+      deck <- deckOf s "draft-notes-braced" registry "Draft Notes\nRegicide {color: r} {color: U}\nRegicide {color: B}\nSmuggler Captain {name: goblin piker}\nPaliano Vanguard {type: goblin}\nCogwork Tracker {player: 2}\n"
+      let named = CardName.MkCardName . Text.pack
+      Spec.assertEqWith
+        s
+        "the notes, in order"
+        (Deck.draftNotes deck)
+        ( Map.fromList
+            [ (named "Regicide", Seq.fromList [DraftNote.Color Color.Red, DraftNote.Color Color.Blue, DraftNote.Color Color.Black]),
+              (named "Smuggler Captain", Seq.singleton (DraftNote.Name (named "Goblin Piker"))),
+              (named "Paliano Vanguard", Seq.singleton (DraftNote.CreatureType Subtype.Goblin)),
+              (named "Cogwork Tracker", Seq.singleton (DraftNote.Player (PlayerId.MkPlayerId 1)))
+            ]
+        )
+      let text = DeckList.render (Registry.printings registry) Nothing deck
+      Spec.assertBool s (Text.isInfixOf (Text.pack "\nDraft Notes\nCogwork Tracker {player: 2}\nPaliano Vanguard {type: Goblin}\nRegicide {color: R}\nRegicide {color: U}\nRegicide {color: B}\nSmuggler Captain {name: Goblin Piker}\n") text) ("one a line: " <> show text)
+      again <- deckOf s "draft-notes-braced-again" registry (Text.unpack text)
+      Spec.assertEqWith s "the same deck" again deck
+
+  -- Each kind takes its own values, so a word no kind names, a colour no
+  -- mana symbol writes, a name no card has, a word no creature type is and a
+  -- seat before the first are each a problem.
+  Spec.it s "CR 905.2b a braced note of no kind, or a value its kind does not take, is a problem"
+    . withPool "bad-draft-notes-braced"
+    $ \registry -> do
+      problems <- problemsOf s "bad-draft-notes-braced" registry "Draft Notes\nRegicide {hue: R}\nRegicide {color: X}\nSmuggler Captain {name: Goblin Pikr}\nPaliano Vanguard {type: Forest}\nCogwork Tracker {player: 0}\n"
+      Spec.assertEqWith
+        s
+        "each line"
+        problems
+        [ DeckList.BadNote 2 (Text.pack "hue: R"),
+          DeckList.BadNote 3 (Text.pack "color: X"),
+          DeckList.NoSuchCard 4 (CardName.MkCardName (Text.pack "Goblin Pikr")),
+          DeckList.BadNote 5 (Text.pack "type: Forest"),
+          DeckList.BadNote 6 (Text.pack "player: 0")
+        ]
 
   -- A note is a number, so a bare name says none; it is for a card, so a name
   -- no card has is a problem.

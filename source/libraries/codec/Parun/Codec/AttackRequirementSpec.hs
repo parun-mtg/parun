@@ -73,7 +73,7 @@ spec s = Spec.describe s "Parun.Codec.AttackRequirement" $ do
           Nothing
           RequirementArity.EachSubject
       )
-      " {\"subject\":{\"type\":\"Matching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"object\":\"ControllerOfAttached\"} "
+      " {\"subject\":{\"type\":\"Matching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"object\":{\"type\":\"ControllerOfAttached\"}} "
   -- Seeker of Slaanesh's shape: CR 508.1d read as ONE requirement over every
   -- creature an opponent controls, obeyed by attacking with any one of them.
   Spec.it s "a group requirement" $

@@ -5,6 +5,7 @@ module Parun.Codec.Player where
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
+import qualified Parun.Codec.DraftNote as DraftNote
 import qualified Parun.Codec.CardIdentity as CardIdentity
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.Designation as Designation
@@ -54,7 +55,7 @@ codec = Fields.object $ do
   chosenStickerSheets <- Fields.defaulted "chosenStickerSheets" Set.empty (Common.set Common.natural) Player.chosenStickerSheets
   completedDungeons <- Fields.defaulted "completedDungeons" 0 Common.natural Player.completedDungeons
   completedDungeonNames <- Fields.defaulted "completedDungeonNames" Set.empty (Common.set CardName.codec) Player.completedDungeonNames
-  draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq Common.natural))) Player.draftNotes
+  draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq DraftNote.codec))) Player.draftNotes
   startingDeck <- Fields.defaulted "startingDeck" Map.empty (Common.naturalMap PrintingId.codec Common.natural) Player.startingDeck
   companion <- Fields.defaulted "companion" Nothing (Common.maybe OutsideCard.codec) Player.companion
   companionTaken <- Fields.defaulted "companionTaken" False Common.boolean Player.companionTaken

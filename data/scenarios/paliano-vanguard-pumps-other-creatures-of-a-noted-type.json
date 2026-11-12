@@ -1,0 +1,18 @@
+{
+  "description": "CR 905.2b / 613.4c: Paliano Vanguard gives each other creature its controller controls of a creature type noted for cards named Paliano Vanguard +1/+1",
+  "note": "Alice noted Goblin and Soldier. Her Goblin Piker gets +1/+1; her Grizzly Bears, bob's Goblin Piker and the Vanguard itself, a Soldier but not an other, do not.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "draftNotes": [{"key": "Paliano Vanguard", "value": [{"type": "CreatureType", "value": "Goblin"}, {"type": "CreatureType", "value": "Soldier"}]}], "battlefield": [{"card": "Paliano Vanguard", "label": "vanguard"}, {"card": "Goblin Piker", "label": "piker"}, {"card": "Grizzly Bears", "label": "bears"}], "library": [{"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Goblin Piker", "label": "bobpiker"}], "library": [{"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$piker", "power": 3, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bobpiker", "power": 2, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$vanguard", "power": 2, "toughness": 2}}}
+  ]
+}

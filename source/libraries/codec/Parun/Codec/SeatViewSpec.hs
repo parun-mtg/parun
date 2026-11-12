@@ -9,6 +9,7 @@ import qualified Parun.Codec.SeatView as SeatView
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.SeatView as SeatView
@@ -25,8 +26,8 @@ spec s = Spec.describe s "Parun.Codec.SeatView" $ do
     Common.assertCodec
       s
       SeatView.codec
-      testSeat {SeatView.draftNotes = Map.singleton (CardName.MkCardName (Text.pack "Garbage Fire")) (Seq.fromList [2, 5])}
-      (List.init testSeatJson <> ",\"draftNotes\":[{\"key\":\"Garbage Fire\",\"value\":[2,5]}]}")
+      testSeat {SeatView.draftNotes = Map.singleton (CardName.MkCardName (Text.pack "Garbage Fire")) (Seq.fromList [DraftNote.Number 2, DraftNote.Name (CardName.MkCardName (Text.pack "Shock"))])}
+      (List.init testSeatJson <> ",\"draftNotes\":[{\"key\":\"Garbage Fire\",\"value\":[{\"type\":\"Number\",\"value\":2},{\"type\":\"Name\",\"value\":\"Shock\"}]}]}")
   Spec.it s "has a schema" $ Common.assertHasSchema s SeatView.codec
 
 -- A seat whose hand shows one of its three cards.

@@ -14,6 +14,8 @@ import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
+import qualified Data.Text as Text
+import qualified Data.Sequence as Seq
 import Numeric.Natural (Natural)
 import Parun.CombatEffectSpec (addForests, attackThePlaneswalker, attackersOf, attacking, cursing, cursingBoard, imprisoning, runToEndOfCombat, tapStateOf, withPermanents)
 import qualified Parun.Engine.Activate as Activate
@@ -56,6 +58,8 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.DraftNote as DraftNote
+import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
@@ -1787,6 +1791,39 @@ mostLifeRequirementSpec s registry = Spec.describe s "MostLifeRequirement" $ do
         Spec.assertEqWith s "with the totals exchanged the same announcement stands" (announced bobAhead devourer) (Just (AttackTarget.OfPlayer S.bob))
       _ -> Spec.assertFailure s "fixture should have one Galactus"
 
+-- CR 508.1d's OBJECT axis naming a player its controller noted during the
+-- draft (CR 905.2b), proved by Cogwork Tracker ("This creature attacks a player
+-- you noted for cards named Cogwork Tracker each combat if able"). Alice noted
+-- carol, the SECOND announcement, so the narrowing is the note rather than seat
+-- order; with no note the unnarrowed requirement admits either opponent.
+notedRequirementSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+notedRequirementSpec s registry = Spec.describe s "NotedRequirement" $ do
+  Spec.it s "CR 508.1d / 905.2b the requirement is obeyed only by attacking the player its controller noted" $ do
+    tracker <- S.printingOf s registry "Cogwork Tracker"
+    piker <- S.printingOf s registry "Goblin Piker"
+    let (base, mine, _, _) = S.threePlayerCombat [tracker] [piker] [piker]
+        defending gs =
+          gs
+            { GameState.turn =
+                (GameState.turn gs)
+                  { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
+                    TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob, S.carol]}
+                  }
+            }
+        noting notes gs = gs {GameState.players = Map.adjust (\p -> p {Player.draftNotes = notes}) S.alice (GameState.players gs)}
+        notedCarol = defending (noting (Map.singleton (CardName.MkCardName (Text.pack "Cogwork Tracker")) (Seq.singleton (DraftNote.Player S.carol))) base)
+        unnoted = defending base
+    case mine of
+      [cogwork] -> do
+        Spec.assertBool
+          s
+          (not (Combat.legalAttackDeclarationAs S.alice [(cogwork, AttackTarget.OfPlayer S.bob)] notedCarol))
+          "CR 508.1d: attacking bob obeys one requirement where attacking carol obeys two"
+        Spec.assertBool s (Combat.legalAttackDeclarationAs S.alice [(cogwork, AttackTarget.OfPlayer S.carol)] notedCarol) "attacking carol obeys both"
+        Spec.assertBool s (not (Combat.legalAttackDeclaration S.alice [] notedCarol)) "and declining obeys neither"
+        Spec.assertBool s (Combat.legalAttackDeclarationAs S.alice [(cogwork, AttackTarget.OfPlayer S.bob)] unnoted) "with nothing noted, bob is as good as carol"
+      _ -> Spec.assertFailure s "fixture should have one Cogwork Tracker"
+
 -- CR 508.1d's OBJECT axis naming a player TOGETHER WITH the permanents that
 -- player controls, proved by Trove of Temptation ("{3}{R} Enchantment / Each
 -- opponent must attack you or a planeswalker you control with at least one
@@ -2290,6 +2327,7 @@ spec s registry = Spec.describe s "Parun.Engine.Combat" $ do
   tauntSpec s registry
   publicEnemySpec s registry
   mostLifeRequirementSpec s registry
+  notedRequirementSpec s registry
   troveOfTemptationSpec s registry
   conditionalAttackRequirementSpec s registry
   declarationRetrySpec s registry

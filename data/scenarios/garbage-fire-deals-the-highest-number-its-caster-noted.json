@@ -5,7 +5,7 @@
     "active": "alice",
     "step": "PrecombatMain",
     "seats": [
-      {"name": "alice", "manaPool": "RRR", "draftNotes": [{"key": "Garbage Fire", "value": [2, 5]}], "hand": [{"card": "Garbage Fire", "label": "fire"}], "library": [{"card": "Island"}, {"card": "Island"}]},
+      {"name": "alice", "manaPool": "RRR", "draftNotes": [{"key": "Garbage Fire", "value": [{"type": "Number", "value": 2}, {"type": "Number", "value": 5}]}], "hand": [{"card": "Garbage Fire", "label": "fire"}], "library": [{"card": "Island"}, {"card": "Island"}]},
       {"name": "bob", "battlefield": [{"card": "Colossal Dreadmaw", "label": "dreadmaw"}], "library": [{"card": "Island"}, {"card": "Island"}]}
     ]
   },

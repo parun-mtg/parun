@@ -1,0 +1,19 @@
+{
+  "description": "CR 905.2b / 115.1: Regicide can target only a creature that's one or more of the colours its controller noted for cards named Regicide",
+  "note": "Alice noted red and green: bob's white Serra Angel is no legal target, his green Colossal Dreadmaw and red Goblin Piker are.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "manaPool": "B", "draftNotes": [{"key": "Regicide", "value": [{"type": "Color", "value": "Red"}, {"type": "Color", "value": "Green"}]}], "hand": [{"card": "Regicide", "label": "regicide"}], "library": [{"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Serra Angel", "label": "angel"}, {"card": "Colossal Dreadmaw", "label": "dreadmaw"}, {"card": "Goblin Piker", "label": "piker"}], "library": [{"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$regicide", "targets": ["$angel"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$regicide", "targets": ["$dreadmaw"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Colossal Dreadmaw", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Serra Angel", "count": 1}}}
+  ]
+}

@@ -1,5 +1,6 @@
 module Parun.Types.ManaProduction where
 
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.ManaCount as ManaCount
@@ -73,4 +74,6 @@ data ManaProduction
   | -- | CR 207.5: one mana of either colour circled on the source as its deck
     -- was built (Cryptic Spires), read off ProjectedCharacteristics.circled.
     Circled
+  | -- | CR 905.2b: one mana of a colour the producing player noted during the draft for cards of this name (Paliano, the High City).
+    DraftNoted CardName.CardName
   deriving (Eq, Ord, Show)

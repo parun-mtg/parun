@@ -12,6 +12,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Oracle as Oracle
 import qualified Parun.Types.AbilityKind as AbilityKind
@@ -43,6 +44,7 @@ import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamagePrevented as DamagePrevented
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Defense as Defense
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DieResult as DieResult
@@ -152,11 +154,17 @@ board begun view =
             <> (if pid == PlayerView.viewer view then [] else listed view "  Seen in hand: " (handOrder view (SeatView.hand s)))
             <> listed view "  Seen in library, top first: " (SeatView.library s)
             <> notes (SeatView.draftNotes s)
-    -- CR 905.2b: "Draft notes: Garbage Fire 2, 5; Lurking Automaton 9".
+    -- CR 905.2b: "Draft notes: Garbage Fire 2, 5; Regicide red, blue".
     notes noted =
-      [ Text.pack "  Draft notes: " <> Text.intercalate (Text.pack "; ") [CardName.unwrap name <> Text.singleton ' ' <> Text.intercalate (Text.pack ", ") (fmap (Text.pack . show) (Foldable.toList numbers)) | (name, numbers) <- Map.toList noted]
+      [ Text.pack "  Draft notes: " <> Text.intercalate (Text.pack "; ") [CardName.unwrap name <> Text.singleton ' ' <> Text.intercalate (Text.pack ", ") (fmap note (Foldable.toList written)) | (name, written) <- Map.toList noted]
       | not (Map.null noted)
       ]
+    note written = case written of
+      DraftNote.Number n -> Text.pack (show n)
+      DraftNote.Color c -> Text.toLower (Text.pack (show c))
+      DraftNote.Name name -> CardName.unwrap name
+      DraftNote.CreatureType t -> Maybe.fromMaybe (Text.pack (show t)) (Subtype.creatureTypeWord t)
+      DraftNote.Player pid -> player pid
     stack = listed view "Stack, top first: " (PlayerView.stack view)
     -- CR 807.5: each other Grand Melee turn marker's stack.
     parked = concatMap (\(n, shown) -> listed view ("Turn marker " <> show n <> "'s stack, top first: ") shown) (Map.toList (PlayerView.parkedStacks view))

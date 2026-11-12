@@ -223,6 +223,8 @@ data Filter keyword
     -- interchangeable names as much as CR 709.4a's, and vacuously False where
     -- that chooser has chosen no name.
     HasChosenName NameChooser.NameChooser
+  | -- | CR 905.2b: a name, colour or creature type of the candidate's is one the perspective player noted during the draft for cards of this name.
+    Noted CardName.CardName
   | -- | CR 105.2: the candidate's colours include the one the SOURCE chose as it
     -- entered (CR 614.1c), the two abilities linked by CR 607.2d -- Gauntlet of
     -- Power's "creatures of the chosen color". HasColor above with the colour

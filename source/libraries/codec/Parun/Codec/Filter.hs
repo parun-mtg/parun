@@ -119,6 +119,7 @@ codec keywordCodec =
       Arm.payload "ControllerRelatesToBound" relatesToBound (\(r, h, y) -> Filter.ControllerRelatesToBound r h y) (\x -> case x of Filter.ControllerRelatesToBound r h y -> Just (r, h, y); _ -> Nothing),
       Arm.payload "HasChosenName" NameChooser.codec Filter.HasChosenName (\x -> case x of Filter.HasChosenName y -> Just y; _ -> Nothing),
       Arm.nullary "HasChosenColor" Filter.HasChosenColor,
+      Arm.payload "Noted" CardName.codec Filter.Noted (\x -> case x of Filter.Noted y -> Just y; _ -> Nothing),
       Arm.nullary "HasChosenSubtype" Filter.HasChosenSubtype,
       Arm.nullary "HasChosenCardType" Filter.HasChosenCardType,
       Arm.payload "IsExiledWithSource" ExiledPile.codec Filter.IsExiledWithSource (\x -> case x of Filter.IsExiledWithSource y -> Just y; _ -> Nothing),
@@ -311,6 +312,7 @@ tagOf x = case x of
   Filter.ControllerRelatesToBound {} -> "ControllerRelatesToBound"
   Filter.HasChosenName {} -> "HasChosenName"
   Filter.HasChosenColor {} -> "HasChosenColor"
+  Filter.Noted {} -> "Noted"
   Filter.HasChosenSubtype {} -> "HasChosenSubtype"
   Filter.HasChosenCardType {} -> "HasChosenCardType"
   Filter.IsExiledWithSource {} -> "IsExiledWithSource"

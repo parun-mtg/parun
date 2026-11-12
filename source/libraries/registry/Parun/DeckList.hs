@@ -28,6 +28,7 @@ import qualified Parun.Engine.Card as EngineCard
 import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.Modal as Modal
+import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Ingest as Ingest
@@ -39,10 +40,12 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CharacteristicColors as CharacteristicColors
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaProduction as ManaProduction
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingEntry as PrintingEntry
 import qualified Parun.Types.PrintingTable as PrintingTable
@@ -85,6 +88,9 @@ data Problem
     ChoiceMissing Natural.Natural CardName.CardName Choice
   | -- | One choice recorded twice on one line.
     ChoiceRepeated Natural.Natural CardName.CardName Choice
+  | -- | CR 905.2b: a braced draft note naming no kind of note, or a value its
+    -- kind does not take (`noteIn`).
+    BadNote Natural.Natural Text.Text
   deriving (Eq, Ord, Show)
 
 -- | A choice made for one copy of a card as its deck is built, which a line
@@ -146,6 +152,7 @@ explain problem =
         VanguardRepeated n name -> at n <> Text.pack "the list already brings a vanguard, so not " <> CardName.unwrap name
         NoSuchStickerSheet n name -> at n <> Text.pack "no sticker sheet is named " <> name
         BadAnnotation n content -> at n <> Text.pack "not a choice and its colours: {" <> content <> Text.singleton '}'
+        BadNote n content -> at n <> Text.pack "not a draft note: {" <> content <> Text.singleton '}'
         ChoiceNotMade n name choice -> at n <> CardName.unwrap name <> Text.pack " makes no " <> keyword choice <> Text.pack " choice here"
         ChoiceMissing n name choice -> at n <> CardName.unwrap name <> Text.pack " needs its " <> keyword choice <> Text.pack " choice"
         ChoiceRepeated n name choice -> at n <> CardName.unwrap name <> Text.pack " has its " <> keyword choice <> Text.pack " choice twice"
@@ -234,8 +241,8 @@ data Line
     Entry Natural.Natural CardName.CardName Printing.Printing
   | -- | A count and the sticker sheet it names.
     Sheet Natural.Natural StickerSheet.StickerSheet
-  | -- | A number noted during the draft and the name of the card it was noted for.
-    Note Natural.Natural CardName.CardName
+  | -- | The name of a card and what was noted for it during the draft.
+    Note CardName.CardName [DraftNote.DraftNote]
 
 -- The deck the lines' meanings add up to, the format the first header names,
 -- and every line that is neither.
@@ -255,8 +262,8 @@ assemble results =
         -- In the order written: a player's sheets are told apart by position
         -- (Parun.Types.StickerRef, CR 123.3a).
         Right (Sheet count sheet) -> (section, entries, sheets <> Seq.replicate (Natural.toIntSaturating count) sheet, notes, named, bad)
-        -- One number per copy, so a zero is kept and a repeated name appends.
-        Right (Note value name) -> (section, entries, sheets, Map.insertWith (flip (<>)) name (Seq.singleton value) notes, named, bad)
+        -- In the order written, so a zero is kept and a repeated name appends.
+        Right (Note name values) -> (section, entries, sheets, Map.insertWith (flip (<>)) name (Seq.fromList values) notes, named, bad)
       (_, found, brought, noted, header, reported) = List.foldl' step (Main, [], Seq.empty, Map.empty, Nothing, []) results
       gather want = Map.fromListWith (+) [(printing, count) | (section, printing, count) <- found, section `elem` want]
       once want = Map.keysSet (gather [want])
@@ -295,9 +302,8 @@ formatFor asked listed = case (asked, format listed) of
 
 -- What one line, read in a section, means: nothing (blank), the section the
 -- lines after it belong to, the format the list is for, or a count and the
--- printing -- or, in the Stickers section, the sticker sheet -- it names. In
--- the Draft Notes section the count is the number noted, which a bare name
--- would leave unsaid, and the name is the card's (CR 905.2b).
+-- printing -- or, in the Stickers section, the sticker sheet -- it names, or,
+-- in the Draft Notes section, a card's draft notes (`noteOf`).
 lineOf :: (Monad m) => Registry.Registry m -> Map.Map Text.Text PrintingEntry.PrintingEntry -> (Natural.Natural, Section, Text.Text) -> m (Either InvalidCorpus.InvalidCorpus (Natural.Natural, Either Problem Line))
 lineOf registry first (number, within, raw) =
   let trimmed = Text.strip raw
@@ -307,14 +313,56 @@ lineOf registry first (number, within, raw) =
           (Just section, _) -> pure (Right (number, Right (Header section)))
           (_, Just named) -> pure (Right (number, maybe (Left (Unreadable number trimmed)) (Right . Named) named))
           _ | within == Stickers -> pure (Right (number, sheetOf (Registry.stickerSheets registry) number trimmed))
-          _ | within == DraftNotes -> case countOf trimmed of
-            Just (noted, name) | Char.isDigit (Text.head trimmed) -> fmap (fmap ((,) number . fmap (Note noted . CardName.MkCardName . written))) (resolve registry number (CardName.MkCardName name))
-            _ -> pure (Right (number, Left (Unreadable number trimmed)))
+          _ | within == DraftNotes -> fmap (fmap ((,) number)) (noteOf registry number trimmed)
           _ -> case entryOf trimmed of
             Nothing -> pure (Right (number, Left (Unreadable number trimmed)))
             Just (count, name, at, notes) ->
               let printed card = printingOf (Registry.printings registry) first number name at card >>= annotate number within name notes
                in fmap (fmap ((,) number . (>>= fmap (Entry count name) . printed))) (resolve registry number name)
+
+-- What a line of the Draft Notes section means (CR 905.2b): a number and the
+-- card it was noted for, "3 Lurking Automaton", whose count a bare name would
+-- leave unsaid; or the card and the other notes made for it, each braced as
+-- its kind and value: "Regicide {color: R}", "Smuggler Captain {name: Shock}",
+-- "Paliano Vanguard {type: Soldier}", "Cogwork Tracker {player: 2}", the
+-- player by the seat number `parun play` shows.
+noteOf :: (Monad m) => Registry.Registry m -> Natural.Natural -> Text.Text -> m (Either InvalidCorpus.InvalidCorpus (Either Problem Line))
+noteOf registry number text =
+  let unreadable = Right (Left (Unreadable number text))
+      carrier values name = fmap (fmap (fmap (\card -> Note (CardName.MkCardName (written card)) values))) (resolve registry number (CardName.MkCardName name))
+   in case annotationsOf text of
+        _ | Char.isDigit (Text.head text) -> case countOf text of
+          Just (noted, name) -> carrier [DraftNote.Number noted] name
+          Nothing -> pure unreadable
+        (name, braced@(_ : _)) | not (Text.null name) -> do
+          parsed <- traverse (noteIn registry number) braced
+          case fmap sequence (sequence parsed) of
+            Right (Right values) -> carrier values name
+            Right (Left problem) -> pure (Right (Left problem))
+            Left invalid -> pure (Left invalid)
+        _ -> pure unreadable
+
+-- One braced draft note, `noteOf`'s: a colour as its mana symbol's letter (CR
+-- 107.4a), a card's name, one creature type, or a seat counted from one.
+noteIn :: (Monad m) => Registry.Registry m -> Natural.Natural -> Text.Text -> m (Either InvalidCorpus.InvalidCorpus (Either Problem DraftNote.DraftNote))
+noteIn registry number note =
+  let (kind, rest) = Text.breakOn (Text.singleton ':') note
+      value = Text.strip (Text.drop 1 rest)
+      bad = Right (Left (BadNote number note))
+      found = maybe bad (Right . Right)
+      seatNote seat = if seat > 0 then Just (DraftNote.Player (PlayerId.MkPlayerId (seat - 1))) else Nothing
+   in if Text.null value
+        then pure bad
+        else case Text.unpack (Text.toLower (Text.strip kind)) of
+          "color" -> pure (found (lookup (Text.toUpper value) [(colorLetter color, DraftNote.Color color) | color <- [minBound .. maxBound]]))
+          "name" -> fmap (fmap (fmap (DraftNote.Name . CardName.MkCardName . written))) (resolve registry number (CardName.MkCardName value))
+          "type" -> pure (found (lookup (Text.toLower value) [(Text.toLower word, DraftNote.CreatureType subtype) | subtype <- [minBound .. maxBound], Just word <- [Subtype.creatureTypeWord subtype]]))
+          "player" -> pure (found (Read.readMaybe (Text.unpack value) >>= seatNote))
+          _ -> pure bad
+
+-- A colour's mana symbol letter (CR 107.4a).
+colorLetter :: Color.Color -> Text.Text
+colorLetter color = Text.pack [c | c <- "WUBRG", ManaSymbolText.manaType c == Just (ManaType.Colored color)]
 
 -- What a line of the Stickers section means: a count and the sheet it names,
 -- by name or slug, as a card is looked up (Parun.Registry.slugFor). No
@@ -402,13 +450,11 @@ annotate number within name notes printing = do
 -- The annotations a printing is written with, one per choice it records.
 annotationsFor :: Printing.Printing -> [Text.Text]
 annotationsFor printing =
-  [ Text.singleton '{' <> keyword choice <> Text.pack ": " <> Text.unwords (fmap letter (Set.toAscList colors)) <> Text.singleton '}'
+  [ Text.singleton '{' <> keyword choice <> Text.pack ": " <> Text.unwords (fmap colorLetter (Set.toAscList colors)) <> Text.singleton '}'
   | choice <- [minBound .. maxBound],
     let colors = chosenFor choice printing,
     not (Set.null colors)
   ]
-  where
-    letter color = Text.pack [c | c <- "WUBRG", ManaSymbolText.manaType c == Just (ManaType.Colored color)]
 
 -- A line's count and the text after it.
 countOf :: Text.Text -> Maybe (Natural.Natural, Text.Text)
@@ -527,12 +573,19 @@ halvesOf name =
 -- Sorted by the line written, so the text is a fact about the deck rather than
 -- about the order a Map enumerates its structural keys in. Sticker sheets are
 -- the exception, written in their order (`assemble`), and so are a name's
--- draft notes, one line per number.
+-- draft notes, one line per note (`noteOf`).
 render :: PrintingTable.PrintingTable -> Maybe Text.Text -> Deck.Deck -> Text.Text
 render table header listed =
   let entries m = fmap line (List.sortOn snd [(count, writtenAt printing) | (printing, count) <- Map.toList m])
       writtenAt printing = written (Printing.card printing) <> foldMap ((Text.singleton ' ' <>) . suffix) (suffixFor table printing) <> foldMap (Text.singleton ' ' <>) (annotationsFor printing)
       line (count, name) = Text.pack (show count) <> Text.singleton ' ' <> name
+      braced name kind value = name <> Text.pack (" {" <> kind <> ": ") <> value <> Text.singleton '}'
+      noteLine name noted = case noted of
+        DraftNote.Number n -> line (n, name)
+        DraftNote.Color color -> braced name "color" (colorLetter color)
+        DraftNote.Name named -> braced name "name" (CardName.unwrap named)
+        DraftNote.CreatureType subtype -> braced name "type" (Maybe.fromMaybe (Text.pack (show subtype)) (Subtype.creatureTypeWord subtype))
+        DraftNote.Player pid -> braced name "player" (Text.pack (show (PlayerId.unwrap pid + 1)))
       once = Map.fromSet (const (1 :: Natural.Natural))
       contents section = case section of
         Main -> entries (Deck.cards listed)
@@ -544,7 +597,7 @@ render table header listed =
         Dungeons -> entries (once (Deck.dungeons listed))
         Vanguard -> entries (once (Set.fromList (Maybe.maybeToList (Deck.vanguard listed))))
         Stickers -> fmap (\run -> line (Natural.length run, StickerSheet.name (NonEmpty.head run))) (NonEmpty.group (Deck.stickerSheets listed))
-        DraftNotes -> [line (noted, CardName.unwrap name) | (name, notes) <- Map.toAscList (Deck.draftNotes listed), noted <- Foldable.toList notes]
+        DraftNotes -> [noteLine (CardName.unwrap name) noted | (name, notes) <- Map.toAscList (Deck.draftNotes listed), noted <- Foldable.toList notes]
       block section = case contents section of
         [] -> []
         written' -> Text.empty : heading section : written'

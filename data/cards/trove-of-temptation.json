@@ -4,7 +4,9 @@
       "attackRequirements": [
         {
           "arity": "AnySubject",
-          "object": "ControllerOrTheirPlaneswalkers",
+          "object": {
+            "type": "ControllerOrTheirPlaneswalkers"
+          },
           "subject": {
             "type": "Matching",
             "value": {

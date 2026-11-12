@@ -1,0 +1,26 @@
+{
+  "description": "CR 905.2b / 611.3a: Noble Banneret gives itself and each creature its controller controls with a name noted for cards named Noble Banneret +1/+1 and lifelink as long as there is one",
+  "note": "Alice noted Grizzly Bears. Her Bears and the Banneret get +1/+1 and lifelink; her Craw Wurm and bob's Grizzly Bears do not. Once she Bolts her own Bears, the Banneret is a plain 3/3 again.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "manaPool": "R", "draftNotes": [{"key": "Noble Banneret", "value": [{"type": "Name", "value": "Grizzly Bears"}]}], "battlefield": [{"card": "Noble Banneret", "label": "banneret"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Craw Wurm", "label": "wurm"}], "hand": [{"card": "Lightning Bolt", "label": "bolt"}], "library": [{"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bobbears"}], "library": [{"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$banneret", "power": 4, "toughness": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$banneret", "keyword": {"type": "Lifelink"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Lifelink"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$wurm", "power": 6, "toughness": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$wurm", "keyword": {"type": "Lifelink"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bobbears", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt", "targets": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$banneret", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$banneret", "keyword": {"type": "Lifelink"}, "count": 0}}}
+  ]
+}

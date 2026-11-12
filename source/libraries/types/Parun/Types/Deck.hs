@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.SideDeck as SideDeck
@@ -116,10 +117,10 @@ data Deck = MkDeck
     -- CR 123.2b lets a limited player bring two of one sheet, and CR 123.3a
     -- keeps their stickers apart.
     stickerSheets :: Seq.Seq StickerSheet.StickerSheet,
-    -- | CR 905.2b: the numbers this player recorded during a Conspiracy
-    -- draft, by the name of the card they recorded each for, one per copy
+    -- | CR 905.2b: what this player noted during a Conspiracy
+    -- draft, by the name of the card they noted each for, in order
     -- (Player.draftNotes). Empty outside Conspiracy Draft.
-    draftNotes :: Map.Map CardName.CardName (Seq.Seq Natural.Natural)
+    draftNotes :: Map.Map CardName.CardName (Seq.Seq DraftNote.DraftNote)
   }
   deriving (Eq, Ord, Show)
 

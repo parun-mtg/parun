@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Designation as Designation
@@ -224,14 +225,16 @@ data Player = MkPlayer
     -- CR 201.2a makes sameness of name the question: two printings of one dungeon
     -- are the same dungeon to it, and a printing id would tell them apart.
     completedDungeonNames :: Set.Set CardName.CardName,
-    -- | CR 905.2b: the numbers this player recorded during the draft, by the
-    -- name of the card they recorded each for -- Lurking Automaton's noted
-    -- number, or the cards a Cogwork Grinder removed from the draft -- one per
-    -- copy drafted. Copied from Deck.draftNotes by
+    -- | CR 905.2b: what this player noted during the draft, by the name of the
+    -- card they noted each for -- Lurking Automaton's number, Regicide's
+    -- colours, Smuggler Captain's names, Paliano Vanguard's creature types,
+    -- Cogwork Tracker's player. Copied from Deck.draftNotes by
     -- Parun.Engine.Setup.createDeck and never written after, a draft being over
     -- before any game of it begins (CR 905.1d); read by Parun.Engine.Quantity's
-    -- Quantity.DraftNotes arm.
-    draftNotes :: Map.Map CardName.CardName (Seq.Seq Natural.Natural),
+    -- Quantity.DraftNotes arm (numbers), Filter.Noted (names, colours, creature
+    -- types), ManaProduction.DraftNoted (colours) and RequiredDefender.Noted
+    -- (players).
+    draftNotes :: Map.Map CardName.CardName (Seq.Seq DraftNote.DraftNote),
     -- | CR 103.2a \/ 702.139b: this player's STARTING DECK, counted per printing --
     -- their deck once the sideboard has been set aside, and, in a Commander game,
     -- before the commander is set aside. Empty for a game built without decks.

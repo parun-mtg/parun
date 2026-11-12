@@ -4036,6 +4036,9 @@ filterReads f = case f of
   -- recolours a creature (Painter's Servant) moves an affected set written with
   -- this atom.
   Filter.Type.HasChosenColor -> Set.singleton Colors
+  -- Reads the candidate's COLOURS and SUBTYPES, HasColor's and HasSubtype's
+  -- answers (and HasName's, which has no Aspect); the notes are no projection.
+  Filter.Type.Noted _ -> Set.fromList [Colors, Subtypes]
   -- Reads the candidate's SUBTYPES, HasSubtype's answer: the chosen half arrives
   -- on the Context baked at production, and CR 613.1d's layer writes the other.
   Filter.Type.HasChosenSubtype -> Set.singleton Subtypes
@@ -4381,6 +4384,7 @@ filterReadsPeers f = case f of
   -- rather than off a projection; the candidate's own colours come from its
   -- partial, so no PEER is projected.
   Filter.Type.HasChosenColor -> False
+  Filter.Type.Noted _ -> False
   -- The source's chosen subtype arrives on the Context, baked onto the mana unit
   -- at production; the candidate's own subtypes come from its partial, so no PEER
   -- is projected.

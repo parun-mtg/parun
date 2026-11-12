@@ -3,6 +3,7 @@ module Parun.Types.SeatView where
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ObjectView as ObjectView
@@ -23,6 +24,6 @@ data SeatView = MkSeatView
     exile :: [ObjectView.ObjectView],
     manaPool :: Mana.Mana,
     -- | CR 905.2b: Player.draftNotes, which every seat may look at.
-    draftNotes :: Map.Map CardName.CardName (Seq.Seq Natural.Natural)
+    draftNotes :: Map.Map CardName.CardName (Seq.Seq DraftNote.DraftNote)
   }
   deriving (Eq, Show)

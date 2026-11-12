@@ -572,6 +572,7 @@ filterChildren children predicate = case predicate of
   Filter.ControllerRelatesToBound relation hop name -> fmap (Filter.ControllerRelatesToBound relation hop) (slot children SlotArity.Many name)
   Filter.HasChosenName _ -> pure predicate
   Filter.HasChosenColor -> pure predicate
+  Filter.Noted _ -> pure predicate
   Filter.HasChosenSubtype -> pure predicate
   Filter.HasChosenCardType -> pure predicate
   Filter.IsExiledWithSource _ -> pure predicate
@@ -3550,6 +3551,7 @@ manaProductionChildren c production = case production of
   ManaProduction.ProducedByTapped -> production <$ manaSlot c Binding.Engine.manaSource
   ManaProduction.InCommanderIdentity -> pure production
   ManaProduction.Circled -> pure production
+  ManaProduction.DraftNoted _ -> pure production
 
 -- | A spending restriction's children (CR 106.6). Whether it prohibits and
 -- whether it pays generic costs are left as they are.

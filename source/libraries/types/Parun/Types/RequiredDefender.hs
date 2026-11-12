@@ -1,5 +1,7 @@
 module Parun.Types.RequiredDefender where
 
+import qualified Parun.Types.CardName as CardName
+
 -- | CR 508.1d: WHOM a printed attacking requirement says the creature has to
 -- attack, named by relation to the permanent printing it. Public Enemy's "all
 -- creatures attack enchanted creature's controller each combat if able".
@@ -17,16 +19,14 @@ module Parun.Types.RequiredDefender where
 -- Parun.Engine.AttackRequirement's `admissible` is where that becomes a filter
 -- over CR 508.1b's announcements rather than a single seat.
 --
--- Three arms, and the sweep that says which printings would want a fourth:
+-- Four arms, and the sweep that says which printings would want a fifth:
 -- Scryfall `o:/attacks [a-z ]{2,40} if able/ game:paper` (2026-09-05), read
 -- clause by clause. Every other printing narrowing the object either creates
 -- its requirement by RESOLUTION -- Ruhan of the Fomori, Raving Dead, Nahiri the
 -- Unforgiving, Dulcet Sirens -- which is ActiveAttackRequirement's family, or
 -- prints the narrowing as a CR 508.1c RESTRICTION beside an unnarrowed
 -- requirement -- Xantcha, Sleeper Agent, Fealty to the Realm -- which
--- Parun.Types.CombatRestriction carries. One would want an arm here: Cogwork
--- Tracker's "a player you noted for cards named Cogwork Tracker", a draft
--- designation with no carrier in parun at all.
+-- Parun.Types.CombatRestriction carries.
 data RequiredDefender
   = -- | CR 108.4 / 303.4m: the controller of the object the source is attached
     -- to. Names nobody when the source is attached to nothing, or to a player
@@ -43,4 +43,6 @@ data RequiredDefender
     -- one seat and never a battle -- proved by Parun.CombatCostSpec's "CR 508.1d
     -- attacking a planeswalker its controller controls obeys the requirement".
     ControllerOrTheirPlaneswalkers
-  deriving (Bounded, Enum, Eq, Ord, Show)
+  | -- | CR 109.5 / 905.2b: a player the source's controller noted during the draft for cards of this name (Cogwork Tracker).
+    Noted CardName.CardName
+  deriving (Eq, Ord, Show)
