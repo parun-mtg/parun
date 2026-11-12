@@ -1434,7 +1434,7 @@ effectObjectRefs effect =
         Effect.Mill {} -> []
         -- Blackmail's "target player reveals three cards from their hand" asks
         -- the hand's owner.
-        Effect.Reveal (Reveal.MkReveal ref _) -> [(AnyCardsFromAmong : CardInHand : shownQuestions, ref)]
+        Effect.Reveal (Reveal.MkReveal ref _ _) -> [(AnyCardsFromAmong : CardInHand : shownQuestions, ref)]
         -- Urza's Bauble's "a card at random in target player's hand" asks here.
         Effect.LookAt (LookAt.MkLookAt ref _ _) -> [([RandomInHand], ref)]
         -- Master of Predicaments' "choose a card in your hand" asks here.
@@ -2176,7 +2176,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         boundPlurally effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone ref _ _ mSlot _ _ _) | not (movesAtMostOne ref) -> Maybe.maybeToList mSlot
           Effect.LookAt (LookAt.MkLookAt ref slot _) | not (movesAtMostOne ref) -> [slot]
-          Effect.Reveal (Reveal.MkReveal ref mSlot) | not (movesAtMostOne ref) -> Maybe.maybeToList mSlot
+          Effect.Reveal (Reveal.MkReveal ref mSlot _) | not (movesAtMostOne ref) -> Maybe.maybeToList mSlot
           -- CR 701.17c's slot, plural at every depth and every seat count: an
           -- InstructionR row resizes the INSTRUCTION (Bruvac the Grandiloquent
           -- doubles it), so even a literal 1 can reach Resolve's `several ->
@@ -2404,7 +2404,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- is the ARM of the reference.
         gaining ref = Effect.GainLife (PlayerQuantity.MkPlayerQuantity ref (Quantity.Type.Literal 1))
         -- The same reference NESTED IN AN OBJECTREF, CR 400.1's per-seat walk.
-        revealing ref = Effect.Reveal (Reveal.MkReveal (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary ref (Quantity.Type.Literal 1))) Nothing)
+        revealing ref = Effect.Reveal (Reveal.MkReveal (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary ref (Quantity.Type.Literal 1))) Nothing Nothing)
         -- CR 608.2h's arm anywhere a PlayerRef sits in an effect, which is the
         -- corpus half of this leg. A wildcard because it is a presence probe:
         -- every other arm is not this one, however many there come to be.
@@ -2674,7 +2674,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         onePermanent = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) HowMany.one Zone.Battlefield)
         sourceAndOne = ObjectRef.AllOf (onePermanent NonEmpty.:| [ObjectRef.EachMatching Filter.Type.IsSource])
         moves ref = Effect.MoveToZone (MoveToZone.MkMoveToZone ref Zone.Battlefield EntryRiders.defaultValue Nothing Nothing LibraryPlacement.defaultValue Nothing)
-        reveals ref = Effect.Reveal (Reveal.MkReveal ref Nothing)
+        reveals ref = Effect.Reveal (Reveal.MkReveal ref Nothing Nothing)
         inert :: [Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> [Bool]
         inert = fmap (not . null . inertChoosers)
     Spec.assertEqWith

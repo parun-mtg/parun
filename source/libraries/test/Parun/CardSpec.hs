@@ -760,7 +760,7 @@ objectRefPositions =
         ("destroy", Effect.Destroy (Destroy.MkDestroy (plantedRef "de") Regenerability.Regenerable Nothing Nothing Nothing), [plantedRef "de"]),
         ("attach-all", Effect.AttachAll (AttachAll.MkAttachAll (plantedRef "aa") Filter.Type.IsSource), [plantedRef "aa"]),
         ("move-to-zone", Effect.MoveToZone (MoveToZone.MkMoveToZone (plantedRef "mz") Zone.Exile plainRiders Nothing Nothing LibraryPlacement.OwnerChooses Nothing), [plantedRef "mz"]),
-        ("reveal", Effect.Reveal (Reveal.MkReveal (plantedRef "rv") Nothing), [plantedRef "rv"]),
+        ("reveal", Effect.Reveal (Reveal.MkReveal (plantedRef "rv") Nothing Nothing), [plantedRef "rv"]),
         ("look-at", Effect.LookAt (LookAt.MkLookAt (plantedRef "la") (SlotName.MkSlotName (Text.pack "seen")) (PlayerRef.Relative PlayerRelation.You)), [plantedRef "la"]),
         ("guess", Effect.Guess Guess.MkGuess {Guess.subject = plantedRef "gu", Guess.slot = SlotName.MkSlotName (Text.pack "gs"), Guess.guesser = PlayerRef.Relative PlayerRelation.You, Guess.proposition = Filter.Type.And [], Guess.right = SlotName.MkSlotName (Text.pack "gr")}, [plantedRef "gu"]),
         ("explore", Effect.Explore (plantedRef "ex"), [plantedRef "ex"]),
@@ -853,6 +853,7 @@ playerRefPositions =
         ("surveil", Effect.Surveil (Surveil.MkSurveil (plantedPlayer "su") one Nothing), [plantedPlayer "su"]),
         ("amass", Effect.Amass (Amass.MkAmass (plantedPlayer "as") one (AmassKind.Army Subtype.Goblin) Nothing), [plantedPlayer "as"]),
         ("fateseal", Effect.Fateseal (playerQuantity "fs"), [plantedPlayer "fs"]),
+        ("reveal", Effect.Reveal (Reveal.MkReveal (plantedRef "rv") Nothing (Just (plantedPlayer "rv"))), [plantedPlayer "rv"]),
         ("look-at", Effect.LookAt (LookAt.MkLookAt (plantedRef "la") (SlotName.MkSlotName (Text.pack "seen")) (plantedPlayer "lk")), [plantedPlayer "lk"]),
         ("guess", Effect.Guess Guess.MkGuess {Guess.subject = plantedRef "gu", Guess.slot = SlotName.MkSlotName (Text.pack "gs"), Guess.guesser = plantedPlayer "gu", Guess.proposition = Filter.Type.And [], Guess.right = SlotName.MkSlotName (Text.pack "gr")}, [plantedPlayer "gu"]),
         ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (plantedPlayer "ac")), [plantedPlayer "ac"]),
@@ -5009,7 +5010,7 @@ effectFilters effect = case effect of
   Effect.Mill (Mill.MkMill _ quantity mTally _) -> frame Unframed (quantityFilters quantity) <> millTallyFramed (fmap MillTally.filter (Maybe.maybeToList mTally))
   -- The ObjectRef's Filter is a position a card author writes, so the lint
   -- reaches it, as Explore's does. Both halves of CR 701.20 answer alike.
-  Effect.Reveal (Reveal.MkReveal ref _) -> frame SourceHostFramed (objectRefFilters ref)
+  Effect.Reveal (Reveal.MkReveal ref _ _) -> frame SourceHostFramed (objectRefFilters ref)
   Effect.LookAt (LookAt.MkLookAt ref _ _) -> frame SourceHostFramed (objectRefFilters ref)
   -- The proposition is matched in the effect's context, ChoosePermanents' Filter.
   Effect.Guess (Guess.MkGuess subject _ _ proposition _) -> frame SourceHostFramed (objectRefFilters subject) <> unframed [proposition]

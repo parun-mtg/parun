@@ -8006,6 +8006,7 @@ ripple n =
           ( Reveal.MkReveal
               (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal (toInteger n))))
               (Just rippleRevealed)
+              Nothing
           )
       offer =
         Effect.OfferCast

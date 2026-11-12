@@ -1013,7 +1013,7 @@ effectChildren c effect = case effect of
     fmap Effect.MoveToZone (MoveToZone.MkMoveToZone <$> onObjectRef c ref <*> pure zone <*> onEntryRiders c riders <*> traverse (onSlot c) named <*> pure origin <*> onPlacement c placement <*> traverse (onMoveDuration c) duration)
   Effect.Draw (Draw.MkDraw who quantity named) -> fmap Effect.Draw (Draw.MkDraw <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)
   Effect.Mill (Mill.MkMill who quantity tally named) -> fmap Effect.Mill (Mill.MkMill <$> onPlayer c who <*> onQuantity c quantity <*> traverse (millTallyChildren c) tally <*> traverse (onSlot c) named)
-  Effect.Reveal (Reveal.MkReveal ref named) -> fmap Effect.Reveal (Reveal.MkReveal <$> onObjectRef c ref <*> traverse (onSlot c) named)
+  Effect.Reveal (Reveal.MkReveal ref named revealer) -> fmap Effect.Reveal (Reveal.MkReveal <$> onObjectRef c ref <*> traverse (onSlot c) named <*> traverse (onPlayer c) revealer)
   Effect.FromOutsideTheGame (FromOutsideTheGame.MkFromOutsideTheGame count upTo destination filter_ reveal differentIn pick) ->
     fmap (\rewritten -> Effect.FromOutsideTheGame (FromOutsideTheGame.MkFromOutsideTheGame count upTo destination rewritten reveal differentIn pick)) (onFilter c filter_)
   Effect.ExileThisSpell -> pure effect

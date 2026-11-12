@@ -613,7 +613,7 @@ cookbookSpec s registry = Spec.describe s "TheUnderworldCookbook" $ do
 -- is the player carrying the instruction out, the targeted one, so aimed at bob
 -- it is bob and not the ability's controller alice. Each seat's library holds a
 -- different card, so the name says whose top was shown.
-libraryRevealSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+libraryRevealSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 libraryRevealSpec s registry = Spec.describe s "LibraryReveal" $ do
   Spec.it s "CR 701.20a a target player reveals the top of their own library" $ do
     windreader <- S.printingOf s registry "Aven Windreader"
@@ -643,6 +643,29 @@ libraryRevealSpec s registry = Spec.describe s "LibraryReveal" $ do
         Spec.assertEqWith s "aimed at bob, bob reveals his Hill Giant" (revealed (activated S.bob)) [(S.bob, ["Hill Giant"])]
         Spec.assertEqWith s "aimed at alice, alice reveals her Goblin Piker" (revealed (activated S.alice)) [(S.alice, ["Goblin Piker"])]
       _ -> Spec.assertFailure s "Aven Windreader should print one activated ability"
+  -- Prophecy's "Reveal the top card of target opponent's library. If it's a
+  -- land, you gain 1 life." is the reveal Reveal.revealer names: alice, who
+  -- casts it, shows bob's top card. Bob's one-card library makes the top the
+  -- card shown either side of the shuffle.
+  Spec.it s "CR 701.20a a controller reveals the top of an opponent's library" $ do
+    prophecy <- S.printingOf s registry "Prophecy"
+    plains <- S.printingOf s registry "Plains"
+    forest <- S.printingOf s registry "Forest"
+    giant <- S.printingOf s registry "Hill Giant"
+    let aimed :: Prompt.Prompt r -> r
+        aimed p = case p of
+          Prompt.ChooseTargets _ _ _ sets -> S.preferring (== Recipient.ToPlayer S.bob) sets
+          _ -> S.identityAnswer p
+        resolved top =
+          let (_, stocked) = S.addLibraryCard top S.bob (S.landsInPlay plains 1)
+              (gs, oid) = S.handOne prophecy stocked
+              cast = snd (Engine.runGamePure aimed gs (Cast.castSpell S.manaPerformer S.alice oid (CardName.MkCardName (Text.pack "Prophecy")) Facing.FaceUp))
+           in snd (Engine.runGamePure aimed cast Stack.resolveTop)
+        revealed gs = fmap (fmap (fmap (Text.unpack . CardName.unwrap) . Set.toList)) (S.revealsOf gs)
+    Spec.assertEqWith s "alice reveals bob's Forest" (revealed (resolved forest)) [(S.alice, ["Forest"])]
+    Spec.assertEqWith s "and gains 1 life for the land" (S.lifeOf S.alice (resolved forest)) (Just 21)
+    Spec.assertEqWith s "alice reveals bob's Hill Giant" (revealed (resolved giant)) [(S.alice, ["Hill Giant"])]
+    Spec.assertEqWith s "and gains nothing for the creature" (S.lifeOf S.alice (resolved giant)) (Just 20)
 
 -- Merfolk Spy is the card: {U} Creature -- Merfolk Rogue 1/1, "Islandwalk /
 -- Whenever this creature deals combat damage to a player, that player reveals a
@@ -751,7 +774,7 @@ randomRevealSpec s registry =
           maiden <- S.printingOf s registry "Bird Maiden"
           let base = List.foldl' (\g p -> snd (S.addHandCard p S.bob g)) (Setup.emptyGame S.bothPlayers) [piker, wraith, maiden]
               gs = base {GameState.bookkeeping = (GameState.bookkeeping base) {Bookkeeping.lastChoice = Timestamp.MkTimestamp 0}}
-              effect = Effect.Reveal (Reveal.MkReveal (ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (PlayerRef.Relative PlayerRelation.Opponent) (Filter.Type.And []) (Quantity.Type.Literal 1))) Nothing)
+              effect = Effect.Reveal (Reveal.MkReveal (ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (PlayerRef.Relative PlayerRelation.Opponent) (Filter.Type.And []) (Quantity.Type.Literal 1))) Nothing Nothing)
               after = S.runPure (rolling 1) gs (Resolve.applyEffect S.noSource S.noSource S.alice Map.empty Map.empty effect)
           Spec.assertEqWith s "the roll was honoured here too" (revealed after) [(S.bob, ["Bog Wraith"])]
           Spec.assertEqWith s "and nobody was recorded as having been offered a choice" (Bookkeeping.lastChoice (GameState.bookkeeping after)) (Timestamp.MkTimestamp 0)
