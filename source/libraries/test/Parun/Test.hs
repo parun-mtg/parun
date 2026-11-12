@@ -398,6 +398,7 @@ import qualified Parun.Codec.ExilePermanentsSpec
 import qualified Parun.Codec.ExilePlayPermissionSpec
 import qualified Parun.Codec.ExiledPileSpec
 import qualified Parun.Codec.ExpansionSpec
+import qualified Parun.Codec.ExpendedSpec
 import qualified Parun.Codec.ExpirySpec
 import qualified Parun.Codec.ExploitTriggerSpec
 import qualified Parun.Codec.ExploitedSpec
@@ -634,6 +635,7 @@ import qualified Parun.Codec.PlayerDesignationSpec
 import qualified Parun.Codec.PlayerDesignationTallySpec
 import qualified Parun.Codec.PlayerDrawsNthCardSpec
 import qualified Parun.Codec.PlayerEffectSpec
+import qualified Parun.Codec.PlayerExpendsSpec
 import qualified Parun.Codec.PlayerIdSpec
 import qualified Parun.Codec.PlayerInstructionSpec
 import qualified Parun.Codec.PlayerIsDealtDamageSpec
@@ -1459,6 +1461,7 @@ spec s registry corpus = do
   Parun.Codec.ExpansionSpec.spec s
   Parun.Codec.ExpirySpec.spec s
   Parun.Codec.ExploitedSpec.spec s
+  Parun.Codec.ExpendedSpec.spec s
   Parun.Codec.FacedDilemmaSpec.spec s
   Parun.Codec.ExtraPhaseSpec.spec s
   Parun.Codec.ExtraTurnSpec.spec s
@@ -1689,6 +1692,7 @@ spec s registry corpus = do
   Parun.Codec.PlayerDesignationSpec.spec s
   Parun.Codec.PlayerDesignationTallySpec.spec s
   Parun.Codec.PlayerDrawsNthCardSpec.spec s
+  Parun.Codec.PlayerExpendsSpec.spec s
   Parun.Codec.LifeTriggerSpec.spec s
   Parun.Codec.PlayerEffectSpec.spec s
   Parun.Codec.PlayerIdSpec.spec s

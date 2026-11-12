@@ -98,6 +98,7 @@ import qualified Parun.Types.Drew as Drew
 import qualified Parun.Types.EntersTrigger as EntersTrigger
 import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.EventShape as EventShape
+import qualified Parun.Types.Expended as Expended
 import qualified Parun.Types.ExploitTrigger as ExploitTrigger
 import qualified Parun.Types.Exploited as Exploited
 import qualified Parun.Types.FacedDilemma as FacedDilemma
@@ -145,6 +146,7 @@ import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerActsOn as PlayerActsOn
 import qualified Parun.Types.PlayerDrawsNthCard as PlayerDrawsNthCard
+import qualified Parun.Types.PlayerExpends as PlayerExpends
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -935,6 +937,7 @@ anyTriggerReads event = case event of
   GameEvent.LandPlayed {} -> True
   GameEvent.ManifestedDread {} -> True
   GameEvent.FacedDilemma {} -> True
+  GameEvent.Expended {} -> True
   GameEvent.DieResultSettled {} -> True
   GameEvent.RolledToVisit {} -> True
   GameEvent.PlanarDieRolled {} -> True
@@ -2091,6 +2094,15 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- read against CR 109.5's "you".
   TriggerCondition.PlayerFacesDilemma relation -> case event of
     GameEvent.FacedDilemma ev -> PlayerRelation.holds (Game.teams gs) relation you (FacedDilemma.player ev)
+    _ -> False
+  -- CR 700.14: the payment took the player's total from under N to at least
+  -- N. Both totals come off the event, stamped as the cost was paid, so a
+  -- later payment past N fires nothing (the rulings of 2024-07-26).
+  TriggerCondition.PlayerExpends (PlayerExpends.MkPlayerExpends relation n) -> case event of
+    GameEvent.Expended ev ->
+      Expended.before ev < n
+        && Expended.after ev >= n
+        && PlayerRelation.holds (Game.teams gs) relation you (Expended.player ev)
     _ -> False
   -- CR 706.2: one die's RESULT, after every modifier, was the stated number,
   -- the roller read against CR 109.5's "you" as PlayerActs does.

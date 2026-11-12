@@ -3760,6 +3760,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.PlayerPlaysLand payload -> unframed [PlaysLand.filter payload]
   TriggerCondition.PlayerManifestsDread _ -> []
   TriggerCondition.PlayerFacesDilemma _ -> []
+  TriggerCondition.PlayerExpends _ -> []
   TriggerCondition.PlayerRollsResult _ -> []
   TriggerCondition.Visit -> []
   TriggerCondition.ChaosEnsues -> []
@@ -3891,6 +3892,7 @@ playerEffectFilters playerEffect = case playerEffect of
   -- number moves, never which spells.
   PlayerEffect.SetMaximumHandSize _ -> []
   PlayerEffect.IncreaseMaximumHandSize _ -> []
+  PlayerEffect.IncreaseDevotion _ -> []
   PlayerEffect.ReduceMaximumHandSize _ -> []
   -- CR 500.5 carries a ManaFilter, not a Filter: the set it names is MANA, and
   -- this traversal is about the spells a player effect names.

@@ -607,6 +607,7 @@ filterChildren children predicate = case predicate of
   Filter.ConvokedSourceThisTurn -> pure predicate
   Filter.SaddledSourceThisTurn -> pure predicate
   Filter.DealtDamageThisTurn -> pure predicate
+  Filter.ActivatedThisTurn -> pure predicate
   Filter.DealtDamageTo asked -> fmap Filter.DealtDamageTo (dealtDamageToChildren children asked)
   Filter.EnteredThisTurn _ -> pure predicate
   Filter.CountersPutThisTurn relation kind -> fmap (Filter.CountersPutThisTurn relation) (traverse (counterKindChildren children) kind)
@@ -666,6 +667,7 @@ anchorChildren children anchor = case anchor of
   Anchor.Source -> pure anchor
   Anchor.AnyPermanent group -> fmap Anchor.AnyPermanent (nest children group)
   Anchor.YourCommander -> pure anchor
+  Anchor.Host -> pure anchor
 
 -- | A comparison's children: the slot its operand reads.
 measuresChildren :: (Applicative f) => Children keyword f -> Measures.Measures -> f Measures.Measures
@@ -1602,6 +1604,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.PlayerPlaysLand (PlaysLand.MkPlaysLand who from filter_) -> fmap (TriggerCondition.PlayerPlaysLand . PlaysLand.MkPlaysLand who from) (triggerFilter c filter_)
   TriggerCondition.PlayerManifestsDread _ -> pure condition
   TriggerCondition.PlayerFacesDilemma _ -> pure condition
+  TriggerCondition.PlayerExpends _ -> pure condition
   TriggerCondition.ChaosEnsues -> pure condition
   TriggerCondition.PlayerRollsPlaneswalker _ -> pure condition
   TriggerCondition.SelfTurnedUpOffDeck -> pure condition
@@ -2096,6 +2099,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.NoMaximumHandSize -> pure effect
   PlayerEffect.SetMaximumHandSize _ -> pure effect
   PlayerEffect.IncreaseMaximumHandSize _ -> pure effect
+  PlayerEffect.IncreaseDevotion _ -> pure effect
   PlayerEffect.ReduceMaximumHandSize _ -> pure effect
   PlayerEffect.DontLoseUnspentMana which -> PlayerEffect.DontLoseUnspentMana <$> playerManaFilter c which
   PlayerEffect.LoseLifeForUnspentMana -> pure effect

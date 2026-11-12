@@ -120,6 +120,7 @@ blackCreature =
       Filter.declaredBlockerThisCombat = False,
       Filter.leftLibraryThisTurn = Set.empty,
       Filter.dealtDamageThisTurn = False,
+      Filter.activatedThisTurn = False,
       Filter.arrivalThisTurn = Nothing,
       Filter.crewedThisTurn = Set.empty,
       Filter.convokedThisTurn = Set.empty,
@@ -169,6 +170,7 @@ blackCreature =
       -- atom's own cases below say which view they want rather than inheriting it.
       Filter.activatedAbilityKinds = Set.empty,
       Filter.grantsStationToughness = False,
+      Filter.devotionBonus = 0,
       Filter.loyaltyIsToughness = False
     }
 
@@ -214,6 +216,7 @@ devoidBigCreature =
       Filter.declaredBlockerThisCombat = False,
       Filter.leftLibraryThisTurn = Set.empty,
       Filter.dealtDamageThisTurn = False,
+      Filter.activatedThisTurn = False,
       Filter.arrivalThisTurn = Nothing,
       Filter.crewedThisTurn = Set.empty,
       Filter.convokedThisTurn = Set.empty,
@@ -261,6 +264,7 @@ devoidBigCreature =
       Filter.manaSpentOnX = Mana.MkMana [],
       Filter.activatedAbilityKinds = Set.empty,
       Filter.grantsStationToughness = False,
+      Filter.devotionBonus = 0,
       Filter.loyaltyIsToughness = False
     }
 

@@ -51,6 +51,7 @@ import qualified Parun.Types.AgainstExiledPile as AgainstExiledPile
 import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledWith
 import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
+import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Types.Binding as Binding.Type
@@ -1442,7 +1443,7 @@ withCharacteristicsOf :: ObjectId -> GameState -> Filter.Context -> Filter.Conte
 withCharacteristicsOf object gs context =
   let view = viewWithLastKnownAnywhere gs object
    in context
-        { Filter.sourceMeasures = foldMap Filter.measuresOf view,
+        { Filter.sourceMeasures = foldMap (\v -> Map.union (Filter.measuresOf v) (Map.fromList [(Measure.Power, 0), (Measure.Toughness, 0)])) view,
           Filter.sourceColors = foldMap Filter.colors view,
           Filter.sourceSectors = foldMap (Sector.sectorsIn . Filter.designations) view,
           Filter.sourceNames = foldMap Filter.names view,
@@ -4136,6 +4137,8 @@ filterReads f = case f of
   -- handed in on the context, so it is a fixed input to any single projection.
   Filter.Type.CantPayKeywordCost _ -> Set.empty
   Filter.Type.DealtDamageThisTurn -> Set.empty
+  -- Reads nothing: no Modification writes TurnRegisters.activationsThisTurn.
+  Filter.Type.ActivatedThisTurn -> Set.empty
   Filter.Type.DealtDamageTo asked -> case DealtDamageTo.party asked of
     DamagedParty.HolderOfCandidate holder -> holderReads holder
     _ -> Set.empty
@@ -4364,8 +4367,15 @@ filterReadsPeers f = case f of
   -- The anchored object's traits arrive on the Context -- the source's owner
   -- read off Object.owner rather than off a projection -- and the candidate's
   -- own come from its partial, so no PEER is projected.
-  -- A group anchor reads every permanent's view (Filter.Context.battlefieldViews).
-  Filter.Type.Shares _ anchor -> Maybe.isJust (Filter.anchorFilter anchor)
+  -- A group anchor reads every permanent's view (Filter.Context.battlefieldViews),
+  -- and Host the candidate's attachedToView.
+  Filter.Type.Shares _ anchor -> case anchor of
+    Anchor.AnyPermanent _ -> True
+    Anchor.Host -> True
+    Anchor.Bound _ -> False
+    Anchor.Evaluated -> False
+    Anchor.Source -> False
+    Anchor.YourCommander -> False
   Filter.Type.HasSubtype _ -> False
   Filter.Type.HasName _ -> False
   Filter.Type.NameWordsAtLeast _ -> False
@@ -4437,6 +4447,7 @@ filterReadsPeers f = case f of
   -- peer's view, so no second projection can change its answer.
   Filter.Type.CantPayKeywordCost _ -> False
   Filter.Type.DealtDamageThisTurn -> False
+  Filter.Type.ActivatedThisTurn -> False
   Filter.Type.DealtDamageTo _ -> False
   Filter.Type.EnteredThisTurn _ -> False
   Filter.Type.CountersPutThisTurn _ _ -> False
@@ -4754,9 +4765,10 @@ quantityReads q = case q of
   Quantity.Type.IsStartingPlayer _ -> Set.empty
   Quantity.Type.IsActivePlayer _ -> Set.empty
   Quantity.Type.PlayerCounters {} -> Set.empty
-  -- CR 700.5 reads two things off each permanent -- who controls it (layer 2)
-  -- and its mana cost. Only the first is an Aspect: no Modification writes a
-  -- mana cost, so CR 613.8a's dependency cannot turn on that half.
+  -- CR 700.5 reads three things off each permanent -- who controls it (layer 2),
+  -- its mana cost and its copiable player abilities (CR 700.5a). Only the first
+  -- is an Aspect: no Modification writes the other two, so CR 613.8a's
+  -- dependency cannot turn on them.
   Quantity.Type.Devotion {} -> Set.singleton Controller
   -- CR 700.8 reads who controls each permanent and whether it is a creature of
   -- one of four creature types.

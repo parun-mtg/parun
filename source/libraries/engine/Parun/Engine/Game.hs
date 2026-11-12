@@ -55,6 +55,7 @@ import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.EntryOrigin as EntryOrigin
 import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.ExiledPile as ExiledPile
+import qualified Parun.Types.Expended as Expended
 import Parun.Types.Face (Face)
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownState as FaceDownState
@@ -3390,6 +3391,7 @@ castOf event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -3521,6 +3523,7 @@ abilityResolved event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -3612,6 +3615,7 @@ discardOf event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -3786,6 +3790,7 @@ movedChange event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -3896,6 +3901,7 @@ damageDealt event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -4192,6 +4198,7 @@ lifeChangeOf direction event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.Expended {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -4249,6 +4256,15 @@ dilemmasFacedThisTurn gs pid =
         GameEvent.FacedDilemma faced -> FacedDilemma.player faced == pid
         _ -> False
    in length (filter (facedBy . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+
+-- | CR 700.14: the mana this player has spent this turn to cast spells, the
+-- `after` of their latest GameEvent.Expended on the turn's log, or 0.
+manaExpendedThisTurn :: GameState -> PlayerId -> Natural
+manaExpendedThisTurn gs pid =
+  let reached event = case event of
+        GameEvent.Expended expended | Expended.player expended == pid -> Just (Expended.after expended)
+        _ -> Nothing
+   in Maybe.fromMaybe 0 (Foldable.foldl' (\latest logged -> reached (LoggedEvent.event logged) Applicative.<|> latest) Nothing (TurnRegisters.events (GameState.turn gs)))
 
 -- CR 508.1a / 608.2i: how many creatures this player declared as attackers this
 -- turn. lifeChangedIn's footing -- a fold over TurnRegisters.events, whose

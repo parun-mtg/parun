@@ -83,6 +83,7 @@ codec =
           Arm.payload "SetMaximumHandSize" Common.natural PlayerEffect.SetMaximumHandSize (\x -> case x of PlayerEffect.SetMaximumHandSize y -> Just y; _ -> Nothing),
           Arm.payload "IncreaseMaximumHandSize" Common.natural PlayerEffect.IncreaseMaximumHandSize (\x -> case x of PlayerEffect.IncreaseMaximumHandSize y -> Just y; _ -> Nothing),
           Arm.payload "ReduceMaximumHandSize" Common.natural PlayerEffect.ReduceMaximumHandSize (\x -> case x of PlayerEffect.ReduceMaximumHandSize y -> Just y; _ -> Nothing),
+          Arm.payload "IncreaseDevotion" Common.natural PlayerEffect.IncreaseDevotion (\x -> case x of PlayerEffect.IncreaseDevotion y -> Just y; _ -> Nothing),
           Arm.payload "DontLoseUnspentMana" ManaFilter.codec PlayerEffect.DontLoseUnspentMana (\x -> case x of PlayerEffect.DontLoseUnspentMana y -> Just y; _ -> Nothing),
           Arm.nullary "LoseLifeForUnspentMana" PlayerEffect.LoseLifeForUnspentMana,
           Arm.payload "MayPayLifeForMana" lifeForMana (uncurry PlayerEffect.MayPayLifeForMana) (\x -> case x of PlayerEffect.MayPayLifeForMana life mana -> Just (life, mana); _ -> Nothing),
@@ -143,6 +144,7 @@ tagOf x = case x of
   PlayerEffect.SetMaximumHandSize {} -> "SetMaximumHandSize"
   PlayerEffect.IncreaseMaximumHandSize {} -> "IncreaseMaximumHandSize"
   PlayerEffect.ReduceMaximumHandSize {} -> "ReduceMaximumHandSize"
+  PlayerEffect.IncreaseDevotion {} -> "IncreaseDevotion"
   PlayerEffect.DontLoseUnspentMana {} -> "DontLoseUnspentMana"
   PlayerEffect.LoseLifeForUnspentMana {} -> "LoseLifeForUnspentMana"
   PlayerEffect.MayPayLifeForMana {} -> "MayPayLifeForMana"
