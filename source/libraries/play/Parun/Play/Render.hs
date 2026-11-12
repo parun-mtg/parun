@@ -35,6 +35,7 @@ import qualified Parun.Types.ClassLevelChange as ClassLevelChange
 import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatStep as CombatStep
+import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.CounterChange as CounterChange
@@ -502,6 +503,7 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.LostTheGame pid -> said [player pid, Text.pack "loses the game"]
   GameEvent.ManifestedDread d -> said [player (ManifestedDread.player d), Text.pack "manifests dread"]
   GameEvent.FacedDilemma d -> said [player (FacedDilemma.player d), Text.pack "faces a dilemma over", name (FacedDilemma.object d)]
+  GameEvent.CommittedCrime c -> said [player (CommittedCrime.player c), Text.pack "commits a crime with", name (CommittedCrime.object c)]
   GameEvent.DieResultSettled r -> said [player (DieResult.roller r), Text.pack "rolls", Text.pack (show (DieResult.result r))]
   GameEvent.RolledToVisit r -> said [player (DieResult.roller r), Text.pack "rolls", Text.pack (show (DieResult.result r)), Text.pack "to visit their Attractions"]
   GameEvent.PlanarDieRolled r -> said [player (PlanarDieRolled.roller r), Text.pack "rolls", planarFace (PlanarDieRolled.face r), Text.pack "on the planar die"]

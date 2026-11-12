@@ -181,8 +181,8 @@ codec =
       Arm.payload "AttackedInLastTurnOf" PlayerRef.codec Quantity.AttackedInLastTurnOf (\x -> case x of Quantity.AttackedInLastTurnOf y -> Just y; _ -> Nothing),
       Arm.payload "AttackersInTheirLastTurn" PlayerRef.codec Quantity.AttackersInTheirLastTurn (\x -> case x of Quantity.AttackersInTheirLastTurn y -> Just y; _ -> Nothing),
       -- The tally is the tag, as ControlGained's window is: CR 701.9a's discards,
-      -- CR 121.1's draws, CR 603.1b's bending verbs, CR 700.17's dilemmas and CR
-      -- 305.2a's land plays, with only a PlayerRef on the wire for
+      -- CR 121.1's draws, CR 603.1b's bending verbs, CR 700.17's dilemmas, CR
+      -- 700.13's crimes and CR 305.2a's land plays, with only a PlayerRef on the wire for
       -- OpponentsAttacked's reason: what is counted comes from the turn's record
       -- rather than from anything the card names, and the turn is the record's
       -- extent rather than a window a card could state.
@@ -190,6 +190,7 @@ codec =
       Arm.payload "CardsDrawnThisTurn" PlayerRef.codec (Quantity.TalliedThisTurn TurnTally.CardsDrawn) (\x -> case x of Quantity.TalliedThisTurn TurnTally.CardsDrawn y -> Just y; _ -> Nothing),
       Arm.payload "ActionsDoneThisTurn" actionsDoneCodec (\(acts, ref) -> Quantity.TalliedThisTurn (TurnTally.ActionsDone acts) ref) (\x -> case x of Quantity.TalliedThisTurn (TurnTally.ActionsDone acts) ref -> Just (acts, ref); _ -> Nothing),
       Arm.payload "DilemmasFacedThisTurn" PlayerRef.codec (Quantity.TalliedThisTurn TurnTally.DilemmasFaced) (\x -> case x of Quantity.TalliedThisTurn TurnTally.DilemmasFaced y -> Just y; _ -> Nothing),
+      Arm.payload "CrimesCommittedThisTurn" PlayerRef.codec (Quantity.TalliedThisTurn TurnTally.CrimesCommitted) (\x -> case x of Quantity.TalliedThisTurn TurnTally.CrimesCommitted y -> Just y; _ -> Nothing),
       Arm.payload "LandsPlayedThisTurn" PlayerRef.codec (Quantity.TalliedThisTurn TurnTally.LandsPlayed) (\x -> case x of Quantity.TalliedThisTurn TurnTally.LandsPlayed y -> Just y; _ -> Nothing),
       -- CR 119.3's life gained, with only a PlayerRef on the wire for
       -- CardsDiscardedThisTurn's reason above. What is SUMMED is the amounts and
@@ -344,6 +345,7 @@ tagOf x = case x of
   Quantity.TalliedThisTurn TurnTally.CardsDrawn _ -> "CardsDrawnThisTurn"
   Quantity.TalliedThisTurn TurnTally.ActionsDone {} _ -> "ActionsDoneThisTurn"
   Quantity.TalliedThisTurn TurnTally.DilemmasFaced _ -> "DilemmasFacedThisTurn"
+  Quantity.TalliedThisTurn TurnTally.CrimesCommitted _ -> "CrimesCommittedThisTurn"
   Quantity.TalliedThisTurn TurnTally.LandsPlayed _ -> "LandsPlayedThisTurn"
   Quantity.LifeChanged {} -> "LifeChanged"
   Quantity.PlayersDealtDamage {} -> "PlayersDealtDamage"

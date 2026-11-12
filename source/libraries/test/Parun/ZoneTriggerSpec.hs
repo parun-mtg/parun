@@ -81,6 +81,7 @@ import qualified Parun.Types.ClassLevelChange as ClassLevelChange
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
 import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.Color as Color
+import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition.Type
@@ -2317,6 +2318,8 @@ representativeEvents cond =
             NonEmpty.:| [noTable (GameEvent.ManifestedDread (ManifestedDread.MkManifestedDread S.bob (Seq.singleton arrived)))]
         -- CR 700.17's own event: facing a dilemma binds nothing.
         TriggerCondition.PlayerFacesDilemma _ -> one (GameEvent.FacedDilemma (FacedDilemma.MkFacedDilemma S.bob departed))
+        -- CR 700.13's own event: committing a crime binds nothing.
+        TriggerCondition.PlayerCommitsCrime _ -> one (GameEvent.CommittedCrime (CommittedCrime.MkCommittedCrime S.bob departed))
         -- CR 706.2's per-die event, carrying the number the condition states.
         TriggerCondition.PlayerRollsResult watched -> one (GameEvent.DieResultSettled DieResult.MkDieResult {DieResult.roller = S.bob, DieResult.result = DieResult.result watched})
         -- CR 701.52a's own event, and the only one this condition admits.
@@ -2641,6 +2644,7 @@ everyTriggerCondition =
     TriggerCondition.PlayerManifestsDread PlayerRelation.You,
     TriggerCondition.PlayerManifestsDread PlayerRelation.Opponent,
     TriggerCondition.PlayerFacesDilemma PlayerRelation.You,
+    TriggerCondition.PlayerCommitsCrime PlayerRelation.You,
     TriggerCondition.PlayerRollsResult DieResult.MkDieResult {DieResult.roller = PlayerRelation.You, DieResult.result = 6},
     TriggerCondition.PlayerRollsResult DieResult.MkDieResult {DieResult.roller = PlayerRelation.Opponent, DieResult.result = 6},
     TriggerCondition.Visit,

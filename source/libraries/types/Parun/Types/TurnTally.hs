@@ -15,6 +15,9 @@ data TurnTally
   | -- | CR 700.17: spells and abilities modes were chosen for -- The Caretaker's
     -- "if you faced a dilemma this turn".
     DilemmasFaced
+  | -- | CR 700.13: crimes committed -- Nimble Brigand's "if you've committed a
+    -- crime this turn".
+    CrimesCommitted
   | -- | CR 305.2a: lands played -- Fastbond's "if it wasn't the first land you
     -- played this turn".
     LandsPlayed

@@ -536,6 +536,8 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
                   -- After the payment for Cast.castSpell's reason: everything
                   -- above can still restore `before` and unwind the activation.
                   Event.becameTarget announced abilId StackObjectKind.ActivatedAbility pid chosen
+                  -- CR 700.13: and activating it may be a crime.
+                  Event.committedCrime announced abilId pid chosen
                   -- CR 406.4 through CR 602.2b: Cast.castProposed's reveal of a
                   -- target drawn out of a face-down pile, as briefly.
                   Monad.mapM_ (Event.reveal RevealCause.Ordinary pid) drawn

@@ -257,6 +257,9 @@ data TriggerCondition
   | -- | CR 700.17: "whenever you face a dilemma" (Melkotian Adjudicator),
     -- against GameEvent.FacedDilemma.
     PlayerFacesDilemma PlayerRelation.PlayerRelation
+  | -- | CR 700.13: "whenever you commit a crime" (Vadmir, New Blood), against
+    -- GameEvent.CommittedCrime.
+    PlayerCommitsCrime PlayerRelation.PlayerRelation
   | -- | CR 311.7: "whenever chaos ensues", a plane's chaos ability, against a
     -- GameEvent.ChaosEnsued.
     ChaosEnsues

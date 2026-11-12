@@ -111,6 +111,7 @@ import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
+import qualified Parun.Types.CommittedCrime as CommittedCrime
 import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControlChanged as ControlChanged
@@ -1277,6 +1278,7 @@ damageOf event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.CommittedCrime {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -1354,6 +1356,7 @@ revealOf event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.CommittedCrime {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
@@ -9867,6 +9870,29 @@ becameTarget announced source kind controller chosen =
                 BecameTarget.controller = controller
               }
 
+-- CR 700.13: record a crime when what was just announced targets an opponent of
+-- `criminal`, a permanent, spell or ability one controls, or a card in one's
+-- graveyard. Once per spell or ability however many targets qualify, and off
+-- its initial targets alone (rulings 2024-04-12), so only the three
+-- announcement sites call this: a CR 707.10 copy is not cast and a CR 115.7
+-- re-target announces nothing. Judged on `announced`, becameTarget's board.
+committedCrime :: GameState -> ObjectId -> PlayerId -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> Game ()
+committedCrime announced source criminal chosen =
+  Monad.when (any (any (maybe False victim . wronged)) chosen)
+    . State.modify'
+    . recordEvent
+    $ GameEvent.CommittedCrime CommittedCrime.MkCommittedCrime {CommittedCrime.player = criminal, CommittedCrime.object = source}
+  where
+    victim = PlayerRelation.holds (Game.teams announced) PlayerRelation.Opponent criminal
+    wronged recipient = case (Recipient.playerOf recipient, Recipient.objectOf recipient) of
+      (Just pid, _) -> Just pid
+      (Nothing, Just oid) -> case Game.zoneOf oid announced of
+        Just Zone.Battlefield -> Projection.controllerOf oid announced
+        Just Zone.Stack -> Projection.controllerOf oid announced
+        Just Zone.Graveyard -> fmap Object.owner (Game.lookupObject oid announced)
+        _ -> Nothing
+      (Nothing, Nothing) -> Nothing
+
 -- CR 701.3b and CR 701.3c: store the attachment, restamp, and record it -- and
 -- rule 701.3d's unattachment from the old host, when there was one.
 --
@@ -11833,6 +11859,7 @@ controllerTurnScoped cond = case cond of
   -- and CR 702.170 each state when their event happens.
   TriggerCondition.PlayerManifestsDread _ -> False
   TriggerCondition.PlayerFacesDilemma _ -> False
+  TriggerCondition.PlayerCommitsCrime _ -> False
   TriggerCondition.SelfBecomesPlotted -> False
   -- No PermanentAction's rule names a turn. Where the act can only happen on the
   -- ACTIVE player's turn -- CR 508.1g's exert, the attack CR 508.1a makes
@@ -12355,6 +12382,7 @@ abilityTriggeredOf event = case event of
   GameEvent.LostTheGame _ -> Nothing
   GameEvent.ManifestedDread {} -> Nothing
   GameEvent.FacedDilemma {} -> Nothing
+  GameEvent.CommittedCrime {} -> Nothing
   GameEvent.DieResultSettled _ -> Nothing
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing

@@ -706,6 +706,13 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       TriggerCondition.codec
       (TriggerCondition.PlayerFacesDilemma PlayerRelation.You)
       " {\"type\":\"PlayerFacesDilemma\",\"value\":\"You\"} "
+  -- CR 700.13: Vadmir, New Blood's "whenever you commit a crime".
+  Spec.it s "PlayerCommitsCrime" $
+    Common.assertCodec
+      s
+      TriggerCondition.codec
+      (TriggerCondition.PlayerCommitsCrime PlayerRelation.You)
+      " {\"type\":\"PlayerCommitsCrime\",\"value\":\"You\"} "
   -- CR 706.2: Night Shift of the Living Dead's "whenever you roll a 6".
   Spec.it s "PlayerRollsResult" $
     Common.assertCodec

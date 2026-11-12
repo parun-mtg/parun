@@ -1451,6 +1451,7 @@ eventBindingSlots cond = case cond of
   -- eventBindingSlotsSometimes'.
   TriggerCondition.PlayerManifestsDread _ -> Set.empty
   TriggerCondition.PlayerFacesDilemma _ -> Set.empty
+  TriggerCondition.PlayerCommitsCrime _ -> Set.empty
   -- The object the sticker went on, for Tusk and Whiskers' "that creature".
   TriggerCondition.PlacesSticker _ -> Set.singleton Binding.became
   TriggerCondition.PlayerRollsResult _ -> Set.empty

@@ -1602,6 +1602,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.PlayerPlaysLand (PlaysLand.MkPlaysLand who from filter_) -> fmap (TriggerCondition.PlayerPlaysLand . PlaysLand.MkPlaysLand who from) (triggerFilter c filter_)
   TriggerCondition.PlayerManifestsDread _ -> pure condition
   TriggerCondition.PlayerFacesDilemma _ -> pure condition
+  TriggerCondition.PlayerCommitsCrime _ -> pure condition
   TriggerCondition.ChaosEnsues -> pure condition
   TriggerCondition.PlayerRollsPlaneswalker _ -> pure condition
   TriggerCondition.SelfTurnedUpOffDeck -> pure condition

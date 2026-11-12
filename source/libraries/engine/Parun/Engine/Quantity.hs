@@ -1819,7 +1819,7 @@ controlGainedThisTurn gs pid oid current =
 -- (Engine.beginTurnOf), so the log's extent IS "this turn"; Game.discardOf
 -- rather than the Moved event the same discard files, and a cycled card counts
 -- (CR 702.29a). Draws read the turn-scoped tally Event keeps per draw; acts
--- Game.actionsDoneThisTurn's fold, dilemmas Game.dilemmasFacedThisTurn's.
+-- Game.actionsDoneThisTurn's fold, dilemmas and crimes Game.doneThisTurn's.
 --
 -- Land plays read CR 305.2a's own tally, GameState.landsPlayed, which only an
 -- active player's turn clears (Engine.openTurn): for anyone else it holds their
@@ -1831,7 +1831,8 @@ talliedThisTurn tally pid gs = case tally of
   TurnTally.CardsDiscarded -> toInteger (length (filter ((== Just pid) . Game.discardOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))))
   TurnTally.CardsDrawn -> toInteger (Seq.length (Map.findWithDefault Seq.empty pid (TurnRegisters.drawsThisTurn (GameState.turn gs))))
   TurnTally.ActionsDone acts -> toInteger (Game.actionsDoneThisTurn acts gs pid)
-  TurnTally.DilemmasFaced -> toInteger (Game.dilemmasFacedThisTurn gs pid)
+  TurnTally.DilemmasFaced -> toInteger (Game.doneThisTurn Game.dilemmaFacer gs pid)
+  TurnTally.CrimesCommitted -> toInteger (Game.doneThisTurn Game.criminal gs pid)
   TurnTally.LandsPlayed
     | Turn.hasTurnRunning gs pid -> toInteger (Map.findWithDefault 0 pid (GameState.landsPlayed gs))
     | otherwise -> 0

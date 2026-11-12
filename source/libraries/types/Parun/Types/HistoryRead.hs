@@ -28,6 +28,8 @@ data HistoryRead
     CounterPlacements
   | -- | Vehicles crewed, and creatures crewing them (CR 702.122a).
     Crews
+  | -- | Crimes committed (CR 700.13).
+    Crimes
   | -- | Damage dealt (CR 120.1).
     Damage
   | -- | Permanents that died (CR 700.4).
