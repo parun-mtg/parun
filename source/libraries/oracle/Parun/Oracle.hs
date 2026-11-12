@@ -216,7 +216,8 @@ triggered context creature t
       let named' = Text.isPrefixOf (Target.self after) effect && Target.self after /= Text.pack "it"
       -- An ability word heads an ability whose effect ends in its condition
       -- (Old-Growth Educator's Infusion), as it heads an intervening "if".
-      heading <- if Text.null gate then trailingWord effect else [word]
+      worded <- if Text.null gate then trailingWord effect else [word]
+      heading <- worded : [opened | Text.null worded, opened <- Trigger.openingWord (Trigger.opening e)]
       [heading <> Trigger.opening e <> gate <> Text.pack ", " <> (if named' then effect else Prose.decapitalise effect)]
   | otherwise = []
 

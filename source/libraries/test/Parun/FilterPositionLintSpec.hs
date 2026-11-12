@@ -1699,6 +1699,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Shimian Specter", 1), -- its search's filter, against its loop's member
         ("Legion's End", 3), -- its battlefield and graveyard exiles' objects and its hand sweep's filter
         ("Maelstrom Pulse", 1), -- its destroy's object
+        ("Rat King, Verminister", 1), -- its return's object
         ("Pattern Matcher", 1), -- its search's filter, at AnyPermanent
         ("Seasinger", 1), -- its ability's target slot, Controller at AnyPermanent
         ("Key to the Side-Door", 1) -- its ability's discard cost, at AnyPermanent

@@ -101,8 +101,8 @@ event context creature c = case c of
     word <- ["it", that]
     subject <- also one >>= andOr
     -- Landfall is the ability word (CR 207.2c) Oracle text prints before
-    -- this event and no other (Sporemound). Free for alliance: printed
-    -- (Mighty Mutanimals) or not (Beast-Kin Ranger).
+    -- this event and no other (Sporemound). Free for alliance: printed (EPF
+    -- Point Squad) or not (Beast-Kin Ranger).
     opening' <- case one of
       "a land you control" -> ["Landfall \8212 "]
       "another creature you control" -> ["", "Alliance \8212 "]
@@ -414,6 +414,12 @@ lifeChanged tally =
 -- (Foolish Fate).
 abilityWord :: Text.Text -> [Text.Text]
 abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"] <> [Text.pack "Infusion \8212 " | words' == Text.pack "you gained life this turn"]
+
+-- | The ability word (CR 207.2c) Oracle text may print before an ability
+-- this event opens. Free for alliance: printed (Raphael, Tough Turtle) or not
+-- (Corpse Knight).
+openingWord :: Text.Text -> [Text.Text]
+openingWord opens = [Text.pack "Alliance \8212 " | opens == Text.pack "Whenever another creature you control enters"]
 
 -- | Whether the condition is the source's own status ("this creature is
 -- attacking"), as 'counted' reads it, after which the source is "it".
