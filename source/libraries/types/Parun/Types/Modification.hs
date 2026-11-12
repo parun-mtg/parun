@@ -15,6 +15,7 @@ import qualified Parun.Types.CostKeyword as CostKeyword
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FullText as FullText
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.NameInsertion as NameInsertion
@@ -155,6 +156,13 @@ data Modification ability
     -- creature with backup, a CR 707.9a copy exception included, is not
     -- granted. Parun.KeywordTriggerSpec's Backup group proves both halves.
     GainAbilitiesOfSource (Set.Set Keyword.Keyword)
+  | -- | layer 6, CR 613.1f / 702.1c: this object gains every keyword the
+    -- designator names that a permanent the Filter matches has (Concerted
+    -- Effort's "the same is true for landwalk, protection").
+    --
+    -- Not implemented: the continuous form, read off cards that stay in another
+    -- zone (Cairn Wanderer) (#7043).
+    GainKeywordsAmong (KeywordDesignator.KeywordDesignator Keyword.Keyword) (Filter.Filter Keyword.Keyword)
   | -- | layer 6, CR 613.1f: this object has each activated ability of each
     -- card the payload names, in exile (Locus of Enlightenment, Mairsil, the
     -- Pretender) or atop a library (Conspicuous Snoop), each carrying the

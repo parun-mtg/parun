@@ -48,7 +48,7 @@ import qualified Parun.Engine.Projection.Rewrite as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.Replacement as Replacement
-import Parun.Engine.Resolve.Slots (attackedBy, boundSlots, chosenCandidates, effectContext, effectObjectRefs, effectPlayerRefs, effectViewOf, graveyardCardsOf, handCardsOf, hiddenCardsOf, legalMany, legalOne, matchingFromAmong, objectRefObjects, playerRefPlayers, playerRefSlots, replacementRowSlots, resolutionReads, resolvingAbilityName, resolvingKind, slotBindings, slotGroup)
+import Parun.Engine.Resolve.Slots (attackedBy, battlefieldMatching, boundSlots, chosenCandidates, effectContext, effectObjectRefs, effectPlayerRefs, effectViewOf, graveyardCardsOf, handCardsOf, hiddenCardsOf, legalMany, legalOne, matchingFromAmong, objectRefObjects, playerRefPlayers, playerRefSlots, replacementRowSlots, resolutionReads, resolvingAbilityName, resolvingKind, slotBindings, slotGroup)
 import qualified Parun.Engine.Restamp as Restamp
 import qualified Parun.Engine.Room as Room
 import qualified Parun.Engine.Sba as Sba
@@ -3838,8 +3838,19 @@ bindEarthbentLand resolving land gs =
 -- GainAbility, gathered into the new host's projected lists; unproven, since no
 -- printing with backup prints either, nor a special action, which has no arm
 -- (Scryfall `keyword:backup`, 2026-09-24).
-expandGrant :: ObjectId -> ObjectId -> GameState -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card) -> [Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card)]
-expandGrant resolving source gs modification = case modification of
+--
+-- CR 702.1c's grant expands the same way, into one GainKeyword per distinct
+-- keyword the designator names among the projected keywords of the permanents
+-- its Filter matches, read now: Concerted Effort's ruling keeps the grant after
+-- the creature that had the keyword leaves. A keyword several of them have is
+-- granted once, since CR 702.1c grants each variant, not each instance.
+-- The scenario concerted-effort-shares-every-landwalk-and-protection-found
+-- proves it.
+expandGrant :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> GameState -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card) -> [Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card)]
+expandGrant legal resolving controller source gs modification = case modification of
+  Modification.GainKeywordsAmong designator among ->
+    let found = foldMap (\oid -> Map.keysSet (Projection.keywordsOf oid gs)) (battlefieldMatching legal resolving controller source gs among)
+     in fmap Modification.GainKeyword (filter (Keyword.designates designator) (Set.toAscList found))
   Modification.GainAbilitiesOfSource above ->
     let pc = Projection.withoutExceptedAbilities (Maybe.fromMaybe (Projection.copiableCharacteristics source gs) (Binding.placedSourceCopyOf (slotBindings resolving gs)))
         printedAbove keyword = Set.member keyword above

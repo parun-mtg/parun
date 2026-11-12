@@ -371,7 +371,7 @@ modifyTarget resolving source controller legal chosen (ModifyTarget.MkModifyTarg
                  in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored g1)}}
               storeSet g (objs, frozen) = case frozen of
                 Nothing -> g
-                Just m -> List.foldl' (store objs) g (Common.expandGrant resolving source gs m)
+                Just m -> List.foldl' (store objs) g (Common.expandGrant legal resolving controller source gs m)
            in List.foldl' storeSet gs frozenSets
 
 -- CR 608.2d: a word swap is not among CR 601.2b-d's announcements, so the
