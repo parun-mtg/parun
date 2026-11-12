@@ -4751,9 +4751,10 @@ quantityReads q = case q of
   Quantity.Type.IsStartingPlayer _ -> Set.empty
   Quantity.Type.IsActivePlayer _ -> Set.empty
   Quantity.Type.PlayerCounters {} -> Set.empty
-  -- CR 700.5 reads two things off each permanent -- who controls it (layer 2)
-  -- and its mana cost. Only the first is an Aspect: no Modification writes a
-  -- mana cost, so CR 613.8a's dependency cannot turn on that half.
+  -- CR 700.5 reads three things off each permanent -- who controls it (layer 2),
+  -- its mana cost and its copiable player abilities (CR 700.5a). Only the first
+  -- is an Aspect: no Modification writes the other two, so CR 613.8a's
+  -- dependency cannot turn on them.
   Quantity.Type.Devotion {} -> Set.singleton Controller
   -- CR 700.8 reads who controls each permanent and whether it is a creature of
   -- one of four creature types.

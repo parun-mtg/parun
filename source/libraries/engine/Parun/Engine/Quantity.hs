@@ -613,13 +613,16 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- projection cannot describe contributes nothing, as do CR 202.1b's
         -- costless ones -- a land, a token.
         --
-        -- CR 700.5a's layer bound is not applied here and does not need to be. The
-        -- rule stops at copy, control and text-changing effects -- layers 1, 2 and
-        -- 3 -- and no layer above those writes a mana cost or a controller, so this
-        -- arm reads the same numbers off whatever bounded or finished view its
-        -- caller injected. Projection.conditionHolds already hands a static
-        -- ability's gate a view bounded at that ability's own layer, which is what
-        -- keeps a devotion-gated continuous effect from reading its own output.
+        -- CR 700.5a's layer bound is met by what this arm reads rather than by
+        -- the view it is handed: a mana cost, a controller and Filter.devotionBonus,
+        -- which only copy, control and text-changing effects write, so a bounded
+        -- and a finished view give one answer. The bonus comes off the copiable
+        -- player abilities, which no layer-6 removal empties -- Altar of the
+        -- Pantheon's ruling 2020-01-24, proven by
+        -- data/scenarios/devotion/altar-of-the-pantheon-still-raises-devotion-after-losing-its-abilities.json.
+        -- Projection.conditionHolds hands a static ability's gate a view bounded
+        -- at that ability's own layer, which keeps a devotion-gated continuous
+        -- effect from reading its own output.
         Quantity.Devotion (Devotion.MkDevotion ref colors) -> case playersOf ref of
           Just [pid] -> Just (devotionOf viewOf colors pid gs)
           _ -> Nothing
@@ -1776,16 +1779,15 @@ variablesOf = toInteger . length . filter (== ManaSymbol.Variable) . ManaCost.un
 -- CR 202.1b names the permanents that have no mana cost at all -- a land, and a
 -- token whose creating effect gave it none -- so each contributes nothing; the
 -- same Nothing covers a permanent the injected view cannot describe.
+--
+-- CR 700.5a's "effects that modify devotion" are added ONCE per question,
+-- however many colours it names: Altar of the Pantheon's ruling 2020-01-24.
 devotionOf :: Count.ViewOf -> Set Color.Color -> PlayerId.PlayerId -> GameState -> Integer
 devotionOf viewOf colors pid gs =
-  let symbolsOf oid = case viewOf oid of
-        Nothing -> []
-        Just view ->
-          if Filter.controller view == Just pid
-            then foldMap ManaCost.unwrap (Filter.manaCost view)
-            else []
+  let controlled = filter (\view -> Filter.controller view == Just pid) (Maybe.mapMaybe viewOf (Set.toList (GameState.battlefield gs)))
       counts symbol = any (`Set.member` colors) (ManaSymbolText.symbolColors symbol)
-   in toInteger (length (concatMap (filter counts . symbolsOf) (Set.toList (GameState.battlefield gs))))
+      symbols = concatMap (filter counts . foldMap ManaCost.unwrap . Filter.manaCost) controlled
+   in toInteger (length symbols) + toInteger (sum (fmap Filter.devotionBonus controlled))
 
 -- CR 700.8a / 700.8b: how many creatures that player controls can fill
 -- distinct slots among CR 700.8's four creature types, each filling one slot at

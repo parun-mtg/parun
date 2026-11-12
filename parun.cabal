@@ -1900,6 +1900,7 @@ library engine
     Parun.Engine.Departure
     Parun.Engine.Deploy
     Parun.Engine.Detain
+    Parun.Engine.Devotion
     Parun.Engine.Dice
     Parun.Engine.Driver
     Parun.Engine.Dungeon

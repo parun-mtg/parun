@@ -22,6 +22,7 @@ import qualified Parun.Engine.AbilityZone as AbilityZone
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Deploy as Deploy
+import qualified Parun.Engine.Devotion as Devotion
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
@@ -1589,7 +1590,9 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.activatedAbilityKinds = ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf snapshot) (snapshotRoster deploy zone home lapsed snapshot),
       -- CR 702.184c off the snapshot, which carries the field: the marker
       -- outlives the object exactly as a keyword or a P/T does.
-      Filter.grantsStationToughness = PC.grantsStationToughness snapshot
+      Filter.grantsStationToughness = PC.grantsStationToughness snapshot,
+      -- CR 700.5a off the snapshot's copiable list, as the live builder reads it.
+      Filter.devotionBonus = Devotion.bonusOf (PC.playerAbilities snapshot)
     }
 
 -- CR 604.2: a snapshot's activated abilities less those whose "as long as"
@@ -1646,7 +1649,8 @@ overlaySnapshot deploy zone home lapsed snapshot live =
           Filter.manaValue = Filter.manaValue sampled,
           Filter.manaCost = Filter.manaCost sampled,
           Filter.activatedAbilityKinds = Filter.activatedAbilityKinds sampled,
-          Filter.grantsStationToughness = Filter.grantsStationToughness sampled
+          Filter.grantsStationToughness = Filter.grantsStationToughness sampled,
+          Filter.devotionBonus = Filter.devotionBonus sampled
         }
 
 -- CR 608.2i: an object an event snapshotted, as the snapshot shows it -- its

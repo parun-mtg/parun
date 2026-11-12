@@ -160,6 +160,14 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.codec
       (PlayerEffect.ReduceMaximumHandSize 2)
       " {\"type\":\"ReduceMaximumHandSize\",\"value\":2} "
+  -- CR 700.5a / Altar of the Pantheon. This is the shape
+  -- data/cards/altar-of-the-pantheon.json carries.
+  Spec.it s "IncreaseDevotion, Altar of the Pantheon's one" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.IncreaseDevotion 1)
+      " {\"type\":\"IncreaseDevotion\",\"value\":1} "
   -- CR 500.5 / 703.4q / Upwelling: no mana type named.
   Spec.it s "DontLoseUnspentMana, Upwelling's whole pool" $
     Common.assertCodec
