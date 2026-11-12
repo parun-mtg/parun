@@ -3842,11 +3842,12 @@ bindEarthbentLand resolving land gs =
 --
 -- CR 702.1c's grant expands the same way, into one GainKeyword per distinct
 -- keyword the designator names among the projected keywords of the objects in
--- its zone its Filter matches, read now: Concerted Effort's ruling keeps the grant after
--- the creature that had the keyword leaves. A keyword several of them have is
--- granted once, since CR 702.1c grants each variant, not each instance.
--- The scenario concerted-effort-shares-every-landwalk-and-protection-found
--- proves it.
+-- its zone its Filter matches, read now: Concerted Effort's ruling keeps the
+-- grant after the creature that had the keyword leaves. A keyword several of
+-- them have is granted once, since CR 702.1c grants each variant, not each
+-- instance. The scenario
+-- concerted-effort-shares-every-landwalk-and-protection-found proves it; no
+-- card in the pool resolves one over a zone other than the battlefield.
 expandGrant :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> GameState -> Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card) -> [Modification.Modification (GrantedAbility.GrantedAbility Card.Type.Card)]
 expandGrant legal resolving controller source gs modification = case modification of
   Modification.GainKeywordsAmong designator zone among ->
