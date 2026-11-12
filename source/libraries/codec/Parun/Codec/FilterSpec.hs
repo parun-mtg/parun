@@ -8,6 +8,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
@@ -629,14 +630,20 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      (Filter.IsActivatedAbility Nothing)
+      (Filter.IsActivatedAbility (ActivationCriteria.MkActivationCriteria Nothing Nothing Nothing Nothing))
       " {\"type\":\"IsActivatedAbility\"} "
   Spec.it s "IsActivatedAbility with a loyalty kind" $
     Common.assertCodec
       s
       codec
-      (Filter.IsActivatedAbility (Just LoyaltyKind.LoyaltyAbility))
-      " {\"type\":\"IsActivatedAbility\",\"value\":\"LoyaltyAbility\"} "
+      (Filter.IsActivatedAbility (ActivationCriteria.MkActivationCriteria Nothing Nothing (Just LoyaltyKind.LoyaltyAbility) Nothing))
+      " {\"type\":\"IsActivatedAbility\",\"value\":{\"whichLoyalty\":\"LoyaltyAbility\"}} "
+  Spec.it s "IsActivatedAbility with a keyword" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.IsActivatedAbility (ActivationCriteria.MkActivationCriteria (Just (KeywordDesignator.OfKeyword Keyword.Boast)) Nothing Nothing Nothing))
+      " {\"type\":\"IsActivatedAbility\",\"value\":{\"grantedBy\":{\"type\":\"OfKeyword\",\"value\":{\"type\":\"Boast\"}}}} "
   Spec.it s "IsAbility" $
     Common.assertCodec
       s

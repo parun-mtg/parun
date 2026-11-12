@@ -2627,6 +2627,7 @@ library types
     Parun.Types.AbilityAct
     Parun.Types.AbilityActivatedTrigger
     Parun.Types.AbilityAddsMana
+    Parun.Types.AbilityFacts
     Parun.Types.AbilityKind
     Parun.Types.AbilityName
     Parun.Types.AbilitySticker

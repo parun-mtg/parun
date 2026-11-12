@@ -26,14 +26,11 @@ import qualified Parun.Engine.Devotion as Devotion
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
-import qualified Parun.Engine.Loyalty as Loyalty
 import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Players as Players
 import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.Subtype as Subtype
-import qualified Parun.Types.AbilityKind as AbilityKind
-import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.Aggregation as Aggregation
@@ -75,7 +72,6 @@ import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.LoggedEvent as LoggedEvent
-import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -1322,22 +1318,9 @@ pastView snapshot =
 -- (AtomicCards.json, 2026-10-27, planeswalkers whose text has such a line).
 -- The planeswalker half of that phrase is the source filter's, which Luxior,
 -- Giada's Gift observes (data/scenarios/the-chain-veil).
-activationMeets :: ActivationCriteria.ActivationCriteria -> PastActivation.PastActivation -> Bool
+activationMeets :: ActivationCriteria.ActivationCriteria Keyword.Type.Keyword -> PastActivation.PastActivation -> Bool
 activationMeets criteria past =
-  let ability = PastActivation.ability past
-   in abilityMeets criteria (ActivatedAbility.keyword =<< ability) (ActivatedAbility.name =<< ability) (PastActivation.kind past) (maybe LoyaltyKind.NonLoyaltyAbility (Loyalty.loyaltyKindOf . ActivatedAbility.cost) ability)
-
--- Parun.Types.ActivationCriteria asked of an ability's facts: its rule-702
--- keyword, its name, CR 605.1a's kind and CR 606.2's loyalty. Each is compared
--- and never inspected further. The one reading of every criterion, shared by a
--- past activation (activationMeets) and one in progress
--- (Parun.Engine.PlayerEffect.activationCostAdjustmentsGiven).
-abilityMeets :: ActivationCriteria.ActivationCriteria -> Maybe Keyword.Type.Keyword -> Maybe AbilityName.AbilityName -> AbilityKind.AbilityKind -> LoyaltyKind.LoyaltyKind -> Bool
-abilityMeets criteria stamp named kind loyalty =
-  maybe True (\g -> any (Keyword.designates g) stamp) (ActivationCriteria.grantedBy criteria)
-    && maybe True ((== named) . Just) (ActivationCriteria.whichAbility criteria)
-    && maybe True (== kind) (ActivationCriteria.whichKind criteria)
-    && maybe True (== loyalty) (ActivationCriteria.whichLoyalty criteria)
+  Filter.abilityMeets criteria (Game.abilityFacts (PastActivation.kind past) (PastActivation.ability past))
 
 -- CR 716.2a / 721.2a / 723.2a: the layouts whose inset frame these copiable
 -- values carry (CR 716.2b / 721.2b / 723.2b), Filter.View's `insetFrames`.

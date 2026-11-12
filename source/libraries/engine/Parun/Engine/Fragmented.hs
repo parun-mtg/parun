@@ -29,6 +29,7 @@ import qualified Parun.Engine.MoveDuration as MoveDuration
 import qualified Parun.Engine.Planechase as Planechase
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Extra.Int as Int
+import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Acquisition as Acquisition
 import Parun.Types.Action (Action)
@@ -55,6 +56,7 @@ import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import Parun.Types.LoopTrail (LoopTrail)
 import qualified Parun.Types.LoopTrail as LoopTrail
+import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Modal as Modal
@@ -500,7 +502,7 @@ saddled event = case event of
 
 loyaltyActivated :: GameEvent -> Bool
 loyaltyActivated event = case event of
-  GameEvent.AbilityActivated a -> AbilityWasActivated.loyalty a
+  GameEvent.AbilityActivated a -> AbilityFacts.loyalty (AbilityWasActivated.facts a) == LoyaltyKind.LoyaltyAbility
   _ -> False
 
 stepBegan :: GameEvent -> Bool

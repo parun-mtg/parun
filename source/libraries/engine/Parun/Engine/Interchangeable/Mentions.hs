@@ -963,7 +963,7 @@ permanentCandidateNames :: (Monoid r) => Asking r -> PermanentCandidate.Permanen
 permanentCandidateNames asking x = case x of
   PermanentCandidate.MkPermanentCandidate source _provenance effect _ordinal -> names asking (== source) <> replacementEffectNames asking (const mempty) (grantedAbilityNames asking (const mempty)) (effectNames asking (const mempty) (grantedAbilityNames asking (const mempty))) effect
 
-activationCriteriaNames :: (Monoid r) => Asking r -> ActivationCriteria.ActivationCriteria -> r
+activationCriteriaNames :: (Monoid r) => Asking r -> ActivationCriteria.ActivationCriteria Keyword.Keyword -> r
 activationCriteriaNames asking x = case x of
   ActivationCriteria.MkActivationCriteria grantedBy _whichKind _whichLoyalty _whichAbility -> foldMap (keywordDesignatorNames asking) grantedBy
 

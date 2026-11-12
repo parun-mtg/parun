@@ -63,7 +63,9 @@
                   },
                   {
                     "type": "IsActivatedAbility",
-                    "value": "LoyaltyAbility"
+                    "value": {
+                      "whichLoyalty": "LoyaltyAbility"
+                    }
                   }
                 ]
               }

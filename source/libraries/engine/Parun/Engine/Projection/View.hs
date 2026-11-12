@@ -746,7 +746,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- 113.3's kinds an ability is is fixed for the life of the object. False
       -- for an id naming nothing, and for every object that is not an ability on
       -- the stack.
-      Filter.activatedAbility = Game.activatedAbilityKind oid gs,
+      Filter.activatedAbility = Game.activatedAbilityFacts oid gs,
       Filter.activationCost = Game.activationCost oid gs,
       -- CR 113.1c, the line above widened to take CR 113.3c's triggered kind as
       -- well, and read off Object.source in the same way.

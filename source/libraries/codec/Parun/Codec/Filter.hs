@@ -1,8 +1,10 @@
 module Parun.Codec.Filter where
 
+import qualified Data.Maybe as Maybe
 import qualified Data.Typeable as Typeable
 import qualified Numeric.Natural as Natural
 import qualified Parun.Codec.AbilityKind as AbilityKind
+import qualified Parun.Codec.ActivationCriteria as ActivationCriteria
 import qualified Parun.Codec.AloneAmong as AloneAmong
 import qualified Parun.Codec.Anchor as Anchor
 import qualified Parun.Codec.BlockRole as BlockRole
@@ -25,7 +27,6 @@ import qualified Parun.Codec.KeywordDesignator as KeywordDesignator
 import qualified Parun.Codec.KeywordFamily as KeywordFamily
 import qualified Parun.Codec.Layout as Layout
 import qualified Parun.Codec.LibraryDeparture as LibraryDeparture
-import qualified Parun.Codec.LoyaltyKind as LoyaltyKind
 import qualified Parun.Codec.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Codec.Measures as Measures
 import qualified Parun.Codec.NameChooser as NameChooser
@@ -45,6 +46,7 @@ import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.ActivationCriteria as ActivationCriteria.Type
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.CounterKind as CounterKind
@@ -168,7 +170,9 @@ codec keywordCodec =
       Arm.payload "HostOfSubjectHasCardType" CardType.codec Filter.HostOfSubjectHasCardType (\x -> case x of Filter.HostOfSubjectHasCardType y -> Just y; _ -> Nothing),
       Arm.nullary "IsCommander" Filter.IsCommander,
       Arm.nullary "IsToken" Filter.IsToken,
-      Arm.optionalPayload "IsActivatedAbility" LoyaltyKind.codec Filter.IsActivatedAbility (\x -> case x of Filter.IsActivatedAbility y -> Just y; _ -> Nothing),
+      -- No payload is every activated ability, the criteria all Nothing, which
+      -- is what Squelch prints.
+      Arm.optionalPayload "IsActivatedAbility" (ActivationCriteria.codec keywordCodec) (Filter.IsActivatedAbility . Maybe.fromMaybe everyActivation) (\x -> case x of Filter.IsActivatedAbility y -> Just (if y == everyActivation then Nothing else Just y); _ -> Nothing),
       Arm.nullary "IsAbility" Filter.IsAbility,
       Arm.nullary "IsEmblem" Filter.IsEmblem,
       -- Recursive for AttachedTo's reason, the payload describing the ability's
@@ -203,6 +207,10 @@ codec keywordCodec =
       Arm.payload "Not" (codec keywordCodec) Filter.Not (\x -> case x of Filter.Not y -> Just y; _ -> Nothing),
       Arm.payload "Unwritten" (codec keywordCodec) Filter.Unwritten (\x -> case x of Filter.Unwritten y -> Just y; _ -> Nothing)
     ]
+
+-- | IsActivatedAbility's payload when absent: no criterion narrows it.
+everyActivation :: ActivationCriteria.Type.ActivationCriteria keyword
+everyActivation = ActivationCriteria.Type.MkActivationCriteria Nothing Nothing Nothing Nothing
 
 -- | CR 110.2's comparison keyed by name: the margin, and the filter
 -- describing the permanents being counted -- recursive like Not, and for the

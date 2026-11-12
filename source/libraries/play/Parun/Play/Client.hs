@@ -44,6 +44,7 @@ import qualified Parun.Oracle.Cost as Oracle.Cost
 import qualified Parun.Oracle.Keyword as Oracle.Keyword
 import qualified Parun.Play.Protocol as Protocol
 import qualified Parun.Play.Render as Render
+import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.Card as Card
@@ -152,7 +153,7 @@ undone seat view = do
       GameEvent.SpellCast {} -> True
       -- CR 734.1: a mana ability paid toward an undone action and kept is
       -- logged too, and is not the action completing.
-      GameEvent.AbilityActivated a -> AbilityWasActivated.kind a /= AbilityKind.ManaAbility
+      GameEvent.AbilityActivated a -> AbilityFacts.kind (AbilityWasActivated.facts a) /= AbilityKind.ManaAbility
       _ -> False
 
 -- | CR 734.1 with CR 508.1 / 509.1's preambles: at a declaration of attackers

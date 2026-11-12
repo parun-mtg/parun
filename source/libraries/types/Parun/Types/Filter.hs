@@ -2,6 +2,7 @@ module Parun.Types.Filter where
 
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
@@ -24,7 +25,6 @@ import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
-import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.NameChooser as NameChooser
@@ -532,10 +532,11 @@ data Filter keyword
     -- 903.3's designation is made before the game begins and no rule rewrites it.
     IsCommander
   | -- | CR 113.3b: the candidate is an ACTIVATED ability on the stack, not CR
-    -- 113.3c's triggered one -- Squelch's "target activated ability"; given a
-    -- kind, only CR 606.2's side of it (Chandra's Regulator's "a loyalty
-    -- ability"). Uncharacteristic and immutable for IsToken's reason.
-    IsActivatedAbility (Maybe LoyaltyKind.LoyaltyKind)
+    -- 113.3c's triggered one, meeting the criteria -- Squelch's "target
+    -- activated ability", Chandra's Regulator's "a loyalty ability" (CR 606.2),
+    -- Frenzied Raider's "a boast ability" (CR 702.142b). Uncharacteristic and
+    -- immutable for IsToken's reason.
+    IsActivatedAbility (ActivationCriteria.ActivationCriteria keyword)
   | -- | CR 113.1c: the candidate is an ability on the stack, of either of CR
     -- 113.3's two kinds -- IsActivatedAbility above widened to take the triggered
     -- one as well. Uncharacteristic and immutable for IsToken's reason.

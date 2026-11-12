@@ -57,6 +57,7 @@ import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Integer as Integer
+import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
@@ -1938,7 +1939,7 @@ targetQuestions pid gs r =
 -- (Count.pastView), with the criteria Parun.Types.CostModifier carries
 -- (Count.activationMeets); `source` is the asking effect's own permanent, which
 -- Filter.IsSource reads.
-firstActivation :: PlayerId -> RowSource -> Filter Keyword -> ActivationCriteria.ActivationCriteria -> Maybe (Filter Keyword) -> GameState -> TurnScope.TurnScope -> Bool
+firstActivation :: PlayerId -> RowSource -> Filter Keyword -> ActivationCriteria.ActivationCriteria Keyword -> Maybe (Filter Keyword) -> GameState -> TurnScope.TurnScope -> Bool
 firstActivation pid source criterion criteria aimedAt gs scope =
   let matchesSnapshot you criterion' snapshot = Filter.matches (contextFor you source gs) (Count.pastView snapshot) criterion'
       admits past =
@@ -2034,13 +2035,13 @@ activationCostAdjustmentsGiven effects pid targets stamp named kind loyalty srcI
       -- "this creature" here, and with `targetPerspective`'s "you".
       matchingTargets source wanted = filter (\oid -> matchesObjectFor (targetPerspective pid source gs) source wanted oid gs) (Set.toList targets)
       -- The source filter, then the facts about the ABILITY being activated
-      -- that no source filter can answer (Count.abilityMeets). Then Professor
+      -- that no source filter can answer (Filter.abilityMeets). Then Professor
       -- Hojo's "first", asked with the same criteria.
       reaches source modifier = case CostModifier.subject modifier of
         CostSubject.Activations criteria ->
           let criterion = CostModifier.matching modifier
            in matchesObjectFrom source criterion srcId gs
-                && Count.abilityMeets criteria stamp named kind loyalty
+                && Filter.abilityMeets criteria (AbilityFacts.MkAbilityFacts stamp named kind loyalty)
                 && maybe True (firstActivation pid source criterion criteria (CostModifier.whichTargets modifier) gs) (CostModifier.onlyFirst modifier)
         -- Thalia and Sapphire Medallion, turned away by the SUBJECT and not by
         -- their Filters, which is what keeps a noncreature permanent's activated

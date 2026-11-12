@@ -18,9 +18,11 @@ import qualified Parun.Engine.NameWords as NameWords
 import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.TextWord as TextWord
 import qualified Parun.Engine.Turn as Turn
+import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
+import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
@@ -56,7 +58,6 @@ import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.Lookback as Lookback
-import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaUnit as ManaUnit
@@ -570,15 +571,15 @@ data View = MkView
     commander :: Bool,
     -- CR 113.3b: is this candidate an ACTIVATED ability on the stack, rather
     -- than CR 113.3c's triggered one? Read from Object.source
-    -- (Parun.Engine.Game.activatedAbilityKind) exactly as `token` above is, and
+    -- (Parun.Engine.Game.activatedAbilityFacts) exactly as `token` above is, and
     -- never from a projection: which kind of ability an object is is no
     -- characteristic (CR 109.3), so no CR 613 layer can change the answer.
     --
     -- Nothing for every candidate that is not an ability on the stack: a
     -- permanent, a spell, a player, a printed face, an event snapshot. Each
-    -- builder says so at its own site. Otherwise CR 606.2's side of it, for
-    -- IsActivatedAbility's kind.
-    activatedAbility :: Maybe LoyaltyKind.LoyaltyKind,
+    -- builder says so at its own site. Otherwise the facts IsActivatedAbility's
+    -- criteria ask of it (abilityMeets).
+    activatedAbility :: Maybe AbilityFacts.AbilityFacts,
     -- CR 602.2b: the mana in an activated ability's activation cost, its analog
     -- of a spell's mana cost, which ManaCostHasSymbol reads beside `manaCost`
     -- (Unbound Flourishing's "that ability's activation cost contains {X}").
@@ -2626,7 +2627,7 @@ matches context view predicate = case predicate of
   Filter.IsCommander -> commander view
   -- CR 113.3b against rule 113.3c, read the way IsToken above is: a live read of
   -- what the object IS (Object.source), which no layer rewrites.
-  Filter.IsActivatedAbility kind -> maybe (Maybe.isJust (activatedAbility view)) ((== activatedAbility view) . Just) kind
+  Filter.IsActivatedAbility criteria -> any (abilityMeets criteria) (activatedAbility view)
   -- CR 113.1c, the atom above widened to both of CR 113.3's kinds, and read the
   -- same way: a live read of what the object IS (Object.source).
   Filter.IsAbility -> ability view
@@ -2738,6 +2739,18 @@ matches context view predicate = case predicate of
   Filter.Or fs -> any (matches context view) fs
   Filter.Not f -> not (matches context view f)
   Filter.Unwritten f -> matches context view f
+
+-- Parun.Types.ActivationCriteria asked of an ability's facts. Each is compared
+-- and never inspected further. The one reading of every criterion, shared by
+-- the ability on the stack (IsActivatedAbility), a past activation
+-- (Parun.Engine.Count.activationMeets) and one in progress
+-- (Parun.Engine.PlayerEffect.activationCostAdjustmentsGiven).
+abilityMeets :: ActivationCriteria.ActivationCriteria Keyword.Type.Keyword -> AbilityFacts.AbilityFacts -> Bool
+abilityMeets criteria facts =
+  maybe True (\g -> any (Keyword.designates g) (AbilityFacts.keyword facts)) (ActivationCriteria.grantedBy criteria)
+    && maybe True ((== AbilityFacts.name facts) . Just) (ActivationCriteria.whichAbility criteria)
+    && maybe True (== AbilityFacts.kind facts) (ActivationCriteria.whichKind criteria)
+    && maybe True (== AbilityFacts.loyalty facts) (ActivationCriteria.whichLoyalty criteria)
 
 -- | CR 123.6-123.9: a sticker's kind, from what it says.
 stickerKindOf :: StickerContent.StickerContent -> StickerKind.StickerKind

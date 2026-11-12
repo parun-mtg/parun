@@ -23,6 +23,8 @@ import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.AbilityFacts as AbilityFacts
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
@@ -2790,17 +2792,17 @@ isAbility oid gs = case lookupObject oid gs of
 -- CR 605.3b keeps a mana ability off the stack entirely, so no mana ability is
 -- ever a candidate here; see Parun.Types.Pool.Abilities.
 --
--- Answered as CR 606.2's side of the ability (Nothing for anything that is not
--- an activated ability on the stack), read off its PRINTED cost for
--- Parun.Engine.Loyalty.loyaltyKindOf's reason: Chandra's Regulator's "a loyalty
--- ability".
-activatedAbilityKind :: ObjectId -> GameState -> Maybe LoyaltyKind.LoyaltyKind
-activatedAbilityKind oid gs = case lookupObject oid gs of
+-- Answered as the ability's facts (Nothing for anything that is not an
+-- activated ability on the stack), off the ability the stack object was put
+-- there under: Chandra's Regulator's "a loyalty ability", Frenzied Raider's "a
+-- boast ability". CR 605.3b makes it a non-mana ability.
+activatedAbilityFacts :: ObjectId -> GameState -> Maybe AbilityFacts.AbilityFacts
+activatedAbilityFacts oid gs = case lookupObject oid gs of
   Nothing -> Nothing
   Just obj
     | Object.zone obj /= Zone.Stack -> Nothing
     | otherwise -> case Object.source obj of
-        Source.OfAbility activated -> Just (Loyalty.loyaltyKindOf (ActivatedAbility.cost (ActivatedAbilitySource.ability activated)))
+        Source.OfAbility activated -> Just (abilityFacts AbilityKind.NonManaAbility (Just (ActivatedAbilitySource.ability activated)))
         -- CR 113.3c's kind, which isAbility above keeps and this one does not. The
         -- inherent one is a triggered ability all the same (CR 726.2), sourceless or
         -- not.
@@ -2814,8 +2816,22 @@ activatedAbilityKind oid gs = case lookupObject oid gs of
         Source.OfSpellCopy _ -> Nothing
         Source.OfCardCopy _ -> Nothing
 
+-- What Parun.Types.ActivationCriteria asks of an activated ability, given CR
+-- 605.1a's side of it: its stamp, its name, and CR 606.2's side read off its
+-- PRINTED cost for Parun.Engine.Loyalty.loyaltyKindOf's reason. Nothing is CR
+-- 305.6's intrinsic mana route, no printed ability: unstamped, unnamed, and no
+-- loyalty ability.
+abilityFacts :: AbilityKind.AbilityKind -> Maybe (ActivatedAbility.ActivatedAbility card ability) -> AbilityFacts.AbilityFacts
+abilityFacts kind ability =
+  AbilityFacts.MkAbilityFacts
+    { AbilityFacts.keyword = ActivatedAbility.keyword =<< ability,
+      AbilityFacts.name = ActivatedAbility.name =<< ability,
+      AbilityFacts.kind = kind,
+      AbilityFacts.loyalty = maybe LoyaltyKind.NonLoyaltyAbility (Loyalty.loyaltyKindOf . ActivatedAbility.cost) ability
+    }
+
 -- CR 602.2b: the mana in the activation cost of the activated ability on the
--- stack `oid` names, read off its Source as activatedAbilityKind reads its kind.
+-- stack `oid` names, read off its Source as activatedAbilityFacts reads its facts.
 -- Nothing for every other object, and for a cost with no mana.
 activationCost :: ObjectId -> GameState -> Maybe ManaCost.ManaCost
 activationCost oid gs = do

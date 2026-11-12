@@ -1433,7 +1433,7 @@ activateWhileRolling runSubgame pid oid ability = do
     Payment.Paid _ -> do
       State.modify' (ActivationRestriction.recordActivation oid ability)
       State.modify' (ActivationRestriction.logActivation before pid oid (Just ability) AbilityKind.NonManaAbility Set.empty)
-      State.modify' (Event.recordEvent (GameEvent.AbilityActivated AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = pid, AbilityWasActivated.ability = Nothing, AbilityWasActivated.source = oid, AbilityWasActivated.loyalty = Loyalty.isLoyaltyCost (ActivatedAbility.cost ability), AbilityWasActivated.kind = AbilityKind.NonManaAbility, AbilityWasActivated.activationCost = Cost.Type.mana (ActivatedAbility.cost ability)}))
+      State.modify' (Event.recordEvent (GameEvent.AbilityActivated AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = pid, AbilityWasActivated.ability = Nothing, AbilityWasActivated.source = oid, AbilityWasActivated.facts = Game.abilityFacts AbilityKind.NonManaAbility (Just ability), AbilityWasActivated.activationCost = Cost.Type.mana (ActivatedAbility.cost ability)}))
       let modal = ActivatedAbility.modal ability
           every = Set.fromList (fmap fst (zip (fmap ModeIndex.MkModeIndex [0 ..]) (Modal.modeEffects modal)))
           bound =

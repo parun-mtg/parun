@@ -28,6 +28,7 @@ import qualified Parun.Engine.SplitSecond as SplitSecond
 import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Engine.Vanguard as Vanguard
+import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
@@ -409,7 +410,7 @@ loyaltyActivatedThisTurn :: ObjectId -> GameState -> Bool
 loyaltyActivatedThisTurn srcId gs = any (loyaltyOf . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
   where
     loyaltyOf event = case event of
-      GameEvent.AbilityActivated a -> AbilityWasActivated.loyalty a && AbilityWasActivated.source a == srcId
+      GameEvent.AbilityActivated a -> AbilityFacts.loyalty (AbilityWasActivated.facts a) == LoyaltyKind.LoyaltyAbility && AbilityWasActivated.source a == srcId
       _ -> False
 
 -- How many of `pid`'s loyalty activations of `srcId` this turn went past CR
