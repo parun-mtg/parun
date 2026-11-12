@@ -20,6 +20,7 @@ import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
+import qualified Parun.Engine.Event.Trigger as Trigger
 import qualified Parun.Engine.Exile as Exile
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
@@ -2922,6 +2923,11 @@ playLand settle offered pid oid mName = do
   -- flagging. CR 305.4: the only tally, an effect that PUTS a land onto the
   -- battlefield not being one.
   State.modify' (\g -> g {GameState.landsPlayed = Map.insertWith (+) pid 1 (GameState.landsPlayed g)})
+  -- CR 603.4: the play is over, so its board is filed now rather than when the
+  -- instruction allowing it finishes, which may play another land first
+  -- (Brilliant Ultimatum). data/scenarios/trigger's Fastbond and Brilliant
+  -- Ultimatum scenario proves it.
+  State.modify' Trigger.fileBoards
 
 -- CR 601.3: the exile permission a play of `oid` by `pid` is made under when
 -- it names no other: the card's own, open to `pid` where the card lies.

@@ -1825,9 +1825,6 @@ controlGainedThisTurn gs pid oid current =
 -- last turn's plays, and CR 305.3 makes this turn's 0. Kept because the CR
 -- states it: no pool card reads another player's land plays (Fastbond reads its
 -- controller's, on their turn), so dropping the gate leaves the suite green.
---
--- Not implemented: a trigger's "if" reading this for each of several lands one
--- instruction plays sees the tally after the last (#6358).
 talliedThisTurn :: TurnTally.TurnTally -> PlayerId.PlayerId -> GameState -> Integer
 talliedThisTurn tally pid gs = case tally of
   TurnTally.CardsDiscarded -> toInteger (length (filter ((== Just pid) . Game.discardOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))))
