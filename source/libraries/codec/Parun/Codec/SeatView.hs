@@ -4,6 +4,7 @@ module Parun.Codec.SeatView where
 
 import qualified Data.Map.Strict as Map
 import qualified Parun.Codec.CardName as CardName
+import qualified Parun.Codec.DraftNote as DraftNote
 import qualified Parun.Codec.Mana as Mana
 import qualified Parun.Codec.ObjectView as ObjectView
 import qualified Parun.Codec.PlayerCounterKind as PlayerCounterKind
@@ -26,7 +27,7 @@ codec = Fields.object $ do
   graveyard <- Fields.required "graveyard" (Common.list ObjectView.codec) SeatView.graveyard
   exile <- Fields.required "exile" (Common.list ObjectView.codec) SeatView.exile
   manaPool <- Fields.required "manaPool" Mana.codec SeatView.manaPool
-  draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq Common.natural))) SeatView.draftNotes
+  draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq DraftNote.codec))) SeatView.draftNotes
   pure
     SeatView.MkSeatView
       { SeatView.player = player,

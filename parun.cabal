@@ -722,6 +722,8 @@ library codec
     Parun.Codec.DoesNotUntapNextSpec
     Parun.Codec.DraftBooster
     Parun.Codec.DraftBoosterSpec
+    Parun.Codec.DraftNote
+    Parun.Codec.DraftNoteSpec
     Parun.Codec.DraftNoteTally
     Parun.Codec.DraftNoteTallySpec
     Parun.Codec.Draw
@@ -2962,6 +2964,7 @@ library types
     Parun.Types.Dividing
     Parun.Types.DoesNotUntapNext
     Parun.Types.DraftBooster
+    Parun.Types.DraftNote
     Parun.Types.DraftNoteTally
     Parun.Types.Draw
     Parun.Types.DrawCountR

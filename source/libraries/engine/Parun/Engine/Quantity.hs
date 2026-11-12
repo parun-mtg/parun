@@ -49,6 +49,7 @@ import qualified Parun.Types.ControlWindow as ControlWindow
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Devotion as Devotion
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.DraftNoteTally as DraftNoteTally
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Exponentiation as Exponentiation
@@ -1068,7 +1069,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- Cogwork Grinder's rulings of 2014-05-29).
         Quantity.DraftNotes (DraftNoteTally.MkDraftNoteTally ref name fold) -> case playersOf ref of
           Just [pid] ->
-            let noted = maybe Seq.empty (Map.findWithDefault Seq.empty name . Player.draftNotes) (Map.lookup pid (GameState.players gs))
+            let noted = [n | DraftNote.Number n <- Foldable.toList (maybe Seq.empty (Map.findWithDefault Seq.empty name . Player.draftNotes) (Map.lookup pid (GameState.players gs)))]
                 folded = case fold of
                   NoteFold.Total -> sum noted
                   NoteFold.Highest -> foldr max 0 noted

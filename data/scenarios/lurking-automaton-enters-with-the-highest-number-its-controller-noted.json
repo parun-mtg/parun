@@ -5,7 +5,7 @@
     "active": "alice",
     "step": "PrecombatMain",
     "seats": [
-      {"name": "alice", "manaPool": "CCCCC", "draftNotes": [{"key": "Garbage Fire", "value": [12]}, {"key": "Lurking Automaton", "value": [4, 9]}], "hand": [{"card": "Lurking Automaton", "label": "automaton"}], "library": [{"card": "Island"}, {"card": "Island"}]},
+      {"name": "alice", "manaPool": "CCCCC", "draftNotes": [{"key": "Garbage Fire", "value": [{"type": "Number", "value": 12}]}, {"key": "Lurking Automaton", "value": [{"type": "Number", "value": 4}, {"type": "Number", "value": 9}]}], "hand": [{"card": "Lurking Automaton", "label": "automaton"}], "library": [{"card": "Island"}, {"card": "Island"}]},
       {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}]}
     ]
   },

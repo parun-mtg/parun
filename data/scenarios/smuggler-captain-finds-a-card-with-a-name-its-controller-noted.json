@@ -1,0 +1,22 @@
+{
+  "description": "CR 905.2b / 701.23a: Smuggler Captain's entry search finds only a card with a name its controller noted for cards named Smuggler Captain",
+  "note": "Alice noted Serra Angel, so of her library's Craw Wurm and Serra Angel only the Angel can be found.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "manaPool": "BBBB", "draftNotes": [{"key": "Smuggler Captain", "value": [{"type": "Name", "value": "Serra Angel"}]}], "hand": [{"card": "Smuggler Captain", "label": "captain"}], "library": [{"card": "Craw Wurm", "label": "wurm"}, {"card": "Serra Angel", "label": "angel"}, {"card": "Island", "label": "island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$captain"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "Search", "with": ["$wurm"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Search", "with": ["$angel"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$wurm", "$island"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Serra Angel", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Craw Wurm", "count": 0}}}
+  ]
+}

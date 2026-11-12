@@ -3,7 +3,9 @@
     {
       "attackRequirements": [
         {
-          "object": "OpponentWithMostLife",
+          "object": {
+            "type": "OpponentWithMostLife"
+          },
           "subject": {
             "type": "Matching",
             "value": {

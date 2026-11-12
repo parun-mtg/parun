@@ -3,7 +3,9 @@
     {
       "attackRequirements": [
         {
-          "object": "ControllerOfAttached",
+          "object": {
+            "type": "ControllerOfAttached"
+          },
           "subject": {
             "type": "Matching",
             "value": {

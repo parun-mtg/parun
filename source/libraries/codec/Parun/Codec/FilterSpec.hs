@@ -317,6 +317,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.HasChosenColor
       " {\"type\":\"HasChosenColor\"} "
+  Spec.it s "Noted" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.Noted (CardName.MkCardName (Text.pack "Regicide")))
+      " {\"type\":\"Noted\",\"value\":\"Regicide\"} "
   Spec.it s "HasChosenSubtype" $
     Common.assertCodec
       s

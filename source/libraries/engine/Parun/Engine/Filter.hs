@@ -1,6 +1,7 @@
 module Parun.Engine.Filter where
 
 import qualified Data.Containers.ListUtils as ListUtils
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Const as Const
 import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
@@ -39,6 +40,7 @@ import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Designation as Designation
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.Expansion as Expansion
@@ -67,6 +69,7 @@ import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Pairing as Pairing
 import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.ParityOperand as ParityOperand
+import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
@@ -1671,6 +1674,10 @@ data Context = MkContext
     -- Parun.FilterPositionLintSpec's "CR 607.2d no card asks HasChosenColor or
     -- HasChosenSubtype outside an admitted position".
     sourceChosenColors :: Set.Set Color.Color,
+    -- CR 905.2b: what each player noted during the draft (Player.draftNotes),
+    -- for Noted, which asks the perspective player's. Filled by contextIn;
+    -- empty in contextFor, so the atom is vacuously False off a game.
+    draftNotes :: Map.Map PlayerId.PlayerId (Map.Map CardName.CardName (Seq.Seq DraftNote.DraftNote)),
     -- CR 205.3: the subtype the SOURCE chose as it entered (CR 614.1c), for the
     -- one atom that asks whether a candidate wears it (HasChosenSubtype). Filled
     -- where sourceChosenColors above is, and read the same way (Obelisk of Urd,
@@ -1799,12 +1806,13 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty}
 
--- contextFor over a game: its teams (CR 102.4) and its active players (CR 102.1,
--- 805.4a) filled from the state, the two facts about the table a match may ask.
+-- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
+-- 805.4a) and its draft notes (CR 905.2b) filled from the state, the facts
+-- about the table a match may ask.
 contextIn :: GameState -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextIn gs p s = (contextFor (GameSettings.teams (MatchScope.settings (GameState.match gs))) p s) {activePlayers = Turn.activePlayers gs}
+contextIn gs p s = (contextFor (GameSettings.teams (MatchScope.settings (GameState.match gs))) p s) {activePlayers = Turn.activePlayers gs, draftNotes = fmap Player.draftNotes (GameState.players gs)}
 
 -- The ONE object a slot names, for the readers that can take no more than one --
 -- Quantity.AgainstSlot's evaluation, Count's IsControllerOfBound. Nothing where
@@ -2257,6 +2265,18 @@ matches context view predicate = case predicate of
   -- as readily as a printed cost does. A source that has chosen none matches
   -- nothing.
   Filter.HasChosenColor -> not (Set.disjoint (sourceChosenColors context) (colors view))
+  -- CR 905.2b: each note recast as the atom asking after its kind, so a noted
+  -- name is HasName's membership and a noted creature type HasSubtype's; a
+  -- number or a player names nothing a candidate has. No perspective, no notes.
+  Filter.Noted card ->
+    let noted = maybe Seq.empty (Map.findWithDefault Seq.empty card) (perspective context >>= (`Map.lookup` draftNotes context))
+        asked note = case note of
+          DraftNote.Name name -> Just (Filter.HasName name)
+          DraftNote.Color color -> Just (Filter.HasColor color)
+          DraftNote.CreatureType subtype -> Just (Filter.HasSubtype subtype)
+          DraftNote.Number _ -> Nothing
+          DraftNote.Player _ -> Nothing
+     in any (matches context view) (Maybe.mapMaybe asked (Foldable.toList noted))
   -- CR 205.3 read off the PROJECTION, the HasSubtype arm above with the subtype
   -- arriving on the Context: whatever CR 613.1d's layer left the candidate
   -- wearing is what CR 607.2d's link is compared against. A source that has
@@ -2995,6 +3015,7 @@ manaValueThresholds predicate = case predicate of
   Filter.ControllerRelatesToBound {} -> []
   Filter.HasChosenName {} -> []
   Filter.HasChosenColor -> []
+  Filter.Noted _ -> []
   Filter.HasChosenSubtype -> []
   Filter.HasChosenCardType -> []
   Filter.IsExiledWithSource _ -> []
@@ -3166,6 +3187,7 @@ statesAQuality predicate = case predicate of
   -- CR 701.23b's "stated quality" for HasColor's reason, one indirection along:
   -- the description is a colour whichever way the colour was arrived at.
   Filter.HasChosenColor -> True
+  Filter.Noted _ -> True
   -- The arm above one characteristic over: a subtype is a stated quality whichever
   -- way the card arrived at it.
   Filter.HasChosenSubtype -> True
@@ -3351,6 +3373,9 @@ readsSourceValues predicate = case predicate of
   Filter.HasChosenColor -> True
   Filter.HasChosenSubtype -> True
   Filter.HasChosenCardType -> True
+  -- The PERSPECTIVE player's notes, not the source's: two sources one player
+  -- controls read the same ones.
+  Filter.Noted _ -> False
   Filter.IsExiledWithSource _ -> False
   Filter.IsLastExiledWithSource -> False
   Filter.OfChosenPlayer -> False

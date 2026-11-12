@@ -69,6 +69,7 @@ import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.ExiledPile as ExiledPile
@@ -117,6 +118,7 @@ import qualified Parun.Types.PendingTrigger as PendingTrigger
 import Parun.Types.PhaseSelector (PhaseSelector)
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PhyrexianPayment as PhyrexianPayment
+import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerControl as PlayerControl
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -336,6 +338,9 @@ producedVisiting bound visited oid gs poolBoard production = case production of
   ManaProduction.InCommanderIdentity ->
     among (foldMap (fmap ManaType.Colored . Set.toList) (Projection.controllerOf oid gs >>= (`Commander.commanderColorIdentity` gs)))
   ManaProduction.Circled -> among (fmap ManaType.Colored (Set.toList (PC.circled (Projection.project oid gs))))
+  ManaProduction.DraftNoted card ->
+    let noted = maybe Seq.empty (Map.findWithDefault Seq.empty card . Player.draftNotes) (Projection.controllerOf oid gs >>= (`Map.lookup` GameState.players gs))
+     in among (fmap ManaType.Colored (Set.toList (Set.fromList [color | DraftNote.Color color <- Foldable.toList noted])))
   where
     among types = case types of
       first : second : more -> Offers ColorSpread.OneColor (first NonEmpty.:| (second : more))
@@ -924,6 +929,7 @@ readsPool (clause, _) = any (poolProduction . ManaAddition.production) (Maybe.ma
       ManaProduction.ProducedByTapped -> False
       ManaProduction.InCommanderIdentity -> False
       ManaProduction.Circled -> False
+      ManaProduction.DraftNoted _ -> False
 
 -- CR 603.7a / 106.6a: the delayed ability a Parun.Types.WhenSpent creates as
 -- one mana is produced, its text read off the source's rules text now.

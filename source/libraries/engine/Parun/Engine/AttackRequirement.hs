@@ -11,7 +11,9 @@
 -- which card produced one, nor which carrier.
 module Parun.Engine.AttackRequirement where
 
+import qualified Data.Foldable as Foldable
 import qualified Data.Map as Map
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Expiry as Expiry
@@ -25,6 +27,7 @@ import qualified Parun.Engine.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.ActiveAttackRequirement as ActiveAttackRequirement
 import qualified Parun.Types.AttackRequirement as AttackRequirement
 import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.DraftNote as DraftNote
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import Parun.Types.ObjectId (ObjectId)
@@ -251,6 +254,15 @@ instances candidates targets gs =
                     AttackTarget.OfBattle _ -> False
                 )
                 targets
+        Just (RequiredDefender.Noted card) ->
+          -- CR 109.5 fixes the "you" as the source's controller, whose notes
+          -- (CR 905.2b) are read; a noted player who has left the game or is
+          -- not a defending player this combat is pruned by membership like
+          -- the arms above, so the requirement is obeyed by no declaration.
+          let noted pid = [player | DraftNote.Player player <- Foldable.toList (maybe Seq.empty (Map.findWithDefault Seq.empty card . Player.draftNotes) (Map.lookup pid (GameState.players gs)))]
+           in case Projection.controllerOf source gs of
+                Nothing -> []
+                Just you -> filter (\target -> any (\pid -> target == AttackTarget.OfPlayer pid) (noted you)) targets
       -- CR 119.1, as an Integer and not the Natural Parun.Engine.Cost.lifeTotalOf
       -- answers with: CR 104.3b lets a total sit below zero until a state-based
       -- action sees it, and a clamp there would order two such seats alike. The

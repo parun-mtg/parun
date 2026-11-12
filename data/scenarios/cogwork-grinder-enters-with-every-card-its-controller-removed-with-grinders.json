@@ -5,7 +5,7 @@
     "active": "alice",
     "step": "PrecombatMain",
     "seats": [
-      {"name": "alice", "manaPool": "CCCCCC", "draftNotes": [{"key": "Cogwork Grinder", "value": [2, 3]}], "hand": [{"card": "Cogwork Grinder", "label": "grinder"}], "library": [{"card": "Island"}, {"card": "Island"}]},
+      {"name": "alice", "manaPool": "CCCCCC", "draftNotes": [{"key": "Cogwork Grinder", "value": [{"type": "Number", "value": 2}, {"type": "Number", "value": 3}]}], "hand": [{"card": "Cogwork Grinder", "label": "grinder"}], "library": [{"card": "Island"}, {"card": "Island"}]},
       {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}]}
     ]
   },

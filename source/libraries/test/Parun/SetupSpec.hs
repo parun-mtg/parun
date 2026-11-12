@@ -62,6 +62,7 @@ import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Designation as Designation
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Expiry as Expiry
@@ -297,12 +298,12 @@ setupSpec s registry = Spec.describe s "Setup" $ do
     Spec.assertEqWith s "twenty without" (S.lifeOf S.alice (build Map.empty)) (Just 20)
     Spec.assertEqWith s "and bob, whose deck was never built, keeps CR 103.4's twenty" (S.lifeOf S.bob (build (Map.singleton shimatsu 1))) (Just 20)
 
-  -- CR 905.2b: the numbers a player noted during the draft arrive with their
+  -- CR 905.2b: what a player noted during the draft arrives with their
   -- deck. CR 728's restart and CR 730's subgame both reset the player through
   -- Setup.resetPlayers, so the subgame stands for both (docs/decisions.md,
   -- "Whether a restart or a subgame keeps what was noted during the draft").
   Spec.it s "CR 905.2b createDeck records the draft notes, and a subgame keeps them" $ do
-    let notes = Map.singleton (CardName.MkCardName (Text.pack "Lurking Automaton")) (Seq.fromList [4, 9 :: Natural])
+    let notes = Map.fromList [(CardName.MkCardName (Text.pack "Lurking Automaton"), Seq.fromList [DraftNote.Number 4, DraftNote.Number 9]), (CardName.MkCardName (Text.pack "Regicide"), Seq.singleton (DraftNote.Color Color.Red))]
         built = S.runPure S.identityAnswer (Setup.emptyGame S.bothPlayers) (Setup.createDeck S.alice (Deck.fromCards Map.empty) {Deck.draftNotes = notes})
         notesOf pid gs = fmap Player.draftNotes (Map.lookup pid (GameState.players gs))
     Spec.assertEqWith s "alice's notes are on alice" (notesOf S.alice built) (Just notes)

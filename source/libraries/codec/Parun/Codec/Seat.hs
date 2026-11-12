@@ -7,6 +7,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Parun.Codec.CardName as CardName
+import qualified Parun.Codec.DraftNote as DraftNote
 import qualified Parun.Codec.GraveyardOrder as GraveyardOrder
 import qualified Parun.Codec.Label as Label
 import qualified Parun.Codec.Placement as Placement
@@ -43,7 +44,7 @@ codec = Fields.object $ do
   ante <- Fields.defaulted "ante" Seq.empty (Common.seq Placement.codec) Seat.ante
   sideDecks <- Fields.defaulted "sideDecks" Map.empty (Common.keyedList (Common.keyValue SideDeck.codec (Common.seq Placement.codec))) Seat.sideDecks
   startingDeck <- Fields.defaulted "startingDeck" Map.empty (Common.multiset CardName.codec) Seat.startingDeck
-  draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq Common.natural))) Seat.draftNotes
+  draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq DraftNote.codec))) Seat.draftNotes
   pure
     Seat.MkSeat
       { Seat.name = name,

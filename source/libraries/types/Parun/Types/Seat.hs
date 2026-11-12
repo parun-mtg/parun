@@ -4,6 +4,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import Numeric.Natural (Natural)
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.ManaType as ManaType
@@ -48,8 +49,8 @@ data Seat = MkSeat
     -- | CR 103.2a: the player's starting deck, counted by name, which no zone
     -- above records once the game has begun.
     startingDeck :: Map.Map CardName.CardName Natural,
-    -- | CR 905.2b: the numbers the player recorded during the draft, by card
+    -- | CR 905.2b: what the player noted during the draft, by card
     -- name (Player.draftNotes).
-    draftNotes :: Map.Map CardName.CardName (Seq.Seq Natural)
+    draftNotes :: Map.Map CardName.CardName (Seq.Seq DraftNote.DraftNote)
   }
   deriving (Eq, Ord, Show)

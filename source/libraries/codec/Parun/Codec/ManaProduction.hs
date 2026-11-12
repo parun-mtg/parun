@@ -1,6 +1,7 @@
 module Parun.Codec.ManaProduction where
 
 import qualified Data.Maybe as Maybe
+import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.ColorSpread as ColorSpread
 import qualified Parun.Codec.CouldProduce as CouldProduce
 import qualified Parun.Codec.ManaCount as ManaCount
@@ -25,7 +26,8 @@ codec =
       Arm.payload "Pooled" ManaCount.codec ManaProduction.Pooled (\x -> case x of ManaProduction.Pooled y -> Just y; _ -> Nothing),
       Arm.nullary "ProducedByTapped" ManaProduction.ProducedByTapped,
       Arm.nullary "InCommanderIdentity" ManaProduction.InCommanderIdentity,
-      Arm.nullary "Circled" ManaProduction.Circled
+      Arm.nullary "Circled" ManaProduction.Circled,
+      Arm.payload "DraftNoted" CardName.codec ManaProduction.DraftNoted (\x -> case x of ManaProduction.DraftNoted y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: ManaProduction.ManaProduction -> String
@@ -40,3 +42,4 @@ tagOf x = case x of
   ManaProduction.ProducedByTapped {} -> "ProducedByTapped"
   ManaProduction.InCommanderIdentity {} -> "InCommanderIdentity"
   ManaProduction.Circled {} -> "Circled"
+  ManaProduction.DraftNoted {} -> "DraftNoted"

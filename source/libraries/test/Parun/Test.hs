@@ -330,6 +330,7 @@ import qualified Parun.Codec.DistinctOfSpec
 import qualified Parun.Codec.DivideSpec
 import qualified Parun.Codec.DoesNotUntapNextSpec
 import qualified Parun.Codec.DraftBoosterSpec
+import qualified Parun.Codec.DraftNoteSpec
 import qualified Parun.Codec.DraftNoteTallySpec
 import qualified Parun.Codec.DrawCountRSpec
 import qualified Parun.Codec.DrawCountRewriteSpec
@@ -1246,6 +1247,7 @@ spec s registry corpus = do
   Parun.Codec.CompanyCountSpec.spec s
   Parun.Codec.ComparisonSpec.spec s
   Parun.Codec.CompletedDungeonSpec.spec s
+  Parun.Codec.DraftNoteSpec.spec s
   Parun.Codec.DraftNoteTallySpec.spec s
   Parun.Codec.ComponentCardSpec.spec s
   Parun.Codec.ConditionSpec.spec s

@@ -1,0 +1,18 @@
+{
+  "description": "CR 905.2b / 106.3: Paliano, the High City adds one mana of a colour its controller noted for cards named Paliano, the High City",
+  "note": "Alice noted white, blue and red: the city pays Lightning Bolt's {R} but not Giant Growth's {G}.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "draftNotes": [{"key": "Paliano, the High City", "value": [{"type": "Color", "value": "White"}, {"type": "Color", "value": "Blue"}, {"type": "Color", "value": "Red"}]}], "battlefield": [{"card": "Paliano, the High City", "label": "paliano"}, {"card": "Grizzly Bears", "label": "bears"}], "hand": [{"card": "Giant Growth", "label": "growth"}, {"card": "Lightning Bolt", "label": "bolt"}], "library": [{"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$growth", "targets": ["$bears"], "mana": ["$paliano"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt", "targets": ["$bob"], "mana": ["$paliano"], "yields": [[{"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}}
+  ]
+}
