@@ -1681,12 +1681,11 @@ declarableBlockers pid gs =
       arity = blockArityGiven candidates gs
       (requirements, best) = blockCeilingGiven board pid gs
       obeyed = requirementsMet requirements best
-      heavier = 1 + sum (Requirement.pairs requirements) + sum (Requirement.groups requirements)
       payable declaration = blockTollsPayable pid declaration gs
       blocking blocker = maybe False (not . Set.null) (Map.lookup blocker best)
       added blocker attacker = blockDeclarationAllowed limit most alone arity pcs able (Map.insert blocker (Set.singleton attacker) best) gs
       reached blocker attacker =
-        let boosted = requirements {Requirement.pairs = Map.insertWith (+) (blocker, attacker) heavier (Requirement.pairs requirements)}
+        let (heavier, boosted) = Requirement.boosted [(blocker, attacker)] requirements
             witness = bestBlockDeclaration boosted limit most alone arity pcs able payable candidates attackers gs
          in requirementsMet boosted witness >= heavier + obeyed
       affordable blocker attacker = payable (Map.singleton blocker (Set.singleton attacker))
@@ -2393,6 +2392,24 @@ attackProposalAllowed pid proposal gs =
       limits = CombatRestriction.attackLimit gs
    in attackProposalAllowedGiven limits alone (attackCeilingGiven limits alone barred candidates gs) proposal gs
 
+-- CR 508.1b-d: whether some announcement for exactly `chosen` makes a
+-- declaration attackProposalAllowed lets stand, for a caller judging the
+-- creatures before CR 508.1b asks where each attacks. couldAttack's boost: a
+-- requirement on each of `chosen`'s announcements heavier than every other
+-- together, over a search confined to `chosen`, makes the ceiling's witness
+-- hold every chosen creature exactly when some such declaration exists.
+-- ProtocolSpec's Jace Beleren case is the proof.
+attackCreaturesAllowed :: PlayerId -> [ObjectId] -> GameState -> Bool
+attackCreaturesAllowed pid chosen gs =
+  let (candidates, barred) = attackCandidates pid gs
+      alone = aloneAnnouncements candidates gs
+      limits = CombatRestriction.attackLimit gs
+      (required, _) = attackCeilingGiven limits alone barred candidates gs
+      wanted = Set.fromList chosen
+      (_, boosted) = Requirement.boosted [(oid, target) | oid <- Set.toList wanted, target <- declarableTargets gs] required
+      (_, witness) = ceilingUnder (\oid _ -> Set.member oid wanted) boosted limits alone barred candidates gs
+   in Map.keysSet witness == wanted && attackProposalAllowed pid witness gs
+
 attackProposalAllowedGiven :: CombatRestriction.AttackLimits -> Map (ObjectId, AttackTarget.AttackTarget) [CombatRestriction.Company] -> (Requirement.Instances (ObjectId, AttackTarget.AttackTarget), Map ObjectId AttackTarget.AttackTarget) -> Map ObjectId AttackTarget.AttackTarget -> GameState -> Bool
 attackProposalAllowedGiven limits alone bound proposal gs =
   attackDeclarationAllowed limits alone proposal gs && obeysAttackRequirements bound proposal
@@ -2427,12 +2444,11 @@ couldAttack pid gs =
       limits = CombatRestriction.attackLimit gs
       (required, best) = attackCeilingGiven limits alone barred candidates gs
       most = Requirement.met required (Set.fromList (Map.toList best))
-      heavier = 1 + sum (Requirement.pairs required) + sum (Requirement.groups required)
       targets = declarableTargets gs
       -- The legal declaration ceilingUnder settles on, costs aside and none of
       -- `forbidden` made, holding `needed` of `announcements`, if there is one.
       witnessOf forbidden needed announcements =
-        let boosted = required {Requirement.pairs = Map.unionWith (+) (Map.fromList (fmap (\announcement -> (announcement, heavier)) announcements)) (Requirement.pairs required)}
+        let (heavier, boosted) = Requirement.boosted announcements required
             (_, witness) = ceilingUnder (\oid target -> Set.notMember (oid, target) forbidden) boosted limits alone barred candidates gs
          in if Requirement.met boosted (Set.fromList (Map.toList witness)) >= needed * heavier + most then Just witness else Nothing
       unbounded = Map.null alone && Map.null (CombatRestriction.whole limits) && Map.null (CombatRestriction.perTarget limits)
