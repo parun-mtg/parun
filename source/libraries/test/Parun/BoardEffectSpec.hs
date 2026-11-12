@@ -1353,7 +1353,7 @@ communeWithLavaSpec s registry =
               -- A slotless reveal: the planted Quantity is in the ref's depth,
               -- and the bind slot is a separate position this case says nothing
               -- about.
-              depthOf q = Effect.Reveal (Reveal.MkReveal (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q)) Nothing)
+              depthOf q = Effect.Reveal (Reveal.MkReveal (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q)) Nothing Nothing)
           -- SlotArity.Amount and not One: the depth reads the slot's amount
           -- rather than an object, so the entry is a read with no arity claim on
           -- it (Parun.Engine.Resolve.Slots.quantitySlots).

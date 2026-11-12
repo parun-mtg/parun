@@ -3269,7 +3269,7 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
           Just n | n > 0 -> n > List.genericLength (Game.cardsIn Zone.Library pid gs)
           _ -> False
      in not (null millers) && all beyondLibrary millers
-  Effect.Reveal (Reveal.MkReveal ref _) -> choosesFromNothing ref
+  Effect.Reveal (Reveal.MkReveal ref _ _) -> choosesFromNothing ref
   Effect.FromOutsideTheGame {} -> False
   Effect.ExileThisSpell {} -> False
   Effect.LookAt (LookAt.MkLookAt ref _ _) -> choosesFromNothing ref

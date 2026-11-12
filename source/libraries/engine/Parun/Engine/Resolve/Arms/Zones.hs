@@ -1319,7 +1319,7 @@ mill settle resolving source controller legal (Mill.MkMill ref quantity mTally m
 -- alone. One reveal per named card, which is all GameEvent.Revealed's single
 -- ObjectId allows and all rule 701.20a asks for.
 reveal :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Reveal.Reveal -> Game ()
-reveal resolving source controller legal chosen (Reveal.MkReveal ref mSlot) = do
+reveal resolving source controller legal chosen (Reveal.MkReveal ref mSlot revealer) = do
   gs <- State.get
   -- Name what was shown, if the card asked for a name, in ONE write per
   -- reveal: LookAt's one-versus-many line. A lone card takes the SINGLE
@@ -1333,19 +1333,20 @@ reveal resolving source controller legal chosen (Reveal.MkReveal ref mSlot) = do
   -- back with an EachCardFromAmong. Parun.MassEffectSpec's UncoveredClues group
   -- proves the binding.
   named <- Common.askingObjects resolving source controller legal chosen ref
-  let -- A card in a hand or a library is shown by the seat whose zone it is
-      -- (CR 400.3) -- Duress's "target opponent reveals their hand", Fall's
-      -- random cards, Aven Windreader's "target player reveals the top card of
-      -- their library". A card picked "from among them" is shown by the
-      -- resolving controller, who carries the instruction out.
+  let -- A named revealer shows every card: Prophecy's "reveal the top card of
+      -- target opponent's library" is its controller's reveal (CR 608.2c).
+      -- Unnamed, a card in a hand or a library is shown by its owner, the seat
+      -- whose zone it is -- Duress's "target opponent reveals their hand",
+      -- Fall's random cards, Aven Windreader's "target player reveals the top
+      -- card of their library". A card picked "from among them" is shown by
+      -- the resolving controller, who carries the instruction out.
       --
-      -- Not implemented: a controller revealing the top of ANOTHER player's
-      -- library, Prophecy's wording, credits that library's owner (#6292).
-      -- Parun.InvestigateSpec's "CR 701.20a a target player reveals the top of
-      -- their own library" proves the owner reading.
-      shower oid = case (ref, Game.lookupObject oid gs) of
-        (ObjectRef.ChosenCardFromAmong {}, _) -> controller
-        (_, Just obj) | Object.zone obj `elem` [Zone.Hand, Zone.Library] -> Object.owner obj
+      -- Parun.InvestigateSpec's LibraryReveal group proves both readings.
+      stated = foldMap (playerRefPlayers legal resolving source controller gs) revealer
+      shower oid = case (stated, ref, Game.lookupObject oid gs) of
+        (pid : _, _, _) -> pid
+        (_, ObjectRef.ChosenCardFromAmong {}, _) -> controller
+        (_, _, Just obj) | Object.zone obj `elem` [Zone.Hand, Zone.Library] -> Object.owner obj
         _ -> controller
   Monad.mapM_ (\oid -> Event.revealResolving resolving (shower oid) oid) named
   bindShown named

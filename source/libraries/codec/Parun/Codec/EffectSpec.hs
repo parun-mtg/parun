@@ -657,7 +657,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.Reveal (Reveal.MkReveal (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))) Nothing))
+      (Effect.Reveal (Reveal.MkReveal (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))) Nothing Nothing))
       " {\"type\":\"Reveal\",\"value\":{\"ref\":{\"type\":\"InSlot\",\"value\":\"self\"}}} "
   -- Into the Wilds' "look at the top card of your library", whose slot the next
   -- clause reads back.

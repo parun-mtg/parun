@@ -785,7 +785,7 @@ effectPlayerRefs effect = case effect of
       _ -> []
   Effect.Draw (Draw.MkDraw ref _ _) -> [ref]
   Effect.Mill (Mill.MkMill ref _ _ _) -> [ref]
-  Effect.Reveal {} -> []
+  Effect.Reveal (Reveal.MkReveal _ _ revealer) -> Maybe.maybeToList revealer
   Effect.FromOutsideTheGame {} -> []
   Effect.ExileThisSpell -> []
   Effect.LookAt (LookAt.MkLookAt _ _ looker) -> [looker]
@@ -2546,7 +2546,7 @@ boundSlots effect = case effect of
   Effect.Mill (Mill.MkMill _ _ mTally mSlot) -> foldMap (Set.singleton . MillTally.slot) mTally <> foldMap Set.singleton mSlot
   -- The cards CR 701.20a's reveal showed, where the card named a slot. Optional,
   -- where LookAt's is not: the GameEvent.Revealed in the log is a record already.
-  Effect.Reveal (Reveal.MkReveal _ mSlot) -> foldMap Set.singleton mSlot
+  Effect.Reveal (Reveal.MkReveal _ mSlot _) -> foldMap Set.singleton mSlot
   -- The cards CR 701.20e's look showed, for a later clause to name.
   Effect.LookAt (LookAt.MkLookAt _ slot _) -> Set.singleton slot
   Effect.Guess guess -> Set.fromList [Guess.slot guess, Guess.right guess]

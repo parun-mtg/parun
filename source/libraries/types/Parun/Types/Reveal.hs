@@ -1,10 +1,12 @@
 module Parun.Types.Reveal where
 
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.SlotName as SlotName
 
 -- | The payload of Parun.Types.Effect's Reveal arm: WHICH cards CR 701.20a's
--- reveal shows, and the slot -- if any -- the resolution remembers them in.
+-- reveal shows, the slot -- if any -- the resolution remembers them in, and
+-- WHO shows them.
 --
 -- Parun.Types.LookAt's shape, minus that type's requirement on the slot. A look's
 -- GameEvent.Looked reaches its one audience alone (CR 701.20e), so a later clause
@@ -22,6 +24,10 @@ import qualified Parun.Types.SlotName as SlotName
 -- effects would have to learn both.
 data Reveal = MkReveal
   { ref :: ObjectRef.ObjectRef,
-    slot :: Maybe SlotName.SlotName
+    slot :: Maybe SlotName.SlotName,
+    -- | The player carrying the reveal out; Nothing reads it off each card: a
+    -- hand's or a library's owner, else the controller (CR 608.2c). Prophecy's
+    -- "reveal the top card of target opponent's library" writes the controller.
+    revealer :: Maybe PlayerRef.PlayerRef
   }
   deriving (Eq, Ord, Show)

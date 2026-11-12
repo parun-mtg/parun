@@ -3416,7 +3416,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- resolution's context (Resolve.Slots.objectRefObjects), where the
     -- EachMatching set planted above is not a position slotNames reaches -- the
     -- two sit in the same field of the same effect and answer differently.
-    let sweptHand = base {Face.spell = spellOf [Effect.Reveal (Reveal.MkReveal (ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand (ZoneScope.ControllerOfBound slot) (Just buried))) Nothing)] Map.empty}
+    let sweptHand = base {Face.spell = spellOf [Effect.Reveal (Reveal.MkReveal (ObjectRef.EachCardInHand (EachCardInHand.MkEachCardInHand (ZoneScope.ControllerOfBound slot) (Just buried))) Nothing Nothing)] Map.empty}
     Spec.assertEqWith
       s
       "a buried atom in a hand sweep's filter is accepted"
