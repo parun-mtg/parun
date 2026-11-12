@@ -3765,6 +3765,7 @@ apply settle batch applied batchPrevented candidate event =
                     (\decider asked candidates ceiling_ -> Prompt.ChooseAnyNumber decider asked oid AnyNumberOf.ToExile candidates ceiling_ Seq.empty)
                     amount
                     count
+                    Nothing
                     offered
                 -- ONE event (CR 608.2f): "exile any number of creature cards" is one
                 -- action on several objects. The Sutured Ghoul scenario in

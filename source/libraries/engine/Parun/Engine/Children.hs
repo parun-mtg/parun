@@ -451,6 +451,7 @@ import qualified Parun.Types.TokenPlus as TokenPlus
 import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
+import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -3204,13 +3205,14 @@ objectRefChildren c ref = case ref of
   ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser players filter_ count) ->
     fmap ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard <$> refChooser c chooser <*> refZones c players <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count)
   ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand seat filter_ count) -> fmap ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand <$> refPlayer c seat <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count)
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong bound filter_ count chooser pileChooser faceUpPile selection) ->
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong bound filter_ count total chooser pileChooser faceUpPile selection) ->
     fmap
       ObjectRef.ChosenCardFromAmong
       ( ChosenCardFromAmong.MkChosenCardFromAmong
           <$> refSlot c bound
           <*> refFilter c filter_
           <*> howManyChildren (refQuantity c) count
+          <*> traverse (\(TotalCap.MkTotalCap weight most) -> TotalCap.MkTotalCap <$> refQuantity c weight <*> refQuantity c most) total
           <*> refPlayer c chooser
           <*> traverse (refPlayer c) pileChooser
           <*> pure faceUpPile
