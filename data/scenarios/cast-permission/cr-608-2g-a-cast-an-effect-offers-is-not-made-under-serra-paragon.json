@@ -1,11 +1,8 @@
 {
-  "description": "CR 608.2g a cast an effect offers need not be made under Serra Paragon",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Forest",
@@ -29,11 +26,6 @@
             "ready": true
           }
         ],
-        "library": [
-          {
-            "card": "Forest"
-          }
-        ],
         "graveyard": [
           {
             "card": "Forest",
@@ -53,10 +45,15 @@
             "card": "Forest",
             "label": "handforest-2"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Forest"
@@ -72,64 +69,54 @@
             "label": "bm"
           }
         ],
-        "library": [
-          {
-            "card": "Forest"
-          }
-        ],
         "hand": [
           {
             "card": "Lightning Bolt",
             "label": "bolt"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 608.2g a cast an effect offers is not made under Serra Paragon, whose use and rider it leaves alone",
+  "note": "The Haskell test destroys the Elves with a bare destroy; here bob's Lightning Bolt kills them in his own turn. No permission prompt is answered: the Paragon's permission is not one this cast can be made under.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$bargainer",
-          "ability": 0
+          "ability": 0,
+          "object": "$bargainer"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "OfferedCast",
           "with": "Exercises"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
-        "Answer": {
-          "prompt": "ChoosePlayPermission",
-          "with": null
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseSacrifices",
@@ -137,35 +124,33 @@
             "$f1"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
           "card": "Llanowar Elves",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Offered",
-          "player": "alice",
           "is": [
             "Pass",
             "PlayLand $handforest",
@@ -174,68 +159,72 @@
             "PlayLand Forest#11",
             "ActivateManaAbility $f2",
             "ActivateManaAbility $f3"
-          ]
+          ],
+          "of": "Offered",
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "do": {
         "Cast": {
-          "object": "$bolt",
-          "targets": [
-            "Llanowar Elves"
-          ],
           "mana": [
             "$bm",
             null
+          ],
+          "object": "$bolt",
+          "targets": [
+            "Llanowar Elves"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "bob",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 20
+          "life": 20,
+          "player": "alice"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "View": {
+          "is": [],
           "of": "Zone",
           "player": "alice",
-          "zone": "Exile",
-          "is": []
+          "zone": "Exile"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     }
-  ],
-  "note": "The Haskell test destroys the Elves with a bare destroy; here bob's Lightning Bolt kills them in his own turn. The control file answers the permission prompt with Serra Paragon's grant instead of declining it."
+  ]
 }
