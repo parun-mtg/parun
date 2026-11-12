@@ -55,9 +55,12 @@ missing, say so in the PR. Never build in the warm worktree.
 group names and its own joined by dots, passed unsplit (`--test-options` splits
 on spaces); repeat `-p` to run the tests matching any. Only failures print,
 then a summary line naming the seed the run shuffled the tests with; `--seed N`
-replays that order. Iterate on your subtree, and run
-the whole suite before each commit. Redirect output to a file and read the
-file. Build with `cabal build -v0`. No `cabal clean`; keep the optimizer on
+replays that order. Iterate on your subtree, and before pushing run the tests
+your change can reach, not the whole suite: CI runs that on every push and
+the merge queue runs it again. Once auto-merge is armed, start the whole
+suite once, so that a CI failure finds the build warm and its result at
+hand; read it only if the PR comes back. Redirect output to a file and read
+the file. Build with `cabal build -v0`. No `cabal clean`; keep the optimizer on
 for the suite (mutations are the exception).
 
 Run `cabal` in the foreground with a generous timeout and split long runs by
@@ -143,6 +146,11 @@ assertion, and restores the file; its exit status is the outcome (`--help`).
 Keep the pattern narrow. Whether the assertion it names is the gameplay-level
 one is your judgement.
 
+- **A mutation of a data file needs no build.** A card or scenario is read
+  at run time: copy the file aside, edit it, run its subtree with the
+  ordinary `cabal run -v0 parun -- test -p PATTERN`, and copy it back.
+  `script/mutate.sh` is for Haskell, and its first run in a checkout builds
+  everything again at `-O0`.
 - **One mutation at a time, and read the failure.** It must go red for the
   intended reason in the intended place.
 - **Name the assertion it reddened.** If a cheap proxy ahead of the
@@ -269,6 +277,8 @@ so in the PR.
 
 ### Follow-ups: fold in or file
 
+- **A batch unit folds in no engine change** (its issue says so): the card
+  goes to a capability issue. The rest of this list is for the other units.
 - **Fold it in** unless it needs an owner design call, new engine state or a
   new core type, or would push the unit past ~300k tokens or ~300 tool uses.
   Fold anything costing one more proving test and roughly 30k tokens, even
@@ -299,7 +309,8 @@ so in the PR.
   `InvalidCorpus`, so grep the new cards for any JSON key a merged PR renamed
   --- and re-run the load-bearing mutations, since a bad resolution can neuter
   a test.
-- Measure the suite count, never infer it; re-measure after a merge.
+- A suite count in the PR body is measured, never inferred; leave it out
+  when no whole run was read.
 - Grep a closed issue's bare number again after any merge. An issue only
   narrowed gets "related to #N" and a retitle naming what is left.
 - `script/format-json.sh` takes `MODE FILE...` and passes vacuously when run

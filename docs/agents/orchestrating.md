@@ -146,7 +146,9 @@ summary, and its title carries no CR numbers.
 - **Short units.** Size an issue to finish in about 150 turns: about 20 cards
   a batch, one capability an issue, or two or three parameter-sized ones
   that share an edit site (name it, and read it; if you cannot, they are a
-  topic, not one issue). A unit with work left files the rest as a new
+  topic, not one issue). A batch makes no engine change: one made at the end
+  of a batch re-reads the whole batch every turn, where its own unit starts
+  from an empty context. A unit with work left files the rest as a new
   sub-issue ("Implementing a unit").
 - **Cost** is cache reads: every turn re-reads the whole context, so cost
   grows with the square of a session's length. Each unit measures its own
@@ -216,7 +218,10 @@ Every unit issue but the finish ends with **Footer**.
 > one scenario per new ability wording, the PR body naming each card left
 > without its own and the scenario covering it. Each verdict above is a
 > claim: a card that needs a capability goes to a capability issue (file
-> one, or comment on the open one) and the PR says so. Reuse: MERGED.
+> one, or comment on the open one) and the PR says so. This unit is card
+> data, scenarios and renderer wording only: a card that needs a change under
+> `source/libraries/` outside `oracle/` is such a card, however small the
+> change, and "fold it in" does not apply. Reuse: MERGED.
 
 **Capability** is a `gap` issue in the project's usual form, plus: the
 SETNAME cards needing it (Oracle text fetched DATE), the census's one-line
