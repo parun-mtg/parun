@@ -15,7 +15,8 @@ codec filterCodec =
       Arm.nullary "Evaluated" Anchor.Evaluated,
       Arm.nullary "Source" Anchor.Source,
       Arm.payload "AnyPermanent" filterCodec Anchor.AnyPermanent (\x -> case x of Anchor.AnyPermanent y -> Just y; _ -> Nothing),
-      Arm.nullary "YourCommander" Anchor.YourCommander
+      Arm.nullary "YourCommander" Anchor.YourCommander,
+      Arm.nullary "Host" Anchor.Host
     ]
 
 tagOf :: Anchor.Anchor nested -> String
@@ -25,3 +26,4 @@ tagOf x = case x of
   Anchor.Source {} -> "Source"
   Anchor.AnyPermanent {} -> "AnyPermanent"
   Anchor.YourCommander {} -> "YourCommander"
+  Anchor.Host {} -> "Host"

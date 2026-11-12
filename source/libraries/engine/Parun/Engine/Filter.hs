@@ -1992,6 +1992,17 @@ sharesAnchored trait anchor = case anchor of
     Trait.Controller -> Nothing
     Trait.Sector -> Nothing
     Trait.CardType _ -> Nothing
+  -- The candidate's own host, off attachedToView, so an attacher reached through
+  -- Filter.HasAttached compares against the permanent it sits on: CR 700.9's
+  -- "an Aura that is controlled by that permanent's controller" (Lion Umbra).
+  Anchor.Host -> case trait of
+    Trait.Controller -> Just (\_ view -> meets (held view) (foldMap held (attachedToView view)))
+    Trait.Color -> Nothing
+    Trait.Name -> Nothing
+    Trait.Owner -> Nothing
+    Trait.Sector -> Nothing
+    Trait.CreatureType -> Nothing
+    Trait.CardType _ -> Nothing
   where
     meets a b = not (Set.disjoint a b)
     held = foldMap Set.singleton . controller
@@ -2018,6 +2029,8 @@ attachedAnchored anchor = case anchor of
   -- A group names no one host: Filter.AttachedTo is that reading.
   Anchor.AnyPermanent _ -> Nothing
   Anchor.YourCommander -> Nothing
+  -- The candidate's own host is the candidate's attachment, not an anchor.
+  Anchor.Host -> Nothing
 
 -- CR 205.2a: a view's card types, among the named ones where a Trait names some.
 cardTypesAmong :: Maybe (Set.Set CardType.CardType) -> View -> Set.Set CardType.CardType
@@ -3375,6 +3388,7 @@ readsSourceValues predicate = case predicate of
     Anchor.Evaluated -> False
     Anchor.AnyPermanent group -> readsSourceValues group
     Anchor.YourCommander -> False
+    Anchor.Host -> False
   Filter.HasSubtype _ -> False
   Filter.HasName _ -> False
   Filter.NameWordsAtLeast _ -> False
@@ -3524,6 +3538,7 @@ anchorFilter anchor = case anchor of
   Anchor.Evaluated -> Nothing
   Anchor.Source -> Nothing
   Anchor.YourCommander -> Nothing
+  Anchor.Host -> Nothing
 
 -- overBoundSlotsWith without the arity: CR 700.2d's rename.
 overBoundSlots :: (Applicative f) => (SlotName.SlotName -> f SlotName.SlotName) -> Filter.Filter Keyword.Type.Keyword -> f (Filter.Filter Keyword.Type.Keyword)

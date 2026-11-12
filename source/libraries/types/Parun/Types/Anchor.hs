@@ -15,4 +15,6 @@ data Anchor nested
     AnyPermanent nested
   | -- | CR 903.3e: the commanders of the player the match is made for, at their current characteristics in any zone.
     YourCommander
+  | -- | CR 301.5 / 303.4b: the object the candidate is attached to.
+    Host
   deriving (Eq, Ord, Show)

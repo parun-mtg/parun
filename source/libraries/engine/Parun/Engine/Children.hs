@@ -667,6 +667,7 @@ anchorChildren children anchor = case anchor of
   Anchor.Source -> pure anchor
   Anchor.AnyPermanent group -> fmap Anchor.AnyPermanent (nest children group)
   Anchor.YourCommander -> pure anchor
+  Anchor.Host -> pure anchor
 
 -- | A comparison's children: the slot its operand reads.
 measuresChildren :: (Applicative f) => Children keyword f -> Measures.Measures -> f Measures.Measures

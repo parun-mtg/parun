@@ -50,6 +50,7 @@ import qualified Parun.Types.AgainstExiledPile as AgainstExiledPile
 import qualified Parun.Types.AgainstLastCardExiledWith as AgainstLastCardExiledWith
 import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
+import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Types.Binding as Binding.Type
@@ -4354,8 +4355,15 @@ filterReadsPeers f = case f of
   -- The anchored object's traits arrive on the Context -- the source's owner
   -- read off Object.owner rather than off a projection -- and the candidate's
   -- own come from its partial, so no PEER is projected.
-  -- A group anchor reads every permanent's view (Filter.Context.battlefieldViews).
-  Filter.Type.Shares _ anchor -> Maybe.isJust (Filter.anchorFilter anchor)
+  -- A group anchor reads every permanent's view (Filter.Context.battlefieldViews),
+  -- and Host the candidate's attachedToView.
+  Filter.Type.Shares _ anchor -> case anchor of
+    Anchor.AnyPermanent _ -> True
+    Anchor.Host -> True
+    Anchor.Bound _ -> False
+    Anchor.Evaluated -> False
+    Anchor.Source -> False
+    Anchor.YourCommander -> False
   Filter.Type.HasSubtype _ -> False
   Filter.Type.HasName _ -> False
   Filter.Type.NameWordsAtLeast _ -> False
