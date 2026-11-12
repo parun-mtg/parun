@@ -1,0 +1,201 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "DoubleStrike"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Drizzt Do'Urden",
+      "oracleText": "Double strike\nWhen Drizzt enters, create Guenhwyvar, a legendary 4/1 green Cat creature token with trample.\nWhenever a creature dies, if it had power greater than Drizzt's power, put a number of +1/+1 counters on Drizzt equal to the difference.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Green"
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Trample"
+                                  }
+                                ],
+                                "name": "Guenhwyvar",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 4
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Cat"
+                                  ],
+                                  "supertypes": [
+                                    "Legendary"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ],
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                }
+              }
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "GreaterThan",
+              "measured": {
+                "type": "AgainstSlot",
+                "value": {
+                  "quantity": {
+                    "type": "Measure",
+                    "value": "Power"
+                  },
+                  "slot": "thatDepartedPermanent"
+                }
+              },
+              "threshold": {
+                "type": "Measure",
+                "value": "Power"
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Plus",
+                            "value": {
+                              "left": {
+                                "type": "AgainstSlot",
+                                "value": {
+                                  "quantity": {
+                                    "type": "Measure",
+                                    "value": "Power"
+                                  },
+                                  "slot": "thatDepartedPermanent"
+                                }
+                              },
+                              "right": {
+                                "type": "Negate",
+                                "value": {
+                                  "type": "Measure",
+                                  "value": "Power"
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Elf",
+          "Ranger"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
