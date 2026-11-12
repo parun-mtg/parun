@@ -41,6 +41,7 @@ import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.AbilitySticker as AbilitySticker
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
@@ -105,7 +106,6 @@ import qualified Parun.Types.Layer as Layer
 import qualified Parun.Types.LentCards as LentCards
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Loyalty as Loyalty
-import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
@@ -1259,16 +1259,16 @@ viewOfSpell caster oid gs = viewOfCharacteristics (fullView gs) oid (project oid
 -- CR 605.3b: the view of an activated ability that put nothing on the stack --
 -- a mana ability, or one activated inside a die roll's window -- read as
 -- viewOfSpell reads an ability that did: no characteristics, the activator its
--- controller (CR 602.2a), CR 606.2's kind, the mana in its activation cost
--- (CR 602.2b, Game.activationCost's reading, passed in off the event), and its
+-- controller (CR 602.2a), its facts and the mana in its activation cost (CR
+-- 602.2b, Game.activationCost's reading), both passed in off the event, and its
 -- source through CR 113.7a's last known information, as viewOfCharacteristics'
 -- abilitySource. The record is playerView's with no player behind it.
-viewOfUnstackedAbility :: PlayerId.PlayerId -> ObjectId -> LoyaltyKind.LoyaltyKind -> Maybe ManaCost.ManaCost -> GameState -> Filter.View
-viewOfUnstackedAbility activator source kind cost gs =
+viewOfUnstackedAbility :: PlayerId.PlayerId -> ObjectId -> AbilityFacts.AbilityFacts -> Maybe ManaCost.ManaCost -> GameState -> Filter.View
+viewOfUnstackedAbility activator source facts cost gs =
   (Filter.playerView activator)
     { Filter.playerIdentity = Nothing,
       Filter.controller = Just activator,
-      Filter.activatedAbility = Just kind,
+      Filter.activatedAbility = Just facts,
       Filter.activationCost = cost,
       Filter.ability = True,
       Filter.abilitySource = fmap (lastZoned gs source) (Count.orLastKnown (fullView gs) gs source)

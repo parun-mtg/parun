@@ -7,7 +7,9 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
@@ -367,6 +369,20 @@ aimedAt r target =
 -- The player candidate every "vacuously false" case below is asked about.
 aPlayer :: Filter.View
 aPlayer = Filter.playerView (PlayerId.MkPlayerId 0)
+
+-- An activated ability's facts on the stack, for IsActivatedAbility below.
+stackedFacts :: Maybe Keyword.Keyword -> LoyaltyKind.LoyaltyKind -> AbilityFacts.AbilityFacts
+stackedFacts stamp = AbilityFacts.MkAbilityFacts stamp Nothing AbilityKind.NonManaAbility
+
+-- IsActivatedAbility's criteria: none, one loyalty kind, and boast.
+everyActivation :: ActivationCriteria.ActivationCriteria Keyword.Keyword
+everyActivation = ActivationCriteria.MkActivationCriteria Nothing Nothing Nothing Nothing
+
+loyaltyCriteria :: LoyaltyKind.LoyaltyKind -> ActivationCriteria.ActivationCriteria Keyword.Keyword
+loyaltyCriteria kind = everyActivation {ActivationCriteria.whichLoyalty = Just kind}
+
+boastCriteria :: ActivationCriteria.ActivationCriteria Keyword.Keyword
+boastCriteria = everyActivation {ActivationCriteria.grantedBy = Just (KeywordDesignator.OfKeyword Keyword.Boast)}
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Engine.Filter" $ do
@@ -2442,24 +2458,30 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
 
   -- CR 113.3b against CR 113.3c. A bare field read like IsToken above: the
   -- builder (Parun.Engine.Projection.View.viewOfCharacteristics, through
-  -- Parun.Engine.Game.activatedAbilityKind) is where the zone and the kind are
+  -- Parun.Engine.Game.activatedAbilityFacts) is where the zone and the facts are
   -- decided, so the gameplay-level proof is Parun.CounterspellSpec's Squelch
   -- group.
   Spec.describe s "IsActivatedAbility" $ do
     Spec.it s "matches a view whose object is an activated ability" $ do
-      Spec.assertBool s (Filter.matches self (blackCreature {Filter.activatedAbility = Just LoyaltyKind.NonLoyaltyAbility}) (Filter.Type.IsActivatedAbility Nothing)) "activated ability"
-      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.IsActivatedAbility Nothing))) "and a permanent is not one"
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.activatedAbility = Just (stackedFacts Nothing LoyaltyKind.NonLoyaltyAbility)}) (Filter.Type.IsActivatedAbility everyActivation)) "activated ability"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.IsActivatedAbility everyActivation))) "and a permanent is not one"
 
-    -- CR 606.2: given a kind, only that side of the loyalty division.
+    -- CR 606.2: given a kind, only that side of the loyaltyCriteria division.
     Spec.it s "given a kind, matches only an activated ability of that kind" $ do
-      Spec.assertBool s (Filter.matches self (blackCreature {Filter.activatedAbility = Just LoyaltyKind.LoyaltyAbility}) (Filter.Type.IsActivatedAbility (Just LoyaltyKind.LoyaltyAbility))) "loyalty ability"
-      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.activatedAbility = Just LoyaltyKind.NonLoyaltyAbility}) (Filter.Type.IsActivatedAbility (Just LoyaltyKind.LoyaltyAbility)))) "and a non-loyalty one is not"
-      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.IsActivatedAbility (Just LoyaltyKind.NonLoyaltyAbility)))) "nor is a permanent of either kind"
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.activatedAbility = Just (stackedFacts Nothing LoyaltyKind.LoyaltyAbility)}) (Filter.Type.IsActivatedAbility (loyaltyCriteria LoyaltyKind.LoyaltyAbility))) "loyalty ability"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.activatedAbility = Just (stackedFacts Nothing LoyaltyKind.NonLoyaltyAbility)}) (Filter.Type.IsActivatedAbility (loyaltyCriteria LoyaltyKind.LoyaltyAbility)))) "and a non-loyalty one is not"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.IsActivatedAbility (loyaltyCriteria LoyaltyKind.NonLoyaltyAbility)))) "nor is a permanent of either kind"
+
+    -- CR 702.142b: given a keyword, only an ability stamped with it.
+    Spec.it s "given a keyword, matches only an activated ability under it" $ do
+      Spec.assertBool s (Filter.matches self (blackCreature {Filter.activatedAbility = Just (stackedFacts (Just Keyword.Boast) LoyaltyKind.NonLoyaltyAbility)}) (Filter.Type.IsActivatedAbility boastCriteria)) "boast ability"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.activatedAbility = Just (stackedFacts (Just Keyword.Exhaust) LoyaltyKind.NonLoyaltyAbility)}) (Filter.Type.IsActivatedAbility boastCriteria))) "and an exhaust one is not"
+      Spec.assertBool s (not (Filter.matches self (blackCreature {Filter.activatedAbility = Just (stackedFacts Nothing LoyaltyKind.NonLoyaltyAbility)}) (Filter.Type.IsActivatedAbility boastCriteria))) "nor an unstamped one"
 
     -- CR 113.9: neither kind is a spell and neither contains the other, so a
     -- player -- who is no object at all -- is vacuously false, IsToken's posture.
     Spec.it s "a player candidate is vacuously false" $ do
-      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.IsActivatedAbility Nothing))) "player"
+      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.IsActivatedAbility everyActivation))) "player"
 
   -- CR 110.5. The atom is a bare field read, Transformed's shape below: the
   -- battlefield scoping CR 110.5d demands lives in the BUILDER that fills the

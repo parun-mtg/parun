@@ -18,8 +18,9 @@ module Parun.Types.LoyaltyKind where
 -- A TYPE and not a Bool, and read at two different scales, which is why one type
 -- serves both: Parun.Engine.PlayerEffect.activationCostAdjustmentsGiven and
 -- Parun.Engine.Filter's View are told which kind an ability IS, and
--- Parun.Types.ActivationCriteria.whichLoyalty and Filter.IsActivatedAbility say
--- which kind an adjustment or a filter APPLIES to (Chandra's Regulator).
+-- Parun.Types.ActivationCriteria.whichLoyalty, which Filter.IsActivatedAbility
+-- carries, says which kind an adjustment or a filter APPLIES to (Chandra's
+-- Regulator).
 data LoyaltyKind
   = -- | CR 606.2: a loyalty symbol in the ability's cost.
     LoyaltyAbility

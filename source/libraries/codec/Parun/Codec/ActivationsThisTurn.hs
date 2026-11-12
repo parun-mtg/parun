@@ -15,5 +15,5 @@ codec :: Codec.Codec ActivationsThisTurn.ActivationsThisTurn
 codec = Fields.object $ do
   activator <- Fields.required "activator" PlayerRef.codec ActivationsThisTurn.activator
   source <- Fields.required "source" (Filter.codec Keyword.codec) ActivationsThisTurn.source
-  criteria <- Fields.required "criteria" ActivationCriteria.codec ActivationsThisTurn.criteria
+  criteria <- Fields.required "criteria" (ActivationCriteria.codec Keyword.codec) ActivationsThisTurn.criteria
   pure ActivationsThisTurn.MkActivationsThisTurn {ActivationsThisTurn.activator = activator, ActivationsThisTurn.source = source, ActivationsThisTurn.criteria = criteria}

@@ -1,0 +1,39 @@
+{
+  "description": "CR 702.177a Rangers' Refueler: activating Greenbelt Guardian's {G} ability draws nothing, and activating its exhaust ability draws a card",
+  "note": "Greenbelt Guardian is the only creature, so it is the {G} ability's target. Each activation resolves before the next, so the hand shows which one triggered.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {"card": "Rangers' Refueler", "label": "refueler"},
+          {"card": "Greenbelt Guardian", "label": "guardian"},
+          {"card": "Forest", "label": "f1"},
+          {"card": "Forest", "label": "f2"},
+          {"card": "Forest", "label": "f3"},
+          {"card": "Forest", "label": "f4"},
+          {"card": "Forest", "label": "f5"}
+        ],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {"name": "bob"}
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$guardian", "ability": 0, "mana": ["$f1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["ability of $guardian"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$guardian", "ability": 1, "mana": ["$f2", "$f3", "$f4", "$f5"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $refueler", "ability of $guardian"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$guardian", "kind": {"type": "PlusOnePlusOne"}, "count": 3}}}
+  ],
+  "final": [
+    {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 1}}
+  ]
+}

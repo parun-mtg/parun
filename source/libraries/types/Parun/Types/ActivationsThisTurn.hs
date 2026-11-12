@@ -15,6 +15,6 @@ data ActivationsThisTurn = MkActivationsThisTurn
     -- | Asked of the ability's source as the activation began (CR 608.2i).
     source :: Filter.Filter Keyword.Keyword,
     -- | What only the ability, not its source, can answer.
-    criteria :: ActivationCriteria.ActivationCriteria
+    criteria :: ActivationCriteria.ActivationCriteria Keyword.Keyword
   }
   deriving (Eq, Ord, Show)

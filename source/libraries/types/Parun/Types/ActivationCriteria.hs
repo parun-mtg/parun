@@ -2,7 +2,6 @@ module Parun.Types.ActivationCriteria where
 
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
-import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 
@@ -12,12 +11,16 @@ import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 -- counterpart, a spell being one object with one cost.
 --
 -- Nothing in every field is every activated ability of a matching source.
-data ActivationCriteria = MkActivationCriteria
+--
+-- PARAMETRIC in the keyword for Parun.Types.Filter's reason:
+-- Filter.IsActivatedAbility carries one, and Keyword names Filter. Only
+-- @ActivationCriteria Keyword.Keyword@ is ever written.
+data ActivationCriteria keyword = MkActivationCriteria
   { -- | Only an ability under this rule-702 keyword (Parun.Types.ActivatedAbility.keyword):
     -- Fluctuator's "cycling abilities", Bureau Headmaster's "equip abilities".
     -- Spell-free because a spell's keywords are the spell's, which the Filter
     -- reads.
-    grantedBy :: Maybe (KeywordDesignator.KeywordDesignator Keyword.Keyword),
+    grantedBy :: Maybe (KeywordDesignator.KeywordDesignator keyword),
     -- | CR 605.1a: Zirda, the Dawnwaker's "that aren't mana abilities",
     -- Suppression Field's "unless they're mana abilities". Spell-free because
     -- rule 605.1a classifies only abilities.

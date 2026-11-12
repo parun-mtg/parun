@@ -626,7 +626,7 @@ filterChildren children predicate = case predicate of
   Filter.HostOfSubjectHasCardType _ -> pure predicate
   Filter.IsToken -> pure predicate
   Filter.IsCommander -> pure predicate
-  Filter.IsActivatedAbility _ -> pure predicate
+  Filter.IsActivatedAbility criteria -> fmap Filter.IsActivatedAbility (activationCriteriaChildren children criteria)
   Filter.IsAbility -> pure predicate
   Filter.IsEmblem -> pure predicate
   Filter.FromSource f -> fmap Filter.FromSource (nest children f)
@@ -852,9 +852,9 @@ inZoneChildren :: (Applicative f) => Children keyword f -> InZone.InZone -> f In
 inZoneChildren children from = case from of
   InZone.MkInZone zone ref -> fmap (InZone.MkInZone zone) (player children ref)
 
--- | An activation tally's criteria's children: the keyword its granting
--- ability is designated by.
-activationCriteriaChildren :: (Applicative f) => Children Keyword.Keyword f -> ActivationCriteria.ActivationCriteria -> f ActivationCriteria.ActivationCriteria
+-- | Activation criteria's children: the keyword its granting ability is
+-- designated by.
+activationCriteriaChildren :: (Applicative f) => Children keyword f -> ActivationCriteria.ActivationCriteria keyword -> f (ActivationCriteria.ActivationCriteria keyword)
 activationCriteriaChildren children criteria = case criteria of
   ActivationCriteria.MkActivationCriteria grantedBy whichKind whichLoyalty whichAbility -> fmap (\renamed -> ActivationCriteria.MkActivationCriteria renamed whichKind whichLoyalty whichAbility) (traverse (designatorChildren children) grantedBy)
 
@@ -2045,7 +2045,7 @@ data PlayerEffectChildren f = MkPlayerEffectChildren
     -- | A keyword an ability is designated by (CR 702), whole.
     playerDesignator :: KeywordDesignator.KeywordDesignator Keyword.Keyword -> f (KeywordDesignator.KeywordDesignator Keyword.Keyword),
     -- | What narrows a cost modifier's abilities (CR 602.2b), whole.
-    playerActivations :: ActivationCriteria.ActivationCriteria -> f ActivationCriteria.ActivationCriteria,
+    playerActivations :: ActivationCriteria.ActivationCriteria Keyword.Keyword -> f (ActivationCriteria.ActivationCriteria Keyword.Keyword),
     -- | The zone a permission reaches into, whole.
     playerZone :: InZone.InZone -> f InZone.InZone,
     -- | The turn an "only the first" limit counts over (CR 500.1), whole.

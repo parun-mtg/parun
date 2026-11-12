@@ -28,6 +28,7 @@ import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityActivatedTrigger as AbilityActivatedTrigger
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
+import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActingPermanent as ActingPermanent
@@ -120,7 +121,6 @@ import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeTrigger as LifeTrigger
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LostPermanent as LostPermanent
-import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.ManaAbilityResolved as ManaAbilityResolved
 import qualified Parun.Types.ManaAdded as ManaAdded
 import qualified Parun.Types.ManaSpecification as ManaSpecification
@@ -1568,8 +1568,8 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- ability is still on the stack -- and its source through CR 113.7a's last
   -- known information (Filter.FromSource), so a source sacrificed to pay the
   -- cost still answers. An activation that put nothing on the stack (CR
-  -- 605.3b) is read off Projection.viewOfUnstackedAbility instead, and CR
-  -- 605.1a's kind off the event. The scenario
+  -- 605.3b) is read off Projection.viewOfUnstackedAbility instead, its facts
+  -- off the event, and CR 605.1a's kind off the event either way. The scenario
   -- elrond-moon-reader-draws-once-when-a-creature-s-mana-ability-is-activated
   -- proves the mana road, and
   -- runic-armasaur-draws-when-an-opponent-rerolls-with-goblin-bookie the
@@ -1579,11 +1579,11 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   TriggerCondition.AbilityActivated (AbilityActivatedTrigger.MkAbilityActivatedTrigger f kind) -> case event of
     GameEvent.AbilityActivated activated ->
       let activator = AbilityWasActivated.player activated
-          loyaltyKind = if AbilityWasActivated.loyalty activated then LoyaltyKind.LoyaltyAbility else LoyaltyKind.NonLoyaltyAbility
-       in all (== AbilityWasActivated.kind activated) kind
+          facts = AbilityWasActivated.facts activated
+       in all (== AbilityFacts.kind facts) kind
             && case AbilityWasActivated.ability activated of
               Just abilId -> Maybe.isJust (Game.lookupObject abilId gs) && Filter.matches bearerContext (Projection.viewOfSpell activator abilId gs) f
-              Nothing -> Filter.matches bearerContext (Projection.viewOfUnstackedAbility activator (AbilityWasActivated.source activated) loyaltyKind (AbilityWasActivated.activationCost activated) gs) f
+              Nothing -> Filter.matches bearerContext (Projection.viewOfUnstackedAbility activator (AbilityWasActivated.source activated) facts (AbilityWasActivated.activationCost activated) gs) f
     _ -> False
   -- CR 601.2c / 603.2c: a permanent or a player became the target of a spell or
   -- ability. A Self subject is the bearer, a bare comparison of ids in a Self

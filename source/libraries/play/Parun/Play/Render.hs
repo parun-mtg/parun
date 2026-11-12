@@ -15,6 +15,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Oracle as Oracle
+import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityView as AbilityView
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
@@ -417,7 +418,7 @@ event :: PlayerView.PlayerView -> LoggedEvent.LoggedEvent -> Maybe Text.Text
 event view logged = case LoggedEvent.event logged of
   GameEvent.SpellCast c -> said [player (SpellWasCast.player c), Text.pack "casts", snapshotName (SpellWasCast.characteristics c)]
   GameEvent.AbilityActivated a
-    | AbilityWasActivated.kind a == AbilityKind.ManaAbility -> Nothing
+    | AbilityFacts.kind (AbilityWasActivated.facts a) == AbilityKind.ManaAbility -> Nothing
     | otherwise -> said [player (AbilityWasActivated.player a), Text.pack "activates", name (AbilityWasActivated.source a) <> Text.pack "'s ability"]
   GameEvent.LandPlayed l -> said [player (LandPlayed.player l), Text.pack "plays", name (LandPlayed.land l)]
   GameEvent.AttackerDeclared a -> said [name (AttackerDeclared.attacker a), Text.pack "attacks", attacked (AttackerDeclared.target a)]
