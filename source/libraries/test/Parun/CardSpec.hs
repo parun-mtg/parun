@@ -1012,18 +1012,6 @@ modeClauseConditions = Maybe.mapMaybe Clause.condition . Foldable.toList . Mode.
 modalClauseConditions :: Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Condition.Type.Condition]
 modalClauseConditions = concatMap modeClauseConditions . Modal.modes
 
--- CR 118.12's gate multiplier and chosen X, the OTHER Quantities a clause carries
--- outside its effects -- Rakshasa's Disdain's "for each card in your graveyard",
--- Flameblast Dragon's {X}.
--- modalClauseConditions' sibling one field over, and swept at the same three
--- carriers, so a Count written into a gate is not invisible to cardCounts.
-modalPayGateQuantities :: Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Quantity.Type.Quantity]
-modalPayGateQuantities =
-  concatMap (concatMap gateQuantities . Maybe.mapMaybe Clause.payGate . Foldable.toList . Mode.clauses)
-    . Modal.modes
-  where
-    gateQuantities gate = Maybe.maybeToList (PayGate.perEach gate) <> Maybe.maybeToList (PayGate.x gate)
-
 -- Every Condition a Duration holds: only ForAsLongAs (CR 611.2b) carries one.
 -- Resolve.conditionQuantities' role one type up -- durationCounts below and
 -- durationFilters further down both take from it, so the CR 122.1b kind under a
@@ -1050,15 +1038,44 @@ modificationCounts =
           Children.modificationAbility = Const.Const . grantedAbilityCounts
         }
 
--- Every Count reachable from a StaticAbility: its modifications' P/T quantities,
--- plus CR 604.2's "as long as" gate, which is a Condition and so a pair of
--- Quantities -- and the leaves-the-battlefield duration beside it, which is a
--- Duration and so another Condition when it is a CR 611.2b "for as long as".
-staticAbilityCounts :: StaticAbility.StaticAbility (GrantedAbility.GrantedAbility Card.Type.Card) -> [Count.Type.Count Quantity.Type.Quantity]
-staticAbilityCounts ability =
-  concatMap conditionCounts (Maybe.maybeToList (StaticAbility.condition ability))
-    <> concatMap durationCounts (Maybe.maybeToList (StaticAbility.lingers ability))
-    <> concatMap modificationCounts (StaticAbility.modifications ability)
+-- The Count sweep's visitor for an ability record: each kind of child's Counts,
+-- through the sweep for that kind. A cost, a keyword stamp, an affected set and
+-- a cost reduction's target Filter hold no Count of their own; their Filters'
+-- Counts are reached through cardFilters and countFilters.
+abilityCounts :: Children.AbilityChildren Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) (Const.Const [Count.Type.Count Quantity.Type.Quantity])
+abilityCounts =
+  Children.abilityLeaves
+    { Children.abilityQuantity = Const.Const . quantityCounts,
+      Children.abilityModal = Const.Const . modalCounts,
+      Children.abilityRestriction = Const.Const . concatMap conditionCounts . restrictionConditions,
+      Children.abilityCondition = Const.Const . conditionCounts,
+      Children.abilityTrigger = Const.Const . triggerConditionCounts,
+      Children.abilityDuration = Const.Const . durationCounts,
+      Children.abilityModification = Const.Const . modificationCounts,
+      Children.abilityPlayerEffect = Const.Const . playerEffectCounts,
+      Children.abilityReplacement = Const.Const . replacementCounts,
+      Children.abilityRules = Const.Const . ruleAbilitiesCounts
+    }
+
+-- Every Count a modal payload holds: its clauses' effects, "if" gates (CR
+-- 701.46a) and pay gates (CR 118.12), and its selection's "instead" gate and
+-- "up to" count (CR 700.2).
+modalCounts :: Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Count.Type.Count Quantity.Type.Quantity]
+modalCounts =
+  Const.getConst
+    . Children.modalChildren
+      Children.modalLeaves
+        { Children.modalEffect = Const.Const . effectCounts,
+          Children.modalCondition = Const.Const . conditionCounts,
+          Children.modalInstead = Const.Const . conditionCounts,
+          Children.modalQuantity = Const.Const . quantityCounts,
+          Children.modalPayGate = Const.Const . Const.getConst . Children.payGateChildren Children.countLeaves {Children.countQuantity = Const.Const . quantityCounts}
+        }
+
+-- Every Count a replacement holds: its riders' (CR 615.5) and its minted
+-- token's (CR 614.1a), Create's recursion.
+replacementCounts :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> [Count.Type.Count Quantity.Type.Quantity]
+replacementCounts replacement = concatMap effectCounts (replacementEffectRiders replacement) <> concatMap (overFaces cardCounts) (replacementMintedCards replacement)
 
 -- Every Count reachable from a TriggerCondition: its conditions' (CR 603.8, an
 -- attack's or a cast's "while"), nested conditions' included.
@@ -1099,8 +1116,8 @@ ownCounts =
               Children.onCard = minted,
               Children.onConjured = minted,
               Children.onMelded = minted,
-              Children.onReplacement = \replacement -> Const.Const (concatMap effectCounts (replacementEffectRiders replacement) <> concatMap (overFaces cardCounts) (replacementMintedCards replacement)),
-              Children.onAbility = Const.Const . foldMap triggeredAbilityCounts . carriedTrigger,
+              Children.onReplacement = Const.Const . replacementCounts,
+              Children.onAbility = Const.Const . foldMap (Const.getConst . Children.triggeredAbilityChildren abilityCounts) . carriedTrigger,
               Children.onPlayerEffect = Const.Const . playerEffectCounts,
               Children.onEntryRiders = Const.Const . foldMap modificationCounts . EntryRiders.characteristics,
               Children.onFaceDown = \listed ->
@@ -1113,50 +1130,6 @@ ownCounts =
               Children.onChosenPermanents = Const.Const . foldMap quantityCounts . HowMany.quantity . ChosenPermanents.count
             }
 
--- Every Count reachable from one triggered ability (a card's own, or a
--- delayed one -- both TriggeredAbility Card): its TriggerCondition, its
--- intervening "if" clause, and its modes' effects.
--- CR 702.178a's "as long as" gate is a Condition like any other, so it reaches a
--- Count and through it a Filter -- triggeredAbilityCounts' treatment of CR 603.4's
--- intervening "if", one field over.
-activatedAbilityCounts :: ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Count.Type.Count Quantity.Type.Quantity]
-activatedAbilityCounts ability =
-  -- CR 101.1's ceiling on the X this ability's own activation announces, the
-  -- cardCounts treatment of Face.maximumX one type over (Blighted Nightmare).
-  concatMap quantityCounts (ActivatedAbility.maximumX ability)
-    -- CR 107.3c's defined X, the same position.
-    <> foldMap quantityCounts (ActivatedAbility.definedX ability)
-    <> foldMap conditionCounts (ActivatedAbility.condition ability)
-    -- CR 602.5's "activate only if [board condition]" rider, whose Condition is
-    -- a Count position like any other -- and the one ActivatedAbility field the
-    -- two sweeps reached through nothing until OnlyIf gave it a payload.
-    <> concatMap conditionCounts (concatMap restrictionConditions (ActivatedAbility.restrictions ability))
-    <> concatMap effectCounts (Modal.allEffects (ActivatedAbility.modal ability))
-    <> concatMap conditionCounts (modalClauseConditions (ActivatedAbility.modal ability))
-    <> concatMap quantityCounts (modalPayGateQuantities (ActivatedAbility.modal ability))
-
-triggeredAbilityCounts :: TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Count.Type.Count Quantity.Type.Quantity]
-triggeredAbilityCounts ability =
-  triggerConditionCounts (TriggeredAbility.condition ability)
-    <> foldMap conditionCounts (TriggeredAbility.intervening ability)
-    <> concatMap effectCounts (Modal.allEffects (TriggeredAbility.modal ability))
-    <> concatMap conditionCounts (modalClauseConditions (TriggeredAbility.modal ability))
-    <> concatMap quantityCounts (modalPayGateQuantities (TriggeredAbility.modal ability))
-
--- Every Count reachable from a card: every site a Parun.Types.Count can be
--- authored -- Quantity (characteristic-defining P/T, printed P/T, and every
--- effect/modification quantity), Condition (a trigger's own condition, a
--- triggered ability's intervening clause, an activated ability's CR 702.178a
--- gate, a ForAsLongAs duration, CR 701.46a's per-clause gate, and CR 508.1c's /
--- CR 509.1b's "unless some condition is met"), CR 118.12's gate multiplier
--- (modalPayGateQuantities), and every effect (spell, activated, triggered,
--- delayed), recursing into a minted token or emblem.
---
--- This traversal is hand-maintained, not derived, so it is NOT enforced
--- exhaustive by -Werror the way the Zone/Effect/Modification cases inside it
--- are: a NEW Face field, or a new CostComponent/PlayerEffect arm, that can carry
--- a Quantity or Count would bypass this lint silently. When you add a field that
--- can hold either, add it here.
 -- Every effect a card can RESOLVE: its spell's modes, its activated and
 -- triggered abilities' modes, and its delayed abilities' modes. Deliberately
 -- wider than Card.allEffects (spell modes only) -- a stored continuous effect
@@ -1349,42 +1322,6 @@ payGateBound modal =
     then Set.singleton Binding.sacrificedPermanent
     else Set.empty
 
--- Every Count reachable from a combat restriction: CR 508.1c's / CR 509.1b's
--- "unless some condition is met", and the amount an affected set compares
--- against (Ensnaring Bridge); the subject is an Affected, which holds a Filter
--- but no Count.
-combatRestrictionCounts :: CombatRestriction.CombatRestriction -> [Count.Type.Count Quantity.Type.Quantity]
-combatRestrictionCounts restriction = case restriction of
-  CombatRestriction.CantAttack (AffectedUnless.MkAffectedUnless _ condition _ amount) -> foldMap conditionCounts condition <> foldMap quantityCounts amount
-  CombatRestriction.CantBlock (AffectedUnless.MkAffectedUnless _ condition _ amount) -> foldMap conditionCounts condition <> foldMap quantityCounts amount
-  -- The blocker Filter beside the gate holds no Count either.
-  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy _ _ condition _) -> foldMap conditionCounts condition
-  CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures _ _ condition _) -> foldMap conditionCounts condition
-  -- The PlayerScope and the CR 506.3 kinds beside the gate hold no Count either.
-  CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer _ _ _ condition _) -> foldMap conditionCounts condition
-  -- The companion Filter beside the gate holds no Count either.
-  CombatRestriction.CantAttackAlone (AloneUnless.MkAloneUnless _ _ _ condition _) -> foldMap conditionCounts condition
-  CombatRestriction.CantBlockAlone (AloneUnless.MkAloneUnless _ _ _ condition _) -> foldMap conditionCounts condition
-  CombatRestriction.CantAttackMoreThan (AttackLimitUnless.MkAttackLimitUnless _ _ condition) -> foldMap conditionCounts condition
-  CombatRestriction.CantBlockMoreThan (LimitUnless.MkLimitUnless _ _ _ condition) -> foldMap conditionCounts condition
-
--- Every Count reachable from a blocking permission: CR 604.2's "as long as" gate,
--- and the counted arity beside it (Kemba's Legion). The subject is an Affected,
--- which holds a Filter but no Count.
-blockPermissionCounts :: BlockPermission.BlockPermission -> [Count.Type.Count Quantity.Type.Quantity]
-blockPermissionCounts permission =
-  foldMap quantityCounts (BlockPermission.additional permission)
-    <> foldMap conditionCounts (BlockPermission.while permission)
-
--- CR 508.1h's per-attacker share. Only the Counted arm holds anything: the Fixed
--- arm is a Parun.Types.Cost, whose components carry Naturals rather than
--- Quantities (CR 601.2b's X is a constructor of its own) and Filters rather than
--- Counts.
-perCreatureCounts :: PerCreature.PerCreature -> [Count.Type.Count Quantity.Type.Quantity]
-perCreatureCounts perCreature = case perCreature of
-  PerCreature.Fixed _ -> []
-  PerCreature.Counted quantity -> quantityCounts quantity
-
 -- Every effect a card AUTHORS: the ones its carriers hold, plus everything
 -- nested inside one of those effects' own payloads, transitively. The nested
 -- half is what makes this a CLOSURE rather than the flat concatenation the
@@ -1422,9 +1359,8 @@ effectNestedEffects =
           Children.onAbility = Const.Const . foldMap (Modal.allEffects . TriggeredAbility.modal) . carriedTrigger
         }
 
--- The carriers themselves, before the nesting closure above: one limb per field
--- of a Face that holds effects. Hand-maintained, with cardCounts' caveat: a NEW
--- Face field holding effects must be added here too.
+-- The carriers themselves, before the nesting closure above: the printed ones
+-- and the quoted abilities a face grants.
 cardCarrierEffects :: Face.Face Card.Type.Card -> [Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
 cardCarrierEffects card =
   printedCarrierEffects card
@@ -1440,39 +1376,40 @@ cardCarrierEffects card =
 -- cardAuthoredEffects, whose nesting closure reaches an arm inside another
 -- carried ability too.
 delayedDeclarations :: Face.Face Card.Type.Card -> [TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
-delayedDeclarations card =
-  Map.elems (Face.delayedAbilities card)
-    <> Maybe.mapMaybe
-      ( \effect -> case effect of
-          Effect.ArmDelayedTrigger arm -> Game.carriedDelayedAbility arm
-          _ -> Nothing
-      )
-      (cardAuthoredEffects card)
+delayedDeclarations card = Map.elems (Face.delayedAbilities card) <> carriedDelayedAbilities card
 
--- The limbs of cardCarrierEffects that do NOT go through a grant. Split out so
--- grantedModifications below can walk them without closing a loop with the two
--- limbs above, which are defined in terms of it.
+-- delayedDeclarations' carried half.
+carriedDelayedAbilities :: Face.Face Card.Type.Card -> [TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
+carriedDelayedAbilities card = [ability | Effect.ArmDelayedTrigger arm <- cardAuthoredEffects card, Just ability <- [Game.carriedDelayedAbility arm]]
+
+-- The limbs of cardCarrierEffects that do NOT go through a grant, one face
+-- visitor per carrier. Split out so grantedModifications below can walk them
+-- without closing a loop with the two limbs above, which are defined in terms
+-- of it. A Face field of a type no visitor here overrides is not reached.
 printedCarrierEffects :: Face.Face Card.Type.Card -> [Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
-printedCarrierEffects card =
-  Card.allEffects card
-    <> concatMap (Modal.allEffects . ActivatedAbility.modal) (Face.activatedAbilities card)
-    <> concatMap (Modal.allEffects . TriggeredAbility.modal) (Face.triggeredAbilities card)
-    <> concatMap (Modal.allEffects . TriggeredAbility.modal) (Map.elems (Face.delayedAbilities card))
-    -- CR 309.4c: a room ability's effects, which no other limb above reaches --
-    -- Parun.Types.Face.rooms is the fifth carrier.
-    <> concatMap (Modal.allEffects . DungeonRoom.ability) (Face.rooms card)
-    -- The effects a printed replacement ability carries, the sixth carrier: CR
-    -- 615.5's additional effect beside a prevention (DamageR.riders) and CR
-    -- 614.1c's as-enters instruction (EntryRewrite.RunEffects). Neither is a
-    -- resolution's effect at all -- one runs from Resolve.runPreventionRider and
-    -- the other from Resolve.runEntryEffects -- but both are card-authored effect
-    -- lists, which is what every lint downstream of this function is about.
-    <> concatMap (replacementPrintedEffects . PrintedReplacement.effect) (Face.replacementEffects card)
+printedCarrierEffects =
+  Const.getConst
+    . Children.faceChildren
+      Children.faceLeaves
+        { Children.faceModal = Const.Const . Modal.allEffects,
+          Children.faceActivated = Children.activatedAbilityChildren carrierEffects,
+          Children.faceReplacement = Children.printedReplacementChildren carrierEffects,
+          Children.faceTriggered = Children.triggeredAbilityChildren carrierEffects,
+          Children.faceRoom = Const.Const . Modal.allEffects . DungeonRoom.ability
+        }
+
+-- printedCarrierEffects' visitor for an ability record: its modes' effects,
+-- and a printed replacement's (CR 614.1c, 615.5).
+carrierEffects :: Children.AbilityChildren Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) (Const.Const [Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)])
+carrierEffects =
+  Children.abilityLeaves
+    { Children.abilityModal = Const.Const . Modal.allEffects,
+      Children.abilityReplacement = Const.Const . replacementPrintedEffects
+    }
 
 -- CR 103.5b and CR 103.6: the actions a face grants from a HAND, one effect list
--- per action. The two fields are exactly the two Parun.Engine.Mulligan passes to
--- handWindow, and hand-maintained with cardResolutionEffects' caveat: a third
--- pregame window would have to be added here.
+-- per action: every faceHandAction child, which is the two fields
+-- Parun.Engine.Mulligan passes to handWindow.
 --
 -- A list of ACTIONS rather than one flat list, because each action is performed
 -- on its own (Parun.Engine.Mulligan.handWindow performs one and asks again), so a
@@ -1483,7 +1420,7 @@ printedCarrierEffects card =
 -- list would hand a dozen lints a slot-sharing claim that is false of them. The
 -- sweep below and ownBoundSlots are the two readers, and both want the split.
 handActions :: Face.Face Card.Type.Card -> [[Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]]
-handActions card = fmap HandAction.effects (Face.mulliganActions card <> Face.openingHandActions card)
+handActions = Const.getConst . Children.faceChildren Children.faceLeaves {Children.faceHandAction = \action -> Const.Const [HandAction.effects action]}
 
 -- Every effect a card AUTHORS, its two pregame windows included: what
 -- cardResolutionEffects reaches, plus the hand actions it deliberately leaves
@@ -1508,77 +1445,60 @@ characteristicQuantities card = case Face.characteristicPT card of
   Nothing -> []
   Just cda -> [CharacteristicPT.power cda, CharacteristicPT.toughness cda]
 
+-- Every Count reachable from a card: a printed or characteristic-defining P/T,
+-- CR 101.1's ceiling on X, and every ability, cost and rule row's, through
+-- abilityCounts and ruleCounts; a minted token or emblem's through effectCounts.
 cardCounts :: Face.Face Card.Type.Card -> [Count.Type.Count Quantity.Type.Quantity]
-cardCounts card =
-  concatMap quantityCounts (characteristicQuantities card)
-    -- CR 101.1's ceiling on CR 601.2b's X, which every printing states as a
-    -- per-board amount (Soul Immolation's "the greatest toughness among
-    -- creatures you control").
-    <> concatMap quantityCounts (Face.maximumX card)
-    <> concatMap (\(Power.MkPower quantity) -> quantityCounts quantity) (Maybe.maybeToList (Face.power card))
-    <> concatMap (\(Toughness.MkToughness quantity) -> quantityCounts quantity) (Maybe.maybeToList (Face.toughness card))
-    <> concatMap staticAbilityCounts (Face.staticAbilities card)
-    -- CR 604.2's "as long as" clause on a printed replacement ability, the
-    -- staticAbilityCounts treatment of the same clause one field over.
-    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . PrintedReplacement.condition) (Face.replacementEffects card)
-    -- CR 614.1a's appended token on a printed row, Create's recursion.
-    <> concatMap (overFaces cardCounts) (concatMap (replacementMintedCards . PrintedReplacement.effect) (Face.replacementEffects card))
-    <> concatMap effectCounts (Card.allEffects card)
-    <> concatMap conditionCounts (modalClauseConditions (Face.spell card))
-    <> concatMap quantityCounts (modalPayGateQuantities (Face.spell card))
-    <> concatMap activatedAbilityCounts (Face.activatedAbilities card)
-    <> concatMap triggeredAbilityCounts (Face.triggeredAbilities card)
-    <> concatMap triggeredAbilityCounts (Map.elems (Face.delayedAbilities card))
-    <> concatMap (concatMap effectCounts . Modal.allEffects . DungeonRoom.ability) (Face.rooms card)
-    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . AlternativeCost.condition) (Face.alternativeCosts card)
-    -- CR 604.2's "as long as" clause on the PLAYER-facing static carrier, the
-    -- staticAbilityCounts treatment of the same clause on the object-facing one,
-    -- and the PlayerEffect beside it.
-    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . PlayerStaticAbility.condition) (Face.playerAbilities card)
-    <> concatMap (playerEffectCounts . PlayerStaticAbility.effect) (Face.playerAbilities card)
-    <> concatMap (quantityCounts . CostReduction.perEach) (Face.costReductions card)
-    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . CostReduction.condition) (Face.costReductions card)
-    -- CR 601.3's "cast this spell only if" rider (Illusory Angel).
-    <> concatMap (concatMap conditionCounts . castingRestrictionConditions) (Face.castingRestrictions card)
-    -- CR 601.3d's flash permission condition (Swift Reckoning).
-    <> concatMap (concatMap conditionCounts . castingPermissionConditions) (Face.castingPermissions card)
-    -- CR 113.6g's spell mastery (Exquisite Firecraft).
-    <> concatMap conditionCounts (counterabilityConditions (Face.counterability card))
-    <> ruleAbilitiesCounts (Projection.ruleAbilitiesOfFace card)
+cardCounts =
+  Const.getConst
+    . Children.faceChildren
+      Children.faceLeaves
+        { Children.facePower = \(Power.MkPower quantity) -> Const.Const (quantityCounts quantity),
+          Children.faceToughness = \(Toughness.MkToughness quantity) -> Const.Const (quantityCounts quantity),
+          Children.faceCharacteristicPT = Children.characteristicPTChildren (Const.Const . quantityCounts),
+          Children.faceStatic = Children.staticAbilityChildren abilityCounts,
+          Children.faceModal = Const.Const . modalCounts,
+          Children.faceActivated = Children.activatedAbilityChildren abilityCounts,
+          Children.faceReplacement = Children.printedReplacementChildren abilityCounts,
+          Children.faceTriggered = Children.triggeredAbilityChildren abilityCounts,
+          Children.faceRoom = Const.Const . modalCounts . DungeonRoom.ability,
+          Children.faceCastingPermission = Const.Const . concatMap conditionCounts . castingPermissionConditions,
+          Children.faceCastingRestriction = Const.Const . concatMap conditionCounts . castingRestrictionConditions,
+          Children.faceCounterability = Const.Const . concatMap conditionCounts . counterabilityConditions,
+          Children.faceQuantity = Const.Const . quantityCounts,
+          Children.faceAlternativeCost = Children.alternativeCostChildren abilityCounts,
+          Children.faceCostReduction = Children.costReductionChildren abilityCounts,
+          Children.facePlayerStatic = Children.playerStaticAbilityChildren abilityCounts,
+          Children.faceBlockRequirement = Children.blockRequirementChildren ruleCounts,
+          Children.faceBlockPermission = Children.blockPermissionChildren ruleCounts,
+          Children.faceAttackRequirement = Children.attackRequirementChildren ruleCounts,
+          Children.faceCombatRestriction = Children.combatRestrictionChildren ruleCounts,
+          Children.faceSacrificeRestriction = Children.sacrificeRestrictionChildren ruleCounts,
+          Children.faceUntapRestriction = Children.untapRestrictionChildren ruleCounts,
+          Children.faceCrewRestriction = Children.crewRestrictionChildren ruleCounts,
+          Children.faceTargetRestriction = Children.targetRestrictionChildren ruleCounts,
+          Children.faceRulePermission = Children.rulePermissionChildren ruleCounts,
+          Children.faceAttachRestriction = Children.attachRestrictionChildren ruleCounts,
+          Children.faceEntryRestriction = Children.entryRestrictionChildren ruleCounts,
+          Children.faceCounterRestriction = Children.counterRestrictionChildren ruleCounts,
+          Children.faceActivationProhibition = Children.activationProhibitionChildren ruleCounts,
+          Children.faceAttackCost = Children.attackCostChildren ruleCounts,
+          Children.faceBlockCost = Children.blockCostChildren ruleCounts,
+          Children.faceHandAction = Const.Const . concatMap effectCounts . HandAction.effects
+        }
 
--- Every Count reachable from the fifteen CR 613.11 rule-ability families, a
--- printed face's (cardCounts) and a granted bundle's (modificationCounts) alike.
+-- The Count sweep's visitor for a CR 613.11 rule row: its gate (CR 604.2,
+-- 611.3a) and its counted amounts (CR 508.1h, 509.1d).
+ruleCounts :: Children.RuleChildren (Const.Const [Count.Type.Count Quantity.Type.Quantity])
+ruleCounts =
+  Children.ruleLeaves
+    { Children.ruleCondition = Const.Const . conditionCounts,
+      Children.ruleQuantity = Const.Const . quantityCounts
+    }
+
+-- Every Count reachable from a granted bundle of rule rows (modificationCounts).
 ruleAbilitiesCounts :: RuleAbilities.RuleAbilities -> [Count.Type.Count Quantity.Type.Quantity]
-ruleAbilitiesCounts rules =
-  concatMap combatRestrictionCounts (RuleAbilities.combatRestrictions rules)
-    <> concatMap blockPermissionCounts (RuleAbilities.blockPermissions rules)
-    <> concatMap (foldMap conditionCounts . RulePermission.while) (RuleAbilities.rulePermissions rules)
-    -- CR 508.1d's "or that it attacks if some condition is met", the same CR
-    -- 604.2 clause blockPermissionCounts reads one field over (Otarian
-    -- Juggernaut counts its controller's graveyard). The requirement's SUBJECT
-    -- is an Affected, which holds a Filter but no Count.
-    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . AttackRequirement.while) (RuleAbilities.attackRequirements rules)
-    -- CR 509.1c's identically worded second reading, on the other side of the
-    -- combat phase (Seton's Desire counts its controller's graveyard, the same
-    -- threshold clause). Both of this requirement's axes are Affecteds, which
-    -- hold a Filter but no Count.
-    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . BlockRequirement.while) (RuleAbilities.blockRequirements rules)
-    -- CR 502.3's restriction under its CR 611.3a "as long as" (Static Orb counts
-    -- itself untapped). The affected set holds a Filter but no Count.
-    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . UntapRestriction.while) (RuleAbilities.untapRestrictions rules)
-    -- CR 508.1h's counted share (Sphere of Safety's "the number of enchantments
-    -- you control"); its subject is an Affected, which holds a Filter but no
-    -- Count.
-    <> concatMap (perCreatureCounts . AttackCost.perAttacker) (RuleAbilities.attackCosts rules)
-    -- CR 509.1d's counted share, the same Count in the blocking carrier. A FENCE
-    -- rather than a proved line: Sphere of Safety fills the attacking one and
-    -- pins the positive assertion below, and no cost to block in `data/cards/`
-    -- writes a Counted share -- Oppressive Rays' is a literal {3}.
-    <> concatMap (perCreatureCounts . BlockCost.perBlocker) (RuleAbilities.blockCosts rules)
-    -- CR 611.3a's "as long as" on either cost (Archangel of Tithes counts
-    -- itself untapped, and attacking).
-    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . AttackCost.while) (RuleAbilities.attackCosts rules)
-    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . BlockCost.while) (RuleAbilities.blockCosts rules)
+ruleAbilitiesCounts = Const.getConst . Children.ruleAbilitiesChildren ruleCounts
 
 -- The shared shape of the D4 dataflow lint, over EVERY carrier a card can hang
 -- modes off: its spell, and its activated, triggered and delayed abilities. The
@@ -2261,21 +2181,38 @@ effectMintedFaces effect =
 -- (CR 508.3a's `thatPlayer` under an attack trigger answers every copy).
 ownDeclaredTargetSlots :: Face.Face Card.Type.Card -> Set.Set SlotName.SlotName
 ownDeclaredTargetSlots card =
-  Set.unions
-    ( fmap
-        withPerPlayer
-        ( Card.allTargetSlots card
-            : fmap
-              Modal.allTargetSlots
-              ( fmap ActivatedAbility.modal (Face.activatedAbilities card)
-                  <> fmap TriggeredAbility.modal (Face.triggeredAbilities card)
-                  <> fmap TriggeredAbility.modal (delayedDeclarations card)
-                  <> fmap DungeonRoom.ability (Foldable.toList (Face.rooms card))
-              )
-        )
-    )
+  Map.keysSet enchant
+    <> foldMap perPlayerSlots enchant
+    <> Const.getConst
+      ( Children.faceChildren
+          Children.faceLeaves
+            { Children.faceModal = Const.Const . modalDeclaredSlots,
+              Children.faceActivated = Children.activatedAbilityChildren declaring,
+              Children.faceTriggered = Children.triggeredAbilityChildren declaring,
+              Children.faceRoom = Const.Const . modalDeclaredSlots . DungeonRoom.ability
+            }
+          card
+      )
+    <> foldMap (modalDeclaredSlots . TriggeredAbility.modal) (carriedDelayedAbilities card)
   where
-    withPerPlayer slots = Map.keysSet slots <> Set.fromList (fmap SlotPerPlayer.slot (Maybe.mapMaybe TargetSlot.perPlayer (Map.elems slots)))
+    enchant = Card.enchantSlotMap card
+    declaring :: Children.AbilityChildren Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) (Const.Const (Set.Set SlotName.SlotName))
+    declaring = Children.abilityLeaves {Children.abilityModal = Const.Const . modalDeclaredSlots}
+
+-- Every slot a modal payload's modes declare (CR 601.2c), each per-player
+-- slot's "that player" name included.
+modalDeclaredSlots :: Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Set.Set SlotName.SlotName
+modalDeclaredSlots =
+  Const.getConst
+    . Children.modalChildren
+      Children.modalLeaves
+        { Children.modalSlot = Const.Const . Set.singleton,
+          Children.modalTargetSlot = Const.Const . perPlayerSlots
+        }
+
+-- A per-player target slot's "that player" name (CR 601.2c), if it has one.
+perPlayerSlots :: TargetSlot.TargetSlot -> Set.Set SlotName.SlotName
+perPlayerSlots = foldMap (Set.singleton . SlotPerPlayer.slot) . TargetSlot.perPlayer
 
 -- Every slot a card DECLARES as a target: the four carriers above, on the card's
 -- own face AND on every face it mints. A token's triggered ability
@@ -3846,9 +3783,8 @@ triggerConditionFilters triggerCondition = case triggerCondition of
       ActingPermanent.Self -> []
       ActingPermanent.Matching f -> unframed [f]
 
--- Every SlotName a TriggerCondition names OUTRIGHT. Exhaustive with no
--- fallthrough, triggerConditionCounts' shape and for its reason: a condition
--- that gains a slot is named by -Werror rather than silently answering [].
+-- Every SlotName a TriggerCondition names OUTRIGHT: Parun.Engine.Children's
+-- triggerSlot, nested conditions' included.
 --
 -- What makes the answer worth having is that the reader is SINGULAR.
 -- Parun.Engine.Event matches CR 603.7's slot-named condition through
@@ -3861,88 +3797,13 @@ triggerConditionFilters triggerCondition = case triggerCondition of
 -- by filterSlotsReadSingly below rather than by this walk: clashesIn folds both
 -- over a delayed ability's condition.
 triggerConditionSlots :: TriggerCondition.TriggerCondition -> [SlotName.SlotName]
-triggerConditionSlots triggerCondition = case triggerCondition of
-  TriggerCondition.Enters _ -> []
-  TriggerCondition.StepBegins _ -> []
-  -- CR 603.8's state trigger holds a Condition, which is a pair of Quantities
-  -- and Filters -- no SlotName of its own.
-  TriggerCondition.StateIs _ -> []
-  TriggerCondition.DealsDamage _ -> []
-  TriggerCondition.IsDealtDamage _ -> []
-  TriggerCondition.PlayerIsDealtDamage _ -> []
-  TriggerCondition.PermanentsDealDamageToPlayer _ -> []
-  TriggerCondition.CreatureDealtCombatDamageToMonarch -> []
-  TriggerCondition.CreaturesDealtCombatDamageToInitiative -> []
-  TriggerCondition.PlayerTookInitiative -> []
-  TriggerCondition.SelfRevealedForMiracle -> []
-  TriggerCondition.RevealedThisWay _ -> []
-  TriggerCondition.Discards _ -> []
-  TriggerCondition.PlayerDrawsNthCard _ -> []
-  TriggerCondition.Attacks _ -> []
-  TriggerCondition.Blocks _ -> []
-  -- CR 603.7c's captured object, the one subject naming a slot.
-  TriggerCondition.Leaves t -> case LeavesTrigger.permanent t of
-    LeavingPermanent.Bound slot -> [slot]
-    _ -> []
-  TriggerCondition.LeavesZone _ -> []
-  TriggerCondition.PutIntoZone _ -> []
-  TriggerCondition.BecomesTapState _ -> []
-  TriggerCondition.TappedForMana _ -> []
-  TriggerCondition.AbilityAddsMana {} -> []
-  TriggerCondition.SelfManaAbilityResolves -> []
-  TriggerCondition.Countered _ -> []
-  TriggerCondition.DamageToPlayerPrevented _ -> []
-  TriggerCondition.SelfPreventsDamage _ -> []
-  TriggerCondition.LifeChanges _ -> []
-  TriggerCondition.CountersChange _ -> []
-  TriggerCondition.SelfBecomesClassLevel _ -> []
-  TriggerCondition.SpellCast _ -> []
-  TriggerCondition.AbilityActivated _ -> []
-  TriggerCondition.BecomesTargeted _ -> []
-  TriggerCondition.SelfHalfUnlocked _ -> []
-  TriggerCondition.RoomFullyUnlocked _ -> []
-  -- Recursive, for triggerConditionCounts' reason: a branch of an AnyOf may be
-  -- any condition, the slot-named one included.
-  TriggerCondition.AnyOf conditions -> concatMap triggerConditionSlots conditions
-  TriggerCondition.CausedBy narrowed -> triggerConditionSlots (CausedBy.condition narrowed)
-  TriggerCondition.TurnedFaceUp _ -> []
-  TriggerCondition.Transforms _ -> []
-  TriggerCondition.PermanentActs _ -> []
-  TriggerCondition.FaceDownPermanentLeavesRevealed -> []
-  TriggerCondition.PermanentBecomesDesignated _ -> []
-  TriggerCondition.AttachedCreatureMentors -> []
-  TriggerCondition.Exploits {} -> []
-  TriggerCondition.Crews _ -> []
-  TriggerCondition.PermanentSacrificed {} -> []
-  TriggerCondition.SagaFinalChapterTriggers _ -> []
-  TriggerCondition.PlayerBecomesMonarch _ -> []
-  -- CR 603.7's slot-named condition, the first of the three arms with an answer:
-  -- Ray of Command's "when you lose control of the creature" watches the
-  -- permanent its own spell targeted; CR 603.10d's self subject names no slot.
-  TriggerCondition.LosesControl subject -> case subject of
-    LostPermanent.Bound slot -> [slot]
-    LostPermanent.Self -> []
-  TriggerCondition.RoomEntered _ -> []
-  TriggerCondition.PlayerActs _ -> []
-  TriggerCondition.PlayerLosesGame _ -> []
-  TriggerCondition.PlacesSticker _ -> []
-  TriggerCondition.PlayerPlaysLand _ -> []
-  TriggerCondition.PlayerManifestsDread _ -> []
-  TriggerCondition.PlayerFacesDilemma _ -> []
-  TriggerCondition.PlayerRollsResult _ -> []
-  TriggerCondition.Visit -> []
-  TriggerCondition.ChaosEnsues -> []
-  TriggerCondition.PlayerRollsPlaneswalker _ -> []
-  TriggerCondition.SelfTurnedUpOffDeck -> []
-  TriggerCondition.SelfPlaneswalkedAwayFrom -> []
-  TriggerCondition.FlipsCoin _ -> []
-  TriggerCondition.SelfBecomesPlotted -> []
-  -- No attachment condition names a slot OUTRIGHT: an Attachment end binds one
-  -- (Parun.Engine.Event.Binding.eventBindingSlots) rather than reading one.
-  TriggerCondition.AttachmentChanges _ -> []
-  -- CR 603.7c's captured environment is what a reflexive trigger knows, but the
-  -- condition itself admits no event and names nothing.
-  TriggerCondition.Reflexive -> []
+triggerConditionSlots =
+  Const.getConst
+    . Children.triggerConditionChildren
+      Children.triggerLeaves
+        { Children.triggerSlot = \slot -> Const.Const [slot],
+          Children.triggerNested = Const.Const . triggerConditionSlots
+        }
 
 -- Every SlotName a Filter reads SINGLY: Parun.Engine.Filter.singularSlots, the
 -- classification the engine's arity lint reads too. Parun.Engine.Count answers
@@ -3962,14 +3823,9 @@ triggerConditionSlots triggerCondition = case triggerCondition of
 filterSlotsReadSingly :: Filter.Type.Filter Keyword.Keyword -> [SlotName.SlotName]
 filterSlotsReadSingly = Set.toList . Filter.singularSlots
 
--- Every Count a player effect holds: a cost change's `perEach` and per-target
--- `each`, and a free-cast grant's `amount`, the Quantities a PlayerEffect
--- carries.
+-- Every Count a player effect holds: the Quantities it carries.
 playerEffectCounts :: PlayerEffect.PlayerEffect -> [Count.Type.Count Quantity.Type.Quantity]
-playerEffectCounts playerEffect = case playerEffect of
-  PlayerEffect.ModifyCost modifier -> foldMap quantityCounts (CostModifier.perEach modifier) <> foldMap quantityCounts (PerTarget.each =<< CostModifier.perTarget modifier)
-  PlayerEffect.CastWithoutPayingManaCost grant -> foldMap quantityCounts (FreeCast.amount grant)
-  _ -> []
+playerEffectCounts = Const.getConst . Children.playerEffectChildren Children.playerEffectLeaves {Children.playerQuantity = Const.Const . quantityCounts}
 
 -- The Filters a DamagePattern carries -- its source half and its printed
 -- recipient half, the two axes of that type that ARE predicates over an object.
@@ -4150,7 +4006,7 @@ copyExceptionFilters exception = case exception of
   CopyException.GainThisAbility -> []
   -- Nothing HERE, for modificationFilters' GainAbility reason: a quoted ability
   -- is swept by grantedActivatedAbilities, grantedTriggeredAbilities and
-  -- grantedStaticAbilities, which keep its Framing (copyQuotedAbilities).
+  -- grantedStaticAbilities, which keep its Framing (copyGrants).
   CopyException.GainAbility _ -> []
 
 -- CR 208.2b's entry option. The P/T pair narrows nothing; the keywords reach a
@@ -4220,7 +4076,7 @@ entryRewriteFilters entryRewrite = case entryRewrite of
   -- arm above's sweep, and the granted keywords are the option arms' payload
   -- without the choice around it, reached the same way.
   -- The quoted abilities are swept by grantedModifications instead
-  -- (entryQuotedAbilities), for copyExceptionFilters' GainAbility reason.
+  -- (replacementGrants), for copyExceptionFilters' GainAbility reason.
   EntryRewrite.EntersWith e -> foldMap withCountersFilters (EntersWith.counters e) <> concatMap keywordFilters (Set.toList (EntersWith.keywords e))
   EntryRewrite.UnderControlOf _ -> []
   EntryRewrite.Riot -> []
@@ -5435,25 +5291,13 @@ modalFilters modal =
 -- so every corpus lint that reads a printed activated ability has to read these
 -- too.
 grantedActivatedAbilities :: Face.Face Card.Type.Card -> [ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
-grantedActivatedAbilities card =
-  Maybe.mapMaybe
-    ( \modification -> case modification of
-        Modification.GainAbility (GrantedAbility.Activated ability) -> Just ability
-        _ -> Nothing
-    )
-    (grantedModifications card)
+grantedActivatedAbilities card = [ability | GrantedAbility.Activated ability <- grantedAbilities card]
 
 -- The TRIGGERED half of the same grant, swept for the same reason: Sixth Sense's
 -- quoted "whenever this creature deals combat damage to a player" is text
 -- printed on the Aura.
 grantedTriggeredAbilities :: Face.Face Card.Type.Card -> [TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
-grantedTriggeredAbilities card =
-  Maybe.mapMaybe
-    ( \modification -> case modification of
-        Modification.GainAbility (GrantedAbility.Triggered ability) -> Just ability
-        _ -> Nothing
-    )
-    (grantedModifications card)
+grantedTriggeredAbilities card = [ability | GrantedAbility.Triggered ability <- grantedAbilities card]
 
 -- Every Filter the fifteen CR 613.11 rule-ability families carry, a printed
 -- face's (cardFilters) and a granted bundle's alike.
@@ -5498,59 +5342,25 @@ ruleAbilitiesFilters rules =
 
 -- The RULE kind of the same grant (CR 613.11), swept for the same reason.
 grantedRuleAbilities :: Face.Face Card.Type.Card -> [RuleAbilities.RuleAbilities]
-grantedRuleAbilities card =
-  Maybe.mapMaybe
-    ( \modification -> case modification of
-        Modification.GainAbility (GrantedAbility.Rules rules) -> Just rules
-        _ -> Nothing
-    )
-    (grantedModifications card)
+grantedRuleAbilities card = [ability | GrantedAbility.Rules ability <- grantedAbilities card]
 
 -- The REPLACEMENT kind of the same grant, swept for the same reason.
 grantedReplacements :: Face.Face Card.Type.Card -> [PrintedReplacement.PrintedReplacement Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))]
-grantedReplacements card =
-  Maybe.mapMaybe
-    ( \modification -> case modification of
-        Modification.GainAbility (GrantedAbility.Replacement ability) -> Just ability
-        _ -> Nothing
-    )
-    (grantedModifications card)
+grantedReplacements card = [ability | GrantedAbility.Replacement ability <- grantedAbilities card]
 
 -- The PLAYER kind of the same grant (CR 613.10), swept for the same reason.
 grantedPlayerAbilities :: Face.Face Card.Type.Card -> [PlayerStaticAbility.PlayerStaticAbility]
-grantedPlayerAbilities card =
-  Maybe.mapMaybe
-    ( \modification -> case modification of
-        Modification.GainAbility (GrantedAbility.Player ability) -> Just ability
-        _ -> Nothing
-    )
-    (grantedModifications card)
+grantedPlayerAbilities card = [ability | GrantedAbility.Player ability <- grantedAbilities card]
 
 -- The COST-REDUCTION kind of the same grant (CR 601.2f), swept for the same
 -- reason.
 grantedCostReductions :: Face.Face Card.Type.Card -> [CostReduction.CostReduction]
-grantedCostReductions card =
-  Maybe.mapMaybe
-    ( \modification -> case modification of
-        Modification.GainAbility (GrantedAbility.SelfCostReduction reduction) -> Just reduction
-        _ -> Nothing
-    )
-    (grantedModifications card)
+grantedCostReductions card = [ability | GrantedAbility.SelfCostReduction ability <- grantedAbilities card]
 
 -- The ALTERNATIVE-COST kind of the same grant (CR 118.9), swept for the same
 -- reason.
 grantedAlternativeCosts :: Face.Face Card.Type.Card -> [AlternativeCost.AlternativeCost]
-grantedAlternativeCosts card =
-  Maybe.mapMaybe
-    ( \modification -> case modification of
-        Modification.GainAbility (GrantedAbility.SelfAlternativeCost alternative) -> Just alternative
-        _ -> Nothing
-    )
-    (grantedModifications card)
-
--- CR 708.2: a face-down listing's quoted abilities, as the grant they amount to.
-listedGrants :: FaceDownCharacteristics.FaceDownCharacteristics (GrantedAbility.GrantedAbility Card.Type.Card) -> [Projection.Modification]
-listedGrants = fmap Modification.GainAbility . FaceDownCharacteristics.abilities
+grantedAlternativeCosts card = [ability | GrantedAbility.SelfAlternativeCost ability <- grantedAbilities card]
 
 -- CR 708.2: the replacement effects a face-down listing's abilities carry.
 listedReplacements :: FaceDownCharacteristics.FaceDownCharacteristics (GrantedAbility.GrantedAbility Card.Type.Card) -> [ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))]
@@ -5558,13 +5368,7 @@ listedReplacements listed = [PrintedReplacement.effect r | GrantedAbility.Replac
 
 -- The STATIC kind of the same grant, swept for the same reason.
 grantedStaticAbilities :: Face.Face Card.Type.Card -> [StaticAbility.StaticAbility (GrantedAbility.GrantedAbility Card.Type.Card)]
-grantedStaticAbilities card =
-  Maybe.mapMaybe
-    ( \modification -> case modification of
-        Modification.GainAbility (GrantedAbility.Static ability) -> Just ability
-        _ -> Nothing
-    )
-    (grantedModifications card)
+grantedStaticAbilities card = [ability | GrantedAbility.Static ability <- grantedAbilities card]
 
 -- Every modification this face carries, the shared walk the grant sweeps above
 -- index into. TWO sources, not one: a PRINTED static ability's modifications (CR
@@ -5574,12 +5378,12 @@ grantedStaticAbilities card =
 -- only the first would let it escape every lint below.
 --
 -- A THIRD source rides beside them as a GainAbility: CR 707.9a's quoted ability
--- in a copy exception (copyQuotedAbilities), text printed on this card that ends
--- up on the copy; and CR 614.1c's quoted ability in an entry clause
--- (entryQuotedAbilities).
+-- in a copy exception (copyGrants), text printed on this card that ends up on
+-- the copy; and CR 614.1c's quoted ability in an entry clause
+-- (replacementGrants).
 --
 -- Iterated, because a granted ability's own effects may store a grant in turn:
--- each round feeds the abilities just found back through the ModifyTarget walk,
+-- each round feeds the abilities just found back through abilityGrants,
 -- and it bottoms out because every round descends strictly further into one
 -- card's finite text. Seeded from printedCarrierEffects rather than
 -- cardCarrierEffects, which is what keeps this out of a loop with the two grant
@@ -5587,73 +5391,75 @@ grantedStaticAbilities card =
 grantedModifications :: Face.Face Card.Type.Card -> [Projection.Modification]
 grantedModifications card =
   let printed =
-        concatMap (Foldable.toList . StaticAbility.modifications) (Face.staticAbilities card)
-      -- The WILDCARD-free read of the one Effect arm carrying a Modification;
-      -- namedRemovals' caveat applies, a second such arm would escape this.
-      storedIn :: [Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> [Projection.Modification]
-      storedIn =
-        concatMap
-          ( concatMap
-              ( \effect -> case effect of
-                  Effect.ModifyTarget modify -> [ModifyTarget.modification modify]
-                  -- CR 708.2's listed abilities are this card's text too.
-                  -- And CR 611.2e's effects, stored as ModifyTarget's are.
-                  Effect.MoveToZone move -> foldMap (listedGrants . FaceDownState.listed) (EntryRiders.faceDown (MoveToZone.riders move)) <> Foldable.toList (EntryRiders.characteristics (MoveToZone.riders move))
-                  Effect.Create create -> foldMap (listedGrants . FaceDownState.listed) (EntryRiders.faceDown (Create.riders create))
-                  Effect.TurnFaceDown turn -> listedGrants (TurnFaceDown.characteristics turn)
-                  Effect.CreateCopy create -> copyQuotedAbilities (CreateCopy.exceptions create) <> foldMap (listedGrants . FaceDownState.listed) (EntryRiders.faceDown (CreateCopy.riders create))
-                  Effect.BecomeCopy become -> copyQuotedAbilities (BecomeCopy.exceptions become)
-                  Effect.CopyStackObject copy -> copyQuotedAbilities (CopyStackObject.exceptions copy)
-                  Effect.Replace replace -> copyQuotedAbilities (replacementCopyExceptions (Replace.effect replace)) <> entryQuotedAbilities (Replace.effect replace)
-                  _ -> []
-              )
-              . effectWithNested
+        Const.getConst
+          ( Children.faceChildren
+              Children.faceLeaves
+                { Children.faceStatic = Children.staticAbilityChildren abilityGrants,
+                  Children.faceReplacement = Children.printedReplacementChildren abilityGrants
+                }
+              card
           )
-      effectsOf modifications =
-        concatMap (Modal.allEffects . ActivatedAbility.modal) (Maybe.mapMaybe (\modification -> case modification of Modification.GainAbility (GrantedAbility.Activated a) -> Just a; _ -> Nothing) modifications)
-          <> concatMap (Modal.allEffects . TriggeredAbility.modal) (Maybe.mapMaybe (\modification -> case modification of Modification.GainAbility (GrantedAbility.Triggered t) -> Just t; _ -> Nothing) modifications)
-      -- A granted static ability's own parts are card text too, and may grant.
-      staticsIn modifications =
-        concatMap (Foldable.toList . StaticAbility.modifications) (Maybe.mapMaybe (\modification -> case modification of Modification.GainAbility (GrantedAbility.Static sa) -> Just sa; _ -> Nothing) modifications)
-      -- CR 612.6's extra text is quoted ability text on this card too.
-      withFullText modifications =
-        modifications <> [Modification.GainAbility g | Modification.HasFullText ft <- modifications, g <- FullText.alsoHas ft]
       deeper modifications =
         if null modifications
           then []
-          else
-            let expanded = withFullText modifications
-             in expanded <> deeper (storedIn (effectsOf expanded) <> staticsIn expanded)
-   in deeper (printed <> concatMap ((\r -> copyQuotedAbilities (replacementCopyExceptions r) <> entryQuotedAbilities r) . PrintedReplacement.effect) (Face.replacementEffects card) <> storedIn (printedCarrierEffects card))
+          else modifications <> deeper (concatMap (Const.getConst . Children.grantedAbilityChildren abilityGrants) (concatMap modificationAbilities modifications))
+   in deeper (printed <> concatMap effectGrants (concatMap effectWithNested (printedCarrierEffects card)))
 
--- CR 707.9a: the abilities a copy exception QUOTES, as the grant they amount to.
-copyQuotedAbilities :: [CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card)] -> [Projection.Modification]
-copyQuotedAbilities =
-  Maybe.mapMaybe
-    ( \exception -> case exception of
-        CopyException.GainAbility granted -> Just (Modification.GainAbility granted)
-        _ -> Nothing
-    )
+-- Every ability a modification grants (CR 113.3), a full text's (CR 612.6)
+-- included.
+modificationAbilities :: Projection.Modification -> [GrantedAbility.GrantedAbility Card.Type.Card]
+modificationAbilities = Const.getConst . Children.modificationChildren Children.modificationLeaves {Children.modificationAbility = \ability -> Const.Const [ability]}
 
--- CR 614.1c: the abilities an entry clause QUOTES (Degavolver's "with 'Pay 3
--- life: Regenerate this creature.'"), as the grant they amount to.
-entryQuotedAbilities :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> [Projection.Modification]
-entryQuotedAbilities replacement = case replacement of
-  ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.EntersWith e)) -> fmap Modification.GainAbility (Foldable.toList (EntersWith.abilities e))
-  _ -> []
+-- Every ability this face grants another object, the shared walk the grant
+-- sweeps above index into.
+grantedAbilities :: Face.Face Card.Type.Card -> [GrantedAbility.GrantedAbility Card.Type.Card]
+grantedAbilities = concatMap modificationAbilities . grantedModifications
 
--- The copy exceptions a replacement carries: the AsCopy payload, on either
--- event class that carries it (CR 614.1c, 614.1e).
-replacementCopyExceptions :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> [CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card)]
-replacementCopyExceptions replacement = case replacement of
-  ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.AsCopy asCopy)) -> asCopyExceptions asCopy
-  ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR _ _ _ (TurnUpRewrite.AsCopy asCopy)) -> asCopyExceptions asCopy
-  ReplacementEffect.AttachR (AttachR.MkAttachR _ (AttachRewrite.AsCopy asCopy)) -> asCopyExceptions asCopy
-  _ -> []
+-- The grant sweep's visitor for an ability record: the modifications its modes'
+-- effects store, a static ability's own (CR 613.1f) and a replacement's quoted
+-- ones.
+abilityGrants :: Children.AbilityChildren Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) (Const.Const [Projection.Modification])
+abilityGrants =
+  Children.abilityLeaves
+    { Children.abilityModal = Const.Const . concatMap effectGrants . concatMap effectWithNested . Modal.allEffects,
+      Children.abilityModification = \modification -> Const.Const [modification],
+      Children.abilityReplacement = Const.Const . replacementGrants
+    }
 
--- Every exception an AsCopy can apply, conditional or not.
-asCopyExceptions :: AsCopy.AsCopy ability effect -> [CopyException.CopyException ability]
-asCopyExceptions = foldMap CopyClause.exceptions . AsCopy.clauses
+-- The modifications one effect stores (CR 611.2, 611.2e) or quotes: a face-down
+-- listing's abilities (CR 708.2), a copy exception's (CR 707.9a), an installed
+-- replacement's.
+effectGrants :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Projection.Modification]
+effectGrants =
+  Const.getConst
+    . Children.effectChildren
+      Children.effectLeaves
+        { Children.onModification = \modification -> Const.Const [modification],
+          Children.onEntryRiders = Children.entryRidersChildren copyGrants,
+          Children.onFaceDown = Children.faceDownChildren copyGrants,
+          Children.onCopyException = Children.copyExceptionChildren copyGrants,
+          Children.onReplacement = Const.Const . replacementGrants
+        }
+
+-- The modifications a replacement quotes: an "as a copy" rewrite's exceptions
+-- (CR 707.9a) and the abilities an entering permanent gains (CR 614.1c).
+replacementGrants :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> [Projection.Modification]
+replacementGrants =
+  Const.getConst
+    . Children.replacementEffectChildren
+      Children.replacementLeaves
+        { Children.replacementCopy = Children.asCopyChildren copyGrants,
+          Children.replacementAbility = \ability -> Const.Const [Modification.GainAbility ability]
+        }
+
+-- The grant sweep's visitor for a copy or entry payload: a quoted ability, as
+-- the grant it amounts to, and a characteristic an entry sets (CR 611.2e).
+copyGrants :: Children.CopyChildren (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) (Const.Const [Projection.Modification])
+copyGrants =
+  Children.copyLeaves
+    { Children.copyAbility = \ability -> Const.Const [Modification.GainAbility ability],
+      Children.copyModification = \modification -> Const.Const [modification]
+    }
 
 -- The enchant slots this face GRANTS rather than prints: CR 613.1f layer 6's
 -- Modification.GainEnchant, which Cloudform and Gliding Licid write and CR
@@ -7480,6 +7286,7 @@ spec s registry corpus = Spec.describe s "Parun.Engine.Card" $ do
   realSplitCardSpec s registry
   splitBoxSpec s registry
   lintSpec s registry corpus
+  tempCompare s corpus
 
 -- CR 709.4 again, on a PRINTED split card rather than the invented `splitCard`
 -- fixture above.
@@ -7670,11 +7477,43 @@ carriedTrigger ability = case ability of
 
 -- Every Count a granted ability holds, whichever of CR 113.3's kinds it is.
 grantedAbilityCounts :: GrantedAbility.GrantedAbility Card.Type.Card -> [Count.Type.Count Quantity.Type.Quantity]
-grantedAbilityCounts granted = case granted of
-  GrantedAbility.Activated ability -> activatedAbilityCounts ability
-  GrantedAbility.Triggered ability -> triggeredAbilityCounts ability
-  GrantedAbility.Static ability -> staticAbilityCounts ability
-  GrantedAbility.Rules rules -> ruleAbilitiesCounts rules
+grantedAbilityCounts = Const.getConst . Children.grantedAbilityChildren abilityCounts
+oldStaticAbilityCounts :: StaticAbility.StaticAbility (GrantedAbility.GrantedAbility Card.Type.Card) -> [Count.Type.Count Quantity.Type.Quantity]
+oldStaticAbilityCounts ability =
+  concatMap conditionCounts (Maybe.maybeToList (StaticAbility.condition ability))
+    <> concatMap durationCounts (Maybe.maybeToList (StaticAbility.lingers ability))
+    <> concatMap modificationCounts (StaticAbility.modifications ability)
+
+oldActivatedAbilityCounts :: ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Count.Type.Count Quantity.Type.Quantity]
+oldActivatedAbilityCounts ability =
+  -- CR 101.1's ceiling on the X this ability's own activation announces, the
+  -- oldCardCounts treatment of Face.maximumX one type over (Blighted Nightmare).
+  concatMap quantityCounts (ActivatedAbility.maximumX ability)
+    -- CR 107.3c's defined X, the same position.
+    <> foldMap quantityCounts (ActivatedAbility.definedX ability)
+    <> foldMap conditionCounts (ActivatedAbility.condition ability)
+    -- CR 602.5's "activate only if [board condition]" rider, whose Condition is
+    -- a Count position like any other -- and the one ActivatedAbility field the
+    -- two sweeps reached through nothing until OnlyIf gave it a payload.
+    <> concatMap conditionCounts (concatMap restrictionConditions (ActivatedAbility.restrictions ability))
+    <> concatMap effectCounts (Modal.allEffects (ActivatedAbility.modal ability))
+    <> concatMap conditionCounts (modalClauseConditions (ActivatedAbility.modal ability))
+    <> concatMap quantityCounts (oldModalPayGateQuantities (ActivatedAbility.modal ability))
+
+oldTriggeredAbilityCounts :: TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Count.Type.Count Quantity.Type.Quantity]
+oldTriggeredAbilityCounts ability =
+  triggerConditionCounts (TriggeredAbility.condition ability)
+    <> foldMap conditionCounts (TriggeredAbility.intervening ability)
+    <> concatMap effectCounts (Modal.allEffects (TriggeredAbility.modal ability))
+    <> concatMap conditionCounts (modalClauseConditions (TriggeredAbility.modal ability))
+    <> concatMap quantityCounts (oldModalPayGateQuantities (TriggeredAbility.modal ability))
+
+oldGrantedAbilityCounts :: GrantedAbility.GrantedAbility Card.Type.Card -> [Count.Type.Count Quantity.Type.Quantity]
+oldGrantedAbilityCounts granted = case granted of
+  GrantedAbility.Activated ability -> oldActivatedAbilityCounts ability
+  GrantedAbility.Triggered ability -> oldTriggeredAbilityCounts ability
+  GrantedAbility.Static ability -> oldStaticAbilityCounts ability
+  GrantedAbility.Rules rules -> oldRuleAbilitiesCounts rules
   GrantedAbility.Replacement ability -> concatMap conditionCounts (Maybe.maybeToList (PrintedReplacement.condition ability))
   GrantedAbility.Player ability -> concatMap conditionCounts (Maybe.maybeToList (PlayerStaticAbility.condition ability))
   GrantedAbility.SelfCostReduction reduction ->
@@ -7683,3 +7522,324 @@ grantedAbilityCounts granted = case granted of
   GrantedAbility.SelfAlternativeCost alternative -> concatMap conditionCounts (Maybe.maybeToList (AlternativeCost.condition alternative))
   -- Carries no Count.
   GrantedAbility.SelfSpendManaAsThough _ -> []
+
+oldRuleAbilitiesCounts :: RuleAbilities.RuleAbilities -> [Count.Type.Count Quantity.Type.Quantity]
+oldRuleAbilitiesCounts rules =
+  concatMap oldCombatRestrictionCounts (RuleAbilities.combatRestrictions rules)
+    <> concatMap oldBlockPermissionCounts (RuleAbilities.blockPermissions rules)
+    <> concatMap (foldMap conditionCounts . RulePermission.while) (RuleAbilities.rulePermissions rules)
+    -- CR 508.1d's "or that it attacks if some condition is met", the same CR
+    -- 604.2 clause oldBlockPermissionCounts reads one field over (Otarian
+    -- Juggernaut counts its controller's graveyard). The requirement's SUBJECT
+    -- is an Affected, which holds a Filter but no Count.
+    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . AttackRequirement.while) (RuleAbilities.attackRequirements rules)
+    -- CR 509.1c's identically worded second reading, on the other side of the
+    -- combat phase (Seton's Desire counts its controller's graveyard, the same
+    -- threshold clause). Both of this requirement's axes are Affecteds, which
+    -- hold a Filter but no Count.
+    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . BlockRequirement.while) (RuleAbilities.blockRequirements rules)
+    -- CR 502.3's restriction under its CR 611.3a "as long as" (Static Orb counts
+    -- itself untapped). The affected set holds a Filter but no Count.
+    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . UntapRestriction.while) (RuleAbilities.untapRestrictions rules)
+    -- CR 508.1h's counted share (Sphere of Safety's "the number of enchantments
+    -- you control"); its subject is an Affected, which holds a Filter but no
+    -- Count.
+    <> concatMap (oldPerCreatureCounts . AttackCost.perAttacker) (RuleAbilities.attackCosts rules)
+    -- CR 509.1d's counted share, the same Count in the blocking carrier. A FENCE
+    -- rather than a proved line: Sphere of Safety fills the attacking one and
+    -- pins the positive assertion below, and no cost to block in `data/cards/`
+    -- writes a Counted share -- Oppressive Rays' is a literal {3}.
+    <> concatMap (oldPerCreatureCounts . BlockCost.perBlocker) (RuleAbilities.blockCosts rules)
+    -- CR 611.3a's "as long as" on either cost (Archangel of Tithes counts
+    -- itself untapped, and attacking).
+    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . AttackCost.while) (RuleAbilities.attackCosts rules)
+    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . BlockCost.while) (RuleAbilities.blockCosts rules)
+
+oldCombatRestrictionCounts :: CombatRestriction.CombatRestriction -> [Count.Type.Count Quantity.Type.Quantity]
+oldCombatRestrictionCounts restriction = case restriction of
+  CombatRestriction.CantAttack (AffectedUnless.MkAffectedUnless _ condition _ amount) -> foldMap conditionCounts condition <> foldMap quantityCounts amount
+  CombatRestriction.CantBlock (AffectedUnless.MkAffectedUnless _ condition _ amount) -> foldMap conditionCounts condition <> foldMap quantityCounts amount
+  -- The blocker Filter beside the gate holds no Count either.
+  CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy _ _ condition _) -> foldMap conditionCounts condition
+  CombatRestriction.CantBlockCreatures (CantBlockCreatures.MkCantBlockCreatures _ _ condition _) -> foldMap conditionCounts condition
+  -- The PlayerScope and the CR 506.3 kinds beside the gate hold no Count either.
+  CombatRestriction.CantAttackPlayer (CantAttackPlayer.MkCantAttackPlayer _ _ _ condition _) -> foldMap conditionCounts condition
+  -- The companion Filter beside the gate holds no Count either.
+  CombatRestriction.CantAttackAlone (AloneUnless.MkAloneUnless _ _ _ condition _) -> foldMap conditionCounts condition
+  CombatRestriction.CantBlockAlone (AloneUnless.MkAloneUnless _ _ _ condition _) -> foldMap conditionCounts condition
+  CombatRestriction.CantAttackMoreThan (AttackLimitUnless.MkAttackLimitUnless _ _ condition) -> foldMap conditionCounts condition
+  CombatRestriction.CantBlockMoreThan (LimitUnless.MkLimitUnless _ _ _ condition) -> foldMap conditionCounts condition
+
+oldBlockPermissionCounts :: BlockPermission.BlockPermission -> [Count.Type.Count Quantity.Type.Quantity]
+oldBlockPermissionCounts permission =
+  foldMap quantityCounts (BlockPermission.additional permission)
+    <> foldMap conditionCounts (BlockPermission.while permission)
+
+oldPerCreatureCounts :: PerCreature.PerCreature -> [Count.Type.Count Quantity.Type.Quantity]
+oldPerCreatureCounts perCreature = case perCreature of
+  PerCreature.Fixed _ -> []
+  PerCreature.Counted quantity -> quantityCounts quantity
+
+oldPlayerEffectCounts :: PlayerEffect.PlayerEffect -> [Count.Type.Count Quantity.Type.Quantity]
+oldPlayerEffectCounts playerEffect = case playerEffect of
+  PlayerEffect.ModifyCost modifier -> foldMap quantityCounts (CostModifier.perEach modifier) <> foldMap quantityCounts (PerTarget.each =<< CostModifier.perTarget modifier)
+  PlayerEffect.CastWithoutPayingManaCost grant -> foldMap quantityCounts (FreeCast.amount grant)
+  _ -> []
+
+oldCardCounts :: Face.Face Card.Type.Card -> [Count.Type.Count Quantity.Type.Quantity]
+oldCardCounts card =
+  concatMap quantityCounts (characteristicQuantities card)
+    -- CR 101.1's ceiling on CR 601.2b's X, which every printing states as a
+    -- per-board amount (Soul Immolation's "the greatest toughness among
+    -- creatures you control").
+    <> concatMap quantityCounts (Face.maximumX card)
+    <> concatMap (\(Power.MkPower quantity) -> quantityCounts quantity) (Maybe.maybeToList (Face.power card))
+    <> concatMap (\(Toughness.MkToughness quantity) -> quantityCounts quantity) (Maybe.maybeToList (Face.toughness card))
+    <> concatMap oldStaticAbilityCounts (Face.staticAbilities card)
+    -- CR 604.2's "as long as" clause on a printed replacement ability, the
+    -- oldStaticAbilityCounts treatment of the same clause one field over.
+    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . PrintedReplacement.condition) (Face.replacementEffects card)
+    -- CR 614.1a's appended token on a printed row, Create's recursion.
+    <> concatMap (overFaces oldCardCounts) (concatMap (replacementMintedCards . PrintedReplacement.effect) (Face.replacementEffects card))
+    <> concatMap effectCounts (Card.allEffects card)
+    <> concatMap conditionCounts (modalClauseConditions (Face.spell card))
+    <> concatMap quantityCounts (oldModalPayGateQuantities (Face.spell card))
+    <> concatMap oldActivatedAbilityCounts (Face.activatedAbilities card)
+    <> concatMap oldTriggeredAbilityCounts (Face.triggeredAbilities card)
+    <> concatMap oldTriggeredAbilityCounts (Map.elems (Face.delayedAbilities card))
+    <> concatMap (concatMap effectCounts . Modal.allEffects . DungeonRoom.ability) (Face.rooms card)
+    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . AlternativeCost.condition) (Face.alternativeCosts card)
+    -- CR 604.2's "as long as" clause on the PLAYER-facing static carrier, the
+    -- oldStaticAbilityCounts treatment of the same clause on the object-facing one,
+    -- and the PlayerEffect beside it.
+    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . PlayerStaticAbility.condition) (Face.playerAbilities card)
+    <> concatMap (oldPlayerEffectCounts . PlayerStaticAbility.effect) (Face.playerAbilities card)
+    <> concatMap (quantityCounts . CostReduction.perEach) (Face.costReductions card)
+    <> concatMap (concatMap conditionCounts . Maybe.maybeToList . CostReduction.condition) (Face.costReductions card)
+    -- CR 601.3's "cast this spell only if" rider (Illusory Angel).
+    <> concatMap (concatMap conditionCounts . castingRestrictionConditions) (Face.castingRestrictions card)
+    -- CR 601.3d's flash permission condition (Swift Reckoning).
+    <> concatMap (concatMap conditionCounts . castingPermissionConditions) (Face.castingPermissions card)
+    -- CR 113.6g's spell mastery (Exquisite Firecraft).
+    <> concatMap conditionCounts (counterabilityConditions (Face.counterability card))
+    <> oldRuleAbilitiesCounts (Projection.ruleAbilitiesOfFace card)
+
+oldModalPayGateQuantities :: Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [Quantity.Type.Quantity]
+oldModalPayGateQuantities =
+  concatMap (concatMap gateQuantities . Maybe.mapMaybe Clause.payGate . Foldable.toList . Mode.clauses)
+    . Modal.modes
+  where
+    gateQuantities gate = Maybe.maybeToList (PayGate.perEach gate) <> Maybe.maybeToList (PayGate.x gate)
+
+oldTriggerConditionSlots :: TriggerCondition.TriggerCondition -> [SlotName.SlotName]
+oldTriggerConditionSlots triggerCondition = case triggerCondition of
+  TriggerCondition.Enters _ -> []
+  TriggerCondition.StepBegins _ -> []
+  -- CR 603.8's state trigger holds a Condition, which is a pair of Quantities
+  -- and Filters -- no SlotName of its own.
+  TriggerCondition.StateIs _ -> []
+  TriggerCondition.DealsDamage _ -> []
+  TriggerCondition.IsDealtDamage _ -> []
+  TriggerCondition.PlayerIsDealtDamage _ -> []
+  TriggerCondition.PermanentsDealDamageToPlayer _ -> []
+  TriggerCondition.CreatureDealtCombatDamageToMonarch -> []
+  TriggerCondition.CreaturesDealtCombatDamageToInitiative -> []
+  TriggerCondition.PlayerTookInitiative -> []
+  TriggerCondition.SelfRevealedForMiracle -> []
+  TriggerCondition.RevealedThisWay _ -> []
+  TriggerCondition.Discards _ -> []
+  TriggerCondition.PlayerDrawsNthCard _ -> []
+  TriggerCondition.Attacks _ -> []
+  TriggerCondition.Blocks _ -> []
+  -- CR 603.7c's captured object, the one subject naming a slot.
+  TriggerCondition.Leaves t -> case LeavesTrigger.permanent t of
+    LeavingPermanent.Bound slot -> [slot]
+    _ -> []
+  TriggerCondition.LeavesZone _ -> []
+  TriggerCondition.PutIntoZone _ -> []
+  TriggerCondition.BecomesTapState _ -> []
+  TriggerCondition.TappedForMana _ -> []
+  TriggerCondition.AbilityAddsMana {} -> []
+  TriggerCondition.SelfManaAbilityResolves -> []
+  TriggerCondition.Countered _ -> []
+  TriggerCondition.DamageToPlayerPrevented _ -> []
+  TriggerCondition.SelfPreventsDamage _ -> []
+  TriggerCondition.LifeChanges _ -> []
+  TriggerCondition.CountersChange _ -> []
+  TriggerCondition.SelfBecomesClassLevel _ -> []
+  TriggerCondition.SpellCast _ -> []
+  TriggerCondition.AbilityActivated _ -> []
+  TriggerCondition.BecomesTargeted _ -> []
+  TriggerCondition.SelfHalfUnlocked _ -> []
+  TriggerCondition.RoomFullyUnlocked _ -> []
+  -- Recursive, for triggerConditionCounts' reason: a branch of an AnyOf may be
+  -- any condition, the slot-named one included.
+  TriggerCondition.AnyOf conditions -> concatMap oldTriggerConditionSlots conditions
+  TriggerCondition.CausedBy narrowed -> oldTriggerConditionSlots (CausedBy.condition narrowed)
+  TriggerCondition.TurnedFaceUp _ -> []
+  TriggerCondition.Transforms _ -> []
+  TriggerCondition.PermanentActs _ -> []
+  TriggerCondition.FaceDownPermanentLeavesRevealed -> []
+  TriggerCondition.PermanentBecomesDesignated _ -> []
+  TriggerCondition.AttachedCreatureMentors -> []
+  TriggerCondition.Exploits {} -> []
+  TriggerCondition.Crews _ -> []
+  TriggerCondition.PermanentSacrificed {} -> []
+  TriggerCondition.SagaFinalChapterTriggers _ -> []
+  TriggerCondition.PlayerBecomesMonarch _ -> []
+  -- CR 603.7's slot-named condition, the first of the three arms with an answer:
+  -- Ray of Command's "when you lose control of the creature" watches the
+  -- permanent its own spell targeted; CR 603.10d's self subject names no slot.
+  TriggerCondition.LosesControl subject -> case subject of
+    LostPermanent.Bound slot -> [slot]
+    LostPermanent.Self -> []
+  TriggerCondition.RoomEntered _ -> []
+  TriggerCondition.PlayerActs _ -> []
+  TriggerCondition.PlayerLosesGame _ -> []
+  TriggerCondition.PlacesSticker _ -> []
+  TriggerCondition.PlayerPlaysLand _ -> []
+  TriggerCondition.PlayerManifestsDread _ -> []
+  TriggerCondition.PlayerFacesDilemma _ -> []
+  TriggerCondition.PlayerRollsResult _ -> []
+  TriggerCondition.Visit -> []
+  TriggerCondition.ChaosEnsues -> []
+  TriggerCondition.PlayerRollsPlaneswalker _ -> []
+  TriggerCondition.SelfTurnedUpOffDeck -> []
+  TriggerCondition.SelfPlaneswalkedAwayFrom -> []
+  TriggerCondition.FlipsCoin _ -> []
+  TriggerCondition.SelfBecomesPlotted -> []
+  -- No attachment condition names a slot OUTRIGHT: an Attachment end binds one
+  -- (Parun.Engine.Event.Binding.eventBindingSlots) rather than reading one.
+  TriggerCondition.AttachmentChanges _ -> []
+  -- CR 603.7c's captured environment is what a reflexive trigger knows, but the
+  -- condition itself admits no event and names nothing.
+  TriggerCondition.Reflexive -> []
+
+oldOwnDeclaredTargetSlots :: Face.Face Card.Type.Card -> Set.Set SlotName.SlotName
+oldOwnDeclaredTargetSlots card =
+  Set.unions
+    ( fmap
+        withPerPlayer
+        ( Card.allTargetSlots card
+            : fmap
+              Modal.allTargetSlots
+              ( fmap ActivatedAbility.modal (Face.activatedAbilities card)
+                  <> fmap TriggeredAbility.modal (Face.triggeredAbilities card)
+                  <> fmap TriggeredAbility.modal (delayedDeclarations card)
+                  <> fmap DungeonRoom.ability (Foldable.toList (Face.rooms card))
+              )
+        )
+    )
+  where
+    withPerPlayer slots = Map.keysSet slots <> Set.fromList (fmap SlotPerPlayer.slot (Maybe.mapMaybe TargetSlot.perPlayer (Map.elems slots)))
+
+oldPrintedCarrierEffects :: Face.Face Card.Type.Card -> [Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
+oldPrintedCarrierEffects card =
+  Card.allEffects card
+    <> concatMap (Modal.allEffects . ActivatedAbility.modal) (Face.activatedAbilities card)
+    <> concatMap (Modal.allEffects . TriggeredAbility.modal) (Face.triggeredAbilities card)
+    <> concatMap (Modal.allEffects . TriggeredAbility.modal) (Map.elems (Face.delayedAbilities card))
+    -- CR 309.4c: a room ability's effects, which no other limb above reaches --
+    -- Parun.Types.Face.rooms is the fifth carrier.
+    <> concatMap (Modal.allEffects . DungeonRoom.ability) (Face.rooms card)
+    -- The effects a printed replacement ability carries, the sixth carrier: CR
+    -- 615.5's additional effect beside a prevention (DamageR.riders) and CR
+    -- 614.1c's as-enters instruction (EntryRewrite.RunEffects). Neither is a
+    -- resolution's effect at all -- one runs from Resolve.runPreventionRider and
+    -- the other from Resolve.runEntryEffects -- but both are card-authored effect
+    -- lists, which is what every lint downstream of this function is about.
+    <> concatMap (replacementPrintedEffects . PrintedReplacement.effect) (Face.replacementEffects card)
+
+oldHandActions :: Face.Face Card.Type.Card -> [[Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]]
+oldHandActions card = fmap HandAction.effects (Face.mulliganActions card <> Face.openingHandActions card)
+
+oldGrantedModifications :: Face.Face Card.Type.Card -> [Projection.Modification]
+oldGrantedModifications card =
+  let printed =
+        concatMap (Foldable.toList . StaticAbility.modifications) (Face.staticAbilities card)
+      -- The WILDCARD-free read of the one Effect arm carrying a Modification;
+      -- namedRemovals' caveat applies, a second such arm would escape this.
+      storedIn :: [Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> [Projection.Modification]
+      storedIn =
+        concatMap
+          ( concatMap
+              ( \effect -> case effect of
+                  Effect.ModifyTarget modify -> [ModifyTarget.modification modify]
+                  -- CR 708.2's listed abilities are this card's text too.
+                  -- And CR 611.2e's effects, stored as ModifyTarget's are.
+                  Effect.MoveToZone move -> foldMap (listedGrants . FaceDownState.listed) (EntryRiders.faceDown (MoveToZone.riders move)) <> Foldable.toList (EntryRiders.characteristics (MoveToZone.riders move))
+                  Effect.Create create -> foldMap (listedGrants . FaceDownState.listed) (EntryRiders.faceDown (Create.riders create))
+                  Effect.TurnFaceDown turn -> listedGrants (TurnFaceDown.characteristics turn)
+                  Effect.CreateCopy create -> copyQuotedAbilities (CreateCopy.exceptions create) <> foldMap (listedGrants . FaceDownState.listed) (EntryRiders.faceDown (CreateCopy.riders create))
+                  Effect.BecomeCopy become -> copyQuotedAbilities (BecomeCopy.exceptions become)
+                  Effect.CopyStackObject copy -> copyQuotedAbilities (CopyStackObject.exceptions copy)
+                  Effect.Replace replace -> copyQuotedAbilities (replacementCopyExceptions (Replace.effect replace)) <> entryQuotedAbilities (Replace.effect replace)
+                  _ -> []
+              )
+              . effectWithNested
+          )
+      effectsOf modifications =
+        concatMap (Modal.allEffects . ActivatedAbility.modal) (Maybe.mapMaybe (\modification -> case modification of Modification.GainAbility (GrantedAbility.Activated a) -> Just a; _ -> Nothing) modifications)
+          <> concatMap (Modal.allEffects . TriggeredAbility.modal) (Maybe.mapMaybe (\modification -> case modification of Modification.GainAbility (GrantedAbility.Triggered t) -> Just t; _ -> Nothing) modifications)
+      -- A granted static ability's own parts are card text too, and may grant.
+      staticsIn modifications =
+        concatMap (Foldable.toList . StaticAbility.modifications) (Maybe.mapMaybe (\modification -> case modification of Modification.GainAbility (GrantedAbility.Static sa) -> Just sa; _ -> Nothing) modifications)
+      -- CR 612.6's extra text is quoted ability text on this card too.
+      withFullText modifications =
+        modifications <> [Modification.GainAbility g | Modification.HasFullText ft <- modifications, g <- FullText.alsoHas ft]
+      deeper modifications =
+        if null modifications
+          then []
+          else
+            let expanded = withFullText modifications
+             in expanded <> deeper (storedIn (effectsOf expanded) <> staticsIn expanded)
+   in deeper (printed <> concatMap ((\r -> copyQuotedAbilities (replacementCopyExceptions r) <> entryQuotedAbilities r) . PrintedReplacement.effect) (Face.replacementEffects card) <> storedIn (oldPrintedCarrierEffects card))
+
+copyQuotedAbilities :: [CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card)] -> [Projection.Modification]
+copyQuotedAbilities =
+  Maybe.mapMaybe
+    ( \exception -> case exception of
+        CopyException.GainAbility granted -> Just (Modification.GainAbility granted)
+        _ -> Nothing
+    )
+
+entryQuotedAbilities :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> [Projection.Modification]
+entryQuotedAbilities replacement = case replacement of
+  ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.EntersWith e)) -> fmap Modification.GainAbility (Foldable.toList (EntersWith.abilities e))
+  _ -> []
+
+replacementCopyExceptions :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> [CopyException.CopyException (GrantedAbility.GrantedAbility Card.Type.Card)]
+replacementCopyExceptions replacement = case replacement of
+  ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.AsCopy asCopy)) -> asCopyExceptions asCopy
+  ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR _ _ _ (TurnUpRewrite.AsCopy asCopy)) -> asCopyExceptions asCopy
+  ReplacementEffect.AttachR (AttachR.MkAttachR _ (AttachRewrite.AsCopy asCopy)) -> asCopyExceptions asCopy
+  _ -> []
+
+asCopyExceptions :: AsCopy.AsCopy ability effect -> [CopyException.CopyException ability]
+asCopyExceptions = foldMap CopyClause.exceptions . AsCopy.clauses
+
+listedGrants :: FaceDownCharacteristics.FaceDownCharacteristics (GrantedAbility.GrantedAbility Card.Type.Card) -> [Projection.Modification]
+listedGrants = fmap Modification.GainAbility . FaceDownCharacteristics.abilities
+
+tempCompare :: (Monad n) => Spec.Spec IO n -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
+tempCompare s corpus = Spec.it s "TEMP old vs new collectors" $ do
+  ps <- S.allPrintings s corpus
+  let faces = concatMap (concatMap withMinted . NonEmpty.toList . Card.Type.faces . Printing.card) ps
+      diff :: (Ord a) => String -> (Face.Face Card.Type.Card -> [a]) -> (Face.Face Card.Type.Card -> [a]) -> [String]
+      diff label new old =
+        [ label <> " " <> show (Face.name f) <> " missing=" <> show (length (old f List.\ new f)) <> " added=" <> show (length (new f List.\ old f))
+        | f <- faces,
+          List.sort (new f) /= List.sort (old f)
+        ]
+      triggers f = Face.triggeredAbilities f <> Map.elems (Face.delayedAbilities f) <> delayedDeclarations f <> grantedTriggeredAbilities f
+      isGain m = case m of Modification.GainAbility _ -> True; _ -> False
+      report =
+        diff "counts" cardCounts oldCardCounts
+          <> diff "declared" (Set.toList . ownDeclaredTargetSlots) (Set.toList . oldOwnDeclaredTargetSlots)
+          <> diff "carriers" printedCarrierEffects oldPrintedCarrierEffects
+          <> diff "carriersOrder" (pure . printedCarrierEffects) (pure . oldPrintedCarrierEffects)
+          <> diff "hand" handActions oldHandActions
+          <> diff "triggerSlots" (concatMap (triggerConditionSlots . TriggeredAbility.condition) . triggers) (concatMap (oldTriggerConditionSlots . TriggeredAbility.condition) . triggers)
+          <> diff "grantAbilities" grantedAbilities ( -> [g | Modification.GainAbility g <- oldGrantedModifications f])
+          <> diff "grantOther" (filter (not . isGain) . grantedModifications) (filter (not . isGain) . oldGrantedModifications)
+  Spec.assertEqWith s "TEMP" report []

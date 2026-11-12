@@ -3229,6 +3229,18 @@ data RuleChildren f = MkRuleChildren
     ruleCounterKind :: CounterKind.CounterKind Keyword.Keyword -> f (CounterKind.CounterKind Keyword.Keyword)
   }
 
+-- | Every child of a rule left as it is: the base a walk overrides.
+ruleLeaves :: (Applicative f) => RuleChildren f
+ruleLeaves =
+  MkRuleChildren
+    { ruleAffected = pure,
+      ruleFilter = pure,
+      ruleCondition = pure,
+      ruleQuantity = pure,
+      ruleCost = pure,
+      ruleCounterKind = pure
+    }
+
 -- | A RuleAbilities' children (CR 613.11), row by row.
 ruleAbilitiesChildren :: (Applicative f) => RuleChildren f -> RuleAbilities.RuleAbilities -> f RuleAbilities.RuleAbilities
 ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions attachRestrictions attackCosts rulePermissions attackRequirements blockCosts blockPermissions blockRequirements combatRestrictions counterRestrictions crewRestrictions entryRestrictions sacrificeRestrictions targetRestrictions untapRestrictions) =
@@ -3631,6 +3643,29 @@ data CopyChildren ability effect f = MkCopyChildren
     copyListedKeyword :: Keyword.Keyword -> f Keyword.Keyword
   }
 
+-- | Every child of a copy or entry payload left as it is: the base a walk overrides.
+copyLeaves :: (Applicative f) => CopyChildren ability effect f
+copyLeaves =
+  MkCopyChildren
+    { copyFilter = pure,
+      copyQuantity = pure,
+      copyCounterKind = pure,
+      copyKeyword = pure,
+      copySubtype = pure,
+      copyColor = pure,
+      copyAbility = pure,
+      copyEffect = pure,
+      copyCondition = pure,
+      copyDuration = pure,
+      copySlot = pure,
+      copyPlayer = pure,
+      copyModification = pure,
+      copyTypeLine = pure,
+      copyPower = pure,
+      copyToughness = pure,
+      copyListedKeyword = pure
+    }
+
 -- | A copy rewrite's children (CR 707.5). Whether it enters tapped, what it
 -- copies among, who receives it and whether it is optional are left as they
 -- are.
@@ -3866,6 +3901,17 @@ data CountChildren f = MkCountChildren
     -- | The described cost a gate offers (CR 118.6), whole.
     countBasis :: CostBasis.CostBasis -> f CostBasis.CostBasis
   }
+
+-- | Every child of a gate or a counter move left as it is: the base a walk overrides.
+countLeaves :: (Applicative f) => CountChildren f
+countLeaves =
+  MkCountChildren
+    { countQuantity = pure,
+      countPlayer = pure,
+      countKind = pure,
+      countCost = pure,
+      countBasis = pure
+    }
 
 -- | A pay gate's children (CR 118.12). Its branch, its obligation and the
 -- clause it is offered at are left as they are.
