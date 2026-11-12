@@ -3431,6 +3431,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.PermanentsDiedThisTurn -> []
   Quantity.Type.DamagePreventedThisWay -> []
   Quantity.Type.SpellsCastUsingThisTurn {} -> []
+  Quantity.Type.PhasesBegunThisTurn {} -> []
   Quantity.Type.SubgamesThisMatch -> []
   Quantity.Type.DungeonsCompleted _ -> []
   Quantity.Type.CommanderCasts _ -> []

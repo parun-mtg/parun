@@ -4852,6 +4852,7 @@ quantityReads q = case q of
   Quantity.Type.PermanentsDiedThisTurn -> Set.empty
   Quantity.Type.DamagePreventedThisWay -> Set.empty
   Quantity.Type.SpellsCastUsingThisTurn _ -> Set.empty
+  Quantity.Type.PhasesBegunThisTurn _ -> Set.empty
   Quantity.Type.SubgamesThisMatch -> Set.empty
   Quantity.Type.DungeonsCompleted _ -> Set.empty
   Quantity.Type.CommanderCasts _ -> Set.empty

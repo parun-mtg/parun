@@ -1,0 +1,32 @@
+{
+  "description": "CR 603.4 Raph & Leo, Sibling Rivals do not trigger attacking for the first time in a second combat phase",
+  "note": "The twin of the scenario where they attack in the first combat phase, differing in which phase their first attack of the turn is in: Aurelia, the Warleader attacks alone and adds the second combat phase, where Raph & Leo attack. A limit counting their own attacks (Aurelia's \"for the first time each turn\") would trigger here; the combat phase's ordinal does not, so nothing goes on the stack, they stay tapped and no third combat phase follows. Bob ends at 20 - 3 - 2 = 15.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Raph & Leo, Sibling Rivals", "label": "raph", "ready": true },
+          { "card": "Aurelia, the Warleader", "label": "aurelia", "ready": true }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$aurelia"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $aurelia"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$raph"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Life": { "player": "bob", "life": 17 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 15 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Tapped": { "object": "$raph", "tapped": true } } }
+  ]
+}

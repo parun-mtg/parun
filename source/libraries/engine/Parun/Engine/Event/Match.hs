@@ -6,7 +6,6 @@
 -- reaches the loop.
 module Parun.Engine.Event.Match where
 
-import qualified Control.Monad as Monad
 import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -552,16 +551,9 @@ stepPlayers gs bearer scope own =
 -- window: CR 505.6 gives the active player priority in every main phase, and
 -- Parun.Engine.Engine.placePendingTriggers scans at every priority boundary.
 --
--- A comprehension rather than a case, so there is no fallthrough arm for a new
--- GameEvent constructor to fall into; `isMainPhase` is exhaustive over Phase.
+-- Turn.stepsBegun reads the log; `isMainPhase` is exhaustive over Phase.
 mainPhasesBegun :: GameState -> Natural
-mainPhasesBegun gs =
-  Natural.length
-    ( do
-        GameEvent.StepBegan (StepBegan.MkStepBegan phase _) <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
-        Monad.guard (isMainPhase phase)
-        pure ()
-    )
+mainPhasesBegun = Natural.length . filter isMainPhase . Turn.stepsBegun
 
 -- CR 505.1: the precombat and postcombat main phases, and no step of any other.
 isMainPhase :: Phase.Phase -> Bool

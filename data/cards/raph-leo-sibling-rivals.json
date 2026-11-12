@@ -1,0 +1,130 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Red"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "White"
+            }
+          }
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Red"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "White"
+            }
+          }
+        }
+      ],
+      "name": "Raph & Leo, Sibling Rivals",
+      "oracleText": "Whenever Raph & Leo attack, if it's the first combat phase of the turn, untap one or two target attacking creatures. After this phase, there is an additional combat phase.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "PhasesBegunThisTurn",
+                "value": {
+                  "type": "CombatPhase"
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Untap",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "creatures"
+                        }
+                      },
+                      {
+                        "type": "AddPhases",
+                        "value": [
+                          "ExtraCombat"
+                        ]
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "creatures": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 1,
+                        "most": 2
+                      }
+                    },
+                    "filter": {
+                      "type": "IsAttacking"
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Mutant",
+          "Ninja",
+          "Turtle"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

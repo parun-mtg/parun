@@ -1047,6 +1047,10 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.SpellsCastUsingThisTurn family ->
           let casts = Maybe.mapMaybe (Game.castOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
            in Just (toInteger (length (filter (\c -> (Keyword.familyOf =<< SpellWasCast.castUsing c) == Just family) casts)))
+        -- CR 500.1: how many times that step or phase has begun this turn, off
+        -- the turn's log (Turn.phasesBegun). Always a number, never Nothing, for
+        -- PermanentsDiedThisTurn's reason.
+        Quantity.PhasesBegunThisTurn selector -> Just (toInteger (Turn.phasesBegun selector gs))
         -- CR 100.6a / 730.1a: how many subgames have begun this match. Read off the
         -- stored tally and not the log, PermanentsDiedThisTurn's arm's opposite on
         -- that point: TurnRegisters.events is cleared at turn handoff and a subgame
@@ -1710,6 +1714,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.PermanentsDiedThisTurn -> False
   Quantity.DamagePreventedThisWay -> False
   Quantity.SpellsCastUsingThisTurn _ -> False
+  Quantity.PhasesBegunThisTurn _ -> False
   Quantity.SubgamesThisMatch -> False
   Quantity.DungeonsCompleted _ -> False
   Quantity.CommanderCasts _ -> False
