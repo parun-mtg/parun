@@ -27,7 +27,7 @@
                     "value": {
                       "ref": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "unmarked"
                       },
                       "regenerability": "Regenerable"
                     }
@@ -36,7 +36,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "unmarked": {
                 "filter": {
                   "type": "Not",
                   "value": {
