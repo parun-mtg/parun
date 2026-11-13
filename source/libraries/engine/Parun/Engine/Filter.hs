@@ -16,6 +16,7 @@ import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Engine.NameWords as NameWords
 import qualified Parun.Engine.Sector as Sector
+import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Engine.TextWord as TextWord
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.AbilityFacts as AbilityFacts
@@ -1908,6 +1909,7 @@ measureOf measure = case measure of
   Measure.TotalPowerAndToughness -> \view -> (+) <$> power view <*> toughness view
   Measure.ManaValue -> manaValue
   Measure.ColorCount -> Just . toInteger . Set.size . colors
+  Measure.CreatureTypeCount -> Just . toInteger . Set.size . Set.filter Subtype.Engine.isCreatureType . subtypes
   -- CR 306.5: only a planeswalker has loyalty, and CR 306.5c's counters are its
   -- loyalty on the battlefield (Drain Life's target), its toughness under
   -- Modification.LoyaltyIsToughness, as Projection.loyaltyOf answers.
@@ -3064,6 +3066,7 @@ manaValueThresholds predicate = case predicate of
     Operand.Literal n -> case Measures.measure m of
       Measure.ManaValue -> [n]
       Measure.ColorCount -> []
+      Measure.CreatureTypeCount -> []
       Measure.Loyalty -> []
       -- Reads power or toughness against the literal, so it bounds nothing.
       Measure.Power -> []

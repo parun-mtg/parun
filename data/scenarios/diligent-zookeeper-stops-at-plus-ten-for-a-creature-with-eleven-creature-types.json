@@ -1,0 +1,128 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Diligent Zookeeper",
+            "label": "keeper"
+          },
+          {
+            "card": "Pet Avengers",
+            "label": "pets"
+          },
+          {
+            "attached": "pets",
+            "card": "Angelic Destiny"
+          },
+          {
+            "attached": "pets",
+            "card": "Avatar Destiny"
+          },
+          {
+            "attached": "pets",
+            "card": "Demonic Embrace"
+          },
+          {
+            "attached": "pets",
+            "card": "Dub"
+          },
+          {
+            "attached": "pets",
+            "card": "Monk's Fist"
+          },
+          {
+            "card": "Loxodon Convert",
+            "label": "convert"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 205.3m, 613.4c: Diligent Zookeeper's bonus stops at +10/+10 for a creature with eleven creature types",
+  "note": "Pet Avengers prints six creature types and its four Auras and Monk's Fist add Angel, Avatar, Demon, Knight and Monk (CR 613.1d), eleven in all; they also give +10/+7, so it is 14/11 before the Zookeeper and 24/21 after, where an uncapped count would make it 25/22. Avatar Destiny adds nothing to power or toughness with no creature card in alice's graveyard. The three-type Loxodon Convert beside it is under the cap.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$pets",
+          "power": 24,
+          "toughness": 21
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$convert",
+          "power": 7,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

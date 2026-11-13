@@ -213,6 +213,7 @@ measure m = case m of
   Measure.TotalPowerAndToughness -> []
   Measure.ManaValue -> [Text.pack "mana value"]
   Measure.ColorCount -> []
+  Measure.CreatureTypeCount -> []
   Measure.Loyalty -> [Text.pack "loyalty"]
 
 -- | What a name or pronoun owns: "its", "Spark's".

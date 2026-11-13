@@ -4067,6 +4067,11 @@ measureReads measure = case measure of
   Measure.TotalPowerAndToughness -> Set.singleton PowerA
   Measure.ManaValue -> Set.empty
   Measure.ColorCount -> Set.singleton Colors
+  -- CR 205.3m's creature types are layer 4's (CR 613.1d). A regression fence
+  -- rather than a proved behaviour: Diligent Zookeeper reads the count in
+  -- layer 7c, where nothing writes a subtype, so answering Set.empty leaves
+  -- its scenarios green (mutated 2026-11-13).
+  Measure.CreatureTypeCount -> Set.singleton Subtypes
   -- CR 306.5c's counters are no layer's; being a planeswalker is layer 4's.
   Measure.Loyalty -> Set.singleton Types
 
