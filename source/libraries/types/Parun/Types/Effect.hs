@@ -25,6 +25,7 @@ import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChoosePlayer as ChoosePlayer
 import qualified Parun.Types.ChoosePlayerAtRandom as ChoosePlayerAtRandom
 import qualified Parun.Types.ChooseQuality as ChooseQuality
+import qualified Parun.Types.Cloak as Cloak
 import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.Connive as Connive
 import qualified Parun.Types.ControlPlayer as ControlPlayer
@@ -797,15 +798,9 @@ data Effect card ability
   | -- | CR 701.57a: the resolving controller discovers this many, the process
     -- Parun.Engine.Discover.process, then CR 701.57b's event.
     Discover Quantity.Quantity
-  | -- | CR 701.58a: the players the PlayerRef names each cloak the top card of
-    -- their own library, performed by Parun.Engine.Cloak.cloak as one procedure
-    -- (Ransom Note's "your library", Unexplained Absence's "its controller
-    -- cloaks the top card of their library").
-    --
-    -- Not implemented: a printing that has one player cloak from ANOTHER's
-    -- library, where CR 110.2a puts the permanent under the instructed player's
-    -- control rather than the library owner's (#3855).
-    Cloak PlayerRef.PlayerRef
+  | -- | CR 701.58a: the instructed players each cloak the top card of a
+    -- library, performed by Parun.Engine.Cloak.cloak as one procedure.
+    Cloak Cloak.Cloak
   | -- | CR 701.62a: the players the PlayerRef names each manifest dread,
     -- performed by Parun.Engine.ManifestDread.manifestDread as one procedure.
     ManifestDread PlayerRef.PlayerRef
