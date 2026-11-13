@@ -3535,6 +3535,7 @@ durationFilters duration =
           Duration.DuringNextUntapStepOf _ -> []
           Duration.DuringYourNextTurn -> []
           Duration.DuringThatExtraTurn -> []
+          Duration.DuringThatCombatPhase -> []
           Duration.ForAsLongAs _ -> []
           Duration.UntilEndOfCombat -> []
           Duration.UntilEndOfCombatOnYourNextTurn -> []

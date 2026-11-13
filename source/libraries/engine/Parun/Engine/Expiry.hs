@@ -194,6 +194,10 @@ arm resolving targets controller source duration gs = case duration of
   -- Nothing where no such turn is pending: the window cannot begin, so per CR
   -- 611.2b's reading above nothing is stored.
   Duration.DuringThatExtraTurn -> fmap Expiry.DuringExtraTurn (Turn.thatExtraTurn source controller gs)
+  -- CR 611.2a / 500.8: the combat phase this resolution added, named by its
+  -- place in the schedule (Turn.addedCombatPhase). Nothing where no combat
+  -- phase follows this one: the window cannot begin, so nothing is stored.
+  Duration.DuringThatCombatPhase -> fmap Expiry.DuringAddedCombatPhase (Turn.addedCombatPhase gs)
   -- BAKED, and stored baked: the condition outlives the resolution that stored
   -- it, and sweepConditional below re-reads it off the effect's
   -- SOURCE, whose bindings never held the resolution's slots. An InSlot left
@@ -308,6 +312,7 @@ perSeat duration = case duration of
   Duration.UntilEndOfYourNextTurn -> Nothing
   Duration.DuringYourNextTurn -> Nothing
   Duration.DuringThatExtraTurn -> Nothing
+  Duration.DuringThatCombatPhase -> Nothing
   Duration.ForAsLongAs _ -> Nothing
   Duration.UntilEndOfCombat -> Nothing
   Duration.UntilEndOfCombatOnYourNextTurn -> Nothing
@@ -328,10 +333,11 @@ follows :: Expiry -> Bool
 follows = (== Expiry.Perpetual)
 
 -- CR 611.2a: has this duration's window BEGUN? Every arm but DuringTurnOf,
--- DuringUntapStepOf and DuringExtraTurn states only an end, so the answer for
--- them is True from the moment the effect is stored and a sweep is the whole of
--- their life cycle. Those three name a turn or step that has not started yet,
--- and a reader that asks only whether the row was swept applies it early.
+-- DuringUntapStepOf, DuringExtraTurn and DuringAddedCombatPhase states only an
+-- end, so the answer for them is True from the moment the effect is stored and
+-- a sweep is the whole of their life cycle. Those four name a turn, step or
+-- phase that has not started yet, and a reader that asks only whether the row
+-- was swept applies it early.
 --
 -- The reading is dropAtCleanup's, one turn shifted: the window is the first turn
 -- of the named player numbered ABOVE the one the duration began on, so it is
@@ -355,6 +361,9 @@ begun gs expiry = case expiry of
   Expiry.DuringTurnOfControllerOf afterObjectTurn -> windowReached gs afterObjectTurn
   -- CR 500.7: open exactly while the extra turn it names is the one under way.
   Expiry.DuringExtraTurn stamp -> TurnRegisters.extraTurnUnderWay (GameState.turn gs) == Just stamp
+  -- CR 500.8: never open under this arm. reachCombatPhase rewrites the row to
+  -- AtEndOf as the phase it names begins, and that arm is the open one.
+  Expiry.DuringAddedCombatPhase _ -> False
   Expiry.AtCleanup -> True
   Expiry.Never -> True
   Expiry.Perpetual -> True
@@ -470,6 +479,10 @@ endsAt gs moment source expiry = case expiry of
   -- unbegun. Hygiene: `begun` alone decides whether the row applies.
   Expiry.DuringExtraTurn stamp ->
     moment == Cleanup && not (any ((== stamp) . ExtraTurn.createdAt) (GameState.extraTurns gs))
+  -- CR 611.2a / 500.8: reachCombatPhase ends or pins it as its phase is
+  -- reached, so only a row whose phase the turn never reached (CR 725.1d) is
+  -- left for the cleanup. Hygiene: `begun` never applies the row.
+  Expiry.DuringAddedCombatPhase _ -> moment == Cleanup
   -- CR 500.5a: EQUALITY on the selector -- dropAtEndOf says why.
   Expiry.AtEndOf window -> moment == EndOf window
   -- CR 500.5 / 500.5a: the first combat phase of that turn to end ends it, so an
@@ -685,6 +698,34 @@ pinAfterDeclareAttackers gs =
               Expiry.DuringTurnOf (AfterTurn.MkAfterTurn pid (AfterObjectTurn.turn afterObjectTurn))
         _ -> expiry
    in mapExpiries pin gs
+
+-- CR 611.2a / 500.8: a combat phase has been reached -- it begins, or CR
+-- 500.11 skips it whole. A "during that combat phase" row naming it
+-- (Turn.addedCombatPhase's count, read against the schedule behind this phase)
+-- becomes an ordinary "until end of combat" one (CR 500.5a) where the phase
+-- begins and ends where it is skipped: that phase never happens, and the
+-- restriction is that phase's alone (Bumi, Unleashed's 2025-10-02 ruling). A
+-- row naming more phases than are left is one whose phase is gone, and ends
+-- with it.
+--
+-- Pinned as the phase BEGINS, not read live through it, because CR 500.8 lets
+-- an effect add another combat phase behind this one while it runs, which moves
+-- the count.
+--
+-- data/scenarios/combat/cr-500-8-only-land-creatures-attack-in-bumi-unleashed-s-added-combat-phase.json
+-- proves the pin, and
+-- cr-500-8-a-skipped-added-combat-phase-takes-bumi-unleashed-s-restriction-with-it.json
+-- the skip.
+reachCombatPhase :: Bool -> GameState -> GameState
+reachCombatPhase begins gs =
+  let behind = Turn.combatPhasesIn (TurnRegisters.remaining (GameState.turn gs))
+      reach _ expiry = case expiry of
+        Expiry.DuringAddedCombatPhase named
+          | named < behind -> Just expiry
+          | named == behind && begins -> Just (Expiry.AtEndOf PhaseSelector.CombatPhase)
+          | otherwise -> Nothing
+        _ -> Just expiry
+   in editExpiries reach gs
 
 -- Is this turn the window "during its controller's next turn" names? A later
 -- turn whose active player controls the object now. Whether the creature could

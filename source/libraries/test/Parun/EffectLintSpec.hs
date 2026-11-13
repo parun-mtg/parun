@@ -125,6 +125,7 @@ import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
 import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
 import qualified Parun.Types.ExchangeValues as ExchangeValues
 import qualified Parun.Types.ExileHaunting as ExileHaunting
+import qualified Parun.Types.ExtraPhase as ExtraPhase
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.Fight as Fight
@@ -3990,10 +3991,37 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (anyFace windowOffends (Printing.card relay))) "the real Galvanic Relay is accepted"
     Spec.assertBool s (windowOffends (planted evasion)) "an evasion is rejected"
     Spec.assertBool s (windowOffends (planted pump)) "a continuous effect on an object is rejected"
+  -- CR 500.8, swept over the pool. See thatCombatPhaseOffends.
+  Spec.it s "CR 500.8 no card writes during that combat phase without adding one" $ do
+    ps <- S.allPrintings s corpus
+    let writes = (/= 0) . jsonAtoms (Text.pack "DuringThatCombatPhase") . Codec.encode (Face.Codec.codec Card.Codec.codec)
+        offenders = filter (anyFace thatCombatPhaseOffends . Printing.card) ps
+    Spec.assertBool s (any (anyFace writes . Printing.card) ps) "the pool has a card writing the duration"
+    Spec.assertEqWith s "the duration follows an added combat phase" (fmap (S.nameOf . Printing.card) offenders) []
+  -- The REJECTING direction: Bumi's restriction with no phase added.
+  Spec.it s "the lint itself catches during that combat phase with no phase added" $ do
+    bumi <- S.printingOf s registry "Bumi, Unleashed"
+    let restriction = Effect.ForbidAttack (ForbidAttack.MkForbidAttack Duration.DuringThatCombatPhase (RestrictedCreatures.Matching (Filter.Type.HasCardType CardType.Creature)) Nothing)
+        planted = (vanillaFace "Planted" instantLine) {Face.spell = Mint.oneMode (Seq.singleton restriction)}
+    Spec.assertBool s (not (anyFace thatCombatPhaseOffends (Printing.card bumi))) "the real Bumi, Unleashed is accepted"
+    Spec.assertBool s (thatCombatPhaseOffends planted) "a restriction naming no added phase is rejected"
 
 spec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 spec s registry corpus = Spec.describe s "Parun.Engine.Card" $ do
   effectLintSpec s registry corpus
+
+-- CR 500.8: Duration.DuringThatCombatPhase names the combat phase its own
+-- resolution added (Parun.Engine.Turn.addedCombatPhase reads the first one
+-- scheduled), so a face writing it with no AddPhases holding an ExtraCombat
+-- would name the turn's own combat phase, and offends. Counted against the
+-- ENCODED face for untilUsedOffends' reason.
+thatCombatPhaseOffends :: Face.Face Card.Type.Card -> Bool
+thatCombatPhaseOffends card =
+  let addsCombat effect = case effect of
+        Effect.AddPhases phases -> elem ExtraPhase.ExtraCombat phases
+        _ -> False
+   in jsonAtoms (Text.pack "DuringThatCombatPhase") (Codec.encode (Face.Codec.codec Card.Codec.codec) card) /= 0
+        && not (any addsCombat (cardAuthoredEffects card))
 
 -- CR 611.2a: a "during X's next turn" duration arms a window that
 -- Parun.Engine.Expiry.begun alone holds back until that turn. Six carriers ask
@@ -4004,7 +4032,7 @@ spec s registry corpus = Spec.describe s "Parun.Engine.Card" $ do
 windowOffends :: Face.Face Card.Type.Card -> Bool
 windowOffends card =
   let encoded = Codec.encode (Face.Codec.codec Card.Codec.codec) card
-   in sum (fmap (\tag -> jsonAtoms (Text.pack tag) encoded) ["DuringNextTurnOf", "DuringNextUntapStepOf", "DuringYourNextTurn", "DuringThatExtraTurn"]) /= begunWindows card
+   in sum (fmap (\tag -> jsonAtoms (Text.pack tag) encoded) ["DuringNextTurnOf", "DuringNextUntapStepOf", "DuringYourNextTurn", "DuringThatExtraTurn", "DuringThatCombatPhase"]) /= begunWindows card
 
 -- How many window durations this face writes on a carrier that asks
 -- Expiry.begun.
@@ -4023,6 +4051,7 @@ begunWindows card =
         Duration.DuringNextUntapStepOf _ -> True
         Duration.DuringYourNextTurn -> True
         Duration.DuringThatExtraTurn -> True
+        Duration.DuringThatCombatPhase -> True
         _ -> False
    in length (filter (maybe False window . asking) (cardAuthoredEffects card))
 

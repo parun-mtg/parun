@@ -1496,6 +1496,7 @@ durationPlayerRefs duration = case duration of
   -- CR 109.5's "you" is no reference at all.
   Duration.DuringYourNextTurn -> []
   Duration.DuringThatExtraTurn -> []
+  Duration.DuringThatCombatPhase -> []
   Duration.UntilEndOfTurn -> []
   Duration.Indefinite -> []
   Duration.Perpetual -> []
@@ -1528,6 +1529,7 @@ durationSlots duration = case duration of
   Duration.DuringNextUntapStepOf ref -> playerRefSlots ref
   Duration.DuringYourNextTurn -> Map.empty
   Duration.DuringThatExtraTurn -> Map.empty
+  Duration.DuringThatCombatPhase -> Map.empty
   Duration.ForAsLongAs condition -> conditionSlots condition
   -- A Cost reads no slot: the activation cost of an ability is not walked by
   -- modeSlots either, and CR 116.2c's price is paid outside any resolution, so
@@ -2290,6 +2292,7 @@ durationSlotsAreExhaustive duration = case duration of
   Duration.DuringNextUntapStepOf _ -> True
   Duration.DuringYourNextTurn -> True
   Duration.DuringThatExtraTurn -> True
+  Duration.DuringThatCombatPhase -> True
   Duration.ForAsLongAs condition -> conditionSlotsAreExhaustive condition
   -- durationSlots' answer: a Cost reads no slot, and its payer names at most one,
   -- so the enumeration is complete.
