@@ -67,20 +67,21 @@ data Site = MkSite
 
 -- | The command line: the substrings selecting cases (any of them; every case
 -- when none), the per-case budget in microseconds, the shuffle's seed, where
--- to write the run's 'Report', and whether to list the selected cases instead
--- of running them.
+-- to write the run's 'Report', whether to list the selected cases instead of
+-- running them, and whether to stop at the first failure.
 data Options = MkOptions
   { patterns :: [Text.Text],
     timeout :: Maybe Natural,
     seed :: Maybe Key.Type.Key,
     json :: Maybe FilePath,
-    list :: Bool
+    list :: Bool,
+    failFast :: Bool
   }
   deriving (Eq, Show)
 
 -- | The options of a command line with no flags.
 defaults :: Options
-defaults = MkOptions {patterns = [], timeout = Nothing, seed = Nothing, json = Nothing, list = False}
+defaults = MkOptions {patterns = [], timeout = Nothing, seed = Nothing, json = Nothing, list = False, failFast = False}
 
 -- | One case as it ran: its dotted path, why it failed if it did and where,
 -- and how long it took.
@@ -181,7 +182,7 @@ main collect = do
   screen <- IORef.newIORef MkScreen {counted = MkSummary {total = 0, failures = 0}, drawnAt = 0, width = 0}
   lock <- Concurrent.newMVar ()
   let write t = TextIO.putStr t >> IO.hFlush IO.stdout
-  ran <- run (Concurrent.withMVar lock . const . shown write display (Natural.length todo) started screen) (timeout options) todo
+  ran <- run (Concurrent.withMVar lock . const . shown write display (Natural.length todo) started screen) options todo
   Monad.when (live display) $ IORef.readIORef screen >>= write . erased . width
   Foldable.for_ (json options) $ \file ->
     ByteString.writeFile file . Encoding.encodeUtf8 . Common.render $ Codec.encode reportCodec MkReport {shuffled = Key.toHex s, results = ran}
@@ -196,7 +197,8 @@ flags =
     GetOpt.Option [] ["timeout"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a duration: " <> s) (\n -> Right o {timeout = Just n}) $ duration s) "DURATION") "fail a case still running after this long: seconds, or a number ending in ms, s, m or h",
     GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a seed: " <> s) (\k -> Right o {seed = Just k}) . Key.fromHex $ Text.pack s) "KEY") "the shuffle's key, 64 hexadecimal digits; drawn from the operating system when absent",
     GetOpt.Option [] ["json"] (GetOpt.ReqArg (\file o -> Right o {json = Just file}) "FILE") "write every case's name, failure, its site and nanoseconds to this file as JSON",
-    GetOpt.Option [] ["list"] (GetOpt.NoArg (\o -> Right o {list = True})) "print the names of the cases a run would select, in the order they are registered, without running them"
+    GetOpt.Option [] ["list"] (GetOpt.NoArg (\o -> Right o {list = True})) "print the names of the cases a run would select, in the order they are registered, without running them",
+    GetOpt.Option [] ["fail-fast"] (GetOpt.NoArg (\o -> Right o {failFast = True})) "start no case after the first failure; those already running finish"
   ]
 
 parseOptions :: [String] -> Either String Options
@@ -228,9 +230,9 @@ selected options c = null (patterns options) || any (\p -> Text.isInfixOf p $ na
 
 -- | Runs the cases, each under the budget if there is one, handing each to
 -- @report@ as it finishes, and answers every case as it ran, in the order they
--- finished.
-run :: (Result -> IO ()) -> Maybe Natural -> [Case] -> IO [Result]
-run report limit cases = do
+-- finished. Under 'failFast', a failure empties the queue.
+run :: (Result -> IO ()) -> Options -> [Case] -> IO [Result]
+run report options cases = do
   queue <- IORef.newIORef cases
   finished <- IORef.newIORef []
   let worker = do
@@ -241,12 +243,13 @@ run report limit cases = do
           Nothing -> pure ()
           Just c -> do
             before <- Clock.getMonotonicTimeNSec
-            outcome <- runCase limit c
+            outcome <- runCase (timeout options) c
             after <- Clock.getMonotonicTimeNSec
             let (f, w) = failed outcome
                 result = MkResult {title = name c, failure = f, site = w, nanoseconds = Word64.toNatural after - Word64.toNatural before}
             IORef.atomicModifyIORef' finished $ \rs -> (result : rs, ())
             report result
+            Monad.when (failFast options && Maybe.isJust f) $ IORef.atomicWriteIORef queue []
             worker
   workers <- Concurrent.getNumCapabilities
   dones <- Monad.replicateM workers $ do

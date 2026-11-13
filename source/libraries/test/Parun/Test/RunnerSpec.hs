@@ -1,6 +1,7 @@
 module Parun.Test.RunnerSpec where
 
 import qualified Control.Concurrent as Concurrent
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Writer as Writer
 import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
@@ -26,13 +27,15 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
     Spec.it s "reads a seed" $
       Spec.assertEq s (fmap Runner.seed $ Runner.parseOptions ["--seed", replicate 63 '0' <> "7"]) (Right (Just $ key 7))
     Spec.it s "selects every case when given nothing" $
-      Spec.assertEq s (Runner.parseOptions []) (Right Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing, Runner.list = False})
+      Spec.assertEq s (Runner.parseOptions []) (Right Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing, Runner.list = False, Runner.failFast = False})
     Spec.it s "refuses a positional argument" $
       Spec.assertEq s (Runner.parseOptions ["Engine"]) (Left "unexpected argument: Engine")
     Spec.it s "refuses a flag it does not know" $
       Spec.assertBool s (isLeft $ Runner.parseOptions ["--hide-successes"]) "accepted --hide-successes"
     Spec.it s "reads where to write the report" $
       Spec.assertEq s (fmap Runner.json $ Runner.parseOptions ["--json", "report.json"]) (Right (Just "report.json"))
+    Spec.it s "reads --fail-fast" $
+      Spec.assertEq s (fmap Runner.failFast $ Runner.parseOptions ["--fail-fast"]) (Right True)
     Spec.it s "reads --list" $
       Spec.assertEq s (fmap Runner.list $ Runner.parseOptions ["--list"]) (Right True)
     Spec.it s "refuses a seed that is not a key" $
@@ -83,7 +86,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
         Spec.it r "throws" $ ioError (userError "bang")
         Spec.it r "hangs" $ Concurrent.threadDelay 10000000
       sink <- IORef.newIORef []
-      ran <- Runner.run (failuresInto sink) (Just 10000) (Foldable.toList cases)
+      ran <- Runner.run (failuresInto sink) Runner.defaults {Runner.timeout = Just 10000} (Foldable.toList cases)
       Spec.assertEq s (Runner.summarize ran) Runner.MkSummary {Runner.total = 4, Runner.failures = 3}
       reported <- IORef.readIORef sink
       Spec.assertEq s (Seq.sort . Seq.fromList $ fmap (Text.takeWhile (/= ':')) reported) (Seq.fromList $ fmap Text.pack ["FAIL g.asserts", "FAIL g.hangs", "FAIL g.throws"])
@@ -92,7 +95,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
     Spec.it s "carries an assertion's call stack into its failure line" $ do
       cases <- collect . Spec.it r "asserts" $ Spec.assertFailure r "boom"
       sink <- IORef.newIORef []
-      _ <- Runner.run (failuresInto sink) Nothing (Foldable.toList cases)
+      _ <- Runner.run (failuresInto sink) Runner.defaults (Foldable.toList cases)
       reported <- IORef.readIORef sink
       case reported of
         [l] -> do
@@ -102,14 +105,20 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
     Spec.it s "leaves out the frames inside Parun.Spec" $ do
       cases <- collect . Spec.it r "asserts" $ Spec.assertEq r 'a' 'b'
       sink <- IORef.newIORef []
-      _ <- Runner.run (failuresInto sink) Nothing (Foldable.toList cases)
+      _ <- Runner.run (failuresInto sink) Runner.defaults (Foldable.toList cases)
       reported <- fmap (Text.replace (Text.pack "\\") (Text.pack "/")) <$> IORef.readIORef sink
       Spec.assertBool s (any (Text.isInfixOf $ Text.pack "Parun/Test/RunnerSpec.hs") reported && not (any (Text.isInfixOf $ Text.pack "Parun/Spec.hs") reported)) $ "unexpected frames: " <> show reported
+    Spec.it s "starts no case after a failure under --fail-fast" $ do
+      cases <- collect $ do
+        Spec.it r "fails" $ Spec.assertFailure r "boom"
+        Monad.forM_ [1 .. 50 :: Int] $ \i -> Spec.it r (show i) $ Concurrent.threadDelay 20000
+      ran <- Runner.run (const $ pure ()) Runner.defaults {Runner.failFast = True} (Foldable.toList cases)
+      Spec.assertBool s (any ((== Text.pack "fails") . Runner.title) ran && length ran < 51) $ "ran " <> show (length ran) <> " cases"
     Spec.it s "sites an assertion at the case's own line, and an exception nowhere" $ do
       cases <- collect $ do
         Spec.it r "asserts" $ Spec.assertEq r 'a' 'b'
         Spec.it r "throws" $ ioError (userError "bang")
-      ran <- Runner.run (const $ pure ()) Nothing (Foldable.toList cases)
+      ran <- Runner.run (const $ pure ()) Runner.defaults (Foldable.toList cases)
       let siteOf n = fmap Runner.site $ filter ((== Text.pack n) . Runner.title) ran
       case siteOf "asserts" of
         [Just w] -> Spec.assertBool s (Text.isSuffixOf (Text.pack "Parun/Test/RunnerSpec.hs") (Runner.sourceFile w) && Runner.sourceLine w > 0) $ "not this file: " <> show w
@@ -119,7 +128,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
       cases <- collect . Spec.describe r "g" $ do
         Spec.it r "quick" $ pure ()
         Spec.it r "slow" $ Concurrent.threadDelay 50000 >> Spec.assertFailure r "boom"
-      ran <- Runner.run (const $ pure ()) Nothing (Foldable.toList cases)
+      ran <- Runner.run (const $ pure ()) Runner.defaults (Foldable.toList cases)
       let named n = filter ((== Text.pack n) . Runner.title) ran
       Spec.assertEq s (fmap Runner.failure $ named "g.quick") [Nothing]
       Spec.assertBool s (all (maybe False (Text.isPrefixOf $ Text.pack "boom") . Runner.failure) (named "g.slow") && length (named "g.slow") == 1) $ "no failure: " <> show ran
@@ -128,7 +137,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
   Spec.describe s "assertEqWith" $ do
     Spec.it s "names the actual value and the expected one on lines of their own" $ do
       cases <- collect . Spec.it r "asserts" $ Spec.assertEqWith r "label" 'a' 'b'
-      ran <- Runner.run (const $ pure ()) Nothing (Foldable.toList cases)
+      ran <- Runner.run (const $ pure ()) Runner.defaults (Foldable.toList cases)
       Spec.assertEq s (fmap (fmap (Text.takeWhile (/= 'C')) . Runner.failure) ran) [Just $ Text.pack "label: expected actual == expected\n  actual:   'a'\n  expected: 'b'\n"]
 
   Spec.describe s "shown" $ do
