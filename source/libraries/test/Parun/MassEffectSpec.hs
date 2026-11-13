@@ -649,9 +649,9 @@ graspingTentaclesSpec s registry =
             (List.sort ([named "Heartstone", named "Meekstone"] <> replicate 8 (named "Swamp")))
           Spec.assertBool s (not (wasAsked responses)) "the declined may asked nothing about which card"
 
--- CR 701.17c's "from among them", which is the group read Filter.IsBound could
--- not do: a slot bound to the WHOLE batch a mill put in the graveyard, named by a
--- later clause's filter over candidates that batch does not exhaust.
+-- CR 701.17c's "from among them": a slot bound to the WHOLE batch a mill put in
+-- the graveyard, which a later clause chooses out of, its filter narrowing the
+-- batch and the rest of the graveyard never a candidate.
 --
 -- Midnight Tilling {1}{G} Instant, "Mill four cards, then you may return a
 -- permanent card from among them to your hand." (name, cost, type line and
@@ -692,19 +692,18 @@ midnightTillingSpec s registry =
                 }
             )
       named = Just . CardName.MkCardName . Text.pack
-      -- The candidates in the order the prompt offers them, which is
-      -- Resolve.graveyardCardsOf's ascending ObjectId -- and, the mill having
-      -- minted fresh ids in milling order (CR 400.7), the order the cards were
-      -- milled in. Pinned by index: an answerer that went looking for a legal
-      -- card would find one again under either reading.
+      -- The candidates in the order the prompt offers them, which is the order
+      -- the mill bound them in, the order the cards were milled in. Pinned by
+      -- index: an answerer that went looking for a legal card would find one
+      -- again under either reading.
       nth n offered = Maybe.fromMaybe (NonEmpty.head offered) (Maybe.listToMaybe (drop n (NonEmpty.toList offered)))
       -- Takes the printed "may" -- clause 1, the return; clause 0 is the mandatory
-      -- mill -- and answers the graveyard choice with the nth card offered.
+      -- mill -- and answers the choice among them with the nth card offered.
       taking :: Int -> Prompt.Prompt r -> r
       taking n p = case p of
         Prompt.ChooseOptional _ _ _ _ clause _
           | clause == ClauseIndex.MkClauseIndex 1 -> OptionalDecision.Exercises
-        Prompt.ChooseCardInGraveyard _ _ _ offered _ -> nth n offered
+        Prompt.ChooseCardFromAmong _ _ _ offered -> nth n offered
         _ -> S.identityAnswer p
       cast :: (forall r. Prompt.Prompt r -> r) -> (ObjectId.ObjectId, GameState.GameState) -> GameState.GameState
       cast answer (spellId, gs) =

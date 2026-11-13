@@ -105,30 +105,13 @@
                     "type": "MoveToZone",
                     "value": {
                       "ref": {
-                        "type": "ChosenCardInGraveyard",
+                        "type": "ChosenCardFromAmong",
                         "value": {
-                          "chooser": {
-                            "type": "TheController"
-                          },
                           "filter": {
-                            "type": "And",
-                            "value": [
-                              {
-                                "type": "IsBound",
-                                "value": "milled"
-                              },
-                              {
-                                "type": "HasCardType",
-                                "value": "Creature"
-                              }
-                            ]
+                            "type": "HasCardType",
+                            "value": "Creature"
                           },
-                          "players": {
-                            "type": "Scoped",
-                            "value": {
-                              "type": "You"
-                            }
-                          }
+                          "slot": "milled"
                         }
                       },
                       "zone": "Battlefield"

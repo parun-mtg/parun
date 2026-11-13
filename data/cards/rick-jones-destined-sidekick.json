@@ -44,39 +44,22 @@
                         "type": "MoveToZone",
                         "value": {
                           "ref": {
-                            "type": "ChosenCardInGraveyard",
+                            "type": "ChosenCardFromAmong",
                             "value": {
-                              "chooser": {
-                                "type": "TheController"
-                              },
                               "filter": {
-                                "type": "And",
+                                "type": "Or",
                                 "value": [
                                   {
-                                    "type": "IsBound",
-                                    "value": "milled"
+                                    "type": "HasSubtype",
+                                    "value": "Hero"
                                   },
                                   {
-                                    "type": "Or",
-                                    "value": [
-                                      {
-                                        "type": "HasSubtype",
-                                        "value": "Hero"
-                                      },
-                                      {
-                                        "type": "HasCardType",
-                                        "value": "Enchantment"
-                                      }
-                                    ]
+                                    "type": "HasCardType",
+                                    "value": "Enchantment"
                                   }
                                 ]
                               },
-                              "players": {
-                                "type": "Scoped",
-                                "value": {
-                                  "type": "You"
-                                }
-                              }
+                              "slot": "milled"
                             }
                           },
                           "zone": "Hand"

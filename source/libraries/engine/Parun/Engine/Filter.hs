@@ -2291,10 +2291,9 @@ matches context view predicate = case predicate of
   -- evaluation is sourced at. Vacuously False for a slot naming nothing, which
   -- is the posture the atom above takes.
   --
-  -- MEMBERSHIP, so a slot bound to a GROUP admits every one of its members: CR
-  -- 701.17c's look-back, as in Midnight Tilling's "from among them", is a question
-  -- about the whole batch a mill,
-  -- a look or a move named, and a slot naming one object is the singleton case
+  -- MEMBERSHIP, so a slot bound to a GROUP admits every one of its members: a
+  -- look-back is a question about the whole batch a mill, a look or a move
+  -- named, and a slot naming one object is the singleton case
   -- of it rather than a different question.
   --
   -- A PLAYER view asks the slot's player half, so CR 115.3's "another target"

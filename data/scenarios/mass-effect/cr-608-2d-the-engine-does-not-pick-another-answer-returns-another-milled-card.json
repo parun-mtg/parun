@@ -87,7 +87,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ChooseCardInGraveyard",
+          "prompt": "ChooseCardFromAmong",
           "with": "Goblin Piker"
         }
       }
