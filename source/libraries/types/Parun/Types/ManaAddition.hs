@@ -79,6 +79,10 @@ data ManaAddition = MkManaAddition
     -- | CR 106.6's third shape: a delayed triggered ability that triggers when
     -- this mana is spent to cast a spell (Pyromancer's Goggles), created once
     -- for each mana produced (CR 106.6a) as Parun.Types.ManaUnit.spendTrigger.
-    whenSpent :: Maybe WhenSpent.WhenSpent
+    whenSpent :: Maybe WhenSpent.WhenSpent,
+    -- | CR 608.2c / 105.4: the colours of the mana this instruction adds
+    -- become its source's chosen colours, for the "that color" a later
+    -- instruction reads (Foraging Wickermaw).
+    choosesColor :: Bool
   }
   deriving (Eq, Ord, Show)

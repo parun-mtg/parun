@@ -150,6 +150,7 @@ import qualified Parun.Types.ManaAbilityResolved as ManaAbilityResolved
 import qualified Parun.Types.ManaActivation as ManaActivation
 import qualified Parun.Types.ManaAdded as ManaAdded
 import qualified Parun.Types.ManaAddedCause as ManaAddedCause
+import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaOption as ManaOption
 import qualified Parun.Types.ManaSegment as ManaSegment
@@ -6749,6 +6750,12 @@ tapForManaWith perform window inFlight refused activator oid = do
                         -- Mana.manaSuppliesGiven counted it.
                         let activated = fmap (fmap (fmap (\u -> maybe id Mana.restrictUnit (Monad.join (access chosen)) u {ManaUnit.spendTrigger = fmap (\t -> t {SpendTrigger.controller = controller}) (ManaUnit.spendTrigger u)}))) shares
                         State.modify' (\g -> List.foldl' (\acc (recipient, units) -> Mana.addMana recipient units acc) g activated)
+                        -- CR 608.2c: the "that color" the trailing effects read,
+                        -- Resolve.Arms.Damage.addMana's write. A clause's shares
+                        -- are added as one, so its additions are not told apart:
+                        -- Parun.CardSpec keeps a choosing addition alone in its clause.
+                        Monad.when (any ManaAddition.choosesColor (Maybe.mapMaybe ManaAbility.manaProduced (Foldable.toList (Clause.effects clause)))) $
+                          State.modify' (Game.recordChoice Chosen.Colors (Game.readingAcquisition oid oid gsNow oid) (const (Just (Mana.colorsAmong (fmap ManaUnit.manaType (concatMap snd shares))))) oid)
                         bound2 <- ManaAbilityPerformer.effects perform oid controller bound1 (filter (Maybe.isNothing . ManaAbility.manaProduced) trailing)
                         pure (answers2, bound2, filled <> shares, made <> produced)
               -- CR 602.2's history, off `gs`, the board the activation began on:

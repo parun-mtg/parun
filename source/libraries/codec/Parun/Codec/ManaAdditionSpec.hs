@@ -35,7 +35,8 @@ spec s = Spec.describe s "Parun.Codec.ManaAddition" $ do
             ManaAddition.retention = ManaRetention.Ordinary,
             ManaAddition.restriction = Nothing,
             ManaAddition.rider = Nothing,
-            ManaAddition.whenSpent = Nothing
+            ManaAddition.whenSpent = Nothing,
+            ManaAddition.choosesColor = False
           }
       )
       " {\"production\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Green\"}}} "
@@ -53,7 +54,8 @@ spec s = Spec.describe s "Parun.Codec.ManaAddition" $ do
             ManaAddition.retention = ManaRetention.Ordinary,
             ManaAddition.restriction = Nothing,
             ManaAddition.rider = Nothing,
-            ManaAddition.whenSpent = Nothing
+            ManaAddition.whenSpent = Nothing,
+            ManaAddition.choosesColor = False
           }
       )
       " {\"player\":{\"type\":\"InSlot\",\"value\":\"thatPlayer\"},\"production\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Green\"}}} "
@@ -73,7 +75,8 @@ spec s = Spec.describe s "Parun.Codec.ManaAddition" $ do
             ManaAddition.retention = ManaRetention.UntilEndOfTurn,
             ManaAddition.restriction = Nothing,
             ManaAddition.rider = Nothing,
-            ManaAddition.whenSpent = Nothing
+            ManaAddition.whenSpent = Nothing,
+            ManaAddition.choosesColor = False
           }
       )
       " {\"player\":{\"type\":\"InSlot\",\"value\":\"thatPlayer\"},\"production\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Green\"}},\"retention\":\"UntilEndOfTurn\"} "
@@ -91,7 +94,8 @@ spec s = Spec.describe s "Parun.Codec.ManaAddition" $ do
             ManaAddition.retention = ManaRetention.Ordinary,
             ManaAddition.restriction = Just (ManaRestriction.onlyCasts (Filter.Or [Filter.HasCardType CardType.Artifact, Filter.HasCardType CardType.Creature])),
             ManaAddition.rider = Nothing,
-            ManaAddition.whenSpent = Nothing
+            ManaAddition.whenSpent = Nothing,
+            ManaAddition.choosesColor = False
           }
       )
       " {\"production\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Red\"}},\"restriction\":{\"casts\":{\"type\":\"Or\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Artifact\"},{\"type\":\"HasCardType\",\"value\":\"Creature\"}]}}} "
@@ -110,7 +114,8 @@ spec s = Spec.describe s "Parun.Codec.ManaAddition" $ do
             ManaAddition.retention = ManaRetention.Ordinary,
             ManaAddition.restriction = Just (ManaRestriction.none {ManaRestriction.activations = Just (Filter.And [])}),
             ManaAddition.rider = Nothing,
-            ManaAddition.whenSpent = Nothing
+            ManaAddition.whenSpent = Nothing,
+            ManaAddition.choosesColor = False
           }
       )
       " {\"production\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colorless\"}},\"restriction\":{\"activations\":{\"type\":\"And\",\"value\":[]}}} "
@@ -127,10 +132,28 @@ spec s = Spec.describe s "Parun.Codec.ManaAddition" $ do
             ManaAddition.retention = ManaRetention.Ordinary,
             ManaAddition.restriction = Nothing,
             ManaAddition.rider = Nothing,
-            ManaAddition.whenSpent = Nothing
+            ManaAddition.whenSpent = Nothing,
+            ManaAddition.choosesColor = False
           }
       )
       " {\"count\":{\"type\":\"Literal\",\"value\":2},\"player\":{\"type\":\"InSlot\",\"value\":\"chosen\"},\"production\":{\"type\":\"AnyColor\"}} "
+  -- Foraging Wickermaw's "becomes that color" reads the colour this one adds.
+  Spec.it s "MkManaAddition, a chosen colour written on the wire" $
+    Common.assertCodec
+      s
+      ManaAddition.codec
+      ( ManaAddition.MkManaAddition
+          { ManaAddition.player = PlayerRef.Relative PlayerRelation.You,
+            ManaAddition.count = Quantity.Literal 1,
+            ManaAddition.production = ManaProduction.AnyColor ColorSpread.OneColor,
+            ManaAddition.retention = ManaRetention.Ordinary,
+            ManaAddition.restriction = Nothing,
+            ManaAddition.rider = Nothing,
+            ManaAddition.whenSpent = Nothing,
+            ManaAddition.choosesColor = True
+          }
+      )
+      " {\"choosesColor\":true,\"production\":{\"type\":\"AnyColor\"}} "
   -- Pyromancer's Goggles: CR 106.6's third shape names a delayed ability.
   Spec.it s "MkManaAddition, a spend trigger written on the wire" $
     Common.assertCodec
@@ -143,7 +166,8 @@ spec s = Spec.describe s "Parun.Codec.ManaAddition" $ do
             ManaAddition.retention = ManaRetention.Ordinary,
             ManaAddition.restriction = Nothing,
             ManaAddition.rider = Nothing,
-            ManaAddition.whenSpent = Just (WhenSpent.MkWhenSpent (Filter.And []) (AbilityName.MkAbilityName (Text.pack "copy")))
+            ManaAddition.whenSpent = Just (WhenSpent.MkWhenSpent (Filter.And []) (AbilityName.MkAbilityName (Text.pack "copy"))),
+            ManaAddition.choosesColor = False
           }
       )
       " {\"production\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colorless\"}},\"whenSpent\":{\"casts\":{\"type\":\"And\",\"value\":[]},\"ability\":\"copy\"}} "

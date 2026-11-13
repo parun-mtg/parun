@@ -1402,7 +1402,8 @@ addition p =
       ManaAddition.retention = ManaRetention.Ordinary,
       ManaAddition.restriction = Nothing,
       ManaAddition.rider = Nothing,
-      ManaAddition.whenSpent = Nothing
+      ManaAddition.whenSpent = Nothing,
+      ManaAddition.choosesColor = False
     }
 
 -- | Mana an instruction adds (CR 106.1), one addition per mana symbol, and
