@@ -51,6 +51,7 @@ import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.ChosenQuality as ChosenQuality
 import qualified Parun.Types.ClassLevel as ClassLevel
+import qualified Parun.Types.Cloak as Cloak
 import qualified Parun.Types.CoinReading as CoinReading
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ColorSpread as ColorSpread
@@ -2775,14 +2776,14 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       Effect.Learn
       " {\"type\":\"Learn\"} "
   -- CR 701.58a fixes the listing and the opcode's printings say the top card, so
-  -- the payload is the bare PlayerRef -- whose library the top card comes off.
+  -- the payload is who cloaks and, where it is not their own, whose library.
   Spec.it s "Cloak" $
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.Cloak (PlayerRef.Relative PlayerRelation.You))
-      " {\"type\":\"Cloak\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
+      (Effect.Cloak (Cloak.MkCloak (PlayerRef.Relative PlayerRelation.You) Nothing))
+      " {\"type\":\"Cloak\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
   -- CR 701.62a: Manifest Dread's "manifest dread", the instructed player its
   -- payload (Unwanted Remake's "its controller manifests dread").
   Spec.it s "ManifestDread" $

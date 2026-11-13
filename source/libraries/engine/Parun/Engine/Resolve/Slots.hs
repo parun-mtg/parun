@@ -76,6 +76,7 @@ import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
+import qualified Parun.Types.Cloak as Cloak
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.Conjure as Conjure
@@ -966,8 +967,9 @@ effectPlayerRefs effect = case effect of
   Effect.Recruit -> []
   Effect.Discover {} -> []
   Effect.Learn -> []
-  -- The printing's own reference: whose library the top card comes off.
-  Effect.Cloak ref -> [ref]
+  -- The printing's own references: who cloaks, and whose library the top
+  -- card comes off where it is not their own.
+  Effect.Cloak (Cloak.MkCloak who library) -> who : Foldable.toList library
   -- CR 701.62a's: whose library the two cards come off.
   Effect.ManifestDread ref -> [ref]
   Effect.Venture {} -> []

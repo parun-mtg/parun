@@ -68,6 +68,7 @@ import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.Chosen as Chosen
+import qualified Parun.Types.Cloak as Cloak.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSlots as ControlSlots
@@ -1477,15 +1478,19 @@ recruit = Recruit.recruit
 learn :: Game () -> ObjectId -> ObjectId -> PlayerId -> Game ()
 learn settle resolving source controller = Learn.learn settle controller resolving source
 
--- CR 701.58a: the named players each cloak the top card of their library; the
--- keyword action is Parun.Engine.Cloak.cloak's, listing and all. APNAP (CR
--- 608.2f) orders the several, which is Effect.Shuffle's posture and for its
--- reason: the order is a fact about the rules rather than about PlayerId's Ord.
-cloak :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerRef -> Game ()
-cloak settle resolving source controller legal ref = do
+-- CR 701.58a: the instructed players each cloak the top card of their own
+-- library, or of each library the payload names; the keyword action is
+-- Parun.Engine.Cloak.cloak's, listing and all. APNAP (CR 608.2f) orders the
+-- several, which is Effect.Shuffle's posture and for its reason: the order is a
+-- fact about the rules rather than about PlayerId's Ord.
+cloak :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Cloak.Type.Cloak -> Game ()
+cloak settle resolving source controller legal (Cloak.Type.MkCloak who library) = do
   gs <- State.get
-  let named = Set.fromList (playerRefPlayers legal resolving source controller gs ref)
-  Monad.mapM_ (Cloak.cloak settle) (filter (`Set.member` named) (Game.apnapOrder gs))
+  let inApnapOrder ref =
+        let named = Set.fromList (playerRefPlayers legal resolving source controller gs ref)
+         in filter (`Set.member` named) (Game.apnapOrder gs)
+  Monad.forM_ (inApnapOrder who) $ \cloaker ->
+    Monad.mapM_ (Cloak.cloak settle cloaker) (maybe [cloaker] inApnapOrder library)
 
 -- CR 701.62a: the named players each manifest dread, the keyword action being
 -- Parun.Engine.ManifestDread.manifestDread's, choice and event alike. APNAP

@@ -105,6 +105,7 @@ import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.ChosenQuality as ChosenQuality
 import qualified Parun.Types.Clause as Clause
+import qualified Parun.Types.Cloak as Cloak
 import qualified Parun.Types.CoinFlipTrigger as CoinFlipTrigger
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatRestriction as CombatRestriction
@@ -1245,7 +1246,7 @@ effectChildren c effect = case effect of
   Effect.TimeTravel -> pure effect
   Effect.Recruit -> pure effect
   Effect.Discover quantity -> fmap Effect.Discover (onQuantity c quantity)
-  Effect.Cloak who -> fmap Effect.Cloak (onPlayer c who)
+  Effect.Cloak (Cloak.MkCloak who library) -> fmap Effect.Cloak (Cloak.MkCloak <$> onPlayer c who <*> traverse (onPlayer c) library)
   Effect.ManifestDread who -> fmap Effect.ManifestDread (onPlayer c who)
   Effect.Venture _ -> pure effect
   Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices players filter_ quantity permanents) ->

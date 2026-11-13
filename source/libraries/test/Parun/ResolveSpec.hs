@@ -85,6 +85,7 @@ import qualified Parun.Types.EntryBlock as EntryBlock
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
+import qualified Parun.Types.Feasibility as Feasibility
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GainControl as GainControl
 import Parun.Types.Game (Game)
@@ -1046,7 +1047,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
     let (land, bare) = S.addPermanent forest S.alice (Setup.emptyGame S.bothPlayers)
         (_, withBear) = S.addPermanent bears S.alice bare
         choosing count = Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) count Zone.Battlefield) (SlotName.MkSlotName (Text.pack "chosen")) Nothing Nothing)
-        impossible = Resolve.effectIsImpossible land land S.alice Map.empty
+        impossible = Resolve.effectIsImpossible Feasibility.AsOption land land S.alice Map.empty
     Spec.assertEqWith
       s
       "CR 608.2d one out of none is impossible, one out of one is not, and up to one is neither"
@@ -1061,7 +1062,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
     forest <- S.printingOf s registry "Forest"
     let (land, gs) = S.addPermanent forest S.alice (Setup.emptyGame S.bothPlayers)
         slot = SlotName.MkSlotName (Text.pack "chosen")
-        impossible legal = Resolve.effectIsImpossible land land S.alice legal gs (Effect.TurnFaceUp slot)
+        impossible legal = Resolve.effectIsImpossible Feasibility.AsOption land land S.alice legal gs (Effect.TurnFaceUp slot)
     Spec.assertEqWith
       s
       "CR 608.2d an empty slot is not impossible, a face-up Forest is"

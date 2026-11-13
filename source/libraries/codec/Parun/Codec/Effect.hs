@@ -37,6 +37,7 @@ import qualified Parun.Codec.ChoosePermanents as ChoosePermanents
 import qualified Parun.Codec.ChoosePlayer as ChoosePlayer
 import qualified Parun.Codec.ChoosePlayerAtRandom as ChoosePlayerAtRandom
 import qualified Parun.Codec.ChooseQuality as ChooseQuality
+import qualified Parun.Codec.Cloak as Cloak
 import qualified Parun.Codec.Conjure as Conjure
 import qualified Parun.Codec.Connive as Connive
 import qualified Parun.Codec.ControlPlayer as ControlPlayer
@@ -185,7 +186,7 @@ codec cardCodec abilityCodec =
           Arm.nullary "Recruit" Effect.Recruit,
           Arm.payload "Discover" Quantity.codec Effect.Discover (\x -> case x of Effect.Discover y -> Just y; _ -> Nothing),
           Arm.nullary "Learn" Effect.Learn,
-          Arm.payload "Cloak" PlayerRef.codec Effect.Cloak (\x -> case x of Effect.Cloak y -> Just y; _ -> Nothing),
+          Arm.payload "Cloak" Cloak.codec Effect.Cloak (\x -> case x of Effect.Cloak y -> Just y; _ -> Nothing),
           Arm.payload "ManifestDread" PlayerRef.codec Effect.ManifestDread (\x -> case x of Effect.ManifestDread y -> Just y; _ -> Nothing),
           Arm.optionalPayload "Venture" Subtype.codec Effect.Venture (\x -> case x of Effect.Venture y -> Just y; _ -> Nothing),
           Arm.nullary "ExileHandThenDraw" Effect.ExileHandThenDraw,
