@@ -3928,7 +3928,7 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.ReduceMaximumHandSize _ -> []
   -- CR 500.5 carries a ManaFilter, not a Filter: the set it names is MANA, and
   -- this traversal is about the spells a player effect names.
-  PlayerEffect.DontLoseUnspentMana _ -> []
+  PlayerEffect.DontLoseUnspentMana {} -> []
   PlayerEffect.LoseLifeForUnspentMana -> []
   PlayerEffect.MayPayLifeForMana {} -> []
   -- CR 609.4b's ManaFilter and set of types name MANA, for the same reason; its

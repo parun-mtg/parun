@@ -21,10 +21,12 @@
           "effect": {
             "type": "DontLoseUnspentMana",
             "value": {
-              "type": "OfType",
-              "value": {
-                "type": "Colored",
-                "value": "Green"
+              "mana": {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
               }
             }
           },

@@ -21,7 +21,9 @@
           "effect": {
             "type": "DontLoseUnspentMana",
             "value": {
-              "type": "Any"
+              "mana": {
+                "type": "Any"
+              }
             }
           },
           "scope": {
