@@ -40,7 +40,6 @@ import qualified Parun.Codec.GameSettings as GameSettings
 import qualified Parun.Codec.IgnoredAbility as IgnoredAbility
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.LastKnown as LastKnown
-import qualified Parun.Codec.LoggedEvent as LoggedEvent
 import qualified Parun.Codec.Mana as Mana
 import qualified Parun.Codec.ManaType as ManaType
 import qualified Parun.Codec.Object as Object
@@ -219,7 +218,6 @@ codec resolve = Fields.object $ do
   initiative <- Fields.defaulted "initiative" Nothing (Common.maybe PlayerId.codec) GameState.initiative
   daytime <- Fields.defaulted "daytime" Nothing (Common.maybe Daytime.codec) GameState.daytime
   spellsCastLastTurn <- Fields.defaulted "spellsCastLastTurn" 0 Common.natural (History.spellsCastLastTurn . GameState.history)
-  eventsLastTurn <- Fields.defaulted "eventsLastTurn" Seq.empty (Common.seq LoggedEvent.codec) (History.eventsLastTurn . GameState.history)
   castsBeforeThisTurn <- Fields.defaulted "castsBeforeThisTurn" Seq.empty (Common.seq SpellWasCast.codec) (History.castsBeforeThisTurn . GameState.history)
   damageBeforeThisTurn <- Fields.defaulted "damageBeforeThisTurn" Seq.empty (Common.seq DamageEvent.codec) (History.damageBeforeThisTurn . GameState.history)
   pastTurns <- Fields.defaulted "pastTurns" Seq.empty (Common.seq PastTurn.codec) (History.pastTurns . GameState.history)
@@ -357,7 +355,6 @@ codec resolve = Fields.object $ do
           History.MkHistory
             { History.triggeredThisGame = triggeredThisGame,
               History.spellsCastLastTurn = spellsCastLastTurn,
-              History.eventsLastTurn = eventsLastTurn,
               History.castsBeforeThisTurn = castsBeforeThisTurn,
               History.damageBeforeThisTurn = damageBeforeThisTurn,
               History.pastTurns = pastTurns,

@@ -26,7 +26,6 @@ import qualified Parun.Types.Discrepancy as Discrepancy
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.MatchScope as MatchScope
@@ -184,17 +183,15 @@ spec s registry = Spec.describe s "Ledger" $ do
     let (land, before) = S.addPermanent plains S.alice (S.landsInPlay plains 0)
         tapped = S.runPure S.identityAnswer before (Event.tap land)
         handedOff =
-          tapped
-            { GameState.turn =
-                (GameState.turn tapped)
-                  { TurnRegisters.turnNumber = TurnRegisters.turnNumber (GameState.turn tapped) + 1,
-                    TurnRegisters.events = Seq.empty
-                  },
-              GameState.history =
-                (GameState.history tapped)
-                  { History.eventsLastTurn = TurnRegisters.events (GameState.turn tapped)
-                  }
-            }
+          S.withLastTurn
+            (TurnRegisters.events (GameState.turn tapped))
+            tapped
+              { GameState.turn =
+                  (GameState.turn tapped)
+                    { TurnRegisters.turnNumber = TurnRegisters.turnNumber (GameState.turn tapped) + 1,
+                      TurnRegisters.events = Seq.empty
+                    }
+              }
         untapped = setTapped land TapState.Untapped handedOff
     Spec.assertEqWith s "the tap last turn is read" (Ledger.discrepancies before handedOff) []
     Spec.assertEqWith s "an unlogged untap this turn is named" (Ledger.discrepancies before untapped) [Discrepancy.MkTapState land TapState.Tapped TapState.Untapped]

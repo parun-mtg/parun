@@ -104,6 +104,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
 import qualified Parun.Types.HandActionPerformer as HandActionPerformer
+import qualified Parun.Types.History as History
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Key as Key
@@ -121,6 +122,7 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.Observer as Observer
+import qualified Parun.Types.PastTurn as PastTurn
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Placement as Placement
@@ -1517,6 +1519,23 @@ permanentSnapshot oid pid power =
 -- (#164), and the two-event case had to be spelled with a trailing
 -- Event.recordEvent.
 --
+-- A finished turn holding `events`, filed as the newest of History.pastTurns
+-- under the state's active player: what Engine.closeTurn leaves, for a fixture
+-- that states "last turn" (Game.turnLog) without playing one.
+withLastTurn :: Seq.Seq LoggedEvent.LoggedEvent -> GameState.GameState -> GameState.GameState
+withLastTurn events gs =
+  gs
+    { GameState.history =
+        (GameState.history gs)
+          { History.pastTurns =
+              History.pastTurns (GameState.history gs)
+                Seq.|> PastTurn.MkPastTurn
+                  { PastTurn.activePlayers = [TurnRegisters.activePlayer (GameState.turn gs)],
+                    PastTurn.events = events
+                  }
+          }
+    }
+
 -- Each event gets its OWN EventGroup, which is what a hand-built list means: the
 -- fixture states a sequence, and nothing in it says two of the events were the
 -- single event CR 704.3 or CR 608.2f describes. A test that wants simultaneity

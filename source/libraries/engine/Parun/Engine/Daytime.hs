@@ -292,7 +292,7 @@ settle record = do
 -- The count is History.spellsCastLastTurn, snapshotted at the handoff, because
 -- the event log this would otherwise be folded from is cleared there and this
 -- runs afterwards. That scalar and not the per-seat fold of
--- History.eventsLastTurn a CARD reads: rule 732.2 names exactly one player
+-- Game.turnLog WhichTurn.LastTurn a CARD reads: rule 732.2 names exactly one player
 -- where a card asks about every player, and Engine.beginTurnOf folds the scalar
 -- out of the same log with the same Game.castsPerPlayer, so the two agree about
 -- the one seat this rule is about.

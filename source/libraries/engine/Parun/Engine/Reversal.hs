@@ -185,8 +185,6 @@ withoutAnnouncement before entry closed = do
   daytime <- one GameState.daytime
   spellsCastLastTurn <- one (History.spellsCastLastTurn . GameState.history)
   -- Written only at the turn handoff, which no announcement spans.
-  eventsLastTurn <- one (History.eventsLastTurn . GameState.history)
-  -- Written only at the turn handoff, which no announcement spans.
   castsBeforeThisTurn <- one (History.castsBeforeThisTurn . GameState.history)
   -- Written only at the turn handoff, which no announcement spans.
   damageBeforeThisTurn <- one (History.damageBeforeThisTurn . GameState.history)
@@ -362,7 +360,6 @@ withoutAnnouncement before entry closed = do
           History.MkHistory
             { History.triggeredThisGame = triggeredThisGame,
               History.spellsCastLastTurn = spellsCastLastTurn,
-              History.eventsLastTurn = eventsLastTurn,
               History.castsBeforeThisTurn = castsBeforeThisTurn,
               History.damageBeforeThisTurn = damageBeforeThisTurn,
               History.pastTurns = pastTurns,

@@ -469,7 +469,7 @@ anyNumberBoard tovolar ranger wolf =
 afterOneCast :: GameState.GameState -> GameState.GameState
 afterOneCast gs =
   let cast = GameEvent.SpellCast (SpellWasCast.MkSpellWasCast S.alice S.noSource S.emptyCharacteristics (Just Zone.Hand) Nothing Set.empty)
-   in gs {GameState.history = (GameState.history gs) {History.eventsLastTurn = TurnRegisters.events (GameState.turn (S.withEvents [cast] gs))}}
+   in S.withLastTurn (TurnRegisters.events (GameState.turn (S.withEvents [cast] gs))) gs
 
 -- Names every permanent offered. Pinned rather than left to S.identityAnswer,
 -- whose fallback happens to answer the same way: the assertion is about what the

@@ -71,7 +71,6 @@ import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Generator as Generator
-import qualified Parun.Types.History as History
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.LoggedEvent as LoggedEvent
@@ -430,7 +429,7 @@ spec s registry = Spec.describe s "PlayerView" $ do
             }
     Spec.assertEqWith s "alice witnessed it" (length (PlayerView.Type.witnessed (PlayerView.viewFor S.alice gs))) 1
     Spec.assertEqWith s "bob did not" (length (PlayerView.Type.witnessed (PlayerView.viewFor S.bob gs))) 0
-    let lastTurn = placed {GameState.history = (GameState.history placed) {History.eventsLastTurn = Seq.singleton look}}
+    let lastTurn = S.withLastTurn (Seq.singleton look) placed
     Spec.assertEqWith s "bob did not, read a turn later" (length (PlayerView.Type.witnessedLastTurn (PlayerView.viewFor S.bob lastTurn))) 0
     Spec.assertEqWith s "alice witnessed it, read a turn later" (length (PlayerView.Type.witnessedLastTurn (PlayerView.viewFor S.alice lastTurn))) 1
     Spec.assertEqWith s "alice's drawing" (drawnFor S.alice gs) [Text.pack "Looked at Goblin Piker."]
