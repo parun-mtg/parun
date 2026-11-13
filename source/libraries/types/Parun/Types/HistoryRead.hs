@@ -56,6 +56,8 @@ data HistoryRead
     PlanarRolls
   | -- | Abilities that resolved (CR 608.2).
     Resolutions
+  | -- | Permanents sacrificed (CR 701.21a).
+    Sacrifices
   | -- | Mounts saddled, and creatures saddling them (CR 702.171a).
     Saddles
   | -- | Steps and phases that began (CR 500.1).

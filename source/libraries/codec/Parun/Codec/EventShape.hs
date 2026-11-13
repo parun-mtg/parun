@@ -20,7 +20,8 @@ codec =
       Arm.payload "CardArrivedIn" CardArrivedIn.codec EventShape.CardArrivedIn (\x -> case x of EventShape.CardArrivedIn y -> Just y; _ -> Nothing),
       Arm.payload "SpellCast" CastWindow.codec EventShape.SpellCast (\x -> case x of EventShape.SpellCast y -> Just y; _ -> Nothing),
       Arm.nullary "AttackerDeclared" EventShape.AttackerDeclared,
-      Arm.nullary "CountersPut" EventShape.CountersPut
+      Arm.nullary "CountersPut" EventShape.CountersPut,
+      Arm.nullary "Sacrificed" EventShape.Sacrificed
     ]
 
 tagOf :: EventShape.EventShape -> String
@@ -31,3 +32,4 @@ tagOf x = case x of
   EventShape.SpellCast {} -> "SpellCast"
   EventShape.AttackerDeclared -> "AttackerDeclared"
   EventShape.CountersPut -> "CountersPut"
+  EventShape.Sacrificed -> "Sacrificed"

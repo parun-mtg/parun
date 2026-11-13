@@ -1,0 +1,110 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "a1"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "a2"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "a3"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "a4"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "a5"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "a6"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "a7"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "a8"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "b1"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "b2"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "b3"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "b4"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "b5"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "b6"
+          },
+          {
+            "card": "Phoenix Fleet Airship",
+            "label": "b7"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Phoenix Fleet Airship is an artifact creature as long as its controller controls eight or more permanents named Phoenix Fleet Airship",
+  "final": [],
+  "note": "Alice controls eight and Bob seven: hers are artifact creatures, his are not, so the count is the controller's own and seven is short.",
+  "timeline": [
+    {
+      "check": {
+        "Types": {
+          "object": "$a1",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$b1",
+          "types": [
+            "Artifact"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

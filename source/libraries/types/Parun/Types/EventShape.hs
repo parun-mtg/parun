@@ -11,7 +11,7 @@ import qualified Parun.Types.Zone as Zone
 -- SpellCast, which names its own (Parun.Types.CastWindow).
 --
 -- Only the zone changes, GameEvent.LeftTheGame, the cast, the attacker
--- declaration and the counter placement have a shape: every other GameEvent constructor is recorded in the log with no EventShape arm, so a
+-- declaration, the counter placement and the sacrifice have a shape: every other GameEvent constructor is recorded in the log with no EventShape arm, so a
 -- count cannot fold over any of them (#162).
 --
 -- That is not the same as the log being unreadable for those events, and the
@@ -77,4 +77,8 @@ data EventShape
     -- on a creature this turn". Filter.CountersPutThisTurn asks a member that
     -- one placement's putter and kind.
     CountersPut
+  | -- | CR 701.21a / 608.2i: a permanent was sacrificed, each member the
+    -- permanent as it last existed, its controller the player who sacrificed
+    -- it (Dargo, the Shipwrecker).
+    Sacrificed
   deriving (Eq, Ord, Show)
