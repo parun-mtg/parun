@@ -1,0 +1,168 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Dose of Dawnglow",
+      "oracleText": "Return target creature card from your graveyard to the battlefield. Then if it isn't your main phase, blight 2. (Put two -1/-1 counters on a creature you control.)",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Any",
+                  "value": [
+                    {
+                      "type": "During",
+                      "value": {
+                        "scope": {
+                          "type": "PlayersTurn",
+                          "value": {
+                            "type": "Relative",
+                            "value": "AnyPlayer"
+                          }
+                        },
+                        "window": {
+                          "type": "BeginningPhase"
+                        }
+                      }
+                    },
+                    {
+                      "type": "During",
+                      "value": {
+                        "scope": {
+                          "type": "PlayersTurn",
+                          "value": {
+                            "type": "Relative",
+                            "value": "AnyPlayer"
+                          }
+                        },
+                        "window": {
+                          "type": "CombatPhase"
+                        }
+                      }
+                    },
+                    {
+                      "type": "During",
+                      "value": {
+                        "scope": {
+                          "type": "PlayersTurn",
+                          "value": {
+                            "type": "Relative",
+                            "value": "AnyPlayer"
+                          }
+                        },
+                        "window": {
+                          "type": "EndingPhase"
+                        }
+                      }
+                    },
+                    {
+                      "type": "During",
+                      "value": {
+                        "scope": {
+                          "type": "PlayersTurn",
+                          "value": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          }
+                        },
+                        "window": {
+                          "type": "Step",
+                          "value": {
+                            "type": "PrecombatMain"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "During",
+                      "value": {
+                        "scope": {
+                          "type": "PlayersTurn",
+                          "value": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          }
+                        },
+                        "window": {
+                          "type": "Step",
+                          "value": {
+                            "type": "PostcombatMain"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "effects": [
+                  {
+                    "type": "Blight",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "pool": {
+                  "type": "CardsInGraveyard",
+                  "value": {
+                    "type": "Scoped",
+                    "value": {
+                      "type": "You"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
