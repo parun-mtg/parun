@@ -10,6 +10,7 @@ import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.Copyability as Copyability
 import qualified Parun.Codec.Cost as Cost
 import qualified Parun.Codec.CostChoice as CostChoice
+import qualified Parun.Codec.DefinedX as DefinedX
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.Modal as Modal
 import qualified Parun.Codec.Quantity as Quantity
@@ -34,7 +35,7 @@ codec cardCodec abilityCodec = Fields.object $ do
   -- CR 101.1: the floor on that X, emitted only for an ability that states one.
   minimumX <- Fields.defaulted "minimumX" 0 Common.natural ActivatedAbility.minimumX
   -- CR 107.3c: emitted only for an ability whose text defines its X.
-  definedX <- Fields.defaulted "definedX" Nothing (Common.maybe Quantity.codec) ActivatedAbility.definedX
+  definedX <- Fields.defaulted "definedX" Nothing (Common.maybe DefinedX.codec) ActivatedAbility.definedX
   modal <- Fields.required "modal" (Modal.codec cardCodec abilityCodec) ActivatedAbility.modal
   -- CR 602.5: emitted only for a restricted ability, so the absence of the key
   -- is CR 117.1b's default -- no "activate only ..." rider at all.

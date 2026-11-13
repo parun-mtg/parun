@@ -1,0 +1,97 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Variable"
+              }
+            ]
+          },
+          "definedX": {
+            "choice": {
+              "type": "WithCardsNamed",
+              "value": "Caller of the Untamed"
+            },
+            "quantity": {
+              "type": "AgainstSlot",
+              "value": {
+                "quantity": {
+                  "type": "Measure",
+                  "value": "ManaValue"
+                },
+                "slot": "thatDefiningCard"
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "CreateCopy",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatDefiningCard"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Caller of the Untamed",
+      "oracleText": "Before you shuffle your deck to start the game, you may reveal this card from your deck and exile a creature card you drafted that isn't in your deck.\n{X}, {T}: Create a token that's a copy of a card you exiled with cards named Caller of the Untamed. X is the mana value of that card.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "pregameExile": {
+        "filter": {
+          "type": "HasCardType",
+          "value": "Creature"
+        }
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Elf",
+          "Shaman"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

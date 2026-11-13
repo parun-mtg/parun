@@ -175,6 +175,7 @@ import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
+import qualified Parun.Types.DefinedX as DefinedX
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Destroy as Destroy
@@ -2657,7 +2658,8 @@ activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices
     <*> traverse (fmap CostChoice.MkCostChoice . traverse (abilityCost c) . CostChoice.unwrap) costChoices
     <*> traverse (abilityQuantity c) maximumX
     <*> pure minimumX
-    <*> traverse (abilityQuantity c) definedX
+    -- CR 607.2a's pile is a relation on the board, named by no slot.
+    <*> traverse (\(DefinedX.MkDefinedX quantity choice) -> fmap (`DefinedX.MkDefinedX` choice) (abilityQuantity c quantity)) definedX
     <*> abilityModal c modal
     <*> traverse (abilityRestriction c) restrictions
     <*> pure activator

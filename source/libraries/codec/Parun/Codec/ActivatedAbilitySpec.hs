@@ -19,6 +19,7 @@ import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.DefinedX as DefinedX
 import qualified Parun.Types.DuringPhase as DuringPhase
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Equip as Equip
@@ -248,7 +249,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           []
           []
           0
-          (Just (Quantity.Literal 2))
+          (Just (DefinedX.MkDefinedX (Quantity.Literal 2) Nothing))
           (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
           []
           (Activator.Related PlayerRelation.You)
@@ -257,4 +258,4 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Copyability.Copyable
       )
-      " {\"cost\":{\"mana\":null},\"definedX\":{\"type\":\"Literal\",\"value\":2},\"modal\":{\"modes\":[{}]}} "
+      " {\"cost\":{\"mana\":null},\"definedX\":{\"quantity\":{\"type\":\"Literal\",\"value\":2}},\"modal\":{\"modes\":[{}]}} "

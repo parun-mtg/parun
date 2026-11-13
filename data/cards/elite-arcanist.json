@@ -16,14 +16,16 @@
             ]
           },
           "definedX": {
-            "type": "AgainstExiledPile",
-            "value": {
-              "pile": {
-                "type": "OwnAbilities"
-              },
-              "quantity": {
-                "type": "Measure",
-                "value": "ManaValue"
+            "quantity": {
+              "type": "AgainstExiledPile",
+              "value": {
+                "pile": {
+                  "type": "OwnAbilities"
+                },
+                "quantity": {
+                  "type": "Measure",
+                  "value": "ManaValue"
+                }
               }
             }
           },
