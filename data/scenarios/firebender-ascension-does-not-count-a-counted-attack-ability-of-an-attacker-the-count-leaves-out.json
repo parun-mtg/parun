@@ -1,0 +1,19 @@
+{
+  "description": "CR 508.3c: a \"whenever you attack with one or more Birds\" ability of an attacking creature that is no Bird is not caused by that creature attacking, so Firebender Ascension gets no quest counter",
+  "note": "Hermes, Overseer of Elpis, an Elder Wizard, attacks beside Storm Crow. Hermes' ability triggers for the Crow's attack, not its own. docs/decisions.md, \"Which abilities a creature attacking causes to trigger\".",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Firebender Ascension", "label": "ascension"}, {"card": "Hermes, Overseer of Elpis", "label": "hermes", "ready": true}, {"card": "Storm Crow", "label": "crow", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$hermes", "$crow"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $hermes"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseScry", "with": [["Island", "Island"], []]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$ascension", "kind": {"type": "Named", "value": "quest"}, "count": 0}}}
+  ]
+}

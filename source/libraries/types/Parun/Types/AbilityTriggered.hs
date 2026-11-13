@@ -1,5 +1,6 @@
 module Parun.Types.AbilityTriggered where
 
+import qualified Data.Set as Set
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.ObjectId as ObjectId
@@ -30,8 +31,8 @@ data AbilityTriggered = MkAbilityTriggered
     -- Parun.Engine.Engine.reactions reserved as it triggered; Nothing for a
     -- record that is only a "triggers only once" key.
     stackObject :: Maybe ObjectId.ObjectId,
-    -- | CR 508.3a: the creature whose declaration as an attacker was the
-    -- trigger event; Nothing for every other event.
-    attacker :: Maybe ObjectId.ObjectId
+    -- | CR 508.3: the creatures whose attacking was the trigger event; empty
+    -- for every other event.
+    attackers :: Set.Set ObjectId.ObjectId
   }
   deriving (Eq, Ord, Show)

@@ -12679,7 +12679,7 @@ instructionRecord controller src =
                 AbilityTriggered.controller = controller,
                 AbilityTriggered.ability = ability,
                 AbilityTriggered.stackObject = Nothing,
-                AbilityTriggered.attacker = Nothing
+                AbilityTriggered.attackers = Set.empty
               }
         TriggerLimit.OncePerTurn SpentOn.Triggering -> Nothing
         TriggerLimit.Unlimited -> Nothing
