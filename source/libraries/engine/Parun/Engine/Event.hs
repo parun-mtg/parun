@@ -8638,7 +8638,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                     -- cast it (`under`, CR 110.2b), what Myojin of Night's Reach's
                     -- and Nine-Lives Familiar's CR 614.1c rewrites ask of the
                     -- permanent. `paidCosts`' gate; a controller who isn't the
-                    -- caster is the view's to answer (Object.castBy).
+                    -- caster is the filter's to answer (Holder.Caster).
                     Object.castFrom = carriedFrom,
                     Object.castBy = carriedBy,
                     -- CR 400.7d a sixth time, and CR 702.174b is the ability that

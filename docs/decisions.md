@@ -1801,6 +1801,28 @@ Entries are ordered by the first rule each cites.
   `mirrormind-crown-s-copies-of-a-legendary-creature-stay-legendary-under-multiversal-incursion`.
 - **Issue**: #7109.
 
+## Which creatures Twilight Diviner's "they" are in a batch only partly from a graveyard
+
+- **Question**: "Whenever one or more other creatures you control enter, if they
+  entered or were cast from a graveyard, create a token that's a copy of one of
+  them." When one event puts a creature onto the battlefield from a graveyard
+  beside one from elsewhere, does the ability trigger, and which is "one of
+  them"?
+- **Rules**: CR 603.2c, 603.4, 603.6a; CR of 2026-11-06. No ruling on the card
+  picks one (Scryfall, 2026-11-13).
+- **Decision**: It triggers, and "they" are the graveyard creatures alone: the
+  other entrant is no candidate for the copy.
+- **Rejected**: Not triggering unless every entrant qualifies, the stricter
+  reading of "they", which Celes, Rune Knight's "if one or more of them"
+  supports by contrast; it lost because the condition would then be a fact
+  about the event, where "one of them" reads it as saying which creatures.
+  Triggering with every entrant a candidate, which copies a creature the
+  condition does not describe.
+- **Site**: the trigger's filter in `data/cards/twilight-diviner.json`, proved on
+  Ecological Appreciation by the scenario
+  `twilight-diviner-copies-the-creature-found-in-a-graveyard-beside-one-found-in-a-library`.
+- **Issue**: #7151, #7177.
+
 ## Whether a token creation that creates nothing spends Mirrormind Crown's first time
 
 - **Question**: Under Worms of the Earth, Cackling Counterpart would create a

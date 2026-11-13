@@ -99,6 +99,7 @@ blackCreature =
       -- the WasCastFrom cases below build their own view rather than reuse this
       -- one -- and here the field is the Nothing every uncast object carries.
       Filter.castFrom = Nothing,
+      Filter.castBy = Nothing,
       -- CR 115.1: a permanent targets nothing; the Targets cases below build a
       -- stack view of their own.
       Filter.targets = Set.empty,
@@ -197,6 +198,7 @@ devoidBigCreature =
       Filter.owner = Nothing,
       Filter.zone = Nothing,
       Filter.castFrom = Nothing,
+      Filter.castBy = Nothing,
       Filter.targets = Set.empty,
       Filter.targetViews = Map.empty,
       Filter.targetCount = 0,

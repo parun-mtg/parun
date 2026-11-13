@@ -168,6 +168,7 @@ viewOfCardLapsed lapsed face =
           -- CR 601.2a: a printed FACE was never cast, so WasCastFrom is vacuously
           -- False against it -- `zone` above's reason.
           Filter.castFrom = Nothing,
+          Filter.castBy = Nothing,
           -- CR 115.1: a printed face is on no stack and targets nothing.
           Filter.targets = Set.empty,
           Filter.targetViews = Map.empty,
@@ -470,11 +471,11 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- squared: no projection carries a zone, and CR 400.7 leaves the spell no
       -- memory of the one it came from either, so Parun.Engine.Cast's two stamps
       -- are the only place the answer exists. Nothing for an id naming nothing
-      -- and for every object that was never cast, and for a permanent whose
-      -- controller isn't who cast it, Filter.WasCastFrom naming no caster.
-      Filter.castFrom = do
-        obj <- Game.lookupObject oid gs
-        if maybe True (\caster -> controller == Just caster) (Object.castBy obj) then Object.castFrom obj else Nothing,
+      -- and for every object that was never cast.
+      Filter.castFrom = Object.castFrom =<< Game.lookupObject oid gs,
+      -- CR 400.7d off the OBJECT beside it: the caster is a second stamp, which
+      -- a controller CR 616.1 rewrote on entry does not move (Gather Specimens).
+      Filter.castBy = Object.castBy =<< Game.lookupObject oid gs,
       -- CR 115.1 off the OBJECT's bindings, live: CR 601.2c fixed the targets and
       -- CR 115.7 can move them, so nothing here is a stamp. Empty for an id
       -- naming nothing and for everything off the stack.

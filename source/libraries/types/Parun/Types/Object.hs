@@ -807,7 +807,7 @@ data Object = MkObject
     castFrom :: Maybe Zone.Zone,
     -- | CR 400.7d / 601.2a: who cast the spell this permanent was, written by
     -- that same carry. Nothing for every other object, a spell's caster being
-    -- its enteredUnder.
+    -- its enteredUnder. Read by Parun.Engine.Filter's Holder.Caster.
     castBy :: Maybe PlayerId.PlayerId,
     -- | CR 601.2b: the keyword ability that offered the cost this SPELL was cast
     -- for -- Parun.Types.CandidateCost's tag, stamped by Parun.Engine.Cast onto the

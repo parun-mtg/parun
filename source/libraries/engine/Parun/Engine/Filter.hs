@@ -209,6 +209,10 @@ data View = MkView
     -- ability on the stack -- and for everything with no OBJECT behind it at all,
     -- so WasCastFrom is vacuously False there, `zone` above's posture.
     castFrom :: Maybe Zone.Zone,
+    -- CR 400.7d / 601.2a: who cast the spell the candidate permanent was -- what
+    -- Holder.Caster reads, off Parun.Types.Object.castBy. Nothing wherever
+    -- `castFrom` above is, and for a spell still on the stack.
+    castBy :: Maybe PlayerId.PlayerId,
     -- CR 115.1: what the candidate TARGETS, for a spell or ability on the stack
     -- -- the recipients CR 601.2c (602.2b, 603.3d) chose, read live off the
     -- object's target-slot bindings by Parun.Engine.Projection.View.targetsOfStackObject
@@ -957,6 +961,7 @@ playerView pid =
       zone = Nothing,
       -- CR 601.2a casts an OBJECT; a player was never cast either.
       castFrom = Nothing,
+      castBy = Nothing,
       -- CR 115.1: a player is never on the stack, so targets nothing.
       targets = Set.empty,
       targetViews = Map.empty,
@@ -1948,6 +1953,7 @@ heldBy :: Holder.Holder -> View -> Maybe PlayerId.PlayerId
 heldBy holder view = case holder of
   Holder.Controller -> controller view
   Holder.Owner -> owner view
+  Holder.Caster -> castBy view
 
 -- CR 105.2 / 205.3m / 709.4a: Filter.Shares' reading of each pair, as the test
 -- of a candidate against the anchored object's values, or against each member's
@@ -1984,6 +1990,7 @@ sharesAnchored trait anchor = case anchor of
     Trait.Sector -> Nothing
     Trait.CardType _ -> Nothing
   Anchor.Bound (Just Holder.Owner) _ -> Nothing
+  Anchor.Bound (Just Holder.Caster) _ -> Nothing
   Anchor.Bound Nothing slot -> case trait of
     -- A slot naming nothing leaves the bound side empty.
     Trait.Name -> Just (\context view -> meets (names view) (Map.findWithDefault Set.empty slot (slotNames context)))

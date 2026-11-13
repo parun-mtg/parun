@@ -1424,6 +1424,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- CR 601.2a: a snapshot records characteristics and no zone at all, so it
       -- cannot say where a cast came from either -- `zone` above's reason.
       Filter.castFrom = Nothing,
+      Filter.castBy = Nothing,
       -- CR 115.1: a snapshot is of an object that has left the stack or never
       -- was on it, and records no announcement -- `zone` above's reason.
       Filter.targets = Set.empty,

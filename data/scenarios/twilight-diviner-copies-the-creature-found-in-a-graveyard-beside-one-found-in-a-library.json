@@ -21,9 +21,11 @@
         ],
         "hand": [
           {
-            "card": "Synthetic Mixed Return",
-            "label": "return"
-          },
+            "card": "Ecological Appreciation",
+            "label": "appreciation"
+          }
+        ],
+        "library": [
           {
             "card": "Goblin Piker",
             "label": "piker"
@@ -31,29 +33,25 @@
           {
             "card": "Hill Giant",
             "label": "giant"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
           }
         ],
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
-        "manaPool": "W",
+        "manaPool": "GGGGGGG",
         "name": "alice"
       },
       {
@@ -82,16 +80,14 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "Twilight Diviner copies the creature returned from a graveyard beside one put from hand",
-  "note": "Synthetic Mixed Return puts a graveyard card and a hand card onto the battlefield together, a batch no printed card builds. The Diviner asks nothing, the Piker from hand being no candidate, and copies the Bears; no trigger at all would leave one Bears.",
+  "description": "Twilight Diviner copies the creature found in a graveyard beside one found in a library",
+  "note": "docs/decisions.md, \"Which creatures Twilight Diviner's \\\"they\\\" are in a batch only partly from a graveyard\". Ecological Appreciation puts a graveyard card and a library card onto the battlefield in one event. The Diviner asks nothing, the Piker from the library being no candidate, and copies the Bears; no trigger at all would leave one Bears.",
   "timeline": [
     {
       "do": {
         "Cast": {
-          "object": "$return",
-          "targets": [
-            "$bears"
-          ]
+          "object": "$appreciation",
+          "x": 4
         }
       },
       "player": "alice",
@@ -107,8 +103,49 @@
     {
       "do": {
         "Answer": {
-          "prompt": "ChooseCardInHand",
-          "with": "$piker"
+          "prompt": "Search",
+          "with": [
+            "$piker",
+            "$giant",
+            "$bears",
+            "$memnite"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "$giant"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "$memnite"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$giant",
+            "$memnite"
+          ]
         }
       },
       "player": "alice",
@@ -121,6 +158,24 @@
           "Grizzly Bears",
           "Goblin Piker"
         ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$i1",
+            "Hill Giant",
+            "$i2",
+            "Memnite",
+            "$i3",
+            "$i4"
+          ]
+        }
       },
       "player": "alice",
       "step": "PrecombatMain",
@@ -163,6 +218,19 @@
           "count": 1,
           "player": "alice",
           "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ecological Appreciation",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
         }
       },
       "player": "alice",

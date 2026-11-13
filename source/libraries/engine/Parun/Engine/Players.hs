@@ -19,6 +19,7 @@ import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
+import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerChoice as PlayerChoice
@@ -189,6 +190,7 @@ namedUncut given gs ref =
       holderOf holder = case holder of
         Holder.Controller -> controllerOf given
         Holder.Owner -> ownerOf given
+        Holder.Caster -> \oid -> Object.castBy =<< Game.lookupObject oid gs
    in case ref of
         PlayerRef.Relative relation -> related' relation
         -- Every player minus every player the slot names (CR 104.2c's winning

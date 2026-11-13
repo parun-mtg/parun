@@ -108,6 +108,13 @@
                       "holder": "Owner",
                       "relation": "You"
                     }
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Caster",
+                      "relation": "You"
+                    }
                   }
                 ]
               },
