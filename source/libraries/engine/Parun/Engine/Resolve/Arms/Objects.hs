@@ -1688,8 +1688,16 @@ createEmblem resolving source controller legal (CreateEmblem.MkCreateEmblem card
   -- CR 114.2: each player the reference names gets an emblem, minted by
   -- Event.createEmblem, in APNAP order as Effect.Create's creators are (CR
   -- 608.2f). A target slot CR 608.2b found illegal names nobody.
-  Monad.forM_ (Common.apnapPlayersOf player legal resolving source controller gs) $ \getter ->
-    Event.createEmblem getter card
+  --
+  -- CR 607.2d: the emblem's "the chosen type" is the choice this resolution
+  -- made, which was written to the source, so each emblem takes the source's
+  -- choices as its own and keeps them whatever the source later becomes or
+  -- chooses (CR 608.2d). data/scenarios' oko-shadowmoor-scion-s-emblem pair
+  -- proves it.
+  Monad.forM_ (Common.apnapPlayersOf player legal resolving source controller gs) $ \getter -> do
+    minted <- Event.createEmblem getter card
+    Foldable.for_ minted $ \emblem ->
+      State.modify' (\g -> Game.handChoices (Game.readingAcquisition resolving source g source) source emblem g)
 
 becomeMonarch :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> MonarchTarget.MonarchTarget -> Game ()
 becomeMonarch resolving source controller legal target = do
