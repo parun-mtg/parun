@@ -121,6 +121,13 @@
                       }
                     },
                     {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Owner",
+                        "relation": "You"
+                      }
+                    },
+                    {
                       "type": "Or",
                       "value": [
                         {
