@@ -109,6 +109,15 @@ event context creature c = case c of
       "another creature you control" -> ["", "Alliance \8212 "]
       _ -> [""]
     [other (opening' <> "Whenever " <> subject <> " enters") [(becameSlot, word)]]
+  -- A disjunction with a kind described further names each kind in full,
+  -- and a land does not die (CR 700.4): "another creature you control or a
+  -- land you control is put into a graveyard from the battlefield" (Long
+  -- Feng, Grand Secretariat).
+  TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f@(Filter.Type.And (Filter.Type.Or gs : common))) _ _)
+    | t == LeavesTrigger.dies (LeavingPermanent.Matching f),
+      any (\g -> case g of Filter.Type.And (_ : _ : _) -> True; _ -> False) gs -> do
+        ones <- traverse (\g -> fmap fst (described context (Filter.Type.And (g : common)))) gs
+        [other ("Whenever " <> List.intercalate " or " ones <> " is put into a graveyard from the battlefield") [(becameSlot, "it"), (departedPermanent, "it")]]
   TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f) _ _) | t == LeavesTrigger.dies (LeavingPermanent.Matching f) -> do
     (one, that) <- described context f
     word <- ["it", that]
