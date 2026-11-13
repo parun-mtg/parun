@@ -45,6 +45,7 @@ effective =
   let awake row = case PlayerControl.duration row of
         ControlDuration.WhileResolving _ -> False
         ControlDuration.UntilTurnEnds -> True
+        ControlDuration.UntilCombatEnds -> True
         ControlDuration.UntilResolutionEnds -> True
         ControlDuration.WhileSearching -> True
       -- The later of two rows of one stamp is the one pushed later.

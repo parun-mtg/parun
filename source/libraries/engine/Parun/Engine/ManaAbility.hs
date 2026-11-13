@@ -368,7 +368,7 @@ manaProduced effect = case effect of
   Effect.Vote {} -> Nothing
   Effect.Bid {} -> Nothing
   Effect.RestartGame _ -> Nothing
-  Effect.ControlPlayerNextTurn _ -> Nothing
+  Effect.ControlPlayerNext _ -> Nothing
   Effect.ControlPlayerThisResolution _ -> Nothing
   Effect.Destroy {} -> Nothing
   Effect.Sacrifice _ -> Nothing
@@ -577,7 +577,7 @@ playerChoice effect = case effect of
   Effect.Vote {} -> Nothing
   Effect.Bid {} -> Nothing
   Effect.RestartGame _ -> Nothing
-  Effect.ControlPlayerNextTurn _ -> Nothing
+  Effect.ControlPlayerNext _ -> Nothing
   Effect.ControlPlayerThisResolution _ -> Nothing
   Effect.Destroy {} -> Nothing
   Effect.Sacrifice _ -> Nothing
@@ -844,7 +844,7 @@ movesLibraryCard effect = case effect of
   Effect.PlayerSacrifices {} -> False
   Effect.Vote {} -> False
   Effect.Bid {} -> False
-  Effect.ControlPlayerNextTurn _ -> False
+  Effect.ControlPlayerNext _ -> False
   Effect.ControlPlayerThisResolution _ -> False
   Effect.Destroy {} -> False
   Effect.Sacrifice _ -> False

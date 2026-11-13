@@ -28,6 +28,7 @@ import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.Connive as Connive
 import qualified Parun.Types.ControlPlayer as ControlPlayer
+import qualified Parun.Types.ControlPlayerNext as ControlPlayerNext
 import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.Counter as Counter
@@ -177,9 +178,9 @@ data Effect card ability
   | -- | CR 728.1 / 728.1a: restart the game, with the resolving controller as
     -- the new game's starting player; the ObjectRef is CR 728.5's exemption.
     RestartGame (Maybe ObjectRef.ObjectRef)
-  | -- | CR 724.1: you control target player during that player's next turn
-    -- (Mindslaver).
-    ControlPlayerNextTurn SlotName.SlotName
+  | -- | CR 724.1: you control the slot's player during their next turn
+    -- (Mindslaver) or next combat phase (Secret of Bloodbending).
+    ControlPlayerNext ControlPlayerNext.ControlPlayerNext
   | -- | CR 724.2: you control the slot's player until this object finishes
     -- resolving (Word of Command). Its second span, while the forced spell
     -- resolves, is Parun.Types.OfferCast's controlWhileResolving.

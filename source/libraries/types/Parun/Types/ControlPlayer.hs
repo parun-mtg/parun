@@ -7,7 +7,7 @@ import qualified Parun.Types.SlotName as SlotName
 -- that rides with the control.
 --
 -- No duration field: the arm IS rule 724.2's duration, where
--- ControlPlayerNextTurn is rule 724.1's. Two opcodes rather than one carrying a
+-- ControlPlayerNext is rule 724.1's. Two opcodes rather than one carrying a
 -- Parun.Types.ControlDuration, because rule 724.1's control is SCHEDULED for a
 -- later turn (CR 724.1b) and rule 724.2's takes hold immediately -- the two
 -- write different fields of the game state.

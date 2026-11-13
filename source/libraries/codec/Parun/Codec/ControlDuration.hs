@@ -10,6 +10,7 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.nullary "UntilTurnEnds" ControlDuration.UntilTurnEnds,
+      Arm.nullary "UntilCombatEnds" ControlDuration.UntilCombatEnds,
       Arm.nullary "UntilResolutionEnds" ControlDuration.UntilResolutionEnds,
       Arm.payload "WhileResolving" ObjectId.codec ControlDuration.WhileResolving (\x -> case x of ControlDuration.WhileResolving y -> Just y; _ -> Nothing),
       Arm.nullary "WhileSearching" ControlDuration.WhileSearching
@@ -18,6 +19,7 @@ codec =
 tagOf :: ControlDuration.ControlDuration -> String
 tagOf x = case x of
   ControlDuration.UntilTurnEnds -> "UntilTurnEnds"
+  ControlDuration.UntilCombatEnds -> "UntilCombatEnds"
   ControlDuration.UntilResolutionEnds -> "UntilResolutionEnds"
   ControlDuration.WhileResolving {} -> "WhileResolving"
   ControlDuration.WhileSearching -> "WhileSearching"

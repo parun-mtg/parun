@@ -40,6 +40,7 @@ import qualified Parun.Codec.ChooseQuality as ChooseQuality
 import qualified Parun.Codec.Conjure as Conjure
 import qualified Parun.Codec.Connive as Connive
 import qualified Parun.Codec.ControlPlayer as ControlPlayer
+import qualified Parun.Codec.ControlPlayerNext as ControlPlayerNext
 import qualified Parun.Codec.ControlSides as ControlSides
 import qualified Parun.Codec.CopyStackObject as CopyStackObject
 import qualified Parun.Codec.Counter as Counter
@@ -194,7 +195,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Vote" Vote.codec Effect.Vote (\x -> case x of Effect.Vote y -> Just y; _ -> Nothing),
           Arm.payload "Bid" Bid.codec Effect.Bid (\x -> case x of Effect.Bid y -> Just y; _ -> Nothing),
           Arm.optionalPayload "RestartGame" ObjectRef.codec Effect.RestartGame (\x -> case x of Effect.RestartGame y -> Just y; _ -> Nothing),
-          Arm.payload "ControlPlayerNextTurn" SlotName.codec Effect.ControlPlayerNextTurn (\x -> case x of Effect.ControlPlayerNextTurn y -> Just y; _ -> Nothing),
+          Arm.payload "ControlPlayerNext" ControlPlayerNext.codec Effect.ControlPlayerNext (\x -> case x of Effect.ControlPlayerNext y -> Just y; _ -> Nothing),
           Arm.payload "ControlPlayerThisResolution" ControlPlayer.codec Effect.ControlPlayerThisResolution (\x -> case x of Effect.ControlPlayerThisResolution y -> Just y; _ -> Nothing),
           Arm.payload "Destroy" Destroy.codec Effect.Destroy (\x -> case x of Effect.Destroy y -> Just y; _ -> Nothing),
           Arm.payload "Fight" Fight.codec Effect.Fight (\x -> case x of Effect.Fight y -> Just y; _ -> Nothing),
@@ -382,7 +383,7 @@ tagOf x = case x of
   Effect.Vote {} -> "Vote"
   Effect.Bid {} -> "Bid"
   Effect.RestartGame {} -> "RestartGame"
-  Effect.ControlPlayerNextTurn {} -> "ControlPlayerNextTurn"
+  Effect.ControlPlayerNext {} -> "ControlPlayerNext"
   Effect.ControlPlayerThisResolution {} -> "ControlPlayerThisResolution"
   Effect.Destroy {} -> "Destroy"
   Effect.Fight {} -> "Fight"

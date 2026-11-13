@@ -118,6 +118,7 @@ import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.ConjureCards as ConjureCards
 import qualified Parun.Types.Connive as Connive
 import qualified Parun.Types.ControlPlayer as ControlPlayer
+import qualified Parun.Types.ControlPlayerNext as ControlPlayerNext
 import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSlots as ControlSlots
 import qualified Parun.Types.ControllerRelation as ControllerRelation
@@ -1016,7 +1017,7 @@ effectChildren c effect = case effect of
       )
   Effect.ExileAllGraveyards -> pure effect
   Effect.RestartGame exempt -> fmap Effect.RestartGame (traverse (onObjectRef c) exempt)
-  Effect.ControlPlayerNextTurn named -> fmap Effect.ControlPlayerNextTurn (onSlot c named)
+  Effect.ControlPlayerNext (ControlPlayerNext.MkControlPlayerNext named during) -> fmap (\renamed -> Effect.ControlPlayerNext (ControlPlayerNext.MkControlPlayerNext renamed during)) (onSlot c named)
   Effect.ControlPlayerThisResolution (ControlPlayer.MkControlPlayer named landsOnly) -> fmap (\renamed -> Effect.ControlPlayerThisResolution (ControlPlayer.MkControlPlayer renamed landsOnly)) (onSlot c named)
   Effect.Destroy (Destroy.MkDestroy ref regenerability named buried permanents) ->
     fmap Effect.Destroy (Destroy.MkDestroy <$> onObjectRef c ref <*> pure regenerability <*> traverse (onSlot c) named <*> traverse (onSlot c) buried <*> traverse (onSlot c) permanents)

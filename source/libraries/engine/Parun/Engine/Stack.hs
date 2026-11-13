@@ -127,6 +127,7 @@ outlivesResolution :: [ObjectId] -> NonEmpty.NonEmpty PlayerControl.PlayerContro
 outlivesResolution stack =
   let survives row = case PlayerControl.duration row of
         ControlDuration.UntilTurnEnds -> True
+        ControlDuration.UntilCombatEnds -> True
         ControlDuration.UntilResolutionEnds -> False
         ControlDuration.WhileResolving oid -> elem oid stack
         -- Lifted by the search that installed it, which ends inside the

@@ -502,11 +502,15 @@ library codec
     Parun.Codec.ControlMargin
     Parun.Codec.ControlMarginSpec
     Parun.Codec.ControlPlayer
+    Parun.Codec.ControlPlayerNext
+    Parun.Codec.ControlPlayerNextSpec
     Parun.Codec.ControlPlayerSpec
     Parun.Codec.ControlSides
     Parun.Codec.ControlSidesSpec
     Parun.Codec.ControlSlots
     Parun.Codec.ControlSlotsSpec
+    Parun.Codec.ControlSpan
+    Parun.Codec.ControlSpanSpec
     Parun.Codec.Convoking
     Parun.Codec.ConvokingSpec
     Parun.Codec.Copyability
@@ -2878,8 +2882,10 @@ library types
     Parun.Types.ControllerRelation
     Parun.Types.ControlMargin
     Parun.Types.ControlPlayer
+    Parun.Types.ControlPlayerNext
     Parun.Types.ControlSides
     Parun.Types.ControlSlots
+    Parun.Types.ControlSpan
     Parun.Types.ControlWindow
     Parun.Types.Convoking
     Parun.Types.Copyability

@@ -67,6 +67,8 @@ import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControlDuration as ControlDuration
 import qualified Parun.Types.ControlPlayer as ControlPlayer
+import qualified Parun.Types.ControlPlayerNext as ControlPlayerNext
+import qualified Parun.Types.ControlSpan as ControlSpan
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagePart as DamagePart
@@ -1640,24 +1642,36 @@ flipCoinArm throwForCoin reflipWindow runSubgame resolving source controller leg
   Foldable.for_ (FlipCoin.misses flipCoin) $ \misses ->
     State.modify' (Common.bindAmountSlot resolving source misses (coins * List.genericLength flippers - tally))
 
-controlPlayerNextTurn :: PlayerId -> Map.Map SlotName (Set Recipient) -> SlotName -> Game ()
-controlPlayerNextTurn controller legal slot =
+controlPlayerNext :: PlayerId -> Map.Map SlotName (Set Recipient) -> ControlPlayerNext.ControlPlayerNext -> Game ()
+controlPlayerNext controller legal next =
   State.modify' $ \gs ->
-    case legalOne slot legal of
+    case legalOne (ControlPlayerNext.slot next) legal of
       Just (Recipient.ToPlayer target) ->
         -- CR 724.1: schedule control of `target` by this ability's controller
-        -- (CR 724.5). Map.insert overwrites a prior pending control (CR 724.1a),
-        -- and the row is stamped NOW, as the effect is created.
+        -- (CR 724.5), stamped NOW, as the effect is created.
         let (stamp, stamped) = Game.freshTimestamp gs
+            duration = case ControlPlayerNext.during next of
+              ControlSpan.NextTurn -> ControlDuration.UntilTurnEnds
+              ControlSpan.NextCombatPhase -> ControlDuration.UntilCombatEnds
             row =
               PlayerControl.MkPlayerControl
                 { PlayerControl.decider = Decider.MkDecider controller,
-                  PlayerControl.duration = ControlDuration.UntilTurnEnds,
-                  -- CR 724.7: Mindslaver prints no restriction.
+                  PlayerControl.duration = duration,
+                  -- CR 724.7: neither Mindslaver nor Secret of Bloodbending
+                  -- prints a restriction.
                   PlayerControl.manaFromLandsOnly = False,
                   PlayerControl.timestamp = stamp
                 }
-            schedule g pid = g {GameState.pendingControl = Map.insert pid row (GameState.pendingControl g)}
+            -- CR 724.1a: the new row overwrites a pending one of its own
+            -- duration, which could never work again. One of the OTHER
+            -- duration stays, that rule's "overwrite" being the
+            -- continuous-effect sense (Common.pushControl): a combat phase's
+            -- control scheduled after a whole turn's hands the turn back as
+            -- the phase ends. Scenario
+            -- secret-of-bloodbending-over-a-mindslaver-hands-the-turn-back-after-combat
+            -- proves it.
+            others = filter ((/= duration) . PlayerControl.duration) . NonEmpty.toList
+            schedule g pid = g {GameState.pendingControl = Map.alter (\old -> Just (NonEmpty.prependList (foldMap others old) (pure row))) pid (GameState.pendingControl g)}
          in List.foldl' schedule stamped (Common.controlledTeam controller target stamped)
       -- Not a player recipient or an illegal slot (CR 608.2b): no-op.
       _ -> gs

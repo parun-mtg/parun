@@ -452,7 +452,7 @@ controlEffectsEnd pid gs =
           -- playing is untouched (CR 724.1a then makes the topmost survivor the
           -- one that works). A stack with nothing left loses its key.
           GameState.control = Map.mapMaybe (NonEmpty.nonEmpty . NonEmpty.filter (not . heldBy . PlayerControl.decider)) (GameState.control gs),
-          GameState.pendingControl = Map.filter (not . heldBy . PlayerControl.decider) (GameState.pendingControl gs)
+          GameState.pendingControl = Map.mapMaybe (NonEmpty.nonEmpty . NonEmpty.filter (not . heldBy . PlayerControl.decider)) (GameState.pendingControl gs)
         }
 
 -- Is this floating row one of CR 800.4a's "effects which give that player

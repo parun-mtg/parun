@@ -4,15 +4,19 @@ import Parun.Types.ObjectId (ObjectId)
 
 -- | How long one player's control of another lasts, which is the axis CR 724
 -- splits on: rule 724.1's effects run for a whole turn, and rule 724.2's two
--- named cards for a limited duration inside one.
+-- named cards, and Secret of Bloodbending after them, for a limited duration
+-- inside one.
 --
 -- The field is on Parun.Types.PlayerControl rather than on the opcode that
 -- installs it, because the expiry is asked of the STATE -- Parun.Engine.Engine's
--- turn handoff and Parun.Engine.Stack's end of resolution each drop the arm that
--- is theirs, and neither can see the effect that wrote the row.
+-- turn handoff, Parun.Engine.Expiry's end of a phase and Parun.Engine.Stack's
+-- end of resolution each drop the arm that is theirs, and neither can see the effect that wrote the row.
 data ControlDuration
   = -- | CR 724.1: the whole of the controlled player's turn (Mindslaver).
     UntilTurnEnds
+  | -- | CR 500.5: the whole of one of the controlled player's combat phases
+    -- (Secret of Bloodbending).
+    UntilCombatEnds
   | -- | CR 724.2: until the object that installed it finishes resolving (Word of
     -- Command).
     UntilResolutionEnds

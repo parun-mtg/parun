@@ -66,6 +66,8 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
+import qualified Parun.Types.ControlPlayerNext as ControlPlayerNext
+import qualified Parun.Types.ControlSpan as ControlSpan
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostComponent as CostComponent
@@ -1412,7 +1414,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
                     Cost.Type.components = [CostComponent.TapThis, CostComponent.SacrificeThis]
                   },
               ActivatedAbility.modal =
-                Mint.oneModeTargeting (Map.singleton slot (TargetSlot.required Pool.Players Nothing)) (Seq.fromList [Effect.ControlPlayerNextTurn slot]),
+                Mint.oneModeTargeting (Map.singleton slot (TargetSlot.required Pool.Players Nothing)) (Seq.fromList [Effect.ControlPlayerNext (ControlPlayerNext.MkControlPlayerNext slot ControlSpan.NextTurn)]),
               ActivatedAbility.maximumX = [],
               ActivatedAbility.minimumX = 0,
               ActivatedAbility.definedX = Nothing,
@@ -1452,7 +1454,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
         resolved = snd (Engine.runGamePure S.identityAnswer g4 Stack.resolveTop)
         bobsTurn = snd (Engine.runGamePure S.identityAnswer resolved Engine.handoffTurn)
         afterBob = snd (Engine.runGamePure S.identityAnswer bobsTurn Engine.handoffTurn)
-    Spec.assertEqWith s "control pending for bob" (fmap PlayerControl.decider (Map.lookup S.bob (GameState.pendingControl resolved))) (Just (Decider.MkDecider S.alice))
+    Spec.assertEqWith s "control pending for bob" (fmap (fmap PlayerControl.decider . NonEmpty.toList) (Map.lookup S.bob (GameState.pendingControl resolved))) (Just [Decider.MkDecider S.alice])
     Spec.assertEqWith s "promoted on bob's turn" (S.unstamped (GameState.control bobsTurn)) (S.turnControl S.alice S.bob)
     Spec.assertEqWith s "bob's decisions route to alice" (Decide.deciderFor S.bob bobsTurn) (Decider.MkDecider S.alice)
     Spec.assertEqWith s "control expired after bob's turn" (Decide.deciderFor S.bob afterBob) (Decider.MkDecider S.bob)
@@ -1463,8 +1465,8 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
         afterAlice = installControlBy mindslaver S.alice S.bob base
         -- Then: bob controls bob (CR 724.9 self-control), created LATER.
         afterBob = installControlBy mindslaver S.bob S.bob afterAlice
-    Spec.assertEqWith s "the first effect installed alice as bob's decider" (fmap PlayerControl.decider (Map.lookup S.bob (GameState.pendingControl afterAlice))) (Just (Decider.MkDecider S.alice))
-    Spec.assertEqWith s "CR 724.1a: the later effect overwrites — bob's own control wins" (fmap PlayerControl.decider (Map.lookup S.bob (GameState.pendingControl afterBob))) (Just (Decider.MkDecider S.bob))
+    Spec.assertEqWith s "the first effect installed alice as bob's decider" (fmap (fmap PlayerControl.decider . NonEmpty.toList) (Map.lookup S.bob (GameState.pendingControl afterAlice))) (Just [Decider.MkDecider S.alice])
+    Spec.assertEqWith s "CR 724.1a: the later effect overwrites — bob's own control wins" (fmap (fmap PlayerControl.decider . NonEmpty.toList) (Map.lookup S.bob (GameState.pendingControl afterBob))) (Just [Decider.MkDecider S.bob])
   Spec.it s "CR 728.1a: resolving a RestartGame ability restarts with its controller as starting player" $ do
     mountain <- S.printingOf s registry "Mountain"
     let g0 = Setup.emptyGame S.bothPlayers
@@ -1724,7 +1726,7 @@ addMany :: Printing.Printing -> Int -> PlayerId.PlayerId -> GameState.GameState 
 addMany mountain n pid gs =
   List.foldl' (\g _ -> snd (S.addPermanent mountain pid g)) gs (replicate n ())
 
--- Build a Mindslaver-shaped ControlPlayerNextTurn ability owned by `controller`,
+-- Build a Mindslaver-shaped ControlPlayerNext ability owned by `controller`,
 -- targeting `target`, put it on the stack, and resolve it. Returns the resulting
 -- state. Object.owner is the resolving ability's controller (Resolve.hs), so this
 -- installs pendingControl[target] = MkDecider controller.
@@ -1741,7 +1743,7 @@ installControlBy mindslaver controller target gs0 =
                   Cost.Type.components = [CostComponent.TapThis, CostComponent.SacrificeThis]
                 },
             ActivatedAbility.modal =
-              Mint.oneModeTargeting (Map.singleton slot (TargetSlot.required Pool.Players Nothing)) (Seq.fromList [Effect.ControlPlayerNextTurn slot]),
+              Mint.oneModeTargeting (Map.singleton slot (TargetSlot.required Pool.Players Nothing)) (Seq.fromList [Effect.ControlPlayerNext (ControlPlayerNext.MkControlPlayerNext slot ControlSpan.NextTurn)]),
             ActivatedAbility.maximumX = [],
             ActivatedAbility.minimumX = 0,
             ActivatedAbility.definedX = Nothing,

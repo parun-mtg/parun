@@ -82,6 +82,7 @@ import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.ConjureCards as ConjureCards
 import qualified Parun.Types.Connive as Connive
 import qualified Parun.Types.ControlPlayer as ControlPlayer
+import qualified Parun.Types.ControlPlayerNext as ControlPlayerNext
 import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSlots as ControlSlots
 import qualified Parun.Types.ControllerRelation as ControllerRelation
@@ -795,7 +796,7 @@ effectPlayerRefs effect = case effect of
   Effect.Search (Search.MkSearch searcher owner _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) -> [searcher, owner]
   Effect.ExileAllGraveyards -> []
   Effect.RestartGame {} -> []
-  Effect.ControlPlayerNextTurn {} -> []
+  Effect.ControlPlayerNext {} -> []
   Effect.ControlPlayerThisResolution {} -> []
   Effect.Destroy {} -> []
   Effect.Sacrifice {} -> []
@@ -1177,7 +1178,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- The opening bid is the read; the two slots are boundSlots' half.
   Effect.Bid bid -> quantitySlots (Bid.opening bid)
   Effect.RestartGame _ -> Map.empty
-  Effect.ControlPlayerNextTurn slot -> oneSlot slot
+  Effect.ControlPlayerNext next -> oneSlot (ControlPlayerNext.slot next)
   Effect.ControlPlayerThisResolution (ControlPlayer.MkControlPlayer slot _) -> oneSlot slot
   -- The three slot fields are DEFINITIONS, not reads; they belong to boundSlots
   -- below.
@@ -2070,7 +2071,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.Vote {} -> True
   Effect.Bid bid -> Quantity.slotsAreExhaustive (Bid.opening bid)
   Effect.RestartGame _ -> True
-  Effect.ControlPlayerNextTurn _ -> True
+  Effect.ControlPlayerNext _ -> True
   Effect.ControlPlayerThisResolution _ -> True
   Effect.Destroy {} -> True
   Effect.Sacrifice _ -> True
@@ -2378,7 +2379,7 @@ hasRead wanted =
         Effect.Vote {} -> False
         Effect.Bid bid -> Quantity.hasRead wanted (Bid.opening bid)
         Effect.RestartGame _ -> False
-        Effect.ControlPlayerNextTurn _ -> False
+        Effect.ControlPlayerNext _ -> False
         Effect.ControlPlayerThisResolution _ -> False
         Effect.Destroy {} -> False
         Effect.Sacrifice _ -> False
@@ -2690,7 +2691,7 @@ boundSlots effect = case effect of
   -- The high bid and the high bidder, for the instructions that act on them.
   Effect.Bid (Bid.MkBid _ highBid highBidder) -> Set.fromList [highBid, highBidder]
   Effect.RestartGame _ -> Set.empty
-  Effect.ControlPlayerNextTurn _ -> Set.empty
+  Effect.ControlPlayerNext _ -> Set.empty
   Effect.ControlPlayerThisResolution _ -> Set.empty
   Effect.TurnFaceDown _ -> Set.empty
   Effect.TurnFaceUp _ -> Set.empty

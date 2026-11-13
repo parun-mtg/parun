@@ -25,6 +25,7 @@ import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Functor.Const as Const
 import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
@@ -52,6 +53,7 @@ import qualified Parun.Types.AfterTurn as AfterTurn
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
+import qualified Parun.Types.ControlDuration as ControlDuration
 import qualified Parun.Types.CopyCoverage as CopyCoverage
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Designation as Designation
@@ -76,6 +78,7 @@ import qualified Parun.Types.PaidExpiry as PaidExpiry
 import qualified Parun.Types.Phase as Phase
 import Parun.Types.PhaseSelector (PhaseSelector)
 import qualified Parun.Types.PhaseSelector as PhaseSelector
+import qualified Parun.Types.PlayerControl as PlayerControl
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PreventionRider as PreventionRider
@@ -776,10 +779,27 @@ keepWhere survives = editExpiries (\source expiry -> if survives source expiry t
 -- when the end of combat step ends as a step, and containment would end it at
 -- the first combat step it saw. Parun.Engine.Turn.inWindow is the containment
 -- test, and it answers a different question for a different reader.
+--
+-- A player's control lasting the combat phase ends here too, on every road out
+-- of that phase for being here: GameState.control holds no Expiry, so the sweep
+-- cannot see it. Scenario
+-- secret-of-bloodbending-controls-an-opponent-for-their-next-combat-phase-only
+-- proves the phase's own end, and
+-- secret-of-bloodbending-s-control-ends-with-a-combat-phase-an-effect-ends CR
+-- 725.2d's.
 dropAtEndOf :: PhaseSelector -> GameState -> GameState
 dropAtEndOf ending =
   (if ending == PhaseSelector.Step (Phase.Combat CombatStep.DeclareAttackers) then pinAfterDeclareAttackers else id)
+    . (if ending == PhaseSelector.CombatPhase then endCombatControl else id)
     . sweep (EndOf ending)
+
+-- CR 500.5: the rows of GameState.control that last a combat phase, dropped as
+-- one ends. A row underneath survives and works again (CR 724.1a), and a player
+-- left with none loses the key.
+endCombatControl :: GameState -> GameState
+endCombatControl gs =
+  let outlives = (/= ControlDuration.UntilCombatEnds) . PlayerControl.duration
+   in gs {GameState.control = Map.mapMaybe (NonEmpty.nonEmpty . NonEmpty.filter outlives) (GameState.control gs)}
 
 -- CR 116.2c: every offer a payment could end right now, paired with the object
 -- that stored it. The one reader of Expiry.WhenPaid outside the sweeps, and the

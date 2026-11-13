@@ -527,13 +527,13 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     Spec.assertEqWith s "and the seam agrees" (fmap Departure.continuesAfterDeparture [twoSeats, threeSeats]) [False, True]
 
   -- CR 800.4a: "any effects which give that player control of any objects or
-  -- players end." Mindslaver's opcode is Effect.ControlPlayerNextTurn, whose
+  -- players end." Mindslaver's opcode is Effect.ControlPlayerNext, whose
   -- effect lives in GameState.pendingControl until the controlled player's
   -- turn begins (CR 724.1b) and in GameState.control during it
   -- (CR 724.1/724.3). Both are effects giving the departing player control of
   -- a PLAYER, so both end.
   Spec.it s "CR 800.4a a Mindslaver controller departing releases their victim, pending and active alike" $ do
-    let pending = S.threePlayerGame {GameState.pendingControl = Map.singleton S.carol (S.turnControlRow S.bob)}
+    let pending = S.threePlayerGame {GameState.pendingControl = Map.singleton S.carol (pure (S.turnControlRow S.bob))}
         duringTurn =
           S.threePlayerGame
             { GameState.turn =

@@ -5061,7 +5061,7 @@ effectFilters effect = case effect of
   -- "all non-Aura permanent cards exiled with Karn" states characteristics in it
   -- -- so an empty list here took a Filter a card author writes out of the lint.
   Effect.RestartGame mRef -> frame SourceHostFramed (concatMap objectRefFilters (Maybe.maybeToList mRef))
-  Effect.ControlPlayerNextTurn _ -> []
+  Effect.ControlPlayerNext _ -> []
   Effect.ControlPlayerThisResolution _ -> []
   Effect.Destroy (Destroy.MkDestroy ref _ _ _ _) -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect ref _ _) -> frame SourceHostFramed (objectRefFilters ref)

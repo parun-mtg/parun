@@ -62,7 +62,9 @@ import qualified Parun.Types.ConjureCards as ConjureCards
 import qualified Parun.Types.ConjureDestination as ConjureDestination
 import qualified Parun.Types.Connive as Connive
 import qualified Parun.Types.ControlPlayer as ControlPlayer
+import qualified Parun.Types.ControlPlayerNext as ControlPlayerNext
 import qualified Parun.Types.ControlSides as ControlSides
+import qualified Parun.Types.ControlSpan as ControlSpan
 import qualified Parun.Types.CopyOriginal as CopyOriginal
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CopyTargets as CopyTargets
@@ -407,13 +409,13 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.RestartGame (Just (ObjectRef.EachCardInExiledPile (EachCardInExiledPile.MkEachCardInExiledPile ExiledPile.OwnAbilities Nothing))))
       " {\"type\":\"RestartGame\",\"value\":{\"type\":\"EachCardInExiledPile\",\"value\":{\"pile\":{\"type\":\"OwnAbilities\"}}}} "
-  Spec.it s "ControlPlayerNextTurn" $
+  Spec.it s "ControlPlayerNext" $
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.ControlPlayerNextTurn (SlotName.MkSlotName (Text.pack "target")))
-      " {\"type\":\"ControlPlayerNextTurn\",\"value\":\"target\"} "
+      (Effect.ControlPlayerNext (ControlPlayerNext.MkControlPlayerNext (SlotName.MkSlotName (Text.pack "target")) ControlSpan.NextTurn))
+      " {\"type\":\"ControlPlayerNext\",\"value\":{\"slot\":\"target\",\"during\":\"NextTurn\"}} "
   -- CR 724.2's arm, with rule 724.7's restriction written: Word of Command's.
   Spec.it s "ControlPlayerThisResolution" $
     Common.assertJsonCodec

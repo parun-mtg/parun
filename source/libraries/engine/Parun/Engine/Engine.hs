@@ -58,6 +58,7 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Rad as Rad
 import qualified Parun.Engine.Replacement as Replacement
+import qualified Parun.Engine.Resolve.Common as Common
 import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Resolve.Slots as Resolve
 import qualified Parun.Engine.Ring as Ring
@@ -88,6 +89,7 @@ import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Completion as Completion
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.ControlClock as ControlClock
+import qualified Parun.Types.ControlDuration as ControlDuration
 import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Decider as Decider
@@ -2383,17 +2385,7 @@ closeTurn gs =
 -- as a turn that has not begun holds them.
 newTurn :: Maybe Timestamp.Timestamp -> PlayerId -> GameState -> GameState
 newTurn extra pid gs =
-  let -- CR 800.4b: a player who would be controlled by a departed player isn't, so
-      -- a pending Decider naming one is not promoted. CR 800.4a's second clause
-      -- clears the entry at the departure itself; this guard answers otherwise.
-      promotedFor taker = case Map.lookup taker (GameState.pendingControl gs) of
-        Nothing -> Nothing
-        Just row -> case PlayerControl.decider row of
-          Decider.MkDecider d ->
-            if List.elem d (Game.stillPlaying gs)
-              then Just row
-              else Nothing
-      -- CR 805.4: every player whose turn this is, `pid` alone without the
+  let -- CR 805.4: every player whose turn this is, `pid` alone without the
       -- shared team turns option.
       takers = filter (Turn.sharesTurn gs pid) (GameState.turnOrder gs)
       -- CR 807.4b: the players taking a parked Grand Melee turn, whose
@@ -2405,8 +2397,7 @@ newTurn extra pid gs =
       -- can learn which turn that is, and an entry whose turn has passed be
       -- retired. Applied to the UPDATED state, both answers being read off this
       -- turn's number and active player.
-      Event.settleOnsets
-        extra
+      Event.settleOnsets extra . promoteControl ControlDuration.UntilTurnEnds takers $
         gs
           { GameState.turn =
               (GameState.turn gs)
@@ -2426,26 +2417,36 @@ newTurn extra pid gs =
             -- CR 801.2c: who is in range is fixed as each turn begins, so the
             -- seats emptied during the outgoing turn close up here.
             GameState.departedThisTurn = Set.empty,
-            -- CR 724.1/724.1b: the new active player's pending control becomes
-            -- this turn's control, and REPLACING the whole map every turn is
-            -- what ends a prior control at the next turn's start -- unless CR
-            -- 800.4b stops the promotion (`promotedFor`, above). Replacing rather
-            -- than inserting is also what retires a CR 724.2 row a resolution
-            -- somehow left behind; no resolution spans a turn boundary, so that
-            -- is a belt on top of Parun.Engine.Stack's braces. Each taker's own
-            -- row under CR 805.4, which CR 805.8's control of a whole team
-            -- scheduled for every teammate (Resolve.Effect.controlledTeam).
-            GameState.control =
-              Map.union
-                ( Map.fromList
-                    [ (taker, pure row)
-                    | taker <- takers,
-                      Just row <- [promotedFor taker]
-                    ]
-                )
-                (Map.filterWithKey (\p _ -> elsewhere p) (GameState.control gs)),
-            GameState.pendingControl = List.foldl' (flip Map.delete) (GameState.pendingControl gs) takers
+            -- CR 724.1: REPLACING the whole map every turn is what ends a prior
+            -- control at the next turn's start, each taker's pending control
+            -- for the turn being promoted over it below. Replacing is also what
+            -- retires a CR 724.2 row a resolution somehow left behind; no
+            -- resolution spans a turn boundary, so that is a belt on top of
+            -- Parun.Engine.Stack's braces.
+            GameState.control = Map.filterWithKey (\p _ -> elsewhere p) (GameState.control gs)
           }
+
+-- CR 724.1b: each of these players' pending control of this duration becomes
+-- live as the turn or combat phase it waited for begins -- each taker's own
+-- row under CR 805.4, which CR 805.8's control of a whole team scheduled for
+-- every teammate (Resolve.Common.controlledTeam). On top of whatever control
+-- is running, which Decide.effective orders by creation (CR 724.1a).
+--
+-- CR 800.4b: a player who would be controlled by a departed player isn't, so a
+-- pending row naming one is spent unpromoted. CR 800.4a's second clause clears
+-- the row at the departure itself; this guard answers otherwise.
+promoteControl :: ControlDuration.ControlDuration -> [PlayerId] -> GameState -> GameState
+promoteControl duration takers gs =
+  let due = (== duration) . PlayerControl.duration
+      playing row = case PlayerControl.decider row of
+        Decider.MkDecider d -> List.elem d (Game.stillPlaying gs)
+      promoted g taker =
+        List.foldl'
+          (flip (Common.pushControl taker))
+          g
+          (filter (\row -> due row && playing row) (foldMap NonEmpty.toList (Map.lookup taker (GameState.pendingControl gs))))
+      waiting = Map.mapMaybeWithKey (\p rows -> if elem p takers then NonEmpty.nonEmpty (NonEmpty.filter (not . due) rows) else Just rows) (GameState.pendingControl gs)
+   in (List.foldl' promoted gs takers) {GameState.pendingControl = waiting}
 
 -- Consume the schedule: the next step becomes current. An empty schedule means
 -- the turn is over, so hand off. The turn is data, and this is the only thing
@@ -2541,6 +2542,12 @@ enterStep = do
   if not phaseBegins
     then Nothing <$ skipWholePhase phase
     else do
+      -- CR 724.1b / 614.10a: a control waiting for a combat phase takes hold as
+      -- one of that player's begins, a skipped phase never reaching this line.
+      -- Scenario
+      -- secret-of-bloodbending-waits-past-a-skipped-combat-phase proves the wait.
+      Monad.when (Turn.phaseBeginningAt phase == Just PhaseSelector.CombatPhase) $
+        State.modify' (\gs -> promoteControl ControlDuration.UntilCombatEnds (Turn.activePlayers gs) gs)
       -- CR 103.8a's skip is the rules', not an effect's, so it is asked FIRST: a
       -- "skip your next draw step" waits for the first occurrence that isn't
       -- skipped (CR 614.10a) instead of being spent here.
