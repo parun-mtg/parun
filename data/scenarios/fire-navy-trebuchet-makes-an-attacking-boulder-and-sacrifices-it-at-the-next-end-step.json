@@ -163,14 +163,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "Block": {}
-      },
-      "player": "bob",
-      "step": "DeclareBlockers",
-      "turn": 1
-    },
-    {
       "check": {
         "Life": {
           "life": 16,
@@ -198,7 +190,7 @@
       "check": {
         "View": {
           "is": [
-            "trigger of Fire Navy Trebuchet"
+            "trigger of $fnt"
           ],
           "of": "Stack"
         }
