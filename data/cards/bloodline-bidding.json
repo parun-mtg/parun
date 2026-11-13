@@ -1,0 +1,86 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Convoke"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 6
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Bloodline Bidding",
+      "oracleText": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nChoose a creature type. Return all creature cards of the chosen type from your graveyard to the battlefield.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ChooseQuality",
+                    "value": {
+                      "type": "Subtype",
+                      "value": "CreatureType"
+                    }
+                  },
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "EachCardInGraveyard",
+                        "value": {
+                          "filter": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "HasChosenSubtype"
+                              }
+                            ]
+                          },
+                          "graveyards": {
+                            "type": "Scoped",
+                            "value": {
+                              "type": "You"
+                            }
+                          }
+                        }
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

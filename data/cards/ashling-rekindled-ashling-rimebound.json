@@ -1,0 +1,322 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Ashling, Rekindled",
+      "oracleText": "Whenever this creature enters or transforms into Ashling, Rekindled, you may discard a card. If you do, draw a card.\nAt the beginning of your first main phase, you may pay {U}. If you do, transform Ashling.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "Enters",
+                "value": {}
+              },
+              {
+                "type": "Transforms",
+                "value": {
+                  "into": "Ashling, Rekindled"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ],
+                    "ifTaken": {
+                      "type": "AnyTaken",
+                      "value": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "ordinal": 1,
+              "phase": {
+                "type": "PrecombatMain"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Transform",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "self"
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "mana": [
+                          {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Blue"
+                            }
+                          }
+                        ]
+                      },
+                      "payer": {
+                        "type": "Relative",
+                        "value": "You"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Elemental",
+          "Sorcerer"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    },
+    {
+      "colorIndicator": [
+        "Blue"
+      ],
+      "name": "Ashling, Rimebound",
+      "oracleText": "Whenever this creature transforms into Ashling, Rimebound and at the beginning of your first main phase, add two mana of any one color. Spend this mana only to cast spells with mana value 4 or greater.\nAt the beginning of your first main phase, you may pay {R}. If you do, transform Ashling.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "Transforms",
+                "value": {
+                  "into": "Ashling, Rimebound"
+                }
+              },
+              {
+                "type": "StepBegins",
+                "value": {
+                  "ordinal": 1,
+                  "phase": {
+                    "type": "PrecombatMain"
+                  },
+                  "scope": {
+                    "type": "PlayersTurn",
+                    "value": {
+                      "type": "Relative",
+                      "value": "You"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "count": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "production": {
+                            "type": "AnyColor"
+                          },
+                          "restriction": {
+                            "casts": {
+                              "type": "Measures",
+                              "value": {
+                                "comparison": "AtLeast",
+                                "measure": "ManaValue",
+                                "operand": {
+                                  "type": "Literal",
+                                  "value": 4
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "ordinal": 1,
+              "phase": {
+                "type": "PrecombatMain"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Transform",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "self"
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "mana": [
+                          {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Red"
+                            }
+                          }
+                        ]
+                      },
+                      "payer": {
+                        "type": "Relative",
+                        "value": "You"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Elemental",
+          "Wizard"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "type": "Transforming"
+  }
+}

@@ -1,0 +1,199 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 6
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Aurora Awakener",
+      "oracleText": "Trample\nVivid — When this creature enters, reveal cards from the top of your library until you reveal X permanent cards, where X is the number of colors among permanents you control. Put any number of those permanent cards onto the battlefield, then put the rest of the revealed cards on the bottom of your library in a random order.",
+      "power": {
+        "type": "Literal",
+        "value": 7
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 7
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Reveal",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibraryUntil",
+                            "value": {
+                              "count": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "Distinct",
+                                    "value": "Colors"
+                                  },
+                                  "filter": {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  },
+                                  "scope": {
+                                    "type": "InZone",
+                                    "value": {
+                                      "player": {
+                                        "type": "Relative",
+                                        "value": "AnyPlayer"
+                                      },
+                                      "zone": "Battlefield"
+                                    }
+                                  }
+                                }
+                              },
+                              "filter": {
+                                "type": "Or",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Artifact"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Battle"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Enchantment"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Land"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Planeswalker"
+                                  }
+                                ]
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "slot": "revealed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "ChosenCardFromAmong",
+                            "value": {
+                              "count": {
+                                "type": "UpTo"
+                              },
+                              "filter": {
+                                "type": "Or",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Artifact"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Battle"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Enchantment"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Land"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Planeswalker"
+                                  }
+                                ]
+                              },
+                              "slot": "revealed"
+                            }
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "placement": {
+                            "type": "RandomOrder",
+                            "value": "Bottom"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "revealed"
+                          },
+                          "zone": "Library"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Druid",
+          "Giant"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

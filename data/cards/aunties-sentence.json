@@ -1,0 +1,163 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Auntie's Sentence",
+      "oracleText": "Choose one —\n• Target opponent reveals their hand. You choose a nonland permanent card from it. That player discards that card.\n• Target creature gets -2/-2 until end of turn.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Reveal",
+                    "value": {
+                      "ref": {
+                        "type": "EachCardInHand",
+                        "value": {
+                          "hands": {
+                            "type": "InSlot",
+                            "value": "opponent"
+                          }
+                        }
+                      },
+                      "slot": "revealed"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "Discard",
+                    "value": {
+                      "type": "These",
+                      "value": {
+                        "cards": {
+                          "type": "ChosenCardFromAmong",
+                          "value": {
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "Or",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Artifact"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Battle"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Enchantment"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Land"
+                                    },
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Planeswalker"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Not",
+                                  "value": {
+                                    "type": "HasCardType",
+                                    "value": "Land"
+                                  }
+                                }
+                              ]
+                            },
+                            "slot": "revealed"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "opponent": {
+                "filter": {
+                  "type": "IsPlayer",
+                  "value": "Opponent"
+                },
+                "pool": {
+                  "type": "Players"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "ModifyPowerToughness",
+                        "value": {
+                          "power": {
+                            "type": "Literal",
+                            "value": -2
+                          },
+                          "toughness": {
+                            "type": "Literal",
+                            "value": -2
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "creature"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "creature": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

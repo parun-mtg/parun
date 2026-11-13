@@ -1,0 +1,102 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Boneclub Berserker",
+            "label": "berserker"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Raging Goblin"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 604.1, 613.4c: Boneclub Berserker gets +2/+0 for each other Goblin its controller controls",
+  "note": "Alice's two other Goblins make it 6/4. The Berserker is a Goblin and does not count itself (8 if it did), bob's Goblin is not hers (8 again), and Grizzly Bears is no Goblin.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$berserker",
+          "power": 6,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
