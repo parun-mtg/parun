@@ -97,6 +97,12 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
           Spec.assertBool s (Text.isPrefixOf (Text.pack "FAIL asserts: boom\n  CallStack") l) $ "unexpected line: " <> Text.unpack l
           Spec.assertBool s (Text.isInfixOf (Text.pack "Parun/Test/RunnerSpec.hs") $ Text.replace (Text.pack "\\") (Text.pack "/") l) $ "no call site: " <> Text.unpack l
         _ -> Spec.assertFailure s $ "expected one line, got " <> show reported
+    Spec.it s "leaves out the frames inside Parun.Spec" $ do
+      cases <- collect . Spec.it r "asserts" $ Spec.assertEq r 'a' 'b'
+      sink <- IORef.newIORef []
+      _ <- Runner.run (failuresInto sink) Nothing (Foldable.toList cases)
+      reported <- fmap (Text.replace (Text.pack "\\") (Text.pack "/")) <$> IORef.readIORef sink
+      Spec.assertBool s (any (Text.isInfixOf $ Text.pack "Parun/Test/RunnerSpec.hs") reported && not (any (Text.isInfixOf $ Text.pack "Parun/Spec.hs") reported)) $ "unexpected frames: " <> show reported
     Spec.it s "sites an assertion at the case's own line, and an exception nowhere" $ do
       cases <- collect $ do
         Spec.it r "asserts" $ Spec.assertEq r 'a' 'b'

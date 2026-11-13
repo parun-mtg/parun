@@ -140,11 +140,12 @@ data Screen = MkScreen
   deriving (Eq, Show)
 
 -- | Registers each case under the groups around it; a failed assertion throws
--- 'AssertionFailed.AssertionFailed'.
+-- 'AssertionFailed.AssertionFailed', its call stack without the frames called
+-- from inside "Parun.Spec", which every assertion shares.
 runner :: (Monad n) => Spec.Spec IO (Writer.WriterT (Seq.Seq Case) n)
 runner =
   Spec.MkSpec
-    { Spec.assertFailure = \m -> Exception.throwIO . AssertionFailed.MkAssertionFailed (Text.pack m) $ Stack.getCallStack Stack.callStack,
+    { Spec.assertFailure = \m -> Exception.throwIO . AssertionFailed.MkAssertionFailed (Text.pack m) . filter ((/= "Parun.Spec") . Stack.srcLocModule . snd) $ Stack.getCallStack Stack.callStack,
       Spec.describe = \s -> Writer.censor (fmap (\c -> c {path = Text.pack s : path c})),
       Spec.it = \s a -> Writer.tell . Seq.singleton $ MkCase {path = [Text.pack s], action = a}
     }
