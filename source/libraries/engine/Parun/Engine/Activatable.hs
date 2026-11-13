@@ -137,7 +137,9 @@ abilitiesForGiven pcs offBoard oid gs = case fmap Object.zone (Game.lookupObject
   -- The delayed map is the projection's too (CR 707.2), so a copy reads the text
   -- it copied. A granted ability's arm carries its delayed ability
   -- (Parun.AbilitySlotLintSpec's quoted-arm lint) and EffectZone reads it off the
-  -- arm, so the host's map never has to hold the grantor's text.
+  -- arm, so the host's map never has to hold the grantor's text;
+  -- a lending card's is filed in it under that card's name
+  -- (Binding.delayedAsRead).
   -- Parun.Engine.Event.battlefieldAbilitiesOf carries the same pairing and the
   -- same note.
   Just Zone.Battlefield -> filter (AbilityZone.functionsIn Zone.Battlefield (PC.delayedAbilities (Projection.projectGiven pcs oid gs)) Zone.Battlefield) (Projection.abilitiesGiven pcs oid gs)

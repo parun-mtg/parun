@@ -77,8 +77,13 @@ import qualified Parun.Types.Zone as Zone
 -- ability functions from answers first (Keyword.statedZones) -- CR 702.57a's
 -- forecast, and CR 702.49d's commander ninjutsu, the one that names two, which
 -- is why this answers a set.
+--
+-- CR 613.1f: an ability acquired from a lending card arms that card's delayed
+-- ability of a name (Binding.delayedAsRead). A regression fence here: no
+-- activated ability in data/cards/ arms by name a delayed ability that moves
+-- its source out of a zone its cost does not already name.
 zonesFunctionedIn :: Map.Map AbilityName.AbilityName (TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> Maybe (Set.Set Zone.Zone)
-zonesFunctionedIn delayed ability =
+zonesFunctionedIn declared ability =
   case foldMap Keyword.statedZones (ActivatedAbility.keyword ability) of
     stated
       | not (Set.null stated) -> Just stated
@@ -89,7 +94,7 @@ zonesFunctionedIn delayed ability =
                 -- CR 113.7's source slot ALONE is "the object it's on" here: an
                 -- activation is not an event, so Parun.Engine.Event.Binding.eventBindings
                 -- never runs for one and CR 400.7e's `became` names nothing.
-                (EffectZone.zonesFunctionedFrom (Set.singleton Binding.triggerSource) delayed)
+                (EffectZone.zonesFunctionedFrom (Set.singleton Binding.triggerSource) (Binding.delayedAsRead (ActivatedAbility.name ability) declared))
                 (Modal.allEffects (ActivatedAbility.modal ability))
 
 -- CR 113.6m's "functions only in that zone", asked of one zone: does this
