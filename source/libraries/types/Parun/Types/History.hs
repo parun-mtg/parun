@@ -10,7 +10,6 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.PastTurn as PastTurn
 import qualified Parun.Types.PlayerId as PlayerId
-import qualified Parun.Types.SpellWasCast as SpellWasCast
 
 -- | CR 608.2i: what this game has done that a reader asks after the turn's log
 -- (TurnRegisters.events) that recorded it is cleared, held whole as
@@ -22,20 +21,16 @@ data History = MkHistory
     -- cleared there. Under the shared team turns option, the most any one
     -- player on the previous active team cast (CR 732.2a).
     spellsCastLastTurn :: !Natural.Natural,
-    -- | CR 601.2i / 608.2i: every spell cast this game BEFORE the turn in
-    -- progress, oldest first, appended at the turn handoff from the log it
-    -- clears. Parun.Engine.Count's CastWindow.ThisGame fold joins it to the
-    -- live log.
-    castsBeforeThisTurn :: !(Seq.Seq SpellWasCast.SpellWasCast),
     -- | CR 120.1 / 608.2i: every damage event dealt this game BEFORE the turn
     -- in progress, oldest first, appended at the turn handoff from the log it
-    -- clears, as castsBeforeThisTurn is. Lookback.AsThisObject's
+    -- clears. Lookback.AsThisObject's
     -- Filter.DealtDamageTo joins it to the live log.
     damageBeforeThisTurn :: !(Seq.Seq DamageEvent.DamageEvent),
     -- | CR 608.2i: every finished turn of this game, oldest first, appended at
     -- the turn handoff (Engine.closeTurn) from the log it clears. The newest is
     -- "last turn" (Game.turnLog), read by the per-seat view and by every
-    -- WhichTurn.LastTurn tally.
+    -- WhichTurn.LastTurn tally; all of them hold the game's casts
+    -- (Game.castsThisGame).
     pastTurns :: !(Seq.Seq PastTurn.PastTurn),
     -- | CR 508.1a / 608.2i: the attackers declared during each player's OWN
     -- most recent turn, keyed by that player and replaced as their next turn

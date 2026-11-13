@@ -158,30 +158,19 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
         -- ARRIVED reads the arriving object instead (see the CardArrived arm), which is why
         -- the fold hands snapshotView the same reader the zone arm uses.
         --
-        -- CastWindow.ThisGame reaches back past the log to the earlier
-        -- turns' casts, which History.castsBeforeThisTurn keeps as the same
-        -- record the log's SpellCast entries carry.
+        -- CastWindow.ThisGame reaches back past the log to the finished
+        -- turns' casts (Game.castsThisGame).
         Scope.InHistory shape ->
           let logged = case shape of
                 -- Nothing for an evaluation aimed at no object, or at one whose cast
                 -- is not in this turn's log: CR 707.10's copy was never cast.
                 EventShape.SpellCast CastWindow.BeforeEvaluated -> foldMap (fmap GameEvent.SpellCast) (Filter.evaluated context >>= \spell -> Game.castsBefore spell gs)
                 EventShape.SpellCast CastWindow.OtherThanEvaluated -> List.filter (not . isEvaluatedCast) thisTurn
+                EventShape.SpellCast CastWindow.ThisGame -> fmap GameEvent.SpellCast (Foldable.toList (Game.castsThisGame gs))
                 _ -> thisTurn
               thisTurn = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
               isEvaluatedCast event = Maybe.isJust (Filter.evaluated context) && fmap SpellWasCast.spell (Game.castOf event) == Filter.evaluated context
-              earlier = case shape of
-                EventShape.SpellCast CastWindow.ThisGame -> fmap GameEvent.SpellCast (Foldable.toList (History.castsBeforeThisTurn (GameState.history gs)))
-                EventShape.SpellCast CastWindow.ThisTurn -> []
-                EventShape.SpellCast CastWindow.BeforeEvaluated -> []
-                EventShape.SpellCast CastWindow.OtherThanEvaluated -> []
-                EventShape.MovedBetween {} -> []
-                EventShape.MovedFrom {} -> []
-                EventShape.CardArrivedIn {} -> []
-                EventShape.AttackerDeclared -> []
-                EventShape.CountersPut -> []
-                EventShape.Sacrificed -> []
-              views = Maybe.mapMaybe (snapshotView viewOf gs shape) (earlier <> logged)
+              views = Maybe.mapMaybe (snapshotView viewOf gs shape) logged
               kept = fmap ((,) Nothing) (Maybe.mapMaybe (keep predicate context . Just) views)
            in pure (aggregate quantityOf aggregation kept)
         -- CR 102.1: the players themselves. Candidates come from the same

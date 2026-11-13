@@ -63,7 +63,6 @@ import qualified Parun.Codec.RestartSignal as RestartSignal
 import qualified Parun.Codec.Result as Result
 import qualified Parun.Codec.ReturnWatch as ReturnWatch
 import qualified Parun.Codec.SideDeck as SideDeck
-import qualified Parun.Codec.SpellWasCast as SpellWasCast
 import qualified Parun.Codec.ThrowResult as ThrowResult
 import qualified Parun.Codec.Timestamp as Timestamp
 import qualified Parun.Codec.TurnMarker as TurnMarker
@@ -218,7 +217,6 @@ codec resolve = Fields.object $ do
   initiative <- Fields.defaulted "initiative" Nothing (Common.maybe PlayerId.codec) GameState.initiative
   daytime <- Fields.defaulted "daytime" Nothing (Common.maybe Daytime.codec) GameState.daytime
   spellsCastLastTurn <- Fields.defaulted "spellsCastLastTurn" 0 Common.natural (History.spellsCastLastTurn . GameState.history)
-  castsBeforeThisTurn <- Fields.defaulted "castsBeforeThisTurn" Seq.empty (Common.seq SpellWasCast.codec) (History.castsBeforeThisTurn . GameState.history)
   damageBeforeThisTurn <- Fields.defaulted "damageBeforeThisTurn" Seq.empty (Common.seq DamageEvent.codec) (History.damageBeforeThisTurn . GameState.history)
   pastTurns <- Fields.defaulted "pastTurns" Seq.empty (Common.seq PastTurn.codec) (History.pastTurns . GameState.history)
   damagePreventedBy <- Fields.defaulted "damagePreventedBy" Map.empty (Common.naturalMap ObjectId.codec Common.natural) GameState.damagePreventedBy
@@ -355,7 +353,6 @@ codec resolve = Fields.object $ do
           History.MkHistory
             { History.triggeredThisGame = triggeredThisGame,
               History.spellsCastLastTurn = spellsCastLastTurn,
-              History.castsBeforeThisTurn = castsBeforeThisTurn,
               History.damageBeforeThisTurn = damageBeforeThisTurn,
               History.pastTurns = pastTurns,
               History.attacksInOwnLastTurn = attacksInOwnLastTurn,

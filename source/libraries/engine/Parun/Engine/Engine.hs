@@ -2330,8 +2330,8 @@ closeTurn gs =
                 TurnRegisters.permanentsAsTurnBegan = Nothing,
                 -- CR 608.2i is why a log exists at all. It does not say how far back;
                 -- the ONE-turn scope is this engine's choice, and a "this game"
-                -- question about casts or damage reads castsBeforeThisTurn or
-                -- damageBeforeThisTurn below instead.
+                -- question about casts reads pastTurns below instead, and one
+                -- about damage damageBeforeThisTurn.
                 -- Cleared here and never at cleanup -- cleanup is still part of
                 -- this turn, and CR 514.1's discard is itself an event of it.
                 TurnRegisters.events = Seq.empty,
@@ -2392,16 +2392,15 @@ closeTurn gs =
                 -- whether ANY cast two or more, and the most any one of them cast
                 -- answers both.
                 History.spellsCastLastTurn = List.foldl' max 0 (fmap (\p -> Map.findWithDefault 0 p casts) outgoing),
-                -- CR 601.2i: the outgoing turn's casts join the game-long record
-                -- before the log holding them is cleared above.
-                History.castsBeforeThisTurn = History.castsBeforeThisTurn (GameState.history gs) <> Game.castsInLog gs,
-                -- CR 120.1: the outgoing turn's damage joins the game-long record the
-                -- same way, for a look-back as long as an object's own life.
+                -- CR 120.1: the outgoing turn's damage joins the game-long record
+                -- before the log holding it is cleared above, for a look-back as
+                -- long as an object's own life.
                 History.damageBeforeThisTurn = History.damageBeforeThisTurn (GameState.history gs) <> Game.damageInLog gs,
                 -- CR 608.2i: the outgoing turn, whole, joins the game's finished
                 -- turns before the log holding it is cleared above, for the per-seat
-                -- view and for every "last turn" tally a CARD asks (Quantity's
-                -- SpellsCast and LifeChanged at WhichTurn.LastTurn). Forced here, so
+                -- view, for every "last turn" tally a CARD asks (Quantity's
+                -- SpellsCast and LifeChanged at WhichTurn.LastTurn) and for the
+                -- game's casts (Game.castsThisGame). Forced here, so
                 -- no record holds the state it was read from.
                 History.pastTurns =
                   seq (length outgoing) . (History.pastTurns (GameState.history gs) Seq.|>) $!

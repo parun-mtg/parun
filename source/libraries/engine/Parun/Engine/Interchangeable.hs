@@ -282,9 +282,7 @@ representatives pcs gs candidates =
 --     spellsCastLastTurn, resolvedNames) are keyed by or valued
 --     at a PLAYER and name no object.
 --   * Snapshots.lastKnown is about objects that have LEFT, bar the host each
---     record names, which namedByAnother searches; and so is
---     History.castsBeforeThisTurn: its spells were cast on an earlier turn,
---     and CR 500.2 ends no step while the stack holds one.
+--     record names, which namedByAnother searches.
 --     Snapshots.stackArchive is keyed by stack objects that have left too, and
 --     its bindings are read only on behalf of a stack object or a delayed
 --     trigger (CR 608.2h), which namedByAnother and namedByStored already
@@ -317,8 +315,11 @@ representatives pcs gs candidates =
 --   * History.pastTurns holds every finished turn's log. Its newest is read
 --     by the per-seat view and by the "last turn" tallies (Quantity's
 --     SpellsCast and LifeChanged), which count per PLAYER and name no object,
---     so no choice between objects can turn on it. The older ones are read by
---     nothing yet (gap #6034); a reader owes a line here.
+--     so no choice between objects can turn on it. The older ones are read
+--     for their casts alone (Game.castsThisGame), and those are about
+--     objects that have LEFT: their spells were cast on an earlier turn, and
+--     CR 500.2 ends no step while the stack holds one. Nothing else reads
+--     them yet (gap #6034); a reader owes a line here.
 --   * TurnRegisters.permanentsAsTurnBegan is keyed by every permanent, but no
 --     choice this turn can change it and it is read only by a Count over the
 --     whole record, so what two candidates' entries say cannot separate them.

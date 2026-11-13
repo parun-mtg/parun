@@ -23,6 +23,7 @@ import qualified Parun.Codec.TurnRegisters as TurnRegisters.Codec
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
+import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Ring as Ring
 import qualified Parun.Engine.Setup as Setup
@@ -379,15 +380,15 @@ gameStateRoundTripSpec s registry corpus = do
                       }
                 }
 
-  -- History.castsBeforeThisTurn, CR 601.2i's casts of earlier turns, the
-  -- other record the handoff keeps. Built through a real cast and handoff, so
+  -- Game.castsThisGame, CR 601.2i's casts of earlier turns, read off the
+  -- finished turn the handoff files. Built through a real cast and handoff, so
   -- the record is non-empty for the reason the case above gives.
   Spec.it s "a cast on an earlier turn round trips" $ do
     mountain <- S.printingOf s registry "Mountain"
     lightningBolt <- S.printingOf s registry "Lightning Bolt"
     let (gs, spellId) = S.handOne lightningBolt (S.landsInPlay mountain 1)
         handed = Engine.beginTurnOf S.bob (S.runPure S.castAnswer gs (S.cast S.alice spellId))
-    Spec.assertEqWith s "the handoff kept alice's cast" (fmap SpellWasCast.player (Foldable.toList (History.castsBeforeThisTurn (GameState.history handed)))) [S.alice]
+    Spec.assertEqWith s "the handoff kept alice's cast" (fmap SpellWasCast.player (Foldable.toList (Game.castsThisGame handed))) [S.alice]
     roundTrips "a cast on an earlier turn" handed
 
   -- History.damageBeforeThisTurn, CR 120.1's damage of earlier turns, kept
