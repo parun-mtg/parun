@@ -871,7 +871,7 @@ matchesPrinted viewOf gs event candidate =
         -- hallowed-moonlight-exiles-a-card-that-enters-as-a-copy-of-a-creature,
         -- hallowed-moonlight-judges-heliod-on-the-devotion-of-the-player-it-enters-under
         -- and hallowed-moonlight-leaves-a-caged-creature-card-in-the-graveyard.
-        (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ _), ProposedEvent.WouldChangeZone zc discarded _ resolving) ->
+        (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ _ _), ProposedEvent.WouldChangeZone zc discarded _ resolving) ->
           let oid = ZoneChange.object zc
               entering = Map.member oid (Scratch.enteringSubjects (GameState.scratch gs))
               namesBattlefield = ZoneChangePattern.whenDestination pat == Just Zone.Battlefield
@@ -4952,6 +4952,7 @@ installSpellMoveRow destination shuffling spellId caster gs =
                     shuffling
                     LibraryPosition.defaultValue
                     False
+                    Nothing
                     Seq.empty
                 ),
             -- CR 113.7: the spell itself, which the pattern's IsSource is

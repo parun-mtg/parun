@@ -5,6 +5,7 @@ module Parun.Codec.ZoneChangeR where
 import qualified Data.Sequence as Seq
 import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.LibraryPosition as LibraryPosition
+import qualified Parun.Codec.WithCounters as WithCounters
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.Codec.ZoneChangePattern as ZoneChangePattern
 import qualified Parun.JsonCodec.Codec as Codec
@@ -26,6 +27,7 @@ codec effectCodec = Fields.object $ do
   shuffling <- Fields.defaulted "shuffling" False Common.boolean ZoneChangeR.shuffling
   position <- Fields.defaulted "position" LibraryPosition.defaultValue LibraryPosition.codec ZoneChangeR.position
   optional <- Fields.defaulted "optional" False Common.boolean ZoneChangeR.optional
+  counters <- Fields.defaulted "counters" Nothing (Common.maybe WithCounters.codec) ZoneChangeR.counters
   whenYouDo <- Fields.defaulted "whenYouDo" Seq.empty (Common.seq effectCodec) ZoneChangeR.whenYouDo
   pure
     ZoneChangeR.MkZoneChangeR
@@ -35,5 +37,6 @@ codec effectCodec = Fields.object $ do
         ZoneChangeR.shuffling = shuffling,
         ZoneChangeR.position = position,
         ZoneChangeR.optional = optional,
+        ZoneChangeR.counters = counters,
         ZoneChangeR.whenYouDo = whenYouDo
       }
