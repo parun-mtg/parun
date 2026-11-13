@@ -1,0 +1,29 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Boiling Rock Prison" }],
+        "hand": [{ "card": "Abandoned Air Temple", "label": "first" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Plains" }],
+        "hand": [{ "card": "Abandoned Air Temple", "label": "second" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 614.1d, 205.4b: Abandoned Air Temple enters tapped unless its controller controls a basic land",
+  "note": "Alice controls a nonbasic land and her opponent a Plains, so her Temple enters tapped; bob's, beside his own Plains, enters untapped. A played card is a new object (CR 400.7), so each Temple is the second of its name when it is checked: the other is still in a hand, then alice's is the older.",
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$first" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "Abandoned Air Temple#2", "tapped": true } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "PlayLand": "$second" } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Tapped": { "object": "Abandoned Air Temple#2", "tapped": false } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Controller", "object": "Abandoned Air Temple#2", "is": "bob" } } }
+  ]
+}

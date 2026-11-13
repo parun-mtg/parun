@@ -2196,7 +2196,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Uneasy Alliance", 1), -- an activated exile of it, the Aura sacrificed as Carapace's is
         ("Spiral into Solitude", 1), -- Uneasy Alliance's wording
         ("Gilt-Leaf's Embrace", 2), -- two keywords in the entering trigger, as Super Speed's pump
-        ("Aquitect's Defenses", 1) -- hexproof in the entering trigger, as Super Speed's first strike
+        ("Aquitect's Defenses", 1), -- hexproof in the entering trigger, as Super Speed's first strike
+        ("Path to Redemption", 1) -- Spiral into Solitude's wording
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the same atom planted in a SPELL's target slot -- the position a
