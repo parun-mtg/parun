@@ -2149,8 +2149,19 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- CR 701.32b / 904.9: "When you set this scheme in motion", against the
   -- event naming this very scheme -- and CR 312.5's encounter and CR 701.31d's
   -- "When you planeswalk to", the same move off a planar deck.
-  TriggerCondition.SelfTurnedUpOffDeck -> case event of
-    GameEvent.TurnedUpOffDeck e -> TurnedUpOffDeck.card e == bearer
+  --
+  -- A Matching subject is My Laughter Echoes' "whenever you set a non-ongoing
+  -- scheme in motion": the player is CR 109.5's "you", and CR 314.4 has the
+  -- bearer face up as the scheme was set, read off the game filed after that
+  -- one event (CR 701.32c sets several one at a time) -- proved by
+  -- data/scenarios/archenemy/cr-701-32c-my-laughter-echoes-misses-the-scheme-set-in-motion-before-it.json.
+  TriggerCondition.TurnedUpOffDeck subject -> case event of
+    GameEvent.TurnedUpOffDeck e -> case subject of
+      ActingPermanent.Self -> TurnedUpOffDeck.card e == bearer
+      ActingPermanent.Matching f ->
+        TurnedUpOffDeck.player e == you
+          && Set.member bearer (GameState.command atEvent)
+          && maybe False (\view -> Filter.matches bearerContext view f) (Projection.viewWithLastKnown (TurnedUpOffDeck.card e) gs (TurnedUpOffDeck.card e))
     _ -> False
   -- CR 701.31d: "When you planeswalk away from [this plane]", against the
   -- planeswalk naming this very plane among those walked away from. The bearer

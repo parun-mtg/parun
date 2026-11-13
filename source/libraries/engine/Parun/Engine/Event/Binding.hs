@@ -118,6 +118,7 @@ import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
+import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -335,6 +336,11 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   (TriggerCondition.TurnedFaceUp subject, GameEvent.TurnedFaceUp t) -> case subject of
     ActingPermanent.Self -> maybe Map.empty (\x -> Binding.fromChoices Map.empty (Just x) Seq.empty) (TurnedFaceUp.announcedX t)
     ActingPermanent.Matching _ -> Binding.setBecame (TurnedFaceUp.object t) Map.empty
+  -- CR 701.32b's "that scheme" (My Laughter Echoes): the scheme set in motion.
+  -- No zone change need have happened, so CR 400.7e's slot is the printed word,
+  -- CountersChange's reason.
+  (TriggerCondition.TurnedUpOffDeck (ActingPermanent.Matching _), GameEvent.TurnedUpOffDeck e) ->
+    Binding.setBecame (TurnedUpOffDeck.card e) Map.empty
   -- CR 123.3's "that creature": the object the sticker went on, which the event
   -- carries (Tusk and Whiskers). No zone change, so CR 400.7e's slot is the
   -- printed word, CountersChange's reason.
@@ -1474,7 +1480,11 @@ eventBindingSlots cond = case cond of
   TriggerCondition.Visit -> Set.empty
   TriggerCondition.ChaosEnsues -> Set.empty
   TriggerCondition.PlayerRollsPlaneswalker _ -> Set.empty
-  TriggerCondition.SelfTurnedUpOffDeck -> Set.empty
+  -- CR 701.32b's "that scheme" under a Matching subject, guaranteed given a
+  -- match; a Self one names the bearer, CR 113.7a's source slot.
+  TriggerCondition.TurnedUpOffDeck subject -> case subject of
+    ActingPermanent.Self -> Set.empty
+    ActingPermanent.Matching _ -> Set.singleton Binding.became
   TriggerCondition.SelfPlaneswalkedAwayFrom -> Set.empty
   TriggerCondition.FlipsCoin _ -> Set.empty
   -- Empty DELIBERATELY. CR 701.3a's event names two objects, and the bearer is

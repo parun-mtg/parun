@@ -179,6 +179,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.Planeswalk -> Set.empty
   Effect.ChaosEnsues -> Set.empty
   Effect.Abandon -> Set.empty
+  Effect.SetInMotion _ -> Set.empty
   Effect.ClaimPrize -> Set.empty
   Effect.Forage -> Set.empty
   Effect.Populate -> Set.empty

@@ -36,4 +36,11 @@ spec s = Spec.describe s "Parun.Codec.InstructionRewrite" $ do
       InstructionRewrite.codec
       InstructionRewrite.DrawFirst
       " {\"type\":\"DrawFirst\"} "
+  -- Plots That Span Centuries' "set three schemes in motion instead".
+  Spec.it s "SetTo" $
+    Common.assertCodec
+      s
+      InstructionRewrite.codec
+      (InstructionRewrite.SetTo 3)
+      " {\"type\":\"SetTo\",\"value\":3} "
   Spec.it s "has a schema" $ Common.assertHasSchema s InstructionRewrite.codec

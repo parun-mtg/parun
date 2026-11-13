@@ -925,7 +925,7 @@ looksBack condition = case condition of
   TriggerCondition.Visit -> False
   TriggerCondition.ChaosEnsues -> False
   TriggerCondition.PlayerRollsPlaneswalker _ -> False
-  TriggerCondition.SelfTurnedUpOffDeck -> False
+  TriggerCondition.TurnedUpOffDeck _ -> False
   -- CR 603.10g: on the rule's list of exceptions, though no zone change of a
   -- permanent. eventTriggersGiven's `walkedAwayFrom` is the source it decides for.
   TriggerCondition.SelfPlaneswalkedAwayFrom -> True
@@ -1145,7 +1145,7 @@ batchScoped condition = case condition of
   TriggerCondition.Visit -> False
   TriggerCondition.ChaosEnsues -> False
   TriggerCondition.PlayerRollsPlaneswalker _ -> False
-  TriggerCondition.SelfTurnedUpOffDeck -> False
+  TriggerCondition.TurnedUpOffDeck _ -> False
   TriggerCondition.SelfPlaneswalkedAwayFrom -> False
   TriggerCondition.FlipsCoin _ -> False
   -- Per-occurrence, either direction: CR 701.3d's routes each unattach one
@@ -2856,7 +2856,7 @@ zonesTriggeredFrom cond =
         TriggerCondition.ChaosEnsues -> Set.singleton Zone.Command
         -- CR 904.9 / 312.5: a scheme's set-in-motion ability and a phenomenon's
         -- encounter ability trigger from the card face up in the command zone.
-        TriggerCondition.SelfTurnedUpOffDeck -> Set.singleton Zone.Command
+        TriggerCondition.TurnedUpOffDeck _ -> Set.singleton Zone.Command
         -- CR 901.7: a plane's planeswalk-away ability triggers from the card as
         -- it stood face up, read back in time (CR 603.10g).
         TriggerCondition.SelfPlaneswalkedAwayFrom -> Set.singleton Zone.Command
@@ -3219,7 +3219,7 @@ stateTriggersOn gs
             TriggerCondition.Visit -> False
             TriggerCondition.ChaosEnsues -> False
             TriggerCondition.PlayerRollsPlaneswalker _ -> False
-            TriggerCondition.SelfTurnedUpOffDeck -> False
+            TriggerCondition.TurnedUpOffDeck _ -> False
             TriggerCondition.SelfPlaneswalkedAwayFrom -> False
             TriggerCondition.FlipsCoin _ -> False
             -- CR 603.2 once more: becoming attached is something that HAPPENS,

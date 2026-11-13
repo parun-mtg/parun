@@ -1,0 +1,77 @@
+{
+  "faces": [
+    {
+      "name": "My Laughter Echoes",
+      "oracleText": "(An ongoing scheme remains face up until it's abandoned.)\nWhenever you set a non-ongoing scheme in motion, you may abandon this scheme. If you do, set that scheme in motion again.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Matching",
+              "value": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Scheme"
+                  },
+                  {
+                    "type": "Not",
+                    "value": {
+                      "type": "HasSupertype",
+                      "value": "Ongoing"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Abandon"
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "SetInMotion",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "became"
+                        }
+                      }
+                    ],
+                    "ifTaken": {
+                      "type": "AnyTaken",
+                      "value": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "supertypes": [
+          "Ongoing"
+        ],
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}

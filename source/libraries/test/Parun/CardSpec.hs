@@ -798,6 +798,7 @@ objectRefPositions =
         ("earthbend", Effect.Earthbend (Earthbend.MkEarthbend (Quantity.Type.Literal 1) (plantedRef "eb")), [plantedRef "eb"]),
         ("airbend", Effect.Airbend (plantedRef "ab"), [plantedRef "ab"]),
         ("assimilate", Effect.Assimilate (plantedRef "as"), [plantedRef "as"]),
+        ("set-in-motion", Effect.SetInMotion (plantedRef "sm"), [plantedRef "sm"]),
         ("goad", Effect.Goad (plantedRef "go"), [plantedRef "go"]),
         ("does-not-untap-next", Effect.DoesNotUntapNext (DoesNotUntapNext.MkDoesNotUntapNext (plantedRef "du") 1), [plantedRef "du"]),
         ("transform", Effect.Transform (plantedRef "tr"), [plantedRef "tr"]),
@@ -3778,7 +3779,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.Visit -> []
   TriggerCondition.ChaosEnsues -> []
   TriggerCondition.PlayerRollsPlaneswalker _ -> []
-  TriggerCondition.SelfTurnedUpOffDeck -> []
+  TriggerCondition.TurnedUpOffDeck subject -> actingFilters subject
   TriggerCondition.SelfPlaneswalkedAwayFrom -> []
   TriggerCondition.FlipsCoin _ -> []
   TriggerCondition.SelfBecomesPlotted -> []
@@ -5013,6 +5014,7 @@ effectFilters effect = case effect of
   Effect.Planeswalk -> []
   Effect.ChaosEnsues -> []
   Effect.Abandon -> []
+  Effect.SetInMotion ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.ClaimPrize -> []
   Effect.Forage -> []
   Effect.Populate -> []

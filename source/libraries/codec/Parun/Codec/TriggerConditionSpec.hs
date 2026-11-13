@@ -730,13 +730,20 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       TriggerCondition.codec
       TriggerCondition.Visit
       " {\"type\":\"Visit\"} "
-  -- CR 701.32: nullary, the scheme being the ability's own.
-  Spec.it s "SelfTurnedUpOffDeck" $
+  -- CR 701.32: the scheme being the ability's own.
+  Spec.it s "TurnedUpOffDeck Self" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      TriggerCondition.SelfTurnedUpOffDeck
-      " {\"type\":\"SelfTurnedUpOffDeck\"} "
+      (TriggerCondition.TurnedUpOffDeck ActingPermanent.Self)
+      " {\"type\":\"TurnedUpOffDeck\",\"value\":{\"type\":\"Self\"}} "
+  -- CR 701.32b: a scheme the Filter admits, My Laughter Echoes' reading.
+  Spec.it s "TurnedUpOffDeck Matching" $
+    Common.assertCodec
+      s
+      TriggerCondition.codec
+      (TriggerCondition.TurnedUpOffDeck (ActingPermanent.Matching (Filter.And [])))
+      " {\"type\":\"TurnedUpOffDeck\",\"value\":{\"type\":\"Matching\",\"value\":{\"type\":\"And\",\"value\":[]}}} "
   -- CR 701.31d: nullary, the plane being the ability's own.
   Spec.it s "SelfPlaneswalkedAwayFrom" $
     Common.assertCodec

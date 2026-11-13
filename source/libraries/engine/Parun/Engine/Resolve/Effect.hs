@@ -690,6 +690,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Planeswalk -> Counters.planeswalk resolving controller
   Effect.ChaosEnsues -> Counters.chaosEnsues
   Effect.Abandon -> Counters.abandon source
+  Effect.SetInMotion ref -> Counters.setInMotion resolving source controller legal ref
   Effect.ClaimPrize -> Counters.claimPrize controller
   Effect.Forage -> Counters.forage (runReplacementEffects runSubgame) resolving controller
   Effect.Populate -> Counters.populate (runReplacementEffects runSubgame) resolving controller

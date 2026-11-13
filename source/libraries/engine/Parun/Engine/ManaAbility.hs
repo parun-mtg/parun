@@ -350,6 +350,7 @@ manaProduced effect = case effect of
   Effect.Planeswalk -> Nothing
   Effect.ChaosEnsues -> Nothing
   Effect.Abandon -> Nothing
+  Effect.SetInMotion _ -> Nothing
   Effect.ClaimPrize -> Nothing
   Effect.Forage -> Nothing
   Effect.Populate -> Nothing
@@ -558,6 +559,7 @@ playerChoice effect = case effect of
   Effect.Planeswalk -> Nothing
   Effect.ChaosEnsues -> Nothing
   Effect.Abandon -> Nothing
+  Effect.SetInMotion _ -> Nothing
   Effect.ClaimPrize -> Nothing
   Effect.Forage -> Nothing
   Effect.Populate -> Nothing
@@ -818,6 +820,7 @@ movesLibraryCard effect = case effect of
   Effect.Planeswalk -> False
   Effect.ChaosEnsues -> False
   Effect.Abandon -> False
+  Effect.SetInMotion _ -> False
   Effect.ClaimPrize -> False
   Effect.Forage -> False
   Effect.Populate -> False

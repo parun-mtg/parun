@@ -548,12 +548,15 @@ phasePatternOffends replacement = case replacement of
 --   anyway.
 -- - DrawFirst on a flip, which is a WouldThrow and not the WouldPerform its
 --   arm reads.
+-- - SetTo on a flip, for DrawFirst's reason, and SetTo 0, a scaling settling
+--   at zero.
 -- - A PerformerR naming an instruction no permanent carries out, which no
 --   event ever reaches: only an assembly and a connive name their performer.
 --
 -- Every printed row is Multiply 2, AddMore 1, Eligeth's DrawInstead on a scry,
--- Pokey, the Scallywagg's RollD20Instead on a flip or Leader, Super-Genius's
--- DrawFirst on a connive.
+-- Pokey, the Scallywagg's RollD20Instead on a flip, Leader, Super-Genius's
+-- DrawFirst on a connive or Plots That Span Centuries' SetTo 3 on a set in
+-- motion.
 -- Exhaustive rather than a wildcard, this file's discipline for a sum.
 instructionRowOffends :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
 instructionRowOffends replacement = case replacement of
@@ -585,6 +588,7 @@ instructionRowOffends replacement = case replacement of
       InstructionRewrite.DrawInstead -> instruction /= PlayerInstruction.Scry
       InstructionRewrite.RollD20Instead -> instruction /= PlayerInstruction.FlipCoin
       InstructionRewrite.DrawFirst -> instruction == PlayerInstruction.FlipCoin
+      InstructionRewrite.SetTo count -> instruction == PlayerInstruction.FlipCoin || count == 0
       InstructionRewrite.Scaled scaling -> case scaling of
         Scaling.Multiply m -> m == 0
         -- A computed quantity can be negative (CR 107.1b) and so reach zero.
@@ -1429,6 +1433,7 @@ effectObjectRefs effect =
         Effect.Planeswalk -> []
         Effect.ChaosEnsues -> []
         Effect.Abandon -> []
+        Effect.SetInMotion ref -> read_ [ref]
         Effect.ClaimPrize -> []
         Effect.Forage -> []
         Effect.Populate -> []
