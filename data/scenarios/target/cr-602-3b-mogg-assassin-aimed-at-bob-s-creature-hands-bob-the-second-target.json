@@ -65,7 +65,7 @@
               "opponentsTarget",
               [
                 [
-                  "Object",
+                  "Creature",
                   "$giant"
                 ]
               ]
