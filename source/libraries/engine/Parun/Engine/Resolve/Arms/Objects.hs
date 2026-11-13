@@ -431,6 +431,10 @@ conjure settle resolving source controller legal (Conjure.MkConjure quantity car
 
 createCopy :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> CreateCopy.CreateCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateCopy quantity ref entry mSlot exceptions creator linked) = do
+  -- Asked before the board is read (CR 608.2d), so Twilight Diviner's "a copy
+  -- of one of them" is chosen. Common.LastKnown, since the copy only reads its
+  -- pick: CR 608.2h's branch below answers for one that has left.
+  sources <- Common.askingObjects Common.LastKnown resolving source controller legal chosen ref
   gs <- State.get
   -- CR 707.2 / 111.3: this many tokens per named permanent, minted through the
   -- same CR 111.2 funnel, carrying the copied permanent's COPIABLE values
@@ -443,7 +447,6 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
   -- already gone, and the pair has to move together.
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-      sources = objectRefObjects legal resolving controller source gs ref
       -- CR 608.2h: the counters the copies enter with, settled ONCE off the
       -- pre-effect board, outside the loop over named permanents below.
       frozen = Common.freezeRiders viewOf context gs resolving source entry
@@ -2078,7 +2081,7 @@ attachBound resolving source controller legal (AttachBound.MkAttachBound subject
 -- "another creature".
 attachAll :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> AttachAll.AttachAll -> Game ()
 attachAll resolving source controller legal chosen (AttachAll.MkAttachAll ref filter_) = do
-  movers <- Common.askingObjects resolving source controller legal chosen ref
+  movers <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   gs <- State.get
   let grants = Projection.controlGrants gs
       inReach oid = all (\you -> Projection.objectInRangeGiven grants you oid gs) (Plane.rangePerspective source controller gs)
@@ -2095,7 +2098,7 @@ attachAll resolving source controller legal chosen (AttachAll.MkAttachAll ref fi
 -- re-asking Object.attachedTo.
 unattach :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
 unattach resolving source controller legal chosen ref = do
-  movers <- Common.askingObjects resolving source controller legal chosen ref
+  movers <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   Event.simultaneously (Monad.forM_ movers Event.detach)
 
 exileHaunting :: Game () -> ObjectId -> Map.Map SlotName (Set Recipient) -> ExileHaunting.ExileHaunting -> Game ()

@@ -757,6 +757,14 @@ attachTogether movers recipient = do
   Foldable.for_ (ordered <> filter (not . restamped) movers) $ \mover ->
     Event.attach mover recipient
 
+-- | Which members of a bound group a "from among them" choice offers.
+data Members
+  = -- | CR 400.7: those still in the game, for an instruction acting on its pick.
+    Present
+  | -- | CR 608.2h: every one, a departed member by last known information, for an instruction only reading its pick.
+    LastKnown
+  deriving (Eq, Show)
+
 -- The objects an ObjectRef names, for every opcode whose ref may be a CR 608.2d
 -- question: the asking arms are answered here in the Game monad, and every other
 -- arm is objectRefObjects' pure sweep, read off the board as it stands (CR
@@ -765,7 +773,10 @@ attachTogether movers recipient = do
 --
 -- Every ask reads its candidates off the board before the instruction acts and
 -- filters the answer rather than trusting it.
+--
+-- `offered` is the calling opcode's, read by the "from among them" arm alone.
 askingObjects ::
+  Members ->
   ObjectId ->
   ObjectId ->
   PlayerId ->
@@ -773,7 +784,7 @@ askingObjects ::
   Map.Map SlotName (Set Recipient) ->
   ObjectRef.ObjectRef ->
   Game [ObjectId]
-askingObjects resolving source controller legal chosen ref = case ref of
+askingObjects offered resolving source controller legal chosen ref = case ref of
   -- Fall of the Thran's "two land cards from their graveyard": the count per
   -- chooser, DISTINCT cards (CR 608.2c's rules of English), asked in APNAP order
   -- (CR 101.4).
@@ -782,7 +793,7 @@ askingObjects resolving source controller legal chosen ref = case ref of
   -- asked.
   ObjectRef.ChosenCardInHand inHand -> chooseCardsInHand resolving source controller legal inHand
   -- The printed "from among them".
-  ObjectRef.ChosenCardFromAmong from -> chooseCardFromAmong resolving source controller legal chosen from
+  ObjectRef.ChosenCardFromAmong from -> chooseCardFromAmong offered resolving source controller legal chosen from
   -- Randomness, asked of the interpreter.
   ObjectRef.RandomCard random -> randomCards resolving source controller legal random
   ObjectRef.RandomCardInGraveyard random -> randomCardsInGraveyard resolving source controller legal random
@@ -790,14 +801,14 @@ askingObjects resolving source controller legal chosen ref = case ref of
   -- drawn from it. The pool's InSlot reads `legal`, so a target CR 608.2b made
   -- illegal is not among them.
   ObjectRef.AtRandom inner -> do
-    pool <- askingObjects resolving source controller legal chosen inner
+    pool <- askingObjects offered resolving source controller legal chosen inner
     Maybe.maybeToList <$> Game.drawAmong Prompt.RandomObject pool
   -- Tovolar's "any number of Human Werewolves you control", read off a board CR
   -- 702.145c has already turned him over on.
   ObjectRef.ChosenPermanents choice -> snd <$> chosenPermanents AnyNumberOf.Permanents legal resolving controller source choice
   -- Each ref asked or read in the order written, before anything moves; an
   -- object two refs name is named once.
-  ObjectRef.AllOf refs -> fmap (ListUtils.nubOrd . concat) (traverse (askingObjects resolving source controller legal chosen) (NonEmpty.toList refs))
+  ObjectRef.AllOf refs -> fmap (ListUtils.nubOrd . concat) (traverse (askingObjects offered resolving source controller legal chosen) (NonEmpty.toList refs))
   -- Every other arm is a read. Exhaustive with no `_`, so a new arm has to say
   -- which it is: one answered [] by objectRefObjects but falling through here
   -- would name nothing.
@@ -833,8 +844,8 @@ askingObjects resolving source controller legal chosen ref = case ref of
 -- keeps a card from writing any other chooser here.
 loopMembers :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ObjectRef.ObjectRef -> Game [Recipient]
 loopMembers resolving source controller legal chosen ref = case ref of
-  ObjectRef.ChosenCardFromAmong _ -> fmap Recipient.ToObject <$> askingObjects resolving source controller legal chosen ref
-  ObjectRef.ChosenCardInHand _ -> fmap Recipient.ToObject <$> askingObjects resolving source controller legal chosen ref
+  ObjectRef.ChosenCardFromAmong _ -> fmap Recipient.ToObject <$> askingObjects Present resolving source controller legal chosen ref
+  ObjectRef.ChosenCardInHand _ -> fmap Recipient.ToObject <$> askingObjects Present resolving source controller legal chosen ref
   _ -> State.gets (\gs -> objectRefRecipients legal resolving controller source gs ref)
 
 -- CR 701.9a's move for every Effect.Discard arm, once the cards are named:
@@ -893,7 +904,7 @@ turnPermanentsOver ::
   Game ()
 turnPermanentsOver legal chosen resolving controller source ref = do
   -- WHICH permanents turn over, gathered BEFORE the turn (CR 608.2f).
-  victims <- askingObjects resolving source controller legal chosen ref
+  victims <- askingObjects Present resolving source controller legal chosen ref
   -- CR 613.7m: which of the swept victims will ACTUALLY take a stamp, ordered by
   -- their controllers. Asked BEFORE the write and off the pre-turn board, the
   -- gather's own reason (CR 608.2f), and `turnsOver` below is the whole
@@ -2191,6 +2202,7 @@ chooseCardsInHand resolving source controller legal (ChosenCardInHand.MkChosenCa
 -- Proved by the scenario "Getaway Barrel puts a random creature card from among
 -- the revealed cards onto the battlefield".
 chooseCardFromAmong ::
+  Members ->
   ObjectId ->
   ObjectId ->
   PlayerId ->
@@ -2198,13 +2210,22 @@ chooseCardFromAmong ::
   Map.Map SlotName (Set Recipient) ->
   ChosenCardFromAmong.ChosenCardFromAmong ->
   Game [ObjectId]
-chooseCardFromAmong resolving source controller legal chosen (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total perColor chooser pileChooser faceUpPile selection) = do
+chooseCardFromAmong offered resolving source controller legal chosen (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total perColor chooser pileChooser faceUpPile selection) = do
   members <- fromAmongMembers legal resolving chosen slot
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
       amount = maybe 0 Integer.toNaturalSaturating . Quantity.evaluateFor viewOf context gs resolving source
-      matching = matchingFromAmong legal resolving controller source gs filter_ (stillPresent gs members)
+      -- A departed member is matched off CR 608.2h's record, matchingFromAmong's
+      -- read. Proved by the scenario "CR 608.2h Twilight Diviner copies a
+      -- returned creature destroyed in response".
+      --
+      -- Not implemented: a name for a departed candidate, which the prompt
+      -- carries by an id no view or scenario reference reaches (#7173).
+      candidates = case offered of
+        Present -> stillPresent gs members
+        LastKnown -> members
+      matching = matchingFromAmong legal resolving controller source gs filter_ candidates
       -- Each candidate weighed against its own projection, TopOfLibraryUntil's
       -- read and clamp.
       weighs weight oid = maybe 0 Integer.toNaturalSaturating (Quantity.evaluateFor viewOf context gs resolving oid weight)
