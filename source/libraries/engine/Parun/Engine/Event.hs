@@ -5229,7 +5229,8 @@ apply settle batch applied batchPrevented candidate event =
       -- PlaneswalkRewrite.RunEffects arm's reason.
       --
       -- CR 614.1a / 614.6: Words of Waste's "each opponent discards a card
-      -- instead" has no "may", so nobody is asked and the draw never happens.
+      -- instead" has no "may", so nobody is asked and the draw never happens;
+      -- data/scenarios/replacement's cr-614-1a-words-of-waste-* proves it.
       DrawRewrite.RunEffects optional effects -> do
         gs <- State.get
         answer <-

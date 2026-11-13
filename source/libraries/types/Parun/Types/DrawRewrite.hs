@@ -78,10 +78,7 @@ data DrawRewrite effect
     -- cards of your library, put all but one of them on the bottom of your
     -- library in a random order, then draw a card".
     KeepOneOfTopThenDraw Quantity.Quantity
-  | -- | CR 614.1a / 614.10: "[these effects] instead", queued for the reason
-    -- Parun.Types.PendingReplacementEffect gives. The Bool is the printed "may",
-    -- asked of the drawer: Island Sanctuary's "instead you may skip that draw.
-    -- If you do," against Words of Waste's "each opponent discards a card
-    -- instead".
+  | -- | CR 614.1a / 614.10: "[these effects] instead", the Bool the drawer's
+    -- printed "may" (Island Sanctuary's, where Words of Waste has none).
     RunEffects Bool (Seq.Seq effect)
   deriving (Eq, Ord, Show)
