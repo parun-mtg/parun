@@ -68,7 +68,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 601.2f, 401.4: Swat Away costs {2} less only while a creature is attacking its caster, and the owner of its target puts it on the top or bottom of their library",
+  "description": "CR 601.2f, 608.2d: Swat Away costs {2} less only while a creature is attacking its caster, and the owner of its target puts it on the top or bottom of their library",
   "note": "The same two Islands and the same target fail before the attack and pay afterwards. Bottom is not the first end offered.",
   "timeline": [
     {
