@@ -1,0 +1,41 @@
+{
+  "description": "Master of the Wild Hunt's Wolves deal their damage at the same time, so the shielded target's controller chooses which of it Mending Hands prevents (CR 608.2f, 615.7)",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}],
+        "battlefield": [
+          {"card": "Master of the Wild Hunt", "label": "master", "ready": true},
+          {"card": "Watchwolf", "label": "watchwolf", "ready": true},
+          {"card": "Ravening Warg", "label": "warg", "ready": true}
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}],
+        "hand": [{"card": "Mending Hands", "label": "hands"}],
+        "battlefield": [
+          {"card": "Indomitable Ancients", "label": "ancients"},
+          {"card": "Plains", "label": "p"}
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$master", "targets": ["$ancients"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$hands", "mana": ["$p"], "targets": ["$ancients"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Answer": {"prompt": "AllocateDamage", "with": [2, 2]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Answer": {"prompt": "ChooseDistribution", "with": [["$warg", 2]]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$ancients", "damage": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Indomitable Ancients", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Ravening Warg", "count": 1}}}
+  ],
+  "note": "Watchwolf's 3 and the deathtouching Ravening Warg's 2 arrive as one batch against a shield of 4. Bob prevents all of the Warg's 2 and 2 of Watchwolf's, so the 2/10 Ancients takes 1 without deathtouch and lives. Dealt one Wolf after the other, alice would order them and bob would be asked nothing: Watchwolf first spends 3 of the shield and 1 of the Warg's damage destroys the Ancients."
+}

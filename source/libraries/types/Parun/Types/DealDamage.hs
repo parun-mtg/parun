@@ -53,7 +53,11 @@ data DealDamage = MkDealDamage
     -- each the source of its own event (CR 120.1), and an amount reading this
     -- slot reads the one dealer whose damage it is.
     -- data/scenarios/allies-at-last-a-shield-is-divided-between-its-two-dealers.json
-    -- proves the batch by CR 615.7's choice.
+    -- proves the batch by CR 615.7's choice. A group an earlier instruction
+    -- bound deals the same way, Master of the Wild Hunt's "each Wolf tapped
+    -- this way":
+    -- data/scenarios/master-of-the-wild-hunt-a-shield-is-divided-between-the-wolves.json
+    -- proves it.
     --
     -- Not implemented: several dealers beside `excess` or `excessTally`
     -- (#7272).

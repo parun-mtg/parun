@@ -32,7 +32,6 @@
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$wyluli-wolf", "tapped": true}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$master", "targets": ["$ancients"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OrderForEach", "with": [0, 1, 2]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "refuse": {"Answer": {"prompt": "ChooseDistribution", "with": [["$wyluli-wolf", 1], ["$sacred-wolf", 1]]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "refuse": {"Answer": {"prompt": "ChooseDistribution", "with": [["$alice-piker", 1], ["$sacred-wolf", 1]]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Answer": {"prompt": "ChooseDistribution", "with": [["$sacred-wolf", 1], ["Wolf Token", 1]]}}},
