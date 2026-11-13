@@ -1,0 +1,20 @@
+{
+  "description": "CR 121.2b / 614.17a a card drawn before the limit began counts against it: Spirit of the Labyrinth cast after Think Twice stops the second Think Twice's draw",
+  "note": "Narset, Parter of Veils's 2019-05-03 ruling. Alice draws the Forest, then casts the Spirit; her second Think Twice resolves and the Mountain stays on her library.",
+  "board": {"active": "alice", "turn": 1, "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Island", "label": "i1", "ready": true}, {"card": "Island", "label": "i2", "ready": true}, {"card": "Island", "label": "i3", "ready": true}, {"card": "Island", "label": "i4", "ready": true}, {"card": "Island", "label": "i5", "ready": true}, {"card": "Plains", "label": "plains", "ready": true}], "hand": [{"card": "Think Twice", "label": "tt1"}, {"card": "Think Twice", "label": "tt2"}, {"card": "Spirit of the Labyrinth", "label": "spirit"}], "library": [{"card": "Forest"}, {"card": "Mountain"}, {"card": "Swamp"}]},
+    {"name": "bob", "library": [{"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$tt1", "mana": ["$i1", "$i2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Forest", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$spirit", "mana": ["$plains", "$i3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Spirit of the Labyrinth", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$tt2", "mana": ["$i4", "$i5"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Think Twice", "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Mountain", "count": 0}}}
+  ]
+}

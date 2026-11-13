@@ -115,7 +115,9 @@
                           },
                           "effect": {
                             "type": "Cant",
-                            "value": "BecomeMonarch"
+                            "value": {
+                              "type": "BecomeMonarch"
+                            }
                           },
                           "players": {
                             "type": "Scoped",

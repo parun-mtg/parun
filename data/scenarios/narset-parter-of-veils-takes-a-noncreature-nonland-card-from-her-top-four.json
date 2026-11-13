@@ -1,0 +1,17 @@
+{
+  "description": "CR 606.4 Narset, Parter of Veils's -2 looks at the top four cards and may put a noncreature, nonland card among them into its controller's hand",
+  "note": "The Grizzly Bears and the Forest are not offered; the Shock is the one card she may take, and the other three go under the Swamp.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Narset, Parter of Veils", "label": "narset", "counters": [{"key": {"type": "Loyalty"}, "value": 5}]}], "library": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Forest", "label": "forest"}, {"card": "Shock", "label": "shock"}, {"card": "Island", "label": "island"}, {"card": "Swamp"}]},
+    {"name": "bob", "library": [{"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$narset", "ability": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$narset", "kind": {"type": "Loyalty"}, "count": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$island", "$bears", "$forest"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Shock", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Library", "is": ["Swamp", "Forest", "Grizzly Bears", "Island#2"]}}}
+  ]
+}

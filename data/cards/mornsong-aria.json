@@ -27,7 +27,10 @@
         {
           "effect": {
             "type": "Cant",
-            "value": "DrawCards"
+            "value": {
+              "type": "DrawMoreThan",
+              "value": 0
+            }
           },
           "scope": {
             "type": "AnyPlayer"
@@ -36,7 +39,9 @@
         {
           "effect": {
             "type": "Cant",
-            "value": "GainLife"
+            "value": {
+              "type": "GainLife"
+            }
           },
           "scope": {
             "type": "AnyPlayer"

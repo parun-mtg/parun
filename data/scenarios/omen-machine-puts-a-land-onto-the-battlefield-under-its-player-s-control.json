@@ -1,0 +1,13 @@
+{
+  "description": "CR 110.2a / 121.3 Omen Machine stops the draw step's draw and has its player exile their top card and put a land onto the battlefield under their own control",
+  "note": "Alice controls the Omen Machine and bob is \"that player\": the Forest enters under his control (a Count on the battlefield is the controller's), and the Mountain under it is not drawn.",
+  "board": {"active": "bob", "turn": 2, "step": "Upkeep", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Omen Machine"}], "library": [{"card": "Island"}]},
+    {"name": "bob", "library": [{"card": "Forest"}, {"card": "Mountain"}]}
+  ]},
+  "timeline": [
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Forest", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Mountain", "count": 0}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Library", "card": "Mountain", "count": 1}}}
+  ]
+}
