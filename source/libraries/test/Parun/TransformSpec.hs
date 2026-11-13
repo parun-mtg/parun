@@ -139,6 +139,7 @@ import qualified Parun.Types.Transformed as Transformed
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.Zone as Zone
 
 -- CR 701.27h's fixture, which is not the Gargoyle's: Tovolar, Dire Overlord //
@@ -1399,7 +1400,7 @@ spellsCastLastTurnSpec s registry = Spec.describe s "SpellsCast at LastTurn" $ d
         handed = Engine.beginTurnOf S.bob (castAndResolve S.bob bobFog board)
     -- SPARSE: alice cast nothing and so has no entry at all, which every reader
     -- takes for 0.
-    Spec.assertEqWith s "bob cast one during alice's turn and alice cast none" (Game.castsPerPlayer (History.eventsLastTurn (GameState.history handed))) (Map.fromList [(S.bob, 1)])
+    Spec.assertEqWith s "bob cast one during alice's turn and alice cast none" (Game.castsPerPlayer (Game.turnLog WhichTurn.LastTurn handed)) (Map.fromList [(S.bob, 1)])
     Spec.assertEqWith s "and CR 502.2's scalar still answers about alice alone" (History.spellsCastLastTurn (GameState.history handed)) 0
 
 -- The two names Ratchet, Field Medic // Ratchet, Rescue Racer prints. CR 701.28

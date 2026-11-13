@@ -8,7 +8,6 @@ import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.DamageEvent as DamageEvent
-import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.PastTurn as PastTurn
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.SpellWasCast as SpellWasCast
@@ -18,12 +17,7 @@ import qualified Parun.Types.SpellWasCast as SpellWasCast
 -- GameState.history. Belongs to this game alone, so Parun.Engine.Setup's
 -- restartGame (CR 728.1) and subgameStateFrom (CR 730.2) begin it again.
 data History = MkHistory
-  { -- | CR 608.2i: the turn just ended's `events`, kept at the handoff. The
-    -- per-seat view reads it, and so does every "last turn" tally
-    -- (WhichTurn.LastTurn). On the first turn it holds what the log held as
-    -- that turn began.
-    eventsLastTurn :: !(Seq.Seq LoggedEvent.LoggedEvent),
-    -- | CR 502.2 / 732.2: how many spells the previous turn's active player
+  { -- | CR 502.2 / 732.2: how many spells the previous turn's active player
     -- cast that turn, snapshotted at handoff from the outgoing log, which is
     -- cleared there. Under the shared team turns option, the most any one
     -- player on the previous active team cast (CR 732.2a).
@@ -39,7 +33,9 @@ data History = MkHistory
     -- Filter.DealtDamageTo joins it to the live log.
     damageBeforeThisTurn :: !(Seq.Seq DamageEvent.DamageEvent),
     -- | CR 608.2i: every finished turn of this game, oldest first, appended at
-    -- the turn handoff (Engine.closeTurn) from the log it clears.
+    -- the turn handoff (Engine.closeTurn) from the log it clears. The newest is
+    -- "last turn" (Game.turnLog), read by the per-seat view and by every
+    -- WhichTurn.LastTurn tally.
     pastTurns :: !(Seq.Seq PastTurn.PastTurn),
     -- | CR 508.1a / 608.2i: the attackers declared during each player's OWN
     -- most recent turn, keyed by that player and replaced as their next turn

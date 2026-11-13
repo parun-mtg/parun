@@ -18,7 +18,6 @@ import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.History as History
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
@@ -35,6 +34,7 @@ import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
+import qualified Parun.Types.WhichTurn as WhichTurn
 import qualified Parun.Types.Zone as Zone
 
 -- | CR 400.2 / 724.4: everything `pid` may see of the game.
@@ -52,7 +52,7 @@ viewFor pid gs =
       PlayerView.stack = Maybe.mapMaybe (objectView pid gs) (TurnRegisters.stack (GameState.turn gs)),
       PlayerView.parkedStacks = fmap (Maybe.mapMaybe (objectView pid gs) . TurnRegisters.stack) (GameState.parkedTurns gs),
       PlayerView.witnessed = witnessedIn (TurnRegisters.events (GameState.turn gs)),
-      PlayerView.witnessedLastTurn = witnessedIn (History.eventsLastTurn (GameState.history gs)),
+      PlayerView.witnessedLastTurn = witnessedIn (Game.turnLog WhichTurn.LastTurn gs),
       PlayerView.result = GameState.result gs,
       PlayerView.undone = Map.lookup pid (Bookkeeping.undone (GameState.bookkeeping gs))
     }

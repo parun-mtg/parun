@@ -1386,7 +1386,7 @@ Entries are ordered by the first rule each cites.
 - **Rejected**: Every running turn's history together, which makes a tally
   count what happened on another stack.
 - **Site**: `Parun.Types.TurnRegisters` (each turn's log) and
-  `Parun.Engine.Engine.closeTurn` (`GameState.eventsLastTurn`). No test
+  `Parun.Engine.Engine.closeTurn` (`History.pastTurns`). No test
   reaches it.
 - **Issue**: #6117.
 
