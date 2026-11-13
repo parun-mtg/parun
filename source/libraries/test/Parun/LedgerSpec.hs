@@ -135,7 +135,7 @@ spec s registry = Spec.describe s "Ledger" $ do
   Spec.it s "CR 603.2g: a placement that left the count where it was is named" $ do
     plains <- S.printingOf s registry "Plains"
     let (land, before) = S.addPermanent plains S.alice (S.landsInPlay plains 0)
-        none = GameEvent.CountersPut CountersPlaced.MkCountersPlaced {CountersPlaced.putter = S.alice, CountersPlaced.object = land, CountersPlaced.kind = CounterKind.PlusOnePlusOne, CountersPlaced.before = 0, CountersPlaced.after = 0}
+        none = GameEvent.CountersPut CountersPlaced.MkCountersPlaced {CountersPlaced.putter = S.alice, CountersPlaced.object = land, CountersPlaced.kind = CounterKind.PlusOnePlusOne, CountersPlaced.before = 0, CountersPlaced.after = 0, CountersPlaced.snapshot = S.permanentSnapshot land S.alice 0}
         after = Event.recordEvent none before
     Spec.assertEqWith s "the idle placement" (Ledger.discrepancies before after) [Discrepancy.MkIdleEvent none]
   Spec.it s "CR 122.1: a kind stored at 0 reads as absent" $ do

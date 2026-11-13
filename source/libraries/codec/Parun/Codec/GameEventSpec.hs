@@ -342,8 +342,11 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.CountersPut (CountersPlaced.MkCountersPlaced (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 3) CounterKind.Lore 1 2))
-      " {\"type\":\"CountersPut\",\"value\":{\"putter\":1,\"object\":3,\"kind\":{\"type\":\"Lore\"},\"before\":1,\"after\":2}} "
+      (GameEvent.CountersPut (CountersPlaced.MkCountersPlaced (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 3) CounterKind.Lore 1 2 (ObjectSnapshot.MkObjectSnapshot (ObjectId.MkObjectId 3) ProjectedCharacteristicsSpec.testCharacteristics (Just (PlayerId.MkPlayerId 0)) (PlayerId.MkPlayerId 0) Zone.Battlefield Zone.Battlefield Set.empty)))
+      ( " {\"type\":\"CountersPut\",\"value\":{\"putter\":1,\"object\":3,\"kind\":{\"type\":\"Lore\"},\"before\":1,\"after\":2,\"snapshot\":{\"object\":3,\"characteristics\":"
+          <> ProjectedCharacteristicsSpec.testCharacteristicsJson
+          <> ",\"controller\":0,\"owner\":0,\"zone\":\"Battlefield\"}}} "
+      )
   -- CR 310.12b's record, and the pair runs the other way: before > after.
   Spec.it s "CountersRemoved" $
     Common.assertCodec

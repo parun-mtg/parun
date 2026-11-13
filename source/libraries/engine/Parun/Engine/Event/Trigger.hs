@@ -3987,6 +3987,10 @@ resnapshot gs without event =
         GameEvent.LifeLost {} -> Just event
         GameEvent.LifeGained {} -> Just event
         GameEvent.AbilityActivated {} -> Just event
+        -- Kept, snapshot and all: no trigger's match reads it (Match's
+        -- CounterMotion.Put arm asks the board), only Count.snapshotView's
+        -- look-back, and a later placement in the same batch changes the
+        -- object, which a re-read would answer Nothing for.
         GameEvent.CountersPut {} -> Just event
         GameEvent.CountersRemoved {} -> Just event
         GameEvent.HalfUnlocked {} -> Just event

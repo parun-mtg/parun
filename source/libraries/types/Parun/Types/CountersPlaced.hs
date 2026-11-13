@@ -4,17 +4,20 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PlayerId as PlayerId
 
 -- | CR 122.6: a player put counters of one kind on an object, with the count
 -- BEFORE and the count AFTER (CR 715.2b's threshold crossing, which
 -- neither count alone can answer). CR 122.6a's `putter` is what
--- "whenever you put" reads.
+-- "whenever you put" reads. `snapshot` is the object as the counters landed,
+-- which CR 608.2i's "put a counter on a creature this turn" asks.
 data CountersPlaced = MkCountersPlaced
   { putter :: PlayerId.PlayerId,
     object :: ObjectId.ObjectId,
     kind :: CounterKind.CounterKind Keyword.Keyword,
     before :: Natural.Natural,
-    after :: Natural.Natural
+    after :: Natural.Natural,
+    snapshot :: ObjectSnapshot.ObjectSnapshot
   }
   deriving (Eq, Ord, Show)
