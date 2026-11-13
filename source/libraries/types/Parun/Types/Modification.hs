@@ -247,7 +247,7 @@ data Modification ability
     -- Urborg -> Swamp). CR 305.7's ability strip is the Replace mode's alone.
     LandSubtype ChangeMode.ChangeMode Subtype.Subtype
   | -- | layer 4, CR 613.1d / 205.1a / 205.1b: LandSubtype, CreatureSubtype or
-    -- (a planeswalker type's add) AddSubtype, as the family says, with the
+    -- (a planeswalker type) Subtype, as the family says, with the
     -- subtype chosen for THIS effect's SOURCE (Object.chosenSubtype), as it
     -- entered or by Effect.ChooseQuality.
     -- Convincing Mirage's "enchanted land is the chosen type"; Mystic Compass's,
@@ -299,12 +299,14 @@ data Modification ability
     -- those of the card its source exiled LAST among those the filter matches
     -- (CR 607.2a, 613.7d) -- Duplicant. No such card leaves them alone.
     SetCreatureSubtypesOfLastCardExiledWith (Filter.Filter Keyword.Keyword)
-  | -- | layer 4, CR 613.1d / CR 205.1b add, over the subtype families the two
-    -- family-tagged arms above cannot reach: CR 205.3g's artifact types (Ygra,
-    -- Eater of All's "other creatures are Food artifacts in addition to their
-    -- other types") and CR 205.3h's enchantment types (a permanent that becomes
-    -- an Aura). CR 205.3d still refuses a type that corresponds to no card type
-    -- the object has, so a card granting one authors the card type first.
+  | -- | layer 4, CR 613.1d / 205.1a / 205.1b: LandSubtype and CreatureSubtype
+    -- over the subtype families those two cannot reach, the mode replacing the
+    -- subtypes of this one's own set or keeping them: CR 205.3g's artifact types
+    -- (Ygra, Eater of All's "other creatures are Food artifacts in addition to
+    -- their other types"), CR 205.3h's enchantment types (a permanent that
+    -- becomes an Aura) and CR 205.3j's planeswalker types (ChosenSubtype's).
+    -- CR 205.3d still refuses a type that corresponds to no card type the
+    -- object has, so a card granting one authors the card type first.
     --
     -- UNTAGGED where LandSubtype and CreatureSubtype carry their family
     -- implicitly, and that is the whole reason those two are not generalised into
@@ -313,13 +315,13 @@ data Modification ability
     -- being swapped is a land type or a creature type. This arm has no such gate
     -- to state, so it is deliberately left unrewritten there. Every printed text
     -- changer swaps a colour word, a basic land type or a creature type, and none
-    -- reaches an artifact or enchantment type -- Scryfall
+    -- reaches an artifact, enchantment or planeswalker type -- Scryfall
     -- o:"replacing all instances of one", 2026-08-22, twelve cards, all read.
-    -- Parun.EffectLintSpec holds the fence: no AddSubtype or RemoveSubtype in the
+    -- Parun.EffectLintSpec holds the fence: no Subtype or RemoveSubtype in the
     -- pool may carry a land type or a creature type, since those have their own
     -- arms and their own gate.
-    AddSubtype Subtype.Subtype
-  | -- | layer 4, CR 613.1d / 205.1a: this object loses this subtype, AddSubtype's
+    Subtype ChangeMode.ChangeMode Subtype.Subtype
+  | -- | layer 4, CR 613.1d / 205.1a: this object loses this subtype, Subtype's
     -- families only (Haunted Plate Mail's "no longer an Equipment").
     RemoveSubtype Subtype.Subtype
   | -- | layer 4, CR 613.1d / 205.1a / 205.1b: this object's card types become

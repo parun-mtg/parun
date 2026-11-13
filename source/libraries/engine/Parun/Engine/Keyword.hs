@@ -3710,7 +3710,7 @@ bestowEnchant = TargetSlot.required Pool.Creatures Nothing
 bestowModifications :: [Modification.Modification ability]
 bestowModifications =
   [ Modification.CardType ChangeMode.Replace CardType.Enchantment,
-    Modification.AddSubtype Subtype.Aura,
+    Modification.Subtype ChangeMode.InAddition Subtype.Aura,
     Modification.GainEnchant bestowEnchant
   ]
 

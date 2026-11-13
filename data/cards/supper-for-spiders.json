@@ -68,8 +68,11 @@
                             "value": "Artifact"
                           },
                           {
-                            "type": "AddSubtype",
-                            "value": "Food"
+                            "type": "Subtype",
+                            "value": {
+                              "mode": "InAddition",
+                              "subtype": "Food"
+                            }
                           },
                           {
                             "type": "GainAbility",

@@ -1,0 +1,40 @@
+{
+  "description": "CR 205.1a / 205.3j Synthetic Spark Mantle sets alice's planeswalkers to the planeswalker type chosen as it entered, replacing their own, and what counts an Ajani or a Liliana follows",
+  "note": "alice's Liliana gives Arisen Gorgon deathtouch and Court Cleric nothing. The Mantle names Ajani: her Liliana is an Ajani and no longer a Liliana, so the Cleric is 2/2 and the Gorgon loses deathtouch. bob's Jace, not hers, stays a Jace.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Plains", "label": "p1", "ready": true },
+          { "card": "Plains", "label": "p2", "ready": true },
+          { "card": "Court Cleric", "label": "cleric", "ready": true },
+          { "card": "Arisen Gorgon", "label": "gorgon", "ready": true },
+          { "card": "Liliana of the Veil", "label": "liliana", "ready": true, "counters": [{ "key": { "type": "Loyalty" }, "value": 3 }] }
+        ],
+        "hand": [
+          { "card": "Synthetic Spark Mantle", "label": "mantle" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Jace Beleren", "label": "bobjace", "ready": true, "counters": [{ "key": { "type": "Loyalty" }, "value": 3 }] }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$cleric", "power": 1, "toughness": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$gorgon", "keyword": { "type": "Deathtouch" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$mantle", "mana": ["$p1", "$p2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChoosePlaneswalkerType", "with": "Ajani" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$gorgon", "keyword": { "type": "Deathtouch" }, "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$cleric", "power": 2, "toughness": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$liliana", "subtypes": ["Ajani"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$bobjace", "subtypes": ["Jace"] } } }
+  ]
+}

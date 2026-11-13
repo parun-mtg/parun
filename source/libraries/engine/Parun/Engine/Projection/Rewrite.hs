@@ -78,7 +78,7 @@ type Modification = Modification.Modification (GrantedAbility.GrantedAbility Car
 --
 -- CR 612.2 gates the two subtype visitors: the position's family is fixed by
 -- its constructor, and the PAIR's family is read off the word being replaced,
--- which is why no family tag rides on the stored ChangeWord. AddSubtype and
+-- which is why no family tag rides on the stored ChangeWord. Subtype and
 -- RemoveSubtype carry no family to check the word against, so the traversal
 -- leaves them whole; Parun.EffectLintSpec keeps land-type and creature-type
 -- words out of them.

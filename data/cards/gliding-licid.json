@@ -106,8 +106,11 @@
                             }
                           },
                           "modification": {
-                            "type": "AddSubtype",
-                            "value": "Aura"
+                            "type": "Subtype",
+                            "value": {
+                              "mode": "InAddition",
+                              "subtype": "Aura"
+                            }
                           },
                           "ref": {
                             "type": "InSlot",

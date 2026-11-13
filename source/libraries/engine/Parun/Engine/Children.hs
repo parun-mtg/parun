@@ -3493,7 +3493,7 @@ modificationChildren c modification = case modification of
   Modification.AddEveryCreatureSubtype -> pure modification
   Modification.LoseEverySubtype _ -> pure modification
   Modification.SetCreatureSubtypesOfLastCardExiledWith filter_ -> Modification.SetCreatureSubtypesOfLastCardExiledWith <$> modificationFilter c filter_
-  Modification.AddSubtype _ -> pure modification
+  Modification.Subtype {} -> pure modification
   Modification.RemoveSubtype _ -> pure modification
   Modification.CardType {} -> pure modification
   Modification.LoseCardType _ -> pure modification
