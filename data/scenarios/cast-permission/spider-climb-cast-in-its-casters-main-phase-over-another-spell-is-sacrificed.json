@@ -1,0 +1,123 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Spider Climb",
+            "label": "climb"
+          },
+          {
+            "card": "Giant Growth",
+            "label": "growth"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "manaPool": "GG",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 307.5a Spider Climb cast while another object is on the stack is sacrificed at the beginning of the next cleanup step",
+  "note": "alice's own main phase, with her Giant Growth on the stack beneath it.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$growth"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$climb"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Spider Climb",
+            "Giant Growth"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Spider Climb",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Spider Climb",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
+    }
+  ]
+}

@@ -11,10 +11,12 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.payload "ByKeyword" (KeywordDesignator.codec Keyword.codec) CostOffer.ByKeyword (\x -> case x of CostOffer.ByKeyword y -> Just y; _ -> Nothing),
-      Arm.nullary "ByNoKeyword" CostOffer.ByNoKeyword
+      Arm.nullary "ByNoKeyword" CostOffer.ByNoKeyword,
+      Arm.nullary "Arming" CostOffer.Arming
     ]
 
 tagOf :: CostOffer.CostOffer -> String
 tagOf x = case x of
   CostOffer.ByKeyword {} -> "ByKeyword"
   CostOffer.ByNoKeyword -> "ByNoKeyword"
+  CostOffer.Arming -> "Arming"

@@ -1927,3 +1927,21 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Setup.exileBeforeShuffling`. Proved by
   `Parun.SetupSpec`'s "exiling before the shuffle" cases.
 - **Issue**: #7201.
+
+## Who says which permission a cast of Spider Climb used
+
+- **Question**: Spider Climb's ruling of 2022-12-08 has the sacrifice occur
+  only if it was cast "using its own ability", and not when another effect let
+  it be cast as though it had flash. Under Vedalken Orrery both permissions
+  allow the same upkeep cast. Which one did the cast use?
+- **Rules**: CR 601.3, 601.3b, 603.7g, 307.5a; CR of 2026-11-06.
+- **Decision**: The caster says, as the cast is announced. Each permission
+  offers its own candidate, the Orrery's first, so a cast that names neither
+  takes the one creating nothing.
+- **Rejected**: Always the other effect's, which makes the choice for the
+  player and denies one the ruling's wording leaves open. Always the card's
+  own: the ruling's example refutes it.
+- **Site**: `Parun.Engine.Cost.withFlashPermission`, proved by the scenarios
+  `spider-climb-cast-under-vedalken-orrery-is-kept` and
+  `spider-climb-cast-under-its-own-permission-beside-vedalken-orrery-is-sacrificed`.
+- **Issue**: #6190.

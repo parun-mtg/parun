@@ -1,0 +1,120 @@
+{
+  "faces": [
+    {
+      "castingPermissions": [
+        {
+          "type": "CastAsThoughItHadFlash",
+          "value": {
+            "outsideSorceryTiming": "sacrifice it"
+          }
+        }
+      ],
+      "delayedAbilities": {
+        "sacrifice it": {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "Cleanup"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Sacrifice",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "became permanent"
+                          },
+                          "sacrificer": "PermanentController"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "enchant": [
+        {
+          "filter": {
+            "type": "HasCardType",
+            "value": "Artifact"
+          },
+          "pool": {
+            "type": "Permanents"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Relic Ward",
+      "oracleText": "You may cast this spell as though it had flash. If you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.\nEnchant artifact\nEnchanted artifact has shroud. (It can't be the target of spells or abilities.)",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Artifact"
+                },
+                {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Shroud"
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

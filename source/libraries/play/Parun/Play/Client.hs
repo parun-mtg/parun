@@ -319,16 +319,17 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
         fmap (\i -> optionalDecision (if i == 1 then OptionalDecision.Exercises else OptionalDecision.Declines)) . one 2
       )
   -- CR 601.2b / 702.51a: each candidate as Oracle text prints its cost, and
-  -- the keyword that offered it (CR 702.152a); CR 101.4b: what earlier
-  -- payers answered.
+  -- the keyword that offered it (CR 702.152a) and the delayed ability it
+  -- creates (CR 603.7g); CR 101.4b: what earlier payers answered.
   "ChooseCost" -> do
     source <- Protocol.field "source" offer
     costs <- Protocol.field "costs" offer >>= Protocol.arrayOf
     let self = objectName view source
         keywords = foldMap (fmap (decoded Codec.Keyword.codec)) (Protocol.field "keywords" offer >>= Protocol.arrayOf) <> repeat Nothing
-        offered cost keyword = candidateName self cost <> foldMap (\k -> Text.pack " (" <> Render.spaced (Text.pack (Codec.Keyword.tagOf k)) <> Text.pack ")") keyword
+        arming = foldMap (fmap textOf) (Protocol.field "arming" offer >>= Protocol.arrayOf) <> repeat Nothing
+        offered cost keyword arms = candidateName self cost <> foldMap (\k -> Text.pack " (" <> Render.spaced (Text.pack (Codec.Keyword.tagOf k)) <> Text.pack ")") keyword <> foldMap (\name -> Text.pack " (" <> name <> Text.pack ")") arms
     pure
-      ( payersTold view self offer <> (Text.pack "Choose how to pay for " <> self <> Text.pack ":" : numbered (zipWith offered costs keywords)),
+      ( payersTold view self offer <> (Text.pack "Choose how to pay for " <> self <> Text.pack ":" : numbered (zipWith3 offered costs keywords arming)),
         fmap (R.Number . toInteger . subtract 1) . one (Natural.length costs)
       )
   -- CR 201.4: any card's name, typed in full; one the rules refuse is asked

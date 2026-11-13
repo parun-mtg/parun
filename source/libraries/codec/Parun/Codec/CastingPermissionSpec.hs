@@ -1,8 +1,10 @@
 module Parun.Codec.CastingPermissionSpec where
 
+import qualified Data.Text as Text
 import qualified Parun.Codec.CastingPermission as CastingPermission
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.CostAmount as CostAmount
@@ -47,13 +49,19 @@ spec s = Spec.describe s "Parun.Codec.CastingPermission" $ do
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastAsThoughItHadFlash Nothing Nothing)
+      (CastingPermission.CastAsThoughItHadFlash Nothing Nothing Nothing)
       " {\"type\":\"CastAsThoughItHadFlash\",\"value\":{}} "
   Spec.it s "CastAsThoughItHadFlash under a condition for an additional cost" $
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastAsThoughItHadFlash (Just (Condition.Any [])) (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])))
+      (CastingPermission.CastAsThoughItHadFlash (Just (Condition.Any [])) (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) Nothing)
       " {\"type\":\"CastAsThoughItHadFlash\",\"value\":{\"condition\":{\"type\":\"Any\",\"value\":[]},\"additionalCost\":[{\"type\":\"Generic\",\"value\":2}]}} "
+  Spec.it s "CastAsThoughItHadFlash creating a delayed ability outside sorcery timing" $
+    Common.assertCodec
+      s
+      CastingPermission.codec
+      (CastingPermission.CastAsThoughItHadFlash Nothing Nothing (Just (AbilityName.MkAbilityName (Text.pack "sacrifice it"))))
+      " {\"type\":\"CastAsThoughItHadFlash\",\"value\":{\"outsideSorceryTiming\":\"sacrifice it\"}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s CastingPermission.codec

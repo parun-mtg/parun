@@ -39,6 +39,7 @@ import qualified Parun.Types.Condition as Condition.Type
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControlDuration as ControlDuration
 import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DiscardSubject as DiscardSubject
 import qualified Parun.Types.DiscardTrigger as DiscardTrigger
 import qualified Parun.Types.DiscardWay as DiscardWay
@@ -765,6 +766,13 @@ armBecame oid obj gs1 arrivals = do
       stillHas keyword = Map.member keyword (Projection.keywordsOf oid gs1)
       ability = Keyword.resolutionDelayedAbility (Monad.mfilter stillHas (Object.castUsing obj)) >>= Keyword.mintedDelayedAbility
       arm delayed permanent = Event.armDelayed delayed oid (Resolve.spellController obj oid gs1) (Map.singleton Keyword.becameSlot (Binding.toObject permanent)) (Just TurnWindow.AnyTurn) Nothing
+      -- CR 603.7g: a delayed ability the cast itself created
+      -- (Parun.Engine.Cast.armCastUnder) names the spell under that slot until
+      -- now. Ahead of the arming below, whose entries already name a permanent.
+      follow permanent entry
+        | DelayedTrigger.source entry == oid = entry {DelayedTrigger.bindings = Map.adjust (Binding.renameObject oid permanent) Keyword.becameSlot (DelayedTrigger.bindings entry)}
+        | otherwise = entry
+  Foldable.for_ permanents (\permanent -> State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = fmap (follow permanent) (StoredEffects.delayedTriggers (GameState.stored g))}}))
   Foldable.for_ ability (\delayed -> State.modify' (\g -> List.foldl' (flip (arm delayed)) g permanents))
   -- CR 702.62a's last sentence, off the same record and at the same moment the
   -- delayed abilities above are armed: a spell cast for the cost suspend's third

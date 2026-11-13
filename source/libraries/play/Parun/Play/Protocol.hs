@@ -18,6 +18,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
+import qualified Parun.Codec.AbilityName as Codec.AbilityName
 import qualified Parun.Codec.CardName as Codec.CardName
 import qualified Parun.Codec.CombatDamageOption as Codec.CombatDamageOption
 import qualified Parun.Codec.Cost as Codec.Cost
@@ -261,14 +262,17 @@ offerOf gs prompt = case prompt of
   Prompt.ReverseManaAbilities _ _ sources -> fields [("sources", objects (NonEmpty.toList sources))]
   -- CR 601.2b / 702.51a: each candidate's cost and, beside it, the keyword
   -- that offered it (CR 702.152a) or null; CR 101.4b: what earlier payers
-  -- answered.
+  -- answered. CR 603.7g: the delayed ability each creates or null, where one
+  -- does.
   Prompt.ChooseCost _ _ source candidates earlier ->
     fields
-      [ ("source", object source),
-        ("costs", Reply.encode (Reply.list (Reply.viaCodec (Codec.Cost.codec Codec.Keyword.codec))) namer (fmap CandidateCost.cost candidates)),
-        ("keywords", Reply.encode (Reply.list (Reply.maybeOf (Reply.viaCodec Codec.Keyword.codec))) namer (fmap CandidateCost.keyword candidates)),
-        ("earlier", payerAnswers earlier)
-      ]
+      ( [ ("source", object source),
+          ("costs", Reply.encode (Reply.list (Reply.viaCodec (Codec.Cost.codec Codec.Keyword.codec))) namer (fmap CandidateCost.cost candidates)),
+          ("keywords", Reply.encode (Reply.list (Reply.maybeOf (Reply.viaCodec Codec.Keyword.codec))) namer (fmap CandidateCost.keyword candidates)),
+          ("earlier", payerAnswers earlier)
+        ]
+          <> [("arming", Reply.encode (Reply.list (Reply.maybeOf (Reply.viaCodec Codec.AbilityName.codec))) namer (fmap CandidateCost.arms candidates)) | any (Maybe.isJust . CandidateCost.arms) candidates]
+      )
   Prompt.PayLifeForMana _ _ life mana -> fields [("life", natural life), ("mana", Reply.encode (Reply.viaCodec Codec.ManaType.codec) namer mana)]
   Prompt.ChooseManaYield _ _ source options -> fields [("source", object source), ("yields", Reply.encode (Reply.list (Reply.list (Reply.viaCodec Codec.ManaType.codec))) namer (fmap (fmap ManaUnit.manaType . Mana.yieldUnits) (Foldable.toList options)))]
   Prompt.ChooseManaSpentOnX _ _ source shares -> fields [("source", object source), ("shares", Reply.encode (Reply.list (Reply.list (Reply.viaCodec Codec.ManaType.codec))) namer (fmap (fmap ManaUnit.manaType . Mana.Type.unwrap) (Foldable.toList shares)))]

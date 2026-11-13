@@ -1,0 +1,149 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Spider Climb",
+            "label": "climb"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "manaPool": "G",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 307.5a / 603.7g Spider Climb cast in its caster's upkeep is sacrificed at the beginning of the next cleanup step",
+  "note": "A phase other than her main phase. The delayed ability triggers in the cleanup step, which gives alice priority (CR 514.3a) with the Aura still attached; it resolves and bob's turn begins without it.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$climb"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 2,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "Cleanup",
+          "of": "Step"
+        }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Spider Climb",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Spider Climb",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Spider Climb",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}
