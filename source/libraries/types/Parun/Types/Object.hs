@@ -248,7 +248,8 @@ data Object = MkObject
     chosenColors :: Map.Map Acquisition.Acquisition (Set.Set Color.Color),
     -- | CR 614.1c: a subtype this object's controller chose as it entered -- a
     -- basic land type (Convincing Mirage) or a creature type (Pillar of Origins),
-    -- ONE field because no printing makes both choices. Read by
+    -- ONE field because no printing makes both choices. Also the type a spell's
+    -- Behold cost chose as it was paid (Behold.chosenType). Read by
     -- Modification.ChosenSubtype and by Filter.HasChosenSubtype off the
     -- effect's SOURCE -- in a CR 106.6 restriction through the value
     -- Parun.Engine.Mana.sourceChoicesOf bakes onto a mana unit at production.
