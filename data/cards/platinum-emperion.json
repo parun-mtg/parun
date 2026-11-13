@@ -12,7 +12,8 @@
       "playerAbilities": [
         {
           "effect": {
-            "type": "CantGainLife"
+            "type": "Cant",
+            "value": "GainLife"
           },
           "scope": {
             "type": "You"
@@ -20,7 +21,8 @@
         },
         {
           "effect": {
-            "type": "CantLoseLife"
+            "type": "Cant",
+            "value": "LoseLife"
           },
           "scope": {
             "type": "You"

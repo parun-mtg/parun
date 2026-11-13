@@ -13,6 +13,7 @@ import qualified Parun.Types.DrawReveal as DrawReveal
 import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.ExtraVotes as ExtraVotes
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.ForbiddenAct as ForbiddenAct
 import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.GameOutcome as GameOutcome
 import qualified Parun.Types.HexproofExemption as HexproofExemption
@@ -174,9 +175,6 @@ data PlayerEffect
     DamageCantBeRedirected DamagePattern.DamagePattern
   | -- | CR 701.23 / 613.11 / Leonin Arbiter: this player can't search libraries.
     CantSearchLibraries CantSearchLibraries.CantSearchLibraries
-  | -- | CR 726.1 / 101.2 / Jared Carthalion, True Heir: this player can't become
-    -- the monarch.
-    CantBecomeMonarch
   | -- | CR 704.5i / 704.5j / Hall of Echoes, Sanctum Lurker: the state-based
     -- action doesn't apply to permanents this player controls.
     StateBasedActionDoesntApply StateBasedAction.StateBasedAction
@@ -270,20 +268,8 @@ data PlayerEffect
     -- put a matching card from among the exiled cards onto the battlefield
     -- tapped.
     PutTappedAsYouCascade (Filter.Filter Keyword.Keyword)
-  | -- | CR 119.7 / Giant Cindermaw, Platinum Emperion: this player can't gain
-    -- life.
-    --
-    -- A STATIC restriction rather than a replacement, which is why
-    -- Parun.Engine.Event.resolveLifeGain consults it AHEAD of the proposal;
-    -- Parun.PlayerEffectSpec's GiantCindermaw group proves it.
-    CantGainLife
-  | -- | CR 119.8 / Platinum Emperion: this player can't lose life.
-    --
-    -- Damage is still DEALT to such a player -- CR 120.3a's RESULT is what does
-    -- not happen -- and CR 119.8's last sentence makes a pay-life cost
-    -- unpayable. Parun.PlayerEffectSpec's PlatinumEmperion and GreedUnderEmperion
-    -- groups prove the two.
-    CantLoseLife
+  | -- | CR 101.2 / 614.17: this player can't perform the act.
+    Cant ForbiddenAct.ForbiddenAct
   | -- | CR 104.2b / 104.3 / 704.5a / Abyssal Persecutor, Platinum Angel, Lich: this
     -- player can't win, can't lose, or doesn't lose for having 0 or less life.
     Precluded GameOutcome.GameOutcome

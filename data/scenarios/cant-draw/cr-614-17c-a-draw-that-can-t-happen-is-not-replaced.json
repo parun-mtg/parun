@@ -1,0 +1,17 @@
+{
+  "description": "CR 614.17c a draw that can't happen is not replaced: Words of Worship gains nothing for it",
+  "note": "Maralen of the Mornsong rather than Mornsong Aria, which would stop the gain too. Alice's Words of Worship row waits for her next draw; Think Twice's draw can't happen, so the row has nothing to replace and her life stays 20 where a row applied to it would make 25 (Maralen's 2008-04-01 ruling). The Forest stays on her library.",
+  "board": {"active": "alice", "turn": 1, "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Maralen of the Mornsong"}, {"card": "Words of Worship", "label": "words"}, {"card": "Plains", "label": "plains", "ready": true}, {"card": "Island", "label": "i1", "ready": true}, {"card": "Island", "label": "i2", "ready": true}], "hand": [{"card": "Think Twice", "label": "tt"}], "library": [{"card": "Forest"}, {"card": "Forest"}]},
+    {"name": "bob", "library": [{"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$words", "mana": ["$plains", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$tt", "mana": ["$i1", "$i2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Think Twice", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 20}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Forest", "count": 0}}}
+  ]
+}

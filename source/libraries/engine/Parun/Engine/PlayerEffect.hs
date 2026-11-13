@@ -88,6 +88,7 @@ import qualified Parun.Types.ExtraVotes as ExtraVotes
 import qualified Parun.Types.Face as Face
 import Parun.Types.Filter (Filter)
 import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.ForbiddenAct as ForbiddenAct
 import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameOutcome as GameOutcome
@@ -668,7 +669,6 @@ prohibitsCasting pid oid variable gs =
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -734,8 +734,7 @@ prohibitsCasting pid oid variable gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -864,7 +863,6 @@ prohibitsPlayingLand pid oid gs =
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -888,8 +886,7 @@ prohibitsPlayingLand pid oid gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -959,7 +956,6 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -978,8 +974,7 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -1073,7 +1068,6 @@ prohibitsCounters pid kind gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -1095,8 +1089,7 @@ prohibitsCounters pid kind gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -1112,82 +1105,9 @@ prohibitsCounters pid kind gs =
 --
 -- Takes no source and no route, unlike the two casting prohibitions above taking
 -- a name: the restriction Jared Carthalion prints is on the PLAYER, and rule 726
--- gives the designation no parts for a narrowing to name. See
--- Parun.Types.PlayerEffect.CantBecomeMonarch.
---
--- A DISJUNCTION for CR 101.2's reason.
+-- gives the designation no parts for a narrowing to name.
 prohibitsBecomingMonarch :: PlayerId -> GameState -> Bool
-prohibitsBecomingMonarch pid gs =
-  let prohibits effect = case effect of
-        PlayerEffect.CantBecomeMonarch -> True
-        PlayerEffect.StateBasedActionDoesntApply _ -> False
-        PlayerEffect.CantSetSchemesInMotion -> False
-        PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
-        PlayerEffect.ControlledWhileSearching -> False
-        PlayerEffect.BlocksFromPiles -> False
-        PlayerEffect.YouChoose _ -> False
-        PlayerEffect.ExilesFoundWhileSearching -> False
-        PlayerEffect.CantAttackWithCreatures -> False
-        -- Every other arm is about casting, playing, targeting, countering,
-        -- searching, paying, keeping mana, gaining or losing life, rule 702
-        -- protection or how a coin flip came out. CR 726.1's designation is none of
-        -- those: it is handed out by a resolving effect or by rule 726.2 itself,
-        -- and no prohibition on casting reaches an effect that has already
-        -- resolved.
-        PlayerEffect.CantCastSpells -> False
-        PlayerEffect.CantActivateAbilities {} -> False
-        PlayerEffect.CantCastMoreThan _ -> False
-        PlayerEffect.ModifyCost {} -> False
-        PlayerEffect.AlternativeActivationCost {} -> False
-        PlayerEffect.PlayAdditionalLands _ -> False
-        PlayerEffect.NoMaximumHandSize -> False
-        PlayerEffect.SetMaximumHandSize _ -> False
-        PlayerEffect.IncreaseMaximumHandSize _ -> False
-        PlayerEffect.IncreaseDevotion _ -> False
-        PlayerEffect.ReduceMaximumHandSize _ -> False
-        PlayerEffect.DontLoseUnspentMana _ -> False
-        PlayerEffect.LoseLifeForUnspentMana -> False
-        PlayerEffect.MayPayLifeForMana {} -> False
-        PlayerEffect.SpendManaAsThough _ -> False
-        -- CR 702.18a/702.11c stop a SPELL from choosing this player as a target.
-        -- CR 726.1's effect need not target to crown them (Palace Jailer's "you
-        -- become the monarch" names nobody), so shroud is not an eligibility
-        -- restriction; where a card does target (Jared's own first clause), CR
-        -- 601.2c's own check turns it away before this one is asked.
-        PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash {} -> False
-        PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
-        PlayerEffect.KeywordRiderGrant _ -> False
-        PlayerEffect.LoyaltyGrant _ -> False
-        PlayerEffect.MayTapForMana _ -> False
-        PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ _ -> False
-        PlayerEffect.RestrictTargeting _ -> False
-        PlayerEffect.TargetPastHexproof _ -> False
-        PlayerEffect.DamageCantBePrevented _ -> False
-        PlayerEffect.DamageCantBeRedirected _ -> False
-        PlayerEffect.CantSearchLibraries _ -> False
-        PlayerEffect.HasProtectionFrom _ -> False
-        PlayerEffect.CantCastMatching _ -> False
-        PlayerEffect.PutTappedAsYouCascade _ -> False
-        PlayerEffect.CastOnlyAtSorcerySpeed -> False
-        PlayerEffect.CantPlayLands _ -> False
-        PlayerEffect.CastFrom _ -> False
-        PlayerEffect.PlayLandsFrom _ -> False
-        PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
-        PlayerEffect.CantGetCounters _ -> False
-        PlayerEffect.StateCoinFlip _ -> False
-        PlayerEffect.ModifyDieRoll _ -> False
-        PlayerEffect.AdditionalVotes _ -> False
-        PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
-        PlayerEffect.RevealsDraw _ -> False
-        PlayerEffect.Precluded _ -> False
-        PlayerEffect.Shows _ -> False
-   in any (prohibits . snd) (applying pid gs)
+prohibitsBecomingMonarch = forbids ForbiddenAct.BecomeMonarch
 
 -- CR 704.5i / 704.5j: does the state-based action not apply to the permanents
 -- `pid` controls (Sanctum Lurker, Hall of Echoes)? A DISJUNCTION: one applicable
@@ -1195,7 +1115,6 @@ prohibitsBecomingMonarch pid gs =
 stateBasedActionDoesntApplyTo :: StateBasedAction.StateBasedAction -> PlayerId -> GameState -> Bool
 stateBasedActionDoesntApplyTo action pid gs =
   let exempts effect = case effect of
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply exempted -> exempted == action
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -1247,8 +1166,7 @@ stateBasedActionDoesntApplyTo action pid gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -1268,7 +1186,6 @@ schemesCantBeSetInMotion gs =
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
         PlayerEffect.ExilesFoundWhileSearching -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantAttackWithCreatures -> False
         PlayerEffect.CantCastSpells -> False
@@ -1313,8 +1230,7 @@ schemesCantBeSetInMotion gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -1339,7 +1255,6 @@ entryTriggerings pid entrant gs =
         PlayerEffect.BlocksFromPiles -> Nothing
         PlayerEffect.YouChoose _ -> Nothing
         PlayerEffect.ExilesFoundWhileSearching -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantAttackWithCreatures -> Nothing
         PlayerEffect.CantCastSpells -> Nothing
@@ -1384,8 +1299,7 @@ entryTriggerings pid entrant gs =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -1419,7 +1333,6 @@ additionalTriggers pid bearer gs =
         PlayerEffect.BlocksFromPiles -> False
         PlayerEffect.YouChoose _ -> False
         PlayerEffect.ExilesFoundWhileSearching -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantAttackWithCreatures -> False
         PlayerEffect.CantCastSpells -> False
@@ -1464,8 +1377,7 @@ additionalTriggers pid bearer gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -1479,7 +1391,6 @@ prohibitsAttackingWithCreatures :: PlayerId -> GameState -> Bool
 prohibitsAttackingWithCreatures pid gs =
   let prohibits effect = case effect of
         PlayerEffect.CantAttackWithCreatures -> True
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -1530,8 +1441,7 @@ prohibitsAttackingWithCreatures pid gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -2236,7 +2146,6 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.DamageCantBeRedirected _ -> Nothing
   PlayerEffect.CantSearchLibraries _ -> Nothing
   PlayerEffect.HasProtectionFrom _ -> Nothing
-  PlayerEffect.CantBecomeMonarch -> Nothing
   PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
   PlayerEffect.EntriesTrigger _ -> Nothing
@@ -2259,8 +2168,7 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.ModifyDieRoll _ -> Nothing
   PlayerEffect.AdditionalVotes _ -> Nothing
   PlayerEffect.AdditionalSurveilCards _ -> Nothing
-  PlayerEffect.CantGainLife -> Nothing
-  PlayerEffect.CantLoseLife -> Nothing
+  PlayerEffect.Cant _ -> Nothing
   PlayerEffect.RevealsDraw _ -> Nothing
   PlayerEffect.Precluded _ -> Nothing
   PlayerEffect.Shows _ -> Nothing
@@ -2498,7 +2406,6 @@ castFromGrantOf effect = case effect of
   PlayerEffect.DamageCantBeRedirected _ -> Nothing
   PlayerEffect.CantSearchLibraries _ -> Nothing
   PlayerEffect.HasProtectionFrom _ -> Nothing
-  PlayerEffect.CantBecomeMonarch -> Nothing
   PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
   PlayerEffect.EntriesTrigger _ -> Nothing
@@ -2530,8 +2437,7 @@ castFromGrantOf effect = case effect of
   PlayerEffect.ModifyDieRoll _ -> Nothing
   PlayerEffect.AdditionalVotes _ -> Nothing
   PlayerEffect.AdditionalSurveilCards _ -> Nothing
-  PlayerEffect.CantGainLife -> Nothing
-  PlayerEffect.CantLoseLife -> Nothing
+  PlayerEffect.Cant _ -> Nothing
   PlayerEffect.RevealsDraw _ -> Nothing
   PlayerEffect.Precluded _ -> Nothing
   PlayerEffect.Shows _ -> Nothing
@@ -2837,8 +2743,7 @@ mayCastWithoutPayingManaCost pid oid gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -2882,7 +2787,6 @@ mayCastWithoutPayingManaCost pid oid gs =
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -2965,7 +2869,6 @@ playLandPiles pid gs =
         PlayerEffect.DamageCantBeRedirected _ -> []
         PlayerEffect.CantSearchLibraries _ -> []
         PlayerEffect.HasProtectionFrom _ -> []
-        PlayerEffect.CantBecomeMonarch -> []
         PlayerEffect.StateBasedActionDoesntApply _ -> []
         PlayerEffect.CantSetSchemesInMotion -> []
         PlayerEffect.EntriesTrigger _ -> []
@@ -2990,8 +2893,7 @@ playLandPiles pid gs =
         PlayerEffect.ModifyDieRoll _ -> []
         PlayerEffect.AdditionalVotes _ -> []
         PlayerEffect.AdditionalSurveilCards _ -> []
-        PlayerEffect.CantGainLife -> []
-        PlayerEffect.CantLoseLife -> []
+        PlayerEffect.Cant _ -> []
         PlayerEffect.RevealsDraw _ -> []
         PlayerEffect.Precluded _ -> []
         PlayerEffect.Shows _ -> []
@@ -3084,7 +2986,6 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -3107,8 +3008,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -3198,7 +3098,6 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -3221,8 +3120,7 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -3296,7 +3194,6 @@ protectionCarriers gs =
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3319,8 +3216,7 @@ protectionCarriers gs =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -3387,7 +3283,6 @@ landPlaysAllowed pid gs =
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3410,8 +3305,7 @@ landPlaysAllowed pid gs =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -3470,7 +3364,6 @@ votesAllowed pid gs =
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3494,8 +3387,7 @@ votesAllowed pid gs =
         PlayerEffect.AdditionalVotes (ExtraVotes.Mandatory extra) -> Just extra
         PlayerEffect.AdditionalVotes (ExtraVotes.Optional _) -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -3539,7 +3431,6 @@ offeredExtras pid gs =
         PlayerEffect.DamageCantBePrevented {} -> False
         PlayerEffect.DamageCantBeRedirected {} -> False
         PlayerEffect.CantSearchLibraries {} -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -3563,8 +3454,7 @@ offeredExtras pid gs =
         PlayerEffect.AdditionalVotes (ExtraVotes.Mandatory _) -> False
         PlayerEffect.AdditionalVotes (ExtraVotes.Optional _) -> True
         PlayerEffect.AdditionalSurveilCards _ -> True
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -3609,7 +3499,6 @@ cascadeActions pid gs =
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3632,8 +3521,7 @@ cascadeActions pid gs =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -3678,7 +3566,6 @@ drawReveals pid nth gs =
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3701,8 +3588,7 @@ drawReveals pid nth gs =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw reveal -> Just reveal
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -3746,7 +3632,6 @@ shownGrants pid gs =
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3769,8 +3654,7 @@ shownGrants pid gs =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows grant -> Just grant
@@ -3849,7 +3733,6 @@ maximumHandSize pid gs =
         PlayerEffect.DamageCantBeRedirected _ -> current
         PlayerEffect.CantSearchLibraries _ -> current
         PlayerEffect.HasProtectionFrom _ -> current
-        PlayerEffect.CantBecomeMonarch -> current
         PlayerEffect.StateBasedActionDoesntApply _ -> current
         PlayerEffect.CantSetSchemesInMotion -> current
         PlayerEffect.EntriesTrigger _ -> current
@@ -3872,8 +3755,7 @@ maximumHandSize pid gs =
         PlayerEffect.ModifyDieRoll _ -> current
         PlayerEffect.AdditionalVotes _ -> current
         PlayerEffect.AdditionalSurveilCards _ -> current
-        PlayerEffect.CantGainLife -> current
-        PlayerEffect.CantLoseLife -> current
+        PlayerEffect.Cant _ -> current
         PlayerEffect.RevealsDraw _ -> current
         PlayerEffect.Precluded _ -> current
         PlayerEffect.Shows _ -> current
@@ -3937,7 +3819,6 @@ keepsUnspentMana pid gs =
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3960,8 +3841,7 @@ keepsUnspentMana pid gs =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -4017,7 +3897,6 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -4040,8 +3919,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -4056,101 +3934,26 @@ losesLifeForUnspentMana pid gs =
 -- effect that would replace the gain "won't do anything", and a row ordered and
 -- spent by CR 616.1 could not produce that.
 --
--- A DISJUNCTION, CR 101.2's posture: one applicable "can't" outranks every
--- permission, so a second changes no answer and CR 613.11's timestamp order has
--- nothing to order.
---
--- Read LIVE through `applying`, so a Giant Cindermaw that left the battlefield
--- stops restricting anybody (CR 604.2).
---
 -- CR 810.9g: asked of every player sharing this one's life total
 -- (Game.lifeSharers), since a teammate who can't gain life stops the team.
 prohibitsGainingLife :: PlayerId -> GameState -> Bool
-prohibitsGainingLife pid gs =
-  let prohibits effect = case effect of
-        PlayerEffect.CantGainLife -> True
-        -- Every other arm is about casting, playing, targeting, countering,
-        -- searching, paying, keeping mana, rule 702 protection, how a coin flip
-        -- came out or losing life. CR 119.7's restriction is none of those.
-        PlayerEffect.CantCastSpells -> False
-        PlayerEffect.CantActivateAbilities {} -> False
-        PlayerEffect.CantCastMoreThan _ -> False
-        PlayerEffect.ModifyCost {} -> False
-        PlayerEffect.AlternativeActivationCost _ -> False
-        PlayerEffect.PlayAdditionalLands _ -> False
-        PlayerEffect.NoMaximumHandSize -> False
-        PlayerEffect.SetMaximumHandSize _ -> False
-        PlayerEffect.IncreaseMaximumHandSize _ -> False
-        PlayerEffect.IncreaseDevotion _ -> False
-        PlayerEffect.ReduceMaximumHandSize _ -> False
-        PlayerEffect.DontLoseUnspentMana _ -> False
-        PlayerEffect.LoseLifeForUnspentMana -> False
-        PlayerEffect.MayPayLifeForMana {} -> False
-        PlayerEffect.SpendManaAsThough _ -> False
-        PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CastAsThoughItHadFlash {} -> False
-        PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
-        PlayerEffect.KeywordRiderGrant _ -> False
-        PlayerEffect.LoyaltyGrant _ -> False
-        PlayerEffect.MayTapForMana _ -> False
-        PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ _ -> False
-        PlayerEffect.RestrictTargeting _ -> False
-        PlayerEffect.TargetPastHexproof _ -> False
-        PlayerEffect.DamageCantBePrevented _ -> False
-        PlayerEffect.DamageCantBeRedirected _ -> False
-        PlayerEffect.CantSearchLibraries _ -> False
-        PlayerEffect.HasProtectionFrom _ -> False
-        PlayerEffect.CantBecomeMonarch -> False
-        PlayerEffect.StateBasedActionDoesntApply _ -> False
-        PlayerEffect.CantSetSchemesInMotion -> False
-        PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
-        PlayerEffect.ControlledWhileSearching -> False
-        PlayerEffect.BlocksFromPiles -> False
-        PlayerEffect.YouChoose _ -> False
-        PlayerEffect.ExilesFoundWhileSearching -> False
-        PlayerEffect.CantAttackWithCreatures -> False
-        PlayerEffect.CantCastMatching _ -> False
-        PlayerEffect.PutTappedAsYouCascade _ -> False
-        PlayerEffect.CastOnlyAtSorcerySpeed -> False
-        PlayerEffect.CantPlayLands _ -> False
-        PlayerEffect.CastFrom _ -> False
-        PlayerEffect.PlayLandsFrom _ -> False
-        PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
-        PlayerEffect.CantGetCounters _ -> False
-        PlayerEffect.StateCoinFlip _ -> False
-        PlayerEffect.ModifyDieRoll _ -> False
-        PlayerEffect.AdditionalVotes _ -> False
-        PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantLoseLife -> False
-        PlayerEffect.RevealsDraw _ -> False
-        PlayerEffect.Precluded _ -> False
-        PlayerEffect.Shows _ -> False
-   in any (\member -> any (prohibits . snd) (applying member gs)) (Game.lifeSharers pid gs)
+prohibitsGainingLife pid gs = any (\member -> forbids ForbiddenAct.GainLife member gs) (Game.lifeSharers pid gs)
 
--- CR 119.8: does an effect say this player can't lose life? prohibitsGainingLife
--- one direction over, read by Parun.Engine.Event.resolveLifeLoss ahead of its
--- proposal and by Event.canPayLife, which rule 119.8's last sentence makes
--- refuse every amount but CR 119.4b's 0.
+-- CR 101.2 / 614.17: does an effect say `pid` can't perform `act`? The one
+-- reading of PlayerEffect.Cant, behind prohibitsGainingLife, prohibitsLosingLife,
+-- prohibitsDrawing and prohibitsBecomingMonarch, which say who else is asked.
 --
--- CR 120.3a is what makes this reach DAMAGE: damage dealt to a player causes
--- that player to lose life, and it is the RESULT that this stops. The damage is
--- still dealt, so a lifelink gain, a wither counter and an infect poison counter
--- all still happen -- Parun.DamageSpec's Platinum Emperion case is the proof.
---
--- CR 810.9h: asked of every player sharing this one's life total, the
--- prohibitsGainingLife reading; data/scenarios/team/cr-810-9h-* prove it.
-prohibitsLosingLife :: PlayerId -> GameState -> Bool
-prohibitsLosingLife pid gs =
+-- A DISJUNCTION, CR 101.2's posture: one applicable "can't" outranks every
+-- permission, so a second changes no answer and CR 613.11's timestamp order has
+-- nothing to order. Read LIVE through `applying` (CR 604.2).
+forbids :: ForbiddenAct.ForbiddenAct -> PlayerId -> GameState -> Bool
+forbids act pid gs =
   let prohibits effect = case effect of
-        PlayerEffect.CantLoseLife -> True
-        PlayerEffect.RevealsDraw _ -> False
+        PlayerEffect.Cant forbidden -> forbidden == act
         -- Every other arm is about casting, playing, targeting, countering,
-        -- searching, paying, keeping mana, rule 702 protection, how a coin flip
-        -- came out, gaining life, winning or losing the game or showing or revealing cards. CR 119.8's restriction is none
-        -- of those -- LoseLifeForUnspentMana included, which CHARGES life rather
+        -- searching, paying, keeping mana, rule 702 protection or how a coin
+        -- flip came out, and forbids no act of CR 119.7's, 119.8's, 121.3's or
+        -- 726.1's -- LoseLifeForUnspentMana included, which CHARGES life rather
         -- than saying anything about whether a charge may land.
         PlayerEffect.CantCastSpells -> False
         PlayerEffect.CantActivateAbilities {} -> False
@@ -4181,7 +3984,6 @@ prohibitsLosingLife pid gs =
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -4204,10 +4006,34 @@ prohibitsLosingLife pid gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
+        PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
-   in any (\member -> any (prohibits . snd) (applying member gs)) (Game.lifeSharers pid gs)
+   in any (prohibits . snd) (applying pid gs)
+
+-- CR 119.8: does an effect say this player can't lose life? prohibitsGainingLife
+-- one direction over, read by Parun.Engine.Event.resolveLifeLoss ahead of its
+-- proposal and by Event.canPayLife, which rule 119.8's last sentence makes
+-- refuse every amount but CR 119.4b's 0.
+--
+-- CR 120.3a is what makes this reach DAMAGE: damage dealt to a player causes
+-- that player to lose life, and it is the RESULT that this stops. The damage is
+-- still dealt, so a lifelink gain, a wither counter and an infect poison counter
+-- all still happen -- Parun.DamageSpec's Platinum Emperion case is the proof.
+--
+-- CR 810.9h: asked of every player sharing this one's life total, the
+-- prohibitsGainingLife reading; data/scenarios/team/cr-810-9h-* prove it.
+prohibitsLosingLife :: PlayerId -> GameState -> Bool
+prohibitsLosingLife pid gs = any (\member -> forbids ForbiddenAct.LoseLife member gs) (Game.lifeSharers pid gs)
+
+-- CR 121.3 / 614.17: does an effect say this player can't draw cards? Read by
+-- Parun.Engine.Event.drawCardSpentReturning AHEAD of its proposal, since CR 614.17c
+-- lets no replacement effect modify an event that can't happen, and by
+-- Parun.Engine.Resolve.Common.effectIsImpossible for rule 121.3's offered draw.
+-- Per player: CR 810 shares life totals and poison, not draws.
+-- data/scenarios/cant-draw proves each.
+prohibitsDrawing :: PlayerId -> GameState -> Bool
+prohibitsDrawing = forbids ForbiddenAct.DrawCards
 
 -- CR 104.2b / 104.3: does an effect say this player can't win, or can't lose,
 -- the game? Read by Parun.Engine.Sba's CR 704.5 losses and Parun.Engine.Resolve.Effect's
@@ -4227,9 +4053,8 @@ precludes outcome pid gs =
         -- Every other arm is about casting, playing, targeting, countering,
         -- searching, paying, keeping mana, rule 702 protection, how a coin flip
         -- came out, life or showing or revealing cards. CR 104.2b's and 104.3's outcomes are
-        -- none of those -- CantLoseLife included, which leaves a player's life
+        -- none of those -- Cant LoseLife included, which leaves a player's life
         -- total where it is but says nothing of CR 104.3b's loss.
-        PlayerEffect.CantLoseLife -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.CantCastSpells -> False
         PlayerEffect.CantActivateAbilities {} -> False
@@ -4260,7 +4085,6 @@ precludes outcome pid gs =
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -4283,7 +4107,7 @@ precludes outcome pid gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.Shows _ -> False
       team = Game.teams gs
       members = pid : [other | GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)), other <- GameState.turnOrder gs, Teams.sameTeam team pid other]
@@ -4337,7 +4161,6 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -4360,8 +4183,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -4475,7 +4297,6 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
-        PlayerEffect.CantBecomeMonarch -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -4498,8 +4319,7 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
         PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.CantGainLife -> False
-        PlayerEffect.CantLoseLife -> False
+        PlayerEffect.Cant _ -> False
         PlayerEffect.RevealsDraw _ -> False
         PlayerEffect.Precluded _ -> False
         PlayerEffect.Shows _ -> False
@@ -4540,7 +4360,6 @@ targetingRestrictions =
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -4563,8 +4382,7 @@ targetingRestrictions =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -4624,7 +4442,6 @@ hexproofExemptions =
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -4647,8 +4464,7 @@ hexproofExemptions =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -4719,7 +4535,6 @@ unpreventable gs =
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -4742,8 +4557,7 @@ unpreventable gs =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -4805,7 +4619,6 @@ unredirectable gs =
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -4828,8 +4641,7 @@ unredirectable gs =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -4882,8 +4694,7 @@ statedFlips pid gs =
         PlayerEffect.ModifyDieRoll _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -4922,7 +4733,6 @@ statedFlips pid gs =
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -4970,8 +4780,7 @@ rollModifiers pid gs =
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.AdditionalVotes _ -> Nothing
         PlayerEffect.AdditionalSurveilCards _ -> Nothing
-        PlayerEffect.CantGainLife -> Nothing
-        PlayerEffect.CantLoseLife -> Nothing
+        PlayerEffect.Cant _ -> Nothing
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
@@ -5004,7 +4813,6 @@ rollModifiers pid gs =
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
-        PlayerEffect.CantBecomeMonarch -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -5137,7 +4945,6 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.DamageCantBePrevented _ -> pure effect
   PlayerEffect.DamageCantBeRedirected _ -> pure effect
   PlayerEffect.CantSearchLibraries _ -> pure effect
-  PlayerEffect.CantBecomeMonarch -> pure effect
   PlayerEffect.StateBasedActionDoesntApply _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect
@@ -5163,8 +4970,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.ModifyDieRoll _ -> pure effect
   PlayerEffect.AdditionalVotes _ -> pure effect
   PlayerEffect.AdditionalSurveilCards _ -> pure effect
-  PlayerEffect.CantGainLife -> pure effect
-  PlayerEffect.CantLoseLife -> pure effect
+  PlayerEffect.Cant _ -> pure effect
   PlayerEffect.RevealsDraw _ -> pure effect
   PlayerEffect.Precluded _ -> pure effect
   PlayerEffect.Shows _ -> pure effect
@@ -5221,7 +5027,6 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.DamageCantBePrevented pattern_ -> fmap PlayerEffect.DamageCantBePrevented (f pattern_)
   PlayerEffect.DamageCantBeRedirected pattern_ -> fmap PlayerEffect.DamageCantBeRedirected (f pattern_)
   PlayerEffect.CantSearchLibraries _ -> pure effect
-  PlayerEffect.CantBecomeMonarch -> pure effect
   PlayerEffect.StateBasedActionDoesntApply _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect
@@ -5244,8 +5049,7 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.ModifyDieRoll _ -> pure effect
   PlayerEffect.AdditionalVotes _ -> pure effect
   PlayerEffect.AdditionalSurveilCards _ -> pure effect
-  PlayerEffect.CantGainLife -> pure effect
-  PlayerEffect.CantLoseLife -> pure effect
+  PlayerEffect.Cant _ -> pure effect
   PlayerEffect.RevealsDraw _ -> pure effect
   PlayerEffect.Precluded _ -> pure effect
   PlayerEffect.Shows _ -> pure effect

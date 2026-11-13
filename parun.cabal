@@ -909,6 +909,8 @@ library codec
     Parun.Codec.ForbidAttackSpec
     Parun.Codec.ForbidBeingBlocked
     Parun.Codec.ForbidBeingBlockedSpec
+    Parun.Codec.ForbiddenAct
+    Parun.Codec.ForbiddenActSpec
     Parun.Codec.ForEach
     Parun.Codec.ForEachNumber
     Parun.Codec.ForEachNumberSpec
@@ -3087,6 +3089,7 @@ library types
     Parun.Types.ForageMode
     Parun.Types.ForbidAttack
     Parun.Types.ForbidBeingBlocked
+    Parun.Types.ForbiddenAct
     Parun.Types.ForEach
     Parun.Types.ForEachNumber
     Parun.Types.ForetellCost

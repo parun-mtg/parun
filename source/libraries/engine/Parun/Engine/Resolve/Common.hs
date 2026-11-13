@@ -42,6 +42,7 @@ import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Phasing as Phasing
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Planechase as Planechase
+import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Players as Players
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.Rewrite as Projection
@@ -112,6 +113,7 @@ import qualified Parun.Types.DieResult as DieResult
 import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.Dividing as Dividing
+import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.Duration as Duration
 import Parun.Types.Effect (Effect)
 import qualified Parun.Types.Effect as Effect
@@ -3270,8 +3272,8 @@ clauseIsImpossible resolving source controller legal gs clause =
 -- the Lion's Reveal then MoveToZone) from reading as impossible while it is
 -- still unbound. The one exception is a copy of an earlier clause's slot
 -- naming nothing (Effect.CopyStackObject's arm): "copy the spell" names one
--- object, and with none there is nothing to choose. Drawing is never impossible
--- either (CR 121.3), nor is searching (CR 701.23b's fail to find). Three arms ask more than "nothing at
+-- object, and with none there is nothing to choose. Drawing from an empty
+-- library is not impossible either (CR 121.3), nor is searching (CR 701.23b's fail to find). Three arms ask more than "nothing at
 -- all happens": Effect.Mill, because rule 701.17b states the whole comparison
 -- itself, and a counted discard or sacrifice, where an instruction to give up N
 -- things is not an option for a player holding fewer (The Mimeoplasm's
@@ -3317,7 +3319,13 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
     let named = objectRefObjects legal resolving controller source gs ref
      in not (null named) && all ((== Just Nothing) . fmap Object.attachedTo . flip Game.lookupObject gs) named
   Effect.MoveToZone (MoveToZone.MkMoveToZone ref _ _ _ _ _ _) -> choosesFromNothing ref
-  Effect.Draw {} -> False
+  -- CR 121.3's second sentence: a player an effect says can't draw can't
+  -- choose an offered draw. The drawers are the executing arm's own read.
+  -- data/scenarios/cant-draw/cr-121-3-a-player-who-can-t-draw-is-not-offered-a-draw.json
+  -- proves it.
+  Effect.Draw (Draw.MkDraw ref _ _) ->
+    let drawers = playerRefPlayers legal resolving source controller gs ref
+     in not (null drawers) && all (`PlayerEffect.prohibitsDrawing` gs) drawers
   -- CR 701.17b: "a player can't mill a number of cards greater than the number
   -- of cards in their library. If given the choice to do so, they can't choose
   -- to take that action." The rule states the whole comparison and not merely

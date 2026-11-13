@@ -2140,7 +2140,6 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.DamageCantBePrevented damage -> PlayerEffect.DamageCantBePrevented <$> playerDamage c damage
   PlayerEffect.DamageCantBeRedirected damage -> PlayerEffect.DamageCantBeRedirected <$> playerDamage c damage
   PlayerEffect.CantSearchLibraries _ -> pure effect
-  PlayerEffect.CantBecomeMonarch -> pure effect
   PlayerEffect.StateBasedActionDoesntApply _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger (EntriesTrigger.MkEntriesTrigger entrants triggering) ->
@@ -2169,8 +2168,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.AdditionalVotes _ -> pure effect
   PlayerEffect.AdditionalSurveilCards _ -> pure effect
   PlayerEffect.PutTappedAsYouCascade filter_ -> PlayerEffect.PutTappedAsYouCascade <$> playerFilter c filter_
-  PlayerEffect.CantGainLife -> pure effect
-  PlayerEffect.CantLoseLife -> pure effect
+  PlayerEffect.Cant _ -> pure effect
   PlayerEffect.Precluded _ -> pure effect
   PlayerEffect.Shows _ -> pure effect
   PlayerEffect.RevealsDraw _ -> pure effect

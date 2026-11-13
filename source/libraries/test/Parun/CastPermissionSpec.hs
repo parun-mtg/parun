@@ -53,6 +53,7 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.ForbiddenAct as ForbiddenAct
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
@@ -1148,7 +1149,7 @@ jaredSpec s registry =
           (jaredId, _, _, gs) <- board
           let after = etbResolved jaredId gs
           Spec.assertEqWith s "bob is the monarch" (GameState.monarch after) (Just S.bob)
-          Spec.assertEqWith s "one stored CR 611.2c effect" (fmap ActivePlayerEffect.effect (StoredEffects.playerEffects (GameState.stored after))) [PlayerEffect.Type.CantBecomeMonarch]
+          Spec.assertEqWith s "one stored CR 611.2c effect" (fmap ActivePlayerEffect.effect (StoredEffects.playerEffects (GameState.stored after))) [PlayerEffect.Type.Cant ForbiddenAct.BecomeMonarch]
           Spec.assertEqWith s "scoped to its controller" (fmap ActivePlayerEffect.scope (StoredEffects.playerEffects (GameState.stored after))) [AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)]
           Spec.assertEqWith s "who is alice" (fmap ActivePlayerEffect.controller (StoredEffects.playerEffects (GameState.stored after))) [S.alice]
           Spec.assertBool s (PlayerEffect.prohibitsBecomingMonarch S.alice after) "so alice can't become the monarch"

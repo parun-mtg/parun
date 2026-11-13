@@ -24,6 +24,7 @@ import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryTriggering as EntryTriggering
 import qualified Parun.Types.ExtraVotes as ExtraVotes
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.ForbiddenAct as ForbiddenAct
 import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.GameOutcome as GameOutcome
 import qualified Parun.Types.HexproofExemption as HexproofExemption
@@ -403,13 +404,6 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.codec
       (PlayerEffect.HasProtectionFrom (Filter.And []))
       " {\"type\":\"HasProtectionFrom\",\"value\":{\"type\":\"And\",\"value\":[]}} "
-  -- CR 726 / Jared Carthalion, True Heir.
-  Spec.it s "CantBecomeMonarch" $
-    Common.assertCodec
-      s
-      PlayerEffect.codec
-      PlayerEffect.CantBecomeMonarch
-      " {\"type\":\"CantBecomeMonarch\"} "
   -- CR 704.5j / Hall of Echoes.
   Spec.it s "StateBasedActionDoesntApply" $
     Common.assertCodec
@@ -656,20 +650,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       " {\"type\":\"PutTappedAsYouCascade\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}} "
   -- CR 119.7 as Giant Cindermaw prints it, and the wire form
   -- data/cards/giant-cindermaw.json writes.
-  Spec.it s "CantGainLife, Giant Cindermaw's restriction" $
+  Spec.it s "Cant, Giant Cindermaw's restriction" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      PlayerEffect.CantGainLife
-      " {\"type\":\"CantGainLife\"} "
-  -- CR 119.8, the other half of Platinum Emperion's one printed sentence
-  -- (data/cards/platinum-emperion.json).
-  Spec.it s "CantLoseLife, Platinum Emperion's restriction" $
-    Common.assertCodec
-      s
-      PlayerEffect.codec
-      PlayerEffect.CantLoseLife
-      " {\"type\":\"CantLoseLife\"} "
+      (PlayerEffect.Cant ForbiddenAct.GainLife)
+      " {\"type\":\"Cant\",\"value\":\"GainLife\"} "
   -- CR 101.2 over CR 104.2b, Abyssal Persecutor's "you can't win the game"
   -- (data/cards/abyssal-persecutor.json).
   Spec.it s "Precluded, Abyssal Persecutor's restriction" $
