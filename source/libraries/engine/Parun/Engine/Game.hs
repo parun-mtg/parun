@@ -1006,6 +1006,16 @@ recordChoice field acquisition change oid gs = case lookupObject oid gs of
   Just _ -> gs {GameState.objects = Map.adjust (overObjectChoices field (Map.alter change acquisition)) oid (GameState.objects gs)}
   Nothing -> gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.lastKnown = Map.adjust (overLastKnownChoices field (Map.alter change acquisition)) oid (Snapshots.lastKnown (GameState.snapshots gs))}}
 
+-- | CR 607.2d: the choices `from`'s abilities acquired as `acquisition` have
+-- made, handed to `to`, an object those abilities made whose own text reads
+-- them, under the acquisition `to` reads its choices by. A choice `from`
+-- never made stays unmade on `to`.
+handChoices :: Acquisition.Acquisition -> ObjectId -> ObjectId -> GameState -> GameState
+handChoices acquisition from to gs =
+  let hand :: Chosen.Chosen a -> GameState -> GameState
+      hand field = recordChoice field (acquisitionOf to gs) (const (choiceWithLastKnown field acquisition from gs)) to
+   in (hand Chosen.Colors . hand Chosen.Subtype . hand Chosen.CardType . hand Chosen.Names . hand Chosen.Players . hand Chosen.Number) gs
+
 -- | The Object field `field` names.
 objectChoices :: Chosen.Chosen a -> Object -> Map.Map Acquisition.Acquisition a
 objectChoices field = case field of

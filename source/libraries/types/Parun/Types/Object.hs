@@ -237,7 +237,8 @@ data Object = MkObject
     --
     -- One of SIX `chosen` fields -- chosenSubtype, chosenCardType, chosenNames,
     -- chosenPlayers and chosenNumber below are the others -- whose shared property is that each is read back OFF
-    -- THE EFFECT'S SOURCE. `protector` below is chosen as the object enters too
+    -- THE EFFECT'S SOURCE; an emblem starts with its maker's
+    -- (Parun.Engine.Game.handChoices). `protector` below is chosen as the object enters too
     -- and is not one of them, being a designation rule 310 reads directly.
     --
     -- All six are KEYED BY THE ACQUISITION of the choosing ability, as
