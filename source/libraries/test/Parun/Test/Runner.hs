@@ -3,6 +3,8 @@
 -- | A test runner on boot libraries alone. It collects the cases a
 -- 'Spec.Spec' registers, shuffles them, runs them on a pool of one worker per
 -- capability, prints each failure as it lands, and ends with one summary line.
+-- At a terminal it also keeps a line counting the cases run, redrawn in place
+-- beneath the failures.
 module Parun.Test.Runner where
 
 import qualified Control.Concurrent as Concurrent
@@ -20,6 +22,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.IO as TextIO
+import qualified Data.Word as Word
 import qualified GHC.Clock as Clock
 import qualified GHC.Stack as Stack
 import Numeric.Natural (Natural)
@@ -100,6 +103,15 @@ data Summary = MkSummary
   }
   deriving (Eq, Show)
 
+-- | What the terminal holds beneath the failures so far: the cases counted,
+-- when the progress line was last drawn, and how wide it was.
+data Screen = MkScreen
+  { counted :: Summary,
+    drawnAt :: Word.Word64,
+    width :: Int
+  }
+  deriving (Eq, Show)
+
 -- | Registers each case under the groups around it; a failed assertion throws
 -- 'AssertionFailed.AssertionFailed'.
 runner :: (Monad n) => Spec.Spec IO (Writer.WriterT (Seq.Seq Case) n)
@@ -122,11 +134,16 @@ main collect = do
       Exit.exitFailure
     Right o -> pure o
   IO.hSetBuffering IO.stdout IO.LineBuffering
+  live <- IO.hIsTerminalDevice IO.stdout
   s <- maybe Key.fresh pure $ seed options
   cases <- collect
+  let todo = ordered options s cases
+  started <- Clock.getMonotonicTimeNSec
+  screen <- IORef.newIORef MkScreen {counted = MkSummary {total = 0, failures = 0}, drawnAt = 0, width = 0}
   lock <- Concurrent.newMVar ()
-  let report line = Concurrent.withMVar lock . const $ TextIO.putStrLn line
-  ran <- run report options s cases
+  let write t = TextIO.putStr t >> IO.hFlush IO.stdout
+  ran <- run (Concurrent.withMVar lock . const . shown write live (Natural.length todo) started screen) (timeout options) todo
+  Monad.when live $ IORef.readIORef screen >>= write . erased . width
   Foldable.for_ (json options) $ \file ->
     ByteString.writeFile file . Encoding.encodeUtf8 . Common.render $ Codec.encode reportCodec MkReport {shuffled = Key.toHex s, results = ran}
   let summary = summarize ran
@@ -168,12 +185,12 @@ name c = Text.intercalate (Text.pack ".") $ path c
 selected :: Options -> Case -> Bool
 selected options c = null (patterns options) || any (\p -> Text.isInfixOf p $ name c) (patterns options)
 
--- | Runs the selected cases in an order shuffled by the seed, handing each
--- failure's line to @report@ as it lands, and answers every case as it ran,
--- in the order they finished.
-run :: (Text.Text -> IO ()) -> Options -> Key.Type.Key -> Seq.Seq Case -> IO [Result]
-run report options s cases = do
-  queue <- IORef.newIORef $ ordered options s cases
+-- | Runs the cases, each under the budget if there is one, handing each to
+-- @report@ as it finishes, and answers every case as it ran, in the order they
+-- finished.
+run :: (Result -> IO ()) -> Maybe Natural -> [Case] -> IO [Result]
+run report limit cases = do
+  queue <- IORef.newIORef cases
   finished <- IORef.newIORef []
   let worker = do
         next <- IORef.atomicModifyIORef' queue $ \q -> case q of
@@ -183,11 +200,11 @@ run report options s cases = do
           Nothing -> pure ()
           Just c -> do
             before <- Clock.getMonotonicTimeNSec
-            outcome <- runCase (timeout options) c
+            outcome <- runCase limit c
             after <- Clock.getMonotonicTimeNSec
             let result = MkResult {title = name c, failure = failed outcome, nanoseconds = Word64.toNatural after - Word64.toNatural before}
             IORef.atomicModifyIORef' finished $ \rs -> (result : rs, ())
-            Foldable.traverse_ (report . failureLine c) $ failure result
+            report result
             worker
   workers <- Concurrent.getNumCapabilities
   dones <- Monad.replicateM workers $ do
@@ -231,8 +248,39 @@ unrendered :: Exception.SomeException -> Text.Text
 unrendered _ = Text.pack "threw an exception whose message also threw"
 
 -- | A failure's path and message, the message's later lines indented.
-failureLine :: Case -> Text.Text -> Text.Text
-failureLine c m = Text.intercalate (Text.pack "\n  ") $ Text.lines (Text.pack "FAIL " <> name c <> Text.pack ": " <> m)
+failureLine :: Text.Text -> Text.Text -> Text.Text
+failureLine t m = Text.intercalate (Text.pack "\n  ") $ Text.lines (Text.pack "FAIL " <> t <> Text.pack ": " <> m)
+
+-- | Shows a finished case, one of @count@, through @write@: its failure in
+-- full, and when @live@ the progress line beneath, redrawn in place with a
+-- carriage return after a failure, at the last case, and otherwise at most
+-- every tenth of a second. The caller holds the lock.
+shown :: (Text.Text -> IO ()) -> Bool -> Natural -> Word.Word64 -> IORef.IORef Screen -> Result -> IO ()
+shown write live count started screen result = do
+  now <- Clock.getMonotonicTimeNSec
+  before <- IORef.readIORef screen
+  let tally = MkSummary {total = total (counted before) + 1, failures = failures (counted before) + maybe 0 (const 1) (failure result)}
+      due = Maybe.isJust (failure result) || now - drawnAt before >= 100000000 || total tally == count
+  Foldable.for_ (failure result) $ \m -> do
+    Monad.when live . write . erased $ width before
+    write $ failureLine (title result) m <> Text.pack "\n"
+  if live && due
+    then do
+      let line = progressLine count tally . Word64.toNatural $ now - started
+      write $ Text.pack "\r" <> Text.justifyLeft (width before) ' ' line
+      IORef.writeIORef screen MkScreen {counted = tally, drawnAt = now, width = Text.length line}
+    else IORef.writeIORef screen before {counted = tally}
+
+-- | Blanks a progress line this wide, leaving the cursor at its start.
+erased :: Int -> Text.Text
+erased w = Text.pack "\r" <> Text.replicate w (Text.pack " ") <> Text.pack "\r"
+
+-- | The progress line: the cases run of @count@, the failures among them, and
+-- the minutes and seconds since the first started.
+progressLine :: Natural -> Summary -> Natural -> Text.Text
+progressLine count tally elapsed =
+  let (minutes, seconds) = divMod (div elapsed 1000000000) 60
+   in Text.pack (show (total tally) <> "/" <> show count <> " run, " <> show (failures tally) <> " failed, " <> show minutes <> ":" <> (if seconds < 10 then "0" else "") <> show seconds)
 
 succeeded :: Summary -> Bool
 succeeded summary = total summary > 0 && failures summary == 0

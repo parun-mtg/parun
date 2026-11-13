@@ -7,6 +7,8 @@ import qualified Data.IORef as IORef
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import qualified GHC.Clock as Clock
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Key as Key
@@ -79,7 +81,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
         Spec.it r "throws" $ ioError (userError "bang")
         Spec.it r "hangs" $ Concurrent.threadDelay 10000000
       sink <- IORef.newIORef []
-      ran <- Runner.run (\l -> IORef.atomicModifyIORef' sink $ \ls -> (l : ls, ())) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Just 10000, Runner.seed = Nothing, Runner.json = Nothing} (key 1) cases
+      ran <- Runner.run (failuresInto sink) (Just 10000) (Foldable.toList cases)
       Spec.assertEq s (Runner.summarize ran) Runner.MkSummary {Runner.total = 4, Runner.failures = 3}
       reported <- IORef.readIORef sink
       Spec.assertEq s (Seq.sort . Seq.fromList $ fmap (Text.takeWhile (/= ':')) reported) (Seq.fromList $ fmap Text.pack ["FAIL g.asserts", "FAIL g.hangs", "FAIL g.throws"])
@@ -88,7 +90,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
     Spec.it s "carries an assertion's call stack into its failure line" $ do
       cases <- collect . Spec.it r "asserts" $ Spec.assertFailure r "boom"
       sink <- IORef.newIORef []
-      _ <- Runner.run (\l -> IORef.atomicModifyIORef' sink $ \ls -> (l : ls, ())) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing} (key 1) cases
+      _ <- Runner.run (failuresInto sink) Nothing (Foldable.toList cases)
       reported <- IORef.readIORef sink
       case reported of
         [l] -> do
@@ -99,11 +101,34 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
       cases <- collect . Spec.describe r "g" $ do
         Spec.it r "quick" $ pure ()
         Spec.it r "slow" $ Concurrent.threadDelay 50000 >> Spec.assertFailure r "boom"
-      ran <- Runner.run (const $ pure ()) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing} (key 1) cases
+      ran <- Runner.run (const $ pure ()) Nothing (Foldable.toList cases)
       let named n = filter ((== Text.pack n) . Runner.title) ran
       Spec.assertEq s (fmap Runner.failure $ named "g.quick") [Nothing]
       Spec.assertBool s (all (maybe False (Text.isPrefixOf $ Text.pack "boom") . Runner.failure) (named "g.slow") && length (named "g.slow") == 1) $ "no failure: " <> show ran
       Spec.assertBool s (all ((>= 50000000) . Runner.nanoseconds) $ named "g.slow") $ "too quick: " <> show ran
+
+  Spec.describe s "shown" $ do
+    let passed = Runner.MkResult (Text.pack "g.a") Nothing 5
+        failed = Runner.MkResult (Text.pack "g.b") (Just $ Text.pack "boom") 5
+        written live results = do
+          sink <- IORef.newIORef []
+          started <- Clock.getMonotonicTimeNSec
+          screen <- IORef.newIORef Runner.MkScreen {Runner.counted = Runner.MkSummary 0 0, Runner.drawnAt = 0, Runner.width = 0}
+          Foldable.traverse_ (Runner.shown (\t -> IORef.modifyIORef' sink (t :)) live (Natural.length results) started screen) results
+          reverse <$> IORef.readIORef sink
+    Spec.it s "prints only failures when not at a terminal" $ do
+      writes <- written False [passed, failed, passed]
+      Spec.assertEq s writes [Text.pack "FAIL g.b: boom\n"]
+    Spec.it s "at a terminal, blanks the progress line for a failure and redraws it beneath" $ do
+      writes <- written True [passed, failed]
+      Spec.assertEq s writes $ fmap Text.pack ["\r1/2 run, 0 failed, 0:00", "\r" <> fmap (const ' ') "1/2 run, 0 failed, 0:00" <> "\r", "FAIL g.b: boom\n", "\r2/2 run, 1 failed, 0:00"]
+    Spec.it s "at a terminal, draws the last case however soon it lands" $ do
+      writes <- written True [passed, passed, passed]
+      Spec.assertEq s (last writes) (Text.pack "\r3/3 run, 0 failed, 0:00")
+
+  Spec.describe s "progressLine" $ do
+    Spec.it s "counts the cases and failures and pads the seconds" $
+      Spec.assertEq s (Runner.progressLine 30898 Runner.MkSummary {Runner.total = 12034, Runner.failures = 1} 125000000000) (Text.pack "12034/30898 run, 1 failed, 2:05")
 
   Spec.describe s "reportCodec" $ do
     Spec.it s "writes the seed and each case, a failure only where there is one" $
@@ -121,6 +146,9 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
       Spec.assertEq s (Runner.summaryLine (key 9) Runner.MkSummary {Runner.total = 0, Runner.failures = 0}) $ Text.pack ("Matched no tests with seed " <> nine <> ".")
       Spec.assertBool s (not $ Runner.succeeded Runner.MkSummary {Runner.total = 0, Runner.failures = 0}) "an empty selection succeeded"
   where
+    -- Keeps each failure's line, as the runner prints it.
+    failuresInto :: IORef.IORef [Text.Text] -> Runner.Result -> IO ()
+    failuresInto sink result = Foldable.for_ (Runner.failure result) $ \m -> IORef.atomicModifyIORef' sink $ \ls -> (Runner.failureLine (Runner.title result) m : ls, ())
     collect :: Writer.WriterT (Seq.Seq Runner.Case) IO () -> IO (Seq.Seq Runner.Case)
     collect = Writer.execWriterT
     r :: Spec.Spec IO (Writer.WriterT (Seq.Seq Runner.Case) IO)
