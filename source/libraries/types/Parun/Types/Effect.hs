@@ -24,7 +24,7 @@ import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChoosePlayer as ChoosePlayer
 import qualified Parun.Types.ChoosePlayerAtRandom as ChoosePlayerAtRandom
-import qualified Parun.Types.ChosenQuality as ChosenQuality
+import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.Conjure as Conjure
 import qualified Parun.Types.Connive as Connive
 import qualified Parun.Types.ControlPlayer as ControlPlayer
@@ -716,7 +716,7 @@ data Effect card ability
     -- being unable to resolve a name at all.
     ChooseCardName ChooseCardName.ChooseCardName
   | -- | CR 608.2d: the resolving controller chooses this quality for the source (Persecute, Mystic Compass).
-    ChooseQuality ChosenQuality.ChosenQuality
+    ChooseQuality ChooseQuality.ChooseQuality
   | -- | CR 701.39a: "bolster N" -- choose a creature the resolving controller
     -- controls with the least toughness, or tied for least, then put that many
     -- +1\/+1 counters on it. Choose, not target.

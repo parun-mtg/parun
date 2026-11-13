@@ -5875,6 +5875,17 @@ chooseQuality quality chooser acquisition oid = case quality of
     let position = picked >>= \word -> fst <$> List.find ((== word) . snd) numbered
     Foldable.for_ position $ \n -> State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just n)) oid)
 
+-- CR 607.2d: the field chooseQuality writes `quality` to, put back on `oid` as
+-- `before` held it (Game.restoreChoice).
+restoreQuality :: ChosenQuality.ChosenQuality -> Acquisition.Acquisition -> ObjectId -> GameState -> GameState -> GameState
+restoreQuality quality acquisition oid before = case quality of
+  ChosenQuality.Colors _ -> Game.restoreChoice Chosen.Colors acquisition oid before
+  ChosenQuality.Subtype _ _ -> Game.restoreChoice Chosen.Subtype acquisition oid before
+  ChosenQuality.CardType -> Game.restoreChoice Chosen.CardType acquisition oid before
+  ChosenQuality.Number _ -> Game.restoreChoice Chosen.Number acquisition oid before
+  ChosenQuality.Parity -> Game.restoreChoice Chosen.Number acquisition oid before
+  ChosenQuality.Word _ -> Game.restoreChoice Chosen.Number acquisition oid before
+
 -- CR 707.5 / 707.4: the copying process an AsCopy rewrite performs, on each
 -- event class it rides (CR 614.1c's entry, CR 614.1e's turning face up, CR
 -- 701.3a's becoming attached): the object's controller chooses what to copy,

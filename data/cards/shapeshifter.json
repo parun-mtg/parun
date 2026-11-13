@@ -84,10 +84,13 @@
                       {
                         "type": "ChooseQuality",
                         "value": {
-                          "type": "Number",
-                          "value": {
-                            "least": 0,
-                            "most": 7
+                          "linked": true,
+                          "quality": {
+                            "type": "Number",
+                            "value": {
+                              "least": 0,
+                              "most": 7
+                            }
                           }
                         }
                       }

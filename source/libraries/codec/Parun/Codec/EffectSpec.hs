@@ -47,6 +47,7 @@ import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChoosePlayer as ChoosePlayer
 import qualified Parun.Types.ChoosePlayerAtRandom as ChoosePlayerAtRandom
+import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.ChosenQuality as ChosenQuality
 import qualified Parun.Types.ClassLevel as ClassLevel
@@ -2511,8 +2512,16 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChooseQuality (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1)))
-      " {\"type\":\"ChooseQuality\",\"value\":{\"type\":\"Colors\",\"value\":{\"least\":1,\"most\":1}}} "
+      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1)) False))
+      " {\"type\":\"ChooseQuality\",\"value\":{\"quality\":{\"type\":\"Colors\",\"value\":{\"least\":1,\"most\":1}}}} "
+  -- Shapeshifter: a choice its static ability reads.
+  Spec.it s "ChooseQuality linked" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Number (ChooseBetween.MkChooseBetween 0 7)) True))
+      " {\"type\":\"ChooseQuality\",\"value\":{\"linked\":true,\"quality\":{\"type\":\"Number\",\"value\":{\"least\":0,\"most\":7}}}} "
   -- CR 400.11c: the filter and CR 701.20a's reveal, Burning Wish's "reveal a
   -- sorcery card". Everything else about the sentence is the rule's -- the pool is
   -- the resolving controller's own (CR 108.3b) and the destination their hand.

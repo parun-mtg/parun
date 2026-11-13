@@ -501,13 +501,11 @@ addMana resolving source controller legal (ManaAddition.MkManaAddition ref produ
       -- the mana added, written where Counters.chooseQuality writes a choice.
       -- With several recipients the last one's stands; no printing has both.
       --
-      -- A regression fence, the rider's above: Foraging Wickermaw, the one
-      -- printing (Scryfall o:"that color" o:"mana of any color", 2026-11-13), is
-      -- a mana ability and takes Parun.Engine.Cost.tapForManaWith's road. A
-      -- triggered or loyalty ability printing the sentence would observe it.
-      --
-      -- Not implemented: ending the write with the resolution, as
-      -- tapForManaWith ends its own with the clause (#7187).
+      -- Foraging Wickermaw, the one printing (Scryfall o:"that color" o:"mana of
+      -- any color", 2026-11-13), is a mana ability and takes
+      -- Parun.Engine.Cost.tapForManaWith's road, so Synthetic Prism Myr's
+      -- targeted ability is what reaches this one, in data/scenarios/mana-source.
+      -- Common.endOwnChoices ends the write with the resolution.
       choose manaTypes =
         Monad.when choosesColor $
           State.modify' (Game.recordChoice Chosen.Colors (Game.readingAcquisition resolving source gs0 source) (const (Just (Mana.colorsAmong manaTypes))) source)

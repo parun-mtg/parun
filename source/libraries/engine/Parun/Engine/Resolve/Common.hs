@@ -83,7 +83,9 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CarryOver as CarryOver
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
+import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.Chooser as Chooser
+import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
@@ -147,6 +149,7 @@ import qualified Parun.Types.LifeLossCause as LifeLossCause
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.Mana as Mana.Type
+import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.MatchScope as MatchScope
@@ -4109,6 +4112,29 @@ isInAGraveyard oid gs = case Game.lookupObject oid gs of
 -- the as-enters road.
 noSubgame :: Game Result
 noSubgame = pure Result.Drawn
+
+-- CR 608.2d / 607.2d: the end of the choices `effects` made for their own
+-- resolution alone -- a "color of your choice" (Distorting Lens) and the "that
+-- color" of mana added (ManaAddition.choosesColor) -- each put back on `source`
+-- as it stood on `before`, the board the ability began resolving on. Such a
+-- choice is no "the chosen color" another ability of the source refers to, nor
+-- one a later unit of its mana carries (Mana.sourceChoicesOf); a linked one
+-- (ChooseQuality.linked) stands. Parun.Engine.Cost.tapForManaWith ends a mana
+-- ability's the same way. Proved by data/scenarios/mana-source's Distorting
+-- Lens, Scuttlemutt and Synthetic Prism Myr scenarios; Shapeshifter's proves
+-- the linked choice stands.
+--
+-- A wildcard: an effect makes no such choice unless it says so here.
+endOwnChoices :: ObjectId -> ObjectId -> GameState -> [Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> GameState -> GameState
+endOwnChoices resolving source before effects =
+  let acquisition = Game.readingAcquisition resolving source before source
+      own effect = case effect of
+        Effect.ChooseQuality choice
+          | not (ChooseQuality.linked choice) -> Event.restoreQuality (ChooseQuality.quality choice) acquisition source before
+        Effect.AddMana addition
+          | ManaAddition.choosesColor addition -> Game.restoreChoice Chosen.Colors acquisition source before
+        _ -> id
+   in \gs -> foldr own gs effects
 
 -- Bind the PLAYERS a resolution named into `slot` on `holder` -- one, or CR
 -- 104.2c's winning team -- bindSlot's mirror with player recipients (ToPlayer)

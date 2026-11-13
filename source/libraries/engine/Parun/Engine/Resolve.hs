@@ -805,6 +805,14 @@ resolveSpell = resolveSpellWith Common.noSubgame
 -- ability's PlaySubgame plays one exactly as a spell's does (see #137).
 resolveModesWith :: Game Result -> ObjectId -> ObjectId -> [(ModeInstance, Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))] -> Game ()
 resolveModesWith runSubgame stackId srcId modes = do
+  before <- State.get
+  resolveChosenModes runSubgame stackId srcId modes
+  -- CR 607.2d: a choice the ability made for itself ends with it.
+  State.modify' (Common.endOwnChoices stackId srcId before (concatMap (Foldable.toList . Mode.allEffects . snd) modes))
+
+-- resolveModesWith's resolution, short of ending the ability's own choices.
+resolveChosenModes :: Game Result -> ObjectId -> ObjectId -> [(ModeInstance, Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))] -> Game ()
+resolveChosenModes runSubgame stackId srcId modes = do
   gs <- State.get
   case Game.lookupObject stackId gs of
     Nothing -> pure ()

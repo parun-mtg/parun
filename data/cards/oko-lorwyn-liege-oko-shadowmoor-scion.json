@@ -371,9 +371,11 @@
                       {
                         "type": "ChooseQuality",
                         "value": {
-                          "type": "Subtype",
-                          "value": {
-                            "family": "CreatureType"
+                          "quality": {
+                            "type": "Subtype",
+                            "value": {
+                              "family": "CreatureType"
+                            }
                           }
                         }
                       },
