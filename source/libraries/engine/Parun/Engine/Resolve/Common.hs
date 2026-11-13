@@ -38,6 +38,7 @@ import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Forage as Forage
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
+import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Phasing as Phasing
 import qualified Parun.Engine.Plane as Plane
@@ -83,6 +84,7 @@ import qualified Parun.Types.CarryOver as CarryOver
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.Chooser as Chooser
+import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
@@ -145,6 +147,7 @@ import qualified Parun.Types.LifeLossCause as LifeLossCause
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.Mana as Mana.Type
+import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.MatchScope as MatchScope
@@ -398,7 +401,7 @@ applyClauseEffects ::
   (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()) ->
   [Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] ->
   Game ()
-applyClauseEffects resolving source applyOne =
+applyClauseEffects resolving source applyOne effects = do
   let step previous effect = do
         arms <- State.gets (armsReflexive resolving source effect)
         let skipped = arms && maybe False (not . instructionDone) previous
@@ -407,7 +410,15 @@ applyClauseEffects resolving source applyOne =
         after <- State.get
         let ahead = maybe False (\asked -> aheadOfNext asked && admitsNone asked) previous
         pure (Just (MkAsked before after (ahead || choosesAnyNumber effect) (choiceAhead effect)))
-   in Monad.foldM_ step Nothing
+  began <- State.get
+  Monad.foldM_ step Nothing effects
+  -- CR 607.2d: the colour a mana addition chose (ManaAddition.choosesColor) is
+  -- its own ability's "that color" and no other's, so the source's choice is
+  -- put back once the clause that read it is done. A regression fence,
+  -- Arms.Damage.addMana's: Foraging Wickermaw, the one printing, is a mana
+  -- ability, and Parun.Engine.Cost.tapForManaWith does the same on its road.
+  Monad.when (any ManaAddition.choosesColor (Maybe.mapMaybe ManaAbility.manaProduced effects)) $
+    State.modify' (Game.restoreChoice Chosen.Colors (Game.readingAcquisition resolving source began source) source began)
 
 -- One instruction of applyClauseEffects' fold, as the next one asks about it:
 -- the states it ran between, whether its choice -- or one written ahead of it
