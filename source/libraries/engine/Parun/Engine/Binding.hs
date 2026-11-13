@@ -13,6 +13,7 @@ import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
 import qualified Data.Text as Text
+import qualified Data.Text.Read as Text.Read
 import Numeric.Natural (Natural)
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
@@ -590,6 +591,14 @@ isAcquired = Text.isPrefixOf acquiredPrefix . AbilityName.unwrap
 isAcquiredFrom :: ObjectId -> AbilityName.AbilityName -> Bool
 isAcquiredFrom oid name = pairOf (Just name) == Just (acquiredFrom oid Nothing)
 
+-- The object acquiredFrom drew this name from, if it did.
+acquiredSource :: AbilityName.AbilityName -> Maybe ObjectId
+acquiredSource name = do
+  card <- pairOf (Just name)
+  case Text.Read.decimal (Text.drop (Text.length acquiredPrefix) (AbilityName.unwrap card)) of
+    Right (n, rest) | Text.null rest -> Just (ObjectId.MkObjectId n)
+    _ -> Nothing
+
 -- CR 603.3b: the name an ability carries as written, acquiredFrom's naming
 -- undone: its own name, or Nothing for an unnamed one.
 asWritten :: Maybe AbilityName.AbilityName -> Maybe AbilityName.AbilityName
@@ -742,8 +751,8 @@ tappedPermanent = SlotName.MkSlotName (Text.pack "thatTappedPermanent")
 -- Boomerang's "Return Trusty Boomerang", Archery Training's "the number of
 -- arrow counters on Archery Training". Parun.Engine.Projection's GainAbility
 -- arm bakes it into the granter's id, so two Poles grant two abilities, each
--- naming its own. Never bound at runtime, so it matches nothing where that arm
--- does not bake it.
+-- naming its own. An activated ability a quantity of which reads it is named for
+-- its granter there too, and setGranter binds it as the ability is activated.
 grantingPermanent :: SlotName
 grantingPermanent = SlotName.MkSlotName (Text.pack "thatGrantingPermanent")
 
@@ -1531,6 +1540,13 @@ toVotes tally = Binding.empty {Binding.votes = Just tally}
 -- single-purpose, so the insert cannot clobber another binding -- as below.
 setTriggerSource :: ObjectId -> Map SlotName Binding -> Map SlotName Binding
 setTriggerSource oid = Map.insert triggerSource (toObject oid)
+
+-- CR 201.5a / 608.2h: bind the object an ability's name was acquired from
+-- (acquiredFrom) under the reserved grantingPermanent slot, so the granted
+-- ability reads its granter by slot, off its last known information once it
+-- has left. Nothing is bound for a name acquiredFrom did not give.
+setGranter :: Maybe AbilityName.AbilityName -> Map SlotName Binding -> Map SlotName Binding
+setGranter name = maybe id (Map.insert grantingPermanent . toObject) (acquiredSource =<< name)
 
 -- Bind a player under the reserved you slot.
 setYou :: PlayerId -> Map SlotName Binding -> Map SlotName Binding
