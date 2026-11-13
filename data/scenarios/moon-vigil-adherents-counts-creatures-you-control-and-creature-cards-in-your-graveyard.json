@@ -1,0 +1,118 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Moon-Vigil Adherents",
+            "label": "adherents"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Memnite"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Gray Ogre"
+          },
+          {
+            "card": "Shock"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Savannah Lions"
+          },
+          {
+            "card": "Coral Merfolk"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Merfolk of the Pearl Trident"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.4c: Moon-Vigil Adherents gets +1/+1 for each creature its controller controls and each creature card in her graveyard",
+  "note": "Three creatures alice controls, the Adherents among them, and two creature cards in her graveyard make it 5/5. Her Shock, bob's creatures and bob's graveyard count for nothing.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$adherents",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
