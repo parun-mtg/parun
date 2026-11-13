@@ -3567,7 +3567,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- Soul Cauldron) serve that source's own activation cost, a payment of
       -- its own as above, and no other position. data/scenarios'
       -- agatha-s-soul-cauldron-pays-a-creature-s-mana-ability-s-own-cost-as-any-color
-      -- is the proof.
+      -- is the proof, and its -ahead-of-a-doubling sibling CR 701.10f's walk's.
       activatingAt = Map.filter (not . null) (Map.fromList (fmap (\oid -> (oid, sourceActivating swept oid)) sources))
       servesAt subjectAt position = case Map.lookup position subjectAt of
         Just (PaymentSubject.Activating oid _ _) | Just extra <- Map.lookup oid activatingAt -> serves . rewriteSupply (clauses <> extra)
@@ -3618,6 +3618,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
           ((activations, manaCost), x) <- Map.toList (Map.fromListWith max [((activations, manaCost), Maybe.fromMaybe 0 (yieldX yield)) | (activations, yield, manaCost, _) <- supplies]),
           not (null (ManaCost.unwrap manaCost))
         ]
+      eatingResolutions = eatingOf suppliesPer
       demandBoundOf per = List.foldl' max 0 (fmap demandSize costResolutions) + sum [times * List.foldl' max 0 (fmap demandSize ways) | (times, ways) <- eatingOf per]
       demandBound = demandBoundOf suppliesPer
       -- For each type, how many typed demands could take it at most: the
@@ -3625,19 +3626,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- taken as often as it can be. A hybrid counts toward both its halves.
       needsOf (demands, _, _) = Map.fromListWith (+) [(manaType, 1 :: Natural) | demand <- demands, demand /= anyTypeDemand, manaType <- Set.toList (demandTypes demand)]
       mostOf ways = List.foldl' (Map.unionWith max) Map.empty (fmap needsOf ways)
-      --
-      -- A source `activatingAt` names may spend other types as the ones its
-      -- cost names, so each of its typed demands counts toward every type.
-      widened ways = Map.fromSet (const (List.foldl' max 0 (fmap (sum . needsOf) ways))) everyManaType
-      typedNeeds =
-        Map.unionsWith
-          (+)
-          ( mostOf costResolutions
-              : [ fmap (* times) (if Map.member oid activatingAt then widened ways else mostOf ways)
-                | (oid, supplies) <- zip sources suppliesPer,
-                  (times, ways) <- eatingOf [supplies]
-                ]
-          )
+      typedNeeds = Map.unionsWith (+) (mostOf costResolutions : [fmap (* times) (mostOf ways) | (times, ways) <- eatingResolutions])
       -- CR 116.2c: Channel's life for mana is one more group, with no activation
       -- behind it: taken k times it adds k mana and pays k times its price, which
       -- CR 119.4's clause below holds against the rest of the board. Never more
