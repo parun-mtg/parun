@@ -7775,7 +7775,8 @@ copiesOf quantity =
                 CopyStackObject.targets = CopyTargets.ChosenByController,
                 CopyStackObject.quantity = quantity,
                 CopyStackObject.copier = CopyStackObject.defaultCopier,
-                CopyStackObject.exceptions = []
+                CopyStackObject.exceptions = [],
+                CopyStackObject.slot = Nothing
               }
         )
     )
@@ -7869,7 +7870,8 @@ demonstrate =
               CopyStackObject.targets = CopyTargets.ChosenByController,
               CopyStackObject.quantity = CopyStackObject.defaultQuantity,
               CopyStackObject.copier = copier,
-              CopyStackObject.exceptions = []
+              CopyStackObject.exceptions = [],
+              CopyStackObject.slot = Nothing
             }
       yours =
         Mint.youMay
@@ -8359,7 +8361,8 @@ epicCopy =
               -- Rule 702.50a's "except for its epic ability" is written into the
               -- archived snapshot instead (Keyword.withoutEpic), the exception
               -- being epic's own sentence rather than CR 707.10's.
-              CopyStackObject.exceptions = []
+              CopyStackObject.exceptions = [],
+              CopyStackObject.slot = Nothing
             }
    in Mint.trigger Mint.yourUpkeep (Seq.singleton effect)
 

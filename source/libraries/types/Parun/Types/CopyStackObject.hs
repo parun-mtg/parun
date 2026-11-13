@@ -6,6 +6,7 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.SlotName as SlotName
 
 -- | The payload of Parun.Types.Effect's CopyStackObject arm: CR 707.10's "put a copy of
 -- it onto the stack". Twincast's "copy target instant or sorcery spell" is
@@ -63,7 +64,11 @@ data CopyStackObject ability = MkCopyStackObject
     -- every arm of CopyException writes a characteristic, and an ability on the
     -- stack has no card behind it to write one onto (CR 405.1) -- which is why
     -- the executor stamps an ability copy no snapshot at all either.
-    exceptions :: [CopyException.CopyException ability]
+    exceptions :: [CopyException.CopyException ability],
+    -- | The slot the copies made are bound under, Parun.Types.CreateCopy's
+    -- `slot` over CR 707.10's copies -- Spinerock Tyrant's "those spells gain
+    -- wither". data/scenarios/spinerock-tyrant proves it.
+    slot :: Maybe SlotName.SlotName
   }
   deriving (Eq, Ord, Show)
 

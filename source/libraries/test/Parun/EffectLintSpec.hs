@@ -1511,7 +1511,7 @@ effectObjectRefs effect =
           ConjureCards.Reference {} -> []
         Effect.CreateCopy (CreateCopy.MkCreateCopy _ ref _ _ _ _ _) -> read_ [ref]
         Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject _ _ _) -> read_ (case original of CopyOriginal.OfObject ref -> [ref, subject]; CopyOriginal.Named _ -> [subject])
-        Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets _ _ _) -> read_ (ref : copyTargetsRefs targets)
+        Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets _ _ _ _) -> read_ (ref : copyTargetsRefs targets)
         Effect.SetX (SetX.MkSetX _ ref) -> read_ [ref]
         Effect.Replace {} -> []
         Effect.SkipPhase {} -> []
@@ -2242,6 +2242,9 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Effect.Create (Create.MkCreate _ _ _ mSlot _ _) -> Maybe.maybeToList mSlot
           -- Create's arm and Create's test: Resolve.bindObjects binds both.
           Effect.CreateCopy (CreateCopy.MkCreateCopy _ _ _ mSlot _ _ _) -> Maybe.maybeToList mSlot
+          -- CR 707.10's copies, bound through Resolve.bindObjects as well:
+          -- `quantity` and a plural `copier` each make several.
+          Effect.CopyStackObject copyStackObject -> Maybe.maybeToList (CopyStackObject.slot copyStackObject)
           -- The destruction's shape: Resolve's Tap and Divide arms bind the
           -- group however few objects it holds.
           Effect.Tap (Tap.MkTap _ mTapped) -> Maybe.maybeToList mTapped
@@ -2778,7 +2781,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- A copy's per-candidate ref may be an AllOf (Radiate); its own ref and a
     -- stated target may not.
     let both = ObjectRef.AllOf (ObjectRef.EachMatching anyCard NonEmpty.:| [ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing)])
-        copies ref targets = Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [])
+        copies ref targets = Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing)
         spell = ObjectRef.EachMatching anyCard
     Spec.assertEqWith
       s

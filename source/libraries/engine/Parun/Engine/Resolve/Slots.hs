@@ -847,7 +847,7 @@ effectPlayerRefs effect = case effect of
   Effect.Conjure {} -> []
   Effect.CreateCopy x -> [CreateCopy.creator x]
   Effect.BecomeCopy x -> foldMap durationPlayerRefs (BecomeCopy.duration x)
-  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ _ copier _) -> [copier]
+  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ _ copier _ _) -> [copier]
   Effect.SetX {} -> []
   Effect.Replace x -> durationPlayerRefs (Replace.duration x)
   Effect.SkipPhase (SkipPhase.MkSkipPhase ref _ _ duration _) -> ref : durationPlayerRefs duration
@@ -1251,7 +1251,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- The DURATION reads slots, ModifyTarget's arm above; the two refs are
   -- effectObjectRefs' half.
   Effect.BecomeCopy (BecomeCopy.MkBecomeCopy _ _ duration _ _) -> foldMap durationSlots duration
-  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _) -> quantitySlots quantity
+  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _ _) -> quantitySlots quantity
   Effect.SetX (SetX.MkSetX value _) -> joinSlots (fmap quantitySlots (NewX.quantities value))
   -- The Duration and Condition each carry Quantities; a Quantity.InSlot is a read.
   -- The ROW's own Filters and Quantities are READS too (replacementRowReads):
@@ -2125,7 +2125,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.Conjure conjure -> all Quantity.slotsAreExhaustive (conjureQuantities conjure)
   Effect.CreateCopy (CreateCopy.MkCreateCopy quantity _ riders _ _ _ _) -> all Quantity.slotsAreExhaustive (quantity : riderQuantities riders)
   Effect.BecomeCopy (BecomeCopy.MkBecomeCopy _ _ duration _ _) -> all durationSlotsAreExhaustive duration
-  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _) -> Quantity.slotsAreExhaustive quantity
+  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _ _) -> Quantity.slotsAreExhaustive quantity
   Effect.SetX (SetX.MkSetX value _) -> all Quantity.slotsAreExhaustive (NewX.quantities value)
   -- The ReplacementEffect's own reads are replacementRowReads', and slotsOf
   -- reports them through replacementRowSlots: its Filters name no target slot, and
@@ -2421,7 +2421,7 @@ hasRead wanted =
         -- creating effect's number (tokenBoxQuantities).
         Effect.Create (Create.MkCreate quantity card riders _ _ _) -> any (Quantity.hasRead wanted) (quantity : riderQuantities riders <> tokenBoxQuantities card)
         Effect.Conjure conjure -> any (Quantity.hasRead wanted) (conjureQuantities conjure)
-        Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _) -> Quantity.hasRead wanted quantity
+        Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ quantity _ _ _) -> Quantity.hasRead wanted quantity
         Effect.SetX (SetX.MkSetX value _) -> any (Quantity.hasRead wanted) (NewX.quantities value)
         Effect.CreateCopy (CreateCopy.MkCreateCopy quantity _ riders _ _ _ _) -> any (Quantity.hasRead wanted) (quantity : riderQuantities riders)
         Effect.BecomeCopy {} -> False
@@ -2563,7 +2563,8 @@ boundSlots effect = case effect of
   Effect.OfferCast offer -> foldMap Set.singleton (OfferCast.slot offer)
   -- Binds nothing: no new object comes into existence.
   Effect.BecomeCopy {} -> Set.empty
-  Effect.CopyStackObject {} -> Set.empty
+  -- CR 707.10: the copies put onto the stack.
+  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject _ _ _ _ _ mSlot) -> foldMap Set.singleton mSlot
   Effect.SetX {} -> Set.empty
   -- CR 730.1b: the subgame's winner, reported rather than chosen.
   Effect.PlaySubgame slot -> Set.singleton slot

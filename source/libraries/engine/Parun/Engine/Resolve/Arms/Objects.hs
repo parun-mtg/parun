@@ -637,7 +637,7 @@ cantBeCopied oid obj kind gs =
     StackObjectKind.TriggeredAbility -> Copyability.Copyable
 
 copyStackObject :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> CopyStackObject.CopyStackObject (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
-copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackObject ref targets quantity copierRef exceptions) = do
+copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackObject ref targets quantity copierRef exceptions mSlot) = do
   gs <- State.get
   -- CR 707.10: `quantity` copies of each named object, each put onto the stack.
   -- The named objects are enumerated ONCE off this `gs` (CR 608.2f), and the
@@ -646,7 +646,7 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
   -- counters the previous mint moved.
   -- Parun.KeywordTriggerSpec's Storm group proves the count.
   let copies = maybe 0 Integer.toIntSaturating (Quantity.evaluateFor (effectViewOf resolving source legal gs) (effectContext gs resolving controller source legal (slotBindings resolving gs)) gs resolving source quantity)
-  Monad.forM_ (Common.copyStackSubjects legal resolving controller source gs ref) $ \original ->
+  minted <- each (Common.copyStackSubjects legal resolving controller source gs ref) $ \original ->
     -- CR 707.10's three nouns: a spell (Game.isSpell) and an activated or
     -- triggered ability (Game.isAbility), each classifying off the object's
     -- ZONE and its Source and never off which card it is. Every other LIVE
@@ -670,7 +670,7 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
     -- (Rings of Brighthearth's "that ability", likewise; Game.cease files it),
     -- and a slot an Effect.Counter bound (Psychic Rebuttal's "the spell
     -- countered this way").
-    Monad.forM_ (if Game.isSpell original gs || Game.isAbility original gs then Game.lookupObject original gs else Map.lookup original (Snapshots.stackArchive (GameState.snapshots gs))) $ \obj ->
+    each (Foldable.toList (if Game.isSpell original gs || Game.isAbility original gs then Game.lookupObject original gs else Map.lookup original (Snapshots.stackArchive (GameState.snapshots gs)))) $ \obj ->
       -- CR 707.10: WHO puts the copy onto the stack,
       -- which is the copy's owner and controller and CR 707.10c's chooser --
       -- Meletis Charlatan's "the controller of target instant or sorcery spell".
@@ -681,7 +681,7 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
       -- yields no copy, read off `gs` with the objects.
       -- data/scenarios/choreographed-sparks and
       -- data/scenarios/gogo-master-of-mimicry prove it.
-      Monad.forM_ (playerRefPlayers legal resolving source controller gs copierRef) $ \copier -> Monad.forM_ (Common.copyOnStackOf (Object.source obj)) $ \(copySource, kind) -> Monad.unless (cantBeCopied original obj kind gs) . Monad.replicateM_ copies $ do
+      each (playerRefPlayers legal resolving source controller gs copierRef) $ \copier -> each (Foldable.toList (Common.copyOnStackOf (Object.source obj))) $ \(copySource, kind) -> each [() | not (cantBeCopied original obj kind gs), _ <- [1 .. copies]] $ \() -> do
         -- CR 707.10's answers, as the target maps to write: one EMPTY map
         -- where the copy keeps the decisions rule 707.10 copied (rule 707.10c
         -- included, its offer below being a separate act), CR 707.10d's one
@@ -693,7 +693,7 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
           CopyTargets.ChosenByController -> pure [Map.empty]
           CopyTargets.ForEach candidates -> Common.copyForEachTargets controller copier resolving source legal original candidates
           CopyTargets.Stated newRef -> Common.copyStatedTargets controller copier resolving source legal original newRef
-        Monad.forM_ plan $ \retarget -> do
+        Monad.forM plan $ \retarget -> do
           -- CR 707.10d / 707.10e with CR 115.7f: a target the effect re-aims
           -- takes the replaced target's part of the division, reaimDivisions'
           -- reading. An answer handing out other parts keeps the targets
@@ -888,6 +888,13 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
           -- CR 707.10: a copy of a SPELL put onto the stack, which is not a
           -- cast, is the event magecraft's "or copy" watches (SpellCast.copies).
           Monad.when (kind == StackObjectKind.Spell) (State.modify' (Event.recordEvent (GameEvent.SpellCopied (SpellWasCopied.MkSpellWasCopied copier copyId))))
+          pure copyId
+  -- The copies made, for a later instruction to name: Spinerock Tyrant's
+  -- "those spells gain wither". data/scenarios/spinerock-tyrant proves it.
+  Common.bindObjects resolving mSlot minted
+  where
+    each :: [a] -> (a -> Game [b]) -> Game [b]
+    each xs f = concat <$> traverse f xs
 
 -- CR 115.7d over each named spell or ability still on the stack.
 chooseNewTargets :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()

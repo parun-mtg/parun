@@ -8,6 +8,7 @@ import qualified Parun.Codec.CopyTargets as CopyTargets
 import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.Quantity as Quantity
+import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -20,7 +21,8 @@ import qualified Parun.Types.CopyTargets as CopyTargets
 -- repeat. A count of one is elided for the same reason, @copier@ for CR 707.10's
 -- own "the player under whose control it was put on the stack", and @exceptions@
 -- for Parun.Codec.BecomeCopy's: CR 707.9's "except ..." clause is absent from most
--- printings.
+-- printings. @slot@ is elided for CreateCopy's reason: most copies are never
+-- named again.
 codec :: (Typeable.Typeable ability, Eq ability) => Codec.Codec ability -> Codec.Codec (CopyStackObject.CopyStackObject ability)
 codec abilityCodec = Fields.object $ do
   ref <- Fields.required "ref" ObjectRef.codec CopyStackObject.ref
@@ -28,11 +30,13 @@ codec abilityCodec = Fields.object $ do
   quantity <- Fields.defaulted "quantity" CopyStackObject.defaultQuantity Quantity.codec CopyStackObject.quantity
   copier <- Fields.defaulted "copier" CopyStackObject.defaultCopier PlayerRef.codec CopyStackObject.copier
   exceptions <- Fields.defaulted "exceptions" [] (Common.list (CopyException.codec abilityCodec)) CopyStackObject.exceptions
+  slot <- Fields.defaulted "slot" Nothing (Common.maybe SlotName.codec) CopyStackObject.slot
   pure
     CopyStackObject.MkCopyStackObject
       { CopyStackObject.ref = ref,
         CopyStackObject.targets = targets,
         CopyStackObject.quantity = quantity,
         CopyStackObject.copier = copier,
-        CopyStackObject.exceptions = exceptions
+        CopyStackObject.exceptions = exceptions,
+        CopyStackObject.slot = slot
       }
