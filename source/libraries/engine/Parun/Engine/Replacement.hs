@@ -1261,7 +1261,7 @@ stocked gs rewrite pid = case rewrite of
   DrawRewrite.DiscardThenDrawOrMill -> True
   -- CR 614.11: an empty library still looks at nothing and then draws.
   DrawRewrite.KeepOneOfTopThenDraw _ -> True
-  DrawRewrite.MaySkipFor _ -> True
+  DrawRewrite.RunEffects _ _ -> True
 
 breaches :: GameState -> ReplacementCandidate -> LifeLossRewrite.LifeLossRewrite -> PlayerId -> Natural -> Bool
 breaches gs candidate rewrite pid n = case rewrite of
@@ -2552,7 +2552,7 @@ readsApplier re = case re of
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.KeepOneOfTopThenDraw (Quantity.Type.Literal _))) -> False
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.KeepOneOfTopThenDraw _)) -> True
   -- CR 109.5: the effects run under the row's controller, GameLossR's answer.
-  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.MaySkipFor _)) -> True
+  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.RunEffects _ _)) -> True
   -- CR 121.2a: "you and that player each draw a card" -- the "you" is the row's
   -- own controller, so two rows alike in `effect` and unlike in `you` hand the
   -- extra card to different seats. LifeLossRewrite.ExileFromTopOfYourLibrary's
@@ -2734,7 +2734,7 @@ readsSource effect = case effect of
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.KeepOneOfTopThenDraw (Quantity.Type.Literal _))) -> False
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.KeepOneOfTopThenDraw _)) -> True
   -- The effects run from the row's source, GameLossR's answer.
-  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.MaySkipFor _)) -> True
+  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.RunEffects _ _)) -> True
   -- CR 616.1: Event.eligible scans the pool under Projection.sourceContext
   -- framed by this candidate's source, so a filter naming any of the source's
   -- characteristics or choices (Filter.readsSourceValues) can offer different

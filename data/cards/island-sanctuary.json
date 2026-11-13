@@ -41,62 +41,65 @@
             "type": "DrawR",
             "value": {
               "rewrite": {
-                "type": "MaySkipFor",
-                "value": [
-                  {
-                    "type": "ForbidAttack",
-                    "value": {
-                      "affected": {
-                        "type": "Matching",
-                        "value": {
-                          "type": "And",
-                          "value": [
-                            {
-                              "type": "HasCardType",
-                              "value": "Creature"
-                            },
-                            {
-                              "type": "Not",
-                              "value": {
-                                "type": "HasKeyword",
+                "type": "RunEffects",
+                "value": {
+                  "effects": [
+                    {
+                      "type": "ForbidAttack",
+                      "value": {
+                        "affected": {
+                          "type": "Matching",
+                          "value": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "Not",
                                 "value": {
-                                  "type": "Flying"
-                                }
-                              }
-                            },
-                            {
-                              "type": "Not",
-                              "value": {
-                                "type": "HasKeyword",
-                                "value": {
-                                  "type": "Landwalk",
+                                  "type": "HasKeyword",
                                   "value": {
-                                    "type": "HasSubtype",
-                                    "value": "Island"
+                                    "type": "Flying"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "Not",
+                                "value": {
+                                  "type": "HasKeyword",
+                                  "value": {
+                                    "type": "Landwalk",
+                                    "value": {
+                                      "type": "HasSubtype",
+                                      "value": "Island"
+                                    }
                                   }
                                 }
                               }
-                            }
-                          ]
-                        }
-                      },
-                      "aimedAt": {
-                        "defenders": {
-                          "type": "Scoped",
-                          "value": {
-                            "type": "You"
+                            ]
                           }
                         },
-                        "kinds": [
-                          "OfPlayer"
-                        ]
-                      },
-                      "duration": {
-                        "type": "UntilYourNextTurn"
+                        "aimedAt": {
+                          "defenders": {
+                            "type": "Scoped",
+                            "value": {
+                              "type": "You"
+                            }
+                          },
+                          "kinds": [
+                            "OfPlayer"
+                          ]
+                        },
+                        "duration": {
+                          "type": "UntilYourNextTurn"
+                        }
                       }
                     }
-                  }
-                ]
+                  ],
+                  "optional": true
+                }
               },
               "whose": {
                 "type": "You"

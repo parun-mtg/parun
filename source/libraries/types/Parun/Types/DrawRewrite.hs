@@ -15,7 +15,7 @@ import qualified Parun.Types.Quantity as Quantity
 -- Parun.Types.UntapRewrite's reason: a replacement effect is classified by the
 -- event class it intercepts AND the rewrite shape it applies.
 --
--- A shape per rewrite rather than one general list of effects, MaySkipFor's
+-- A shape per rewrite rather than one general list of effects, RunEffects'
 -- aside: the printings replace a draw with different things, and an arm naming
 -- which one keeps
 -- Parun.Engine.Replacement.readsApplier and Parun.Engine.Resolve.Slots.replacementRowReads
@@ -78,8 +78,7 @@ data DrawRewrite effect
     -- cards of your library, put all but one of them on the bottom of your
     -- library in a random order, then draw a card".
     KeepOneOfTopThenDraw Quantity.Quantity
-  | -- | CR 614.10 / 614.1a: Island Sanctuary's "instead you may skip that draw.
-    -- If you do, [these effects]", queued for the reason
-    -- Parun.Types.PendingReplacementEffect gives.
-    MaySkipFor (Seq.Seq effect)
+  | -- | CR 614.1a / 614.10: "[these effects] instead", the Bool the drawer's
+    -- printed "may" (Island Sanctuary's, where Words of Waste has none).
+    RunEffects Bool (Seq.Seq effect)
   deriving (Eq, Ord, Show)

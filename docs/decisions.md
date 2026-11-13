@@ -1100,6 +1100,22 @@ Entries are ordered by the first rule each cites.
   controls.
 - **Issue**: #4142.
 
+## When a team sharing a turn settles the order its players draw in
+
+- **Question**: CR 805.6a and 121.2d have the active team's players perform
+  their draws "in whatever order that team likes". With three or more
+  teammates, is the whole order named before the first draw, or the next
+  drawer after each?
+- **Rules**: CR 121.2d, 805.2, 805.6a; CR of 2026-11-06.
+- **Decision**: The next drawer is named after each teammate's draws, by the
+  team's primary player, so the team sees a draw's outcome first.
+- **Rejected**: One order named up front. Nothing in the rule asks the team
+  to announce an order.
+- **Site**: `Parun.Engine.Event.inDrawOrder`. The scenario "CR 805.6a the
+  active team names which teammate draws first" proves the choice, on a team
+  of two, where the readings agree.
+- **Issue**: #4014.
+
 ## Whose range of influence cuts a team's choice
 
 - **Question**: Under shared team turns and limited range, a team's choice

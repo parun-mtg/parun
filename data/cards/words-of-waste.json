@@ -1,0 +1,92 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Replace",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "effect": {
+                            "type": "DrawR",
+                            "value": {
+                              "rewrite": {
+                                "type": "RunEffects",
+                                "value": {
+                                  "effects": [
+                                    {
+                                      "type": "Discard",
+                                      "value": {
+                                        "type": "Counted",
+                                        "value": {
+                                          "player": {
+                                            "type": "Relative",
+                                            "value": "Opponent"
+                                          },
+                                          "quantity": {
+                                            "type": "Literal",
+                                            "value": 1
+                                          }
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "optional": false
+                                }
+                              },
+                              "whose": {
+                                "type": "You"
+                              }
+                            }
+                          },
+                          "origin": "Other",
+                          "uses": "Once"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Words of Waste",
+      "oracleText": "{1}: The next time you would draw a card this turn, each opponent discards a card instead.",
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

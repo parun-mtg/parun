@@ -3266,7 +3266,7 @@ opponentsOf you gs = filter (areOpponents gs you) (stillPlaying gs)
 --
 -- Not implemented: CR 805.6's "in whatever order they like" -- a team's players
 -- come in seat order from the active player's, not an order the team chooses
--- (#4014).
+-- (#7293).
 apnapOrder :: GameState -> [PlayerId]
 apnapOrder gs =
   let rotated = turnOrderFrom (TurnRegisters.activePlayer (GameState.turn gs)) gs
