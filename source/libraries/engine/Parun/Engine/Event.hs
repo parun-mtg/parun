@@ -5820,7 +5820,8 @@ chooseQuality quality chooser acquisition oid = case quality of
     gs <- State.get
     picked <- case among of
       Nothing -> Just <$> Game.choose (Prompt.ChooseSubtype (Decide.deciderFor chooser gs) chooser oid family Nothing)
-      Just listed -> Game.chooseAmong (\decider who offered -> Prompt.ChooseSubtype decider who oid family (Just offered)) chooser (NonEmpty.toList listed)
+      -- CR 612.1: a text change can leave the list naming one type twice, which is one option.
+      Just listed -> Game.chooseAmong (\decider who offered -> Prompt.ChooseSubtype decider who oid family (Just offered)) chooser (ListUtils.nubOrd (NonEmpty.toList listed))
     Foldable.for_ picked $ \subtype -> State.modify' (Game.recordChoice Chosen.Subtype acquisition (const (Just subtype)) oid)
   ChosenQuality.CardType -> do
     gs <- State.get

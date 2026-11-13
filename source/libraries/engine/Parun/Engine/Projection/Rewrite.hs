@@ -279,7 +279,9 @@ rewriteEffect pairs effect = case effect of
               Children.onCopyException = Identity.Identity . rewriteCopyException pairs,
               Children.onFaceDown = Identity.Identity . rewriteListing pairs,
               Children.onManaAddition = Identity.Identity . rewriteManaAddition pairs,
-              Children.onChosenPermanents = Identity.Identity . rewriteChosenPermanents pairs
+              Children.onChosenPermanents = Identity.Identity . rewriteChosenPermanents pairs,
+              -- CR 612.2: a listed type is a subtype word used as one; no card in data/cards/ lists any in an Effect.ChooseQuality.
+              Children.onSubtype = Identity.Identity . TextWord.Engine.subtypeAfter pairs
             }
           effect
       )
@@ -595,9 +597,11 @@ rewritePrintedReplacement pairs = Identity.runIdentity . Children.printedReplace
 -- naming restriction; Living Lore's exiled card, which Parun.ReplacementSpec's
 -- Tidewalker case proves), every Quantity rewriteQuantity, every nested effect
 -- rewriteEffect, a token's card rewriteCard, a granted ability
--- rewriteGrantedAbility, a keyword CR 702.14a's word and an entry option's
--- subtype CR 205.3's, a counter kind Filter.rewriteCounterKind, entry counters
--- rewriteWithCounters and a copy rewriteAsCopy.
+-- rewriteGrantedAbility, a keyword CR 702.14a's word, an entry option's
+-- subtype and each type a choice of a subtype lists CR 205.3's, a counter kind
+-- Filter.rewriteCounterKind, entry counters rewriteWithCounters and a copy
+-- rewriteAsCopy. The listed types are proved by
+-- data/scenarios/text-change's two evolved Dawn-Blessed Pennant scenarios.
 --
 -- Kept: a CR 109.5 relation, a baked recipient and the cost a turn-up
 -- procedure must have paid (engine-baked, compared against the payment) name
