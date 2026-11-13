@@ -61,8 +61,10 @@ the merge queue runs it again. Never run the whole suite locally: a local
 build is unoptimized (`cabal.project`), where it takes nine minutes; if CI
 fails, run the cases it names. No case plays a whole game: one that needs a
 result plays seven-card decks (`BotSpec.sevens`), and one that needs play
-stops after the turn that shows it (`S.playedThrough`). `--slowest N` names
-the cases that ran longest.
+stops after the turn that shows it (`S.playedThrough`). `--json FILE` writes
+every case's name, failure and nanoseconds; the slowest twenty are `jq -r
+'.cases | sort_by(-.nanoseconds)[:20][] | "\(.nanoseconds / 1e6 | floor)ms
+\(.name)"' FILE`.
 Redirect output to a file and read the file. Build with `cabal build -v0`. No
 `cabal clean`, and never turn the optimizer on: `script/mutate.sh` needs the
 same build.

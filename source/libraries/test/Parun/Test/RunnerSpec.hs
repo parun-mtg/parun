@@ -7,6 +7,8 @@ import qualified Data.IORef as IORef
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Play.Key as Key
 import qualified Parun.Spec as Spec
 import qualified Parun.Test.Runner as Runner
@@ -22,13 +24,13 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
     Spec.it s "reads a seed" $
       Spec.assertEq s (fmap Runner.seed $ Runner.parseOptions ["--seed", replicate 63 '0' <> "7"]) (Right (Just $ key 7))
     Spec.it s "selects every case when given nothing" $
-      Spec.assertEq s (Runner.parseOptions []) (Right Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.slowest = 0})
+      Spec.assertEq s (Runner.parseOptions []) (Right Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing})
     Spec.it s "refuses a positional argument" $
       Spec.assertEq s (Runner.parseOptions ["Engine"]) (Left "unexpected argument: Engine")
     Spec.it s "refuses a flag it does not know" $
       Spec.assertBool s (isLeft $ Runner.parseOptions ["--hide-successes"]) "accepted --hide-successes"
-    Spec.it s "reads how many of the slowest cases to name" $
-      Spec.assertEq s (fmap Runner.slowest $ Runner.parseOptions ["--slowest", "3"]) (Right 3)
+    Spec.it s "reads where to write the report" $
+      Spec.assertEq s (fmap Runner.json $ Runner.parseOptions ["--json", "report.json"]) (Right (Just "report.json"))
     Spec.it s "refuses a seed that is not a key" $
       Spec.assertEq s (Runner.parseOptions ["--seed", "x"]) (Left "not a seed: x")
 
@@ -46,7 +48,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
       Spec.assertEq s (fmap Runner.name $ Foldable.toList cases) [Text.pack "a.b.c", Text.pack "a.d"]
 
   Spec.describe s "selected" $ do
-    let options ps = Runner.MkOptions {Runner.patterns = fmap Text.pack ps, Runner.timeout = Nothing, Runner.seed = Nothing, Runner.slowest = 0}
+    let options ps = Runner.MkOptions {Runner.patterns = fmap Text.pack ps, Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing}
         named = Runner.MkCase {Runner.path = fmap Text.pack ["Engine", "Trigger", "fires once"], Runner.action = pure ()}
     Spec.it s "matches a substring spanning groups" $
       Spec.assertBool s (Runner.selected (options ["Trigger.fires"]) named) "missed Trigger.fires"
@@ -58,7 +60,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
       Spec.assertBool s (not $ Runner.selected (options ["engine"]) named) "matched engine"
 
   Spec.describe s "ordered" $ do
-    let options = Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.slowest = 0}
+    let options = Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing}
         cases = Seq.fromList $ fmap (\i -> Runner.MkCase {Runner.path = [Text.pack $ show i], Runner.action = pure ()}) [1 .. 20 :: Integer]
         names seed = fmap Runner.name $ Runner.ordered options (key seed) cases
     Spec.it s "gives one seed one order" $
@@ -77,8 +79,8 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
         Spec.it r "throws" $ ioError (userError "bang")
         Spec.it r "hangs" $ Concurrent.threadDelay 10000000
       sink <- IORef.newIORef []
-      summary <- Runner.run (\l -> IORef.atomicModifyIORef' sink $ \ls -> (l : ls, ())) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Just 10000, Runner.seed = Nothing, Runner.slowest = 0} (key 1) cases
-      Spec.assertEq s summary Runner.MkSummary {Runner.total = 4, Runner.failures = 3}
+      ran <- Runner.run (\l -> IORef.atomicModifyIORef' sink $ \ls -> (l : ls, ())) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Just 10000, Runner.seed = Nothing, Runner.json = Nothing} (key 1) cases
+      Spec.assertEq s (Runner.summarize ran) Runner.MkSummary {Runner.total = 4, Runner.failures = 3}
       reported <- IORef.readIORef sink
       Spec.assertEq s (Seq.sort . Seq.fromList $ fmap (Text.takeWhile (/= ':')) reported) (Seq.fromList $ fmap Text.pack ["FAIL g.asserts", "FAIL g.hangs", "FAIL g.throws"])
       Spec.assertBool s (any (Text.isPrefixOf $ Text.pack "FAIL g.hangs: timed out") reported) "no timeout line"
@@ -86,27 +88,29 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
     Spec.it s "carries an assertion's call stack into its failure line" $ do
       cases <- collect . Spec.it r "asserts" $ Spec.assertFailure r "boom"
       sink <- IORef.newIORef []
-      _ <- Runner.run (\l -> IORef.atomicModifyIORef' sink $ \ls -> (l : ls, ())) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.slowest = 0} (key 1) cases
+      _ <- Runner.run (\l -> IORef.atomicModifyIORef' sink $ \ls -> (l : ls, ())) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing} (key 1) cases
       reported <- IORef.readIORef sink
       case reported of
         [l] -> do
           Spec.assertBool s (Text.isPrefixOf (Text.pack "FAIL asserts: boom\n  CallStack") l) $ "unexpected line: " <> Text.unpack l
           Spec.assertBool s (Text.isInfixOf (Text.pack "Parun/Test/RunnerSpec.hs") $ Text.replace (Text.pack "\\") (Text.pack "/") l) $ "no call site: " <> Text.unpack l
         _ -> Spec.assertFailure s $ "expected one line, got " <> show reported
-    Spec.it s "names the slowest case, and only as many as asked for" $ do
-      cases <- collect $ do
+    Spec.it s "answers each case with its path, its failure and how long it ran" $ do
+      cases <- collect . Spec.describe r "g" $ do
         Spec.it r "quick" $ pure ()
-        Spec.it r "slow" $ Concurrent.threadDelay 50000
-      sink <- IORef.newIORef []
-      _ <- Runner.run (\l -> IORef.atomicModifyIORef' sink $ \ls -> (l : ls, ())) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.slowest = 1} (key 1) cases
-      reported <- IORef.readIORef sink
-      case reported of
-        [l] -> Spec.assertBool s (Text.isPrefixOf (Text.pack "SLOW ") l && Text.isSuffixOf (Text.pack "ms slow") l) $ "unexpected line: " <> Text.unpack l
-        _ -> Spec.assertFailure s $ "expected one line, got " <> show reported
+        Spec.it r "slow" $ Concurrent.threadDelay 50000 >> Spec.assertFailure r "boom"
+      ran <- Runner.run (const $ pure ()) Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing} (key 1) cases
+      let named n = filter ((== Text.pack n) . Runner.title) ran
+      Spec.assertEq s (fmap Runner.failure $ named "g.quick") [Nothing]
+      Spec.assertBool s (all (maybe False (Text.isPrefixOf $ Text.pack "boom") . Runner.failure) (named "g.slow") && length (named "g.slow") == 1) $ "no failure: " <> show ran
+      Spec.assertBool s (all ((>= 50000000) . Runner.nanoseconds) $ named "g.slow") $ "too quick: " <> show ran
 
-  Spec.describe s "slowestLines" $ do
-    Spec.it s "orders by duration, longest first, and stops at the count" $
-      Spec.assertEq s (Runner.slowestLines 2 [(5, Text.pack "a"), (900, Text.pack "b"), (30, Text.pack "c")]) (fmap Text.pack ["SLOW 900ms b", "SLOW 30ms c"])
+  Spec.describe s "reportCodec" $ do
+    Spec.it s "writes the seed and each case, a failure only where there is one" $
+      Spec.assertEq
+        s
+        (Common.render $ Codec.encode Runner.reportCodec Runner.MkReport {Runner.shuffled = Text.pack "07", Runner.results = [Runner.MkResult (Text.pack "g.a") Nothing 5, Runner.MkResult (Text.pack "g.b") (Just $ Text.pack "boom") 900]})
+        (Text.pack "{\"seed\":\"07\",\"cases\":[{\"name\":\"g.a\",\"nanoseconds\":5},{\"name\":\"g.b\",\"failure\":\"boom\",\"nanoseconds\":900}]}")
 
   Spec.describe s "summaryLine" $ do
     Spec.it s "names the seed in a pass" $

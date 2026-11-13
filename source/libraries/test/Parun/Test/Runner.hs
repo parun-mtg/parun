@@ -1,3 +1,5 @@
+{-# LANGUAGE ApplicativeDo #-}
+
 -- | A test runner on boot libraries alone. It collects the cases a
 -- 'Spec.Spec' registers, shuffles them, runs them on a pool of one worker per
 -- capability, prints each failure as it lands, and ends with one summary line.
@@ -8,21 +10,25 @@ import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Control.Monad.Trans.Writer as Writer
-import qualified Data.Bifunctor as Bifunctor
+import qualified Data.ByteString as ByteString
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
 import qualified Data.List as List
-import qualified Data.Ord as Ord
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Encoding
 import qualified Data.Text.IO as TextIO
-import qualified Data.Word as Word
 import qualified GHC.Clock as Clock
 import qualified GHC.Stack as Stack
 import Numeric.Natural (Natural)
 import qualified Parun.Exceptions.AssertionFailed as AssertionFailed
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Extra.Word64 as Word64
+import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
 import qualified Parun.Spec as Spec
@@ -47,15 +53,45 @@ data Outcome
   deriving (Eq, Show)
 
 -- | The command line: the substrings selecting cases (any of them; every case
--- when none), the per-case budget in microseconds, the shuffle's seed, and how
--- many of the slowest cases to name.
+-- when none), the per-case budget in microseconds, the shuffle's seed, and
+-- where to write the run's 'Report'.
 data Options = MkOptions
   { patterns :: [Text.Text],
     timeout :: Maybe Natural,
     seed :: Maybe Key.Type.Key,
-    slowest :: Natural
+    json :: Maybe FilePath
   }
   deriving (Eq, Show)
+
+-- | One case as it ran: its dotted path, why it failed if it did, and how long
+-- it took.
+data Result = MkResult
+  { title :: Text.Text,
+    failure :: Maybe Text.Text,
+    nanoseconds :: Natural
+  }
+  deriving (Eq, Show)
+
+-- | A whole run for a tool to read: the seed that ordered it, in hexadecimal,
+-- and every case in the order it finished.
+data Report = MkReport
+  { shuffled :: Text.Text,
+    results :: [Result]
+  }
+  deriving (Eq, Show)
+
+resultCodec :: Codec.Codec Result
+resultCodec = Fields.object $ do
+  t <- Fields.required "name" Common.text title
+  f <- Fields.defaulted "failure" Nothing (Common.maybe Common.text) failure
+  n <- Fields.required "nanoseconds" Common.natural nanoseconds
+  pure MkResult {title = t, failure = f, nanoseconds = n}
+
+reportCodec :: Codec.Codec Report
+reportCodec = Fields.object $ do
+  k <- Fields.required "seed" Common.text shuffled
+  rs <- Fields.required "cases" (Common.list resultCodec) results
+  pure MkReport {shuffled = k, results = rs}
 
 -- | How many cases ran, and how many of them failed.
 data Summary = MkSummary
@@ -90,7 +126,10 @@ main collect = do
   cases <- collect
   lock <- Concurrent.newMVar ()
   let report line = Concurrent.withMVar lock . const $ TextIO.putStrLn line
-  summary <- run report options s cases
+  ran <- run report options s cases
+  Foldable.for_ (json options) $ \file ->
+    ByteString.writeFile file . Encoding.encodeUtf8 . Common.render $ Codec.encode reportCodec MkReport {shuffled = Key.toHex s, results = ran}
+  let summary = summarize ran
   TextIO.putStrLn $ summaryLine s summary
   Monad.unless (succeeded summary) Exit.exitFailure
 
@@ -99,12 +138,12 @@ flags =
   [ GetOpt.Option "p" ["pattern"] (GetOpt.ReqArg (\s o -> Right o {patterns = patterns o <> [Text.pack s]}) "SUBSTRING") "run the cases whose path holds this; repeated, those matching any",
     GetOpt.Option [] ["timeout"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a duration: " <> s) (\n -> Right o {timeout = Just n}) $ duration s) "DURATION") "fail a case still running after this long: seconds, or a number ending in ms, s, m or h",
     GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a seed: " <> s) (\k -> Right o {seed = Just k}) . Key.fromHex $ Text.pack s) "KEY") "the shuffle's key, 64 hexadecimal digits; drawn from the operating system when absent",
-    GetOpt.Option [] ["slowest"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a number of cases: " <> s) (\n -> Right o {slowest = n}) $ Read.readMaybe s) "N") "name the N cases that ran longest, and for how long, before the summary"
+    GetOpt.Option [] ["json"] (GetOpt.ReqArg (\file o -> Right o {json = Just file}) "FILE") "write every case's name, failure and nanoseconds to this file as JSON"
   ]
 
 parseOptions :: [String] -> Either String Options
 parseOptions arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
-  (updates, [], []) -> Monad.foldM (\o f -> f o) MkOptions {patterns = [], timeout = Nothing, seed = Nothing, slowest = 0} updates
+  (updates, [], []) -> Monad.foldM (\o f -> f o) MkOptions {patterns = [], timeout = Nothing, seed = Nothing, json = Nothing} updates
   (_, argument : _, []) -> Left $ "unexpected argument: " <> argument
   (_, _, problem : _) -> Left $ List.dropWhileEnd Char.isSpace problem
 
@@ -130,13 +169,12 @@ selected :: Options -> Case -> Bool
 selected options c = null (patterns options) || any (\p -> Text.isInfixOf p $ name c) (patterns options)
 
 -- | Runs the selected cases in an order shuffled by the seed, handing each
--- failure's line to @report@ as it lands, then the slowest cases' lines.
-run :: (Text.Text -> IO ()) -> Options -> Key.Type.Key -> Seq.Seq Case -> IO Summary
+-- failure's line to @report@ as it lands, and answers every case as it ran,
+-- in the order they finished.
+run :: (Text.Text -> IO ()) -> Options -> Key.Type.Key -> Seq.Seq Case -> IO [Result]
 run report options s cases = do
-  let order = ordered options s cases
-  queue <- IORef.newIORef order
-  failed <- IORef.newIORef (0 :: Natural)
-  durations <- IORef.newIORef []
+  queue <- IORef.newIORef $ ordered options s cases
+  finished <- IORef.newIORef []
   let worker = do
         next <- IORef.atomicModifyIORef' queue $ \q -> case q of
           [] -> ([], Nothing)
@@ -144,15 +182,12 @@ run report options s cases = do
         case next of
           Nothing -> pure ()
           Just c -> do
-            started <- Clock.getMonotonicTimeNSec
+            before <- Clock.getMonotonicTimeNSec
             outcome <- runCase (timeout options) c
-            finished <- Clock.getMonotonicTimeNSec
-            IORef.atomicModifyIORef' durations $ \ds -> (((finished - started) `div` 1000000, name c) : ds, ())
-            case outcome of
-              Passed -> pure ()
-              Failed m -> do
-                IORef.atomicModifyIORef' failed $ \n -> (n + 1, ())
-                report $ failureLine c m
+            after <- Clock.getMonotonicTimeNSec
+            let result = MkResult {title = name c, failure = failed outcome, nanoseconds = Word64.toNatural after - Word64.toNatural before}
+            IORef.atomicModifyIORef' finished $ \rs -> (result : rs, ())
+            Foldable.traverse_ (report . failureLine c) $ failure result
             worker
   workers <- Concurrent.getNumCapabilities
   dones <- Monad.replicateM workers $ do
@@ -160,14 +195,16 @@ run report options s cases = do
     Monad.void . Concurrent.forkIO $ Exception.finally worker (Concurrent.putMVar done ())
     pure done
   Foldable.traverse_ Concurrent.takeMVar dones
-  n <- IORef.readIORef failed
-  IORef.readIORef durations >>= Foldable.traverse_ report . slowestLines (slowest options)
-  pure MkSummary {total = Natural.length order, failures = n}
+  fmap reverse $ IORef.readIORef finished
 
--- | A line for each of the @n@ cases that ran longest, longest first: its
--- milliseconds, then its path.
-slowestLines :: Natural -> [(Word.Word64, Text.Text)] -> [Text.Text]
-slowestLines n = fmap (\(ms, path') -> Text.pack ("SLOW " <> show ms <> "ms ") <> path') . take (Natural.toIntSaturating n) . List.sortOn (Bifunctor.first Ord.Down)
+-- | A failure's message.
+failed :: Outcome -> Maybe Text.Text
+failed outcome = case outcome of
+  Passed -> Nothing
+  Failed m -> Just m
+
+summarize :: [Result] -> Summary
+summarize ran = MkSummary {total = Natural.length ran, failures = Natural.length $ Maybe.mapMaybe failure ran}
 
 -- | The selected cases, in the order the seed shuffles them into.
 ordered :: Options -> Key.Type.Key -> Seq.Seq Case -> [Case]
