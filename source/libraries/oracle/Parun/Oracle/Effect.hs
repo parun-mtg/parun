@@ -1058,6 +1058,7 @@ supported context p = case PutCounters.ref p of
       Maybe.isNothing (TargetSlot.perPlayer slot),
       Maybe.isNothing (TargetSlot.together slot),
       Maybe.isNothing (TargetSlot.amount slot),
+      Maybe.isNothing (TargetSlot.total slot),
       Maybe.isNothing (TargetSlot.divided slot) ->
         [MkPredicate Nothing (Text.pack ("support " <> show n)) [] [s] Nothing False]
   _ -> []

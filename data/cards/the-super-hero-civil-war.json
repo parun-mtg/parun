@@ -86,50 +86,7 @@
                           },
                           "ref": {
                             "type": "InSlot",
-                            "value": "first"
-                          }
-                        }
-                      },
-                      {
-                        "type": "GainControl",
-                        "value": {
-                          "duration": {
-                            "type": "ForAsLongAs",
-                            "value": {
-                              "type": "Compares",
-                              "value": {
-                                "comparison": "Exactly",
-                                "measured": {
-                                  "type": "Count",
-                                  "value": {
-                                    "aggregation": {
-                                      "type": "Members"
-                                    },
-                                    "filter": {
-                                      "type": "IsSource"
-                                    },
-                                    "scope": {
-                                      "type": "InZone",
-                                      "value": {
-                                        "player": {
-                                          "type": "Relative",
-                                          "value": "AnyPlayer"
-                                        },
-                                        "zone": "Battlefield"
-                                      }
-                                    }
-                                  }
-                                },
-                                "threshold": {
-                                  "type": "Literal",
-                                  "value": 1
-                                }
-                              }
-                            }
-                          },
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "second"
+                            "value": "target"
                           }
                         }
                       }
@@ -137,93 +94,26 @@
                   }
                 ],
                 "targetSlots": {
-                  "first": {
+                  "target": {
                     "count": {
                       "type": "Printed",
                       "value": {
                         "least": 0,
-                        "most": 1
-                      }
-                    },
-                    "filter": {
-                      "type": "Measures",
-                      "value": {
-                        "comparison": "AtMost",
-                        "measure": "ManaValue",
-                        "operand": {
-                          "type": "Literal",
-                          "value": 6
-                        }
+                        "most": 2
                       }
                     },
                     "pool": {
                       "type": "Creatures"
-                    }
-                  },
-                  "second": {
-                    "amount": {
-                      "type": "Plus",
-                      "value": {
-                        "left": {
-                          "type": "Literal",
-                          "value": 6
-                        },
-                        "right": {
-                          "type": "Negate",
-                          "value": {
-                            "type": "Count",
-                            "value": {
-                              "aggregation": {
-                                "type": "Total",
-                                "value": {
-                                  "type": "Measure",
-                                  "value": "ManaValue"
-                                }
-                              },
-                              "filter": {
-                                "type": "HasCardType",
-                                "value": "Creature"
-                              },
-                              "scope": {
-                                "type": "OverBound",
-                                "value": "first"
-                              }
-                            }
-                          }
-                        }
+                    },
+                    "total": {
+                      "most": {
+                        "type": "Literal",
+                        "value": 6
+                      },
+                      "weight": {
+                        "type": "Measure",
+                        "value": "ManaValue"
                       }
-                    },
-                    "count": {
-                      "type": "Printed",
-                      "value": {
-                        "least": 0,
-                        "most": 1
-                      }
-                    },
-                    "filter": {
-                      "type": "And",
-                      "value": [
-                        {
-                          "type": "Not",
-                          "value": {
-                            "type": "IsBound",
-                            "value": "first"
-                          }
-                        },
-                        {
-                          "type": "Measures",
-                          "value": {
-                            "comparison": "AtMost",
-                            "measure": "ManaValue",
-                            "operand": {
-                              "type": "EnclosingAmount"
-                            }
-                          }
-                        }
-                      ]
-                    },
-                    "pool": {
-                      "type": "Creatures"
                     }
                   }
                 }

@@ -3553,6 +3553,8 @@ targetSlotSlots slot =
         maybe Map.empty quantitySlots (SlotCount.quantity (TargetSlot.count slot)),
         -- CR 601.2d's divided total names slots the same way (Rolling Thunder's X).
         maybe Map.empty quantitySlots (TargetSlot.divided slot),
+        -- CR 601.2c's total cap names slots the same way (Fire Lord Sozin's X).
+        joinSlots (fmap quantitySlots (totalCapQuantities (TargetSlot.total slot))),
         -- And the seat a CR 115.1 chooser names through a binding -- Curse of
         -- Inertia's "that attacking player", Necrotic Plague's "its controller"
         -- -- which its condition must supply.

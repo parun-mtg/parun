@@ -1755,6 +1755,7 @@ slot pool f =
       TargetSlot.perPlayer = Nothing,
       TargetSlot.divided = Nothing,
       TargetSlot.together = Nothing,
+      TargetSlot.total = Nothing,
       TargetSlot.asCast = Nothing
     }
 

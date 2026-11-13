@@ -1604,6 +1604,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       "each author's atoms are framed where the resolution overlays the chosen names"
       hasChosenNameCounts
       [ ("Ancient Vendetta", 1), -- its own search
+        ("The Rise of Sozin", 1), -- its chapter II's search
         ("Predict", 1), -- its own mill tally
         ("Petra Sphinx", 1), -- the ObjectRef its move names
         ("Conundrum Sphinx", 1), -- the ObjectRef its move names
@@ -1978,8 +1979,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- JUDGED (Parun.Engine.Target.jointlyJudged); Synthetic Measured Refrain, whose
     -- bound folds over what a sibling slot names (Parun.TargetSpec's "CR 700.2d a
     -- repeated mode's computed bound measures its own occurrence's sibling
-    -- slot"); The Super Hero Civil War, whose second slot's bound is six less
-    -- the total mana value its first slot names; Blighted Nightmare and
+    -- slot"); Blighted Nightmare and
     -- Tameshi, Reality Architect, on ACTIVATED abilities, whose X CR 602.2b
     -- announces; and Sundering Archaic, whose bound is the colors of mana spent to
     -- cast its source (CR 601.2h).
@@ -2018,7 +2018,6 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Stir the Grave", 1),
         ("Synthetic Borrowed Exhumation", 1),
         ("Synthetic Measured Refrain", 1),
-        ("The Super Hero Civil War", 1),
         ("Blighted Nightmare", 1),
         ("Sundering Archaic", 1),
         ("Tameshi, Reality Architect", 1),
