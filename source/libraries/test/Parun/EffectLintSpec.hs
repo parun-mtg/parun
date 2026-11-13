@@ -1508,7 +1508,8 @@ effectObjectRefs effect =
         -- Twilight Diviner's "a copy of one of them", asked by
         -- Resolve.Common.askingObjects.
         Effect.CreateCopy (CreateCopy.MkCreateCopy _ ref _ _ _ _ _) -> [([CardFromAmong], ref)]
-        Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject _ _ _) -> read_ (case original of CopyOriginal.OfObject ref -> [ref, subject]; CopyOriginal.Named _ -> [subject])
+        -- Volatile Chimera's "choose a card at random", the original alone.
+        Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject _ _ _) -> [([RandomAmong], ref) | CopyOriginal.OfObject ref <- [original]] <> read_ [subject]
         Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets _ _ _ _) -> read_ (ref : copyTargetsRefs targets)
         Effect.SetX (SetX.MkSetX _ ref) -> read_ [ref]
         Effect.Replace {} -> []
@@ -1626,7 +1627,9 @@ effectObjectRefs effect =
         Effect.OfferNamedCopy {} -> []
         Effect.OfferNotedCopy {} -> []
         -- Word of Command's "choose a card from it", out of the hand it looked at.
-        Effect.OfferCast offer -> [([CardFromAmong], OfferCast.ref offer)]
+        -- And Arcane Savant's "a card you exiled with cards named Arcane Savant",
+        -- chosen in exile.
+        Effect.OfferCast offer -> [([CardFromAmong, OffBattlefield], OfferCast.ref offer)]
         Effect.GrantPlayFromExile grant -> read_ [GrantPlayFromExile.ref grant]
         -- Shimian Specter's "You choose a nonland card from it" and Sylvan Library's
         -- "choose two cards in your hand", asked by

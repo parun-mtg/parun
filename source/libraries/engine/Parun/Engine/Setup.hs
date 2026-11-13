@@ -370,6 +370,7 @@ blankGame match order active =
       GameState.enteredWith = Map.empty,
       GameState.counteredWith = Map.empty,
       GameState.exilePiles = Map.empty,
+      GameState.exiledBeforeGame = Map.empty,
       GameState.extraTurns = [],
       GameState.turnMarkers = [],
       GameState.parkedTurns = Map.empty
@@ -430,6 +431,16 @@ createDeck pid deck = do
   conspiracyIds <- Monad.mapM (\(printing, n) -> fmap (\i -> (i, n)) (State.state (Game.intern printing))) (Map.toAscList (Deck.conspiracies deck))
   Monad.forM_ conspiracyIds $ \(printingId, n) ->
     Monad.replicateM_ (Natural.toIntSaturating n) (createInCommandZone pid printingId >>= Conspiracy.hideAgenda pid)
+  -- CR 607.2n: "before you shuffle your deck to start the game", the cards
+  -- this player exiles with the cards of each name, face up (CR 406.3) and
+  -- linked by that name. Parun.SetupSpec's "CR 607.2n createDeck exiles" case
+  -- proves it.
+  Monad.forM_ (Map.toAscList (Deck.exiledBeforeGame deck)) $ \(name, printings) -> do
+    exiledIds <- Monad.mapM (\(printing, n) -> fmap (\i -> (i, n)) (State.state (Game.intern printing))) (Map.toAscList printings)
+    Monad.forM_ exiledIds $ \(printingId, n) ->
+      Monad.replicateM_ (Natural.toIntSaturating n) $ do
+        oid <- State.state (placeCard Zone.Exile pid printingId)
+        State.modify' (\gs -> gs {GameState.exiledBeforeGame = Map.insert oid name (GameState.exiledBeforeGame gs)})
   -- CR 903.7 / CR 103.4 / CR 103.4d / CR 902.4 / CR 810.4: the starting life
   -- total, which is the deck's business -- and the settings' and the seat
   -- count's and the vanguard's -- and so cannot be settled by emptyGame above.
@@ -807,6 +818,10 @@ startGameFromCards perform exemptions = do
               TurnRegisters.stackedIn = Map.empty
             }
       }
+  -- CR 607.2n's exile before the shuffle is NOT offered again here, nor in a
+  -- subgame: the first game takes it from the deck list, so a restarted game
+  -- keeps whatever that stated and a subgame begins with none (#7201).
+  --
   -- CR 728.1 / 103.2e / 315.2: the new game places its conspiracies again,
   -- before decks are shuffled, so CR 702.106a turns each hidden agenda face
   -- down and asks a fresh name. Nothing done in the restarted game carries over:

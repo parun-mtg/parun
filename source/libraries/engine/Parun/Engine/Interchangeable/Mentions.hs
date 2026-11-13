@@ -153,6 +153,7 @@ import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.Power as Power
+import qualified Parun.Types.PregameExile as PregameExile
 import qualified Parun.Types.Prevention as Prevention
 import qualified Parun.Types.PreventionRider as PreventionRider
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
@@ -739,6 +740,7 @@ faceNames asking onCard =
         { Children.facePower = Const.Const . powerNames asking,
           Children.faceToughness = Const.Const . toughnessNames asking,
           Children.faceCommanderDeckRule = Const.Const . commanderDeckRuleNames asking,
+          Children.facePregameExile = Const.Const . filterNames asking . PregameExile.filter,
           Children.faceKeyword = Const.Const . keywordNames asking,
           Children.faceColor = const (Const.Const mempty),
           Children.faceCharacteristicPT = Const.Const . characteristicPTNames asking,

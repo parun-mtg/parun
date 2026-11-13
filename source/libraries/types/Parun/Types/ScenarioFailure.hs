@@ -38,6 +38,8 @@ data ScenarioFailure
     MkIllegalAttachment Label.Label
   | -- | A token placed off the battlefield, where CR 111.7 says it would not exist.
     MkTokenOffBattlefield CardName.CardName
+  | -- | A placement exiled with cards of a name (CR 607.2n) outside exile.
+    MkExiledWithOutsideExile CardName.CardName
   | -- | An emperor seat on no team, or a second emperor on one team (CR 809.2).
     MkIllegalEmperor Label.Label
   | -- | A seat whose life differs from a teammate's on a board whose teams share

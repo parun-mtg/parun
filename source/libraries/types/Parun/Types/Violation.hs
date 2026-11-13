@@ -63,4 +63,10 @@ data Violation
   | -- | CR 902.3: players without a vanguard card in a game where another
     -- brings one; how many, then the players in the game.
     MissingVanguard Natural.Natural Natural.Natural
+  | -- | CR 607.2n: more or fewer cards exiled before the game with cards of a
+    -- name than the deck's cards of that name exile; the name, then how many.
+    PregameExileCount CardName.CardName Natural.Natural
+  | -- | CR 607.2n: a card exiled before the game that cards of the name do
+    -- not exile; the card, then the name.
+    PregameExileMismatch CardName.CardName CardName.CardName
   deriving (Eq, Ord, Show)

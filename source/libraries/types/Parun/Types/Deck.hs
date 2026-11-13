@@ -120,13 +120,20 @@ data Deck = MkDeck
     -- | CR 905.2b: what this player noted during a Conspiracy
     -- draft, by the name of the card they noted each for, in order
     -- (Player.draftNotes). Empty outside Conspiracy Draft.
-    draftNotes :: Map.Map CardName.CardName (Seq.Seq DraftNote.DraftNote)
+    draftNotes :: Map.Map CardName.CardName (Seq.Seq DraftNote.DraftNote),
+    -- | CR 607.2n: the cards this player exiles before shuffling, by the name
+    -- of the cards revealed to exile them (Arcane Savant). The player's
+    -- choice, arriving with the deck as `conspiracies` does, and like them
+    -- neither among `cards` nor left in `sideboard`. Parun.Legality judges
+    -- it against the abilities of the cards named.
+    exiledBeforeGame :: Map.Map CardName.CardName (Map.Map Printing.Printing Natural.Natural)
   }
   deriving (Eq, Ord, Show)
 
 -- | A deck with no commander, no vanguard, no dungeons, no sideboard, no
--- conspiracies, no supplementary decks and no draft notes -- every format but Commander and Vanguard,
+-- conspiracies, no supplementary decks, no draft notes and nothing exiled
+-- before the game -- every format but Commander and Vanguard,
 -- every game nobody ventures in, every game nobody wishes in, and every game
 -- outside Conspiracy Draft.
 fromCards :: Map.Map Printing.Printing Natural.Natural -> Deck
-fromCards m = MkDeck {cards = m, commander = Map.empty, vanguard = Nothing, dungeons = Set.empty, sideboard = Map.empty, conspiracies = Map.empty, sideDecks = Map.empty, stickerSheets = Seq.empty, draftNotes = Map.empty}
+fromCards m = MkDeck {cards = m, commander = Map.empty, vanguard = Nothing, dungeons = Set.empty, sideboard = Map.empty, conspiracies = Map.empty, sideDecks = Map.empty, stickerSheets = Seq.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty}

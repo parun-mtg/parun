@@ -3204,7 +3204,7 @@ legalCopyTargets context batch filter_ among self gs =
         CopyDomain.InZone _ -> []
         CopyDomain.InPile pile ->
           let src = Maybe.fromMaybe self (Filter.source context)
-           in Game.linkedPile Nothing (Quantity.readerAcquisition context src gs) pile src gs
+           in Game.linkedPile (Filter.perspective context) Nothing (Quantity.readerAcquisition context src gs) pile src gs
    in filter eligible domain
 
 -- CR 603.11 / 707.9g: the triggered ability linked to a replacement ("When

@@ -369,6 +369,7 @@ import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Plus as Plus
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Power as Power
+import qualified Parun.Types.PregameExile as PregameExile
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.Prevention as Prevention
@@ -2822,6 +2823,8 @@ data FaceChildren card f = MkFaceChildren
     faceToughness :: Toughness.Toughness -> f Toughness.Toughness,
     -- | A deck-construction rule a commander prints (CR 903.5), whole.
     faceCommanderDeckRule :: CommanderDeckRule.CommanderDeckRule -> f CommanderDeckRule.CommanderDeckRule,
+    -- | A printed exile before the game (CR 607.2n), whole.
+    facePregameExile :: PregameExile.PregameExile -> f PregameExile.PregameExile,
     -- | A keyword (CR 702), whole. Keywords a visitor maps together merge, their counts summed.
     faceKeyword :: Keyword.Keyword -> f Keyword.Keyword,
     -- | A colour of the color indicator (CR 204), whole.
@@ -2907,6 +2910,7 @@ faceLeaves =
     { facePower = pure,
       faceToughness = pure,
       faceCommanderDeckRule = pure,
+      facePregameExile = pure,
       faceKeyword = pure,
       faceColor = pure,
       faceCharacteristicPT = pure,
@@ -2949,7 +2953,7 @@ faceLeaves =
 
 -- | A face's children. A delayed ability's name and a mode cost's index are keys, left as they are.
 faceChildren :: (Applicative f) => FaceChildren card f -> Face.Face card -> f (Face.Face card)
-faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer anteOnly circlesTwo deckLimit commanderDeckRules keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
+faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer anteOnly circlesTwo deckLimit commanderDeckRules pregameExile keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
   Face.MkFace name oracleText manaCost typeLine
     <$> traverse (facePower c) power
     <*> traverse (faceToughness c) toughness
@@ -2963,6 +2967,7 @@ faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness lo
     <*> pure circlesTwo
     <*> pure deckLimit
     <*> traverseSet (faceCommanderDeckRule c) commanderDeckRules
+    <*> traverse (facePregameExile c) pregameExile
     <*> fmap (Map.fromListWith (+)) (traverse (\(printed, count) -> (\k -> (k, count)) <$> faceKeyword c printed) (Map.toList keywords))
     <*> traverseSet (faceColor c) colorIndicator
     <*> traverse (faceCharacteristicPT c) characteristicPT

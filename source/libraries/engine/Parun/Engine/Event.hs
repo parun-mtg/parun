@@ -11398,8 +11398,9 @@ lastKnownFrom gs oid obj =
 --     leaves the battlefield, and Game.ceaseAttacking keeps CR 508.5's defending
 --     player for it;
 --   * GameState.movedUntil (CR 610.3), GameState.haunting (CR 702.55b),
---     GameState.encoded (CR 702.99b), GameState.exiledWith (CR 607.2a) and
---     GameState.exilePiles (CR 406.4).
+--     GameState.encoded (CR 702.99b), GameState.exiledWith (CR 607.2a),
+--     GameState.exilePiles (CR 406.4) and GameState.exiledBeforeGame (CR
+--     607.2n).
 --
 -- Only an entry whose KEY is the departing object goes. One whose VALUE names it
 -- stays: a source-leaves watch then returns its object at the next settle, which
@@ -11436,7 +11437,8 @@ leaveTheGame asOf g oid = case lastKnownRecord asOf oid of
             GameState.haunting = Map.delete oid (GameState.haunting g1),
             GameState.encoded = Map.delete oid (GameState.encoded g1),
             GameState.exiledWith = Map.delete oid (GameState.exiledWith g1),
-            GameState.exilePiles = Map.delete oid (GameState.exilePiles g1)
+            GameState.exilePiles = Map.delete oid (GameState.exilePiles g1),
+            GameState.exiledBeforeGame = Map.delete oid (GameState.exiledBeforeGame g1)
           }
 
 -- | CR 708.9: the reveals a face-down permanent's or face-down spell's owner

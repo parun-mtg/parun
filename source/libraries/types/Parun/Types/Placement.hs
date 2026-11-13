@@ -38,6 +38,9 @@ data Placement = MkPlacement
     -- | CR 718.1: the numbers lit up on its printing, an Attraction's.
     lights :: Set.Set Natural,
     -- | CR 207.5: the colours circled on its printing, a Cryptic Spires'.
-    circled :: Set.Set Color.Color
+    circled :: Set.Set Color.Color,
+    -- | CR 607.2n: the name of the cards its owner exiled it with before the
+    -- game, in exile only.
+    exiledWith :: Maybe CardName.CardName
   }
   deriving (Eq, Ord, Show)

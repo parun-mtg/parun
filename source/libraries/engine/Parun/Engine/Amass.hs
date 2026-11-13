@@ -116,6 +116,7 @@ armyToken subtype =
               Face.circlesTwo = False,
               Face.deckLimit = Nothing,
               Face.commanderDeckRules = Set.empty,
+              Face.pregameExile = Nothing,
               Face.keywords = Map.empty,
               Face.colorIndicator = Set.singleton Color.Black,
               Face.characteristicPT = Nothing,

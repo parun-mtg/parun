@@ -36,6 +36,7 @@ codec = Fields.object $ do
   protector <- Fields.defaulted "protector" Nothing (Common.maybe Label.codec) Placement.protector
   lights <- Fields.defaulted "lights" Set.empty (Common.set Common.natural) Placement.lights
   circled <- Fields.defaulted "circled" Set.empty (Common.set Color.codec) Placement.circled
+  exiledWith <- Fields.defaulted "exiledWith" Nothing (Common.maybe CardName.codec) Placement.exiledWith
   pure
     Placement.MkPlacement
       { Placement.card = card,
@@ -52,5 +53,6 @@ codec = Fields.object $ do
         Placement.faceDown = faceDown,
         Placement.protector = protector,
         Placement.lights = lights,
-        Placement.circled = circled
+        Placement.circled = circled,
+        Placement.exiledWith = exiledWith
       }

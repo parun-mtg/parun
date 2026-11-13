@@ -200,6 +200,7 @@ withoutAnnouncement before entry closed = do
   enteredWith <- mapOfSets GameState.enteredWith
   counteredWith <- mapOfSets GameState.counteredWith
   exilePiles <- mapOf GameState.exilePiles
+  exiledBeforeGame <- mapOf GameState.exiledBeforeGame
   extraTurns <- listOf GameState.extraTurns
   -- Written at the turn handoff and by a departure, neither of which an
   -- announcement spans.
@@ -377,6 +378,7 @@ withoutAnnouncement before entry closed = do
         GameState.enteredWith = enteredWith,
         GameState.counteredWith = counteredWith,
         GameState.exilePiles = exilePiles,
+        GameState.exiledBeforeGame = exiledBeforeGame,
         GameState.extraTurns = extraTurns,
         GameState.turnMarkers = turnMarkers,
         GameState.parkedTurns = parkedTurns

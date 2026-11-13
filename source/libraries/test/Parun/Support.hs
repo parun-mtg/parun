@@ -206,7 +206,8 @@ objectSetup name =
       Placement.faceDown = Nothing,
       Placement.protector = Nothing,
       Placement.lights = Set.empty,
-      Placement.circled = Set.empty
+      Placement.circled = Set.empty,
+      Placement.exiledWith = Nothing
     }
 
 -- Test-source spelling of objectSetup: a Magic card name, never a corpus slug.

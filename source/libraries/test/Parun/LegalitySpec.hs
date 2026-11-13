@@ -284,6 +284,35 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
     separate <- fmap (Legality.checkGame GameSettings.plain) (traverse (\share -> supplied s registry deck [(SideDeck.Planar, share)] Nothing) [tenPlanes, tenPlanes])
     Spec.assertEqWith s "own decks are not pooled" separate []
 
+  -- CR 607.2n with Arcane Savant's ruling of 2016-08-23: each Savant
+  -- revealed exiles one instant or sorcery card, so a deck exiles no more
+  -- than it has Savants, and nothing else.
+  Spec.it s "CR 607.2n: a deck exiles before the game only what its cards of the name exile" $ do
+    let exilingIn family lands savants exiled = do
+          deck <- deckOf s registry [("Island", lands), ("Arcane Savant", savants)] []
+          cards <- fmap (Map.fromListWith (+)) (traverse (\(name, count) -> fmap (\p -> (p, count)) (S.printingOf s registry name)) exiled)
+          pure (Legality.check noTable GameSettings.plain (Format.MkFormat family Nothing Set.empty) Nothing deck {Deck.exiledBeforeGame = Map.singleton (nameOf "Arcane Savant") cards})
+        exiling = exilingIn RuleFamily.Limited 40
+    one <- exiling 1 [("Lightning Bolt", 1)]
+    Spec.assertEqWith s "one Savant, one instant" one []
+    two <- exiling 2 [("Lightning Bolt", 1), ("Divination", 1)]
+    Spec.assertEqWith s "two Savants, an instant and a sorcery" two []
+    tooMany <- exiling 1 [("Lightning Bolt", 2)]
+    Spec.assertEqWith s "one Savant, two cards" tooMany [Violation.PregameExileCount (nameOf "Arcane Savant") 2]
+    none <- exiling 0 [("Lightning Bolt", 1)]
+    Spec.assertEqWith s "no Savant" none [Violation.PregameExileCount (nameOf "Arcane Savant") 1]
+    creature <- exiling 1 [("Grizzly Bears", 1)]
+    Spec.assertEqWith s "a creature card" creature [Violation.PregameExileMismatch (nameOf "Grizzly Bears") (nameOf "Arcane Savant")]
+    chimera <- do
+      deck <- deckOf s registry [("Mountain", 40), ("Volatile Chimera", 1)] []
+      let exiledWith cards = do
+            exiled <- fmap (Map.fromListWith (+)) (traverse (\(name, count) -> fmap (\p -> (p, count)) (S.printingOf s registry name)) cards)
+            pure (Legality.check noTable GameSettings.plain (Format.MkFormat RuleFamily.Limited Nothing Set.empty) Nothing deck {Deck.exiledBeforeGame = Map.singleton (nameOf "Volatile Chimera") exiled})
+      traverse exiledWith [[("Grizzly Bears", 2)], [("Grizzly Bears", 2), ("Hill Giant", 2)]]
+    Spec.assertEqWith s "one Chimera, two creatures, then four" chimera [[Violation.PregameExileCount (nameOf "Volatile Chimera") 2], []]
+    constructed <- exilingIn RuleFamily.Constructed 59 1 [("Lightning Bolt", 1)]
+    Spec.assertEqWith s "nothing was drafted in constructed play" constructed [Violation.PregameExileCount (nameOf "Arcane Savant") 1]
+
   Spec.it s "CR 902.3: each player in a Vanguard game brings a vanguard card" $ do
     deck <- deckOf s registry [("Mountain", 60)] []
     let seats vanguards = fmap (Legality.checkGame GameSettings.plain) (traverse (supplied s registry deck []) vanguards)

@@ -382,6 +382,7 @@ import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PlotFromZone as PlotFromZone
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Power as Power
+import qualified Parun.Types.PregameExile as PregameExile
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
 import qualified Parun.Types.PreventNextDamage as PreventNextDamage
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
@@ -521,6 +522,7 @@ vanillaFace name typeLine =
       Face.circlesTwo = False,
       Face.deckLimit = Nothing,
       Face.commanderDeckRules = Set.empty,
+      Face.pregameExile = Nothing,
       Face.keywords = Map.empty,
       Face.colorIndicator = Set.empty,
       Face.staticAbilities = [],
@@ -5632,6 +5634,8 @@ activatedAbilityFilters ability =
 --     pregame actions, which `cardResolutionEffects` above does not reach.
 --   * `commanderDeckRules` -- CR 903.5e's cards of any colour identity, matched
 --     before the game with a bare context (Parun.Legality's inIdentity).
+--   * `pregameExile` -- CR 607.2n's cards exiled before the game, matched
+--     likewise (Parun.Legality's exiledBeforeGame).
 --
 -- The remaining fields hold none: `name`, `manaCost`, `typeLine`, `loyalty`,
 -- `defense`, `vanguard`, `canBeYourCommander`, `claimsStartingPlayer`,
@@ -5688,6 +5692,7 @@ cardFilters card =
         <> ruleAbilitiesFilters (Projection.ruleAbilitiesOfFace card)
         <> [(Unframed, matching) | CommanderDeckRule.AnyColorIdentity matching <- Set.toList (Face.commanderDeckRules card)]
         <> [(Unframed, matching) | CommanderDeckRule.ChosenExtraColor matching <- Set.toList (Face.commanderDeckRules card)]
+        <> [(Unframed, PregameExile.filter exile) | exile <- Maybe.maybeToList (Face.pregameExile card)]
     )
     <> concatMap printedReplacementFilters (Face.replacementEffects card)
     <> concatMap staticAbilityFilters (Face.staticAbilities card)
