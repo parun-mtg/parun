@@ -1,0 +1,16 @@
+{
+  "description": "CR 607.2d: Koh, the Face Stealer chooses only a creature card, so an artifact card it exiled as a creature lends nothing",
+  "note": "Bob's Barl's Cage is a 5/5 creature under Ensoul Artifact, so Koh's entry may exile it, but in exile it is no creature card. Koh's choice then finds no card: alice still pays 1 life, and the Cage's {3} ability, which needs no tap and has a target in bob's Shivan Dragon, is not Koh's. The twin board is koh-the-face-stealer-has-the-triggered-ability-of-the-last-chosen-card, where the exiled cards are creature cards and lend.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "battlefield": [{"card": "Swamp", "label": "s1", "ready": true}, {"card": "Swamp", "label": "s2", "ready": true}, {"card": "Mountain", "label": "m1", "ready": true}, {"card": "Mountain", "label": "m2", "ready": true}, {"card": "Mountain", "label": "m3", "ready": true}, {"card": "Mountain", "label": "m4", "ready": true}, {"card": "Mountain", "label": "m5", "ready": true}, {"card": "Mountain", "label": "m6", "ready": true}, {"card": "Mountain", "label": "m7", "ready": true}], "hand": [{"card": "Koh, the Face Stealer", "label": "koh"}], "library": [{"card": "Mountain"}, {"card": "Mountain"}]}, {"name": "bob", "battlefield": [{"card": "Barl's Cage", "label": "rod"}, {"card": "Ensoul Artifact", "label": "ensoul", "attached": "rod"}, {"card": "Shivan Dragon", "label": "dragon"}], "library": [{"card": "Mountain"}, {"card": "Mountain"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$koh", "mana": ["$m1", "$m2", "$m3", "$m4", "$s1", "$s2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$rod"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Barl's Cage", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Koh, the Face Stealer", "ability": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 19}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "Koh, the Face Stealer", "ability": 1, "mana": ["$m5", "$m6", "$m7", null], "targets": ["$dragon"]}}}
+  ]
+}

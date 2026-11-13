@@ -5,8 +5,11 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.ChosenQuality as ChosenQuality
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChosenQuality as ChosenQuality
+import qualified Parun.Types.ExiledPile as ExiledPile
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 
@@ -60,4 +63,10 @@ spec s = Spec.describe s "Parun.Codec.ChosenQuality" $ do
       ChosenQuality.codec
       (ChosenQuality.Word (Text.pack "Khans" NonEmpty.:| [Text.pack "Dragons"]))
       " {\"type\":\"Word\",\"value\":[\"Khans\",\"Dragons\"]} "
+  Spec.it s "ExiledCard (Koh, the Face Stealer)" $
+    Common.assertCodec
+      s
+      ChosenQuality.codec
+      (ChosenQuality.ExiledCard ExiledPile.OwnAbilities (Filter.HasCardType CardType.Creature))
+      " {\"type\":\"ExiledCard\",\"value\":{\"pile\":{\"type\":\"OwnAbilities\"},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ChosenQuality.codec

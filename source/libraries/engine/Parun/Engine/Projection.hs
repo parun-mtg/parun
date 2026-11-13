@@ -470,7 +470,19 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         --
         -- CR 404 / 108.2: in a graveyard, only a card, never a token awaiting
         -- CR 704.5d (Game.cardsIn).
-        Modification.GainCardAbilities (CardAbilities.MkCardAbilities from criterion extra) ->
+        --
+        -- CR 702.1: a keyword's activated ability is one of them (the ruling on
+        -- Koh, the Face Stealer), proved by the scenario
+        -- koh-the-face-stealer-has-an-activated-keyword-of-the-chosen-card.
+        --
+        -- CR 603.1 / 702.1: where the payload says so, its triggered abilities
+        -- too, a keyword's among them (the same ruling),
+        -- named as the activated ones are, so what one of them exiles is
+        -- linked to no ability printed on `src` (CR 607.5). The scenarios
+        -- koh-the-face-stealer-has-the-triggered-ability-of-the-last-chosen-card
+        -- and koh-the-face-stealer-has-a-triggered-keyword-of-the-chosen-card
+        -- prove the two.
+        Modification.GainCardAbilities (CardAbilities.MkCardAbilities from criterion triggered extra) ->
           let (zone, lenders) = case from of
                 LentCards.InExile -> (Zone.Exile, Set.toAscList (GameState.exile gs))
                 LentCards.TopOfYourLibrary -> (Zone.Library, foldMap (\you -> Maybe.maybeToList (Game.shownTop you gs)) (controllerOf src gs))
@@ -479,10 +491,13 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
               named card a = a {ActivatedAbility.name = Just (Binding.acquiredFrom card (ActivatedAbility.name a))}
               -- CR 113.6 / 702.178b: a card has, where it is, only the "as long
               -- as" grants that function there (AbilityZone.grantFunctionsIn).
-              lent card = let copied = copiableCharacteristics card gs in filter (AbilityZone.grantFunctionsIn Zone.Battlefield (PC.delayedAbilities copied) zone) (PC.activatedAbilities copied)
+              lent card = let copied = copiableCharacteristics card gs in filter (AbilityZone.grantFunctionsIn Zone.Battlefield (PC.delayedAbilities copied) zone) (PC.activatedAbilities copied <> Keyword.battlefieldAbilitiesOf (PC.keywords copied))
               gained = foldMap (\card -> fmap (named card) (lent card)) cards
               restricted a = a {ActivatedAbility.restrictions = ActivatedAbility.restrictions a <> extra}
-           in pc {PC.activatedAbilities = PC.activatedAbilities pc <> fmap restricted gained}
+              titled card t = t {TriggeredAbility.name = Just (Binding.acquiredFrom card (TriggeredAbility.name t))}
+              triggers card = let copied = copiableCharacteristics card gs in PC.triggeredAbilities copied <> Keyword.triggeredAbilitiesOf (PC.keywords copied)
+              fired = if triggered then foldMap (\card -> fmap (titled card) (triggers card)) cards else []
+           in pc {PC.activatedAbilities = PC.activatedAbilities pc <> fmap restricted gained, PC.triggeredAbilities = PC.triggeredAbilities pc <> fired}
         -- CR 613.1f / 123.7a: the abilities printed on the ability stickers on
         -- `src`, read off the stickers and never off src's projection, so a
         -- layer-6 loss on src does not reach them. Each goes through the

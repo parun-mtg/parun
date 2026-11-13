@@ -505,7 +505,7 @@ applyEffectWith runSubgame resolving source controller legal chosen effect = cau
   ability <- State.gets (resolvingAbilityName resolving)
   acquisition <- State.gets (\g -> Game.readingAcquisition resolving source g source)
   applyOneEffect runSubgame resolving source controller legal chosen effect
-  State.modify' (Common.recordExiledWith ExileLink.MkExileLink {ExileLink.source = source, ExileLink.ability = ability, ExileLink.acquisition = acquisition} before)
+  State.modify' (Common.recordExiledWith ExileLink.MkExileLink {ExileLink.source = source, ExileLink.ability = ability, ExileLink.acquisition = acquisition, ExileLink.chosen = False} before)
   State.modify' (Common.recordCounteredWith source acquisition logged)
   State.modify' (Common.recordExilePile before)
   -- CR 614.1c: the as-enters effects of what this instruction put onto the

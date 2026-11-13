@@ -15,18 +15,24 @@ spec s = Spec.describe s "Parun.Codec.CardAbilities" $ do
     Common.assertCodec
       s
       CardAbilities.codec
-      CardAbilities.MkCardAbilities {CardAbilities.from = LentCards.InExile, CardAbilities.cards = Filter.IsExiledWithSource ExiledPile.CraftMaterials, CardAbilities.restrictions = [ActivationRestriction.TimesEachTurn 1]}
+      CardAbilities.MkCardAbilities {CardAbilities.from = LentCards.InExile, CardAbilities.cards = Filter.IsExiledWithSource ExiledPile.CraftMaterials, CardAbilities.triggered = False, CardAbilities.restrictions = [ActivationRestriction.TimesEachTurn 1]}
       " {\"cards\":{\"type\":\"IsExiledWithSource\",\"value\":{\"type\":\"CraftMaterials\"}},\"restrictions\":[{\"type\":\"TimesEachTurn\",\"value\":1}]} "
   Spec.it s "restrictions default to none" $
     Common.assertCodec
       s
       CardAbilities.codec
-      CardAbilities.MkCardAbilities {CardAbilities.from = LentCards.InExile, CardAbilities.cards = Filter.IsExiledWithSource ExiledPile.OwnAbilities, CardAbilities.restrictions = []}
+      CardAbilities.MkCardAbilities {CardAbilities.from = LentCards.InExile, CardAbilities.cards = Filter.IsExiledWithSource ExiledPile.OwnAbilities, CardAbilities.triggered = False, CardAbilities.restrictions = []}
       " {\"cards\":{\"type\":\"IsExiledWithSource\",\"value\":{\"type\":\"OwnAbilities\"}}} "
   Spec.it s "walks the top of a library" $
     Common.assertCodec
       s
       CardAbilities.codec
-      CardAbilities.MkCardAbilities {CardAbilities.from = LentCards.TopOfYourLibrary, CardAbilities.cards = Filter.And [], CardAbilities.restrictions = []}
+      CardAbilities.MkCardAbilities {CardAbilities.from = LentCards.TopOfYourLibrary, CardAbilities.cards = Filter.And [], CardAbilities.triggered = False, CardAbilities.restrictions = []}
       " {\"from\":\"TopOfYourLibrary\",\"cards\":{\"type\":\"And\",\"value\":[]}} "
+  Spec.it s "lends triggered abilities too" $
+    Common.assertCodec
+      s
+      CardAbilities.codec
+      CardAbilities.MkCardAbilities {CardAbilities.from = LentCards.InExile, CardAbilities.cards = Filter.IsExiledWithSource ExiledPile.LastChosen, CardAbilities.triggered = True, CardAbilities.restrictions = []}
+      " {\"cards\":{\"type\":\"IsExiledWithSource\",\"value\":{\"type\":\"LastChosen\"}},\"triggered\":true} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CardAbilities.codec
