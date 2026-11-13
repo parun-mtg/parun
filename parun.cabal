@@ -545,6 +545,8 @@ library codec
     Parun.Codec.CostModifierSpec
     Parun.Codec.CostOffer
     Parun.Codec.CostOfferSpec
+    Parun.Codec.CostPortion
+    Parun.Codec.CostPortionSpec
     Parun.Codec.CostReduction
     Parun.Codec.CostReductionSpec
     Parun.Codec.CostScale
@@ -2888,6 +2890,7 @@ library types
     Parun.Types.CostKeyword
     Parun.Types.CostModifier
     Parun.Types.CostOffer
+    Parun.Types.CostPortion
     Parun.Types.CostReduction
     Parun.Types.CostScale
     Parun.Types.CostSubject
