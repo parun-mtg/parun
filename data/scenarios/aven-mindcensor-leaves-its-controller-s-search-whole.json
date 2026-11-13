@@ -1,0 +1,138 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f0",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f1",
+            "ready": true
+          },
+          {
+            "card": "Aven Mindcensor",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Rampant Growth",
+            "label": "growth"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant",
+            "label": "giant-0"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-1"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-2"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-3"
+          },
+          {
+            "card": "Forest",
+            "label": "deep-forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Aven Mindcensor leaves its controller's search whole",
+  "final": [],
+  "note": "The control for aven-mindcensor-lets-an-opponent-find-only-among-the-top-four-cards: bob controls the Mindcensor, so his own search reaches the Forest fifth from the top.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f0",
+            "$f1"
+          ],
+          "object": "$growth"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$deep-forest"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$giant-0",
+            "$giant-1",
+            "$giant-2",
+            "$giant-3"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 3,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 0,
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

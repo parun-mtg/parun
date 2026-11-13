@@ -1,0 +1,57 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flash"
+        },
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Aven Mindcensor",
+      "oracleText": "Flash\nFlying\nIf an opponent would search a library, that player searches the top four cards of that library instead.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "SearchesTopOfLibraries",
+            "value": 4
+          },
+          "scope": {
+            "type": "Opponent"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Bird",
+          "Wizard"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

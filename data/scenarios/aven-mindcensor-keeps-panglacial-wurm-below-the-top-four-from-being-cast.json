@@ -1,0 +1,179 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f0",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f3",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f4",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f5",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f6",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f7",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f8",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Rampant Growth",
+            "label": "growth"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant",
+            "label": "giant-0"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-1"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-2"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-3"
+          },
+          {
+            "card": "Panglacial Wurm",
+            "label": "wurm"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Aven Mindcensor",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Aven Mindcensor keeps Panglacial Wurm below the top four from being cast",
+  "final": [],
+  "note": "docs/decisions.md, \"Whether a card outside a narrowed search can be cast while searching\". Alice could pay for the Wurm fifth from the top, and is not offered it: an offer would be a prompt nothing here answers. cast/cr-601-3-a-searching-spell-offers-the-cast-too is the control.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f0",
+            "$f1",
+            null
+          ],
+          "object": "$growth"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": []
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$giant-0",
+            "$giant-1",
+            "$giant-2",
+            "$giant-3",
+            "$wurm"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Panglacial Wurm",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Hill Giant",
+            "Hill Giant",
+            "Hill Giant",
+            "Hill Giant"
+          ],
+          "of": "Witnessed",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -1057,6 +1057,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   -- fold is exact only while AnyPlayer is the one scope a card may write.
   PlayerEffect.DamageCantBeRedirected _ -> scope /= AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer)
   PlayerEffect.CantSearchLibraries _ -> False
+  PlayerEffect.SearchesTopOfLibraries _ -> False
   PlayerEffect.HasProtectionFrom _ -> False
   PlayerEffect.StateBasedActionDoesntApply _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
@@ -1142,6 +1143,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.DamageCantBePrevented pattern_ -> Maybe.isJust (DamagePattern.whichRecipient pattern_) || Maybe.isJust (DamagePattern.whichSource pattern_)
   PlayerEffect.DamageCantBeRedirected pattern_ -> Maybe.isJust (DamagePattern.whichRecipient pattern_) || Maybe.isJust (DamagePattern.whichSource pattern_)
   PlayerEffect.CantSearchLibraries _ -> False
+  PlayerEffect.SearchesTopOfLibraries _ -> False
   PlayerEffect.HasProtectionFrom _ -> False
   PlayerEffect.StateBasedActionDoesntApply _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False

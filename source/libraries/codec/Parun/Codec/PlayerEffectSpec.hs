@@ -397,6 +397,14 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.codec
       (PlayerEffect.CantSearchLibraries CantSearchLibraries.MkCantSearchLibraries {CantSearchLibraries.library = PlayerScope.Related PlayerRelation.AnyPlayer, CantSearchLibraries.cause = PlayerScope.Related PlayerRelation.AnyPlayer})
       " {\"type\":\"CantSearchLibraries\",\"value\":{\"library\":{\"type\":\"AnyPlayer\"},\"cause\":{\"type\":\"AnyPlayer\"}}} "
+  -- CR 701.23f as Aven Mindcensor prints it, and the wire form
+  -- data/cards/aven-mindcensor.json writes.
+  Spec.it s "SearchesTopOfLibraries, Aven Mindcensor's four" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.SearchesTopOfLibraries 4)
+      " {\"type\":\"SearchesTopOfLibraries\",\"value\":4} "
   -- CR 702.16j / The Stasis Coffin: "protection from everything" as the empty
   -- conjunction.
   Spec.it s "HasProtectionFrom" $

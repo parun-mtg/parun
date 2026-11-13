@@ -2111,7 +2111,7 @@ bestowSpec s registry = Spec.describe s "Bestow" $ do
         searchCasting p = case p of
           Prompt.CastWhileSearching _ _ options -> Maybe.listToMaybe options
           _ -> payingPrinted host p
-        castThere gs = S.runPure searchCasting gs (Cast.castWhileSearching S.manaPerformer S.alice)
+        castThere gs = S.runPure searchCasting gs (Cast.castWhileSearching Nothing S.manaPerformer S.alice)
         typesOnStack gs = fmap (`Projection.cardTypesOf` gs) (topOfStack gs)
     Spec.assertEqWith
       s

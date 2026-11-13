@@ -387,7 +387,7 @@ searchIsUntimedSpec s registry =
           pure (if taken then Nothing else Maybe.listToMaybe options)
         Prompt.ChooseX {} -> pure x
         _ -> pure (S.identityAnswer p)
-      castThere x gs = snd (State.evalState (Engine.runGame (searchCasting x) gs (Cast.castWhileSearching S.manaPerformer S.alice)) False)
+      castThere x gs = snd (State.evalState (Engine.runGame (searchCasting x) gs (Cast.castWhileSearching Nothing S.manaPerformer S.alice)) False)
    in Spec.describe s "SearchIsUntimed" $ do
         -- Under the Aluren X = 2 is outside "4 or greater"; the search needs no flash.
         Spec.it s "CR 601.3 Protean Hydra is cast from the library at X = 2 beside Untimely Aluren" $ do
@@ -1630,7 +1630,7 @@ scoutsWarningSpec s registry =
           castFirst p = case p of
             Prompt.CastWhileSearching _ _ options -> Maybe.listToMaybe options
             _ -> S.identityAnswer p
-          after = S.runPure castFirst resolved (Cast.castWhileSearching S.manaPerformer S.alice)
+          after = S.runPure castFirst resolved (Cast.castWhileSearching Nothing S.manaPerformer S.alice)
       Spec.assertEqWith s "CR 611.2a the grant is spent by the search's own cast" (StoredEffects.playerEffects (GameState.stored after)) []
       Spec.assertEqWith s "the grant stood before it" (length (StoredEffects.playerEffects (GameState.stored resolved))) 1
       Spec.assertEqWith s "and the Wurm really was cast" (length (TurnRegisters.stack (GameState.turn after))) 1

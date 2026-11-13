@@ -262,12 +262,12 @@ ruleOfLawSpec s registry =
       Spec.assertEqWith
         s
         "before any cast, the Wurm is offered from the library"
-        (length (Cast.castableWhileSearching S.alice gs))
+        (length (Cast.castableWhileSearching Nothing S.alice gs))
         1
       Spec.assertEqWith
         s
         "Rule of Law's one-spell limit blocks the library cast too"
-        (Cast.castableWhileSearching S.alice castOne)
+        (Cast.castableWhileSearching Nothing S.alice castOne)
         []
 
 isCast :: Action.Type.Action -> Bool
@@ -796,7 +796,7 @@ thaliaSpec s registry =
       Spec.assertEqWith
         s
         "exactly seven Forests still afford it, so castableWhileSearching offers it"
-        (fmap (\(oid, _, _) -> oid) (Cast.castableWhileSearching S.alice gs))
+        (fmap (\(oid, _, _) -> oid) (Cast.castableWhileSearching Nothing S.alice gs))
         [wurm]
 
     -- The proving test for Projection.liveAfterLayers, CR 305.7's CR

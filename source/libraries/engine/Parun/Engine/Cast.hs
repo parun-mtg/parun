@@ -2509,8 +2509,13 @@ projectedKeywords oid gs = Map.keysSet (Projection.keywordsOf oid gs)
 -- cast, while a GRANTED one whose affected set still matches offers both.
 -- Parun.CastSpec's "CR 702.37c a granted permission offers Skirk Marauder face
 -- down while searching" proves it.
-castableWhileSearching :: PlayerId -> GameState -> [(ObjectId, CardName.CardName, Facing.Facing)]
-castableWhileSearching pid gs =
+--
+-- `portion` is CR 701.23f's: the cards of the library a replaced search looks
+-- through (Aven Mindcensor), or Nothing for the whole of it. A card outside it
+-- is not offered (docs/decisions.md, "Whether a card outside a narrowed search
+-- can be cast while searching").
+castableWhileSearching :: Maybe (Set ObjectId) -> PlayerId -> GameState -> [(ObjectId, CardName.CardName, Facing.Facing)]
+castableWhileSearching portion pid gs =
   let allowed oid face facing =
         let name = Face.name face
             -- The same stamped state `castable` gates on, for the same rule:
@@ -2525,7 +2530,7 @@ castableWhileSearching pid gs =
         facing <- castFacings oid face gs
         Monad.guard (allowed oid face facing)
         pure (oid, Face.name face, facing)
-   in concatMap proposals (Game.zoneMembers Zone.Library pid gs)
+   in concatMap proposals (filter (\oid -> maybe True (Set.member oid) portion) (Game.zoneMembers Zone.Library pid gs))
 
 -- CR 608.2g: everything a cast an EFFECT offers must still satisfy, given the
 -- candidate costs that offer supplies. `castable`'s conjuncts minus the two the
@@ -2595,10 +2600,10 @@ castableWhenOffered spending pid oid name candidates proposed =
 -- a card from the library, so castableWhileSearching shrinks and the loop
 -- terminates. castSpellWith, untimed, is the re-entrant call -- casting
 -- mid-resolution, the whole point.
-castWhileSearching :: ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> Game ()
-castWhileSearching perform pid = do
+castWhileSearching :: Maybe (Set ObjectId) -> ManaAbilityPerformer.ManaAbilityPerformer -> PlayerId -> Game ()
+castWhileSearching portion perform pid = do
   gs <- State.get
-  case castableWhileSearching pid gs of
+  case castableWhileSearching portion pid gs of
     [] -> pure ()
     options -> do
       let decider = Decide.deciderFor pid gs
@@ -2614,7 +2619,7 @@ castWhileSearching perform pid = do
             -- Untimed: the permission IS the card's timing exception (its
             -- ruling).
             castSpellWith perform False False [] ManaSpending.AsProduced pid oid name facing
-            castWhileSearching perform pid
+            castWhileSearching portion perform pid
 
 -- CR 601.2's own order, walked in it: 601.2a moves the card to the stack FIRST,
 -- then 601.2b chooses the modes and the cost and announces X and the Phyrexian

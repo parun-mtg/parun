@@ -6292,6 +6292,7 @@
       "2": {"card":"Anointed Procession"},
       "4": {"card":"Approach of the Second Sun"},
       "43": {"card":"Aven Initiate"},
+      "5": {"card":"Aven Mindcensor"},
       "44": {"card":"Cancel"},
       "280": {"card":"Cinder Barrens"},
       "161": {"card":"Colossapede"},
@@ -6376,6 +6377,7 @@
       "2": {"card":"Anointed Procession"},
       "4": {"card":"Approach of the Second Sun"},
       "50": {"card":"Aven Initiate"},
+      "5": {"card":"Aven Mindcensor"},
       "183": {"card":"Bitterbow Sharpshooters"},
       "146": {"card":"Chandra, Pyromaster"},
       "54": {"card":"Commit // Memory"},
@@ -9713,6 +9715,7 @@
       "297": {"card":"Arcane Encyclopedia"},
       "298": {"card":"Arcane Signet"},
       "880": {"card":"Ash Barrens"},
+      "688": {"card":"Aven Mindcensor"},
       "299": {"card":"Bag of Holding"},
       "300": {"card":"Basilisk Collar"},
       "595": {"card":"Basilisk Collar"},
@@ -16285,6 +16288,7 @@
       "159": {"card":"Akroma's Memorial"},
       "1": {"card":"Angel of Salvation"},
       "48": {"card":"Arcanum Wings"},
+      "18": {"card":"Aven Mindcensor"},
       "19": {"card":"Blade of the Sixth Pride"},
       "49": {"card":"Blind Phantasm"},
       "95": {"card":"Bogardan Lancer"},
@@ -25448,6 +25452,7 @@
     "MP2": {
       "25": {"card":"Aggravated Assault"},
       "31": {"card":"Armageddon"},
+      "2": {"card":"Aven Mindcensor"},
       "46": {"card":"Blood Moon"},
       "47": {"card":"Boil"},
       "50": {"card":"Choke"},
@@ -27852,6 +27857,8 @@
     "PAKH": {
       "2s": {"card":"Anointed Procession"},
       "4s": {"card":"Approach of the Second Sun"},
+      "5p": {"card":"Aven Mindcensor"},
+      "5s": {"card":"Aven Mindcensor"},
       "211p": {"card":"Commit // Memory"},
       "211s": {"card":"Commit // Memory"},
       "16s": {"card":"Glory-Bound Initiate"},
@@ -29559,6 +29566,7 @@
       "1": {"card":"Reliquary Tower"}
     },
     "PLG21": {
+      "1": {"card":"Aven Mindcensor"},
       "C3": {"card":"Path of Ancestry"},
       "5": {"card":"Scavenging Ooze"},
       "C2": {"card":"Yuriko, the Tiger's Shadow"}
@@ -29729,6 +29737,7 @@
       "KLD-5": {"card":"Authority of the Consuls"},
       "ORI-6": {"card":"Aven Battle Priest"},
       "ODY-63": {"card":"Aven Fisher"},
+      "TSR-5": {"card":"Aven Mindcensor"},
       "DOM-3": {"card":"Aven Sentry"},
       "CON-3": {"card":"Aven Squire"},
       "LRW-4": {"card":"Avian Changeling"},
@@ -40750,6 +40759,7 @@
       "339": {"card":"Anger of the Gods"},
       "371": {"card":"Arcades, the Strategist"},
       "101": {"card":"Assassinate"},
+      "5": {"card":"Aven Mindcensor"},
       "291": {"card":"Banishing Light"},
       "306": {"card":"Baral, Chief of Compliance"},
       "7": {"card":"Benalish Cavalry"},

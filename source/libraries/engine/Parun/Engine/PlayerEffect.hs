@@ -670,6 +670,7 @@ prohibitsCasting pid oid variable gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
@@ -864,6 +865,7 @@ prohibitsPlayingLand pid oid gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
@@ -894,6 +896,72 @@ prohibitsPlayingLand pid oid gs =
         PlayerEffect.Shows _ -> False
    in any prohibits (applying pid gs)
 
+-- CR 614.1a, 701.23f: how many of a library's top cards `pid` searches instead
+-- of the library, or Nothing where no effect replaces the search (Aven
+-- Mindcensor). The LEAST of several: each replacement narrows what the one
+-- before left, so the order CR 616.1 would ask after changes nothing.
+searchPortion :: PlayerId -> GameState -> Maybe Natural
+searchPortion pid gs =
+  let portion effect = case effect of
+        PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries count -> Just count
+        PlayerEffect.HasProtectionFrom _ -> Nothing
+        PlayerEffect.ControlledWhileSearching -> Nothing
+        PlayerEffect.BlocksFromPiles -> Nothing
+        PlayerEffect.YouChoose _ -> Nothing
+        PlayerEffect.ExilesFoundWhileSearching -> Nothing
+        PlayerEffect.CantCastSpells -> Nothing
+        PlayerEffect.CantActivateAbilities {} -> Nothing
+        PlayerEffect.CantCastMoreThan _ -> Nothing
+        PlayerEffect.ModifyCost {} -> Nothing
+        PlayerEffect.AlternativeActivationCost {} -> Nothing
+        PlayerEffect.PlayAdditionalLands _ -> Nothing
+        PlayerEffect.NoMaximumHandSize -> Nothing
+        PlayerEffect.SetMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
+        PlayerEffect.ReduceMaximumHandSize _ -> Nothing
+        PlayerEffect.DontLoseUnspentMana _ -> Nothing
+        PlayerEffect.LoseLifeForUnspentMana -> Nothing
+        PlayerEffect.MayPayLifeForMana {} -> Nothing
+        PlayerEffect.SpendManaAsThough _ -> Nothing
+        PlayerEffect.CantBeTargetedBy {} -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
+        PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.KeywordRiderGrant _ -> Nothing
+        PlayerEffect.LoyaltyGrant _ -> Nothing
+        PlayerEffect.MayTapForMana _ -> Nothing
+        PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
+        PlayerEffect.RestrictTargeting _ -> Nothing
+        PlayerEffect.TargetPastHexproof _ -> Nothing
+        PlayerEffect.DamageCantBePrevented _ -> Nothing
+        PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
+        PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.EntriesTrigger _ -> Nothing
+        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.CantAttackWithCreatures -> Nothing
+        PlayerEffect.CantCastMatching _ -> Nothing
+        PlayerEffect.PutTappedAsYouCascade _ -> Nothing
+        PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.CantPlayLands _ -> Nothing
+        PlayerEffect.CastFrom _ -> Nothing
+        PlayerEffect.PlayLandsFrom _ -> Nothing
+        PlayerEffect.PlotFrom _ -> Nothing
+        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.CantGetCounters _ -> Nothing
+        PlayerEffect.StateCoinFlip _ -> Nothing
+        PlayerEffect.ModifyDieRoll _ -> Nothing
+        PlayerEffect.AdditionalVotes _ -> Nothing
+        PlayerEffect.AdditionalSurveilCards _ -> Nothing
+        PlayerEffect.Cant _ -> Nothing
+        PlayerEffect.RevealsDraw _ -> Nothing
+        PlayerEffect.Precluded _ -> Nothing
+        PlayerEffect.Shows _ -> Nothing
+      portions = Maybe.mapMaybe (portion . snd) (applying pid gs)
+   in if null portions then Nothing else Just (minimum portions)
+
 -- CR 701.23: does any effect prohibit `pid` from searching `owner`'s library,
 -- where the search is caused by a spell or ability `causeController` controls?
 --
@@ -915,6 +983,8 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.CantSearchLibraries narrowing ->
           inScope owner pid gs (CantSearchLibraries.library narrowing)
             && inScope causeController pid gs (CantSearchLibraries.cause narrowing)
+        -- CR 701.23f: a narrowed search is still a search (searchPortion).
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         -- CR 702.16 states no clause about searching, its consequences being
         -- targeting, enchanting, equipping, blocking and damage.
         PlayerEffect.HasProtectionFrom _ -> False
@@ -1042,6 +1112,7 @@ prohibitsCounters pid kind gs =
         -- already resolved, by a rule or by a cost, so none of them reaches one -- Silence
         -- stops the spell, never the counters a resolved one puts on a player.
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantCastSpells -> False
         PlayerEffect.CantActivateAbilities {} -> False
@@ -1154,6 +1225,7 @@ stateBasedActionDoesntApplyTo action pid gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
@@ -1218,6 +1290,7 @@ schemesCantBeSetInMotion gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
@@ -1287,6 +1360,7 @@ entryTriggerings pid entrant gs =
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.CantCastMatching _ -> Nothing
         PlayerEffect.PutTappedAsYouCascade _ -> Nothing
@@ -1365,6 +1439,7 @@ additionalTriggers pid bearer gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
@@ -1429,6 +1504,7 @@ prohibitsAttackingWithCreatures pid gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.CantCastMatching _ -> False
         PlayerEffect.PutTappedAsYouCascade _ -> False
@@ -2147,6 +2223,7 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.DamageCantBePrevented _ -> Nothing
   PlayerEffect.DamageCantBeRedirected _ -> Nothing
   PlayerEffect.CantSearchLibraries _ -> Nothing
+  PlayerEffect.SearchesTopOfLibraries _ -> Nothing
   PlayerEffect.HasProtectionFrom _ -> Nothing
   PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
@@ -2407,6 +2484,7 @@ castFromGrantOf effect = case effect of
   PlayerEffect.DamageCantBePrevented _ -> Nothing
   PlayerEffect.DamageCantBeRedirected _ -> Nothing
   PlayerEffect.CantSearchLibraries _ -> Nothing
+  PlayerEffect.SearchesTopOfLibraries _ -> Nothing
   PlayerEffect.HasProtectionFrom _ -> Nothing
   PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
   PlayerEffect.CantSetSchemesInMotion -> Nothing
@@ -2788,6 +2866,7 @@ mayCastWithoutPayingManaCost pid oid gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
@@ -2870,6 +2949,7 @@ playLandPiles pid gs =
         PlayerEffect.DamageCantBePrevented _ -> []
         PlayerEffect.DamageCantBeRedirected _ -> []
         PlayerEffect.CantSearchLibraries _ -> []
+        PlayerEffect.SearchesTopOfLibraries _ -> []
         PlayerEffect.HasProtectionFrom _ -> []
         PlayerEffect.StateBasedActionDoesntApply _ -> []
         PlayerEffect.CantSetSchemesInMotion -> []
@@ -2987,6 +3067,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
@@ -3074,6 +3155,7 @@ protectedFromGiven rows aimer view gs =
         -- out. None of them says
         -- anything about which objects may reach this player.
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.CantCastSpells -> False
         PlayerEffect.CantActivateAbilities {} -> False
         PlayerEffect.CantCastMoreThan _ -> False
@@ -3170,6 +3252,7 @@ protectionCarriers gs =
         PlayerEffect.HasProtectionFrom quality -> fmap (\oid -> (pid, oid, RowSource.choices source, quality)) (RowSource.object source)
         PlayerEffect.CantBeTargetedBy {} -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.CantCastSpells -> Nothing
         PlayerEffect.CantActivateAbilities {} -> Nothing
         PlayerEffect.CantCastMoreThan _ -> Nothing
@@ -3284,6 +3367,7 @@ landPlaysAllowed pid gs =
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
@@ -3366,6 +3450,7 @@ votesAllowed pid gs =
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
+        PlayerEffect.SearchesTopOfLibraries {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3433,6 +3518,7 @@ offeredExtras pid gs =
         PlayerEffect.DamageCantBePrevented {} -> False
         PlayerEffect.DamageCantBeRedirected {} -> False
         PlayerEffect.CantSearchLibraries {} -> False
+        PlayerEffect.SearchesTopOfLibraries {} -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -3501,6 +3587,7 @@ cascadeActions pid gs =
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
+        PlayerEffect.SearchesTopOfLibraries {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3568,6 +3655,7 @@ drawReveals pid nth gs =
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
+        PlayerEffect.SearchesTopOfLibraries {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3634,6 +3722,7 @@ shownGrants pid gs =
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
+        PlayerEffect.SearchesTopOfLibraries {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3734,6 +3823,7 @@ maximumHandSize pid gs =
         PlayerEffect.DamageCantBePrevented _ -> current
         PlayerEffect.DamageCantBeRedirected _ -> current
         PlayerEffect.CantSearchLibraries _ -> current
+        PlayerEffect.SearchesTopOfLibraries _ -> current
         PlayerEffect.HasProtectionFrom _ -> current
         PlayerEffect.StateBasedActionDoesntApply _ -> current
         PlayerEffect.CantSetSchemesInMotion -> current
@@ -3820,6 +3910,7 @@ keepsUnspentMana pid gs =
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
@@ -3898,6 +3989,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
@@ -3986,6 +4078,7 @@ forbids reaches pid gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
@@ -4105,6 +4198,7 @@ precludes outcome pid gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
@@ -4181,6 +4275,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
@@ -4341,6 +4436,7 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
         PlayerEffect.CantSearchLibraries _ -> False
+        PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
         PlayerEffect.StateBasedActionDoesntApply _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
@@ -4404,6 +4500,7 @@ targetingRestrictions =
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
@@ -4486,6 +4583,7 @@ hexproofExemptions =
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
@@ -4579,6 +4677,7 @@ unpreventable gs =
         PlayerEffect.DamageCantBePrevented pattern_ -> Just (RowSource.object src, pattern_)
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
@@ -4663,6 +4762,7 @@ unredirectable gs =
         PlayerEffect.DamageCantBeRedirected pattern_ -> Just (RowSource.object src, pattern_)
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
@@ -4777,6 +4877,7 @@ statedFlips pid gs =
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
@@ -4857,6 +4958,7 @@ rollModifiers pid gs =
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
@@ -4990,6 +5092,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.DamageCantBePrevented _ -> pure effect
   PlayerEffect.DamageCantBeRedirected _ -> pure effect
   PlayerEffect.CantSearchLibraries _ -> pure effect
+  PlayerEffect.SearchesTopOfLibraries _ -> pure effect
   PlayerEffect.StateBasedActionDoesntApply _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect
@@ -5072,6 +5175,7 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.DamageCantBePrevented pattern_ -> fmap PlayerEffect.DamageCantBePrevented (f pattern_)
   PlayerEffect.DamageCantBeRedirected pattern_ -> fmap PlayerEffect.DamageCantBeRedirected (f pattern_)
   PlayerEffect.CantSearchLibraries _ -> pure effect
+  PlayerEffect.SearchesTopOfLibraries _ -> pure effect
   PlayerEffect.StateBasedActionDoesntApply _ -> pure effect
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger _ -> pure effect

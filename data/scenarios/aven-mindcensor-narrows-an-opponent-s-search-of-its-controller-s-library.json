@@ -1,0 +1,139 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Extract",
+            "label": "extract"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Aven Mindcensor",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant",
+            "label": "giant-0"
+          },
+          {
+            "card": "Plains",
+            "label": "top-plains"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-1"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-2"
+          },
+          {
+            "card": "Forest",
+            "label": "deep-forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Aven Mindcensor narrows an opponent's search of its controller's library",
+  "final": [],
+  "note": "\"A library\": alice is bob's opponent, so her Extract searches the top four cards of bob's library, and the Forest fifth from the top is not one she can exile.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island"
+          ],
+          "object": "$extract",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "unoffered": true,
+          "with": [
+            "$deep-forest",
+            "$top-plains"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$deep-forest",
+            "$giant-0",
+            "$giant-1",
+            "$giant-2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "bob",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

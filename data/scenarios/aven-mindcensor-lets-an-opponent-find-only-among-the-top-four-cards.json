@@ -1,0 +1,172 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f0",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f1",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Rampant Growth",
+            "label": "growth"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant",
+            "label": "giant-0"
+          },
+          {
+            "card": "Plains",
+            "label": "top-plains"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-1"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-2"
+          },
+          {
+            "card": "Forest",
+            "label": "deep-forest"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Aven Mindcensor",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Aven Mindcensor lets an opponent find only among the top four cards",
+  "final": [],
+  "note": "CR 701.23f. Alice names the Forest fifth from the top ahead of the Plains second from it: the Forest is no card of the search, so the Plains is the find, the four cards on top are all she is shown, and all of what is left is shuffled.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f0",
+            "$f1"
+          ],
+          "object": "$growth"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "unoffered": true,
+          "with": [
+            "$deep-forest",
+            "$top-plains"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$deep-forest",
+            "$giant-0",
+            "$giant-1",
+            "$giant-2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Hill Giant",
+            "Plains",
+            "Hill Giant",
+            "Hill Giant"
+          ],
+          "of": "Witnessed",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

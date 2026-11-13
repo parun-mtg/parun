@@ -1948,7 +1948,7 @@ teferiSorcerySpeedSpec s registry = Spec.describe s "Teferi, Mage of Zhalfir" $ 
     let open = S.landsFor forest S.bob 7 (aliceOnTurn S.threePlayerGame)
         stocked = snd (S.addLibraryCard wurm S.bob open)
         board = addTeferi teferi stocked
-        offers gs = length (Cast.castableWhileSearching S.bob gs)
+        offers gs = length (Cast.castableWhileSearching Nothing S.bob gs)
     Spec.assertEqWith s "bob's mid-search cast is refused on alice's turn" (offers board) 0
     Spec.assertEqWith s "without Teferi the same offer stands, off the same seven Forests" (offers stocked) 1
     Spec.assertEqWith
@@ -2027,8 +2027,8 @@ grafdiggersCageCastSpec s registry = Spec.describe s "Grafdigger's Cage" $ do
     wurm <- S.printingOf s registry "Panglacial Wurm"
     let (_, open) = S.addLibraryCard wurm S.alice (S.landsInPlay forest 7)
         caged = snd (S.addPermanent cage S.alice open)
-    Spec.assertEqWith s "without the Cage the mid-search cast is offered" (length (Cast.castableWhileSearching S.alice open)) 1
-    Spec.assertEqWith s "with it the same offer is gone, off the same seven Forests" (length (Cast.castableWhileSearching S.alice caged)) 0
+    Spec.assertEqWith s "without the Cage the mid-search cast is offered" (length (Cast.castableWhileSearching Nothing S.alice open)) 1
+    Spec.assertEqWith s "with it the same offer is gone, off the same seven Forests" (length (Cast.castableWhileSearching Nothing S.alice caged)) 0
 
 -- Three seats, six Islands each, and one Think Twice in each of alice's, bob's and
 -- carol's graveyards plus one in bob's hand. No Magistrate yet --
