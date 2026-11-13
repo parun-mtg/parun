@@ -1,0 +1,108 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Vedalken Orrery",
+            "label": "orrery"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Spider Climb",
+            "label": "climb"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "manaPool": "G",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 601.3c / 601.2b Spider Climb cast in an upkeep under its own permission is sacrificed though Vedalken Orrery would have allowed the cast",
+  "note": "The other answer to the same choice.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "costOffer": {
+            "type": "Arming"
+          },
+          "object": "$climb"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Spider Climb",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Spider Climb",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
+    }
+  ]
+}

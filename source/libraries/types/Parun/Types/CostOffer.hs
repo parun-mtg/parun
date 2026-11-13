@@ -12,4 +12,7 @@ data CostOffer
     ByKeyword (KeywordDesignator.KeywordDesignator Keyword.Keyword)
   | -- | CR 118.9: no keyword ability -- the printed cost, a printed alternative, or an effect's.
     ByNoKeyword
+  | -- | CR 603.7g: a permission of the card's own that creates a delayed
+    -- ability (Parun.Types.CandidateCost.arms), which ByNoKeyword never names.
+    Arming
   deriving (Eq, Ord, Show)

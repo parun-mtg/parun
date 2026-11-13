@@ -68,6 +68,7 @@ import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
+import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.Clause as Clause
@@ -662,6 +663,17 @@ spendArmedAbilities card =
         _ -> Nothing
    in Set.fromList (Maybe.mapMaybe named (cardAuthoredEffects card))
 
+-- The delayed abilities a face's own casting permissions create as it is cast
+-- under them (CR 603.7g, Spider Climb).
+castArmedAbilities :: Face.Face Card.Type.Card -> Set.Set AbilityName.AbilityName
+castArmedAbilities card = Set.fromList [name | CastingPermission.CastAsThoughItHadFlash _ _ (Just name) <- Face.castingPermissions card]
+
+-- The sixth half: the reserved slot Parun.Engine.Cast.armCastUnder binds the
+-- spell under, and Parun.Engine.Stack.armBecame the permanent it becomes.
+-- LOOSE about which ability reads it, armingSpendSlots' caveat.
+armingCastSlots :: Face.Face Card.Type.Card -> Set.Set SlotName.SlotName
+armingCastSlots card = if Set.null (castArmedAbilities card) then Set.empty else Set.singleton Keyword.Engine.becameSlot
+
 abilitySlotLintSpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- The AbilityName half of the D4 dataflow lint (CR 603.7): an
@@ -681,11 +693,12 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- binds its minted tokens is peculiar to a spell mode.
   --
   -- cardAuthoredEffects and not cardResolutionEffects, for the reason that
-  -- function gives: a CR 103.6 opening-hand action can arm one.
+  -- function gives: a CR 103.6 opening-hand action can arm one. A casting
+  -- permission names one too (castArmedAbilities).
   Spec.it s "every armed delayed ability is declared, and every declared one is armed" $ do
     ps <- S.allPrintings s corpus
     let cardOffends card =
-          Resolve.armedAbilities (cardAuthoredEffects card) /= Map.keysSet (Face.delayedAbilities card)
+          Set.union (castArmedAbilities card) (Resolve.armedAbilities (cardAuthoredEffects card)) /= Map.keysSet (Face.delayedAbilities card)
         offenders = filter (anyFace cardOffends . Printing.card) ps
     Spec.assertEqWith s "no dangling or unused delayed abilities" (fmap (S.nameOf . Printing.card) offenders) []
   -- CR 603.7a / 613.1f: an arm inside a QUOTED ability carries its delayed
@@ -806,7 +819,8 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- 400.7e's `became`), a slot an ACTIVATED arming ability's own cost bound
   -- (armingCostSlots -- Calim, Djinn Emperor's discarded card), a slot an
   -- arming ability's resolution-time cost bound (armingPayGateSlots -- Bolg of
-  -- the North's sacrificed creature), or a CR 603.2
+  -- the North's sacrificed creature), the permanent a spell that armed as it
+  -- was cast becomes (armingCastSlots -- Spider Climb), or a CR 603.2
   -- event slot the entry's own condition binds as it fires
   -- (Event.eventBindingSlots -- False Cure's "that player ... they gained", which
   -- Event.delayedPending stamps on top of the captured environment exactly as
@@ -829,7 +843,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- nothing the minting resolution bound is in scope.
   Spec.it s "every slot a delayed ability reads is bound by its card" $ do
     ps <- S.allPrintings s corpus
-    let cardBound card = Set.insert Binding.triggerSource (Set.unions [armingTargetSlots card, armingEventSlots card, armingCostSlots card, armingPayGateSlots card, armingSpendSlots card, Resolve.definedSlots (cardResolutionEffects card)])
+    let cardBound card = Set.insert Binding.triggerSource (Set.unions [armingTargetSlots card, armingEventSlots card, armingCostSlots card, armingPayGateSlots card, armingSpendSlots card, armingCastSlots card, Resolve.definedSlots (cardResolutionEffects card)])
         abilityOffends card ability =
           modalSlotsOffend
             (const Set.empty)

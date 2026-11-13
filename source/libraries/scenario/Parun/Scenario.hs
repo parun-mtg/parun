@@ -1502,9 +1502,11 @@ namedCandidate choices candidate =
   all ((== Cost.mana (CandidateCost.cost candidate)) . Just) (Choices.cost choices)
     && all offered (Choices.costOffer choices)
   where
+    arming = Maybe.isJust (CandidateCost.arms candidate)
     offered offer = case (offer, CandidateCost.keyword candidate) of
       (CostOffer.ByKeyword designator, Just keyword) -> Keyword.designates designator keyword
-      (CostOffer.ByNoKeyword, Nothing) -> True
+      (CostOffer.ByNoKeyword, Nothing) -> not arming
+      (CostOffer.Arming, _) -> arming
       _ -> False
 
 -- | Whether a refused action left the state as it found it: the stack and the

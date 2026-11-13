@@ -504,19 +504,26 @@ withOffering pid oid gs candidate =
 -- (Game.withoutBeingCast), so a card cast from a graveyard does not count
 -- itself there (Swift Reckoning's ruling); the scenarios
 -- swift-reckoning-from-a-graveyard-* prove it.
+--
+-- One naming a delayed ability (CR 603.7g) is offered as a candidate of its
+-- own too, tagged with the name: Spider Climb's ruling (2022-12-08) has a cast
+-- another permission allowed create none, so which permission a cast uses is
+-- CR 601.2b's choice. Parun.Engine.Cast.windowedCandidates keeps it only
+-- where CR 307.5a's test holds.
 withFlashPermission :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
 withFlashPermission pid oid face gs =
   let holds = ActivationRestriction.onlyIfHolds pid oid (Game.withoutBeingCast gs)
-      permitted = [additional | CastingPermission.CastAsThoughItHadFlash condition additional <- permissionsOf oid face gs, all holds condition]
-      free = any Maybe.isNothing permitted
-      additionals = Maybe.catMaybes permitted
+      permitted = [(additional, arms) | CastingPermission.CastAsThoughItHadFlash condition additional arms <- permissionsOf oid face gs, all holds condition]
+      free = elem (Nothing, Nothing) permitted
    in \candidate ->
         candidate {CandidateCost.instantSpeed = CandidateCost.instantSpeed candidate || free}
           : [ candidate
-                { CandidateCost.cost = plus (CandidateCost.cost candidate) Cost.MkCost {Cost.mana = Just additional, Cost.components = []},
-                  CandidateCost.instantSpeed = True
+                { CandidateCost.cost = maybe id (\mana cost -> plus cost Cost.MkCost {Cost.mana = Just mana, Cost.components = []}) additional (CandidateCost.cost candidate),
+                  CandidateCost.instantSpeed = True,
+                  CandidateCost.arms = arms
                 }
-            | additional <- additionals
+            | (additional, arms) <- permitted,
+              (additional, arms) /= (Nothing, Nothing)
             ]
 
 -- | candidateCostsFor, told whether CR 601.3's permission comes from the EFFECT
@@ -735,6 +742,7 @@ candidateCostsGiven permitted pid name oid gs =
                         (withAdditional (Emerge.cost emerge) {Cost.components = Cost.components (Emerge.cost emerge) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid))]})
                         [ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]]
                         False
+                        Nothing
                  in concatMap
                       (\emerge -> fmap (offer emerge) (victims (Maybe.fromMaybe (Filter.Type.HasCardType CardType.Creature) (Emerge.quality emerge))))
                       (Keyword.emergeCosts onStack)
@@ -1015,6 +1023,7 @@ candidateCostsGiven permitted pid name oid gs =
                                 (withAdditional cost {Cost.components = Cost.components cost <> [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) (criterion vid) False)]})
                                 [ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]]
                                 False
+                                Nothing
                             tappingNone cost = CandidateCost.plain (Just (Keyword.Type.Harmonize cost)) (withAdditional cost)
                          in concatMap
                               (\cost -> tappingNone cost : fmap (tappingOne cost) tappable)

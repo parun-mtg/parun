@@ -1,5 +1,6 @@
 module Parun.Types.CastingPermission where
 
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.Keyword as Keyword
@@ -43,6 +44,8 @@ data CastingPermission
     PlayFromGraveyard
   | -- | CR 601.3c / 601.3d: cast this card as though it had flash (CR 702.8a)
     -- while the condition holds, paying the additional cost (CR 601.2f) only
-    -- when the permission is used.
-    CastAsThoughItHadFlash (Maybe Condition.Condition) (Maybe ManaCost.ManaCost)
+    -- when the permission is used. The name is the delayed ability (CR 603.7g,
+    -- Face.delayedAbilities) a cast using the permission any time a sorcery
+    -- couldn't have been cast (CR 307.5a) creates, Spider Climb's.
+    CastAsThoughItHadFlash (Maybe Condition.Condition) (Maybe ManaCost.ManaCost) (Maybe AbilityName.AbilityName)
   deriving (Eq, Ord, Show)

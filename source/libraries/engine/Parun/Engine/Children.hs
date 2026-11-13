@@ -3944,7 +3944,7 @@ castingPermissionChildren c permission = case permission of
   CastingPermission.CastFromLibraryWhileSearching -> pure permission
   CastingPermission.CastFromGraveyard family additional -> CastingPermission.CastFromGraveyard family <$> traverse (permissionCost c) additional
   CastingPermission.PlayFromGraveyard -> pure permission
-  CastingPermission.CastAsThoughItHadFlash condition additional -> CastingPermission.CastAsThoughItHadFlash <$> traverse (permissionCondition c) condition <*> pure additional
+  CastingPermission.CastAsThoughItHadFlash condition additional arms -> CastingPermission.CastAsThoughItHadFlash <$> traverse (permissionCondition c) condition <*> pure additional <*> pure arms
 
 -- | An activation restriction's children (CR 602.5). A phase window, a combat
 -- step and a count of activations are left as they are; "before this step"

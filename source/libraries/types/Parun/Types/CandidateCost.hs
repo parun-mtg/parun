@@ -1,5 +1,6 @@
 module Parun.Types.CandidateCost where
 
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
@@ -52,10 +53,14 @@ data CandidateCost = MkCandidateCost
     reductions :: [ManaCost.ManaCost],
     -- | CR 702.48a / 601.3c / 601.3d: this candidate may be announced any time
     -- its caster could cast an instant, whatever the card's own window.
-    instantSpeed :: Bool
+    instantSpeed :: Bool,
+    -- | CR 603.7g: the delayed ability a cast for this candidate creates as it
+    -- becomes cast; Nothing for every candidate but the one a consequence-
+    -- carrying CastingPermission.CastAsThoughItHadFlash offers.
+    arms :: Maybe AbilityName.AbilityName
   }
   deriving (Eq, Ord, Show)
 
--- | A candidate bringing no reduction and no window of its own.
+-- | A candidate bringing no reduction, no window of its own and no delayed ability.
 plain :: Maybe Keyword.Keyword -> Cost.Cost Keyword.Keyword -> CandidateCost
-plain k c = MkCandidateCost k c [] False
+plain k c = MkCandidateCost k c [] False Nothing

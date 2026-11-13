@@ -1,5 +1,6 @@
 module Parun.Codec.CastingPermission where
 
+import qualified Parun.Codec.AbilityName as AbilityName
 import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.CostComponent as CostComponent
 import qualified Parun.Codec.Keyword as Keyword
@@ -18,7 +19,7 @@ codec =
     [ Arm.nullary "CastFromLibraryWhileSearching" CastingPermission.CastFromLibraryWhileSearching,
       Arm.payload "CastFromGraveyard" graveyard (uncurry CastingPermission.CastFromGraveyard) (\x -> case x of CastingPermission.CastFromGraveyard f c -> Just (f, c); _ -> Nothing),
       Arm.nullary "PlayFromGraveyard" CastingPermission.PlayFromGraveyard,
-      Arm.payload "CastAsThoughItHadFlash" flash (uncurry CastingPermission.CastAsThoughItHadFlash) (\x -> case x of CastingPermission.CastAsThoughItHadFlash c m -> Just (c, m); _ -> Nothing)
+      Arm.payload "CastAsThoughItHadFlash" flash (\(c, m, a) -> CastingPermission.CastAsThoughItHadFlash c m a) (\x -> case x of CastingPermission.CastAsThoughItHadFlash c m a -> Just (c, m, a); _ -> Nothing)
     ]
   where
     graveyard =
@@ -28,9 +29,10 @@ codec =
           <*> Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) snd
     flash =
       Fields.object $
-        (,)
-          <$> Fields.defaulted "condition" Nothing (Common.maybe Condition.codec) fst
-          <*> Fields.defaulted "additionalCost" Nothing (Common.maybe ManaCost.codec) snd
+        (,,)
+          <$> Fields.defaulted "condition" Nothing (Common.maybe Condition.codec) (\(c, _, _) -> c)
+          <*> Fields.defaulted "additionalCost" Nothing (Common.maybe ManaCost.codec) (\(_, m, _) -> m)
+          <*> Fields.defaulted "outsideSorceryTiming" Nothing (Common.maybe AbilityName.codec) (\(_, _, a) -> a)
 
 tagOf :: CastingPermission.CastingPermission -> String
 tagOf x = case x of

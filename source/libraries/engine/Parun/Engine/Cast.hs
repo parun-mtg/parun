@@ -43,6 +43,7 @@ import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.BuybackDecision as BuybackDecision
@@ -139,6 +140,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.TurnWindow as TurnWindow
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Undoing as Undoing
 import qualified Parun.Types.Uses as Uses
@@ -277,9 +279,17 @@ flashRefusedAt pid oid name candidate manaValue gs =
 -- `timed` is False for a cast an effect offers mid-resolution (CR 608.2g) and
 -- for one made while searching (CR 601.3), whose timing no window governs, so
 -- nothing narrows there.
+--
+-- CR 307.5a: a candidate arming a delayed ability (CandidateCost.arms, Spider
+-- Climb's "any time a sorcery couldn't have been cast") is offered only where
+-- that test holds, its other candidate being the same cast everywhere else.
+-- Priority is `timed`: an untimed cast is made under another effect's
+-- permission, which Spider Climb's ruling (2022-12-08) has create nothing. The
+-- scenarios spider-climb-* prove each limb.
 windowedCandidates :: Bool -> PlayerId -> ObjectId -> CardName.CardName -> GameState -> [CandidateCost.CandidateCost] -> [CandidateCost.CandidateCost]
-windowedCandidates timed pid oid name gs candidates =
-  let ownWindow = timingWith False pid oid name gs
+windowedCandidates timed pid oid name gs offered =
+  let candidates = filter (\candidate -> Maybe.isNothing (CandidateCost.arms candidate) || (timed && not (sorcerySpeed pid gs))) offered
+      ownWindow = timingWith False pid oid name gs
       cardWindow = ownWindow || PlayerEffect.mayCastAsThoughItHadFlash pid oid gs
       windowed = timed && any CandidateCost.instantSpeed candidates
       flashOnly = timed && cardWindow && not ownWindow
@@ -2320,13 +2330,13 @@ isGraveyardPermission permission = case permission of
   CastingPermission.CastFromGraveyard _ _ -> True
   CastingPermission.PlayFromGraveyard -> True
   CastingPermission.CastFromLibraryWhileSearching -> False
-  CastingPermission.CastAsThoughItHadFlash _ _ -> False
+  CastingPermission.CastAsThoughItHadFlash {} -> False
 
 -- CR 601.3c / 601.3d: does this card carry a permission to be cast as though
 -- it had flash? Cost.candidateCostsGiven asks its condition and prices it.
 isFlashPermission :: CastingPermission.CastingPermission -> Bool
 isFlashPermission permission = case permission of
-  CastingPermission.CastAsThoughItHadFlash _ _ -> True
+  CastingPermission.CastAsThoughItHadFlash {} -> True
   CastingPermission.CastFromGraveyard _ _ -> False
   CastingPermission.PlayFromGraveyard -> False
   CastingPermission.CastFromLibraryWhileSearching -> False
@@ -3172,6 +3182,18 @@ followIntoSpell permission old new gs = case permission of
      in gs
           { GameState.stored = (GameState.stored gs) {StoredEffects.replacements = fmap follow (StoredEffects.replacements (GameState.stored gs)), StoredEffects.delayedTriggers = fmap followDelayed (StoredEffects.delayedTriggers (GameState.stored gs))}
           }
+
+-- CR 603.7g: the delayed triggered ability a static ability creates as its
+-- player takes the action it allows -- Spider Climb's "the controller of the
+-- permanent it becomes sacrifices it at the beginning of the next cleanup
+-- step", created as the cast completes, so a countered spell's still triggers.
+-- The source is the spell and the controller its caster. Keyword.becameSlot
+-- names the spell until Parun.Engine.Stack.armBecame renames it to the
+-- permanent it becomes, and names nothing if it becomes none.
+armCastUnder :: PlayerId -> ObjectId -> AbilityName.AbilityName -> GameState -> GameState
+armCastUnder caster sid name gs = case Projection.declaredDelayedAbility sid name gs of
+  Nothing -> gs
+  Just ability -> Event.armDelayed ability sid caster (Map.singleton Keyword.becameSlot (Binding.toObject sid)) (Just TurnWindow.AnyTurn) Nothing gs
 
 -- CR 611.2a / 611.2c: Savage Summoning's "the next creature spell you cast
 -- this turn ... That spell can't be countered. That creature enters with an
@@ -4416,6 +4438,9 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- CR 611.2a: the rows this cast spends, for the
                           -- event's own reason -- nothing past this line rejects.
                           State.modify' (PlayerEffect.consume (spent castFor))
+                          -- CR 603.7g: the delayed ability the permission this
+                          -- cast used creates, there for the same reason.
+                          Monad.mapM_ (State.modify' . armCastUnder pid sid) (CandidateCost.arms chosenCandidate)
                           -- CR 611.2c: and the spell that used them is "that
                           -- spell" to the rows their sources installed beside
                           -- them (Savage Summoning), for the same reason.
