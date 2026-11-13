@@ -2044,20 +2044,25 @@ Entries are ordered by the first rule each cites.
 ## A capped target set is re-totalled over its legal targets
 
 - **Question**: The Super Hero Civil War targets "up to two target creatures
-  with total mana value 6 or less". In response one target dies and the other
-  becomes a copy with mana value 6 (Cytoshape). Does the dead creature's mana
-  value still count towards the total as the ability resolves?
+  with total mana value 6 or less". In response one target dies, or gains
+  hexproof (Ranger's Guile), and the other becomes a copy with mana value 6
+  (Cytoshape). Does the illegal target's mana value still count towards the
+  total as the ability resolves?
 - **Rules**: CR 608.2b, 601.2c, 202.3; CR of 2026-11-06. Reunion of the
   House's ruling makes the whole selection illegal when its total grows past
   the cap, and says nothing of a target already illegal.
 - **Decision**: No. The total is taken over the targets still legal on their
   own, so the surviving creature is taken.
-- **Rejected**: Totalling the selection as announced, off last-known
-  information, which takes nothing. CR 608.2b makes a target that left its
-  zone illegal, and an illegal target is not one the restriction is about.
-- **Site**: `Parun.Engine.Target.stillLegalAmong`, proved by the scenario
-  `cr-608-2b-the-super-hero-civil-war-re-totals-over-the-targets-still-legal`.
-- **Issue**: #7229.
+- **Rejected**: Totalling the selection as announced, a dead target off
+  last-known information and a hexproof one off the battlefield, which takes
+  nothing. CR 608.2b makes each illegal on its own, and an illegal target is
+  not one the restriction is about.
+- **Site**: `Parun.Engine.Target.stillLegalAmong`, proved by the scenarios
+  `cr-608-2b-the-super-hero-civil-war-re-totals-over-the-targets-still-legal`
+  (the dead target) and
+  `cr-608-2b-the-super-hero-civil-war-leaves-a-hexproof-target-out-of-its-total`
+  (the hexproof one, which alone tells this from totalling every target).
+- **Issue**: #7229, #7306.
 
 ## Two "that mana becomes" replacements are chosen between once for the pool
 
