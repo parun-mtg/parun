@@ -1,8 +1,10 @@
 module Parun.Codec.DealDamageSpec where
 
+import qualified Data.Either as Either
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Parun.Codec.DealDamage as DealDamage
+import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.DamagePart as DamagePart
@@ -33,6 +35,7 @@ spec s = Spec.describe s "Parun.Codec.DealDamage" $ do
                     DamagePart.quantity = Quantity.Literal 3
                   },
             DealDamage.dealer = Nothing,
+            DealDamage.dealers = Nothing,
             DealDamage.excess = Nothing,
             DealDamage.tally = Nothing,
             DealDamage.damaged = Nothing,
@@ -61,6 +64,7 @@ spec s = Spec.describe s "Parun.Codec.DealDamage" $ do
                     }
                 ],
             DealDamage.dealer = Just (SlotName.MkSlotName (Text.pack "dealer")),
+            DealDamage.dealers = Nothing,
             DealDamage.excess = Just ExcessDestination.ToRecipientController,
             DealDamage.tally = Just (SlotName.MkSlotName (Text.pack "dealt")),
             DealDamage.damaged = Just (SlotName.MkSlotName (Text.pack "hit")),
@@ -68,4 +72,38 @@ spec s = Spec.describe s "Parun.Codec.DealDamage" $ do
           }
       )
       " {\"parts\":[{\"ref\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasKeyword\",\"value\":{\"type\":\"Flying\"}}},\"quantity\":{\"type\":\"Literal\",\"value\":3}},{\"ref\":{\"type\":\"Players\",\"value\":{\"players\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}},\"quantity\":{\"type\":\"Literal\",\"value\":2}}],\"dealer\":\"dealer\",\"excess\":\"ToRecipientController\",\"tally\":\"dealt\",\"damaged\":\"hit\",\"excessTally\":\"over\"} "
+  -- CR 608.2h's sweep of dealers, each bound under the dealer slot's name
+  -- (Judgment of Alexander).
+  Spec.it s "MkDealDamage, a sweep of dealers" $
+    Common.assertCodec
+      s
+      DealDamage.codec
+      ( DealDamage.MkDealDamage
+          { DealDamage.parts =
+              Seq.singleton
+                DamagePart.MkDamagePart
+                  { DamagePart.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
+                    DamagePart.quantity = Quantity.Literal 3
+                  },
+            DealDamage.dealer = Just (SlotName.MkSlotName (Text.pack "dealer")),
+            DealDamage.dealers = Just (ObjectRef.EachMatching (Filter.HasKeyword Keyword.Flying)),
+            DealDamage.excess = Nothing,
+            DealDamage.tally = Nothing,
+            DealDamage.damaged = Nothing,
+            DealDamage.excessTally = Nothing
+          }
+      )
+      " {\"parts\":[{\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"quantity\":{\"type\":\"Literal\",\"value\":3}}],\"dealer\":\"dealer\",\"dealers\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasKeyword\",\"value\":{\"type\":\"Flying\"}}}} "
+  -- A sweep binds each dealer under the dealer slot's name, so it needs one.
+  Spec.it s "rejects dealers without a dealer" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode DealDamage.codec =<< Common.parse (Text.pack "{\"parts\":[],\"dealers\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasKeyword\",\"value\":{\"type\":\"Flying\"}}}}")))
+      "expected a decode failure"
+  -- Not implemented beside a stated excess (#7272), so refused.
+  Spec.it s "rejects dealers beside excess" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode DealDamage.codec =<< Common.parse (Text.pack "{\"parts\":[],\"dealer\":\"dealer\",\"dealers\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasKeyword\",\"value\":{\"type\":\"Flying\"}}},\"excess\":\"ToRecipientController\"}")))
+      "expected a decode failure"
   Spec.it s "has a schema" $ Common.assertHasSchema s DealDamage.codec

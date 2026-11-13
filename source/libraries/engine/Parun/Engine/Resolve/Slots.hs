@@ -1096,14 +1096,17 @@ slotsOf :: Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) 
 slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectRefs effect))) (joinSlots (fmap playerRefSlots (effectPlayerRefs effect)))) $ case effect of
   -- The dealer is a read like any other (CR 120.2b), and of every object the
   -- slot names: each deals (CR 608.2f), and an amount reading that slot reads
-  -- it one dealer at a time, so its singular read is no claim on the slot.
+  -- it one dealer at a time, so its singular read is no claim on the slot. A
+  -- sweep of dealers is effectObjectRefs' half, and the slot is no read at
+  -- all: the arm itself binds each dealer there, ModifyTarget's `each`.
   --
   -- Not implemented: several dealers under an instruction that states or
   -- tallies excess damage (CR 120.4a, 120.10), whose dealer stays one object
   -- (#7272).
-  Effect.DealDamage (DealDamage.MkDealDamage parts dealer excess _ _ excessTally) ->
+  Effect.DealDamage (DealDamage.MkDealDamage parts dealer sweep excess _ _ excessTally) ->
     let amounts = joinSlots (fmap (quantitySlots . DamagePart.quantity) (Foldable.toList parts))
      in case dealer of
+          Just slot | Maybe.isJust sweep -> Map.delete slot amounts
           Just slot | Maybe.isNothing excess && Maybe.isNothing excessTally -> Map.insert slot SlotArity.Many amounts
           _ -> joinTwo amounts (maybe Map.empty oneSlot dealer)
   -- BOTH fighters: CR 701.14a reads each one's power against the other, so a
@@ -2039,7 +2042,7 @@ slotsAreExhaustive effect = all (all Quantity.slotsAreExhaustive . objectRefQuan
 -- Exhaustive, not over Parun.Engine.Children: a classification, every arm judged by someone reading it.
 ownSlotsAreExhaustive :: Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 ownSlotsAreExhaustive effect = case effect of
-  Effect.DealDamage (DealDamage.MkDealDamage parts _ _ _ _ _) -> all (Quantity.slotsAreExhaustive . DamagePart.quantity) parts
+  Effect.DealDamage (DealDamage.MkDealDamage parts _ _ _ _ _ _) -> all (Quantity.slotsAreExhaustive . DamagePart.quantity) parts
   Effect.Fight {} -> True
   Effect.ModifyTarget (ModifyTarget.MkModifyTarget duration modification _ _) ->
     durationSlotsAreExhaustive duration
@@ -2349,7 +2352,7 @@ hasRead wanted =
       -- effectHasRead's half that is not an ObjectRef's: this opcode's own fields,
       -- and its nested effects through the recursion back into hasRead.
       effectOwnHasRead effect = case effect of
-        Effect.DealDamage (DealDamage.MkDealDamage parts _ _ _ _ _) -> any (Quantity.hasRead wanted . DamagePart.quantity) parts
+        Effect.DealDamage (DealDamage.MkDealDamage parts _ _ _ _ _ _) -> any (Quantity.hasRead wanted . DamagePart.quantity) parts
         Effect.Fight {} -> False
         -- Untamed Might's "+X/+X" sits inside the Modification, not on the effect.
         Effect.ModifyTarget (ModifyTarget.MkModifyTarget _ modification _ _) -> any (Quantity.hasRead wanted) (Projection.quantitiesOf modification)
@@ -2644,7 +2647,7 @@ boundSlots effect = case effect of
   -- Soul's "the damage dealt this way" (Parun.Types.DealDamage.tally), and the
   -- objects it reached, for Incinerate's "a creature dealt damage this way", and
   -- CR 120.10's excess, for Goblin Negotiation's "excess damage dealt this way".
-  Effect.DealDamage (DealDamage.MkDealDamage _ _ _ mTally mDamaged mExcessTally) -> foldMap Set.singleton mTally <> foldMap Set.singleton mDamaged <> foldMap Set.singleton mExcessTally
+  Effect.DealDamage (DealDamage.MkDealDamage _ _ _ _ mTally mDamaged mExcessTally) -> foldMap Set.singleton mTally <> foldMap Set.singleton mDamaged <> foldMap Set.singleton mExcessTally
   -- CR 120.10's excess again, The Last Agni Kai's "is dealt excess damage this
   -- way".
   Effect.Fight (Fight.MkFight _ _ _ mExcessTally) -> foldMap Set.singleton mExcessTally

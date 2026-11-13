@@ -3,6 +3,7 @@ module Parun.Types.DealDamage where
 import qualified Data.Sequence as Seq
 import qualified Parun.Types.DamagePart as DamagePart
 import qualified Parun.Types.ExcessDestination as ExcessDestination
+import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.SlotName as SlotName
 
 -- | CR 120.1: deal damage to the objects and players its clauses name.
@@ -44,8 +45,8 @@ data DealDamage = MkDealDamage
     -- redirects every one of them at once.
     --
     -- A SlotName rather than an ObjectRef, where a clause's ref above is the
-    -- wider type: every dealer in the pool is named before the effect runs --
-    -- CR 115.10a's distinction, which is exactly the InSlot arm's.
+    -- wider type: it is the name an amount reads each dealer under, and a
+    -- dealer found as the effect runs is `dealers`' business.
     --
     -- A slot naming SEVERAL objects names several dealers, Allies at Last's "up
     -- to two target creatures you control each deal damage equal to their
@@ -67,6 +68,15 @@ data DealDamage = MkDealDamage
     -- that source and it does as much as it can -- not damage from the
     -- resolving object instead.
     dealer :: Maybe SlotName.SlotName,
+    -- | The dealers when they are found as the instruction runs rather than
+    -- named before it (CR 608.2h), each bound under `dealer` while its own
+    -- amount is read: Judgment of Alexander's "each commander creature you
+    -- control deals damage equal to its power". Nothing reads `dealer`'s slot
+    -- instead. Every one deals in the one batch (CR 608.2f), the slot's case
+    -- above:
+    -- data/scenarios/judgment-of-alexander-a-shield-is-divided-between-the-commanders.json
+    -- proves it. Parun.Codec.DealDamage refuses it without a `dealer`.
+    dealers :: Maybe ObjectRef.ObjectRef,
     -- | WHERE THE EXCESS GOES -- CR 120.4a's first sentence, which happens only
     -- when "an effect that's causing damage to be dealt STATES that excess
     -- damage that would be dealt to a permanent is dealt to another permanent or

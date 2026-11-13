@@ -480,7 +480,7 @@ objectsOf e = case e of
   Effect.Tap t -> [Tap.ref t]
   Effect.Untap r -> [r]
   Effect.Sacrifice s -> [SacrificeEffect.ref s]
-  Effect.DealDamage d -> fmap ObjectRef.InSlot (Maybe.maybeToList (DealDamage.dealer d)) <> fmap DamagePart.ref (Foldable.toList (DealDamage.parts d))
+  Effect.DealDamage d -> maybe (fmap ObjectRef.InSlot (Maybe.maybeToList (DealDamage.dealer d))) pure (DealDamage.dealers d) <> fmap DamagePart.ref (Foldable.toList (DealDamage.parts d))
   Effect.PreventNextDamage p -> Maybe.maybeToList (PreventNextDamage.ref p)
   _ -> []
 
@@ -1182,7 +1182,7 @@ added production count = case (production, count) of
 -- you control deals damage", Soul's Fire).
 dealDamage :: Target.Context -> DealDamage.DealDamage -> [Predicate]
 dealDamage context d
-  | Maybe.isJust (DealDamage.excess d) || Maybe.isJust (DealDamage.tally d) || Maybe.isJust (DealDamage.damaged d) || Maybe.isJust (DealDamage.excessTally d) = []
+  | Maybe.isJust (DealDamage.dealers d) || Maybe.isJust (DealDamage.excess d) || Maybe.isJust (DealDamage.tally d) || Maybe.isJust (DealDamage.damaged d) || Maybe.isJust (DealDamage.excessTally d) = []
   | otherwise = do
       source <- Target.object context Target.All (ObjectRef.InSlot (Maybe.fromMaybe Target.selfSlot (DealDamage.dealer d)))
       -- The source is the sentence's subject, so the amount calls it "it":
