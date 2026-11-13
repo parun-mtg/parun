@@ -903,19 +903,27 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
 
 -- CR 201.5a: the granter's id (Binding.grantingPermanent) baked into the
 -- effects of an ability it grants, as Filter.bakeCost bakes it into the cost:
--- every Filter an effect holds outright or through an ObjectRef, however deep
--- the effect is nested. Named by id, so a granter that has since changed zones
--- is a different object and is not found (CR 400.7).
--- data/scenarios' Trusty Boomerang files prove it. The triggered arm shares the
--- bake and has no producer in data/cards; Spare Dagger would be one.
+-- every Filter an effect holds outright, through an ObjectRef or through a
+-- Quantity, however deep the effect is nested, and every Filter a clause's
+-- condition counts over. Named by id, so a granter that has since changed
+-- zones is a different object and is not found (CR 400.7).
+-- data/scenarios' Trusty Boomerang files prove the object, its Archery
+-- Training file the Quantity and its Heliod's Punishment files the condition.
+-- The triggered arm shares the bake and has no producer in data/cards; Spare
+-- Dagger would be one.
 --
 -- Not implemented: the name in any other position of the granted ability -- a
--- Quantity, a Condition, a target slot, a quoted ability (#7329).
+-- target slot, a quoted ability, a slot no cost binds (#7342).
+--
+-- Not implemented: a count of a granter that has left read off its last known
+-- information (CR 608.2h); it reads zero (#7341).
 bakeGranter :: ObjectId -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . effect}
+bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . effect, Children.modalCondition = Identity.Identity . condition}
   where
-    effect = Identity.runIdentity . Children.effectChildren Children.effectLeaves {Children.onEffect = Identity.Identity . effect, Children.onObjectRef = Identity.Identity . ref, Children.onFilter = Identity.Identity . bake}
+    effect = Identity.runIdentity . Children.effectChildren Children.effectLeaves {Children.onEffect = Identity.Identity . effect, Children.onObjectRef = Identity.Identity . ref, Children.onFilter = Identity.Identity . bake, Children.onQuantity = Identity.Identity . quantity}
     ref = Identity.runIdentity . Children.objectRefChildren Children.objectRefLeaves {Children.refFilter = Identity.Identity . bake, Children.refNested = Identity.Identity . ref}
+    condition = Identity.runIdentity . Children.conditionChildren Children.conditionLeaves {Children.conditionQuantity = Identity.Identity . quantity, Children.conditionNested = Identity.Identity . condition}
+    quantity = Identity.runIdentity . Children.quantityChildren (Children.descendingQuantities (Identity.Identity . quantity)) {Children.nest = Identity.Identity . bake}
     bake = Filter.bakeBound Map.empty (Map.singleton Binding.grantingPermanent (Set.singleton granter)) Map.empty
 
 -- One grant, dropped when CR 205.3d refuses it. The refusal is proved at the
