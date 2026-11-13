@@ -143,6 +143,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
+import qualified Parun.Types.SpendScope as SpendScope
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
@@ -4192,7 +4193,11 @@ spendManaAsThoughRows pid gs =
 -- CR 609.4b's clauses that speak about every payment this player makes, whatever
 -- it is for.
 spendManaAsThough :: PlayerId -> GameState -> [SpendManaAsThough.SpendManaAsThough]
-spendManaAsThough pid gs = filter (Maybe.isNothing . SpendManaAsThough.casting) (fmap snd (spendManaAsThoughRows pid gs))
+spendManaAsThough pid gs = spendManaAsThoughEvery (spendManaAsThoughRows pid gs)
+
+-- spendManaAsThough given spendManaAsThoughRows' own answer.
+spendManaAsThoughEvery :: [(RowSource.RowSource, SpendManaAsThough.SpendManaAsThough)] -> [SpendManaAsThough.SpendManaAsThough]
+spendManaAsThoughEvery = filter ((== SpendScope.EveryPayment) . SpendManaAsThough.scope) . fmap snd
 
 -- CR 609.4b / 113.6d: spendManaAsThough plus, for a payment casting a spell,
 -- the clauses naming that spell (Vizier of the Menagerie's "to cast creature
@@ -4204,22 +4209,42 @@ spendManaAsThough pid gs = filter (Maybe.isNothing . SpendManaAsThough.casting) 
 -- gate asks. The scenario
 -- a-printed-spellbook-is-offered-whole-and-the-card-randomness-named-is-the-one
 -- proves it.
+--
+-- For a payment activating an ability, the clauses naming its source instead
+-- (CR 602.2b; Agatha's Soul Cauldron's "to activate abilities of creatures you
+-- control"), a mana ability's own cost included. data/scenarios'
+-- agatha-s-soul-cauldron-pays-a-creature-s-activation-as-any-color proves it.
 spendManaAsThoughFor :: PlayerId -> PaymentSubject.PaymentSubject -> GameState -> [SpendManaAsThough.SpendManaAsThough]
 spendManaAsThoughFor pid subject gs = spendManaAsThoughForGiven (spendManaAsThough pid gs) pid subject gs
 
 -- The same clauses given `spendManaAsThough pid gs`'s own answer, which every
--- subject but a cast is.
+-- subject but a cast or an activation is.
 spendManaAsThoughForGiven :: [SpendManaAsThough.SpendManaAsThough] -> PlayerId -> PaymentSubject.PaymentSubject -> GameState -> [SpendManaAsThough.SpendManaAsThough]
 spendManaAsThoughForGiven general pid subject gs = case subject of
   PaymentSubject.Casting oid ->
     let view = Projection.viewOfObject oid gs
-        namesSpell context = maybe True (Filter.matches context view) . SpendManaAsThough.casting
+        namesSpell context clause = case SpendManaAsThough.scope clause of
+          SpendScope.EveryPayment -> True
+          SpendScope.Casting spell -> Filter.matches context view spell
+          SpendScope.Activating _ -> False
      in [clause | (source, clause) <- spendManaAsThoughRows pid gs, namesSpell (contextFor (Just pid) source gs) clause]
           <> filter (namesSpell (Filter.contextIn gs (Just pid) Nothing)) (PC.grantedSpendManaAsThough (Projection.project oid gs))
-  PaymentSubject.Activating {} -> general
+  PaymentSubject.Activating oid _ _ -> general <> spendManaAsThoughActivating (spendManaAsThoughRows pid gs) pid oid gs
   PaymentSubject.Unlocking {} -> general
   PaymentSubject.TurningFaceUp {} -> general
   PaymentSubject.ForNeither -> general
+
+-- CR 609.4b / 602.2b: the clauses among `rows` (spendManaAsThoughRows' own
+-- answer) naming an activation of `oid`'s abilities. Lazy in the source's view,
+-- so a board with no such clause reads nothing.
+spendManaAsThoughActivating :: [(RowSource.RowSource, SpendManaAsThough.SpendManaAsThough)] -> PlayerId -> ObjectId -> GameState -> [SpendManaAsThough.SpendManaAsThough]
+spendManaAsThoughActivating rows pid oid gs =
+  let view = Projection.viewOfObject oid gs
+      namesSource (source, clause) = case SpendManaAsThough.scope clause of
+        SpendScope.EveryPayment -> False
+        SpendScope.Casting _ -> False
+        SpendScope.Activating abilitySource -> Filter.matches (contextFor (Just pid) source gs) view abilitySource
+   in fmap snd (filter namesSource rows)
 
 -- CR 701.6a / 613.11: can this spell or ability on the stack be countered
 -- (Spider-Punk, Prowling Serpopard)? The typed question

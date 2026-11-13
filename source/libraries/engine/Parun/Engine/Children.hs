@@ -431,6 +431,7 @@ import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpellTally as SpellTally
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
+import qualified Parun.Types.SpendScope as SpendScope
 import qualified Parun.Types.Splice as Splice
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.StaticAbility as StaticAbility
@@ -3654,12 +3655,19 @@ manaRiderChildren c (ManaRider.MkManaRider condition effect) =
 -- | A spend-as-though clause's children (CR 609.4b). Whether it is the only
 -- way that mana pays is left as it is.
 spendManaAsThoughChildren :: (Applicative f) => ManaChildren f -> SpendManaAsThough.SpendManaAsThough -> f SpendManaAsThough.SpendManaAsThough
-spendManaAsThoughChildren c (SpendManaAsThough.MkSpendManaAsThough which asThough only casting) =
+spendManaAsThoughChildren c (SpendManaAsThough.MkSpendManaAsThough which asThough only payments) =
   SpendManaAsThough.MkSpendManaAsThough
     <$> manaSpent c which
     <*> manaAsThough c asThough
     <*> pure only
-    <*> traverse (manaCriterion c) casting
+    <*> spendScopeChildren c payments
+
+-- | A spend-as-though clause's scope's children (CR 609.4b).
+spendScopeChildren :: (Applicative f) => ManaChildren f -> SpendScope.SpendScope -> f SpendScope.SpendScope
+spendScopeChildren c payments = case payments of
+  SpendScope.EveryPayment -> pure payments
+  SpendScope.Casting spell -> SpendScope.Casting <$> manaCriterion c spell
+  SpendScope.Activating source -> SpendScope.Activating <$> manaCriterion c source
 
 -- | One visitor per kind of child a damage pattern holds: the damage a
 -- prevention or replacement effect matches (CR 614.1a, 615.1a).

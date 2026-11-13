@@ -49,6 +49,7 @@ import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
+import qualified Parun.Types.SpendScope as SpendScope
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerLimit as TriggerLimit
@@ -163,6 +164,6 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
     Common.assertCodec
       s
       codec
-      (GrantedAbility.SelfSpendManaAsThough (SpendManaAsThough.MkSpendManaAsThough ManaFilter.Any (Set.singleton (ManaType.Colored Color.Red)) False Nothing))
+      (GrantedAbility.SelfSpendManaAsThough (SpendManaAsThough.MkSpendManaAsThough ManaFilter.Any (Set.singleton (ManaType.Colored Color.Red)) False SpendScope.EveryPayment))
       " {\"type\":\"SelfSpendManaAsThough\",\"value\":{\"which\":{\"type\":\"Any\"},\"asThough\":[{\"type\":\"Colored\",\"value\":\"Red\"}],\"only\":false}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec
