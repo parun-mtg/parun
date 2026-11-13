@@ -215,7 +215,6 @@ codec resolve = Fields.object $ do
   monarch <- Fields.defaulted "monarch" Nothing (Common.maybe PlayerId.codec) GameState.monarch
   initiative <- Fields.defaulted "initiative" Nothing (Common.maybe PlayerId.codec) GameState.initiative
   daytime <- Fields.defaulted "daytime" Nothing (Common.maybe Daytime.codec) GameState.daytime
-  spellsCastLastTurn <- Fields.defaulted "spellsCastLastTurn" 0 Common.natural (History.spellsCastLastTurn . GameState.history)
   pastTurns <- Fields.defaulted "pastTurns" Seq.empty (Common.seq PastTurn.codec) (History.pastTurns . GameState.history)
   damagePreventedBy <- Fields.defaulted "damagePreventedBy" Map.empty (Common.naturalMap ObjectId.codec Common.natural) GameState.damagePreventedBy
   attacksInOwnLastTurn <- Fields.defaulted "attacksInOwnLastTurn" Map.empty (Common.naturalMap PlayerId.codec (Common.seq AttackerDeclared.codec)) (History.attacksInOwnLastTurn . GameState.history)
@@ -350,7 +349,6 @@ codec resolve = Fields.object $ do
         GameState.history =
           History.MkHistory
             { History.triggeredThisGame = triggeredThisGame,
-              History.spellsCastLastTurn = spellsCastLastTurn,
               History.pastTurns = pastTurns,
               History.attacksInOwnLastTurn = attacksInOwnLastTurn,
               History.resolvedNames = resolvedNames

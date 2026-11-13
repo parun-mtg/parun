@@ -154,6 +154,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SourceChoices as SourceChoices
+import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
@@ -1535,6 +1536,16 @@ withLastTurn events gs =
                   }
           }
     }
+
+-- CR 502.2: a finished turn in which the state's active player cast `n`
+-- spells, filed as the newest of History.pastTurns: what
+-- Game.spellsCastLastTurn reads, stated without playing the turn.
+-- Parun.DaytimeSpec's handoff case proves through the rules what it stands in
+-- for.
+afterCasting :: Natural -> GameState.GameState -> GameState.GameState
+afterCasting n gs =
+  let spell = GameEvent.SpellCast (SpellWasCast.MkSpellWasCast (TurnRegisters.activePlayer (GameState.turn gs)) noSource emptyCharacteristics (Just Zone.Hand) Nothing Set.empty)
+   in withLastTurn (TurnRegisters.events (GameState.turn (withEvents (List.genericReplicate n spell) gs))) gs
 
 -- Each event gets its OWN EventGroup, which is what a hand-built list means: the
 -- fixture states a sequence, and nothing in it says two of the events were the

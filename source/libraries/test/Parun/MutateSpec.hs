@@ -95,7 +95,6 @@ import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -1666,7 +1665,7 @@ graftbeastName = CardName.MkCardName (Text.pack "Synthetic Graftbeast")
 -- `n` spells on the previous turn's books -- Parun.TransformSpec's own helper.
 untapStepAfter :: Natural.Natural -> GameState.GameState -> GameState.GameState
 untapStepAfter n gs =
-  S.runPure S.identityAnswer (gs {GameState.history = (GameState.history gs) {History.spellsCastLastTurn = n}}) (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
+  S.runPure S.identityAnswer (S.afterCasting n gs) (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
 
 -- Blightreaper Thallid's back face, its token, and Howlpack Piper's back face.
 blightsower, saprolingToken, howler :: CardName.CardName

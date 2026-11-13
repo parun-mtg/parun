@@ -530,7 +530,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 - CR 712.10 by day that spell enters front face up | `board:daytime`
 - CR 732.1 a game with no daybound permanent stays neither day nor night | `check:other-GameState.daytime`
 - CR 732.1/702.145c Tovolar's upkeep trigger makes it night and transforms him | `board:daytime`
-- CR 732.2 the handoff records what the previous turn's active player cast | `check:other-GameState.spellsCastLastTurn` `check:events`
+- CR 732.2 the handoff records what the previous turn's active player cast | `check:other-Game.spellsCastLastTurn` `check:events`
 
 ### `DepartureSpec`
 
@@ -1174,7 +1174,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 
 ### `TeamSpec`
 
-- CR 502.2a the handoff records what the previous active team cast | `check:events` `check:other-GameState.spellsCastLastTurn`
+- CR 502.2a the handoff records what the previous active team cast | `check:events` `check:other-Game.spellsCastLastTurn`
 - CR 702.179d each active teammate's speed rises once | `board:player-speed`
 - CR 805.2 a departed active player's teammate declares the attack | `board:player-status`
 - CR 805.5 a teammate who passed is asked again before the team passes | `check:prompt-order`

@@ -42,7 +42,6 @@ import qualified Parun.Types.Daytime as Daytime
 import Parun.Types.Game (Game)
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ProjectedCharacteristics as PC
@@ -289,24 +288,22 @@ settle record = do
 --   * its second -- night, and that player cast two or more, becomes day
 --   * its third -- neither, and the check doesn't happen at all
 --
--- The count is History.spellsCastLastTurn, snapshotted at the handoff, because
--- the event log this would otherwise be folded from is cleared there and this
--- runs afterwards. That scalar and not the per-seat fold of
--- Game.turnLog WhichTurn.LastTurn a CARD reads: rule 732.2 names exactly one player
--- where a card asks about every player, and Engine.beginTurnOf folds the scalar
--- out of the same log with the same Game.castsPerPlayer, so the two agree about
--- the one seat this rule is about.
+-- The count is Game.spellsCastLastTurn, off the finished turn the handoff
+-- filed (History.pastTurns) and the players stamped on it: rule 732.2 names
+-- exactly one player where a card's Game.turnLog WhichTurn.LastTurn tally asks
+-- about every player. Both fold the same log with the same
+-- Game.castsPerPlayer, so they agree about the one seat this rule is about.
 --
 -- A TURN-BASED ACTION that does not use the stack, so it is performed inline by
 -- Parun.Engine.Engine's untap arm and nothing is put anywhere.
 --
 -- CR 502.2a's reading for the shared team turns option needs no arm here: the
--- scalar is the most any one player on the previous active team cast, which
+-- count is the most any one player on the previous active team cast, which
 -- answers "none of them" and "any of them two or more" alike.
 untapCheck :: ([ObjectId] -> GameState -> GameState) -> Game Bool
 untapCheck record = do
   gs <- State.get
   case GameState.daytime gs of
     Nothing -> pure False
-    Just Daytime.Day -> if History.spellsCastLastTurn (GameState.history gs) == 0 then becomes record Daytime.Night else pure False
-    Just Daytime.Night -> if History.spellsCastLastTurn (GameState.history gs) >= 2 then becomes record Daytime.Day else pure False
+    Just Daytime.Day -> if Game.spellsCastLastTurn gs == 0 then becomes record Daytime.Night else pure False
+    Just Daytime.Night -> if Game.spellsCastLastTurn gs >= 2 then becomes record Daytime.Day else pure False

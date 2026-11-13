@@ -3,7 +3,6 @@ module Parun.Types.History where
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
-import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.CardName as CardName
@@ -15,15 +14,11 @@ import qualified Parun.Types.PlayerId as PlayerId
 -- GameState.history. Belongs to this game alone, so Parun.Engine.Setup's
 -- restartGame (CR 728.1) and subgameStateFrom (CR 730.2) begin it again.
 data History = MkHistory
-  { -- | CR 502.2 / 732.2: how many spells the previous turn's active player
-    -- cast that turn, snapshotted at handoff from the outgoing log, which is
-    -- cleared there. Under the shared team turns option, the most any one
-    -- player on the previous active team cast (CR 732.2a).
-    spellsCastLastTurn :: !Natural.Natural,
-    -- | CR 608.2i: every finished turn of this game, oldest first, appended at
+  { -- | CR 608.2i: every finished turn of this game, oldest first, appended at
     -- the turn handoff (Engine.closeTurn) from the log it clears. The newest is
-    -- "last turn" (Game.turnLog), read by the per-seat view and by every
-    -- WhichTurn.LastTurn tally; all of them hold the game's casts
+    -- "last turn" (Game.turnLog), read by the per-seat view, by every
+    -- WhichTurn.LastTurn tally and by CR 502.2's count
+    -- (Game.spellsCastLastTurn); all of them hold the game's casts
     -- (Game.castsThisGame) and its earlier damage (Game.damageBeforeThisTurn).
     pastTurns :: !(Seq.Seq PastTurn.PastTurn),
     -- | CR 508.1a / 608.2i: the attackers declared during each player's OWN

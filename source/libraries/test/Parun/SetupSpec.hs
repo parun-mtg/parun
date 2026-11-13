@@ -74,7 +74,6 @@ import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.History as History
 import qualified Parun.Types.IgnoredAbility as IgnoredAbility
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LeftTheGame as LeftTheGame
@@ -423,9 +422,8 @@ setupSpec s registry = Spec.describe s "Setup" $ do
     mountain <- S.printingOf s registry "Mountain"
     let (land, built) = S.addPermanent mountain S.alice (Setup.gameWith GameSettings.plain S.bothPlayers)
         busy =
-          built
-            { GameState.scratch = (GameState.scratch built) {Scratch.enteringBeside = Set.singleton land},
-              GameState.history = (GameState.history built) {History.spellsCastLastTurn = 2}
+          (S.afterCasting 2 built)
+            { GameState.scratch = (GameState.scratch built) {Scratch.enteringBeside = Set.singleton land}
             }
         restarted = S.runPure S.identityAnswer busy (Setup.restartGame S.performer Set.empty S.alice)
         subgame = Setup.subgameStateFrom S.alice busy
