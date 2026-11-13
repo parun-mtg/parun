@@ -27,10 +27,12 @@
                       {
                         "type": "ChooseQuality",
                         "value": {
-                          "type": "Colors",
-                          "value": {
-                            "least": 1,
-                            "most": 1
+                          "quality": {
+                            "type": "Colors",
+                            "value": {
+                              "least": 1,
+                              "most": 1
+                            }
                           }
                         }
                       },
@@ -101,10 +103,12 @@
                       {
                         "type": "ChooseQuality",
                         "value": {
-                          "type": "Colors",
-                          "value": {
-                            "least": 1,
-                            "most": 1
+                          "quality": {
+                            "type": "Colors",
+                            "value": {
+                              "least": 1,
+                              "most": 1
+                            }
                           }
                         }
                       },

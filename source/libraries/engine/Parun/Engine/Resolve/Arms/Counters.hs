@@ -66,8 +66,8 @@ import qualified Parun.Types.Blight as Blight.Type
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChooseNumber as ChooseNumber
+import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.Chosen as Chosen
-import qualified Parun.Types.ChosenQuality as ChosenQuality
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControlSides as ControlSides
 import qualified Parun.Types.ControlSlots as ControlSlots
@@ -452,13 +452,13 @@ chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardNam
 -- same resolution reads it through Parun.Engine.SourceContext -- the scenario
 -- cr-608-2d-persecute-discards-the-cards-of-the-color-chosen-as-it-resolves.
 --
--- Not implemented: confining the choice to the ability that made it (CR
--- 607.2d), so another ability of the source under the same acquisition reads
--- it as its own "the chosen color" (#7187).
-chooseQuality :: ObjectId -> ObjectId -> PlayerId -> ChosenQuality.ChosenQuality -> Game ()
-chooseQuality resolving source controller quality = do
+-- A permanent's ability keeps the choice only where another of its abilities
+-- refers to it (ChooseQuality.linked, CR 607.2d); otherwise
+-- Common.endOwnChoices ends it with the resolution.
+chooseQuality :: ObjectId -> ObjectId -> PlayerId -> ChooseQuality.ChooseQuality -> Game ()
+chooseQuality resolving source controller choice = do
   gs <- State.get
-  Event.chooseQuality quality controller (Game.readingAcquisition resolving source gs source) source
+  Event.chooseQuality (ChooseQuality.quality choice) controller (Game.readingAcquisition resolving source gs source) source
 
 -- CR 400.11c: the resolving controller reveals a card they own from outside the
 -- game matching the filter and puts it into their hand -- Burning Wish.

@@ -36,7 +36,7 @@ import qualified Parun.Codec.ChooseNumber as ChooseNumber
 import qualified Parun.Codec.ChoosePermanents as ChoosePermanents
 import qualified Parun.Codec.ChoosePlayer as ChoosePlayer
 import qualified Parun.Codec.ChoosePlayerAtRandom as ChoosePlayerAtRandom
-import qualified Parun.Codec.ChosenQuality as ChosenQuality
+import qualified Parun.Codec.ChooseQuality as ChooseQuality
 import qualified Parun.Codec.Conjure as Conjure
 import qualified Parun.Codec.Connive as Connive
 import qualified Parun.Codec.ControlPlayer as ControlPlayer
@@ -165,7 +165,7 @@ codec cardCodec abilityCodec =
           Arm.nullary "Rethrow" Effect.Rethrow,
           Arm.payload "RerollStoredResults" SlotName.codec Effect.RerollStoredResults (\x -> case x of Effect.RerollStoredResults y -> Just y; _ -> Nothing),
           Arm.payload "ChooseCardName" ChooseCardName.codec Effect.ChooseCardName (\x -> case x of Effect.ChooseCardName y -> Just y; _ -> Nothing),
-          Arm.payload "ChooseQuality" ChosenQuality.codec Effect.ChooseQuality (\x -> case x of Effect.ChooseQuality y -> Just y; _ -> Nothing),
+          Arm.payload "ChooseQuality" ChooseQuality.codec Effect.ChooseQuality (\x -> case x of Effect.ChooseQuality y -> Just y; _ -> Nothing),
           Arm.payload "FromOutsideTheGame" FromOutsideTheGame.codec Effect.FromOutsideTheGame (\x -> case x of Effect.FromOutsideTheGame y -> Just y; _ -> Nothing),
           Arm.nullary "ExileThisSpell" Effect.ExileThisSpell,
           Arm.payload "Bolster" Quantity.codec Effect.Bolster (\x -> case x of Effect.Bolster y -> Just y; _ -> Nothing),

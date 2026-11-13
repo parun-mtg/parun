@@ -97,6 +97,7 @@ import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChoosePlayer as ChoosePlayer
 import qualified Parun.Types.ChoosePlayerAtRandom as ChoosePlayerAtRandom
+import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
@@ -1220,7 +1221,7 @@ effectChildren c effect = case effect of
   Effect.Proliferate named -> fmap Effect.Proliferate (traverse (onSlot c) named)
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName who restriction among) ->
     fmap Effect.ChooseCardName (ChooseCardName.MkChooseCardName <$> onPlayer c who <*> onFilter c restriction <*> traverse (onSlot c) among)
-  Effect.ChooseQuality quality -> fmap Effect.ChooseQuality (chosenQualityChildren (onSubtype c) quality)
+  Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality linked) -> fmap Effect.ChooseQuality (ChooseQuality.MkChooseQuality <$> chosenQualityChildren (onSubtype c) quality <*> pure linked)
   Effect.Bolster quantity -> fmap Effect.Bolster (onQuantity c quantity)
   Effect.Amass (Amass.MkAmass who quantity kind named) -> fmap Effect.Amass (Amass.MkAmass <$> onPlayer c who <*> onQuantity c quantity <*> pure kind <*> traverse (onSlot c) named)
   Effect.Blight (Blight.MkBlight who quantity named) -> fmap Effect.Blight (Blight.MkBlight <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)

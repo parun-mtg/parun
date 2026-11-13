@@ -1006,6 +1006,12 @@ recordChoice field acquisition change oid gs = case lookupObject oid gs of
   Just _ -> gs {GameState.objects = Map.adjust (overObjectChoices field (Map.alter change acquisition)) oid (GameState.objects gs)}
   Nothing -> gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.lastKnown = Map.adjust (overLastKnownChoices field (Map.alter change acquisition)) oid (Snapshots.lastKnown (GameState.snapshots gs))}}
 
+-- | CR 607.2d: the choice `field` holds on `oid` for the abilities acquired as
+-- `acquisition`, put back as `before` held it: the end of a choice that was
+-- one resolution's own.
+restoreChoice :: Chosen.Chosen a -> Acquisition.Acquisition -> ObjectId -> GameState -> GameState -> GameState
+restoreChoice field acquisition oid before = recordChoice field acquisition (const (choiceWithLastKnown field acquisition oid before)) oid
+
 -- | CR 607.2d: the choices `from`'s abilities acquired as `acquisition` have
 -- made, handed to `to`, an object those abilities made whose own text reads
 -- them, under the acquisition `to` reads its choices by. A choice `from`

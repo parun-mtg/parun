@@ -414,6 +414,7 @@ library codec
     Parun.Codec.ChoosePlayerAtRandom
     Parun.Codec.ChoosePlayerAtRandomSpec
     Parun.Codec.ChoosePlayerSpec
+    Parun.Codec.ChooseQuality
     Parun.Codec.Chooser
     Parun.Codec.ChooserSpec
     Parun.Codec.ChosenCardFromAmong
@@ -2816,6 +2817,7 @@ library types
     Parun.Types.ChoosePermanents
     Parun.Types.ChoosePlayer
     Parun.Types.ChoosePlayerAtRandom
+    Parun.Types.ChooseQuality
     Parun.Types.Chooser
     Parun.Types.Chosen
     Parun.Types.ChosenCardFromAmong
