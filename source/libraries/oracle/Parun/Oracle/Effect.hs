@@ -342,7 +342,9 @@ clause context c
       -- Educator's "put two +1/+1 counters on it if you gained life this
       -- turn"), with no ability word, which the triggered ability then heads.
       let trailed = [(Text.dropEnd 1 body <> Text.pack " if " <> words' <> Text.pack ".", ms) | Text.null word, Text.isSuffixOf (Text.pack ".") body]
-      (word <> Text.pack "If " <> words' <> Text.pack ", " <> opened, ms) : trailed
+      -- Free: "Then if" after the instructions before it (Tend the Sprigs).
+      let thenIf = [(Text.pack "Then if " <> words' <> Text.pack ", " <> opened, ms) | Text.null word]
+      (word <> Text.pack "If " <> words' <> Text.pack ", " <> opened, ms) : trailed <> thenIf
   | otherwise = do
       predicates <- instructions context (Foldable.toList (Clause.effects c))
       case (Clause.payGate c, Clause.optionality c, List.foldr addedTogether [] predicates) of

@@ -1,0 +1,95 @@
+{
+  "faces": [
+    {
+      "characteristicPT": {
+        "power": {
+          "type": "Count",
+          "value": {
+            "aggregation": {
+              "type": "Distinct",
+              "value": "Colors"
+            },
+            "filter": {
+              "type": "HeldBy",
+              "value": {
+                "holder": "Controller",
+                "relation": "You"
+              }
+            },
+            "scope": {
+              "type": "InZone",
+              "value": {
+                "player": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                },
+                "zone": "Battlefield"
+              }
+            }
+          }
+        },
+        "toughness": {
+          "type": "Count",
+          "value": {
+            "aggregation": {
+              "type": "Distinct",
+              "value": "Colors"
+            },
+            "filter": {
+              "type": "HeldBy",
+              "value": {
+                "holder": "Controller",
+                "relation": "You"
+              }
+            },
+            "scope": {
+              "type": "InZone",
+              "value": {
+                "player": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                },
+                "zone": "Battlefield"
+              }
+            }
+          }
+        }
+      },
+      "keywords": [
+        {
+          "type": "DoubleStrike"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Squawkroaster",
+      "oracleText": "Double strike\nVivid — Squawkroaster's power is equal to the number of colors among permanents you control.",
+      "power": {
+        "type": "Star"
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Elemental"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
