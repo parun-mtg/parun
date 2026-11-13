@@ -1580,25 +1580,25 @@ recordXShares subject pid oid readsIt split = Monad.forM_ split $ \(rest, onX) -
 -- The OFFERS come in two provenances and this function holds only the keywords'.
 -- CR 701.67a's waterbend is the other, and it rides the COST (CostComponent.Waterbend)
 -- rather than the object, which is what lets rule 701.67b scope it to one
--- component of the total: `waterbendOffers` caps it at the waterbend cost's own
+-- component of the total: `statedOffers` caps it at the waterbend cost's own
 -- generic amount where a keyword's offer is capped only by the symbol.
 manaSubstitutions :: [CostComponent.CostComponent Keyword.Type.Keyword] -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> ManaCost.ManaCost -> [(ManaCost.ManaCost, [(Keyword.Substitute, Natural)])]
 manaSubstitutions components slots pid oid gs =
   let keywords = Map.keysSet (spellKeywords pid oid gs)
-   in substitutionsOffering (\symbol -> fmap (\substitute -> (substitute, Nothing)) (Keyword.manaSubstitutesFor symbol keywords) <> waterbendOffers components symbol) slots pid oid gs
+   in substitutionsOffering (\symbol -> fmap (\substitute -> (substitute, Nothing)) (Keyword.manaSubstitutesFor symbol keywords) <> statedOffers components symbol) slots pid oid gs
 
--- CR 701.67a's half of the offer alone, which is what every payment but a
+-- The COST's half of the offer alone (CR 701.67a's waterbend, CR 602.1e's
+-- CostComponent.TapInsteadOfMana), which is what every payment but a
 -- cast gets -- an activation, and CR 118.12's resolution-time payment of a ward
 -- or an unless cost: CR 702.51a, CR 702.66a and CR 702.126a all function while
 -- a SPELL is on the stack, so no keyword of the source's reaches those costs,
--- where a waterbend cost is one component of the cost being paid and says so
--- itself.
+-- where a component of the cost being paid states its offer itself.
 --
--- The answer for a cost stating no waterbend is exactly one entry substituting
+-- The answer for a cost stating neither is exactly one entry substituting
 -- nothing -- `offers` is empty, so the product is the empty vector -- which is
 -- the answer every such payment had before rule 701.67a arrived.
-waterbendSubstitutions :: [CostComponent.CostComponent Keyword.Type.Keyword] -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> ManaCost.ManaCost -> [(ManaCost.ManaCost, [(Keyword.Substitute, Natural)])]
-waterbendSubstitutions components = substitutionsOffering (waterbendOffers components)
+statedSubstitutions :: [CostComponent.CostComponent Keyword.Type.Keyword] -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> ManaCost.ManaCost -> [(ManaCost.ManaCost, [(Keyword.Substitute, Natural)])]
+statedSubstitutions components = substitutionsOffering (statedOffers components)
 
 -- CR 701.67a as an offer, and CR 701.67b as the CEILING on it: "for each generic
 -- mana in that cost", where `that cost` is the waterbend cost and not the total
@@ -1608,12 +1608,20 @@ waterbendSubstitutions components = substitutionsOffering (waterbendOffers compo
 -- each license their own generic. Arithmetic rather than proven behaviour: no
 -- card in Scryfall `oracle:waterbend`, 2026-09-19, states two, and Waterbender
 -- Ascension would refute it by stating a second.
-waterbendOffers :: [CostComponent.CostComponent Keyword.Type.Keyword] -> ManaSymbol.ManaSymbol -> [(Keyword.Substitute, Maybe Natural)]
-waterbendOffers components symbol =
+--
+-- CR 602.1e's offer beside it (CostComponent.TapInsteadOfMana), the opposite on
+-- both counts: "each mana in this ability's activation cost" is every symbol
+-- of the TOTAL cost, so it has no ceiling but the symbol's own count, and its
+-- criterion is the card's. data/scenarios' "CR 602.1e Heirloom Epic taxed by
+-- Suppression Field is paid by tapping six creatures" proves the missing
+-- ceiling.
+statedOffers :: [CostComponent.CostComponent Keyword.Type.Keyword] -> ManaSymbol.ManaSymbol -> [(Keyword.Substitute, Maybe Natural)]
+statedOffers components symbol =
   let allowance = sum [n | CostComponent.Waterbend (CostAmount.Fixed n) <- components] + sum [n | CostComponent.WaterbendInstead n <- components]
-   in case symbol of
+      waterbent = case symbol of
         ManaSymbol.Generic _ | allowance > 0 -> [(Keyword.TapUntapped waterbendCriterion, Just allowance)]
         _ -> []
+   in waterbent <> [(Keyword.TapUntapped criterion, Nothing) | CostComponent.TapInsteadOfMana criterion <- components]
 
 -- Rule 701.67a's "an untapped artifact or creature you control", MINTED here for
 -- Parun.Engine.Keyword.manaSubstitutesFor's reason: the rule's own words are what
@@ -1697,7 +1705,7 @@ convokes substitute = case substitute of
 -- A SUBSTITUTION's mana halves folded into a TOTALLING, which is the shape
 -- Mana.announce's `total` parameter takes. The offer arrives as a parameter
 -- because the two carriers state different ones -- `manaSubstitutions` for a
--- cast and `waterbendSubstitutions` for everything else. That offer decides whether to ask
+-- cast and `statedSubstitutions` for everything else. That offer decides whether to ask
 -- which half of a hybrid symbol is announced, and it asks only where two halves
 -- are payable -- so a totalling blind to CR 702.51b would find NO half payable on
 -- a Merrow Skyswimmer ({3}{W/U}{W/U}, convoke) cast off nothing but creatures,
@@ -1889,6 +1897,7 @@ traverseAmount f component = case component of
   -- CR 702.174a's cost names no X.
   CostComponent.ChooseOpponent _ -> pure component
   CostComponent.WaterbendInstead _ -> pure component
+  CostComponent.TapInsteadOfMana _ -> pure component
   CostComponent.ExileThisFrom _ -> pure component
   CostComponent.ExileThis -> pure component
   CostComponent.ExileCardsFromGraveyard {} -> pure component
@@ -2042,6 +2051,7 @@ componentDemandGrowsWith slot component = case component of
   -- `manaHasVariable` answers for.
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
+  CostComponent.TapInsteadOfMana _ -> False
   CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
   CostComponent.ExileCardsFromGraveyard {} -> False
@@ -2425,6 +2435,7 @@ componentStatesHiddenQuality component = case component of
   CostComponent.ChooseOpponent _ -> False
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
+  CostComponent.TapInsteadOfMana _ -> False
   -- The other hidden zone (CR 400.2), and the FIRST conjunct is satisfied where
   -- no other arm's is -- but the second is not: CR 701.17a takes the cards off
   -- the top, so "mill a card" describes no quality for a player to fail to find.
@@ -3155,6 +3166,7 @@ claimOfGiven board slots pid oid component gs =
         -- payer takes the offer (`manaSubstitutions`), and that one claims them.
         CostComponent.Waterbend _ -> Nothing
         CostComponent.WaterbendInstead _ -> Nothing
+        CostComponent.TapInsteadOfMana _ -> Nothing
         -- Nothing, Blight's arm above and for its reason one rule over: CR 701.20b
         -- leaves the revealed card in the hand, so nothing leaves any pool. CR
         -- 701.20c is what makes the shared-choice half right here too -- a card
@@ -3283,7 +3295,7 @@ canPayReading slots subject pid oid cost gs = case Cost.mana cost of
               Mana.canPayCommitting subject (midPayment (manaActivationsGiven (PlayerEffect.applying pid gs))) ManaSpending.AsProduced pid (lifeOwedBy pid gs components) (energyOwedBy components) (claimsOf slots pid oid components gs) residual gs
                 && all (\component -> canPayComponent slots pid oid component gs) components
                 && jointlyPayable slots pid oid components gs
-     in any payableWith (waterbendSubstitutions (Cost.components cost) slots pid oid gs manaCost)
+     in any payableWith (statedSubstitutions (Cost.components cost) slots pid oid gs manaCost)
 
 -- How many times may this player activate this mana ability, right now, and what
 -- does one activation spend? CR 605.3b keeps a mana ability off the stack, so
@@ -3676,6 +3688,7 @@ uncountedCeiling pid oid claims gs component = case component of
   -- before it reads this.
   CostComponent.Waterbend _ -> Just 1
   CostComponent.WaterbendInstead _ -> Just 1
+  CostComponent.TapInsteadOfMana _ -> Just 1
   where
     -- `thresholdRepeats` where this is the ONLY claim on its axis, and 1 where
     -- another component of the cost draws on it too: the selections would then
@@ -3763,8 +3776,8 @@ lifeTotalOf pid gs = case Map.lookup pid (GameState.players gs) of
 -- way: it answers one residual cost per set of symbols a
 -- substitute could pay for, each with the components that spends
 -- (`manaSubstitutions`), and this asks `any` of those too. A CAST passes
--- `manaSubstitutions` and an ACTIVATION `waterbendSubstitutions`, which is
--- the waterbend half alone; `canPayReading` asks the latter's the same way.
+-- `manaSubstitutions` and an ACTIVATION `statedSubstitutions`, which is
+-- the cost's own half alone; `canPayReading` asks the latter's the same way.
 canPaySomeCompletion :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PaymentSubject.PaymentSubject -> ManaSpending.ManaSpending -> PlayerId -> ObjectId -> (ManaCost.ManaCost -> [ManaCost.ManaCost]) -> (ManaCost.ManaCost -> [(ManaCost.ManaCost, [(Keyword.Substitute, Natural)])]) -> Cost Keyword.Type.Keyword -> GameState -> Bool
 canPaySomeCompletion slots subject spending pid oid total_ substitute cost gs =
   let pcs = Projection.projectAll gs
@@ -4007,6 +4020,7 @@ targetComputed component = case component of
   CostComponent.ChooseOpponent _ -> False
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
+  CostComponent.TapInsteadOfMana _ -> False
 
 -- | CR 601.2b: the reserved slot a payment of this component binds for a later
 -- "if" to read through Quantity.WasBound, known from the announcement alone --
@@ -4059,6 +4073,7 @@ announcedRecord component = case component of
   CostComponent.ChooseOpponent _ -> Nothing
   CostComponent.Waterbend _ -> Just Binding.waterbendCost
   CostComponent.WaterbendInstead _ -> Nothing
+  CostComponent.TapInsteadOfMana _ -> Nothing
 
 -- | `announcedRecord` over a whole cost.
 announcedRecords :: Cost Keyword.Type.Keyword -> Set.Set SlotName.SlotName
@@ -4107,6 +4122,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.ChooseOpponent _ -> 0
   CostComponent.Waterbend _ -> 0
   CostComponent.WaterbendInstead _ -> 0
+  CostComponent.TapInsteadOfMana _ -> 0
   CostComponent.ExileThisFrom _ -> 0
   CostComponent.ExileThis -> 0
   CostComponent.ExileCardsFromGraveyard {} -> 0
@@ -4160,6 +4176,7 @@ energyOwedByComponent component = case component of
   CostComponent.ChooseOpponent _ -> 0
   CostComponent.Waterbend _ -> 0
   CostComponent.WaterbendInstead _ -> 0
+  CostComponent.TapInsteadOfMana _ -> 0
   CostComponent.ExileThisFrom _ -> 0
   CostComponent.ExileThis -> 0
   CostComponent.ExileCardsFromGraveyard {} -> 0
@@ -4223,6 +4240,7 @@ countersOwedByComponent component = case component of
   CostComponent.ChooseOpponent _ -> []
   CostComponent.Waterbend _ -> []
   CostComponent.WaterbendInstead _ -> []
+  CostComponent.TapInsteadOfMana _ -> []
   CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
   CostComponent.ExileCardsFromGraveyard {} -> []
@@ -4547,6 +4565,7 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- half gates.
   CostComponent.Waterbend amount -> payableAnnounced amount (const True)
   CostComponent.WaterbendInstead _ -> True
+  CostComponent.TapInsteadOfMana _ -> True
   -- CR 701.17b's last sentence, stated of costs in as many words: "the player
   -- can't pay a cost that includes milling a number of cards greater than the
   -- number of cards in their library". Not the general "as many as possible" of
@@ -4789,6 +4808,8 @@ criteriaOf component = case component of
   -- no word of a card's is in it, so CR 612.2 has nothing to swap.
   CostComponent.Waterbend _ -> []
   CostComponent.WaterbendInstead _ -> []
+  -- PRINTED, unlike the two above, so CR 612.2 has a word to swap in it.
+  CostComponent.TapInsteadOfMana criterion -> [criterion]
   CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
   CostComponent.MillCards _ -> []
@@ -5133,7 +5154,7 @@ restoreKeepingLibraryActions before = do
 -- substitution applies and CR 701.67a's taps stand in the same way, and before
 -- CR 601.2h's payment. WHICH offer is the
 -- caller's: a cast passes `manaSubstitutions` and every other payment
--- `waterbendSubstitutions`.
+-- `statedSubstitutions`.
 --
 -- FILTERED, NOT TRUSTED. CR 118.3 is the filter: an entry whose taps or exiles
 -- the board cannot satisfy together is never offered. An unrecognised answer reads as the
@@ -5141,7 +5162,7 @@ restoreKeepingLibraryActions before = do
 -- fallback must not tap a creature the payer did not offer up.
 --
 -- ELIDED where one entry is left, which is every cast by a spell with none of
--- the keywords, every activation of a cost stating no waterbend, and every board
+-- the keywords, every activation of a cost stating no offer, and every board
 -- with no eligible object: rule 702.51a's and rule 701.67a's "you may" then have
 -- nothing to ask.
 --
@@ -5256,10 +5277,10 @@ announceSubstitutionsReading slots substituting pid oid cost = case Cost.mana co
 -- `perform` is CR 405.6c's executor, carried down to the mana window for a mana
 -- ability that has an effect beyond its mana (Parun.Types.ManaAbilityPerformer).
 --
--- CR 701.67a's taps are offered (`waterbendSubstitutions`), `canPay`'s offer, so
+-- CR 701.67a's taps are offered (`statedSubstitutions`), `canPay`'s offer, so
 -- the gate and the payment agree about a waterbend cost.
 pay :: ManaAbilityPerformer.ManaAbilityPerformer -> GameState -> PaymentMoment.PaymentMoment -> PaymentSubject.PaymentSubject -> Maybe ObjectId -> ManaSpending.ManaSpending -> PlayerId -> ObjectId -> Cost Keyword.Type.Keyword -> Game Payment.Payment
-pay perform began moment subject announced spending pid oid cost = fmap fst (paySubstituting (const False) perform began [] moment subject announced spending pid oid (announceSubstitutions waterbendSubstitutions pid oid) cost)
+pay perform began moment subject announced spending pid oid cost = fmap fst (paySubstituting (const False) perform began [] moment subject announced spending pid oid (announceSubstitutions statedSubstitutions pid oid) cost)
 
 -- CR 116's special actions pay their costs here, every one of them, in the
 -- rules' order: gate at the least X (`actionPayableAt`), name CR 107.3d's X
@@ -5325,7 +5346,7 @@ payReading slots perform began moment subject spending pid oid cost = Monad.join
 
 -- `payReading` split at its mana window (`paySubstitutingReadingThen`).
 payReadingThen :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> ManaAbilityPerformer.ManaAbilityPerformer -> GameState -> PaymentMoment.PaymentMoment -> PaymentSubject.PaymentSubject -> ManaSpending.ManaSpending -> PlayerId -> ObjectId -> Cost Keyword.Type.Keyword -> Game (Game Payment.Payment)
-payReadingThen slots perform began moment subject spending pid oid cost = fmap (fmap fst) (paySubstitutingReadingThen (const False) slots perform began [] moment subject Nothing spending pid oid (announceSubstitutionsReading slots waterbendSubstitutions pid oid) cost)
+payReadingThen slots perform began moment subject spending pid oid cost = fmap (fmap fst) (paySubstitutingReadingThen (const False) slots perform began [] moment subject Nothing spending pid oid (announceSubstitutionsReading slots statedSubstitutions pid oid) cost)
 
 -- `pay` with CR 702.51a's, CR 702.66a's and CR 702.126a's substitution offered
 -- INSIDE the mana window rather than ahead of it, and the components it adds
@@ -5872,6 +5893,7 @@ paidInSecondPass component = case component of
   CostComponent.ChooseOpponent _ -> False
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
+  CostComponent.TapInsteadOfMana _ -> False
   -- CR 701.20b moves nothing out of any zone, so rule 601.2h's library half has
   -- nothing to ask of it.
   CostComponent.RevealCardFromHand _ -> False
@@ -5991,6 +6013,7 @@ sourceOnly component = case component of
   CostComponent.ChooseOpponent _ -> Nothing
   CostComponent.Waterbend _ -> Nothing
   CostComponent.WaterbendInstead _ -> Nothing
+  CostComponent.TapInsteadOfMana _ -> Nothing
   CostComponent.MillCards _ -> Nothing
   CostComponent.RevealTopOfLibrary _ -> Nothing
   CostComponent.PayLife _ -> Nothing
@@ -6078,6 +6101,7 @@ orderSensitive component = case component of
   -- could have spent, ChooseOpponent's answer just above.
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
+  CostComponent.TapInsteadOfMana _ -> False
   -- CR 701.17a puts a card into a graveyard, which a graveyard-reading part of
   -- the same cost could then spend (Circling Vultures' "the top creature card of
   -- your graveyard"). Alone in CR 601.2h's second pass on this pool, but a combat
@@ -7766,6 +7790,9 @@ payPayable perform moment paidFor slots pid oid component = case component of
   CostComponent.WaterbendInstead _ -> do
     State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.Waterbend pid)))
     pure bindsNothing
+  -- NOTHING TO PAY, Waterbend's reason: a licence `announceSubstitutions` has
+  -- already cashed into a TapPermanents component. No rule gives it an event.
+  CostComponent.TapInsteadOfMana _ -> pure bindsNothing
   -- CR 406.2's move, through the Event.changeZone funnel, so the card gets a CR
   -- 400.7 incarnation and anything watching a graveyard- or hand-to-exile move
   -- sees it. No prompt: the cost names this card.

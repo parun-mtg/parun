@@ -290,6 +290,7 @@ costMovesLibraryCard component = case component of
   CostComponent.ChooseOpponent _ -> False
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
+  CostComponent.TapInsteadOfMana _ -> False
 
 -- CR 605: does this effect add mana, and on what instruction? Read by
 -- Mana.isManaAbility to keep mana abilities off the stack, and by

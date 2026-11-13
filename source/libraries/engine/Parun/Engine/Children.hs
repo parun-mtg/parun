@@ -2015,6 +2015,7 @@ costComponentChildren c component = case component of
   CostComponent.ChooseOpponent _ -> pure component
   CostComponent.Waterbend amount -> CostComponent.Waterbend <$> costAmountChildren c amount
   CostComponent.WaterbendInstead _ -> pure component
+  CostComponent.TapInsteadOfMana criterion -> CostComponent.TapInsteadOfMana <$> costFilter c criterion
 
 -- | An amount a cost component names: only an announced one holds a slot.
 costAmountChildren :: (Applicative f) => CostChildren keyword f -> CostAmount.CostAmount -> f CostAmount.CostAmount

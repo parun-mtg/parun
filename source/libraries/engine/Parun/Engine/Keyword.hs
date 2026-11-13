@@ -4156,7 +4156,7 @@ foretellCosts keywords =
 -- and mint the component: the arms differ in the ZONE they spend out of, in what
 -- spending means there, and in whether CR 702.51c records the spending.
 data Substitute
-  = -- | CR 702.126a / 701.67a: tap one untapped permanent the Filter admits.
+  = -- | CR 702.126a / 701.67a / 602.1e: tap one untapped permanent the Filter admits.
     TapUntapped (Filter Keyword)
   | -- | CR 702.51a / 702.51c: tap one untapped creature the Filter admits, which convokes the spell.
     TapToConvoke (Filter Keyword)

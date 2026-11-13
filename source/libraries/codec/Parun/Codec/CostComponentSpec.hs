@@ -384,6 +384,13 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       codec
       (CostComponent.WaterbendInstead 3)
       " {\"type\":\"WaterbendInstead\",\"value\":3} "
+  -- CR 602.1e's offer: a bare criterion.
+  Spec.it s "TapInsteadOfMana" $
+    Common.assertCodec
+      s
+      codec
+      (CostComponent.TapInsteadOfMana (Filter.HasCardType CardType.Creature))
+      " {\"type\":\"TapInsteadOfMana\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
   -- CR 107.3a's variable of the same cost: the amount arrives with the
   -- announcement rather than off the card (Parun.Engine.Cost.substituteX).
   Spec.it s "Waterbend of an announced X" $

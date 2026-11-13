@@ -1,0 +1,140 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Heirloom Epic",
+            "label": "epic",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-1",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-2",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-3",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-4",
+            "ready": false
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-5",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 602.1e Heirloom Epic's {4} is paid by tapping four creatures, one of them summoning-sick",
+  "final": [
+    {
+      "Count": {
+        "card": "Mountain",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Mountain",
+        "count": 1,
+        "player": "alice",
+        "zone": "Library"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$epic",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-1",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-2",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-3",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-4",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-5",
+        "tapped": false
+      }
+    }
+  ],
+  "note": "No land: the four taps are the whole payment. The fourth Piker is not ready, and CR 302.6 stops only the tap symbol.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTaps",
+          "with": [
+            "$piker-1",
+            "$piker-2",
+            "$piker-3",
+            "$piker-4"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "cost": [],
+          "object": "$epic"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

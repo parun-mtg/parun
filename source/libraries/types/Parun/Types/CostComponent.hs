@@ -269,4 +269,6 @@ data CostComponent keyword
     -- alternative cost rather than an additional one, so it binds no record
     -- (Hama, the Bloodbender; Parun.Engine.Cost.permissionCost).
     WaterbendInstead Natural.Natural
+  | -- | CR 602.1e / Heirloom Epic: the payer may tap a permanent the Filter admits rather than pay each mana of the total cost.
+    TapInsteadOfMana (Filter.Filter keyword)
   deriving (Eq, Ord, Show)

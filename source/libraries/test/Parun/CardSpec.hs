@@ -3131,6 +3131,8 @@ costComponentFilters component = case component of
   CostComponent.ChooseOpponent _ -> []
   CostComponent.Waterbend _ -> []
   CostComponent.WaterbendInstead _ -> []
+  -- Heirloom Epic's "an untapped creature you control".
+  CostComponent.TapInsteadOfMana f -> [f]
 
 -- The Filter narrowing a target slot's CR 115 pool -- "target creature with
 -- flying" -- and CR 303.4a's enchant slot, which is a TargetSlot too.
