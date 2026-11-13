@@ -541,8 +541,8 @@ offerOf gs prompt = case prompt of
         ("filter", Reply.encode (Reply.viaCodec (Codec.Filter.codec Codec.Keyword.codec)) namer restriction),
         ("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.viaCodec Codec.CardName.codec))) namer earlier)
       ]
-  -- CR 205.3: every member of the family.
-  Prompt.ChooseSubtype _ _ source family -> choosing prompt "options" (Just source) [] (filter (Subtype.inFamily family) [minBound ..])
+  -- CR 205.3: every member of the family, or of the card's list of them.
+  Prompt.ChooseSubtype _ _ source family among -> choosing prompt "options" (Just source) [] (filter (Subtype.offered family among) [minBound ..])
   -- CR 612.2: the families the swap is drawn from and the words the new one
   -- may not be; not the pairs, which number in the tens of thousands for
   -- creature types.

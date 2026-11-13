@@ -108,8 +108,8 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseCardInHand _ _ _ candidates -> Generator.pick candidates
   Prompt.ChooseColor _ _ _ colors -> Generator.pick colors
   Prompt.ChooseManaType _ _ _ types -> Generator.pick types
-  -- CR 205.3: any member of the family.
-  Prompt.ChooseSubtype _ _ _ family -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (Subtype.inFamily family) [minBound ..])
+  -- CR 205.3: any member of the family, or of the card's list of them.
+  Prompt.ChooseSubtype _ _ _ family among -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) (filter (Subtype.offered family among) [minBound ..])
   -- The printed "and/or": any nonempty group of the places.
   Prompt.ChooseSearchZones _ _ places -> someOf places
   Prompt.ChooseCost _ _ _ candidates _ -> pickOr (Replay.defaultAnswer (Asked.prompt asked)) candidates

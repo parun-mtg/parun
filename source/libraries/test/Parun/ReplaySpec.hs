@@ -510,13 +510,17 @@ combatReplaySpec s =
         -- one naming Mountain, and Mountain is exactly what defaultAnswer falls
         -- back to, so an undistinguished Mountain would hide the bug.
         Spec.it s "ChooseSubtype records and replays a basic land type" $ do
-          let p = Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.BasicLandType
+          let p = Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.BasicLandType Nothing
           Monad.forM_ [Subtype.Plains, Subtype.Island, Subtype.Swamp, Subtype.Mountain, Subtype.Forest] $ \subtype ->
             Spec.assertEqWith s "round trip" (Replay.decode p (Replay.encode p subtype)) (Just subtype)
         -- CR 305.6: a transcript that runs short still answers with one of the
         -- five.
         Spec.it s "defaultAnswer chooses Mountain" $
-          Spec.assertEqWith s "Mountain" (Replay.defaultAnswer (Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.BasicLandType)) Subtype.Mountain
+          Spec.assertEqWith s "Mountain" (Replay.defaultAnswer (Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.BasicLandType Nothing)) Subtype.Mountain
+        -- CR 614.12a: a printed list (Eclipsed Realms) admits only its own, so
+        -- the family's Goblin is no answer to one without it.
+        Spec.it s "defaultAnswer chooses a listed subtype's first" $
+          Spec.assertEqWith s "Kithkin" (Replay.defaultAnswer (Prompt.ChooseSubtype decider S.alice oid SubtypeFamily.CreatureType (Just (Subtype.Kithkin NonEmpty.:| [Subtype.Treefolk])))) Subtype.Kithkin
         -- CR 702.155b / 715.3b: the chapter a Saga with read ahead enters on.
         -- Round-tripped at 2 and 3 rather than at 1, since 1 is what
         -- defaultAnswer falls back to and a collapsing codec would hide behind

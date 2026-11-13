@@ -826,7 +826,7 @@ afterChoice answers modal =
 writesColors :: ChosenQuality.ChosenQuality -> Bool
 writesColors quality = case quality of
   ChosenQuality.Colors _ -> True
-  ChosenQuality.Subtype _ -> False
+  ChosenQuality.Subtype _ _ -> False
   ChosenQuality.CardType -> False
   ChosenQuality.Number _ -> False
   ChosenQuality.Parity -> False
@@ -836,7 +836,7 @@ writesColors quality = case quality of
 writesSubtype :: ChosenQuality.ChosenQuality -> Bool
 writesSubtype quality = case quality of
   ChosenQuality.Colors _ -> False
-  ChosenQuality.Subtype _ -> True
+  ChosenQuality.Subtype _ _ -> True
   ChosenQuality.CardType -> False
   ChosenQuality.Number _ -> False
   ChosenQuality.Parity -> False
@@ -846,7 +846,7 @@ writesSubtype quality = case quality of
 writesCardType :: ChosenQuality.ChosenQuality -> Bool
 writesCardType quality = case quality of
   ChosenQuality.Colors _ -> False
-  ChosenQuality.Subtype _ -> False
+  ChosenQuality.Subtype _ _ -> False
   ChosenQuality.CardType -> True
   ChosenQuality.Number _ -> False
   ChosenQuality.Parity -> False
@@ -3674,7 +3674,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         draw = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing)
     Monad.forM_
       [ (Filter.Type.HasChosenColor, ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1), hasChosenColorCounts, hasChosenColorTag),
-        (Filter.Type.HasChosenSubtype, ChosenQuality.Subtype SubtypeFamily.BasicLandType, hasChosenSubtypeCounts, hasChosenSubtypeTag),
+        (Filter.Type.HasChosenSubtype, ChosenQuality.Subtype SubtypeFamily.BasicLandType Nothing, hasChosenSubtypeCounts, hasChosenSubtypeTag),
         (Filter.Type.HasChosenCardType, ChosenQuality.CardType, hasChosenCardTypeCounts, hasChosenCardTypeTag)
       ]
       $ \(atom, quality, counts, tag) -> do

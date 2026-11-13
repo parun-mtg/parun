@@ -7,6 +7,7 @@
 -- effect's.
 module Parun.Engine.Subtype where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -81,13 +82,17 @@ isBasicLandType = Maybe.isJust . subtypeMana
 isPlaneswalkerType :: Subtype.Subtype -> Bool
 isPlaneswalkerType = Set.member CardType.Planeswalker . correlatedCardTypes
 
--- | CR 205.3: is this subtype on the family's list, the options a
--- Prompt.ChooseSubtype offers.
+-- | CR 205.3: is this subtype on the family's list.
 inFamily :: SubtypeFamily.SubtypeFamily -> Subtype.Subtype -> Bool
 inFamily family = case family of
   SubtypeFamily.BasicLandType -> isBasicLandType
   SubtypeFamily.CreatureType -> isCreatureType
   SubtypeFamily.PlaneswalkerType -> isPlaneswalkerType
+
+-- | CR 205.3: is this subtype one a Prompt.ChooseSubtype offers: the listed
+-- ones where the card lists them (Eclipsed Realms), else all of the family.
+offered :: SubtypeFamily.SubtypeFamily -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Subtype.Subtype -> Bool
+offered family = maybe (inFamily family) (flip elem)
 
 -- | CR 205.3i
 isLandType :: Subtype.Subtype -> Bool

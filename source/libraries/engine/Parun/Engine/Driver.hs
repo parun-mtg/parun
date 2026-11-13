@@ -166,7 +166,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseTargets decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.AnnounceTargets decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseWordSwap decider _ _ _ _ _ -> Just (Decider.unwrap decider)
-  Prompt.ChooseSubtype decider _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.ChooseSubtype decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseParity decider _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseWord decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseSearchZones decider _ _ -> Just (Decider.unwrap decider)

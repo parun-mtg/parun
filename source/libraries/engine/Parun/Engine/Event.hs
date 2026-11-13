@@ -5733,7 +5733,9 @@ chooseQualityAs candidate quality oid = do
 -- range ("the color or colors of your choice") first asks how many, as a
 -- Prompt.ChooseNumber, and a fixed count asks nothing. A subtype family's
 -- members (CR 305.6, 205.3m, 205.3j) are always all legal and
--- distinguishable, so there is no one-option case to elide. Every family
+-- distinguishable, so there is no one-option case to elide; where the card
+-- lists the types (Eclipsed Realms) only those are offered, and an answer
+-- outside them is filtered rather than trusted. Every family
 -- writes Object.chosenSubtype: no printing makes two such choices, and CR
 -- 607.2d links each to the ability that reads it. A card type is any of CR 205.2a's,
 -- and every one is offered. A parity is written to
@@ -5757,10 +5759,12 @@ chooseQuality quality chooser acquisition oid = case quality of
           pure (maybe chosen (`Set.insert` chosen) picked)
     picked <- Monad.foldM pick Set.empty [1 .. count]
     State.modify' (Game.recordChoice Chosen.Colors acquisition (const (Just picked)) oid)
-  ChosenQuality.Subtype family -> do
+  ChosenQuality.Subtype family among -> do
     gs <- State.get
-    picked <- Game.choose (Prompt.ChooseSubtype (Decide.deciderFor chooser gs) chooser oid family)
-    State.modify' (Game.recordChoice Chosen.Subtype acquisition (const (Just picked)) oid)
+    picked <- case among of
+      Nothing -> Just <$> Game.choose (Prompt.ChooseSubtype (Decide.deciderFor chooser gs) chooser oid family Nothing)
+      Just listed -> Game.chooseAmong (\decider who offered -> Prompt.ChooseSubtype decider who oid family (Just offered)) chooser (NonEmpty.toList listed)
+    Foldable.for_ picked $ \subtype -> State.modify' (Game.recordChoice Chosen.Subtype acquisition (const (Just subtype)) oid)
   ChosenQuality.CardType -> do
     gs <- State.get
     picked <- Game.choose (Prompt.ChooseCardType (Decide.deciderFor chooser gs) chooser oid (minBound NonEmpty.:| [succ minBound .. maxBound]))
