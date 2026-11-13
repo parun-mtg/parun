@@ -68,6 +68,9 @@ codec = Fields.object $ do
   -- Defaulted: an absent key is a search that does not print "exactly",
   -- which is nearly every card file.
   exactly <- Fields.defaulted "exactly" False Common.boolean Search.exactly
+  -- Defaulted: an absent key is a search of the whole library, which is
+  -- nearly every card file.
+  top <- Fields.defaulted "top" Nothing (Common.maybe Quantity.codec) Search.top
   pure
     Search.MkSearch
       { Search.searcher = searcher,
@@ -86,5 +89,6 @@ codec = Fields.object $ do
         Search.librarySlot = librarySlot,
         Search.differentIn = differentIn,
         Search.exactly = exactly,
-        Search.andOr = andOr
+        Search.andOr = andOr,
+        Search.top = top
       }

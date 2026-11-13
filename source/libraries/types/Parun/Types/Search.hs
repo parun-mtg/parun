@@ -164,6 +164,15 @@ data Search = MkSearch
     -- look through (Parun.Types.Prompt.ChooseSearchZones), or by "and", Ancient
     -- Vendetta's "graveyard, hand, and library", which looks through every one
     -- (CR 701.23a).
-    andOr :: Bool
+    andOr :: Bool,
+    -- | How many of the library's top cards the instruction looks through in
+    -- place of the whole (CR 701.23a) -- Assemble the Team's "the top third of
+    -- your library, rounded up" -- or 'Nothing' for a search of all of it.
+    --
+    -- A Quantity rather than a fraction: the card's own sentence is a count of
+    -- the library divided and rounded (CR 107.1a), which Parun.Types.Quotient
+    -- already says. Only the library is narrowed, as
+    -- Parun.Types.PlayerEffect.SearchesTopOfLibraries narrows it from outside.
+    top :: Maybe Quantity.Quantity
   }
   deriving (Eq, Ord, Show)

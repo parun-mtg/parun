@@ -46,10 +46,11 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.librarySlot = Just (SlotName.MkSlotName (Text.pack "library")),
             Search.differentIn = Set.fromList [DifferentIn.Names, DifferentIn.Powers],
             Search.exactly = True,
-            Search.andOr = True
+            Search.andOr = True,
+            Search.top = Just (Quantity.Literal 3)
           }
       )
-      " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"InSlot\",\"value\":\"player\"},\"zones\":[\"Library\",\"Graveyard\"],\"outsideTheGame\":true,\"andOr\":true,\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"descriptions\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HasCardType\",\"value\":\"Artifact\"}],\"upTo\":true,\"destination\":\"BattlefieldTapped\",\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":2}}],\"slot\":\"found\",\"handSlot\":\"hand\",\"librarySlot\":\"library\",\"differentIn\":[\"Names\",\"Powers\"],\"exactly\":true} "
+      " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"InSlot\",\"value\":\"player\"},\"zones\":[\"Library\",\"Graveyard\"],\"outsideTheGame\":true,\"andOr\":true,\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"descriptions\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HasCardType\",\"value\":\"Artifact\"}],\"upTo\":true,\"destination\":\"BattlefieldTapped\",\"counters\":[{\"kind\":{\"type\":\"PlusOnePlusOne\"},\"count\":{\"type\":\"Literal\",\"value\":2}}],\"slot\":\"found\",\"handSlot\":\"hand\",\"librarySlot\":\"library\",\"differentIn\":[\"Names\",\"Powers\"],\"exactly\":true,\"top\":{\"type\":\"Literal\",\"value\":3}} "
   -- The other reading of the same count: no "upTo" key means the quantity is a
   -- quota. Paired with the case above so each key's absence is asserted, not
   -- just its presence -- a required key would have made every card file
@@ -76,7 +77,8 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.librarySlot = Nothing,
             Search.differentIn = Set.empty,
             Search.exactly = False,
-            Search.andOr = False
+            Search.andOr = False,
+            Search.top = Nothing
           }
       )
       " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"destination\":\"BattlefieldTapped\"} "
@@ -105,7 +107,8 @@ spec s = Spec.describe s "Parun.Codec.Search" $ do
             Search.librarySlot = Nothing,
             Search.differentIn = Set.empty,
             Search.exactly = False,
-            Search.andOr = False
+            Search.andOr = False,
+            Search.top = Nothing
           }
       )
       " {\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":null,\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"destination\":\"Exile\"} "
