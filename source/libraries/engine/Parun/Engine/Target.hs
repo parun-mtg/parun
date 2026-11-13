@@ -1238,9 +1238,9 @@ stillLegal kind reader perspective bindings acquisition source recipient slot gs
 -- (Reunion of the House's ruling, "the entire selection of targets is
 -- illegal"). The total is over the targets still legal alone
 -- (docs/decisions.md, "A capped target set is re-totalled over its legal
--- targets"). data/scenarios/target's Cytoshape cases prove both; totalling
--- every recipient instead reddens neither, a departed target's object being
--- gone (CR 400.7) and weighing nothing.
+-- targets"). data/scenarios/target's Cytoshape cases prove both. Totalling
+-- every recipient instead reddens only the hexproof one: a departed target's
+-- object is gone (CR 400.7) and weighs nothing.
 stillLegalAmong :: StackObjectKind.StackObjectKind -> Maybe AbilityName.AbilityName -> Maybe PlayerId -> Map SlotName Binding.Type.Binding -> Acquisition.Acquisition -> ObjectId -> TargetSlot -> Set Recipient -> GameState -> Set Recipient
 stillLegalAmong kind reader perspective bindings acquisition source slot recipients gs =
   let alone = Set.filter (\recipient -> stillLegal kind reader perspective bindings acquisition source recipient slot gs) recipients
