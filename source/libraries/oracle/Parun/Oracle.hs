@@ -239,7 +239,6 @@ trailingWord effect = case Text.breakOnEnd (Text.pack " if ") effect of
 activated :: Target.Context -> ActivatedAbility.ActivatedAbility Card.Card Continuous.Ability -> [Text.Text]
 activated context a
   | null (ActivatedAbility.maximumX a),
-    ActivatedAbility.minimumX a == 0,
     Maybe.isNothing (ActivatedAbility.definedX a),
     ActivatedAbility.activator a == Activator.Related PlayerRelation.You,
     Maybe.isNothing (ActivatedAbility.condition a),

@@ -146,6 +146,11 @@ data Face card = MkFace
     -- apply in. Read off the face of a card in its owner's command zone, where
     -- CR 315.3 keeps a conspiracy.
     claimsStartingPlayer :: Bool,
+    -- | CR 315.5a: how many cards this card's additional opening hand holds,
+    -- where it prints "draw an additional hand", or Nothing. A printed field
+    -- for claimsStartingPlayer's reason; its reader is
+    -- Parun.Engine.Mulligan.additionalHandSizes.
+    additionalHand :: Maybe Natural.Natural,
     -- | CR 407.3: whether this card prints "Remove this card from your deck
     -- before playing if you're not playing for ante". A printed flag for
     -- claimsStartingPlayer's reason: its reader (Parun.Engine.Ante.barred) runs
@@ -446,7 +451,8 @@ data Face card = MkFace
     maximumX :: [Quantity.Quantity],
     -- | CR 101.1: the floor this face's own words put on that X -- Mind Grind's
     -- "X can't be 0". 0 for a face that states none. A SPELL's X alone, as
-    -- above; an ability's is Parun.Types.ActivatedAbility.minimumX.
+    -- above; an ability's, or one alternative cost's, rides that cost
+    -- (Parun.Types.CostComponent's VariableAtLeast).
     minimumX :: Natural.Natural,
     -- | CR 118.9: this face's printed alternative costs, which its controller MAY
     -- pay rather than the spell's mana cost (Fireblast). CR 118.9c: this does not

@@ -509,7 +509,6 @@ manaSpec s registry = Spec.describe s "Mana" $ do
               ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
               ActivatedAbility.modal = Mint.oneMode (Seq.singleton (Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored Color.Green)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False))),
               ActivatedAbility.maximumX = [],
-              ActivatedAbility.minimumX = 0,
               ActivatedAbility.definedX = Nothing,
               ActivatedAbility.restrictions = [],
               ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -530,7 +529,6 @@ manaSpec s registry = Spec.describe s "Mana" $ do
                   (Map.singleton (SlotName.MkSlotName (Text.pack "x")) (TargetSlot.required Pool.AnyTarget Nothing))
                   (Seq.singleton (Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored Color.Green)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False))),
               ActivatedAbility.maximumX = [],
-              ActivatedAbility.minimumX = 0,
               ActivatedAbility.definedX = Nothing,
               ActivatedAbility.restrictions = [],
               ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -551,7 +549,6 @@ manaSpec s registry = Spec.describe s "Mana" $ do
                   (Map.singleton (SlotName.MkSlotName (Text.pack "x")) (TargetSlot.required Pool.AnyTarget Nothing))
                   (Seq.singleton (Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "x"))) (Quantity.Literal 1))) Nothing Nothing Nothing Nothing Nothing))),
               ActivatedAbility.maximumX = [],
-              ActivatedAbility.minimumX = 0,
               ActivatedAbility.definedX = Nothing,
               ActivatedAbility.restrictions = [],
               ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -2142,26 +2139,25 @@ foodChainSpec s registry = Spec.describe s "Food Chain" $ do
 
   -- The wide board again, with a second claimant on the creatures: each makes
   -- Food Chain's group CONTESTED, so it may take fewer of them, yet the walk
-  -- stays small.
-  Spec.it s "CR 118.3 Food Chain beside forty-five creatures and a rival for them still answers at once" $ do
+  -- stays small. A case per rival, so the three run in parallel.
+  Foldable.for_ ["Food Chain", "Blood Pet", "Ashnod's Altar"] $ \rivalName -> Spec.it s ("CR 118.3 Food Chain beside forty-five creatures and a rival for them, " <> rivalName <> ", still answers at once") $ do
     chain <- S.printingOf s registry "Food Chain"
     creatures <- traverse (S.printingOf s registry) ["Crimson Kobolds", "Aegis Turtle", "Alpha Myr", "Alaborn Trooper", "Axebane Beast", "Ancient Carp", "Alpha Tyrranax", "Axebane Stag", "Ancient Brontodon"]
-    rivals <- traverse (S.printingOf s registry) ["Food Chain", "Blood Pet", "Ashnod's Altar"]
+    rival <- S.printingOf s registry rivalName
     progenitus <- S.printingOf s registry "Progenitus"
-    Foldable.for_ rivals $ \rival -> do
-      let (held, oid) =
-            S.handOne
-              progenitus
-              ( Game.overTurn
-                  ( \registers ->
-                      registers
-                        { TurnRegisters.phase = Phase.PrecombatMain,
-                          TurnRegisters.remaining = Seq.empty
-                        }
-                  )
-                  (alicePermanents (chain : rival : concatMap (replicate 5) creatures))
-              )
-      Spec.assertBool s (S.castable S.alice oid held) "Progenitus is offered"
+    let (held, oid) =
+          S.handOne
+            progenitus
+            ( Game.overTurn
+                ( \registers ->
+                    registers
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.remaining = Seq.empty
+                      }
+                )
+                (alicePermanents (chain : rival : concatMap (replicate 5) creatures))
+            )
+    Spec.assertBool s (S.castable S.alice oid held) "Progenitus is offered"
 
   -- A CONTESTED creature Food Chain must still take: Blood Pet's mana value
   -- is 1, so exiling it adds two of a colour where sacrificing it adds one
@@ -4797,7 +4793,7 @@ atLife n gs = gs {GameState.players = Map.adjust (\p -> p {Player.life = n}) S.a
 theAbility :: Printing.Printing -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
 
 -- CR 106.3's count read off the BOARD rather than off the card: Cabal Coffers
 -- (Torment) prints "{2}, {T}: Add {B} for each Swamp you control." Oracle text

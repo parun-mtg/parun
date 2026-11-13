@@ -192,6 +192,7 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.ChooseRepeat {} -> "ChooseRepeat"
   Prompt.OrderTimestamps {} -> "OrderTimestamps"
   Prompt.OrderManaActivations {} -> "OrderManaActivations"
+  Prompt.KeepHand {} -> "KeepHand"
   Prompt.DeclareMulligan {} -> "DeclareMulligan"
   Prompt.Bottom {} -> "Bottom"
   Prompt.MulliganAction {} -> "MulliganAction"

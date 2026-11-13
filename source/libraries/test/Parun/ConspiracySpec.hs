@@ -21,6 +21,13 @@
 -- checked against api.scryfall.com 2026-09-29, paper printing `cns`) is CR
 -- 103.1c's card, and Parun.Engine.Setup.claimStartingPlayer its reader.
 --
+-- Backup Plan (Conspiracy, no mana cost; "(Start the game with this conspiracy
+-- face up in the command zone.) Draw an additional hand of seven cards as the
+-- game begins. Before taking mulligans, shuffle all but one of your hands into
+-- your library." -- checked against api.scryfall.com 2026-11-13, paper printing
+-- `cns`) is CR 315.5a's card, and Parun.Engine.Mulligan.additionalHands its
+-- reader.
+--
 -- Immediate Action (Conspiracy, no mana cost; "Hidden agenda (Start the game
 -- with this conspiracy face down in the command zone and secretly choose a card
 -- name. You may turn this conspiracy face up any time and reveal that name.)
@@ -65,6 +72,7 @@ import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProjectedCharacteristics as PC
@@ -72,6 +80,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RestartSignal as RestartSignal
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.Sickness as Sickness
+import qualified Parun.Types.Status as Status
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
 import qualified Parun.Types.Zone as Zone
@@ -108,6 +117,8 @@ data Asked
   = DeclaredBy PlayerId.PlayerId
   | DrewFrom [PlayerId.PlayerId]
   | NamedBy PlayerId.PlayerId ObjectId
+  | KeptAmong PlayerId.PlayerId [[ObjectId]]
+  | Shuffled Int
   deriving (Eq, Show)
 
 -- The name every CR 702.106a choice below is answered with.
@@ -131,6 +142,28 @@ recording pick p = case p of
     State.modify' (DrewFrom (NonEmpty.toList candidates) :)
     pure (Maybe.fromMaybe (NonEmpty.head candidates) (Maybe.listToMaybe (drop pick (NonEmpty.toList candidates))))
   _ -> pure (S.identityAnswer p)
+
+-- `recording 0`, but keeping the hand at index `keep` of those CR 315.5a
+-- offers, and recording that ask and the size of every shuffle after it.
+keeping :: Natural -> Prompt.Prompt r -> State.State [Asked] r
+keeping keep p = case p of
+  Prompt.KeepHand _ pid hands -> do
+    State.modify' (KeptAmong pid (NonEmpty.toList hands) :)
+    pure keep
+  Prompt.Shuffle cards -> do
+    State.modify' (\asked -> if any isKept asked then Shuffled (length cards) : asked else asked)
+    pure cards
+  _ -> recording 0 p
+  where
+    isKept asked = case asked of
+      KeptAmong {} -> True
+      _ -> False
+
+-- `started`, answered by `keeping keep`.
+startedKeeping :: Natural -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (GameState.GameState, [Asked])
+startedKeeping keep matchup =
+  let ((_, gs), asked) = State.runState (Engine.runGame (keeping keep) (Setup.emptyGame (fmap fst matchup)) (Setup.newGame S.performer matchup)) []
+   in (gs, reverse asked)
 
 -- The whole of Setup.newGame over this matchup, seated in its order -- so its
 -- head is CR 103.1's determination -- with what `recording pick` was asked.
@@ -263,6 +296,60 @@ spec s registry = Spec.describe s "Conspiracy" $ do
       Spec.assertEqWith s "with Power Play, bob starts the new game" (GameState.turnOrder (restart [powerPlay])) [S.bob, S.alice]
       Spec.assertEqWith s "its first turn his first turn of the game (CR 500.7)" (GameState.turnsBegun (restart [powerPlay])) (Map.singleton S.bob 1)
       Spec.assertEqWith s "without it, alice does" (GameState.turnOrder (restart [])) [S.alice, S.bob]
+
+  -- CR 315.5a: alice brings Backup Plan over thirty Mountains, and bob brings
+  -- nothing. Every board is the whole of Setup.newGame.
+  Spec.describe s "Backup Plan" $ do
+    Spec.it s "CR 315.5a Backup Plan draws a second hand of seven and keeps the one chosen" $ do
+      mountain <- S.printingOf s registry "Mountain"
+      plan <- S.printingOf s registry "Backup Plan"
+      let leg keep = startedKeeping keep ((S.alice, deckOf mountain [plan]) NonEmpty.:| [(S.bob, deckOf mountain [])])
+          (second, asked) = leg 1
+          (first, _) = leg 0
+      case asked of
+        [KeptAmong pid [one, two], Shuffled shuffled, DeclaredBy a, DeclaredBy b] -> do
+          Spec.assertEqWith s "alice is the one asked" pid S.alice
+          Spec.assertEqWith s "of two hands of seven" (fmap length [one, two]) [7, 7]
+          Spec.assertEqWith s "sharing no card" (List.intersect one two) []
+          Spec.assertEqWith s "keeping the second, her hand is the second" (Game.zoneMembers Zone.Hand S.alice second) two
+          Spec.assertEqWith s "keeping the first, it is the first" (Game.zoneMembers Zone.Hand S.alice first) one
+          Spec.assertEqWith s "the other hand is shuffled into her library" shuffled 23
+          Spec.assertEqWith s "which holds every other card" (length (Game.zoneMembers Zone.Library S.alice second)) 23
+          Spec.assertEqWith s "all before any mulligan is declared (CR 103.5)" [a, b] [S.alice, S.bob]
+        _ -> Spec.assertFailure s ("setup: asked " <> show asked)
+      Spec.assertEqWith s "bob, without one, draws one hand" (length (Game.zoneMembers Zone.Hand S.bob second), length (Game.zoneMembers Zone.Library S.bob second)) (7, 23)
+
+    -- Backup Plan's 2014-05-29 ruling: the effect is cumulative.
+    Spec.it s "CR 315.5a two Backup Plans draw three hands and keep one" $ do
+      mountain <- S.printingOf s registry "Mountain"
+      plan <- S.printingOf s registry "Backup Plan"
+      let (gs, asked) = startedKeeping 2 ((S.alice, deckOf mountain [plan, plan]) NonEmpty.:| [(S.bob, deckOf mountain [])])
+      case asked of
+        KeptAmong _ hands@[_, _, third] : Shuffled shuffled : _ -> do
+          Spec.assertEqWith s "three hands of seven" (fmap length hands) [7, 7, 7]
+          Spec.assertEqWith s "she keeps the third" (Game.zoneMembers Zone.Hand S.alice gs) third
+          Spec.assertEqWith s "and the other two are shuffled in" shuffled 23
+        _ -> Spec.assertFailure s ("setup: asked " <> show asked)
+
+    -- CR 313.6: Gerrard's hand modifier is -4, so alice's starting hand is three
+    -- cards, and the additional hand is still the seven Backup Plan prints.
+    Spec.it s "CR 315.5a the additional hand is seven cards whatever the starting hand size" $ do
+      mountain <- S.printingOf s registry "Mountain"
+      plan <- S.printingOf s registry "Backup Plan"
+      gerrard <- S.printingOf s registry "Gerrard"
+      let (_, asked) = startedKeeping 0 ((S.alice, (deckOf mountain [plan]) {Deck.vanguard = Just gerrard}) NonEmpty.:| [(S.bob, deckOf mountain [])])
+      Spec.assertEqWith s "a hand of three and a hand of seven" [fmap length hands | KeptAmong _ hands <- asked] [[3, 7]]
+
+    -- CR 704.5b, and Backup Plan's 2014-05-29 ruling: ten cards cannot fill two
+    -- hands of seven.
+    Spec.it s "CR 704.5b a library too short for the additional hand loses the game" $ do
+      mountain <- S.printingOf s registry "Mountain"
+      plan <- S.printingOf s registry "Backup Plan"
+      let short = (Deck.fromCards (Map.singleton mountain 10)) {Deck.conspiracies = Map.singleton plan 1}
+          (gs, asked) = startedKeeping 0 ((S.alice, short) NonEmpty.:| [(S.bob, deckOf mountain [])])
+      Spec.assertEqWith s "the second hand is the three cards left" [fmap length hands | KeptAmong _ hands <- asked] [[7, 3]]
+      Spec.assertEqWith s "alice drew from an empty library" (GameState.drewFromEmpty gs) (Set.singleton S.alice)
+      Spec.assertEqWith s "and loses when state-based actions are checked" (fmap Player.status (Map.lookup S.alice (GameState.players (S.settleSba gs)))) (Just (Status.Departed Departure.Type.Lost))
 
   -- CR 702.106: alice brings Immediate Action and names Grizzly Bears as it goes
   -- into her command zone. Every board is the whole of Setup.newGame.

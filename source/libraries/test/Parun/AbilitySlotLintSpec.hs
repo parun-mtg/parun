@@ -31,7 +31,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (anyFace, anyFaceOrMinted, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, effectCounts, effectWithNested, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
+import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, effectCounts, effectWithNested, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
@@ -124,6 +124,7 @@ import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.PayBranch as PayBranch
@@ -281,14 +282,16 @@ modalCountsOffend modal =
 -- `abilityBound`: they are stamped for the ability, not for a mode, so every
 -- mode gets them.
 triggeredAbilityOffends :: TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
-triggeredAbilityOffends = triggeredAbilityOffendsGiven Set.empty
+triggeredAbilityOffends = triggeredAbilityOffendsGiven (const Set.empty) Set.empty
 
 -- triggeredAbilityOffends with `inherited` answering reads too: the slots the
 -- bearer's FACE guarantees rather than the condition, CR 400.7d's cost record.
-triggeredAbilityOffendsGiven :: Set.Set SlotName.SlotName -> TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
-triggeredAbilityOffendsGiven inherited ability =
+-- And with `armed` reading for the delayed abilities a mode arms, which only
+-- the bearer's face can name (CardSpec.armedReads).
+triggeredAbilityOffendsGiven :: (Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Set.Set SlotName.SlotName) -> Set.Set SlotName.SlotName -> TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+triggeredAbilityOffendsGiven armed inherited ability =
   modalSlotsOffend
-    (const Set.empty)
+    armed
     ( Set.unions
         [ inherited,
           Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility],
@@ -371,7 +374,12 @@ triggeredAbilityOffendsGiven inherited ability =
 -- Binding.you, so an exemption this lint grants is wider than a mana ability's
 -- other effects get (#4850).
 activatedAbilityOffends :: ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
-activatedAbilityOffends ability =
+activatedAbilityOffends = activatedAbilityOffendsGiven (const Set.empty)
+
+-- activatedAbilityOffends with `armed` reading for the delayed abilities a mode
+-- arms, which only the bearer's face can name (CardSpec.armedReads).
+activatedAbilityOffendsGiven :: (Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Set.Set SlotName.SlotName) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+activatedAbilityOffendsGiven armed ability =
   let announcedX =
         if declaresVariable (ActivatedAbility.cost ability)
           then Set.singleton Binding.variableX
@@ -412,7 +420,7 @@ activatedAbilityOffends ability =
         if any (Maybe.isJust . DefinedX.choice) (ActivatedAbility.definedX ability)
           then Set.singleton Binding.definingCard
           else Set.empty
-   in modalSlotsOffend (const Set.empty) (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, defining, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, totalled, discarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
+   in modalSlotsOffend armed (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, defining, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, totalled, discarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
 
 -- Does this cost tap permanents the payer CHOOSES? sacrificesAsCost's shape, and
 -- the same reason: CR 601.2h's payment binds Binding.tappedPermanent
@@ -856,7 +864,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let cardBound card = Set.insert Binding.triggerSource (Set.unions [armingTargetSlots card, armingEventSlots card, armingCostSlots card, armingPayGateSlots card, armingSpendSlots card, armingCastSlots card, Resolve.definedSlots (cardResolutionEffects card)])
         abilityOffends card ability =
           modalSlotsOffend
-            (const Set.empty)
+            (armedReads card)
             (Set.unions [cardBound card, Event.eventBindingSlots (TriggeredAbility.condition ability), Event.eventBindingSlotsSometimes (TriggeredAbility.condition ability)])
             (TriggeredAbility.modal ability)
         -- The CONDITION's own slot, which modalSlotsOffend never sees: it walks
@@ -1006,7 +1014,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
             else Set.empty
         -- Per face over withMinted, so a minted face inherits only what its OWN
         -- costs bound.
-        cardOffends face = any (\ability -> triggeredAbilityOffendsGiven (inherited face <> enteredX face ability) ability) (Face.triggeredAbilities face)
+        cardOffends face = any (\ability -> triggeredAbilityOffendsGiven (armedReads face) (inherited face <> enteredX face ability) ability) (Face.triggeredAbilities face)
         sweeps = anyFaceOrMinted cardOffends
         offenders = filter (sweeps . Printing.card) ps
         -- Rule 702.70a's shape, as a targetless read of "that player".
@@ -1319,14 +1327,16 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "every slot an activated ability reads is bound for its activation, and every slot it declares is read" $ do
     ps <- S.allPrintings s corpus
     let baked ability = ability {ActivatedAbility.modal = Projection.bakeGranter (ObjectId.MkObjectId 0) (ActivatedAbility.modal ability)}
-        faceAbilities face = Face.activatedAbilities face <> fmap baked (grantedActivatedAbilities face)
+        -- Each ability beside the face whose delayed abilities it can arm.
+        faceAbilities face = fmap ((,) face) (Face.activatedAbilities face <> fmap baked (grantedActivatedAbilities face))
         -- Over withMinted, each ability against what its own activation binds:
         -- the Clue a card creates is activated as the Clue's.
         cardAbilities card = concatMap faceAbilities (withMinted (Card.combined card))
         abilitiesOf p = fmap ((,) (Face.name (S.combinedFace p))) (cardAbilities (Printing.card p))
         abilities = concatMap abilitiesOf ps
-        readsAnySlot ab = not (all (Map.null . Resolve.slotsOf) (Modal.allEffects (ActivatedAbility.modal ab)))
-        sweeps = any activatedAbilityOffends . cardAbilities
+        readsAnySlot (_, ab) = not (all (Map.null . Resolve.slotsOf) (Modal.allEffects (ActivatedAbility.modal ab)))
+        offends (face, ab) = activatedAbilityOffendsGiven (armedReads face) ab
+        sweeps = any offends . cardAbilities
         tokenDrawing slot = (vanillaFace "Token" instantLine) {Face.activatedAbilities = [oneEffectActivated Nothing (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot slot) (Quantity.Type.Literal 1) Nothing))]}
     Spec.assertBool s (sweeps (mintingSpell createToken (tokenDrawing Binding.triggerPlayer))) "a token's ability reading thatPlayer is caught"
     Spec.assertBool s (not (sweeps (mintingSpell createToken (tokenDrawing Binding.you)))) "and one reading you is accepted"
@@ -1335,7 +1345,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- every ability would pass on an empty read side whatever the lint said).
     Spec.assertBool s (not (null abilities)) "the pool has activated abilities"
     Spec.assertBool s (any (readsAnySlot . snd) abilities) "and one of them reads a slot"
-    Spec.assertEqWith s "no dangling activated-ability slot" (fmap fst (filter (activatedAbilityOffends . snd) abilities)) []
+    Spec.assertEqWith s "no dangling activated-ability slot" (fmap fst (filter (offends . snd) abilities)) []
   -- CR 601.2c's count, over every carrier at once: see modalCountsOffend.
   Spec.it s "every slot that may take more than one target is read where a set fits" $ do
     ps <- S.allPrintings s corpus
@@ -1620,6 +1630,22 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
       "Denethor, Stone Seer's two-slot ability is accepted"
     Spec.assertBool s (not (activatedAbilityOffends (modalActivated inSlot))) "a slot read only by a chosen graveyard card's scope is accepted"
     Spec.assertBool s (activatedAbilityOffends (modalActivated scoped)) "and the same effect over a scope naming no slot leaves that slot unread"
+  -- CR 603.7c: a declared slot that only the condition of a delayed ability the
+  -- mode arms names is read (CardSpec.armedReads), on every carrier that can
+  -- arm. Each pair differs in the delayed condition alone. Fatal Fissure is
+  -- the spell; the ability carriers' cases are hand-built.
+  Spec.it s "a slot only an armed delayed ability's condition names is read" $ do
+    let chosen = SlotName.MkSlotName (Text.pack "chosen")
+        later = AbilityName.MkAbilityName (Text.pack "later")
+        arming = [lintMode [Effect.ArmDelayedTrigger (ArmDelayedTrigger.MkArmDelayedTrigger later Onset.Immediately Nothing Nothing)] [chosen]]
+        watching permanent = (vanillaFace "Arming" instantLine) {Face.delayedAbilities = Map.singleton later (modalTrigger (TriggerCondition.Leaves (LeavesTrigger.dies permanent)) [lintMode [] []])}
+        named = watching (LeavingPermanent.Bound chosen)
+        unnamed = watching LeavingPermanent.Self
+        spell face = modalSlotsOffend (armedReads face) Set.empty (Modal.MkModal (Seq.fromList arming) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
+        triggered face = triggeredAbilityOffendsGiven (armedReads face) Set.empty (modalTrigger (TriggerCondition.Enters EntersTrigger.defaultValue) arming)
+        activated face = activatedAbilityOffendsGiven (armedReads face) (modalActivated arming)
+    Spec.assertEqWith s "the condition naming the slot is accepted" (fmap ($ named) [spell, triggered, activated]) [False, False, False]
+    Spec.assertEqWith s "and one naming no slot leaves it unread" (fmap ($ unnamed) [spell, triggered, activated]) [True, True, True]
   -- CR 400.1: every InZone Count over a shared zone (battlefield, stack,
   -- exile, command) must pair with PlayerRef.Relative AnyPlayer -- the type
   -- permits any PlayerRef there, but only Relative AnyPlayer is meaningful for a

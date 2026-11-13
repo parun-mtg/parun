@@ -391,6 +391,13 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       codec
       (CostComponent.TapInsteadOfMana (Filter.HasCardType CardType.Creature))
       " {\"type\":\"TapInsteadOfMana\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  -- CR 101.1: Katara, Water Tribe's Hope's "X can't be 0".
+  Spec.it s "VariableAtLeast" $
+    Common.assertCodec
+      s
+      codec
+      (CostComponent.VariableAtLeast 1)
+      " {\"type\":\"VariableAtLeast\",\"value\":1} "
   -- CR 107.3a's variable of the same cost: the amount arrives with the
   -- announcement rather than off the card (Parun.Engine.Cost.substituteX).
   Spec.it s "Waterbend of an announced X" $

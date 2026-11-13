@@ -525,6 +525,7 @@ vanillaFace name typeLine =
       Face.vanguard = Nothing,
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
+      Face.additionalHand = Nothing,
       Face.anteOnly = False,
       Face.circlesTwo = False,
       Face.deckLimit = Nothing,
@@ -1529,7 +1530,7 @@ ruleAbilitiesCounts = Const.getConst . Children.ruleAbilitiesChildren ruleCounts
 -- 1 selection mode B is never resolved alongside mode A, so a token mode A mints
 -- is not there for mode B to read.
 modalSlotsOffend :: (Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Set.Set SlotName.SlotName) -> Set.Set SlotName.SlotName -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
-modalSlotsOffend armedReads abilityBound modal =
+modalSlotsOffend armed abilityBound modal =
   let -- What a mode reads, less what it defines and what the ability binds.
       unboundReads mode =
         let effects = Foldable.toList (Mode.allEffects mode)
@@ -1550,8 +1551,8 @@ modalSlotsOffend armedReads abilityBound modal =
             -- The whole MODE's reads, not just its effect list's: CR 118.12a's
             -- "unless [a player] pays" names its payer by slot too. Plus what a
             -- delayed ability the mode arms reads of the objects it refers to
-            -- (CR 603.7c), Hunter's Insight's "that creature".
-            wanted = Set.union (Map.keysSet (Resolve.modeSlots mode)) (armedReads mode)
+            -- (armedReads).
+            wanted = Set.union (Map.keysSet (Resolve.modeSlots mode)) (armed mode)
          in Set.difference (Set.difference wanted defined) abilityBound
       -- CR 608.2c: the shared clauses read every mode's slots, so a mode's slot
       -- they read is read, and they may read no other.
@@ -1561,6 +1562,27 @@ modalSlotsOffend armedReads abilityBound modal =
         let own = Map.keysSet (Mode.targetSlots mode)
          in Set.union (unboundReads mode) (Set.intersection sharedReads own) /= own
    in any modeOffends (Modal.modes modal) || not (Set.isSubsetOf sharedReads declared)
+
+-- The slots a delayed ability this mode arms reads of the objects the arming
+-- mode refers to (CR 603.7c), which the mode must declare or define: the ones
+-- its condition names outright (Fatal Fissure's, whose spell does nothing else
+-- to its target) and the ones its Filters read (Hunter's Insight's "that
+-- creature") -- those less what the delayed ability binds for itself: its
+-- trigger event's slots (Touch of Moonglove's "a creature ... dies"), the
+-- target slots it declares (Speed, Young Avenger's reflexive "target") with
+-- their per-player slots (Lich's Relic's), and the slots its effects define
+-- (Isareth the Awakener's "returned").
+armedReads :: Face.Face Card.Type.Card -> Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Set.Set SlotName.SlotName
+armedReads card mode =
+  Set.unions
+    [ Set.union (Set.fromList (triggerConditionSlots condition)) (Set.difference (foldMap (Filter.boundSlots . snd) (triggeredAbilityFilters delayed)) own)
+    | Effect.ArmDelayedTrigger arm <- Foldable.toList (Mode.allEffects mode),
+      Just delayed <- [Map.lookup (ArmDelayedTrigger.name arm) (Face.delayedAbilities card)],
+      let condition = TriggeredAbility.condition delayed
+          modal = TriggeredAbility.modal delayed
+          declared = Modal.allTargetSlots modal
+          own = Set.unions [Event.eventBindingSlots condition, Map.keysSet declared, foldMap perPlayerSlots declared, Resolve.definedSlots (Foldable.toList (Modal.allEffects modal))]
+    ]
 
 -- What performing a hand action binds, and the whole of it:
 -- Parun.Engine.Resolve.Effect.performHandAction hands applyEffect an environment holding
@@ -1993,7 +2015,6 @@ oneEffectActivated mana effect =
       ActivatedAbility.modal =
         Mint.oneMode (Seq.singleton effect),
       ActivatedAbility.maximumX = [],
-      ActivatedAbility.minimumX = 0,
       ActivatedAbility.definedX = Nothing,
       ActivatedAbility.restrictions = [],
       ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -2028,7 +2049,6 @@ modalActivated modes =
       ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
       ActivatedAbility.modal = Modal.MkModal (Seq.fromList modes) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty,
       ActivatedAbility.maximumX = [],
-      ActivatedAbility.minimumX = 0,
       ActivatedAbility.definedX = Nothing,
       ActivatedAbility.restrictions = [],
       ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -2512,7 +2532,7 @@ riderFilters riders =
   where
     hostFilters host = case host of
       EntryHost.Specified _ -> []
-      EntryHost.Chosen f -> [(Unframed, f)]
+      EntryHost.Chosen _ f -> [(Unframed, f)]
 
 -- Both Filter positions a CR 614.1c counter row has: the KINDS it is keyed by
 -- (CR 122.1b's keyword counter carries a whole Keyword) and the COUNTS it holds
@@ -3153,6 +3173,7 @@ costComponentFilters component = case component of
   CostComponent.WaterbendInstead _ -> []
   -- Heirloom Epic's "an untapped creature you control".
   CostComponent.TapInsteadOfMana f -> [f]
+  CostComponent.VariableAtLeast _ -> []
 
 -- The Filter narrowing a target slot's CR 115 pool -- "target creature with
 -- flying" -- and CR 303.4a's enchant slot, which is a TargetSlot too.
@@ -5688,7 +5709,7 @@ activatedAbilityFilters ability =
 --
 -- The remaining fields hold none: `name`, `manaCost`, `typeLine`, `loyalty`,
 -- `defense`, `vanguard`, `canBeYourCommander`, `claimsStartingPlayer`,
--- `anteOnly` and `colorIndicator`.
+-- `additionalHand`, `anteOnly` and `colorIndicator`.
 -- That is checkable rather than asserted: none of the
 -- types those fields reach imports Parun.Types.Filter, which
 -- `grep -rl 'import qualified Parun.Types.Filter' source/libraries/types/` over
@@ -5845,7 +5866,8 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- The SPELL half of the D4 dataflow lint: every slot an effect reads is
   -- declared, and every declared slot is read. Equality, not subset: a slot no
   -- effect reads is a card announcing a target it ignores -- representable in
-  -- Magic, not in this pool. Loosen to superset if such a card ever lands.
+  -- Magic, not in this pool. Loosen to superset if such a card ever lands. A
+  -- slot only a delayed ability the mode arms reads is read (armedReads).
   --
   -- The ability carriers get the same equality through the same
   -- modalSlotsOffend, in the three sweeps further down (#1043).
@@ -5929,18 +5951,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
                 if Face.modeChooser card /= PlayerRelation.You
                   then Set.singleton Binding.modeChooser
                   else Set.empty
-              -- The slots the Filters of a delayed ability this mode arms read
-              -- (CR 603.7c), which the spell must declare or define -- less what
-              -- the delayed ability's own trigger event binds (Touch of
-              -- Moonglove's "a creature ... dies").
-              armedReads mode =
-                Set.unions
-                  [ Set.difference (Filter.boundSlots f) (Event.eventBindingSlots (TriggeredAbility.condition delayed))
-                  | Effect.ArmDelayedTrigger arm <- Foldable.toList (Mode.allEffects mode),
-                    Just delayed <- [Map.lookup (ArmDelayedTrigger.name arm) (Face.delayedAbilities card)],
-                    (_, f) <- triggeredAbilityFilters delayed
-                  ]
-           in modalSlotsOffend armedReads (Set.unions [Set.fromList [Binding.you, Binding.triggerSource], announcedX, revealed, sacrificed, recorded, chooser, payGateBound (Face.spell card)]) (Face.spell card)
+           in modalSlotsOffend (armedReads card) (Set.unions [Set.fromList [Binding.you, Binding.triggerSource], announcedX, revealed, sacrificed, recorded, chooser, payGateBound (Face.spell card)]) (Face.spell card)
         sweeps = anyFaceOrMinted cardOffends
         offenders = filter (sweeps . Printing.card) ps
         slot = SlotName.MkSlotName (Text.pack "creature")

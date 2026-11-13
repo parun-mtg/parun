@@ -274,7 +274,9 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
       -- "attached to" a host it describes (EntryHost.Chosen, Nomad
       -- Mythmaker's "a creature you control"): the rule's "any other
       -- applicable effects", so the offer is the Aura's own entryHostsFor
-      -- narrowed by the effect's filter, made by the player it enters under.
+      -- narrowed by the effect's filter, made by the player it enters under,
+      -- or drawn at random and asked of nobody (CardSelection.AtRandom,
+      -- Infectious Rage's "choose a creature at random this Aura can enchant").
       -- Asked here rather than inside the funnel because the filter is card
       -- text read in this resolution's context; a replacement that sends the
       -- card elsewhere discards the answer unused. Answers the
@@ -289,19 +291,22 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
       -- it is rather than letting its controller pick another.
       chosenHost mover riders sofar target = do
         now <- State.get
-        let narrowed admits
+        let pick selection hosts = case selection of
+              CardSelection.ByChoice -> Attach.chooseEntryHost mover target hosts
+              CardSelection.AtRandom -> fmap (fmap Recipient.ToObject) (Game.drawAmong Prompt.RandomObject (Maybe.mapMaybe Recipient.objectOf hosts))
+            narrowed selection admits
               | zone == Zone.Battlefield,
                 Maybe.isNothing (EntryRiders.faceDown riders),
                 Set.member Subtype.Aura (Projection.subtypesOf target now) = do
                   let offered = Attach.entryHostsFor mover target now
                   admitted <- admits (filter (`Set.notMember` sofar) (Maybe.mapMaybe Recipient.objectOf offered))
                   let hosts = filter (maybe False (`Set.member` admitted) . Recipient.objectOf) offered
-                  chosenOne <- Attach.chooseEntryHost mover target hosts
+                  chosenOne <- pick selection hosts
                   pure (fmap Just (chosenOne >>= \h -> Attach.entryAttachmentFor mover target h now))
               | otherwise = pure (Just Nothing)
         case EntryRiders.attachedTo riders of
-          Just (EntryHost.Chosen filter_) -> narrowed (pure . Set.fromList . matchingFromAmong legal resolving controller source now filter_)
-          Just (EntryHost.Specified slot) -> narrowed (\candidates -> fmap (Set.intersection (Set.fromList candidates) . Set.fromList) (Common.fromAmongMembers legal resolving chosen slot))
+          Just (EntryHost.Chosen selection filter_) -> narrowed selection (pure . Set.fromList . matchingFromAmong legal resolving controller source now filter_)
+          Just (EntryHost.Specified slot) -> narrowed CardSelection.ByChoice (\candidates -> fmap (Set.intersection (Set.fromList candidates) . Set.fromList) (Common.fromAmongMembers legal resolving chosen slot))
           Nothing -> pure (Just Nothing)
       -- The context a CHOICE's candidates are filtered in, off the board the
       -- choice is being made on: the resolution's own slots ride along, so a

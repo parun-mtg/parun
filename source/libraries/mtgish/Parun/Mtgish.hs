@@ -444,7 +444,6 @@ activatedAbility c m =
     { ActivatedAbility.costChoices = [],
       ActivatedAbility.cost = c,
       ActivatedAbility.maximumX = [],
-      ActivatedAbility.minimumX = 0,
       ActivatedAbility.definedX = Nothing,
       ActivatedAbility.modal = m,
       ActivatedAbility.restrictions = [],

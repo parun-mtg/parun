@@ -212,7 +212,7 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
   -- Parun.EffectLintSpec fences, so a Create reads it as naming no host.
   mAttached <- case EntryRiders.attachedTo entry of
     Nothing -> pure Nothing
-    Just (EntryHost.Chosen _) -> pure Nothing
+    Just (EntryHost.Chosen _ _) -> pure Nothing
     Just (EntryHost.Specified slot) -> Just . fmap Recipient.ToObject <$> Common.fromAmongMembers legal resolving chosen slot
   -- CR 508.4's rider, read ONCE ahead of the minting loop for mBlocked's
   -- reason.
@@ -980,7 +980,7 @@ armDelayedTrigger resolving source controller legal arm@(ArmDelayedTrigger.MkArm
           -- the OUTER Maybe is the card printing no duration; the inner one is
           -- Expiry.arm reporting that a printed duration never STARTED (CR
           -- 611.2b).
-          State.put (Event.armDelayed ability source controller captured (Event.armOnset (Common.oneSeat legal resolving source controller gs) source controller gs onset) (duration >>= \d -> Expiry.arm resolving legal controller source d gs) gs)
+          State.put (Event.armDelayed ability (Projection.delayedReadBy resolving source gs) source controller captured (Event.armOnset (Common.oneSeat legal resolving source controller gs) source controller gs onset) (duration >>= \d -> Expiry.arm resolving legal controller source d gs) gs)
 
 replace :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Replace.Replace Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()
 replace resolving source controller legal (Replace.MkReplace duration uses origin condition re) =

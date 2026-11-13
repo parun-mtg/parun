@@ -2558,7 +2558,7 @@ fillableModesGiven kind reader pools perspective seed source extra modal gs =
       -- CR 601.2b: a slot counting the announced X demands no target until that
       -- announcement exists (countAt), and a seed's X where it holds one (CR
       -- 702.37f's turned-face-up trigger). A printed floor (Face.minimumX,
-      -- ActivatedAbility.minimumX) is not read here, so this gate is the looser
+      -- CostComponent.VariableAtLeast) is not read here, so this gate is the looser
       -- one, and the announced X is judged again once named (above).
       --
       -- Measured against slotCapacities rather than the candidate count, for that

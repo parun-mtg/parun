@@ -315,7 +315,7 @@ canHostSubjectCounts card =
 -- Every occurrence of one atom's codec tag in an ENCODED face. The completeness
 -- witness for the traversal above: Parun.Codec.Face.toJson visits every field
 -- of a Face and every type under it, is round-tripped by
--- Parun.CodecIntegrationSpec's "honesty round-trip over allPrintings", and was
+-- Parun.CardsSpec's per-card round trip, and was
 -- written for another purpose entirely -- so a Filter position cardFilters forgets
 -- is one this still sees.
 --
@@ -1511,11 +1511,10 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- CR 701.3a: "An Aura, Equipment, or Fortification can't be attached to an
   -- object or player it couldn't enchant, equip, or fortify, respectively." The
   -- atom that asks that question is answerable only where an attach frames the
-  -- match, and vacuously False everywhere else. Not implemented: the atom at a
-  -- RESOLUTION-TIME choice, where Infectious Rage's "choose a creature at random
-  -- this Aura can enchant. Return this card to the battlefield attached to that
-  -- creature" writes it (#3871). See canHostSubjectOffends for the
-  -- two offences this one predicate covers.
+  -- match, and vacuously False everywhere else. A RESOLUTION-TIME choice of
+  -- host never writes it: Infectious Rage's "a creature at random this Aura can
+  -- enchant" is EntryHost.Chosen, whose offer is already the Aura's own. See
+  -- canHostSubjectOffends for the two offences this one predicate covers.
   Spec.it s "CR 701.3a no card asks CanHostSubject outside a position an attach frames" $ do
     let offenders = fmap fst (filter (any canHostSubjectOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only where an attach frames it" (fmap (S.nameOf . Printing.card) offenders) []
@@ -2441,7 +2440,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- may carry is a separate question and is not tagged with it.
         alternatively = base {Face.alternativeCosts = [AlternativeCost.MkAlternativeCost Nothing sacrificeCost]}
         -- CR 602.2b, paid as the ability is activated -- after CR 601.2c too.
-        activating = base {Face.activatedAbilities = [ActivatedAbility.MkActivatedAbility sacrificeCost [] [] 0 Nothing (spellOf []) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable]}
+        activating = base {Face.activatedAbilities = [ActivatedAbility.MkActivatedAbility sacrificeCost [] [] Nothing (spellOf []) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable]}
         -- CR 116.2d: a special action uses no stack (CR 116.1), so no
         -- announcement could answer in any engine.
         ignoring = base {Face.specialActions = [SpecialAction.IgnoreThisUntilEndOfTurn (AbilityName.MkAbilityName (Text.pack "the prohibition")) sacrificeCost]}

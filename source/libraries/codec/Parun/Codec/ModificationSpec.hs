@@ -434,7 +434,6 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
                   (Cost.MkCost Nothing [CostComponent.TapThis])
                   []
                   []
-                  0
                   Nothing
                   (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
                   []

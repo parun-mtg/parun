@@ -196,7 +196,7 @@ asked terminal lookUp view request = do
 
 -- | CR 103.5-103.6: the questions asked before the first turn (CR 103.8).
 beforeFirstTurn :: [String]
-beforeFirstTurn = ["DeclareMulligan", "Bottom", "MulliganAction", "OpeningHandAction"]
+beforeFirstTurn = ["KeepHand", "DeclareMulligan", "Bottom", "MulliganAction", "OpeningHandAction"]
 
 -- | CR 104.3a's concession, quitting and reading a card are typed at any
 -- question, and "auto" or an empty line at a mana source; everything else is

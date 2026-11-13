@@ -2019,6 +2019,7 @@ costComponentChildren c component = case component of
   CostComponent.Waterbend amount -> CostComponent.Waterbend <$> costAmountChildren c amount
   CostComponent.WaterbendInstead _ -> pure component
   CostComponent.TapInsteadOfMana criterion -> CostComponent.TapInsteadOfMana <$> costFilter c criterion
+  CostComponent.VariableAtLeast _ -> pure component
 
 -- | An amount a cost component names: only an announced one holds a slot.
 costAmountChildren :: (Applicative f) => CostChildren keyword f -> CostAmount.CostAmount -> f CostAmount.CostAmount
@@ -2660,12 +2661,11 @@ abilityLeaves =
 
 -- | An activated ability's children. Each choice's costs go to abilityCost.
 activatedAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> ActivatedAbility.ActivatedAbility card ability -> f (ActivatedAbility.ActivatedAbility card ability)
-activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices maximumX minimumX definedX modal restrictions activator condition name stamp copyability) =
+activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices maximumX definedX modal restrictions activator condition name stamp copyability) =
   ActivatedAbility.MkActivatedAbility
     <$> abilityCost c cost
     <*> traverse (fmap CostChoice.MkCostChoice . traverse (abilityCost c) . CostChoice.unwrap) costChoices
     <*> traverse (abilityQuantity c) maximumX
-    <*> pure minimumX
     -- CR 607.2a's pile is a relation on the board, named by no slot.
     <*> traverse (\(DefinedX.MkDefinedX quantity choice) -> fmap (`DefinedX.MkDefinedX` choice) (abilityQuantity c quantity)) definedX
     <*> abilityModal c modal
@@ -2966,7 +2966,7 @@ faceLeaves =
 
 -- | A face's children. A delayed ability's name and a mode cost's index are keys, left as they are.
 faceChildren :: (Applicative f) => FaceChildren card f -> Face.Face card -> f (Face.Face card)
-faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer anteOnly circlesTwo deckLimit commanderDeckRules pregameExile keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
+faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer additionalHand anteOnly circlesTwo deckLimit commanderDeckRules pregameExile keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
   Face.MkFace name oracleText manaCost typeLine
     <$> traverse (facePower c) power
     <*> traverse (faceToughness c) toughness
@@ -2976,6 +2976,7 @@ faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness lo
     <*> pure vanguard
     <*> pure canBeYourCommander
     <*> pure claimsStartingPlayer
+    <*> pure additionalHand
     <*> pure anteOnly
     <*> pure circlesTwo
     <*> pure deckLimit
@@ -3095,12 +3096,13 @@ activeReplacementChildren c (ActiveReplacement.MkActiveReplacement effect source
 
 -- | A delayed triggered ability's children (CR 603.7a).
 delayedTriggerChildren :: (Applicative f) => StoredChildren f -> DelayedTrigger.DelayedTrigger -> f DelayedTrigger.DelayedTrigger
-delayedTriggerChildren c (DelayedTrigger.MkDelayedTrigger ability source controller bindings window expiry createdAt) =
+delayedTriggerChildren c (DelayedTrigger.MkDelayedTrigger ability source controller bindings delayed window expiry createdAt) =
   DelayedTrigger.MkDelayedTrigger
     <$> storedTriggered c ability
     <*> storedObject c source
     <*> pure controller
     <*> traverseSlots c (storedBinding c) bindings
+    <*> traverse (storedTriggered c) delayed
     <*> pure window
     <*> traverse (expiryChildren c) expiry
     <*> pure createdAt
@@ -3853,7 +3855,7 @@ entryRidersChildren c (EntryRiders.MkEntryRiders tapped attacking blocking trans
       EntryController.Owner -> pure u
     host h = case h of
       EntryHost.Specified name -> EntryHost.Specified <$> copySlot c name
-      EntryHost.Chosen filter_ -> EntryHost.Chosen <$> copyFilter c filter_
+      EntryHost.Chosen selection filter_ -> EntryHost.Chosen selection <$> copyFilter c filter_
 
 -- | A face-down state's listing (CR 708.2). Why it is face down and the events
 -- turning it up are left as they are.

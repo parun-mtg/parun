@@ -159,6 +159,7 @@ baseFace =
       Face.vanguard = Nothing,
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
+      Face.additionalHand = Nothing,
       Face.anteOnly = False,
       Face.circlesTwo = False,
       Face.deckLimit = Nothing,
@@ -228,6 +229,7 @@ minimalFace =
       Face.vanguard = Nothing,
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
+      Face.additionalHand = Nothing,
       Face.anteOnly = False,
       Face.circlesTwo = False,
       Face.deckLimit = Nothing,
@@ -307,7 +309,7 @@ populatedFace =
   baseFace
     { Face.keywords = Map.singleton Keyword.Deathtouch 1,
       Face.staticAbilities = [StaticAbility.MkStaticAbility Affected.Attached Nothing Set.empty Nothing Nothing (NonEmpty.singleton Modification.LoseAllAbilities)],
-      Face.activatedAbilities = [ActivatedAbility.MkActivatedAbility (Cost.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing minimalModal [] (Activator.Related PlayerRelation.You) Nothing (Just (AbilityName.MkAbilityName (Text.pack "activated"))) Nothing Copyability.Copyable],
+      Face.activatedAbilities = [ActivatedAbility.MkActivatedAbility (Cost.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing minimalModal [] (Activator.Related PlayerRelation.You) Nothing (Just (AbilityName.MkAbilityName (Text.pack "activated"))) Nothing Copyability.Copyable],
       Face.replacementEffects = [PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource (EntryRewrite.AsCopy (AsCopy.MkAsCopy (Filter.HasCardType CardType.Creature) [] False Seq.empty (CopyDomain.InZone Zone.Battlefield) Nothing CopyRecipient.ThisObject True)))) Set.empty Nothing],
       Face.triggeredAbilities = [minimalTriggeredAbility],
       Face.castingPermissions = [CastingPermission.CastFromLibraryWhileSearching],
@@ -812,6 +814,10 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
   Spec.it s "MkFace, CR 103.1c's starting-player claim" $ do
     v <- Common.assertJson s " {\"name\":\"Power Play\",\"typeLine\":{\"types\":[\"Conspiracy\"]},\"claimsStartingPlayer\":true} "
     Spec.assertEq s (Face.claimsStartingPlayer <$> decodeFace v) (Right True)
+  -- CR 315.5a, for the same reason: the populated half needs its own case.
+  Spec.it s "MkFace, CR 315.5a's additional opening hand" $ do
+    v <- Common.assertJson s " {\"name\":\"Backup Plan\",\"typeLine\":{\"types\":[\"Conspiracy\"]},\"additionalHand\":7} "
+    Spec.assertEq s (Face.additionalHand <$> decodeFace v) (Right (Just 7))
   -- CR 407.3: the printed "Remove this card from your deck before playing if
   -- you're not playing for ante", carried as a flag.
   Spec.it s "an ante card decodes its flag" $ do

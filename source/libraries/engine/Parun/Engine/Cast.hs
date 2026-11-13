@@ -486,7 +486,7 @@ chosenBy chooser face = case Face.modeChooser face of
 
 -- CR 601.2b's least X measured at CR 601.2f's total: a candidate cost is
 -- affordable when it is payable at the least X the caster may announce -- 0, or
--- CR 101.1's printed floor (Face.minimumX, Mind Grind's "X can't be 0") --
+-- CR 101.1's printed floor (leastX, Mind Grind's "X can't be 0") --
 -- against the TOTAL cost, not the printed one. Taxing castability without taxing
 -- payment lets the player underpay; taxing payment without taxing castability
 -- offers a cast that cannot be afforded, and nothing REPAIRS a cast partway:
@@ -529,13 +529,21 @@ payableCost modes extra spending pid oid gs cost = any (\x -> payableCostAt mode
 -- the least X, the only value the climb could not overrun.
 gateXs :: PlayerId -> ObjectId -> GameState -> Cost Keyword -> [Natural]
 gateXs pid oid gs cost =
-  let least = maybe 0 Face.minimumX (Game.faceOf oid gs)
+  let least = leastX (Game.faceOf oid gs) cost
       ceiling_ = (\face -> Cost.maximumX pid oid face gs) =<< Game.faceOf oid gs
       componentsAt x = Cost.componentsPayable Map.empty pid oid (Cost.Type.components (Cost.substituteCounts (Map.fromSet (const 0) (Set.fromList (Cost.announcedCounts cost))) (Cost.substituteX x cost))) gs
       bounded = Maybe.isJust ceiling_ || any (Cost.componentDemandGrowsWith Binding.variableX) (Cost.Type.components cost)
    in if readsAnnouncedX pid oid cost gs && bounded
         then least : takeWhile (\x -> all (x <=) ceiling_ && componentsAt x) [least + 1 ..]
         else [least]
+
+-- CR 101.1: the least X a cast for this cost may announce -- the face's
+-- printed floor (Face.minimumX) or the cost's own (Cost.variableFloor, Light
+-- Up the Night's "if you cast this spell this way, X can't be 0"), whichever
+-- is greater. The cost's binds only the candidate carrying it, proven by
+-- Parun.CostSpec's "Light Up the Night" group.
+leastX :: Maybe (Face.Face card) -> Cost Keyword -> Natural
+leastX face cost = max (maybe 0 Face.minimumX face) (Cost.variableFloor cost)
 
 -- Whether this cost still carries an X that the spell's own CR 601.2f
 -- reduction reads (Cost.selfSentences, a perEach naming Binding.variableX).
@@ -3224,7 +3232,7 @@ followIntoSpell permission old new gs = case permission of
 armCastUnder :: PlayerId -> ObjectId -> AbilityName.AbilityName -> GameState -> GameState
 armCastUnder caster sid name gs = case Projection.declaredDelayedAbility sid name gs of
   Nothing -> gs
-  Just ability -> Event.armDelayed ability sid caster (Map.singleton Keyword.becameSlot (Binding.toObject sid)) (Just TurnWindow.AnyTurn) Nothing gs
+  Just ability -> Event.armDelayed ability (Projection.delayedSnapshotOf sid gs) sid caster (Map.singleton Keyword.becameSlot (Binding.toObject sid)) (Just TurnWindow.AnyTurn) Nothing gs
 
 -- CR 611.2a / 611.2c: Savage Summoning's "the next creature spell you cast
 -- this turn ... That spell can't be countered. That creature enters with an
@@ -3965,7 +3973,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               -- Prompt.ChooseX's posture: a count the components cannot pay
               -- reverses the cast at the gate below rather than being clamped.
               gsCounting <- State.get
-              let announceCount slot = fmap ((,) slot) (Game.choose (Prompt.ChooseX decider pid sid slot 0 (maximum (0 : countValues pid sid gsCounting (Face.minimumX face) unannouncedCost slot))))
+              let announceCount slot = fmap ((,) slot) (Game.choose (Prompt.ChooseX decider pid sid slot 0 (maximum (0 : countValues pid sid gsCounting (leastX (Just face) unannouncedCost) unannouncedCost slot))))
               counts <- fmap Map.fromList (traverse announceCount (Cost.announcedCounts unannouncedCost))
               State.modify' (bindAnnounced counts sid)
               let chargedCost = Cost.substituteCounts counts unannouncedCost
@@ -4013,10 +4021,10 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               -- narrowed to what the card permits. The affordable half rides the
               -- CHOSEN cost, and nothing filters the answer against it: an
               -- unaffordable announcement still reverses the whole cast (#417).
-              -- Its least value is CR 101.1's printed floor, off the same face.
+              -- Its least value is CR 101.1's printed floor (leastX).
               mAmount <-
                 if Cost.hasVariable chargedCost
-                  then fmap Just (Game.choose (Prompt.ChooseX decider pid sid Binding.variableX (Face.minimumX face) (affordableX chosenModes mCeiling chosenReductions chosenSpending pid sid bestowedGs chargedCost)))
+                  then fmap Just (Game.choose (Prompt.ChooseX decider pid sid Binding.variableX (leastX (Just face) chargedCost) (affordableX chosenModes mCeiling chosenReductions chosenSpending pid sid bestowedGs chargedCost)))
                   else pure Nothing
               -- CR 101.1, and CR 101.2 for its direction: the card's sentence
               -- overrides the rule that would otherwise leave X free, and a
@@ -4031,7 +4039,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                     (Just c, Just x) -> x > c
                     _ -> False
                   -- The floor's side of the same sentence, rejected the same way.
-                  underFloor = maybe False (< Face.minimumX face) mAmount
+                  underFloor = maybe False (< leastX (Just face) chargedCost) mAmount
               -- CR 601.2: a step the player cannot comply with makes the casting
               -- illegal and returns the game to before it was proposed. The X just
               -- named is where that can first become true, since every candidate

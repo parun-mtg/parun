@@ -77,7 +77,6 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
               (Cost.MkCost Nothing [CostComponent.TapThis])
               []
               []
-              0
               Nothing
               emptyModal
               []

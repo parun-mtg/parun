@@ -1908,6 +1908,7 @@ traverseAmount f component = case component of
   CostComponent.ChooseOpponent _ -> pure component
   CostComponent.WaterbendInstead _ -> pure component
   CostComponent.TapInsteadOfMana _ -> pure component
+  CostComponent.VariableAtLeast _ -> pure component
   CostComponent.ExileThisFrom _ -> pure component
   CostComponent.ExileThis -> pure component
   CostComponent.ExileCardsFromGraveyard {} -> pure component
@@ -2062,6 +2063,7 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
+  CostComponent.VariableAtLeast _ -> False
   CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
   CostComponent.ExileCardsFromGraveyard {} -> False
@@ -2115,6 +2117,11 @@ ceilingOf :: Maybe AbilityName.AbilityName -> PlayerId -> ObjectId -> [Quantity.
 ceilingOf reader pid oid quantities gs = case fmap (xValue reader pid oid gs) quantities of
   [] -> Nothing
   ceilings -> Just (minimum ceilings)
+
+-- | CR 101.1: the floor this cost's own words put on the X announced for it
+-- (CostComponent.VariableAtLeast); 0 where it states none.
+variableFloor :: Cost keyword -> Natural
+variableFloor cost = maximum (0 : [n | CostComponent.VariableAtLeast n <- Cost.components cost])
 
 -- | CR 107.3c: the X an activated ability's own text defines
 -- (ActivatedAbility.definedX), read off its source as it reads, ceilingOf's
@@ -2446,6 +2453,7 @@ componentStatesHiddenQuality component = case component of
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
+  CostComponent.VariableAtLeast _ -> False
   -- The other hidden zone (CR 400.2), and the FIRST conjunct is satisfied where
   -- no other arm's is -- but the second is not: CR 701.17a takes the cards off
   -- the top, so "mill a card" describes no quality for a player to fail to find.
@@ -3177,6 +3185,7 @@ claimOfGiven board slots pid oid component gs =
         CostComponent.Waterbend _ -> Nothing
         CostComponent.WaterbendInstead _ -> Nothing
         CostComponent.TapInsteadOfMana _ -> Nothing
+        CostComponent.VariableAtLeast _ -> Nothing
         -- Nothing, Blight's arm above and for its reason one rule over: CR 701.20b
         -- leaves the revealed card in the hand, so nothing leaves any pool. CR
         -- 701.20c is what makes the shared-choice half right here too -- a card
@@ -3699,6 +3708,8 @@ uncountedCeiling pid oid claims gs component = case component of
   CostComponent.Waterbend _ -> Just 1
   CostComponent.WaterbendInstead _ -> Just 1
   CostComponent.TapInsteadOfMana _ -> Just 1
+  -- Nothing: a limit on the announcement spends nothing that runs out.
+  CostComponent.VariableAtLeast _ -> Nothing
   where
     -- `thresholdRepeats` where this is the ONLY claim on its axis, and 1 where
     -- another component of the cost draws on it too: the selections would then
@@ -4031,6 +4042,7 @@ targetComputed component = case component of
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
+  CostComponent.VariableAtLeast _ -> False
 
 -- | CR 601.2b: the reserved slot a payment of this component binds for a later
 -- "if" to read through Quantity.WasBound, known from the announcement alone --
@@ -4084,6 +4096,7 @@ announcedRecord component = case component of
   CostComponent.Waterbend _ -> Just Binding.waterbendCost
   CostComponent.WaterbendInstead _ -> Nothing
   CostComponent.TapInsteadOfMana _ -> Nothing
+  CostComponent.VariableAtLeast _ -> Nothing
 
 -- | `announcedRecord` over a whole cost.
 announcedRecords :: Cost Keyword.Type.Keyword -> Set.Set SlotName.SlotName
@@ -4133,6 +4146,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.Waterbend _ -> 0
   CostComponent.WaterbendInstead _ -> 0
   CostComponent.TapInsteadOfMana _ -> 0
+  CostComponent.VariableAtLeast _ -> 0
   CostComponent.ExileThisFrom _ -> 0
   CostComponent.ExileThis -> 0
   CostComponent.ExileCardsFromGraveyard {} -> 0
@@ -4187,6 +4201,7 @@ energyOwedByComponent component = case component of
   CostComponent.Waterbend _ -> 0
   CostComponent.WaterbendInstead _ -> 0
   CostComponent.TapInsteadOfMana _ -> 0
+  CostComponent.VariableAtLeast _ -> 0
   CostComponent.ExileThisFrom _ -> 0
   CostComponent.ExileThis -> 0
   CostComponent.ExileCardsFromGraveyard {} -> 0
@@ -4251,6 +4266,7 @@ countersOwedByComponent component = case component of
   CostComponent.Waterbend _ -> []
   CostComponent.WaterbendInstead _ -> []
   CostComponent.TapInsteadOfMana _ -> []
+  CostComponent.VariableAtLeast _ -> []
   CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
   CostComponent.ExileCardsFromGraveyard {} -> []
@@ -4576,6 +4592,7 @@ canPayComponentGiven board slots pid oid component gs = case component of
   CostComponent.Waterbend amount -> payableAnnounced amount (const True)
   CostComponent.WaterbendInstead _ -> True
   CostComponent.TapInsteadOfMana _ -> True
+  CostComponent.VariableAtLeast _ -> True
   -- CR 701.17b's last sentence, stated of costs in as many words: "the player
   -- can't pay a cost that includes milling a number of cards greater than the
   -- number of cards in their library". Not the general "as many as possible" of
@@ -4820,6 +4837,7 @@ criteriaOf component = case component of
   CostComponent.WaterbendInstead _ -> []
   -- PRINTED, unlike the two above, so CR 612.2 has a word to swap in it.
   CostComponent.TapInsteadOfMana criterion -> [criterion]
+  CostComponent.VariableAtLeast _ -> []
   CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
   CostComponent.MillCards _ -> []
@@ -5904,6 +5922,7 @@ paidInSecondPass component = case component of
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
+  CostComponent.VariableAtLeast _ -> False
   -- CR 701.20b moves nothing out of any zone, so rule 601.2h's library half has
   -- nothing to ask of it.
   CostComponent.RevealCardFromHand _ -> False
@@ -6024,6 +6043,7 @@ sourceOnly component = case component of
   CostComponent.Waterbend _ -> Nothing
   CostComponent.WaterbendInstead _ -> Nothing
   CostComponent.TapInsteadOfMana _ -> Nothing
+  CostComponent.VariableAtLeast _ -> Nothing
   CostComponent.MillCards _ -> Nothing
   CostComponent.RevealTopOfLibrary _ -> Nothing
   CostComponent.PayLife _ -> Nothing
@@ -6112,6 +6132,7 @@ orderSensitive component = case component of
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
+  CostComponent.VariableAtLeast _ -> False
   -- CR 701.17a puts a card into a graveyard, which a graveyard-reading part of
   -- the same cost could then spend (Circling Vultures' "the top creature card of
   -- your graveyard"). Alone in CR 601.2h's second pass on this pool, but a combat
@@ -6383,6 +6404,7 @@ armSpendTriggers sid spent gs =
       arm g trigger =
         Event.armDelayed
           (SpendTrigger.ability trigger)
+          (Projection.delayedSnapshotOf (SpendTrigger.source trigger) g)
           (SpendTrigger.source trigger)
           (SpendTrigger.controller trigger)
           (Map.singleton Binding.castSpell (Binding.toObject sid))
@@ -7803,6 +7825,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- NOTHING TO PAY, Waterbend's reason: a licence `announceSubstitutions` has
   -- already cashed into a TapPermanents component. No rule gives it an event.
   CostComponent.TapInsteadOfMana _ -> pure bindsNothing
+  CostComponent.VariableAtLeast _ -> pure bindsNothing
   -- CR 406.2's move, through the Event.changeZone funnel, so the card gets a CR
   -- 400.7 incarnation and anything watching a graveyard- or hand-to-exile move
   -- sees it. No prompt: the cost names this card.

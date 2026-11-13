@@ -242,6 +242,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseRepeat decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.OrderTimestamps decider _ _ -> Just (Decider.unwrap decider)
   Prompt.OrderManaActivations decider _ _ -> Just (Decider.unwrap decider)
+  Prompt.KeepHand decider _ _ -> Just (Decider.unwrap decider)
   Prompt.DeclareMulligan decider _ _ -> Just (Decider.unwrap decider)
   Prompt.Bottom decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.MulliganAction decider _ _ -> Just (Decider.unwrap decider)

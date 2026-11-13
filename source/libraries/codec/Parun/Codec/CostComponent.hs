@@ -89,7 +89,8 @@ codec keywordCodec =
       Arm.payload "ChooseOpponent" Gift.codec CostComponent.ChooseOpponent (\x -> case x of CostComponent.ChooseOpponent y -> Just y; _ -> Nothing),
       Arm.payload "Waterbend" CostAmount.codec CostComponent.Waterbend (\x -> case x of CostComponent.Waterbend y -> Just y; _ -> Nothing),
       Arm.payload "WaterbendInstead" Common.natural CostComponent.WaterbendInstead (\x -> case x of CostComponent.WaterbendInstead y -> Just y; _ -> Nothing),
-      Arm.payload "TapInsteadOfMana" (Filter.codec keywordCodec) CostComponent.TapInsteadOfMana (\x -> case x of CostComponent.TapInsteadOfMana y -> Just y; _ -> Nothing)
+      Arm.payload "TapInsteadOfMana" (Filter.codec keywordCodec) CostComponent.TapInsteadOfMana (\x -> case x of CostComponent.TapInsteadOfMana y -> Just y; _ -> Nothing),
+      Arm.payload "VariableAtLeast" Common.natural CostComponent.VariableAtLeast (\x -> case x of CostComponent.VariableAtLeast y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: CostComponent.CostComponent keyword -> String
@@ -136,3 +137,4 @@ tagOf x = case x of
   CostComponent.Waterbend {} -> "Waterbend"
   CostComponent.WaterbendInstead {} -> "WaterbendInstead"
   CostComponent.TapInsteadOfMana {} -> "TapInsteadOfMana"
+  CostComponent.VariableAtLeast {} -> "VariableAtLeast"

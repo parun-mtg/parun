@@ -60,6 +60,11 @@ cardBackedCount gs =
         Source.OfInherentTrigger _ -> False
    in Map.size (Map.filter fromCard (GameState.objects gs))
 
+-- Every player's life, and every player's starting life, summed.
+life, startingLife :: GameState.GameState -> Integer
+life = sum . fmap Player.life . Map.elems . GameState.players
+startingLife = sum . fmap Player.startingLife . Map.elems . GameState.players
+
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Engine" $ do
   -- An eight-basic-land mirror can cast nothing and attack with nothing, so the
@@ -109,17 +114,21 @@ spec s registry = Spec.describe s "Parun.Engine.Engine" $ do
   -- S.fightAnswer differs from S.castAnswer in exactly the two combat
   -- declarations (CR 508.1a, CR 509.1a), so the control is the same game with
   -- combat switched off, and life the control never lost is combat damage
-  -- (CR 510.2). Without the comparison the case would still pass if
-  -- DeclareAttackers were ignored outright.
+  -- (CR 510.2). Without the control the first case would still pass if
+  -- DeclareAttackers were ignored outright. Two cases, each against the
+  -- starting totals (CR 119.1), so the two games run in parallel.
+  --
+  -- Twelve turns: creatures out on both sides, and the first attack through.
   Spec.it s "a game driven through combat conserves its cards, and combat actually happened" $ do
     matchup <- S.shortGreenBlack (S.printingOf s registry)
-    -- Twelve turns: creatures out on both sides, and the first attack through.
     let fought = S.opening 12 1 S.fightAnswer matchup
-        control = S.opening 12 1 S.castAnswer matchup
-        life = sum . fmap Player.life . Map.elems . GameState.players
-    Spec.assertLtWith s "CR 510.2 combat dealt damage the control never took" (life fought) (life control)
+    Spec.assertLtWith s "CR 510.2 combat dealt damage" (life fought) (startingLife fought)
     -- CR 400.7 again, on the branch the lands-only cases cannot reach: dying,
     -- being cast and resolving are all zone changes, and none of them may mint
     -- or lose a card.
     Spec.assertEqWith s "CR 400.7 the fought game still conserves its cards" (cardBackedCount fought) 60
-    Spec.assertEqWith s "CR 400.7 and so does the control" (cardBackedCount control) 60
+  Spec.it s "the same game with combat switched off conserves its cards, and no life is lost" $ do
+    matchup <- S.shortGreenBlack (S.printingOf s registry)
+    let control = S.opening 12 1 S.castAnswer matchup
+    Spec.assertEqWith s "no damage without combat" (life control) (startingLife control)
+    Spec.assertEqWith s "CR 400.7 the control conserves its cards" (cardBackedCount control) 60
