@@ -1,10 +1,8 @@
 {
-  "description": "CR 107.3c: Soul Foundry's X is the mana value of the card it exiled, so with no exiled card X is undefined and the ability is not offered",
-  "note": "Soul Foundry's controller declines its Imprint trigger, leaving three Plains untapped. Prototype Portal's ruling of 2011-01-01: with no exiled card the value of X is undefined and can't be paid. Read as an empty pile's sum, X would be 0 and the ability offered for no mana.",
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Plains",
@@ -68,10 +66,10 @@
           {
             "card": "Hill Giant"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Hill Giant"
@@ -88,92 +86,94 @@
           {
             "card": "Hill Giant"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
-    "active": "alice",
     "step": "PrecombatMain"
   },
+  "description": "CR 107.3c: Soul Foundry's X is the mana value of the card it exiled, so with no exiled card X is undefined and the ability is not offered",
+  "note": "Soul Foundry's controller declines its Imprint trigger, leaving three Plains untapped. Prototype Portal's ruling of 2011-01-01: with no exiled card the value of X is undefined and can't be paid. Read as an empty pile's sum, X would be 0 and the ability offered for no mana.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$foundry",
           "mana": [
             "$p1",
             "$p2",
             "$p3",
             "$p4",
             null
-          ]
+          ],
+          "object": "$foundry"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseOptional",
           "with": "Declines"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Hand",
           "card": "Hill Giant",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Offered",
-          "player": "alice",
           "is": [
             "Pass",
             "ActivateManaAbility $p5",
             "ActivateManaAbility $p6",
             "ActivateManaAbility $p7"
-          ]
+          ],
+          "of": "Offered",
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "$foundry"
+          "object": "Soul Foundry"
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }
