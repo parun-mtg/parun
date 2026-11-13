@@ -123,17 +123,8 @@
               "holder": {
                 "type": "Permanent",
                 "value": {
-                  "type": "And",
-                  "value": [
-                    {
-                      "type": "HasCardType",
-                      "value": "Creature"
-                    },
-                    {
-                      "type": "IsInZone",
-                      "value": "Battlefield"
-                    }
-                  ]
+                  "type": "HasCardType",
+                  "value": "Creature"
                 }
               },
               "kind": {

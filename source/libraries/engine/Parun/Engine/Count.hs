@@ -866,11 +866,20 @@ snapshotView viewOf gs shape event = case event of
   -- scenario lasting-tarfire-counts-a-creature-its-counter-killed). The one
   -- placement this event is stands in for the object's whole turn of them, so
   -- Filter.CountersPutThisTurn answers for this putter and this kind alone.
+  --
+  -- CR 122.6: only a placement on the battlefield, an entering object's
+  -- included, is "counters put on an object"; a suspended card's time counters
+  -- are not (the scenario
+  -- lasting-tarfire-stays-silent-after-time-counters-put-on-a-suspended-creature-card).
+  -- Asked of the snapshot, since a last-known view holds no zone for a card's
+  -- IsInZone to read.
   GameEvent.CountersPut placed -> case shape of
-    EventShape.CountersPut ->
-      fmap
-        (\view -> (asSnapshotted gs (CountersPlaced.snapshot placed) view) {Filter.countersPutThisTurn = Set.singleton (CountersPlaced.putter placed, CountersPlaced.kind placed)})
-        (orLastKnown viewOf gs (CountersPlaced.object placed))
+    EventShape.CountersPut
+      | ObjectSnapshot.zone (CountersPlaced.snapshot placed) == Zone.Battlefield ->
+          fmap
+            (\view -> (asSnapshotted gs (CountersPlaced.snapshot placed) view) {Filter.countersPutThisTurn = Set.singleton (CountersPlaced.putter placed, CountersPlaced.kind placed)})
+            (orLastKnown viewOf gs (CountersPlaced.object placed))
+      | otherwise -> Nothing
     EventShape.MovedBetween {} -> Nothing
     EventShape.MovedFrom {} -> Nothing
     EventShape.CardArrivedIn {} -> Nothing
