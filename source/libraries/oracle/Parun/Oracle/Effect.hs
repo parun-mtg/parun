@@ -419,7 +419,7 @@ paid context g predicates
           p <- case predicates of
             [p] | null (after p), Maybe.isNothing (mana p) -> [p]
             _ -> []
-          let pays = if person == Target.Second then second else third
+          let pays = if person == Target.Third then third else second
               instruction = if implied p then verb p else clauseText p
               payment' = Target.wording who <> Text.pack " " <> pays <> each'
           -- Free: "unless" after the instruction (Soul Strings) or before it
@@ -833,6 +833,7 @@ effect context e = case e of
               case person of
                 Target.Second -> declarative context (Create.creator c) create creates
                 Target.Third -> []
+                Target.ThirdPlural -> []
         naming (Target.names a) (imperative context (Create.creator c) create creates <> leading <> spoken)
   -- A limit on the total has no wording yet, so a limited placement renders nothing.
   Effect.PutCounters p | Maybe.isNothing (PutCounters.totalAtMost p) -> do
@@ -1255,6 +1256,7 @@ imperative context ref second third = do
   case person of
     Target.Second -> [MkPredicate (Just who) second [] [] Nothing True]
     Target.Third -> [MkPredicate (Just who) third [] [] Nothing False]
+    Target.ThirdPlural -> [MkPredicate (Just who) second [] [] Nothing False]
 
 -- | A player's instruction that always names the player: "You gain 4 life."
 declarative :: Target.Context -> PlayerRef.PlayerRef -> Text.Text -> Text.Text -> [Predicate]
@@ -1263,3 +1265,4 @@ declarative context ref second third = do
   case person of
     Target.Second -> [MkPredicate (Just who) second [] [] Nothing False]
     Target.Third -> [MkPredicate (Just who) third [] [] Nothing False]
+    Target.ThirdPlural -> [MkPredicate (Just who) second [] [] Nothing False]
