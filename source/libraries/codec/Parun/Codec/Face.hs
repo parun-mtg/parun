@@ -206,6 +206,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   -- CR 103.1c: False is the absence of a card stating its controller is the
   -- starting player.
   claimsStartingPlayer <- Fields.defaulted "claimsStartingPlayer" False Common.boolean Face.claimsStartingPlayer
+  additionalHand <- Fields.defaulted "additionalHand" Nothing (Common.maybe Common.natural) Face.additionalHand
   -- CR 407.3: False is the absence of the ante reminder.
   anteOnly <- Fields.defaulted "anteOnly" False Common.boolean Face.anteOnly
   -- CR 207.5: False is the absence of an instruction to circle two colours.
@@ -274,6 +275,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.copyability = copyability,
         Face.canBeYourCommander = canBeYourCommander,
         Face.claimsStartingPlayer = claimsStartingPlayer,
+        Face.additionalHand = additionalHand,
         Face.anteOnly = anteOnly,
         Face.circlesTwo = circlesTwo,
         Face.deckLimit = deckLimit,

@@ -253,6 +253,7 @@ encode p answer = case p of
   Prompt.ChooseTurnUpAttachment {} -> Response.ChoseTurnUpAttachment answer
   Prompt.ChooseCost {} -> Response.ChoseCost answer
   Prompt.ChoosePlayPermission {} -> Response.ChosePlayPermission answer
+  Prompt.KeepHand {} -> Response.KeptHand answer
   Prompt.DeclareMulligan {} -> Response.DeclaredMulligan answer
   Prompt.Bottom {} -> Response.PutOnBottom answer
   Prompt.MulliganAction {} -> Response.TookMulliganAction answer
@@ -719,6 +720,9 @@ decode p response = case p of
     _ -> Nothing
   Prompt.ChoosePlayPermission {} -> case response of
     Response.ChosePlayPermission permission -> Just permission
+    _ -> Nothing
+  Prompt.KeepHand {} -> case response of
+    Response.KeptHand index -> Just index
     _ -> Nothing
   Prompt.DeclareMulligan {} -> case response of
     Response.DeclaredMulligan decision -> Just decision
@@ -1354,6 +1358,7 @@ defaultAnswer p = case p of
   -- (Parun.Engine.PlayerEffect.permissionOptions orders them so).
   Prompt.ChoosePlayPermission _ _ _ options -> NonEmpty.head options
   -- CR 103.5: keeping is always legal.
+  Prompt.KeepHand {} -> 0
   Prompt.DeclareMulligan {} -> MulliganDecision.Keep
   -- A legal ordered subset of the redrawn hand: deterministically the first
   -- `count`.

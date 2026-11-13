@@ -476,6 +476,7 @@ offerOf gs prompt = case prompt of
   -- CR 706.2b: each modifier by the object stating it, null for none.
   Prompt.ChooseRollModifier _ _ modifiers -> indexing prompt Nothing [] (fmap (\stated -> fields [("source", maybe R.Null object stated)]) (NonEmpty.toList modifiers))
   -- CR 123.5c: each object by its card's name.
+  Prompt.KeepHand _ _ hands -> indexing prompt Nothing [] (fmap objects (NonEmpty.toList hands))
   Prompt.ChooseStickerKeeper _ _ printings -> indexing prompt Nothing [] (fmap (R.Text . printingName gs) (NonEmpty.toList printings))
   -- CR 706.4: each result as its number.
   Prompt.ChooseDieResult _ _ source results -> indexing prompt source [] (fmap natural (NonEmpty.toList results))

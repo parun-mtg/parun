@@ -1,0 +1,14 @@
+{
+  "faces": [
+    {
+      "additionalHand": 7,
+      "name": "Backup Plan",
+      "oracleText": "(Start the game with this conspiracy face up in the command zone.)\nDraw an additional hand of seven cards as the game begins. Before taking mulligans, shuffle all but one of your hands into your library.",
+      "typeLine": {
+        "types": [
+          "Conspiracy"
+        ]
+      }
+    }
+  ]
+}

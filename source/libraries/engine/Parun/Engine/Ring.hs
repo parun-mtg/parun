@@ -164,6 +164,7 @@ theRingEmblem temptations =
               Face.vanguard = Nothing,
               Face.canBeYourCommander = False,
               Face.claimsStartingPlayer = False,
+              Face.additionalHand = Nothing,
               Face.anteOnly = False,
               Face.circlesTwo = False,
               Face.deckLimit = Nothing,
