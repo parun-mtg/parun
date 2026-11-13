@@ -3584,7 +3584,8 @@ delayedMatches grouped gs =
 -- intervening "if" is false at the occurrence has not triggered, nothing is spent
 -- against 603.7b's one shot, and it stays armed for the next occurrence. No other
 -- 603.7 subrule evicts an entry, so triggering and a stated duration remain its
--- only two exits.
+-- only two exits -- but for a reflexive entry, which CR 603.12 checks once
+-- (`spent` below).
 delayedPending :: [LoggedEvent.LoggedEvent] -> GameState -> Game ([PendingTrigger], Seq.Seq DelayedTrigger)
 delayedPending grouped gs =
   let (occurrences, pend) = delayedMatches grouped gs
@@ -3662,8 +3663,14 @@ delayedPending grouped gs =
       triggered entry
         | isReflexive entry = pure (filter (interveningHolds gs) (if delayedArmed gs entry then [reflexiveFiring gs entry] else []))
         | otherwise = fmap (filter (interveningHolds gs) . fmap (pend entry)) (firedBy entry)
-      -- Triggering spends the one shot only for a one-shot entry.
-      spent (entry, fired) = not (null fired) && once entry
+      -- Triggering spends the one shot only for a one-shot entry. A reflexive
+      -- entry's is spent by the check itself: CR 603.12 has it "checked
+      -- immediately after being created", so one whose "if" was false (CR 603.4)
+      -- has no later occurrence to wait for. The scenario
+      -- earthbender-ascension-triggers-nothing-at-its-third-quest-counter-and-once-at-its-fourth
+      -- proves it.
+      spent (entry, fired) = (checked entry || not (null fired)) && once entry
+      checked entry = isReflexive entry && delayedArmed gs entry
       once entry = Expiry.firesOnce gs (DelayedTrigger.source entry) (DelayedTrigger.expiry entry)
    in do
         -- One pass, because `triggered` can ASK: the prompt must be raised once
