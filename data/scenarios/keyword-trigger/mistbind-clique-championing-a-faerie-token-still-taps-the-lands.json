@@ -1,0 +1,123 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Cloud Sprite",
+            "token": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Mistbind Clique",
+            "label": "clique"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "first"
+          },
+          {
+            "card": "Island",
+            "label": "second"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.72c / 704.5d: the Faerie Mistbind Clique champions is a token, which ceases to exist in exile before the trigger is put on the stack; it was championed all the same",
+  "final": [
+    {
+      "Count": {
+        "card": "Mistbind Clique",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Cloud Sprite",
+        "count": 0,
+        "player": "alice",
+        "zone": "Exile"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$first",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$second",
+        "tapped": true
+      }
+    }
+  ],
+  "note": "The exile is read off the move itself: a token's CR 607.2a link is gone by the time triggers are gathered.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$clique"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

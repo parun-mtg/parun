@@ -71,6 +71,7 @@ import Parun.Types.CandidateId (CandidateId)
 import qualified Parun.Types.CandidateId as CandidateId
 import Parun.Types.Card (Card)
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.Chosen as Chosen
 import Parun.Types.ControllerRelation (ControllerRelation)
 import qualified Parun.Types.ControllerRelation as ControllerRelation
@@ -882,7 +883,7 @@ matchesPrinted viewOf gs event candidate =
            in namesBattlefield == entering
                 && maybe True (== ZoneChange.to zc) (ZoneChangePattern.whenDestination pat)
                 && maybe True ((== discarded) . Just) (ZoneChangePattern.whenDiscarded pat)
-                && all (\relation -> maybe False (PlayerRelation.holdsFor (Game.teams gs) relation (ReplacementCandidate.controller candidate) . Just) (Scratch.causing (GameState.scratch gs))) (ZoneChangePattern.causedBy pat)
+                && all (\relation -> maybe False (PlayerRelation.holdsFor (Game.teams gs) relation (ReplacementCandidate.controller candidate) . Just . Cause.controller) (Scratch.causing (GameState.scratch gs))) (ZoneChangePattern.causedBy pat)
                 && (resolving || not (ZoneChangePattern.duringResolution pat))
                 && matchesZoneOwner gs candidate (ZoneChangePattern.whoseObject pat) oid
                 && ( matchesFiltered judgedView gs candidate (ZoneChangePattern.whatObject pat) oid

@@ -1,0 +1,121 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Cloud Sprite"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Mistbind Clique",
+            "label": "clique"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "first"
+          },
+          {
+            "card": "Island",
+            "label": "second"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.72c: Mistbind Clique's champion ability exiles alice's Cloud Sprite, so a Faerie was championed with it and all lands the targeted player controls become tapped",
+  "final": [
+    {
+      "Count": {
+        "card": "Mistbind Clique",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Cloud Sprite",
+        "count": 1,
+        "player": "alice",
+        "zone": "Exile"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$first",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$second",
+        "tapped": true
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$clique"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

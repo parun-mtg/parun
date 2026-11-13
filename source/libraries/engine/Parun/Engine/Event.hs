@@ -102,6 +102,7 @@ import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CarryOver as CarryOver
+import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.Chosen as Chosen
@@ -5180,7 +5181,7 @@ apply settle batch applied batchPrevented candidate event =
       -- row's controller controls, never a cost, so Spiritual Focus sees who
       -- caused the discard.
       DrawRewrite.DiscardThenDrawOrMill -> do
-        let asEffect = payingOnResolution False . causedBy (ReplacementCandidate.controller candidate)
+        let asEffect = payingOnResolution False . causedBy (fmap (\controller -> Cause.MkCause controller (ReplacementCandidate.source candidate) Nothing) (ReplacementCandidate.controller candidate))
         Replacement.consume (ReplacementCandidate.identity candidate)
         gs <- State.get
         let held = Game.cardsIn Zone.Hand pid gs
@@ -11862,15 +11863,15 @@ payingOnResolution paying body = do
   State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.payingOnResolution = saved}})
   pure result
 
--- CR 609.1: run `body` as the effect of a spell or ability `controller`
--- controls, or with Nothing as no effect at all -- a cost's payment
+-- CR 609.1: run `body` as the effect of the spell or ability `cause`
+-- names, or with Nothing as no effect at all -- a cost's payment
 -- (Parun.Engine.Cost.payComponent). Saved and restored, payingOnResolution's
 -- shape, so a mana ability's effect nested inside another resolution answers
 -- for itself and the outer one resumes after it.
-causedBy :: Maybe PlayerId -> Game a -> Game a
-causedBy controller body = do
+causedBy :: Maybe Cause.Cause -> Game a -> Game a
+causedBy cause body = do
   saved <- State.gets (Scratch.causing . GameState.scratch)
-  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.causing = controller}})
+  State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.causing = cause}})
   result <- body
   State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.causing = saved}})
   pure result

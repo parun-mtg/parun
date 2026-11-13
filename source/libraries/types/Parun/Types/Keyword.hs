@@ -373,10 +373,6 @@ data Keyword
     -- entry ability, Affinity's split. Rule 702.72b links the pair through the
     -- exile pile (CR 607.2k), which is why the return names
     -- ObjectRef.EachCardInExiledPile rather than a slot of its own.
-    --
-    -- Not implemented: CR 702.72c's "championed by", which no trigger can watch
-    -- -- Mistbind Clique's "When a Faerie is championed with this creature"
-    -- (#3825).
     Champion (Filter.Filter Keyword)
   | -- | 702.73a: "This object is every creature type." A characteristic-defining
     -- ability (CR 604.3) landing in layer 4.

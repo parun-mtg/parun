@@ -5,6 +5,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Arrival as Arrival
+import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.EnteringTogether as EnteringTogether
 import qualified Parun.Types.EntryOrigin as EntryOrigin
@@ -32,11 +33,11 @@ data Scratch = MkScratch
     -- clause's "If [a player] does" reads, so a cost paid on resolution rather
     -- than an effect (Event.payingOnResolution). False outside one.
     payingOnResolution :: !Bool,
-    -- | CR 609.1: the controller of the spell or ability whose effect is being
+    -- | CR 609.1: the spell or ability whose effect is being
     -- performed (Event.causedBy), which Moved and Discarded record as their
     -- cause. Nothing outside one, and inside a cost's payment outside a
     -- resolution (Parun.Engine.Cost.payComponent).
-    causing :: !(Maybe PlayerId.PlayerId),
+    causing :: !(Maybe Cause.Cause),
     -- | CR 616.1 and Lich's Mirror's ruling: the objects a state-based action
     -- check moves, keyed to the source of the replacement whose effects run in
     -- place of a loss in that check, or to Nothing once kept for the check. A
