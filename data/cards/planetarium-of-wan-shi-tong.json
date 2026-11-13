@@ -1,0 +1,141 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Scry",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 6
+        }
+      ],
+      "name": "Planetarium of Wan Shi Tong",
+      "oracleText": "{1}, {T}: Scry 2.\nWhenever you scry or surveil, look at the top card of your library. You may cast that card without paying its mana cost. Do this only once each turn. (Look at the card after you scry or surveil.)",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "PlayerActs",
+                "value": {
+                  "action": "Scry",
+                  "player": "You"
+                }
+              },
+              {
+                "type": "PlayerActs",
+                "value": {
+                  "action": "Surveil",
+                  "player": "You"
+                }
+              }
+            ]
+          },
+          "limit": {
+            "type": "OncePerTurn",
+            "value": {
+              "type": "TakingInstruction",
+              "value": 1
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "LookAt",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "slot": "looked"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "OfferCast",
+                        "value": {
+                          "offer": {
+                            "withoutPayingManaCost": true
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "looked"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

@@ -3,6 +3,7 @@ module Parun.Codec.TriggerLimitSpec where
 import qualified Parun.Codec.TriggerLimit as TriggerLimit
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.SpentOn as SpentOn
 import qualified Parun.Types.TriggerLimit as TriggerLimit
 
@@ -26,8 +27,8 @@ spec s = Spec.describe s "Parun.Codec.TriggerLimit" $ do
     Common.assertCodec
       s
       TriggerLimit.codec
-      (TriggerLimit.OncePerTurn SpentOn.TakingInstruction)
-      " {\"type\":\"OncePerTurn\",\"value\":\"TakingInstruction\"} "
+      (TriggerLimit.OncePerTurn (SpentOn.TakingInstruction (ClauseIndex.MkClauseIndex 0)))
+      " {\"type\":\"OncePerTurn\",\"value\":{\"type\":\"TakingInstruction\",\"value\":0}} "
   Spec.it s "OncePerGame" $
     Common.assertCodec
       s
