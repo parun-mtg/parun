@@ -523,7 +523,6 @@ blankHistory :: History.History
 blankHistory =
   History.MkHistory
     { History.spellsCastLastTurn = 0,
-      History.castsBeforeThisTurn = Seq.empty,
       History.damageBeforeThisTurn = Seq.empty,
       History.pastTurns = Seq.empty,
       History.attacksInOwnLastTurn = Map.empty,
@@ -3525,14 +3524,21 @@ turnLog which gs = case which of
     _ Seq.:> newest -> PastTurn.events newest
     Seq.EmptyR -> Seq.empty
 
--- CR 601.2i: this turn's casts, in the order they became cast, off the log
--- Engine.handoffTurn clears.
-castsInLog :: GameState -> Seq.Seq SpellWasCast.SpellWasCast
-castsInLog gs = Seq.fromList (Maybe.mapMaybe (castOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+-- CR 601.2i: the casts a log holds, in the order they became cast.
+castsInLog :: Seq.Seq LoggedEvent.LoggedEvent -> Seq.Seq SpellWasCast.SpellWasCast
+castsInLog = Seq.fromList . Maybe.mapMaybe (castOf . LoggedEvent.event) . Foldable.toList
+
+-- CR 601.2i / 608.2i: every spell cast this game, oldest first: each finished
+-- turn's casts (History.pastTurns), then the live log's.
+-- cr-104-2b-the-second-cast-from-hand-on-a-later-turn-wins proves the past
+-- turns are read.
+castsThisGame :: GameState -> Seq.Seq SpellWasCast.SpellWasCast
+castsThisGame gs =
+  foldMap (castsInLog . PastTurn.events) (History.pastTurns (GameState.history gs))
+    <> castsInLog (TurnRegisters.events (GameState.turn gs))
 
 -- CR 120.1: every damage event in the turn's log, oldest first, behind
--- damageRecipient's CR 120.8 fence -- castsInLog's shape, for
--- History.damageBeforeThisTurn.
+-- damageRecipient's CR 120.8 fence, for History.damageBeforeThisTurn.
 damageInLog :: GameState -> Seq.Seq DamageEvent.DamageEvent
 damageInLog gs =
   let dealt event = case event of

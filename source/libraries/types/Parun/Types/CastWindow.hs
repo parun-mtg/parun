@@ -5,7 +5,7 @@ module Parun.Types.CastWindow where
 data CastWindow
   = -- | CR 601.2i: every spell cast this turn, the event log's own extent.
     ThisTurn
-  | -- | CR 601.2i: every spell cast this game (History.castsBeforeThisTurn).
+  | -- | CR 601.2i: every spell cast this game (Game.castsThisGame).
     ThisGame
   | -- | CR 702.40a: this turn's casts before the object the count is evaluated
     -- against, so a spell cast in response isn't counted.

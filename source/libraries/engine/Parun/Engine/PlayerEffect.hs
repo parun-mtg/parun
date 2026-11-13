@@ -1886,7 +1886,7 @@ firstActivation pid source criterion criteria aimedAt gs scope =
 -- its caster as CR 109.5's "you".
 firstCast :: PlayerId -> RowSource -> Filter Keyword -> ObjectId -> GameState -> TurnScope.TurnScope -> Bool
 firstCast pid source criterion oid gs scope =
-  let earlier = Maybe.fromMaybe (Foldable.toList (Game.castsInLog gs)) (Game.castsBefore oid gs)
+  let earlier = Maybe.fromMaybe (Foldable.toList (Game.castsInLog (TurnRegisters.events (GameState.turn gs)))) (Game.castsBefore oid gs)
       admits cast =
         SpellWasCast.player cast == pid
           && maybe False (\view -> Filter.matches (contextFor (Just pid) source gs) view criterion) (Count.snapshotView (Projection.viewWithLastKnownAnywhere gs) gs (EventShape.SpellCast CastWindow.ThisTurn) (GameEvent.SpellCast cast))

@@ -275,7 +275,7 @@ spec-local helper, and the `other-*` tail, are left out: grep for them.
 
 ### `CodecIntegrationSpec`
 
-- a cast on an earlier turn round trips | `check:other-GameState.castsBeforeThisTurn` `check:codec-round-trip`
+- a cast on an earlier turn round trips | `check:other-Game.castsThisGame` `check:codec-round-trip`
 
 ### `CoinSpec`
 
