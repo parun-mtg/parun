@@ -1,0 +1,30 @@
+{
+  "description": "Maralen, Fae Ascendant refuses a card it exiled on an earlier turn",
+  "note": "Both exiled cards are within the count and offered on turn 1, where alice casts neither. On her next turn they are still exiled with Maralen, the permission is unspent, and neither is offered: only the Elves' mana ability is.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "G",
+        "battlefield": [{"card": "Maralen, Fae Ascendant"}],
+        "hand": [{"card": "Llanowar Elves", "label": "elves"}],
+        "library": [{"card": "Hill Giant"}, {"card": "Hill Giant"}, {"card": "Hill Giant"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [],
+        "library": [{"card": "Grizzly Bears"}, {"card": "Runeclaw Bear"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$elves"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Cast Grizzly Bears", "Cast Runeclaw Bear"]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "ActivateManaAbility Llanowar Elves"]}}}
+  ]
+}

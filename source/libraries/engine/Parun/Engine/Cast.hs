@@ -3046,7 +3046,8 @@ ownPayingWays oid face gs =
           CastFromZone.reduction = 0,
           CastFromZone.spending = ManaSpending.AsProduced,
           CastFromZone.alternativeCost = Nothing,
-          CastFromZone.entersWith = Nothing
+          CastFromZone.entersWith = Nothing,
+          CastFromZone.amount = Nothing
         }
     )
   | CastingPermission.CastFromGraveyard _ additional@(_ : _) <- Cost.permissionsOf oid face gs

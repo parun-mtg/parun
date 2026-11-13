@@ -11,6 +11,7 @@ import qualified Parun.Codec.PermissionCost as PermissionCost
 import qualified Parun.Codec.PermissionLimit as PermissionLimit
 import qualified Parun.Codec.PermissionPool as PermissionPool
 import qualified Parun.Codec.PermissionVerb as PermissionVerb
+import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.WithCounters as WithCounters
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -42,4 +43,5 @@ codec = Fields.object $ do
   spending <- Fields.defaulted "spending" ManaSpending.Type.AsProduced ManaSpending.codec CastFromZone.spending
   alternativeCost <- Fields.defaulted "alternativeCost" Nothing (Common.maybe PermissionCost.codec) CastFromZone.alternativeCost
   entersWith <- Fields.defaulted "entersWith" Nothing (Common.maybe WithCounters.codec) CastFromZone.entersWith
-  pure CastFromZone.MkCastFromZone {CastFromZone.from = from, CastFromZone.matching = matching, CastFromZone.limit = limit, CastFromZone.verb = verb, CastFromZone.pool = pool, CastFromZone.additionalCosts = additionalCosts, CastFromZone.reduction = reduction, CastFromZone.spending = spending, CastFromZone.alternativeCost = alternativeCost, CastFromZone.entersWith = entersWith}
+  amount <- Fields.defaulted "amount" Nothing (Common.maybe Quantity.codec) CastFromZone.amount
+  pure CastFromZone.MkCastFromZone {CastFromZone.from = from, CastFromZone.matching = matching, CastFromZone.limit = limit, CastFromZone.verb = verb, CastFromZone.pool = pool, CastFromZone.additionalCosts = additionalCosts, CastFromZone.reduction = reduction, CastFromZone.spending = spending, CastFromZone.alternativeCost = alternativeCost, CastFromZone.entersWith = entersWith, CastFromZone.amount = amount}

@@ -1,0 +1,29 @@
+{
+  "description": "Maralen, Fae Ascendant refuses an exiled card whose mana value is above the number of Elves and Faeries you control",
+  "note": "alice controls two, Maralen (an Elf Faerie, counted once) and the Llanowar Elves; bob's Elvish Mystic is not hers. Grizzly Bears, mana value 2, is offered and Centaur Courser, mana value 3, is not. The control gives alice a Faerie Miscreant as well, and both are offered.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "G",
+        "battlefield": [{"card": "Maralen, Fae Ascendant"}],
+        "hand": [{"card": "Llanowar Elves", "label": "elves"}],
+        "library": [{"card": "Hill Giant"}, {"card": "Hill Giant"}, {"card": "Hill Giant"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Elvish Mystic"}],
+        "library": [{"card": "Grizzly Bears"}, {"card": "Centaur Courser"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$elves"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Centaur Courser", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Cast Grizzly Bears"]}}}
+  ]
+}
