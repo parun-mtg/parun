@@ -1,0 +1,73 @@
+{
+  "description": "Canyon Crawler makes a Food token as it enters",
+  "note": "Canyon Crawler resolves and its enters trigger creates one Food token.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "CCCCBB",
+        "hand": [
+          {
+            "card": "Canyon Crawler",
+            "label": "crawler"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$crawler"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Food Token",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Subtypes": {
+          "object": "Food Token",
+          "subtypes": [
+            "Food"
+          ]
+        }
+      }
+    }
+  ]
+}

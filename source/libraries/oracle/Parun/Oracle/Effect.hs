@@ -816,13 +816,15 @@ effect context e = case e of
               Quantity.Literal 1 -> [Prose.article one <> Text.pack " " <> one]
               Quantity.Literal n | n > 1 -> [Prose.cardinal n <> Text.pack " " <> many]
               _ -> []
-        tokens <- case Target.reading a of
-          Target.Stated q -> some q
+        (tokens, led) <- case Target.reading a of
+          Target.Stated q -> fmap (\t -> (t, [])) (some q)
           -- Free for a count: "for each" (Endless Swarm), "a number of"
           -- (Tyranid Invasion) or "X ..., where X is" (Krenko, Mob Boss).
-          Target.ForEach n each' -> fmap (<> Text.pack " for each " <> each') (some (Quantity.Literal n))
-          Target.EqualTo equal -> [Text.pack "a number of " <> many <> Text.pack " equal to " <> equal, Text.pack "X " <> many <> Text.pack ", where X is " <> equal]
+          -- "For each" leads the sentence too (Crescent Island Temple).
+          Target.ForEach n each' -> fmap (\t -> (t <> Text.pack " for each " <> each', [Text.pack "for each " <> each' <> Text.pack ", create " <> t])) (some (Quantity.Literal n))
+          Target.EqualTo equal -> fmap (\t -> (t, [])) [Text.pack "a number of " <> many <> Text.pack " equal to " <> equal, Text.pack "X " <> many <> Text.pack ", where X is " <> equal]
         let create = Text.pack "create " <> tokens
+            leading = [p {verb = l} | l <- led, p <- imperative context (Create.creator c) create creates, implied p]
             creates = Text.pack "creates " <> tokens
             -- "You create" too, where a trigger on another player's turn
             -- names the creator (Verdant Kraken).
@@ -832,7 +834,7 @@ effect context e = case e of
                 Target.Second -> declarative context (Create.creator c) create creates
                 Target.Third -> []
                 Target.ThirdPlural -> []
-        naming (Target.names a) (imperative context (Create.creator c) create creates <> spoken)
+        naming (Target.names a) (imperative context (Create.creator c) create creates <> leading <> spoken)
   -- A limit on the total has no wording yet, so a limited placement renders nothing.
   Effect.PutCounters p | Maybe.isNothing (PutCounters.totalAtMost p) -> do
     ref <- Target.object context Target.Each (PutCounters.ref p)

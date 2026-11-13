@@ -777,12 +777,13 @@ spec s = Spec.describe s "Parun.Oracle" $ do
 
   -- CR 111.1 / 122.1: tokens and counters "for each" object counted, or "a
   -- number of" them (Endless Swarm, Tyranid Invasion; Khabal Ghoul, Rhovanion
-  -- Rampager), "for each" first.
+  -- Rampager), "for each" first; a token's "for each" leads the sentence too
+  -- (Crescent Island Temple).
   Spec.it s "render creates tokens and puts counters by a count" $ do
     let hand = countOf (Filter.And []) (InZone.MkInZone Zone.Hand (PlayerRef.Relative PlayerRelation.You))
         snake = token "Snake Token" [Color.Green] [Subtype.Snake] 1 []
         swarm = Effect.Create (Create.MkCreate hand snake EntryRiders.defaultValue Nothing (PlayerRef.Relative PlayerRelation.You) False)
-    Spec.assertEq s [[Text.pack "Create a 1/1 green Snake creature token for each card in your hand.", Text.pack "You create a 1/1 green Snake creature token for each card in your hand.", Text.pack "Create a number of 1/1 green Snake creature tokens equal to the number of cards in your hand.", Text.pack "You create a number of 1/1 green Snake creature tokens equal to the number of cards in your hand.", Text.pack "Create X 1/1 green Snake creature tokens, where X is the number of cards in your hand.", Text.pack "You create X 1/1 green Snake creature tokens, where X is the number of cards in your hand."]] (Oracle.abilities (spell [clause [swarm]] []))
+    Spec.assertEq s [[Text.pack "Create a 1/1 green Snake creature token for each card in your hand.", Text.pack "For each card in your hand, create a 1/1 green Snake creature token.", Text.pack "You create a 1/1 green Snake creature token for each card in your hand.", Text.pack "Create a number of 1/1 green Snake creature tokens equal to the number of cards in your hand.", Text.pack "You create a number of 1/1 green Snake creature tokens equal to the number of cards in your hand.", Text.pack "Create X 1/1 green Snake creature tokens, where X is the number of cards in your hand.", Text.pack "You create X 1/1 green Snake creature tokens, where X is the number of cards in your hand."]] (Oracle.abilities (spell [clause [swarm]] []))
     let opponents = Quantity.Count (Count.MkCount (Scope.OverPlayers (PlayerRef.Relative PlayerRelation.Opponent)) (Filter.And []) Aggregation.Members)
         invasion = Effect.Create (Create.MkCreate opponents snake EntryRiders.defaultValue Nothing (PlayerRef.Relative PlayerRelation.You) False)
     Spec.assertBool s (Oracle.says (spell [clause [invasion]] []) (CardName.MkCardName (Text.pack "Spark")) (Text.pack "Create a number of 1/1 green Snake creature tokens equal to the number of opponents you have.")) "no \"opponents you have\""
