@@ -38,40 +38,46 @@ data ForEach effect = MkForEach
     slot :: SlotName.SlotName,
     -- | The instructions run once per member, in written order (CR 608.2c). A
     -- SEQUENCE is the whole point: an opcode naming a set applies ITSELF across
-    -- it, where this applies a list of them to each member in turn, so a later
+    -- it, where this applies a list of them to each member, so a later
     -- instruction can act on what an earlier one produced FOR THAT MEMBER.
     --
-    -- What the body BINDS is scoped to its own iteration and no further, which
+    -- One printed sentence. CR 608.2e's second sentence is a second loop:
+    -- Mutalith Vortex Beast's flips, draws and damage are three.
+    --
+    -- What the body BINDS is scoped to its own member and no further, which
     -- Parun.Engine.Resolve.Arms.Zones's arm states; once the loop is over those names
     -- hold the UNION across every member, so an instruction after it names the
     -- whole batch -- Mirror Match's "exile those tokens", ONE delayed ability
     -- rather than one per member. Parun.CombatCostSpec's
-    -- PutOntoBattlefieldBlocking group proves it.
+    -- PutOntoBattlefieldBlocking group proves it. An amount is also kept member
+    -- by member (Parun.Types.Binding's perMember) and is back in scope
+    -- wherever a later loop considers that member, proved by Parun.CoinSpec's
+    -- "CR 705.2 a lost flip reaches its loser and a won one does not".
     body :: Seq.Seq effect,
     -- | CR 608.2f's THIRD sentence: True where the loop's action "can't be
-    -- processed simultaneously", so each member is considered individually and
-    -- its events stand apart from the next member's. False -- rule 608.2f's "in
-    -- most cases", and what a card that says nothing gets -- runs the whole loop
-    -- inside one Parun.Types.EventGroup, so CR 603.6a's newcomers see each other
-    -- enter.
+    -- processed simultaneously", so each member is considered individually,
+    -- its whole body before the next member's, and its events stand apart
+    -- from the next member's. False -- rule 608.2f's "in most cases", and what
+    -- a card that says nothing gets -- takes the body action by action (CR
+    -- 608.2e): an action's choices are made for every member, then it is
+    -- processed for every member inside one Parun.Types.EventGroup, so CR
+    -- 603.6a's newcomers see each other enter, then the next action's.
     --
     -- Rule 608.2f's own example is the True: Soulfire Eruption's player "can't
     -- exile the top card of their library multiple times at the same time".
-    -- Mutalith Vortex Beast is another, by CR 121.2 -- cards are drawn one at a
-    -- time -- and Thieves' Auction a third, each player choosing from what the
-    -- player before left.
+    -- Mutalith Vortex Beast's draws are another, by CR 121.2 -- cards are
+    -- drawn one at a time -- and Thieves' Auction a third, each player
+    -- choosing from what the player before left.
     --
-    -- Not implemented: rule 608.2f's unit is the ACTION, and CR 608.2e says the
-    -- same for the order, so a body of two instructions owes an answer per
-    -- instruction where this field gives one for the whole loop (#3886).
-    --
-    -- Proved by Parun.CombatCostSpec's "CR 603.6a / 608.2f: every Mirror Match
-    -- token sees every other one enter", which is the False. The True has no
-    -- gameplay observer -- no printing in the pool watches a batch of library
-    -- exiles or of draws -- and is held instead by Parun.CardSpec's "a ForEach
-    -- whose body draws or reads a library top says it is not simultaneous",
-    -- which is where CR 121.2 and rule 608.2f's Soulfire Eruption example are
-    -- kept as rules rather than as a card's default.
+    -- The False is proved by Parun.CombatCostSpec's "CR 603.6a / 608.2f: every
+    -- Mirror Match token sees every other one enter" and by the scenario
+    -- mutalith-vortex-beast-damages-every-losing-opponent-at-once, one
+    -- action's events each. The True has no gameplay observer of its
+    -- events -- no printing in the pool watches a batch of library exiles or
+    -- of draws -- and is held instead by Parun.CardSpec's "a ForEach whose
+    -- body draws or reads a library top says it is not simultaneous", which is
+    -- where CR 121.2 and rule 608.2f's Soulfire Eruption example are kept as
+    -- rules rather than as a card's default.
     individually :: Bool,
     -- | CR 118.12a's "unless [a player] pays", offered once PER MEMBER, the body
     -- running for a member only where the gate's branch selects someone --

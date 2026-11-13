@@ -2030,6 +2030,7 @@ reservedSlots :: Set.Set SlotName.SlotName
 reservedSlots =
   Set.fromList
     [ Binding.variableX,
+      Binding.chosenForOthers,
       Binding.chosenModes,
       Binding.modeChooser,
       Binding.copySource,

@@ -407,7 +407,7 @@ attackingPlayersNames asking x = case x of
 
 bindingNames :: (Monoid r) => Asking r -> Binding.Binding -> r
 bindingNames asking x = case x of
-  Binding.MkBinding targets _amount _modes copy objects _sticker _votes division -> foldMap (foldMap (recipientNames asking)) targets <> foldMap (projectedCharacteristicsNames asking) copy <> names asking (\oid -> any (elem oid) objects) <> foldMap (foldMap (recipientNames asking) . Map.keys) division
+  Binding.MkBinding targets _amount _modes copy objects _sticker _votes division perMember -> foldMap (foldMap (recipientNames asking)) targets <> foldMap (projectedCharacteristicsNames asking) copy <> names asking (\oid -> any (elem oid) objects) <> foldMap (foldMap (recipientNames asking) . Map.keys) division <> foldMap (foldMap (recipientNames asking) . Map.keys) perMember
 
 blockCostNames :: (Monoid r) => Asking r -> BlockCost.BlockCost -> r
 blockCostNames asking = Const.getConst . Children.blockCostChildren (ruleVisitors asking)

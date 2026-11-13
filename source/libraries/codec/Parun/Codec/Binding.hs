@@ -30,6 +30,7 @@ codec = Fields.object $ do
   sticker <- Fields.defaulted "sticker" Nothing (Common.maybe StickerRef.codec) Binding.sticker
   votes <- Fields.defaulted "votes" Nothing (Common.maybe (Common.naturalMap PlayerId.codec Common.natural)) Binding.votes
   division <- Fields.defaulted "division" Nothing (Common.maybe (Common.multiset Recipient.codec)) Binding.division
+  perMember <- Fields.defaulted "perMember" Nothing (Common.maybe (Common.multiset Recipient.codec)) Binding.perMember
   pure
     Binding.MkBinding
       { Binding.targets = targets,
@@ -39,7 +40,8 @@ codec = Fields.object $ do
         Binding.objects = objects,
         Binding.sticker = sticker,
         Binding.votes = votes,
-        Binding.division = division
+        Binding.division = division,
+        Binding.perMember = perMember
       }
 
 -- | A name-keyed map as a JSON OBJECT keyed by the slot name.

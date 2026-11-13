@@ -197,6 +197,13 @@
                                         "value": {
                                           "type": "IsTapped"
                                         }
+                                      },
+                                      {
+                                        "type": "Not",
+                                        "value": {
+                                          "type": "IsBound",
+                                          "value": "thoseChosenForOthers"
+                                        }
                                       }
                                     ]
                                   }

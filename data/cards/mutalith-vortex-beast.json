@@ -58,7 +58,24 @@
                                 "misses": "lost",
                                 "slot": "won"
                               }
-                            },
+                            }
+                          ],
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "Opponent"
+                              }
+                            }
+                          },
+                          "slot": "opponent"
+                        }
+                      },
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
                             {
                               "type": "Draw",
                               "value": {
@@ -71,7 +88,25 @@
                                   "value": "won"
                                 }
                               }
-                            },
+                            }
+                          ],
+                          "individually": true,
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "Opponent"
+                              }
+                            }
+                          },
+                          "slot": "opponent"
+                        }
+                      },
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
                             {
                               "type": "DealDamage",
                               "value": {
@@ -108,7 +143,6 @@
                               }
                             }
                           ],
-                          "individually": true,
                           "ref": {
                             "type": "Players",
                             "value": {

@@ -93,10 +93,16 @@ data Binding = MkBinding
     -- each at least one; CR 115.7f keeps it through a change of targets. Also
     -- CR 608.2d's, among the `objects` an Effect.Divide chose. Nothing for an
     -- undivided slot.
-    division :: Maybe (Map.Map Recipient.Recipient Natural.Natural)
+    division :: Maybe (Map.Map Recipient.Recipient Natural.Natural),
+    -- | CR 608.2f: the `amount` each member of a loop bound under this name, for
+    -- a later loop of the same resolution to read member by member -- Mutalith
+    -- Vortex Beast's "for each flip you lose, this creature deals 3 damage to
+    -- that player". Written by Parun.Engine.Resolve.Arms.Zones's forEach as the
+    -- loop ends, and Nothing for every slot no loop's body bound an amount at.
+    perMember :: Maybe (Map.Map Recipient.Recipient Natural.Natural)
   }
   deriving (Eq, Ord, Show)
 
 -- | The empty binding: no choice of any kind. The unit for merging.
 empty :: Binding
-empty = MkBinding {targets = Nothing, amount = Nothing, modes = Nothing, copy = Nothing, objects = Nothing, sticker = Nothing, votes = Nothing, division = Nothing}
+empty = MkBinding {targets = Nothing, amount = Nothing, modes = Nothing, copy = Nothing, objects = Nothing, sticker = Nothing, votes = Nothing, division = Nothing, perMember = Nothing}
