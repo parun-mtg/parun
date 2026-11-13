@@ -837,8 +837,9 @@ data View = MkView
     -- | CR 601.2h: the mana spent to pay for this candidate -- the units
     -- `manaSpentTagColors` above classifies, read off the same records. Its one
     -- reader is Parun.Engine.Quantity's ManaSpent arm, answering rule 702.191a's "the
-    -- amount of mana spent to cast that spell" and Converge's "the number of
-    -- colors of mana spent to cast this spell".
+    -- amount of mana spent to cast that spell", Converge's "the number of
+    -- colors of mana spent to cast this spell" and Catharsis's "if {W}{W} was
+    -- spent to cast it".
     manaSpent :: Mana.Mana,
     -- | CR 107.3 / 601.2h: the mana that paid the candidate's X
     -- (Parun.Types.Object.manaSpentOnX), none where nothing recorded any. Its

@@ -104,10 +104,13 @@
                             {
                               "type": "ManaSpent",
                               "value": {
-                                "type": "OfTypeOnX",
+                                "type": "OfType",
                                 "value": {
-                                  "type": "Colored",
-                                  "value": "Black"
+                                  "manaType": {
+                                    "type": "Colored",
+                                    "value": "Black"
+                                  },
+                                  "portion": "OnX"
                                 }
                               }
                             },

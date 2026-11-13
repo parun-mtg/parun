@@ -46,6 +46,7 @@ import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.ControlClock as ControlClock
 import qualified Parun.Types.ControlWindow as ControlWindow
+import qualified Parun.Types.CostPortion as CostPortion
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Devotion as Devotion
@@ -721,11 +722,16 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- spell". Zero for a spell cast for no mana, which is an ordinary answer.
         Quantity.ManaSpent part -> case part of
           ManaSpent.Total -> fmap (toInteger . length . Mana.unwrap . Filter.manaSpent) mView
-          -- CR 107.3 / 601.2h: Soul Burn's "the amount of {B} spent on X", off
+          -- CR 601.2h / 400.7d: Catharsis's "if {W}{W} was spent to cast it" off
+          -- the whole payment, Soul Burn's "the amount of {B} spent on X" off
           -- the mana the payer spent on X (Object.manaSpentOnX), 0 where none
           -- was. A unit counts by the type it IS, not one a spend-as-though
           -- clause let it pay as (CR 609.4b).
-          ManaSpent.OfTypeOnX manaType -> fmap (toInteger . length . filter ((== manaType) . ManaUnit.manaType) . Mana.unwrap . Filter.manaSpentOnX) mView
+          ManaSpent.OfType manaType portion ->
+            let spentOn = case portion of
+                  CostPortion.TotalCost -> Filter.manaSpent
+                  CostPortion.OnX -> Filter.manaSpentOnX
+             in fmap (toInteger . length . filter ((== manaType) . ManaUnit.manaType) . Mana.unwrap . spentOn) mView
           -- CR 601.2h / 106.1a: Converge's count, a SET of colours so two mana of
           -- one colour count once and colourless (CR 106.1b) counts none.
           ManaSpent.Colors -> fmap (toInteger . Set.size . ManaSymbolText.colorsOf . Filter.manaSpent) mView
@@ -1630,7 +1636,9 @@ hasRead wanted quantity = case quantity of
   Quantity.InSlot slot -> wanted == StaticRead.ReadsX && slot == Binding.variableX
   Quantity.ManaSpent part -> case part of
     ManaSpent.Total -> wanted == StaticRead.ReadsManaSpent
-    ManaSpent.OfTypeOnX _ -> wanted == StaticRead.ReadsManaSpentOnX
+    -- Unobserved: only a spell with {X} reading a type over its whole cost
+    -- would show the payer asked for X's share needlessly; no pool card is one.
+    ManaSpent.OfType _ portion -> portion == CostPortion.OnX && wanted == StaticRead.ReadsManaSpentOnX
     ManaSpent.Colors -> False
   _ -> Monoid.getAny (Const.getConst (Children.quantityChildren (Children.descendingQuantities (Const.Const . Monoid.Any . hasRead wanted)) quantity))
 
