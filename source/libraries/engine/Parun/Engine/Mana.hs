@@ -3435,6 +3435,9 @@ data Sources = MkSources
     sourceSupplies :: [[(Activations.Activations, Yield, ManaCost, Activations.Activations)]],
     sourceBorrowed :: ObjectId -> [Maybe ManaRestriction.ManaRestriction],
     sourceClauses :: [SpendManaAsThough.SpendManaAsThough],
+    -- PlayerEffect.spendManaAsThoughActivating of the board: the clauses about
+    -- activating an ability of that source, past `sourceClauses`.
+    sourceActivating :: ObjectId -> [SpendManaAsThough.SpendManaAsThough],
     sourceLifeForMana :: [(ObjectId, Natural, ManaType)],
     sourceLifePayable :: Natural -> Bool,
     -- The PLAIN sources among `sourceIds` (plainSupplies), each with the
@@ -3455,7 +3458,8 @@ supplySourcesGiven capacity grants pcs pid gs =
       watch = watchOf gs
       rewritesOf = Replacement.manaRewrites gs
       supplies = fmap (\oid -> manaSuppliesGiven 0 capacity watch rewritesOf pcs pid (borrowed oid) oid gs) ids
-      clauses = PlayerEffect.spendManaAsThough pid gs
+      rows = PlayerEffect.spendManaAsThoughRows pid gs
+      clauses = PlayerEffect.spendManaAsThoughEvery rows
       plain = Map.fromList [(oid, offered) | (oid, routes) <- zip ids supplies, Just offered <- [plainSupplies clauses oid routes]]
       lifeForMana = PlayerEffect.lifeForMana pid gs
    in MkSources
@@ -3466,6 +3470,7 @@ supplySourcesGiven capacity grants pcs pid gs =
           sourceSupplies = supplies,
           sourceBorrowed = borrowed,
           sourceClauses = clauses,
+          sourceActivating = \oid -> PlayerEffect.spendManaAsThoughActivating rows pid oid gs,
           sourcePlain = plain,
           sourcePlainTotal = Map.fromListWith (+) (concat (Map.elems plain)),
           sourceCeiling = ceilingOf clauses lifeForMana supplies [manaSuppliesGiven 1 capacity watch rewritesOf pcs pid (borrowed oid) oid gs | (oid, routes) <- zip ids supplies, any (\(_, yield, _, _) -> Maybe.isJust (yieldX yield)) routes],
@@ -3558,6 +3563,15 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       servesCost
         | costClauses == clauses = serves
         | otherwise = serves . rewriteSupply costClauses
+      -- CR 609.4b's clauses about activating an ability of one source (Agatha's
+      -- Soul Cauldron) serve that source's own activation cost, a payment of
+      -- its own as above, and no other position. data/scenarios'
+      -- agatha-s-soul-cauldron-pays-a-creature-s-mana-ability-s-own-cost-as-any-color
+      -- is the proof.
+      activatingAt = Map.filter (not . null) (Map.fromList (fmap (\oid -> (oid, sourceActivating swept oid)) sources))
+      servesAt subjectAt position = case Map.lookup position subjectAt of
+        Just (PaymentSubject.Activating oid _ _) | Just extra <- Map.lookup oid activatingAt -> serves . rewriteSupply (clauses <> extra)
+        _ -> serves
       pooled = fmap (rewriteSupply clauses . supplyOf admitting) (unitsOf (Game.poolOf pid gs))
       suppliesAt limit oid = manaSuppliesGiven limit capacity (sourceWatch swept) (sourceRewrites swept) pcs pid (sourceBorrowed swept oid) oid gs
       -- CR 601.2b / 602.2b: a route announcing its own X (Wizard's Rockets)
@@ -3604,7 +3618,6 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
           ((activations, manaCost), x) <- Map.toList (Map.fromListWith max [((activations, manaCost), Maybe.fromMaybe 0 (yieldX yield)) | (activations, yield, manaCost, _) <- supplies]),
           not (null (ManaCost.unwrap manaCost))
         ]
-      eatingResolutions = eatingOf suppliesPer
       demandBoundOf per = List.foldl' max 0 (fmap demandSize costResolutions) + sum [times * List.foldl' max 0 (fmap demandSize ways) | (times, ways) <- eatingOf per]
       demandBound = demandBoundOf suppliesPer
       -- For each type, how many typed demands could take it at most: the
@@ -3612,7 +3625,19 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
       -- taken as often as it can be. A hybrid counts toward both its halves.
       needsOf (demands, _, _) = Map.fromListWith (+) [(manaType, 1 :: Natural) | demand <- demands, demand /= anyTypeDemand, manaType <- Set.toList (demandTypes demand)]
       mostOf ways = List.foldl' (Map.unionWith max) Map.empty (fmap needsOf ways)
-      typedNeeds = Map.unionsWith (+) (mostOf costResolutions : [fmap (* times) (mostOf ways) | (times, ways) <- eatingResolutions])
+      --
+      -- A source `activatingAt` names may spend other types as the ones its
+      -- cost names, so each of its typed demands counts toward every type.
+      widened ways = Map.fromSet (const (List.foldl' max 0 (fmap (sum . needsOf) ways))) everyManaType
+      typedNeeds =
+        Map.unionsWith
+          (+)
+          ( mostOf costResolutions
+              : [ fmap (* times) (if Map.member oid activatingAt then widened ways else mostOf ways)
+                | (oid, supplies) <- zip sources suppliesPer,
+                  (times, ways) <- eatingOf [supplies]
+                ]
+          )
       -- CR 116.2c: Channel's life for mana is one more group, with no activation
       -- behind it: taken k times it adds k mana and pays k times its price, which
       -- CR 119.4's clause below holds against the rest of the board. Never more
@@ -3731,7 +3756,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
                   -- seven cannot pay a mana ability's own {1}" and its two Omen
                   -- Hawker siblings are the pair that proves both directions.
                   admits (from, supply) (wantedAt, demand) =
-                    (if wantedAt == costPosition then servesCost else serves) supply demand
+                    (if wantedAt == costPosition then servesCost else servesAt subjectAt wantedAt) supply demand
                       && from < wantedAt
                       && maybe False (`Set.member` supplyAdmits supply) (Map.lookup wantedAt subjectAt)
                   -- "The supplies that could serve this set of demands" and "the
@@ -3808,7 +3833,7 @@ payableResolutionsGiven subject spending swept pcs pid committed committedEnergy
               let wanted_ = demands <> List.genericReplicate generic anyTypeDemand
                   named = Set.unions (fmap demandTypes (filter (/= anyTypeDemand) (wanted_ <> fmap snd eaten)))
                   admitsAt k supply = maybe False (`Set.member` supplyAdmits supply) (Map.lookup k subjectAt)
-                  serve k pools demand = Set.fromList [List.delete supply pool | pool <- Set.toList pools, supply <- ListUtils.nubOrd pool, admitsAt k supply, serves supply demand]
+                  serve k pools demand = Set.fromList [List.delete supply pool | pool <- Set.toList pools, supply <- ListUtils.nubOrd pool, admitsAt k supply, servesAt subjectAt k supply demand]
                   settle doubling supply =
                     let (naming, unnamed) = List.partition (not . Set.disjoint named . spendableAs clauses) (Set.toList (supplyMade supply))
                         other = take 1 (List.sortOn (`Map.notMember` doubling) unnamed)

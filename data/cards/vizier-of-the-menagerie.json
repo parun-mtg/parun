@@ -79,11 +79,14 @@
                   "type": "Colorless"
                 }
               ],
-              "casting": {
-                "type": "HasCardType",
-                "value": "Creature"
-              },
               "only": false,
+              "scope": {
+                "type": "Casting",
+                "value": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                }
+              },
               "which": {
                 "type": "Any"
               }

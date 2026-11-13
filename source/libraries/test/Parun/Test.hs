@@ -763,6 +763,7 @@ import qualified Parun.Codec.SpellTallySpec
 import qualified Parun.Codec.SpellWasCastSpec
 import qualified Parun.Codec.SpellWasCopiedSpec
 import qualified Parun.Codec.SpendManaAsThoughSpec
+import qualified Parun.Codec.SpendScopeSpec
 import qualified Parun.Codec.SpendTriggerSpec
 import qualified Parun.Codec.SpentOnSpec
 import qualified Parun.Codec.SpliceSpec
@@ -1824,6 +1825,7 @@ spec s registry corpus = do
   Parun.Codec.AbilityWasActivatedSpec.spec s
   Parun.Codec.ChapterMomentSpec.spec s
   Parun.Codec.SpendManaAsThoughSpec.spec s
+  Parun.Codec.SpendScopeSpec.spec s
   Parun.Codec.SpendTriggerSpec.spec s
   Parun.Codec.SpliceSpec.spec s
   Parun.Codec.StackObjectKindSpec.spec s

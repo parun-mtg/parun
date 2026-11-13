@@ -6923,9 +6923,8 @@ payActivation perform inFlight pid oid cost = do
   before <- State.get
   (paid, windows) <- case Cost.mana cost of
     Just (ManaCost.MkManaCost []) -> pure (True, [])
-    -- Not implemented: CR 118.14's permission said of an activation (Sharkey,
-    -- Tyrant of the Shire), so an activation cost is paid with the mana it is
-    -- (#6197).
+    -- CR 609.4b's clause about an activation reaches this through the subject
+    -- (PlayerEffect.spendManaAsThoughFor).
     --
     -- CR 106.6 is a different sentence and answers differently: this is CR 602.2b's
     -- payment, so mana restricted to activations may pay it -- Omen Hawker's {C} into

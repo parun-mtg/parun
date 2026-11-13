@@ -10,6 +10,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
+import qualified Parun.Types.SpendScope as SpendScope
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.SpendManaAsThough" $ do
@@ -23,7 +24,7 @@ spec s = Spec.describe s "Parun.Codec.SpendManaAsThough" $ do
           { SpendManaAsThough.which = ManaFilter.OfType (ManaType.Colored Color.White),
             SpendManaAsThough.asThough = Set.fromList (fmap ManaType.Colored [Color.White, Color.Blue]),
             SpendManaAsThough.only = False,
-            SpendManaAsThough.casting = Nothing
+            SpendManaAsThough.scope = SpendScope.EveryPayment
           }
       )
       " {\"which\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"White\"}},\"asThough\":[{\"type\":\"Colored\",\"value\":\"White\"},{\"type\":\"Colored\",\"value\":\"Blue\"}],\"only\":false} "
@@ -36,7 +37,7 @@ spec s = Spec.describe s "Parun.Codec.SpendManaAsThough" $ do
           { SpendManaAsThough.which = ManaFilter.NotOfType (ManaType.Colored Color.White),
             SpendManaAsThough.asThough = Set.singleton ManaType.Colorless,
             SpendManaAsThough.only = True,
-            SpendManaAsThough.casting = Nothing
+            SpendManaAsThough.scope = SpendScope.EveryPayment
           }
       )
       " {\"which\":{\"type\":\"NotOfType\",\"value\":{\"type\":\"Colored\",\"value\":\"White\"}},\"asThough\":[{\"type\":\"Colorless\"}],\"only\":true} "
@@ -49,8 +50,8 @@ spec s = Spec.describe s "Parun.Codec.SpendManaAsThough" $ do
           { SpendManaAsThough.which = ManaFilter.Any,
             SpendManaAsThough.asThough = Set.singleton ManaType.Colorless,
             SpendManaAsThough.only = False,
-            SpendManaAsThough.casting = Just (Filter.HasCardType CardType.Creature)
+            SpendManaAsThough.scope = SpendScope.Casting (Filter.HasCardType CardType.Creature)
           }
       )
-      " {\"which\":{\"type\":\"Any\"},\"asThough\":[{\"type\":\"Colorless\"}],\"only\":false,\"casting\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+      " {\"which\":{\"type\":\"Any\"},\"asThough\":[{\"type\":\"Colorless\"}],\"only\":false,\"scope\":{\"type\":\"Casting\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s SpendManaAsThough.codec

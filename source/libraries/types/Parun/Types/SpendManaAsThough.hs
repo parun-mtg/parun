@@ -1,10 +1,9 @@
 module Parun.Types.SpendManaAsThough where
 
 import qualified Data.Set as Set
-import qualified Parun.Types.Filter as Filter
-import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.SpendScope as SpendScope
 
 -- | The payload of Parun.Types.PlayerEffect's SpendManaAsThough arm: one clause
 -- of CR 609.4b, "spend [this] mana as though it were mana of [these types]".
@@ -53,10 +52,11 @@ data SpendManaAsThough = MkSpendManaAsThough
     -- tells adding from replacing: Parun.ManaSymbolSpec's "Sunglasses of Urza"
     -- cases prove white mana still pays {W} under it.
     only :: Bool,
-    -- | The spells this clause speaks about, Nothing for every payment: Vizier of
-    -- the Menagerie's "to cast creature spells" (CR 118.14). Read against the spell
-    -- at the cost position only (Parun.Engine.PlayerEffect.spendManaAsThoughFor), so
-    -- it reaches neither an activation nor a mana ability's own cost.
-    casting :: Maybe (Filter.Filter Keyword.Keyword)
+    -- | The payments this clause speaks about: Vizier of the Menagerie's "to cast
+    -- creature spells" (CR 118.14), Agatha's Soul Cauldron's "to activate abilities
+    -- of creatures you control". Read against the payment's own subject
+    -- (Parun.Engine.PlayerEffect.spendManaAsThoughFor), so a clause about a cast
+    -- reaches neither an activation nor a mana ability's own cost.
+    scope :: SpendScope.SpendScope
   }
   deriving (Eq, Ord, Show)

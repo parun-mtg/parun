@@ -1624,6 +1624,8 @@ library codec
     Parun.Codec.SpellWasCopiedSpec
     Parun.Codec.SpendManaAsThough
     Parun.Codec.SpendManaAsThoughSpec
+    Parun.Codec.SpendScope
+    Parun.Codec.SpendScopeSpec
     Parun.Codec.SpendTrigger
     Parun.Codec.SpendTriggerSpec
     Parun.Codec.SpentOn
@@ -3520,6 +3522,7 @@ library types
     Parun.Types.SpellWasCast
     Parun.Types.SpellWasCopied
     Parun.Types.SpendManaAsThough
+    Parun.Types.SpendScope
     Parun.Types.SpendTrigger
     Parun.Types.SpentOn
     Parun.Types.Splice

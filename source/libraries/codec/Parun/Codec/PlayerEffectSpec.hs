@@ -58,6 +58,7 @@ import qualified Parun.Types.ShownCards as ShownCards
 import qualified Parun.Types.Shows as Shows
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
+import qualified Parun.Types.SpendScope as SpendScope
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
@@ -210,7 +211,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
             { SpendManaAsThough.which = ManaFilter.OfType (ManaType.Colored Color.White),
               SpendManaAsThough.asThough = Set.singleton (ManaType.Colored Color.Blue),
               SpendManaAsThough.only = False,
-              SpendManaAsThough.casting = Nothing
+              SpendManaAsThough.scope = SpendScope.EveryPayment
             }
       )
       " {\"type\":\"SpendManaAsThough\",\"value\":{\"which\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"White\"}},\"asThough\":[{\"type\":\"Colored\",\"value\":\"Blue\"}],\"only\":false}} "
@@ -223,7 +224,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
             { SpendManaAsThough.which = ManaFilter.NotOfType (ManaType.Colored Color.White),
               SpendManaAsThough.asThough = Set.singleton ManaType.Colorless,
               SpendManaAsThough.only = True,
-              SpendManaAsThough.casting = Nothing
+              SpendManaAsThough.scope = SpendScope.EveryPayment
             }
       )
       " {\"type\":\"SpendManaAsThough\",\"value\":{\"which\":{\"type\":\"NotOfType\",\"value\":{\"type\":\"Colored\",\"value\":\"White\"}},\"asThough\":[{\"type\":\"Colorless\"}],\"only\":true}} "
