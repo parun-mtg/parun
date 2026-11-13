@@ -66,15 +66,21 @@ data Site = MkSite
   deriving (Eq, Show)
 
 -- | The command line: the substrings selecting cases (any of them; every case
--- when none), the per-case budget in microseconds, the shuffle's seed, and
--- where to write the run's 'Report'.
+-- when none), the per-case budget in microseconds, the shuffle's seed, where
+-- to write the run's 'Report', and whether to list the selected cases instead
+-- of running them.
 data Options = MkOptions
   { patterns :: [Text.Text],
     timeout :: Maybe Natural,
     seed :: Maybe Key.Type.Key,
-    json :: Maybe FilePath
+    json :: Maybe FilePath,
+    list :: Bool
   }
   deriving (Eq, Show)
+
+-- | The options of a command line with no flags.
+defaults :: Options
+defaults = MkOptions {patterns = [], timeout = Nothing, seed = Nothing, json = Nothing, list = False}
 
 -- | One case as it ran: its dotted path, why it failed if it did and where,
 -- and how long it took.
@@ -167,6 +173,9 @@ main collect = do
   let display = MkDisplay {live = terminal, annotated = actions == Just "true"}
   s <- maybe Key.fresh pure $ seed options
   cases <- collect
+  Monad.when (list options) $ do
+    Foldable.traverse_ (TextIO.putStrLn . name) . filter (selected options) $ Foldable.toList cases
+    Exit.exitSuccess
   let todo = ordered options s cases
   started <- Clock.getMonotonicTimeNSec
   screen <- IORef.newIORef MkScreen {counted = MkSummary {total = 0, failures = 0}, drawnAt = 0, width = 0}
@@ -186,12 +195,13 @@ flags =
   [ GetOpt.Option "p" ["pattern"] (GetOpt.ReqArg (\s o -> Right o {patterns = patterns o <> [Text.pack s]}) "SUBSTRING") "run the cases whose path holds this; repeated, those matching any",
     GetOpt.Option [] ["timeout"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a duration: " <> s) (\n -> Right o {timeout = Just n}) $ duration s) "DURATION") "fail a case still running after this long: seconds, or a number ending in ms, s, m or h",
     GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a seed: " <> s) (\k -> Right o {seed = Just k}) . Key.fromHex $ Text.pack s) "KEY") "the shuffle's key, 64 hexadecimal digits; drawn from the operating system when absent",
-    GetOpt.Option [] ["json"] (GetOpt.ReqArg (\file o -> Right o {json = Just file}) "FILE") "write every case's name, failure, its site and nanoseconds to this file as JSON"
+    GetOpt.Option [] ["json"] (GetOpt.ReqArg (\file o -> Right o {json = Just file}) "FILE") "write every case's name, failure, its site and nanoseconds to this file as JSON",
+    GetOpt.Option [] ["list"] (GetOpt.NoArg (\o -> Right o {list = True})) "print the names of the cases a run would select, in the order they are registered, without running them"
   ]
 
 parseOptions :: [String] -> Either String Options
 parseOptions arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
-  (updates, [], []) -> Monad.foldM (\o f -> f o) MkOptions {patterns = [], timeout = Nothing, seed = Nothing, json = Nothing} updates
+  (updates, [], []) -> Monad.foldM (\o f -> f o) defaults updates
   (_, argument : _, []) -> Left $ "unexpected argument: " <> argument
   (_, _, problem : _) -> Left $ List.dropWhileEnd Char.isSpace problem
 

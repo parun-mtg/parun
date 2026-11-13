@@ -26,13 +26,15 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
     Spec.it s "reads a seed" $
       Spec.assertEq s (fmap Runner.seed $ Runner.parseOptions ["--seed", replicate 63 '0' <> "7"]) (Right (Just $ key 7))
     Spec.it s "selects every case when given nothing" $
-      Spec.assertEq s (Runner.parseOptions []) (Right Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing})
+      Spec.assertEq s (Runner.parseOptions []) (Right Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing, Runner.list = False})
     Spec.it s "refuses a positional argument" $
       Spec.assertEq s (Runner.parseOptions ["Engine"]) (Left "unexpected argument: Engine")
     Spec.it s "refuses a flag it does not know" $
       Spec.assertBool s (isLeft $ Runner.parseOptions ["--hide-successes"]) "accepted --hide-successes"
     Spec.it s "reads where to write the report" $
       Spec.assertEq s (fmap Runner.json $ Runner.parseOptions ["--json", "report.json"]) (Right (Just "report.json"))
+    Spec.it s "reads --list" $
+      Spec.assertEq s (fmap Runner.list $ Runner.parseOptions ["--list"]) (Right True)
     Spec.it s "refuses a seed that is not a key" $
       Spec.assertEq s (Runner.parseOptions ["--seed", "x"]) (Left "not a seed: x")
 
@@ -50,7 +52,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
       Spec.assertEq s (fmap Runner.name $ Foldable.toList cases) [Text.pack "a.b.c", Text.pack "a.d"]
 
   Spec.describe s "selected" $ do
-    let options ps = Runner.MkOptions {Runner.patterns = fmap Text.pack ps, Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing}
+    let options ps = Runner.defaults {Runner.patterns = fmap Text.pack ps}
         named = Runner.MkCase {Runner.path = fmap Text.pack ["Engine", "Trigger", "fires once"], Runner.action = pure ()}
     Spec.it s "matches a substring spanning groups" $
       Spec.assertBool s (Runner.selected (options ["Trigger.fires"]) named) "missed Trigger.fires"
@@ -62,7 +64,7 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
       Spec.assertBool s (not $ Runner.selected (options ["engine"]) named) "matched engine"
 
   Spec.describe s "ordered" $ do
-    let options = Runner.MkOptions {Runner.patterns = [], Runner.timeout = Nothing, Runner.seed = Nothing, Runner.json = Nothing}
+    let options = Runner.defaults
         cases = Seq.fromList $ fmap (\i -> Runner.MkCase {Runner.path = [Text.pack $ show i], Runner.action = pure ()}) [1 .. 20 :: Integer]
         names seed = fmap Runner.name $ Runner.ordered options (key seed) cases
     Spec.it s "gives one seed one order" $
