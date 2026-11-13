@@ -1186,8 +1186,8 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.PayLifeForMana {} -> True
   Prompt.Type.ReturnCommander {} -> True
   Prompt.Type.DeclareMulligan {} -> True
-  -- A subtype of the prompt's family (CR 205.3).
-  Prompt.Type.ChooseSubtype _ _ _ family -> Engine.Subtype.inFamily family chosen
+  -- A subtype of the prompt's family (CR 205.3), of its list where it has one.
+  Prompt.Type.ChooseSubtype _ _ _ family among -> Engine.Subtype.offered family among chosen
   -- Any card name, an open class the prompt does not list (legalAnswer's
   -- question).
   Prompt.Type.ChooseCardName {} -> True

@@ -493,9 +493,10 @@ data Prompt r where
   -- the words the new one may not be.
   ChooseWordSwap :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> SlotName.SlotName -> Set.Set WordFamily.WordFamily -> Set.Set TextWord.TextWord -> Prompt (TextWord.TextWord, TextWord.TextWord)
   -- | CR 205.3: the one subtype of the family a player chooses for an object,
-  -- written to Object.chosenSubtype; no candidate list, since every member of
-  -- the family's closed list is legal (CR 305.6, 205.3m, 205.3j).
-  ChooseSubtype :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> SubtypeFamily.SubtypeFamily -> Prompt Subtype.Subtype
+  -- written to Object.chosenSubtype. Nothing lists no candidates, every member
+  -- of the family's closed list being legal (CR 305.6, 205.3m, 205.3j); a
+  -- list is the types the card names (Eclipsed Realms), the only legal ones.
+  ChooseSubtype :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> SubtypeFamily.SubtypeFamily -> Maybe (NonEmpty.NonEmpty Subtype.Subtype) -> Prompt Subtype.Subtype
   -- | CR 607.2d: odd or even, for the object the ObjectId names
   -- (ChosenQuality.Parity, Gollum, Riddle Master). Both are always legal.
   ChooseParity :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Prompt Parity.Parity

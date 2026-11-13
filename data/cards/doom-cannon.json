@@ -95,7 +95,9 @@
                 "type": "ChooseQuality",
                 "value": {
                   "type": "Subtype",
-                  "value": "CreatureType"
+                  "value": {
+                    "family": "CreatureType"
+                  }
                 }
               }
             }

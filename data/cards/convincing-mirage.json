@@ -39,7 +39,9 @@
                 "type": "ChooseQuality",
                 "value": {
                   "type": "Subtype",
-                  "value": "BasicLandType"
+                  "value": {
+                    "family": "BasicLandType"
+                  }
                 }
               }
             }

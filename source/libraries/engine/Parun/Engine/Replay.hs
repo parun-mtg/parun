@@ -1245,10 +1245,12 @@ defaultAnswer p = case p of
   Prompt.ChooseActivePlayer _ _ candidates -> NonEmpty.head candidates
   -- CR 305.6 / 205.3m / 205.3j: any member of the family is legal, so one is
   -- conjured from a list the prompt does not offer.
-  Prompt.ChooseSubtype _ _ _ family -> case family of
+  Prompt.ChooseSubtype _ _ _ family Nothing -> case family of
     SubtypeFamily.BasicLandType -> Subtype.Mountain
     SubtypeFamily.CreatureType -> Subtype.Goblin
     SubtypeFamily.PlaneswalkerType -> Subtype.Gideon
+  -- A printed list (Eclipsed Realms) admits only its own; the first is legal.
+  Prompt.ChooseSubtype _ _ _ _ (Just listed) -> NonEmpty.head listed
   -- CR 607.2d: odd and even are both legal; a short transcript takes the one
   -- the card names first.
   Prompt.ChooseParity {} -> Parity.Odd

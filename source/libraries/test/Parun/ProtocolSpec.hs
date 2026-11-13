@@ -266,9 +266,10 @@ spec s registry = Spec.describe s "Protocol" $ do
         options prompt = maybe (Left (Text.pack "no options")) Right (field "options" (Protocol.offerOf gs prompt) >>= arrayOf) >>= traverse (Protocol.decodeAnswer prompt)
         restriction = Filter.Type.Not (Filter.Type.HasCardType CardType.Land)
         naming = Protocol.offerOf gs (Prompt.ChooseCardName alice S.alice o7 restriction (Seq.singleton (S.bob, CardName.MkCardName (Text.pack "Hill Giant"))))
-        basic = Prompt.ChooseSubtype alice S.alice o7 SubtypeFamily.BasicLandType
-        creature = Prompt.ChooseSubtype alice S.alice o7 SubtypeFamily.CreatureType
-        walker = Prompt.ChooseSubtype alice S.alice o7 SubtypeFamily.PlaneswalkerType
+        basic = Prompt.ChooseSubtype alice S.alice o7 SubtypeFamily.BasicLandType Nothing
+        creature = Prompt.ChooseSubtype alice S.alice o7 SubtypeFamily.CreatureType Nothing
+        walker = Prompt.ChooseSubtype alice S.alice o7 SubtypeFamily.PlaneswalkerType Nothing
+        listed = Prompt.ChooseSubtype alice S.alice o7 SubtypeFamily.CreatureType (Just (Subtype.Treefolk NonEmpty.:| [Subtype.Kithkin]))
         families = Set.fromList [WordFamily.BasicLandType, WordFamily.Color]
         forbidden = Set.singleton (TextWord.ColorWord Color.Black)
         swap = Protocol.offerOf gs (Prompt.ChooseWordSwap alice S.alice o7 (SlotName.MkSlotName (Text.pack "target")) families forbidden)
@@ -278,6 +279,8 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 205.3m every creature type" (fmap Set.fromList (options creature)) (Right Engine.Subtype.everyCreatureType)
     Spec.assertEqWith s "CR 205.3j every planeswalker type" (fmap Set.fromList (options walker)) (Right (Set.fromList (filter Engine.Subtype.isPlaneswalkerType [minBound ..])))
     Spec.assertBool s (either (const False) (all (Scenario.withinOffer creature)) (options creature)) "every creature type within the offer"
+    Spec.assertEqWith s "CR 614.12a only the creature types a card lists" (options listed) (Right [Subtype.Kithkin, Subtype.Treefolk])
+    Spec.assertBool s (not (Scenario.withinOffer listed Subtype.Goblin)) "a creature type off the list is outside the offer"
     Spec.assertEqWith s "CR 612.2 a swap's families and forbidden words, beside its source and slot" (fmap (\key -> field key swap) ["source", "slot", "families", "forbidden"]) [Just (Protocol.object o7), Just (R.Text (Text.pack "target")), Just (R.Array [R.Text (Text.pack "BasicLandType"), R.Text (Text.pack "Color")]), Just (Reply.encode (Reply.list Reply.textWord) Protocol.namer [TextWord.ColorWord Color.Black])]
 
   Spec.it s "CR 404.3 a graveyard batch offers its cards top first, and an arrangement reads back" $ do
@@ -591,8 +594,8 @@ spec s registry = Spec.describe s "Protocol" $ do
   Spec.it s "CR 205.3e a subtype of the wrong kind is refused and asked again" $ do
     gs <- started s registry
     let oid = ObjectId.MkObjectId 1
-        creature = Prompt.ChooseSubtype (Decider.MkDecider S.alice) S.alice oid SubtypeFamily.CreatureType
-        basicLand = Prompt.ChooseSubtype (Decider.MkDecider S.alice) S.alice oid SubtypeFamily.BasicLandType
+        creature = Prompt.ChooseSubtype (Decider.MkDecider S.alice) S.alice oid SubtypeFamily.CreatureType Nothing
+        basicLand = Prompt.ChooseSubtype (Decider.MkDecider S.alice) S.alice oid SubtypeFamily.BasicLandType Nothing
         replies = [Protocol.encodeAnswer creature Subtype.Island, Protocol.encodeAnswer creature Subtype.Goblin, Protocol.encodeAnswer basicLand Subtype.Goblin, Protocol.encodeAnswer basicLand Subtype.Swamp]
         ((chosen, _), sent) = overTheLine replies gs ((,) <$> Game.choose creature <*> Game.choose basicLand)
         refused = Just (Text.pack "not an answer the prompt offers")

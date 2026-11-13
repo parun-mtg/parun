@@ -7,6 +7,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChosenQuality as ChosenQuality
+import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -33,8 +34,14 @@ spec s = Spec.describe s "Parun.Codec.ChosenQuality" $ do
     Common.assertCodec
       s
       ChosenQuality.codec
-      (ChosenQuality.Subtype SubtypeFamily.PlaneswalkerType)
-      " {\"type\":\"Subtype\",\"value\":\"PlaneswalkerType\"} "
+      (ChosenQuality.Subtype SubtypeFamily.PlaneswalkerType Nothing)
+      " {\"type\":\"Subtype\",\"value\":{\"family\":\"PlaneswalkerType\"}} "
+  Spec.it s "Subtype among a printed list (Eclipsed Realms)" $
+    Common.assertCodec
+      s
+      ChosenQuality.codec
+      (ChosenQuality.Subtype SubtypeFamily.CreatureType (Just (Subtype.Elf NonEmpty.:| [Subtype.Goblin])))
+      " {\"type\":\"Subtype\",\"value\":{\"among\":[\"Elf\",\"Goblin\"],\"family\":\"CreatureType\"}} "
   Spec.it s "CardType (Umori, the Collector)" $
     Common.assertCodec
       s
