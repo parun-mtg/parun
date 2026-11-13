@@ -2570,9 +2570,18 @@ heldBy :: PC.ProjectedCharacteristics -> Set Keyword
 heldBy pc = Map.keysSet (PC.keywords pc) <> Set.fromList (fmap LentKeyword.keyword (PC.lentKeywords pc))
 
 -- | CR 702.1: whether a card lending its activated abilities, and its
--- triggered ones where `triggered`, lends an ability of this keyword.
+-- triggered ones where `triggered`, lends an ability of this keyword. One
+-- that functions only in a hand or a graveyard counts (CR 113.6), though
+-- nothing is minted for it. Unproven: no Filter in data/cards/ names such a
+-- keyword (`jq` over HasKeyword and HasKeywordFamily, 2026-11-13); "creature
+-- with cycling" would.
 lends :: Bool -> Keyword -> Natural -> Bool
-lends triggered keyword count = not (null (battlefieldAbilitiesFor keyword count)) || triggered && not (null (abilitiesFor keyword count))
+lends triggered keyword count =
+  let expansion = expansionOf keyword
+   in not (null (KeywordExpansion.onBattlefield expansion count))
+        || not (null (KeywordExpansion.fromHand expansion))
+        || not (null (KeywordExpansion.fromGraveyard expansion))
+        || triggered && not (null (KeywordExpansion.triggered expansion count))
 
 -- | CR 702.1 / 607.5: the triggered abilities of the keywords a card lends,
 -- each named for that card as its printed ones are (Binding.acquiredFrom).
