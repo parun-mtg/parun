@@ -161,16 +161,11 @@
       "turn": 1
     },
     {
-      "do": "Pass",
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
       "do": {
         "Cast": {
           "mana": [
-            "$m1"
+            "$m1",
+            null
           ],
           "object": "$bolt",
           "targets": [
@@ -196,10 +191,7 @@
             "$s2",
             "$s3"
           ],
-          "object": "$murder",
-          "targets": [
-            "$azula"
-          ]
+          "object": "$murder"
         }
       },
       "player": "bob",
@@ -236,7 +228,8 @@
         "View": {
           "is": [
             "trigger of $azula",
-            "$bolt"
+            "Lightning Bolt",
+            "trigger of $azula"
           ],
           "of": "Stack"
         }

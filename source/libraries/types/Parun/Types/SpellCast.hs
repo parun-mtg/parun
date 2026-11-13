@@ -81,11 +81,12 @@ data SpellCast = MkSpellCast
     -- not cast (GameEvent.SpellCopied). A copy came from no zone and is no
     -- cast of the turn, so it never satisfies `zone` or `ordinal` above.
     copies :: Bool,
-    -- | Social Snub's "when you cast this spell WHILE YOU CONTROL A CREATURE":
-    -- a state asked as the cast happens and never re-checked, as
+    -- | Social Snub's "when you cast this spell WHILE YOU CONTROL A CREATURE"
+    -- and Fire Lord Azula's "while Fire Lord Azula is attacking": a state
+    -- asked as the cast happens and never re-checked, as
     -- Parun.Types.AttackerTrigger.while is, unlike
-    -- TriggeredAbility.intervening (CR 603.4). Nothing for every other cast
-    -- trigger.
+    -- TriggeredAbility.intervening (CR 603.4). Nothing for a cast trigger
+    -- printing no "while".
     while :: Maybe Condition.Condition
   }
   deriving (Eq, Ord, Show)

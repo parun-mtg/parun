@@ -132,7 +132,8 @@
       "do": {
         "Cast": {
           "mana": [
-            "$m1"
+            "$m1",
+            null
           ],
           "object": "$shock",
           "targets": [
@@ -148,7 +149,7 @@
       "check": {
         "View": {
           "is": [
-            "$shock"
+            "Shock"
           ],
           "of": "Stack"
         }
@@ -204,12 +205,6 @@
       "turn": 1
     },
     {
-      "do": "Pass",
-      "player": "alice",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
       "check": {
         "Attackers": {
           "attackers": {
@@ -225,7 +220,8 @@
       "do": {
         "Cast": {
           "mana": [
-            "$m2"
+            "$m2",
+            null
           ],
           "object": "$bolt",
           "targets": [
@@ -242,7 +238,8 @@
         "View": {
           "is": [
             "trigger of $azula",
-            "$bolt"
+            "Lightning Bolt",
+            "trigger of $azula"
           ],
           "of": "Stack"
         }
