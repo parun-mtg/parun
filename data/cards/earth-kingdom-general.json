@@ -104,7 +104,10 @@
           },
           "limit": {
             "type": "OncePerTurn",
-            "value": "TakingInstruction"
+            "value": {
+              "type": "TakingInstruction",
+              "value": 0
+            }
           },
           "modal": {
             "modes": [

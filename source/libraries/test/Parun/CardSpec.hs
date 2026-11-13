@@ -448,6 +448,7 @@ import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.SpendScope as SpendScope
+import qualified Parun.Types.SpentOn as SpentOn
 import qualified Parun.Types.Splice as Splice
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StaticRead as StaticRead
@@ -477,6 +478,7 @@ import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnFaceDown as TurnFaceDown
 import qualified Parun.Types.TurnUpR as TurnUpR
@@ -1814,6 +1816,20 @@ modeBranchesOffend mode =
                 || Set.member cIdx (OrElse.siblings orElse)
                 || not (all namesBack (OrElse.siblings orElse))
    in any offends indexed
+
+-- CR 603.2h: does a "Do this only once each turn" name a clause one of its
+-- ability's modes lacks? Parun.Engine.Resolve spends the limit when the named
+-- clause runs, so a dangling ordinal is a limit nothing spends -- silently,
+-- which is why this is a lint. Per MODE (CR 700.2d), like the ordinal above.
+cardLimitDangles :: Face.Face Card.Type.Card -> Bool
+cardLimitDangles face =
+  let dangles ability = case TriggeredAbility.limit ability of
+        TriggerLimit.OncePerTurn (SpentOn.TakingInstruction named) ->
+          any (notElem named . zipWith (const . ClauseIndex.MkClauseIndex) [0 ..] . Foldable.toList . Mode.clauses) (Modal.modes (TriggeredAbility.modal ability))
+        TriggerLimit.OncePerTurn SpentOn.Triggering -> False
+        TriggerLimit.Unlimited -> False
+        TriggerLimit.OncePerGame -> False
+   in any dangles (Face.triggeredAbilities face)
 
 -- CR 601.2d / 608.2d: does a divided slot go unread, or a Quantity.Share read
 -- anything but its own slot's members? A division -- of a target slot, or the
@@ -6231,6 +6247,18 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (remembering face && not (cardRemembersUntriggered face)) "Demonic Pact's trigger remembers, and is accepted"
     Spec.assertBool s (cardRemembersUntriggered moved) "its modal on an activated ability is rejected"
     Spec.assertEqWith s "no spell or activated ability remembers" (fmap (S.nameOf . Printing.card) offenders) []
+  -- CR 603.2h's qualified clause, by ordinal: the corpus half, and the rejecting
+  -- direction against Planetarium of Wan Shi Tong misauthored on purpose.
+  Spec.it s "no card's 'Do this only once each turn' names a clause its ability lacks" $ do
+    ps <- S.allPrintings s corpus
+    planetarium <- S.printingOf s registry "Planetarium of Wan Shi Tong"
+    let face = S.combinedFace planetarium
+        renamed n = face {Face.triggeredAbilities = [ability {TriggeredAbility.limit = TriggerLimit.OncePerTurn (SpentOn.TakingInstruction (ClauseIndex.MkClauseIndex n))} | ability <- Face.triggeredAbilities face]}
+        offenders = filter (anyFace cardLimitDangles . Printing.card) ps
+    Spec.assertBool s (not (null (Face.triggeredAbilities face)) && not (cardLimitDangles face)) "Planetarium's limit names its second clause, and is accepted"
+    Spec.assertBool s (not (cardLimitDangles (renamed 0))) "as is one naming its first"
+    Spec.assertBool s (cardLimitDangles (renamed 2)) "one naming a third clause is rejected"
+    Spec.assertEqWith s "no dangling limit" (fmap (S.nameOf . Printing.card) offenders) []
   -- CR 608.2d's either-or, whose two branches must name each other: the corpus
   -- half, with the same shape the slot-name pair above has.
   Spec.it s "no card's either-or names a sibling that does not name it back" $ do

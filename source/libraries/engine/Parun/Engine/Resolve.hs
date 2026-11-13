@@ -957,20 +957,23 @@ resolveChosenModes runSubgame stackId srcId modes = do
                     )
                     (Map.empty, Map.empty, Set.empty)
                     indexedClauses
-          -- CR 603.2h: the "Do this only once each turn" record this ability
-          -- spends, and whether an earlier instance already spent it, in which
-          -- case this one does nothing (Nykthos Paragon's ruling of 2021-06-18).
+          -- CR 603.2h: the clause "Do this only once each turn" qualifies, the
+          -- record taking it spends, and whether an earlier instance already
+          -- spent it, in which case this one does nothing (Nykthos Paragon's
+          -- ruling of 2021-06-18). A clause ahead of the one named spends
+          -- nothing (Planetarium of Wan Shi Tong's ruling of 2025-10-02): the
+          -- two Planetarium files in data/scenarios prove it.
           instruction = case Object.source obj of
             Source.OfTrigger triggered -> Event.instructionRecord effectController triggered
             _ -> Nothing
-          spent = maybe False (Event.instructionSpent gs) instruction
+          spent = maybe False (Event.instructionSpent gs . snd) instruction
        in do
             Monad.unless fizzles $ do
               recordAbilityResolution obj
               Monad.unless spent $ do
                 folds <- traverse resolveOne modes
-                let took = any (\(_, _, ran) -> not (Set.null ran)) folds
-                Monad.when took (Monad.forM_ instruction (State.modify' . Event.instructionTaken))
+                Monad.forM_ instruction $ \(named, record) ->
+                  Monad.when (any (\(_, _, ran) -> Set.member named ran) folds) (State.modify' (Event.instructionTaken record))
             State.modify' (Game.cease stackId)
             Monad.unless fizzles (recordAbilityFinished effectController obj)
 

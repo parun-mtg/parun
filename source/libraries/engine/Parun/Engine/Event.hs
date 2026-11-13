@@ -108,6 +108,7 @@ import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ChosenQuality as ChosenQuality
+import Parun.Types.ClauseIndex (ClauseIndex)
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.Color as Color
@@ -12646,7 +12647,7 @@ limitKey src ctrl ability =
       TriggerSource.OfObject _ -> case TriggeredAbility.limit ability of
         -- CR 603.2h: what "its source's controller" has taken, so a new
         -- controller's instance is unspent.
-        TriggerLimit.OncePerTurn SpentOn.TakingInstruction -> Just ctrl
+        TriggerLimit.OncePerTurn (SpentOn.TakingInstruction _) -> Just ctrl
         TriggerLimit.OncePerTurn SpentOn.Triggering -> Nothing
         TriggerLimit.Unlimited -> Nothing
         TriggerLimit.OncePerGame -> Nothing,
@@ -12663,24 +12664,27 @@ limitedKey pending =
         TriggerLimit.OncePerTurn _ -> Just key
         TriggerLimit.OncePerGame -> Just key
 
--- CR 603.2h: the record a resolving triggered ability spends by taking its
--- "Do this only once each turn" instruction, keyed as limitedKey keys a pending
--- trigger, or Nothing when its ability prints no such rider. `controller` is the
--- ability's (CR 603.3a). Only an object-borne ability reaches the stack as a
--- Parun.Types.TriggeredAbilitySource, so the source is always an object.
-instructionRecord :: PlayerId -> TriggeredAbilitySource.TriggeredAbilitySource -> Maybe AbilityTriggered.AbilityTriggered
+-- CR 603.2h: the clause a resolving triggered ability's "Do this only once each
+-- turn" qualifies and the record taking it spends, keyed as limitedKey keys a
+-- pending trigger, or Nothing when its ability prints no such rider.
+-- `controller` is the ability's (CR 603.3a). Only an object-borne ability
+-- reaches the stack as a Parun.Types.TriggeredAbilitySource, so the source is
+-- always an object.
+instructionRecord :: PlayerId -> TriggeredAbilitySource.TriggeredAbilitySource -> Maybe (ClauseIndex, AbilityTriggered.AbilityTriggered)
 instructionRecord controller src =
   let ability = TriggeredAbilitySource.ability src
    in case TriggeredAbility.limit ability of
-        TriggerLimit.OncePerTurn SpentOn.TakingInstruction ->
+        TriggerLimit.OncePerTurn (SpentOn.TakingInstruction instruction) ->
           Just
-            AbilityTriggered.MkAbilityTriggered
-              { AbilityTriggered.source = TriggerSource.OfObject (TriggeredAbilitySource.source src),
-                AbilityTriggered.controller = controller,
-                AbilityTriggered.ability = ability,
-                AbilityTriggered.stackObject = Nothing,
-                AbilityTriggered.attackers = Set.empty
-              }
+            ( instruction,
+              AbilityTriggered.MkAbilityTriggered
+                { AbilityTriggered.source = TriggerSource.OfObject (TriggeredAbilitySource.source src),
+                  AbilityTriggered.controller = controller,
+                  AbilityTriggered.ability = ability,
+                  AbilityTriggered.stackObject = Nothing,
+                  AbilityTriggered.attackers = Set.empty
+                }
+            )
         TriggerLimit.OncePerTurn SpentOn.Triggering -> Nothing
         TriggerLimit.Unlimited -> Nothing
         TriggerLimit.OncePerGame -> Nothing

@@ -1219,7 +1219,7 @@ triggerLimitNames asking x = case x of
   TriggerLimit.Unlimited -> mempty
   TriggerLimit.OncePerTurn SpentOn.Triggering -> history asking HistoryRead.Triggers
   -- TurnRegisters.instructionsTakenThisTurn, which Parun.Engine.Fragmented.digest keeps.
-  TriggerLimit.OncePerTurn SpentOn.TakingInstruction -> mempty
+  TriggerLimit.OncePerTurn (SpentOn.TakingInstruction _) -> mempty
   -- History.triggeredThisGame, which Parun.Engine.Fragmented.digest keeps.
   TriggerLimit.OncePerGame -> mempty
 
