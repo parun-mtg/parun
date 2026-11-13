@@ -443,7 +443,7 @@ printedBoxOffends card =
 -- Exhaustive rather than a wildcard, this file's discipline for a sum.
 idleTokenRowOffends :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
 idleTokenRowOffends replacement = case replacement of
-  ReplacementEffect.TokenR (TokenR.MkTokenR _ scaling plus) -> Maybe.isNothing scaling && Maybe.isNothing plus
+  ReplacementEffect.TokenR (TokenR.MkTokenR _ scaling plus _) -> Maybe.isNothing scaling && Maybe.isNothing plus
   ReplacementEffect.DamageR {} -> False
   ReplacementEffect.CounterR {} -> False
   ReplacementEffect.CounterLossR {} -> False
@@ -3392,7 +3392,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     queen <- S.printingOf s registry "Queen Allenal of Ruadach"
     let printed = cardReplacementEffects (S.combinedFace queen)
         idle replacement = case replacement of
-          ReplacementEffect.TokenR (TokenR.MkTokenR tokenPattern _ _) -> ReplacementEffect.TokenR (TokenR.MkTokenR tokenPattern Nothing Nothing)
+          ReplacementEffect.TokenR (TokenR.MkTokenR tokenPattern _ _ optional) -> ReplacementEffect.TokenR (TokenR.MkTokenR tokenPattern Nothing Nothing optional)
           other -> other
     Spec.assertBool s (any isTokenR printed) "setup: the Queen prints a token row"
     Spec.assertBool s (not (any idleTokenRowOffends printed)) "the real Queen appends a Soldier"

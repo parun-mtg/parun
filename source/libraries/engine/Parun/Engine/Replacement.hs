@@ -179,6 +179,7 @@ import qualified Parun.Types.ThrowKind as ThrowKind
 import Parun.Types.Timestamp (Timestamp)
 import qualified Parun.Types.TokenLot as TokenLot
 import qualified Parun.Types.TokenPattern as TokenPattern
+import qualified Parun.Types.TokenPlus as TokenPlus
 import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
@@ -950,8 +951,14 @@ matchesPrinted viewOf gs event candidate =
         -- tokens"): "one or more" is ANY lot matching, each judged off what the
         -- creating effect gives its token (CR 111.3) since none is minted yet.
         -- An effects-only row skips a cost's lot (reachesLot).
-        (ReplacementEffect.TokenR (TokenR.MkTokenR pat _ _), ProposedEvent.WouldCreateTokens pid lots) ->
+        (ReplacementEffect.TokenR (TokenR.MkTokenR pat _ _ _), ProposedEvent.WouldCreateTokens pid lots) ->
           matchesPlayer gs candidate (TokenPattern.whose pat) pid
+            -- CR 614.1a's "the first time ... each turn" (Mirrormind Crown): any
+            -- earlier creation of the player's spends it, one the row declined or
+            -- was not there for included (Esix, Fractal Bloom's rulings, the
+            -- same wording). Read off the log, so the tokens of the event being
+            -- replaced are not yet in it.
+            && not (TokenPattern.firstEachTurn pat && Game.createdTokenThisTurn pid gs)
             && any (\lot -> reachesLot pat lot && matchesTokenLot gs (candidateContext gs candidate) (TokenPattern.whatToken pat) pid lot) lots
         -- CR 614.1b / 500.11: a skip intercepts a step, phase or turn
         -- BEGINNING, and names exactly which one -- and, for a player-scoped
@@ -2414,7 +2421,9 @@ readsApplier re = case re of
   -- CR 614.16, the same shape one event class over: the player the tokens are
   -- created FOR rides the EVENT, not the candidate, so Doubling Season doubles
   -- the same player's tokens whoever's row applies, CounterR's answer.
-  ReplacementEffect.TokenR r -> any computedScaling (TokenR.scaling r)
+  -- CR 109.5: an optional row asks its controller, and a copying one reads
+  -- its Filter against the candidate's Context (copiesPermanent).
+  ReplacementEffect.TokenR r -> any computedScaling (TokenR.scaling r) || TokenR.optional r || copiesPermanent r
   -- CR 702.37b via CR 614.1e: the counter kind and count are the effect's own
   -- fields and they land on the object the event already named, which is
   -- WithCounters' answer one event class over. The inner sum is cased so a
@@ -2634,6 +2643,16 @@ computedAmount rewrite = case rewrite of
   DamageRewrite.AlsoToSourceController -> False
   DamageRewrite.HealSourceFirst -> False
 
+-- CR 707.2: does this token row make copies of a permanent it names, rather
+-- than tokens whose text it gives?
+copiesPermanent :: TokenR.TokenR card -> Bool
+copiesPermanent r = case TokenR.plus r of
+  Nothing -> False
+  Just (TokenPlus.One _) -> False
+  Just (TokenPlus.ThatMany _) -> False
+  Just (TokenPlus.Instead _) -> False
+  Just (TokenPlus.InsteadCopies _) -> True
+
 -- CR 616.1: is this scaling's amount read off the board rather than printed?
 -- Hawkeye, Young Avenger's AddMore reads the candidate's source's power, so two
 -- such rows of different power resize differently beside a doubler, and both
@@ -2712,7 +2731,10 @@ readsSource effect = case effect of
   ReplacementEffect.DestructionR _ -> False
   ReplacementEffect.CounterR r -> computedScaling (CounterR.scaling r)
   ReplacementEffect.CounterLossR {} -> False
-  ReplacementEffect.TokenR r -> any computedScaling (TokenR.scaling r)
+  -- CR 707.2: the permanent copied is read relative to the source (Mirrormind
+  -- Crown's "equipped creature"), AsCopy's answer above. The scenario
+  -- mirrormind-crown-on-two-creatures-asks-which-applies-first proves it.
+  ReplacementEffect.TokenR r -> any computedScaling (TokenR.scaling r) || copiesPermanent r
   ReplacementEffect.TurnUpR {} -> False
   ReplacementEffect.AttachR {} -> False
   ReplacementEffect.UntapR _ -> False

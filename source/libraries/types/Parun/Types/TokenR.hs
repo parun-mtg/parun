@@ -18,6 +18,9 @@ data TokenR card = MkTokenR
     -- ... instead": a lot put in the SAME creation event, so a later CR 616.1
     -- row scales it along with the rest, and the riders of the creating effect
     -- reach it.
-    plus :: Maybe (TokenPlus.TokenPlus card)
+    plus :: Maybe (TokenPlus.TokenPlus card),
+    -- | CR 614.1a's "you may instead" (Mirrormind Crown), asked of the row's
+    -- controller as it applies; ZoneChangeR.optional's twin.
+    optional :: Bool
   }
   deriving (Eq, Ord, Show)

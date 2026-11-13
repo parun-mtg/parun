@@ -24,9 +24,11 @@ codec = Fields.object $ do
   -- CR 111.1: elided is ANY token -- Doubling Season's "one or more tokens".
   whatToken <- Fields.defaulted "whatToken" (Filter.And []) (Filter.codec Keyword.codec) TokenPattern.whatToken
   effectsOnly <- Fields.defaulted "effectsOnly" False Common.boolean TokenPattern.effectsOnly
+  firstEachTurn <- Fields.defaulted "firstEachTurn" False Common.boolean TokenPattern.firstEachTurn
   pure
     TokenPattern.MkTokenPattern
       { TokenPattern.whose = whose,
         TokenPattern.whatToken = whatToken,
-        TokenPattern.effectsOnly = effectsOnly
+        TokenPattern.effectsOnly = effectsOnly,
+        TokenPattern.firstEachTurn = firstEachTurn
       }

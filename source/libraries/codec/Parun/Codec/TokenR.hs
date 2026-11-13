@@ -21,9 +21,11 @@ codec cardCodec = Fields.object $ do
   matching <- Fields.required "matching" TokenPattern.codec TokenR.matching
   scaling <- Fields.defaulted "scaling" Nothing (Common.maybe Scaling.codec) TokenR.scaling
   plus <- Fields.defaulted "plus" Nothing (Common.maybe (TokenPlus.codec cardCodec)) TokenR.plus
+  optional <- Fields.defaulted "optional" False Common.boolean TokenR.optional
   pure
     TokenR.MkTokenR
       { TokenR.matching = matching,
         TokenR.scaling = scaling,
-        TokenR.plus = plus
+        TokenR.plus = plus,
+        TokenR.optional = optional
       }

@@ -16,6 +16,10 @@ data TokenPattern = MkTokenPattern
     -- | CR 614.16: Doubling Season's "if an EFFECT would create", reaching only
     -- a lot TokenLot.byEffect marks. False for "if one or more tokens would be
     -- created", which reaches every lot.
-    effectsOnly :: Bool
+    effectsOnly :: Bool,
+    -- | CR 614.1a: "the first time you would create one or more tokens each
+    -- turn" (Mirrormind Crown), spent by any creation of the player's this
+    -- turn.
+    firstEachTurn :: Bool
   }
   deriving (Eq, Ord, Show)
