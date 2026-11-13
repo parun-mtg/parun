@@ -205,6 +205,7 @@ import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.Defense as Defense
+import qualified Parun.Types.DefinedX as DefinedX
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Destroy as Destroy
@@ -2061,6 +2062,7 @@ reservedSlots =
       Binding.copiedObject,
       Binding.tappedForTotalPower,
       Binding.revealedCard,
+      Binding.definingCard,
       Binding.beheldObject,
       Binding.collectedEvidence,
       Binding.waterbendCost,
@@ -5573,7 +5575,7 @@ activatedAbilityFilters ability =
     -- treatment of Face.maximumX one type over (Blighted Nightmare).
     <> frame Unframed (concatMap quantityFilters (ActivatedAbility.maximumX ability))
     -- CR 107.3c's defined X, the same position.
-    <> frame Unframed (foldMap quantityFilters (ActivatedAbility.definedX ability))
+    <> frame Unframed (foldMap (quantityFilters . DefinedX.quantity) (ActivatedAbility.definedX ability))
     -- CR 702.178a's "as long as" gate, the triggeredAbilityFilters treatment of
     -- CR 603.4's intervening "if" one field over.
     <> frame Unframed (concatMap conditionFilters (Maybe.maybeToList (ActivatedAbility.condition ability)))

@@ -680,6 +680,8 @@ library codec
     Parun.Codec.DefendersAreSpec
     Parun.Codec.Defense
     Parun.Codec.DefenseSpec
+    Parun.Codec.DefinedX
+    Parun.Codec.DefinedXSpec
     Parun.Codec.DelayedTrigger
     Parun.Codec.DelayedTriggerSpec
     Parun.Codec.Departure
@@ -2967,6 +2969,7 @@ library types
     Parun.Types.DeclarationTrigger
     Parun.Types.DefendersAre
     Parun.Types.Defense
+    Parun.Types.DefinedX
     Parun.Types.DelayedTrigger
     Parun.Types.Departure
     Parun.Types.Designate

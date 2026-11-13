@@ -2,6 +2,7 @@ module Parun.Engine.Activate where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -245,9 +246,6 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
           -- every other quantity on this road is evaluated against. It is still in
           -- its zone here, the activation cost being unpaid until below.
           mCeiling = Cost.ceilingOf (ActivatedAbility.name ability) pid srcId (ActivatedAbility.maximumX ability) gs
-          -- CR 107.3c: the X the ability's own text defines, which its activator
-          -- does not get to choose -- read here and once, the ceiling's timing.
-          defined = Cost.definedX pid srcId ability gs
           -- CR 101.1: the floor the same words put on it -- Katara, Water Tribe's
           -- Hope's "X can't be 0" -- or the defined X itself (Activatable.leastX).
           floorX = Activatable.leastX pid srcId ability gs
@@ -282,6 +280,23 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
         _ : _ : _ -> CandidateCost.cost <$> Game.choose (Prompt.ChooseCost decider pid abilId (fmap Cost.untagged offeredCosts) Seq.empty)
         [only] -> pure only
         [] -> pure (Maybe.fromMaybe (ActivatedAbility.cost ability) (Maybe.listToMaybe (Cost.withChoices (ActivatedAbility.costChoices ability) (ActivatedAbility.cost ability))))
+      -- CR 601.2b: a choice that defines X is made as X would be announced
+      -- rather than as the ability resolves (Caller of the Untamed's ruling of
+      -- 2016-08-23), and bound below as Binding.definingCard. One candidate is
+      -- no choice; data/scenarios/caller-of-the-untamed-chooses-its-card-as-x-is-defined.json
+      -- proves the timing.
+      let definingCandidates = Cost.definingCandidates pid srcId ability gs
+      mDefining <- case definingCandidates of
+        Just (first : rest@(_ : _)) -> Just <$> Game.choose (Prompt.ChoosePermanent decider pid srcId (first NonEmpty.:| rest) Seq.empty)
+        Just [only] -> pure (Just only)
+        _ -> pure Nothing
+      let -- CR 107.3c: the X the ability's own text defines, which its activator
+          -- does not get to choose -- read here and once, the ceiling's timing.
+          defined = Cost.definedX mDefining pid srcId ability gs
+          -- CR 107.3c: no card to choose leaves X undefined, and an answer
+          -- outside the offer is rejected. A fence: Activatable's gate and the
+          -- offer keep both out of reach, so no test observes it.
+          undefinedX = maybe False (\offered -> maybe True (`notElem` offered) mDefining) definingCandidates
       mAmount <-
         if Cost.hasVariable printedCost
           then maybe (fmap Just (Game.choose (Prompt.ChooseX decider pid abilId Binding.variableX floorX (Activatable.affordableX mCeiling aimableUnannounced stamp (ActivatedAbility.name ability) spendable pid srcId gs printedCost)))) (pure . Just) defined
@@ -351,7 +366,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
       -- one predicate over one cost instead of two spellings of when the gate
       -- applies.
       -- An answer outside the offered costs is rejected, ChooseCost's contract.
-      if overCeiling || underFloor || not (Modal.selectionSatisfiedBy legal settledSelection chosenModes) || (length offeredCosts > 1 && notElem printedCost offeredCosts) || not (Activatable.payableCost aimable stamp (ActivatedAbility.name ability) spendable pid srcId gs announcedAtX)
+      if undefinedX || overCeiling || underFloor || not (Modal.selectionSatisfiedBy legal settledSelection chosenModes) || (length offeredCosts > 1 && notElem printedCost offeredCosts) || not (Activatable.payableCost aimable stamp (ActivatedAbility.name ability) spendable pid srcId gs announcedAtX)
         then reject -- the whole activation is a no-op
         else do
           -- CR 118.13a's announcement, which names an activated ability's
@@ -422,7 +437,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
               -- ability keeps all three once its source is gone: "Once activated or
               -- triggered, an ability exists on the stack independently of its
               -- source."
-              State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setAnnouncedTargets chosen (Binding.setThisAbility abilId (Binding.setYou pid (Binding.setTriggerSource srcId (Target.stampDefendingPlayers srcId chosen g (Binding.setDivisions divisions (Binding.fromChoices chosen mAmount chosenModes))))))}) abilId (GameState.objects g)})
+              State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setAnnouncedTargets chosen (Binding.setThisAbility abilId (Binding.setYou pid (Binding.setTriggerSource srcId (Target.stampDefendingPlayers srcId chosen g (Binding.setDivisions divisions (Binding.setPaid (maybe Map.empty (Binding.paidObjects Binding.definingCard . Set.singleton . Recipient.ToObject) mDefining) (Binding.fromChoices chosen mAmount chosenModes)))))))}) abilId (GameState.objects g)})
               -- CR 601.2c's board, before CR 601.2g/h's window and payment can
               -- change it: what Event.becameTarget samples below.
               announced <- State.get

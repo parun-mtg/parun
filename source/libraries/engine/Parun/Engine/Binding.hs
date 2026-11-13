@@ -817,6 +817,16 @@ revealedCard = SlotName.MkSlotName (Text.pack "thatRevealedCard")
 --
 -- Not a target (CR 115.10a), so the same CR 608.2b posture and the same "no
 -- card's targetSlots may name it" sweep as the slots above.
+-- CR 601.2b: the reserved slot under which Parun.Engine.Activate binds the
+-- card its activator chose as X would be announced, where that choice defines
+-- X (DefinedX.choice) -- Caller of the Untamed's "that card", read by the
+-- defined X and by the effect alike.
+--
+-- Not a target (CR 115.10a), so the same CR 608.2b posture and the same "no
+-- card's targetSlots may name it" sweep as the slots above.
+definingCard :: SlotName
+definingCard = SlotName.MkSlotName (Text.pack "thatDefiningCard")
+
 beheldObject :: SlotName
 beheldObject = SlotName.MkSlotName (Text.pack "thatBeheldObject")
 

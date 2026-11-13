@@ -8,6 +8,7 @@ import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostChoice as CostChoice
+import qualified Parun.Types.DefinedX as DefinedX
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Quantity as Quantity
@@ -48,7 +49,7 @@ data ActivatedAbility card ability = MkActivatedAbility
     -- none (CR 107.3a), or Nothing for an X the activator chooses. Evaluated once
     -- at CR 601.2b's position, off the ability as it reads (Filter.reader), and
     -- stamped as the announced X the cost is paid at.
-    definedX :: Maybe Quantity.Quantity,
+    definedX :: Maybe DefinedX.DefinedX,
     modal :: Modal.Modal card ability,
     -- | CR 602.5: every clause of the "activate only ..." rider the ability
     -- carries, ALL of which must hold. Empty for an ability without one, which is
