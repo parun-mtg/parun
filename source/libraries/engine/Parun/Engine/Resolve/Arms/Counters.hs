@@ -451,6 +451,10 @@ chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardNam
 -- the source is the resolving object itself, so a later instruction of the
 -- same resolution reads it through Parun.Engine.SourceContext -- the scenario
 -- cr-608-2d-persecute-discards-the-cards-of-the-color-chosen-as-it-resolves.
+--
+-- Not implemented: confining the choice to the ability that made it (CR
+-- 607.2d), so another ability of the source under the same acquisition reads
+-- it as its own "the chosen color" (#7187).
 chooseQuality :: ObjectId -> ObjectId -> PlayerId -> ChosenQuality.ChosenQuality -> Game ()
 chooseQuality resolving source controller quality = do
   gs <- State.get

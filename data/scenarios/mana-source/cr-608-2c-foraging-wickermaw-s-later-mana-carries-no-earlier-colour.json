@@ -1,0 +1,49 @@
+{
+  "description": "CR 608.2c: the colour Foraging Wickermaw became on an earlier turn marks none of its later mana, which is spent unasked beside a Mox Sapphire's",
+  "note": "The Wickermaw adds red on turn 1. On turn 3 it and the Mox each add blue: were the earlier red still the Wickermaw's chosen colour, its unit would carry it as a source choice, differ from the Mox's, and raise ChooseManaToSpend when one of the two pays for Flying Men.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Foraging Wickermaw", "label": "maw", "ready": true },
+          { "card": "Mox Sapphire", "label": "mox", "ready": true },
+          { "card": "Island", "label": "island", "ready": true }
+        ],
+        "hand": [
+          { "card": "Flying Men", "label": "men" }
+        ],
+        "library": [
+          { "card": "Hill Giant" },
+          { "card": "Hill Giant" },
+          { "card": "Hill Giant" },
+          { "card": "Hill Giant" },
+          { "card": "Hill Giant" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          { "card": "Hill Giant" },
+          { "card": "Hill Giant" },
+          { "card": "Hill Giant" },
+          { "card": "Hill Giant" },
+          { "card": "Hill Giant" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility $maw", "mana": ["$island", null], "yields": [[{ "manaType": { "type": "Colored", "value": "Red" }, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": ["Artifact"] }]] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Colors", "object": "$maw", "is": ["Red"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Colors", "object": "$maw", "is": [] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility $maw", "mana": ["$island", null], "yields": [[{ "manaType": { "type": "Colored", "value": "Blue" }, "restriction": null, "retention": "Ordinary", "rider": null, "sourceChoices": null, "tags": ["Artifact"] }]] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility $mox" } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [{ "manaType": { "type": "Colored", "value": "Blue" }, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null }, { "manaType": { "type": "Colored", "value": "Blue" }, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null }] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$men" } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [{ "manaType": { "type": "Colored", "value": "Blue" }, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null }] } } }
+  ]
+}
