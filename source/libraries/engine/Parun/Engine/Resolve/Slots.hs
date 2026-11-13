@@ -1775,7 +1775,7 @@ drawRewriteReads rewrite = case rewrite of
   DrawRewrite.DrawInstead _ -> ([], [])
   DrawRewrite.DiscardThenDrawOrMill -> ([], [])
   DrawRewrite.KeepOneOfTopThenDraw quantity -> ([], [quantity])
-  DrawRewrite.MaySkipFor _ -> ([], [])
+  DrawRewrite.RunEffects _ _ -> ([], [])
 
 -- replacementRowReads as a slot map. Arity One for every FILTER read, a
 -- Filter.IsBound being a membership test rather than a target slot; the QUANTITY
@@ -1886,7 +1886,7 @@ replacementRowEffects re = case re of
   ReplacementEffect.LifeLossR _ -> []
   ReplacementEffect.LifeGainR _ -> []
   ReplacementEffect.CounterLossR _ -> []
-  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.MaySkipFor effects)) -> Foldable.toList effects
+  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.RunEffects _ effects)) -> Foldable.toList effects
   ReplacementEffect.DrawR _ -> []
   ReplacementEffect.DrawCountR _ -> []
   ReplacementEffect.InstructionR _ -> []

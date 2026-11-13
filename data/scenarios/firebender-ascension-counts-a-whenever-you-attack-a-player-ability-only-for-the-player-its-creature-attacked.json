@@ -1,0 +1,24 @@
+{
+  "description": "CR 508.3e: a \"whenever you attack a player\" ability is caused by its creature attacking only for the player that creature attacked, so Firebender Ascension gets one quest counter, not two",
+  "note": "Seifer, Balamb Rival attacks bob and Goblin Piker attacks carol, so Seifer's ability triggers twice. Only bob's firing was caused by Seifer attacking; carol's was caused by the Piker, which has no ability.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Firebender Ascension", "label": "ascension"}, {"card": "Seifer, Balamb Rival", "label": "seifer", "ready": true}, {"card": "Goblin Piker", "label": "piker", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bobs"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "carol", "battlefield": [{"card": "Grizzly Bears", "label": "carols"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$seifer", "$piker"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$seifer", "do": {"ChooseAttackTarget": "$bob"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$piker", "do": {"ChooseAttackTarget": "$carol"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"OrderTriggers": ["$seifer", "$seifer"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $ascension", "trigger of $seifer", "trigger of $seifer"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$ascension", "kind": {"type": "Named", "value": "quest"}, "count": 1}}}
+  ]
+}

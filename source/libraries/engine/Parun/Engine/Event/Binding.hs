@@ -5,6 +5,7 @@
 module Parun.Engine.Event.Binding where
 
 import Control.Applicative ((<|>))
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -1367,6 +1368,24 @@ attackBindings gs bearer you trigger event = case (trigger, event) of
   (AttackTrigger.Unblocked _, GameEvent.AttackerUnblocked u) ->
     Binding.setTriggerPlayer (AttackerUnblocked.defender u) (Binding.setAttackingCreature (AttackerUnblocked.attacker u) Map.empty)
   _ -> Map.empty
+
+-- CR 508.3: the creatures whose attacking was `event`, as `condition` reads
+-- it: the declared attacker (CR 508.3a), the creatures attacking the event's
+-- target (CR 508.3b / 508.3e), and the creatures the declaration named (CR
+-- 508.3c / 508.3d), a count's being those it admits. None for CR 508.3f's
+-- "attacks and isn't blocked", whose event is the declaration of blockers
+-- (docs/decisions.md, "Which abilities a creature attacking causes to
+-- trigger").
+attackCausers :: GameState -> ObjectId -> PlayerId -> TriggerCondition.TriggerCondition -> GameEvent -> Set.Set ObjectId
+attackCausers gs bearer you condition event = case condition of
+  TriggerCondition.AnyOf conditions -> foldMap (\each -> attackCausers gs bearer you each event) conditions
+  TriggerCondition.Attacks trigger -> case (trigger, event) of
+    (AttackTrigger.Attacker _, GameEvent.AttackerDeclared d) -> Set.singleton (AttackerDeclared.attacker d)
+    (AttackTrigger.Attacked t, GameEvent.BecameAttacked payload) -> Set.fromList (Foldable.toList (attackedBy gs bearer you t payload))
+    (AttackTrigger.Declaration t, GameEvent.AttackersDeclared attacker) ->
+      Set.fromList (Foldable.toList (admittedAttackers gs bearer you (maybe (Filter.Type.And []) AttackCount.filter (DeclarationTrigger.attackers t)) attacker))
+    _ -> Set.empty
+  _ -> Set.empty
 
 -- CR 400.7e's `became` slot, in the plural CR 713.8c asks for: "if an effect
 -- can find the new object that a melded permanent becomes as it leaves the

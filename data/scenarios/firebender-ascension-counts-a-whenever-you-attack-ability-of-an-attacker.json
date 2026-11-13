@@ -1,0 +1,20 @@
+{
+  "description": "CR 508.3d: a \"whenever you attack\" ability of a creature among the attackers is caused by that creature attacking, so Firebender Ascension gets a quest counter",
+  "note": "Misty Mountains Raider attacks alone and its ability triggers. Isshin, Two Heavens as One's ruling of 2022-02-18 reads the same construction as covering \"whenever you attack with one or more creatures\".",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Firebender Ascension", "label": "ascension"}, {"card": "Misty Mountains Raider", "label": "raider", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$raider"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $ascension", "trigger of $raider"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$ascension", "kind": {"type": "Named", "value": "quest"}, "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Goblin Army Token", "count": 1}}}
+  ]
+}

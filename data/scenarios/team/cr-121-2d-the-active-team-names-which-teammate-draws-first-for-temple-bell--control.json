@@ -1,0 +1,94 @@
+{
+  "description": "CR 121.2d the active team names which teammate draws first for Temple Bell, control",
+  "note": "The same board and the same payments with dave naming alice: her Hill Giant is revealed first and bob pays for it.",
+  "board": {
+    "active": "alice",
+    "turn": 2,
+    "step": "PrecombatMain",
+    "sharedTeamTurns": true,
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1,
+        "battlefield": [
+          {
+            "card": "Zur's Weirding"
+          },
+          {
+            "card": "Temple Bell",
+            "label": "bell",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "team": 2,
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "team": 2,
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "dave",
+        "team": 1,
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$bell"}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "dave", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "alice"}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "dave", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"ChooseToPay": {"decision": "Pays"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "PrecombatMain", "player": "carol", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "PrecombatMain", "player": "carol", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "PrecombatMain", "player": "dave", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "PrecombatMain", "player": "carol", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "PrecombatMain", "player": "dave", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Hill Giant", "count": 0}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "dave", "zone": "Hand", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "dave", "zone": "Graveyard", "card": "Grizzly Bears", "count": 0}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Mountain", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Hand", "card": "Mountain", "count": 1}}}
+  ]
+}

@@ -736,7 +736,9 @@ data Prompt r where
   -- is the one raised exactly when they include the chooser.
   ChoosePlayer :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty PlayerId.PlayerId -> Prompt PlayerId.PlayerId
   -- | CR 726.4 / 727.4 with CR 805.2: which active player takes a departing
-  -- holder's monarch, then initiative, under the shared team turns option.
+  -- holder's monarch, then initiative, under the shared team turns option; or
+  -- which of the active team's players performs their draws next (CR 805.6a,
+  -- 121.2d).
   ChooseActivePlayer :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty PlayerId.PlayerId -> Prompt PlayerId.PlayerId
   -- | An order over one player's triggered abilities, a permutation of the
   -- entries' indices. At Parun.Engine.Engine.orderPending it is CR 603.3b's

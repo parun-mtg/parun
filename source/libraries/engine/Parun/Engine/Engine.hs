@@ -33,6 +33,7 @@ import qualified Parun.Engine.Departure as Departure
 import qualified Parun.Engine.Dungeon as Dungeon
 import qualified Parun.Engine.EndEffect as EndEffect
 import qualified Parun.Engine.Event as Event
+import qualified Parun.Engine.Event.Binding as EventBinding
 import qualified Parun.Engine.Event.Trigger as Trigger
 import qualified Parun.Engine.Exile as Exile
 import qualified Parun.Engine.Expiry as Expiry
@@ -82,7 +83,6 @@ import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.Action as Action.Type
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Asked as Asked
-import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card
@@ -97,6 +97,7 @@ import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.DiscardCause as DiscardCause
+import qualified Parun.Types.DrawKind as DrawKind
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.EntersTrigger as EntersTrigger
@@ -135,6 +136,7 @@ import qualified Parun.Types.Program as Program
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import Parun.Types.Prompt (Prompt)
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.RestartSignal as RestartSignal
 import Parun.Types.Result (Result)
@@ -571,9 +573,10 @@ runTurnBasedActions phase = do
   -- CR 805.4 / 805.9: under the shared team turns option every member of the
   -- active team is an active player, so each still playing (`live`) takes the
   -- actions that are the active player's own.
+  -- The draws come in the order the team likes (CR 805.6a, Event.inDrawOrder).
   --
   -- Not implemented: CR 805.6's order -- the team does not choose the order its
-  -- members untap, draw (CR 805.6a) and discard in (#4014).
+  -- members make their untap and discard choices in (#7293).
   primary <- State.gets (`Game.primaryOf` active)
   live <- State.gets (\gs -> filter (\pid -> List.elem pid (Game.stillPlaying gs)) (Turn.activePlayers gs))
   case phase of
@@ -593,7 +596,8 @@ runTurnBasedActions phase = do
     -- crank (CR 701.45a leaving it out of the rules), the active player's, so
     -- it takes the CR 800.4j guard.
     Phase.Beginning BeginningStep.Upkeep -> Monad.mapM_ Contraption.crank live
-    Phase.Beginning BeginningStep.DrawStep -> Monad.mapM_ (Event.drawForTurn (Resolve.runReplacementEffects playSubgame)) live
+    Phase.Beginning BeginningStep.DrawStep ->
+      Monad.void (Event.inDrawOrder (\pid -> [ProposedEvent.WouldDraw pid (DrawKind.TurnBased pid)]) live (Event.drawForTurn (Resolve.runReplacementEffects playSubgame)))
     -- CR 703.4h: choose the defending player. The active player's action (CR
     -- 507.1), and the one item on the list CR 800.4h hands to another seat rather
     -- than dropping, so it is NOT guarded here -- designateDefenders asks
@@ -790,7 +794,7 @@ reacts = Maybe.isJust . (Event.abilityTriggeredOf . LoggedEvent.event Monad.<=< 
 -- bound on the rounds, and none needed: the one condition of this class
 -- (TriggerCondition.AbilityWatch) watches a Saga's final chapter ability,
 -- which triggers off lore counters (CR 715.2b), or an ability a creature's
--- attack caused to trigger (CR 508.3a), never one that triggered off an
+-- attack caused to trigger (CR 508.3), never one that triggered off an
 -- ability triggering, so what reacts to it fires nothing further. Every round is
 -- filtered by `Event.withinTriggerLimit` first, the ONE place a "triggers only once"
 -- rider is spent.
@@ -813,7 +817,7 @@ reactions incoming = do
       -- around the lot: a batch is "the abilities that have triggered since the
       -- last time a player received priority" (CR 603.3b), which can have
       -- triggered off different events at different moments.
-      State.modify' (\g -> List.foldl' (flip Event.recordEvent) g (fmap triggeredEvent batch))
+      State.modify' (\g -> List.foldl' (flip Event.recordEvent) g (fmap (triggeredEvent before) batch))
       -- The per-GAME rider's own record, written beside the log because the log
       -- is cleared at the turn handoff. Only that rider's bearers are stored, so
       -- the record stays the size of the rider's use rather than the game's.
@@ -848,15 +852,17 @@ reactions incoming = do
 -- controller as it triggered (CR 603.3a) and WHICH ABILITY it is. Every pending
 -- trigger gets one, a SOURCELESS inherent ability included -- the record names a
 -- Parun.Types.TriggerSource, so there is no id it lacks.
-triggeredEvent :: PendingTrigger.PendingTrigger -> GameEvent.GameEvent
-triggeredEvent pending =
+triggeredEvent :: GameState -> PendingTrigger.PendingTrigger -> GameEvent.GameEvent
+triggeredEvent gs pending =
   GameEvent.AbilityTriggered
     AbilityTriggered.MkAbilityTriggered
       { AbilityTriggered.source = PendingTrigger.source pending,
         AbilityTriggered.controller = PendingTrigger.controller pending,
         AbilityTriggered.ability = PendingTrigger.ability pending,
         AbilityTriggered.stackObject = PendingTrigger.stackId pending,
-        AbilityTriggered.attacker = Maybe.listToMaybe [AttackerDeclared.attacker declared | Just logged <- [PendingTrigger.firedBy pending], GameEvent.AttackerDeclared declared <- [LoggedEvent.event logged]]
+        AbilityTriggered.attackers = case (PendingTrigger.source pending, PendingTrigger.firedBy pending) of
+          (TriggerSource.OfObject bearer, Just logged) -> EventBinding.attackCausers gs bearer (PendingTrigger.controller pending) (TriggeredAbility.condition (PendingTrigger.ability pending)) (LoggedEvent.event logged)
+          _ -> Set.empty
       }
 
 -- CR 603.3: reserve the id one triggered ability takes on the stack.
@@ -884,7 +890,7 @@ perGameRecord pending = case TriggeredAbility.limit (PendingTrigger.ability pend
           AbilityTriggered.controller = PendingTrigger.controller pending,
           AbilityTriggered.ability = PendingTrigger.ability pending,
           AbilityTriggered.stackObject = Nothing,
-          AbilityTriggered.attacker = Nothing
+          AbilityTriggered.attackers = Set.empty
         }
 
 -- Put one triggered ability from the ordered batch on the stack. What it hangs

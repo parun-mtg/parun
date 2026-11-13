@@ -1242,6 +1242,7 @@ defaultAnswer p = case p of
   -- the same filter-not-trust fallback Event's arm applies to a wrong answer.
   Prompt.ChoosePlayer _ _ _ candidates -> NonEmpty.head candidates
   -- CR 726.4 / 727.4: every candidate is a live active player who may take it.
+  -- CR 805.6a: or one still to draw, any of whom may draw next.
   Prompt.ChooseActivePlayer _ _ candidates -> NonEmpty.head candidates
   -- CR 305.6 / 205.3m / 205.3j: any member of the family is legal, so one is
   -- conjured from a list the prompt does not offer.

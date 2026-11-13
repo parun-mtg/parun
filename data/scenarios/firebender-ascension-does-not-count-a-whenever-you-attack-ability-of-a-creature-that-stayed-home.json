@@ -1,0 +1,19 @@
+{
+  "description": "CR 508.3d: a \"whenever you attack\" ability of a creature that did not attack is not caused by that creature attacking, so Firebender Ascension gets no quest counter",
+  "note": "Goblin Piker attacks alone. Misty Mountains Raider's ability triggers and amasses, but the Raider is not attacking and the Piker's attack caused no ability of the Piker to trigger.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Firebender Ascension", "label": "ascension"}, {"card": "Misty Mountains Raider", "label": "raider", "ready": true}, {"card": "Goblin Piker", "label": "piker", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$piker"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $raider"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Goblin Army Token", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$ascension", "kind": {"type": "Named", "value": "quest"}, "count": 0}}}
+  ]
+}

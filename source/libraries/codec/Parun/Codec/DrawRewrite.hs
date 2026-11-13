@@ -1,11 +1,15 @@
+{-# LANGUAGE ApplicativeDo #-}
+
 module Parun.Codec.DrawRewrite where
 
+import qualified Data.Sequence as Seq
 import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.FromOutsideTheGame as FromOutsideTheGame
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.DrawRewrite as DrawRewrite
 
 codec :: (Eq effect, Typeable.Typeable effect) => Codec.Codec effect -> Codec.Codec (DrawRewrite.DrawRewrite effect)
@@ -22,8 +26,15 @@ codec effectCodec =
       Arm.payload "DrawInstead" Common.natural DrawRewrite.DrawInstead (\x -> case x of DrawRewrite.DrawInstead y -> Just y; _ -> Nothing),
       Arm.nullary "DiscardThenDrawOrMill" DrawRewrite.DiscardThenDrawOrMill,
       Arm.payload "KeepOneOfTopThenDraw" Quantity.codec DrawRewrite.KeepOneOfTopThenDraw (\x -> case x of DrawRewrite.KeepOneOfTopThenDraw y -> Just y; _ -> Nothing),
-      Arm.payload "MaySkipFor" (Common.seq effectCodec) DrawRewrite.MaySkipFor (\x -> case x of DrawRewrite.MaySkipFor y -> Just y; _ -> Nothing)
+      Arm.payload "RunEffects" (runEffects effectCodec) (uncurry DrawRewrite.RunEffects) (\x -> case x of DrawRewrite.RunEffects optional effects -> Just (optional, effects); _ -> Nothing)
     ]
+
+-- | The effects and the printed "may", keyed by name (#1464).
+runEffects :: (Typeable.Typeable effect) => Codec.Codec effect -> Codec.Codec (Bool, Seq.Seq effect)
+runEffects effectCodec = Fields.object $ do
+  optional <- Fields.required "optional" Common.boolean fst
+  effects <- Fields.required "effects" (Common.seq effectCodec) snd
+  pure (optional, effects)
 
 tagOf :: DrawRewrite.DrawRewrite effect -> String
 tagOf x = case x of
@@ -37,4 +48,4 @@ tagOf x = case x of
   DrawRewrite.DrawInstead {} -> "DrawInstead"
   DrawRewrite.DiscardThenDrawOrMill {} -> "DiscardThenDrawOrMill"
   DrawRewrite.KeepOneOfTopThenDraw {} -> "KeepOneOfTopThenDraw"
-  DrawRewrite.MaySkipFor {} -> "MaySkipFor"
+  DrawRewrite.RunEffects {} -> "RunEffects"

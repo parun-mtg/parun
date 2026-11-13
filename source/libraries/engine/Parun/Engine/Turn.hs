@@ -175,7 +175,7 @@ thatExtraTurn source controller gs =
 -- seats included (CR 800.4j); a caller that must not name one filters them.
 --
 -- Not implemented: CR 805.6's "in whatever order they like" -- the active team
--- does not choose the order its members act in (#4014).
+-- does not choose the order its members act in (#7293).
 activePlayers :: GameState -> [PlayerId]
 activePlayers gs =
   let (before, from) = break (== TurnRegisters.activePlayer (GameState.turn gs)) (GameState.turnOrder gs)

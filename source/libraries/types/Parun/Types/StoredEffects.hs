@@ -71,7 +71,7 @@ data StoredEffects = MkStoredEffects
     -- | CR 614.1a: the effects a replacement applied in an event's place and
     -- that have not run yet -- a damage event's (DamageRewrite.RunEffects), a
     -- loss of the game's (GameLossR) or a draw's (DrawRewrite.FromGraveyardOrLose,
-    -- DrawRewrite.MaySkipFor)
+    -- DrawRewrite.RunEffects)
     -- -- drained by Resolve.runReplacementEffects.
     --
     -- Empty at every priority window because every road that can fill it drains

@@ -1,0 +1,79 @@
+{
+  "description": "CR 805.6a the active team names which teammate draws first, control",
+  "note": "The same board and the same payments with dave naming alice: her Hill Giant is revealed first, bob pays for it, and dave draws his Grizzly Bears.",
+  "board": {
+    "active": "alice",
+    "turn": 2,
+    "step": "Upkeep",
+    "sharedTeamTurns": true,
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1,
+        "battlefield": [
+          {
+            "card": "Zur's Weirding"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "team": 2,
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "team": 2,
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "dave",
+        "team": 1,
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 2, "step": "DrawStep", "player": "dave", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "alice"}}},
+    {"turn": 2, "step": "DrawStep", "player": "dave", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "DrawStep", "player": "bob", "do": {"ChooseToPay": {"decision": "Pays"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "DrawStep", "player": "carol", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "DrawStep", "player": "bob", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "DrawStep", "player": "carol", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Hill Giant", "count": 0}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "dave", "zone": "Hand", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "dave", "zone": "Graveyard", "card": "Grizzly Bears", "count": 0}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}}
+  ]
+}

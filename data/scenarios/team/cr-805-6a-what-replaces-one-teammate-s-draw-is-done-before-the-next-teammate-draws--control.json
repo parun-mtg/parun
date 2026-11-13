@@ -1,0 +1,78 @@
+{
+  "description": "CR 805.6a what replaces one teammate's draw is done before the next teammate draws, control",
+  "note": "The same board with dave naming himself: Zur's Weirding is still there for his draw, bob pays, and Grizzly Bears goes to dave's graveyard before alice's draw loses her the game.",
+  "board": {
+    "active": "alice",
+    "turn": 2,
+    "step": "Upkeep",
+    "sharedTeamTurns": true,
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1,
+        "battlefield": [
+          {
+            "card": "Zur's Weirding"
+          },
+          {
+            "card": "Forbidden Crypt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "team": 2,
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "team": 2,
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "dave",
+        "team": 1,
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 2, "step": "DrawStep", "player": "dave", "do": {"Answer": {"prompt": "ChooseActivePlayer", "with": "dave"}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "DrawStep", "player": "bob", "do": {"ChooseToPay": {"decision": "Pays"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "DrawStep", "player": "carol", "do": {"ChooseToPay": {"decision": "Declines"}}, "source": "Zur's Weirding"},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "do": {"Answer": {"prompt": "ChooseReplacement", "with": 1}}},
+    {"turn": 2, "step": "DrawStep", "player": "dave", "check": {"Count": {"player": "dave", "zone": "Hand", "card": "Grizzly Bears", "count": 0}}},
+    {"turn": 2, "step": "DrawStep", "player": "dave", "check": {"Count": {"player": "dave", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 2, "step": "DrawStep", "player": "dave", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Zur's Weirding", "count": 0}}}
+  ]
+}

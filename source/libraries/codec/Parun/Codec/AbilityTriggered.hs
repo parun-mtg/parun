@@ -2,6 +2,7 @@
 
 module Parun.Codec.AbilityTriggered where
 
+import qualified Data.Set as Set
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.ObjectId as ObjectId
@@ -27,12 +28,12 @@ codec = Fields.object $ do
   controller <- Fields.required "controller" PlayerId.codec AbilityTriggered.controller
   ability <- Fields.required "ability" (TriggeredAbility.codec Card.codec (GrantedAbility.codec Card.codec)) AbilityTriggered.ability
   stackObject <- Fields.defaulted "stackObject" Nothing (Common.maybe ObjectId.codec) AbilityTriggered.stackObject
-  attacker <- Fields.defaulted "attacker" Nothing (Common.maybe ObjectId.codec) AbilityTriggered.attacker
+  attackers <- Fields.defaulted "attackers" Set.empty (Common.set ObjectId.codec) AbilityTriggered.attackers
   pure
     AbilityTriggered.MkAbilityTriggered
       { AbilityTriggered.source = source,
         AbilityTriggered.controller = controller,
         AbilityTriggered.ability = ability,
         AbilityTriggered.stackObject = stackObject,
-        AbilityTriggered.attacker = attacker
+        AbilityTriggered.attackers = attackers
       }
