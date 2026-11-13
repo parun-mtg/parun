@@ -210,6 +210,7 @@ measure :: Measure.Measure -> [Text.Text]
 measure m = case m of
   Measure.Power -> [Text.pack "power"]
   Measure.Toughness -> [Text.pack "toughness"]
+  Measure.TotalPowerAndToughness -> []
   Measure.ManaValue -> [Text.pack "mana value"]
   Measure.ColorCount -> []
   Measure.Loyalty -> [Text.pack "loyalty"]

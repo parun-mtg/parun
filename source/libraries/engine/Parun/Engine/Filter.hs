@@ -1896,6 +1896,7 @@ measureOf :: Measure.Measure -> View -> Maybe Integer
 measureOf measure = case measure of
   Measure.Power -> power
   Measure.Toughness -> toughness
+  Measure.TotalPowerAndToughness -> \view -> (+) <$> power view <*> toughness view
   Measure.ManaValue -> manaValue
   Measure.ColorCount -> Just . toInteger . Set.size . colors
   -- CR 306.5: only a planeswalker has loyalty, and CR 306.5c's counters are its
@@ -3051,6 +3052,7 @@ manaValueThresholds predicate = case predicate of
       -- Reads power or toughness against the literal, so it bounds nothing.
       Measure.Power -> []
       Measure.Toughness -> []
+      Measure.TotalPowerAndToughness -> []
     -- No literal to report, whatever the measure -- and an Own ManaValue
     -- operand reads the candidate's mana value from the other side. Position is
     -- what keeps the caller's argument whole: CR 601.3a's lookahead reads a

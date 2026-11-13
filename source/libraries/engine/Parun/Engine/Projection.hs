@@ -1463,7 +1463,7 @@ withCharacteristicsOf :: ObjectId -> GameState -> Filter.Context -> Filter.Conte
 withCharacteristicsOf object gs context =
   let view = viewWithLastKnownAnywhere gs object
    in context
-        { Filter.sourceMeasures = foldMap (\v -> Map.union (Filter.measuresOf v) (Map.fromList [(Measure.Power, 0), (Measure.Toughness, 0)])) view,
+        { Filter.sourceMeasures = foldMap (\v -> Map.union (Filter.measuresOf v) (Map.fromList [(Measure.Power, 0), (Measure.Toughness, 0), (Measure.TotalPowerAndToughness, 0)])) view,
           Filter.sourceColors = foldMap Filter.colors view,
           Filter.sourceSectors = foldMap (Sector.sectorsIn . Filter.designations) view,
           Filter.sourceNames = foldMap Filter.names view,
@@ -3991,6 +3991,7 @@ measureReads :: Measure.Measure -> Set Aspect
 measureReads measure = case measure of
   Measure.Power -> Set.singleton PowerA
   Measure.Toughness -> Set.singleton PowerA
+  Measure.TotalPowerAndToughness -> Set.singleton PowerA
   Measure.ManaValue -> Set.empty
   Measure.ColorCount -> Set.singleton Colors
   -- CR 306.5c's counters are no layer's; being a planeswalker is layer 4's.
