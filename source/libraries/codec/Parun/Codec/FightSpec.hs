@@ -16,13 +16,20 @@ spec s = Spec.describe s "Parun.Codec.Fight" $ do
     Common.assertCodec
       s
       Fight.codec
-      (Fight.MkFight (SlotName.MkSlotName (Text.pack "mine")) (SlotName.MkSlotName (Text.pack "theirs")) Hop.Itself)
+      (Fight.MkFight (SlotName.MkSlotName (Text.pack "mine")) (SlotName.MkSlotName (Text.pack "theirs")) Hop.Itself Nothing)
       " {\"first\":\"mine\",\"second\":\"theirs\"} "
   -- Novel Nunchaku's "equipped creature fights".
   Spec.it s "MkFight, the first slot's host" $
     Common.assertCodec
       s
       Fight.codec
-      (Fight.MkFight (SlotName.MkSlotName (Text.pack "self")) (SlotName.MkSlotName (Text.pack "victim")) Hop.Host)
+      (Fight.MkFight (SlotName.MkSlotName (Text.pack "self")) (SlotName.MkSlotName (Text.pack "victim")) Hop.Host Nothing)
       " {\"first\":\"self\",\"hop\":\"Host\",\"second\":\"victim\"} "
+  -- The Last Agni Kai's "is dealt excess damage this way".
+  Spec.it s "MkFight, the second creature's excess" $
+    Common.assertCodec
+      s
+      Fight.codec
+      (Fight.MkFight (SlotName.MkSlotName (Text.pack "mine")) (SlotName.MkSlotName (Text.pack "theirs")) Hop.Itself (Just (SlotName.MkSlotName (Text.pack "over"))))
+      " {\"excessTally\":\"over\",\"first\":\"mine\",\"second\":\"theirs\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Fight.codec

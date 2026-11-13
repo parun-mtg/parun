@@ -251,8 +251,8 @@ dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source
 -- CR 701.14. Every clause of the rule is one line here, and none of them is a
 -- read of what the effect IS: the amounts come off the projection, the kind is
 -- data, and the pair guard is arithmetic on two Maybes.
-fight :: (Game Result -> Game ()) -> (Game Result -> Game ()) -> Game Result -> Map.Map SlotName (Set Recipient) -> Fight.Fight -> Game ()
-fight runPreventionRiders runReplacementEffects runSubgame legal (Fight.MkFight firstSlot secondSlot firstHop) = do
+fight :: (Game Result -> Game ()) -> (Game Result -> Game ()) -> Game Result -> ObjectId -> ObjectId -> Map.Map SlotName (Set Recipient) -> Fight.Fight -> Game ()
+fight runPreventionRiders runReplacementEffects runSubgame resolving source legal (Fight.MkFight firstSlot secondSlot firstHop mExcessTally) = do
   gs <- State.get
   -- CR 701.14b, and it is a guard on the PAIR: "if one or both creatures
   -- instructed to fight are no longer on the battlefield or are no longer
@@ -278,7 +278,7 @@ fight runPreventionRiders runReplacementEffects runSubgame legal (Fight.MkFight 
         Monad.guard (Projection.isCreatureOf oid gs)
         power <- Projection.powerOf oid gs
         pure (oid, power)
-  case (fighter firstHop firstSlot, fighter Hop.Itself secondSlot) of
+  excessDealt <- case (fighter firstHop firstSlot, fighter Hop.Itself secondSlot) of
     (Just (oneId, onePower), Just (twoId, twoPower)) -> do
       -- CR 701.14d: "the damage dealt when a creature fights ISN'T COMBAT
       -- DAMAGE", so DamageKind.Noncombat and never the combat damage path.
@@ -308,15 +308,29 @@ fight runPreventionRiders runReplacementEffects runSubgame legal (Fight.MkFight 
       -- ONE batch: CR 701.14a's "each of those creatures deals damage" is one
       -- action, so the two blows land simultaneously and a creature that dies
       -- to the first still dealt the second.
-      Monad.unless (null events) $ do
-        Monad.void (Damage.applyDamage (runReplacementEffects runSubgame) events)
-        -- The DealDamage arm's two drains, and for its reasons: a fight is an
-        -- ordinary damage event, so a rewrite or a shield that applied to it
-        -- runs inside this resolution rather than waiting for the next one.
-        -- CR 614.1a's instead-effects first, then CR 615.5's riders.
-        runReplacementEffects runSubgame
-        runPreventionRiders runSubgame
-    _ -> pure ()
+      if null events
+        then pure 0
+        else do
+          settled <- Damage.applyDamage (runReplacementEffects runSubgame) events
+          -- The DealDamage arm's two drains, and for its reasons: a fight is an
+          -- ordinary damage event, so a rewrite or a shield that applied to it
+          -- runs inside this resolution rather than waiting for the next one.
+          -- CR 614.1a's instead-effects first, then CR 615.5's riders.
+          runReplacementEffects runSubgame
+          runPreventionRiders runSubgame
+          -- CR 120.10, the DealDamage arm's reading: what the first creature
+          -- SETTLED on the second (CR 120.4b), against the second's bar on the
+          -- board the fight began on, which counts damage already marked and
+          -- the first's deathtouch (Damage.excessThreshold), the card's
+          -- ruling of 2025-10-02.
+          -- data/scenarios/the-last-agni-kai-counts-a-deathtouch-fighters-second-point-as-excess.json
+          -- proves the dealer.
+          pure (Damage.excessDealt gs oneId [Recipient.ToCreature twoId] (filter ((== oneId) . DamageEvent.source) settled))
+    _ -> pure 0
+  -- The Last Agni Kai's "is dealt excess damage this way". Bound even at 0,
+  -- DealDamage's excessTally's posture, and so when no fight happens (CR
+  -- 701.14b).
+  Monad.forM_ mExcessTally $ \slot -> State.modify' (Common.bindAmountSlot resolving source slot excessDealt)
 
 modifyTarget :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ModifyTarget.ModifyTarget (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 modifyTarget resolving source controller legal chosen (ModifyTarget.MkModifyTarget duration modification ref each) = do

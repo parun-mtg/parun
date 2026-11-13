@@ -23,6 +23,11 @@ data Fight = MkFight
     -- | CR 301.5a / 303.4b / 608.2h: which object `first` names, its slot's own
     -- or the permanent that one is attached to as the fight happens (Novel
     -- Nunchaku's "equipped creature fights"). Elided when Hop.Itself.
-    hop :: Hop.Hop
+    hop :: Hop.Hop,
+    -- | Where to record the excess damage (CR 120.10) dealt to `second`'s
+    -- creature: Parun.Types.DealDamage's `excessTally`, for a fight.
+    -- data/scenarios/the-last-agni-kai-adds-red-mana-for-the-excess-and-keeps-it.json
+    -- proves it.
+    excessTally :: Maybe SlotName.SlotName
   }
   deriving (Eq, Ord, Show)

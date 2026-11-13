@@ -2296,7 +2296,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- over the FACE rather than over an effect list.
         readSingly effect = case effect of
           -- CR 701.14b's pair, which is why both slots count.
-          Effect.Fight (Fight.MkFight one two _) -> [one, two]
+          Effect.Fight (Fight.MkFight one two _ _) -> [one, two]
           Effect.ChangeText (ChangeText.MkChangeText _ _ slot _) -> [slot]
           Effect.TurnFaceUp slot -> [slot]
           Effect.BecomesBlocked slot -> [slot]
