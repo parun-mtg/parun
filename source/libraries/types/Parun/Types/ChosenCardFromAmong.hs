@@ -55,6 +55,11 @@ data ChosenCardFromAmong = MkChosenCardFromAmong
     -- only shape Parun.EffectLintSpec admits it on. Proved by the Michelangelo's
     -- Technique scenarios.
     total :: Maybe TotalCap.TotalCap,
+    -- | CR 608.2d: at most one pick for each color (CR 105.1) among the
+    -- permanents this matches, each pick a card of its own color; Nothing is no
+    -- such bound. Read where the total is. Proved by the Sanar, Innovative
+    -- First-Year scenarios.
+    perColor :: Maybe (Filter.Filter Keyword.Keyword),
     chooser :: PlayerRef.PlayerRef,
     -- | CR 700.3: Nothing names the pick itself. Just names the player who then
     -- takes one of two piles -- the chooser's pick and the rest of the matching

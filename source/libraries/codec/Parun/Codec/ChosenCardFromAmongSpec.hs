@@ -30,6 +30,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.filter = Filter.HasCardType CardType.Creature,
             ChosenCardFromAmong.count = HowMany.one,
             ChosenCardFromAmong.total = Nothing,
+            ChosenCardFromAmong.perColor = Nothing,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
             ChosenCardFromAmong.pileChooser = Nothing,
             ChosenCardFromAmong.faceUpPile = False,
@@ -48,6 +49,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.filter = Filter.HasCardType CardType.Creature,
             ChosenCardFromAmong.count = HowMany.UpTo (Just (Quantity.Literal 2)),
             ChosenCardFromAmong.total = Nothing,
+            ChosenCardFromAmong.perColor = Nothing,
             ChosenCardFromAmong.chooser = PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "opponent")),
             ChosenCardFromAmong.pileChooser = Nothing,
             ChosenCardFromAmong.faceUpPile = False,
@@ -65,6 +67,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.filter = Filter.And [],
             ChosenCardFromAmong.count = HowMany.UpTo Nothing,
             ChosenCardFromAmong.total = Nothing,
+            ChosenCardFromAmong.perColor = Nothing,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.Opponent,
             ChosenCardFromAmong.pileChooser = Just (PlayerRef.Relative PlayerRelation.You),
             ChosenCardFromAmong.faceUpPile = False,
@@ -83,6 +86,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.filter = Filter.And [],
             ChosenCardFromAmong.count = HowMany.UpTo Nothing,
             ChosenCardFromAmong.total = Nothing,
+            ChosenCardFromAmong.perColor = Nothing,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
             ChosenCardFromAmong.pileChooser = Just (PlayerRef.Relative PlayerRelation.Opponent),
             ChosenCardFromAmong.faceUpPile = True,
@@ -100,6 +104,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.filter = Filter.HasCardType CardType.Creature,
             ChosenCardFromAmong.count = HowMany.one,
             ChosenCardFromAmong.total = Nothing,
+            ChosenCardFromAmong.perColor = Nothing,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
             ChosenCardFromAmong.pileChooser = Nothing,
             ChosenCardFromAmong.faceUpPile = False,
@@ -118,6 +123,7 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
             ChosenCardFromAmong.filter = Filter.HasCardType CardType.Creature,
             ChosenCardFromAmong.count = HowMany.UpTo (Just (Quantity.Literal 2)),
             ChosenCardFromAmong.total = Just TotalCap.MkTotalCap {TotalCap.weight = Quantity.Measure Measure.ManaValue, TotalCap.most = Quantity.Literal 6},
+            ChosenCardFromAmong.perColor = Nothing,
             ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
             ChosenCardFromAmong.pileChooser = Nothing,
             ChosenCardFromAmong.faceUpPile = False,
@@ -125,4 +131,23 @@ spec s = Spec.describe s "Parun.Codec.ChosenCardFromAmong" $ do
           }
       )
       " {\"slot\":\"looked\",\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"count\":{\"type\":\"UpTo\",\"value\":{\"type\":\"Literal\",\"value\":2}},\"total\":{\"weight\":{\"type\":\"Measure\",\"value\":\"ManaValue\"},\"most\":{\"type\":\"Literal\",\"value\":6}}} "
+  -- Sanar, Innovative First-Year's "for each of those colors, you may exile a
+  -- card of that color".
+  Spec.it s "MkChosenCardFromAmong, a card per color" $
+    Common.assertCodec
+      s
+      ChosenCardFromAmong.codec
+      ( ChosenCardFromAmong.MkChosenCardFromAmong
+          { ChosenCardFromAmong.slot = SlotName.MkSlotName (Text.pack "revealed"),
+            ChosenCardFromAmong.filter = Filter.And [],
+            ChosenCardFromAmong.count = HowMany.UpTo Nothing,
+            ChosenCardFromAmong.total = Nothing,
+            ChosenCardFromAmong.perColor = Just (Filter.HasCardType CardType.Creature),
+            ChosenCardFromAmong.chooser = PlayerRef.Relative PlayerRelation.You,
+            ChosenCardFromAmong.pileChooser = Nothing,
+            ChosenCardFromAmong.faceUpPile = False,
+            ChosenCardFromAmong.selection = CardSelection.ByChoice
+          }
+      )
+      " {\"slot\":\"revealed\",\"filter\":{\"type\":\"And\",\"value\":[]},\"count\":{\"type\":\"UpTo\"},\"perColor\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s ChosenCardFromAmong.codec

@@ -691,10 +691,10 @@ pickByChooser ::
   (Decider.Decider -> PlayerId -> [ObjectId] -> Maybe Natural -> Prompt.Prompt (Set ObjectId)) ->
   (Quantity.Type.Quantity -> Natural) ->
   HowMany.HowMany ->
-  Maybe (ObjectId -> Natural, Natural) ->
+  Maybe ([ObjectId] -> ObjectId -> Bool) ->
   [ObjectId] ->
   Game (Maybe PlayerId, [ObjectId])
-pickByChooser resolving source controller legal chooser one_ several amount count cap candidates = do
+pickByChooser resolving source controller legal chooser one_ several amount count admits candidates = do
   gs <- State.get
   let named = namesChooser legal resolving source controller gs chooser
       asked = askedChooser resolving source controller legal chooser
@@ -702,7 +702,7 @@ pickByChooser resolving source controller legal chooser one_ several amount coun
       refusals = maybe Map.empty RepeatPicks.refused (Bookkeeping.repeatPicks (GameState.bookkeeping gs))
   (seat, picked) <-
     if unlimited && Map.null refusals
-      then Game.pickCounted named asked one_ several amount count cap candidates
+      then Game.pickCounted named asked one_ several amount count admits candidates
       else do
         seat <- if named then asked else pure Nothing
         now <- State.get
@@ -711,7 +711,7 @@ pickByChooser resolving source controller legal chooser one_ several amount coun
             offered who oid = reachable who oid && not (Set.member oid (Map.findWithDefault Set.empty who refusals))
         case seat of
           Nothing -> pure (Nothing, [])
-          Just who -> Game.pickCounted True (pure (Just who)) one_ several amount count cap (filter (offered who) candidates)
+          Just who -> Game.pickCounted True (pure (Just who)) one_ several amount count admits (filter (offered who) candidates)
   -- CR 733.3: a pick a seat was asked for joins its RepeatIf run's record.
   Monad.forM_ seat $ \who ->
     Monad.unless (null picked) $
@@ -2179,7 +2179,11 @@ chooseCardsInHand resolving source controller legal (ChosenCardInHand.MkChosenCa
 -- 601.2b left on the resolving object -- TopOfLibrary's reading, and its clamp: a
 -- count that will not evaluate, or evaluates negative, is zero cards (CR
 -- 107.2, 107.1b). pickCounted asks it, and holds the picks within the ref's
--- total where it states one.
+-- total where it states one, and to a card for each color where it states a
+-- perColor: the colors (CR 105.1) of the permanents that Filter matches, read
+-- here off the projection, each pick answering for one color of its own that no
+-- other pick answers for. A card of two of them answers for either (CR
+-- 105.2b).
 --
 -- AtRandom asks nobody: randomCards' question to the interpreter, over the
 -- matching members, naming that many distinct cards (all of them for an
@@ -2194,7 +2198,7 @@ chooseCardFromAmong ::
   Map.Map SlotName (Set Recipient) ->
   ChosenCardFromAmong.ChosenCardFromAmong ->
   Game [ObjectId]
-chooseCardFromAmong resolving source controller legal chosen (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total chooser pileChooser faceUpPile selection) = do
+chooseCardFromAmong resolving source controller legal chosen (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total perColor chooser pileChooser faceUpPile selection) = do
   members <- fromAmongMembers legal resolving chosen slot
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
@@ -2204,7 +2208,13 @@ chooseCardFromAmong resolving source controller legal chosen (ChosenCardFromAmon
       -- Each candidate weighed against its own projection, TopOfLibraryUntil's
       -- read and clamp.
       weighs weight oid = maybe 0 Integer.toNaturalSaturating (Quantity.evaluateFor viewOf context gs resolving oid weight)
-      cap = fmap (\(TotalCap.MkTotalCap weight most) -> (weighs weight, amount most)) total
+      withinTotal (TotalCap.MkTotalCap weight most) taken oid = sum (fmap (weighs weight) (oid : taken)) <= amount most
+      colorsOf = foldMap Filter.colors . viewOf
+      oneEach among =
+        let palette = foldMap colorsOf (battlefieldMatching legal resolving controller source gs among)
+         in \taken oid -> distinctlyAssigned (fmap (Set.toList . Set.intersection palette . colorsOf) (oid : taken))
+      bounds = Foldable.toList (fmap withinTotal total) <> Foldable.toList (fmap oneEach perColor)
+      admits = if null bounds then Nothing else Just (\taken oid -> all (\bound -> bound taken oid) bounds)
       pick purpose = case selection of
         CardSelection.AtRandom -> \pool -> Game.drawDistinct Prompt.RandomObject (maybe (List.genericLength pool) amount (HowMany.quantity count)) pool
         CardSelection.ByChoice -> byChoice purpose
@@ -2220,7 +2230,7 @@ chooseCardFromAmong resolving source controller legal chosen (ChosenCardFromAmon
             (\decider who pool ceiling_ -> Prompt.ChooseAnyNumber decider who source purpose pool ceiling_ Seq.empty)
             amount
             count
-            cap
+            admits
   case pileChooser of
     Nothing -> pick AnyNumberOf.CardsFromAmong matching
     -- CR 700.3: the chooser separates and the pile chooser takes a pile --
@@ -3651,7 +3661,7 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
             let scoped = Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) legal scope gs
              in not (null scoped) && all (\pid -> null (graveyardCardsOf context gs pid filter_)) scoped
           Chooser.BoundInSlot _ -> False
-      ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count _ _ _ _ _) ->
+      ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count _ _ _ _ _ _) ->
         mustPick count && maybe False (null . matchingFromAmong legal resolving controller source gs filter_ . stillPresent gs) (fromAmongBound slot)
       ObjectRef.ChosenPermanents choice -> mustPick (ChosenPermanents.count choice) && null (chosenCandidates legal resolving controller source gs choice)
       -- Only when no member names anything: a read always might.
@@ -4259,10 +4269,16 @@ matchDescriptions fits descriptions
     fitting oid = [i | (i, d) <- indexed, fits oid d]
     go kept [] = reverse kept
     go kept (oid : rest)
-      | assign (fmap fitting (oid : kept)) Set.empty = go (oid : kept) rest
+      | distinctlyAssigned (fmap fitting (oid : kept)) = go (oid : kept) rest
       | otherwise = go kept rest
-    assign [] _ = True
-    assign (options : more) used = any (\i -> not (Set.member i used) && assign more (Set.insert i used)) options
+
+-- Whether every member can take one of its own options that no other member
+-- takes: matchDescriptions' descriptions, and chooseCardFromAmong's colors.
+distinctlyAssigned :: (Ord v) => [[v]] -> Bool
+distinctlyAssigned = go Set.empty
+  where
+    go _ [] = True
+    go used (options : more) = any (\v -> not (Set.member v used) && go (Set.insert v used) more) options
 
 -- One card's values on Search.differentIn's axes (Event.differingOf), read off
 -- the CR 613 projection, so a split card's two names count (CR 201.2a) and a
