@@ -507,8 +507,9 @@ withOffering pid oid gs candidate =
 --
 -- One naming a delayed ability (CR 603.7g) is offered as a candidate of its
 -- own too, tagged with the name: Spider Climb's ruling (2022-12-08) has a cast
--- another permission allowed create none, so which permission a cast uses is
--- CR 601.2b's choice. Parun.Engine.Cast.windowedCandidates keeps it only
+-- another permission allowed create none, and which permission a cast used is
+-- the caster's to say (docs/decisions.md, "Who says which permission a cast of
+-- Spider Climb used"). Parun.Engine.Cast.windowedCandidates keeps it only
 -- where CR 307.5a's test holds.
 withFlashPermission :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
 withFlashPermission pid oid face gs =

@@ -503,6 +503,11 @@ spec s registry = Spec.describe s "Client" $ do
         (picked, shown) = asking Hotseat.fresh {Hotseat.facing = Just S.alice} ["2"] gs choosing
     Spec.assertEqWith s "shown" (dropWhile (not . Text.isPrefixOf (Text.pack "Player 2 paid")) shown) (fmap Text.pack ["Player 2 paid {2} with Player 2's Forest.", "Player 1 declined.", "Choose how to pay for Forest:", "  1. {2}", "  2. {2} (blitz)", "> 2"])
     Spec.assertEqWith s "the second is blitz" picked (Right blitz)
+    -- CR 603.7g: and by the delayed ability one creates (Spider Climb).
+    let arming = (CandidateCost.plain Nothing cost) {CandidateCost.arms = Just (AbilityName.MkAbilityName (Text.pack "sacrifice it"))}
+        (pickedArming, shownArming) = asking Hotseat.fresh {Hotseat.facing = Just S.alice} ["2"] gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, arming] Seq.empty)
+    Spec.assertEqWith s "CR 603.7g shown" (take 2 (drop 1 (dropWhile (/= Text.pack "Choose how to pay for Forest:") shownArming))) (fmap Text.pack ["  1. {2}", "  2. {2} (sacrifice it)"])
+    Spec.assertEqWith s "the second creates it" pickedArming (Right arming)
 
   Spec.it s "a priority offering only passing and mana abilities is passed without asking for the seat the screen faces" $ do
     (forest, gs) <- withForest s registry

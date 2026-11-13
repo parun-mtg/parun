@@ -229,6 +229,11 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "the costs, equal" (field "costs" choosing) (Just (R.Array [Protocol.payment cost, Protocol.payment cost]))
     Spec.assertEqWith s "CR 101.4b earlier payers of a choice of cost" (field "earlier" choosing) (Just told)
     Spec.assertEqWith s "CR 101.4b earlier payers of an offer to pay" (field "earlier" paying) (Just told)
+    -- CR 603.7g: the delayed ability a candidate creates, only where one does.
+    let named = AbilityName.MkAbilityName (Text.pack "sacrifice it")
+        arming = Protocol.offerOf gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, (CandidateCost.plain Nothing cost) {CandidateCost.arms = Just named}] Seq.empty)
+    Spec.assertEqWith s "CR 603.7g the delayed abilities" (field "arming" arming) (Just (R.Array [R.Null, R.Text (Text.pack "sacrifice it")]))
+    Spec.assertEqWith s "and none where no candidate creates one" (field "arming" choosing) Nothing
 
   Spec.it s "CR 510.1 a combat damage assignment offers each recipient's lethal damage and what is already paid in the answer's vocabulary" $ do
     let o7 = ObjectId.MkObjectId 7

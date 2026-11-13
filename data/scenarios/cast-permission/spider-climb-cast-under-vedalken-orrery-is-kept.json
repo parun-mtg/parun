@@ -50,7 +50,7 @@
     ],
     "step": "Upkeep"
   },
-  "description": "CR 601.3b / 601.2b Spider Climb cast in an upkeep as Vedalken Orrery allows is not sacrificed",
+  "description": "CR 601.3b Spider Climb cast in an upkeep as Vedalken Orrery allows is not sacrificed",
   "note": "Its ruling of 2022-12-08: the sacrifice occurs only if it was cast using its own ability. Both permissions apply, so alice chooses, and names the Orrery's.",
   "timeline": [
     {

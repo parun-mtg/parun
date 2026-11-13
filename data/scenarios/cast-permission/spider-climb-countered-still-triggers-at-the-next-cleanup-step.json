@@ -54,7 +54,7 @@
     "step": "Upkeep"
   },
   "description": "CR 603.7g / 514.3a a countered Spider Climb's delayed ability still triggers at the beginning of the next cleanup step",
-  "note": "The ability is created as the spell is cast, not as it resolves, so the cleanup step gives alice priority with a trigger that finds no permanent, and another cleanup step follows.",
+  "note": "The ability is created as the spell is cast, not as it resolves, so the cleanup step gives alice priority with a trigger that finds no permanent.",
   "timeline": [
     {
       "do": {
