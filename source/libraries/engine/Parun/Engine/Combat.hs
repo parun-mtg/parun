@@ -2238,13 +2238,12 @@ noteAttackingNothing gs =
         Nothing -> False
         Just seat -> Battle.protectorOf battle gs /= Just seat
       -- CR 506.4e's second sentence for a PLANESWALKER announcement: one that
-      -- was a battle too as this creature joined combat (attackedControlledBy
+      -- was a battle too while this creature attacked it (attackedControlledBy
       -- holds an entry only then) and has stopped being one is removed unless
-      -- its protector controls it. CR 310.9g keeps the protector to compare.
-      --
-      -- Not implemented: a planeswalker that becomes a battle only after this
-      -- creature joined combat gets no entry, so it is never removed this way
-      -- (#7021).
+      -- its protector controls it. CR 310.9g keeps the protector to compare;
+      -- one with no protector is removed (docs/synthetic-readings.md, "Whether
+      -- an attacked planeswalker that stops being an unprotected battle is
+      -- removed from combat").
       walkerUnprotected attacker pw =
         Map.member attacker (Combat.attackedControlledBy c)
           && not (Battle.isBattle (Projection.project pw gs))
@@ -2255,11 +2254,24 @@ noteAttackingNothing gs =
         AttackTarget.OfPlayer _ -> False
         AttackTarget.OfPlaneswalker pw -> not (targetStillAttacked target gs) || seatMoved attacker pw || walkerUnprotected attacker pw
         AttackTarget.OfBattle battle -> not (targetStillAttacked target gs) || battleSeatMoved attacker battle || protectorMoved attacker battle
-      gone = Map.keysSet (Map.filterWithKey removed (Combat.attackers c))
+      gone = Set.union (Map.keysSet (Map.filterWithKey removed (Combat.attackers c))) (Combat.attackingNothing c)
+      -- CR 506.4e's second sentence asks whether the planeswalker was a battle
+      -- at any time while attacked, so one that became a battle after its
+      -- attacker joined combat gets walkerUnprotected's entry here, the first
+      -- time it is seen as one. Proved by data/scenarios/planeswalker-combat's
+      -- cr-506-4e-whole-cards-a-siege-that-becomes-a-battle-only-after-the-attack.
+      becameBattle attacker target = case target of
+        AttackTarget.OfPlaneswalker _ | Set.notMember attacker gone -> attackedBattleController target gs
+        _ -> Nothing
    in gs
         { GameState.turn =
             (GameState.turn gs)
-              { TurnRegisters.combat = c {Combat.attackingNothing = Set.union gone (Combat.attackingNothing c)}
+              { TurnRegisters.combat =
+                  c
+                    { Combat.attackingNothing = gone,
+                      Combat.attackedControlledBy =
+                        Map.union (Combat.attackedControlledBy c) (Map.mapMaybeWithKey becameBattle (Combat.attackers c))
+                    }
               }
         }
 

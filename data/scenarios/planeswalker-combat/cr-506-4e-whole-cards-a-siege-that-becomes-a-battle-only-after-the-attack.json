@@ -1,0 +1,542 @@
+{
+  "board": {
+    "active": "alice",
+    "attackOption": null,
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Invasion of Dominaria",
+            "counters": [
+              {
+                "key": {
+                  "type": "Defense"
+                },
+                "value": 5
+              }
+            ],
+            "label": "invasion",
+            "protector": "carol"
+          },
+          {
+            "card": "Liquimetal Coating",
+            "label": "coating",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          },
+          {
+            "card": "Plains",
+            "label": "plains"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Skilled Animator",
+            "label": "animator"
+          },
+          {
+            "card": "Planeswalkerificate",
+            "label": "pw"
+          },
+          {
+            "card": "Synthetic Lift the Siege",
+            "label": "lift"
+          },
+          {
+            "card": "Song of the Dryads",
+            "label": "song"
+          },
+          {
+            "card": "Disenchant",
+            "label": "disenchant"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Llanowar Elves",
+            "label": "elf",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 506.4e whole cards: attacked while no battle, a Siege that becomes a battle again and then stops being one is removed from combat when its protector doesn't control it",
+  "note": "The board of the Siege case under Song of the Dryads: the Elf attacks a planeswalker that is no battle, carol still its protector (CR 310.9g). Disenchant on the Song makes it a Siege again while attacked, and Synthetic Lift the Siege takes that away, so it was both, and carol doesn't control it: removed from combat, and the Elf deals no damage.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            null
+          ],
+          "object": "$song",
+          "targets": [
+            "$invasion"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "object": "$coating",
+          "targets": [
+            "$invasion"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            null
+          ],
+          "object": "$animator"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$invasion"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4",
+            null
+          ],
+          "object": "$pw",
+          "targets": [
+            "$invasion"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "$invasion",
+          "object": "Planeswalkerificate",
+          "of": "AttachedTo"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$invasion",
+          "types": [
+            "Artifact",
+            "Creature",
+            "Land",
+            "Planeswalker"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$invasion",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseDefender": "bob"
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseDefender": "alice"
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "$elf"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$invasion"
+      },
+      "player": "bob",
+      "source": "$elf",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$elf": "$invasion"
+          }
+        }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Defenders": {
+          "players": [
+            "alice"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains",
+            "$i4",
+            null
+          ],
+          "object": "$disenchant",
+          "targets": [
+            "Song of the Dryads"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$invasion",
+          "types": [
+            "Artifact",
+            "Battle",
+            "Creature",
+            "Planeswalker"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": "carol",
+          "object": "$invasion",
+          "of": "Protector"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$elf": "$invasion"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p2",
+            "$p3"
+          ],
+          "object": "$lift"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$invasion",
+          "power": 5,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 0,
+          "object": "$invasion"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 5,
+          "kind": {
+            "type": "Defense"
+          },
+          "object": "$invasion"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$invasion",
+          "types": [
+            "Artifact",
+            "Creature",
+            "Planeswalker"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": "carol",
+          "object": "$invasion",
+          "of": "Protector"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "object": "$invasion",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 2
+    }
+  ]
+}
