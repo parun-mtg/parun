@@ -1,0 +1,26 @@
+{
+  "description": "CR 121.3 a draw that only follows a choice does not withhold it: Turtles in Time under Mornsong Aria still offers the shuffle, and those who shuffle draw nothing",
+  "note": "The shuffle is the option and the draw its consequence (the card's ruling of 2026-01-27), so the offer stands; alice and carol shuffle their hands away and Mornsong Aria leaves them empty.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Mornsong Aria"}], "graveyard": [{"card": "Goblin Piker"}], "hand": [{"card": "Turtles in Time", "label": "time"}, {"card": "Shock"}], "library": [{"card": "Island", "label": "a0"}, {"card": "Island", "label": "a1"}, {"card": "Island", "label": "a2"}, {"card": "Island", "label": "a3"}, {"card": "Island", "label": "a4"}, {"card": "Island", "label": "a5"}, {"card": "Island", "label": "a6"}], "manaPool": "UUUUUUU", "name": "alice"},
+    {"battlefield": [{"card": "Hill Giant", "label": "giant"}], "graveyard": [{"card": "Wall of Stone"}], "hand": [{"card": "Wind Drake"}], "library": [{"card": "Island", "label": "b0"}, {"card": "Island", "label": "b1"}, {"card": "Island", "label": "b2"}, {"card": "Island", "label": "b3"}, {"card": "Island", "label": "b4"}, {"card": "Island", "label": "b5"}, {"card": "Island", "label": "b6"}], "name": "bob"},
+    {"graveyard": [{"card": "Murder"}], "hand": [{"card": "Unsummon"}], "library": [{"card": "Island", "label": "c0"}, {"card": "Island", "label": "c1"}, {"card": "Island", "label": "c2"}, {"card": "Island", "label": "c3"}, {"card": "Island", "label": "c4"}, {"card": "Island", "label": "c5"}, {"card": "Island", "label": "c6"}], "name": "carol"}
+  ]},
+  "timeline": [
+    {"do": {"Cast": {"object": "$time"}}, "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"do": "Pass", "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"do": {"ChooseOptional": "Exercises"}, "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"do": {"ChooseOptional": "Declines"}, "player": "bob", "step": "PrecombatMain", "turn": 1},
+    {"do": {"ChooseOptional": "Exercises"}, "player": "carol", "step": "PrecombatMain", "turn": 1},
+    {"do": {"Answer": {"prompt": "Shuffle", "with": ["$a0", "$a1", "$a2", "$a3", "$a4", "$a5", "$a6", "Grizzly Bears", "Shock", "Goblin Piker"]}}, "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"do": {"Answer": {"prompt": "Shuffle", "with": ["$c0", "$c1", "$c2", "$c3", "$c4", "$c5", "$c6", "Unsummon", "Murder"]}}, "player": "alice", "step": "PrecombatMain", "turn": 1},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Goblin Piker", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Shock", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Island", "count": 7}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Wind Drake", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Hand", "card": "Unsummon", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Hand", "card": "Island", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Library", "card": "Island", "count": 7}}}
+  ]
+}
