@@ -55,10 +55,12 @@
                       "effect": {
                         "type": "DontLoseUnspentMana",
                         "value": {
-                          "type": "OfType",
-                          "value": {
-                            "type": "Colored",
-                            "value": "Red"
+                          "mana": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Red"
+                            }
                           }
                         }
                       },
