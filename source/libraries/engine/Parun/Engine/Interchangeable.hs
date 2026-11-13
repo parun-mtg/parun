@@ -280,7 +280,7 @@ representatives pcs gs candidates =
 --     TurnRegisters.turnResume
 --     and the per-player
 --     counters (landsPlayed, departedThisTurn, turnsBegun,
---     resolvedNames) are keyed by or valued
+--     resolvedNames, expiredLastTurns) are keyed by or valued
 --     at a PLAYER and name no object.
 --   * Snapshots.lastKnown is about objects that have LEFT, bar the host each
 --     record names, which namedByAnother searches.
@@ -320,8 +320,9 @@ representatives pcs gs candidates =
 --     LEFT: their spells were cast on an earlier turn, and CR 500.2 ends no
 --     step while the stack holds one. They are read for their damage too
 --     (Game.damageBeforeThisTurn), through the two views objects compares
---     and through actedOnBy. Nothing else reads them yet (gap #6034); a
---     reader owes a line here.
+--     and through actedOnBy. Each player's own last turn
+--     (Game.ownLastTurn) is read for its attacks, by namedByRelation. Nothing
+--     else reads them yet; a reader owes a line here.
 --   * TurnRegisters.permanentsAsTurnBegan is keyed by every permanent, but no
 --     choice this turn can change it and it is read only by a Count over the
 --     whole record, so what two candidates' entries say cannot separate them.
@@ -605,8 +606,9 @@ affectedNames oid source gs affected = case affected of
 --     revealedTops (CR 401.6) and outsideCopies (CR 400.11), each keyed by the
 --     object it is about; and
 --     the logs triggeredThisGame (a "triggers only once" rider's spent
---     triggerings), instructionsTakenThisTurn (CR 603.2h), activationsThisTurn (CR 602.2) and attacksInOwnLastTurn (CR
---     508.1a), by the object each entry names.
+--     triggerings), instructionsTakenThisTurn (CR 603.2h),
+--     activationsThisTurn (CR 602.2) and each player's own last turn's attacks
+--     (Game.attacksInOwnLastTurn, CR 508.1a), by the object each entry names.
 --
 -- phasedOut and a crowning watch can never name a CANDIDATE through the one
 -- caller (Parun.Engine.Cost's mana-source window): both key on an object not on
@@ -683,7 +685,7 @@ namedByRelation oid gs =
         || any (triggeredNames oid) [record | r <- parked, GameEvent.AbilityTriggered record <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events r))]
         || any (any (any (spentActivationNames oid) . Map.keys) . Map.elems . TurnRegisters.activatedThisTurn) parked
         || any (any (activationNames oid) . TurnRegisters.activationsThisTurn) parked
-        || any (any (attackedLastTurnNames oid)) (Map.elems (History.attacksInOwnLastTurn (GameState.history gs)))
+        || any (any (attackedLastTurnNames oid) . Game.attacksInOwnLastTurn gs) (GameState.turnOrder gs)
 
 -- The objects a GameState.phasedOut row names BEYOND its key: none, since CR
 -- 702.26a's stored value is the player the permanent phased out under.

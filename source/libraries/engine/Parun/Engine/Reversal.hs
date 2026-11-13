@@ -187,7 +187,7 @@ withoutAnnouncement before entry closed = do
   -- three agree; taken rather than compared, which would walk the game.
   pastTurns <- newest (History.pastTurns . GameState.history)
   damagePreventedBy <- mapOf GameState.damagePreventedBy
-  attacksInOwnLastTurn <- one (History.attacksInOwnLastTurn . GameState.history)
+  expiredLastTurns <- setOf (History.expiredLastTurns . GameState.history)
   resolvedNames <- mapOf (History.resolvedNames . GameState.history)
   movedUntil <- mapOf GameState.movedUntil
   haunting <- mapOf GameState.haunting
@@ -355,7 +355,7 @@ withoutAnnouncement before entry closed = do
           History.MkHistory
             { History.triggeredThisGame = triggeredThisGame,
               History.pastTurns = pastTurns,
-              History.attacksInOwnLastTurn = attacksInOwnLastTurn,
+              History.expiredLastTurns = expiredLastTurns,
               History.resolvedNames = resolvedNames
             },
         GameState.pendingControl = pendingControl,

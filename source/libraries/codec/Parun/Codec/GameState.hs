@@ -17,7 +17,6 @@ import qualified Parun.Codec.ActiveObjectProhibition as ActiveObjectProhibition
 import qualified Parun.Codec.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Codec.ActiveReplacement as ActiveReplacement
 import qualified Parun.Codec.Arrival as Arrival
-import qualified Parun.Codec.AttackerDeclared as AttackerDeclared
 import qualified Parun.Codec.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Codec.Binding as Binding
 import qualified Parun.Codec.Card as Card
@@ -217,7 +216,7 @@ codec resolve = Fields.object $ do
   daytime <- Fields.defaulted "daytime" Nothing (Common.maybe Daytime.codec) GameState.daytime
   pastTurns <- Fields.defaulted "pastTurns" Seq.empty (Common.seq PastTurn.codec) (History.pastTurns . GameState.history)
   damagePreventedBy <- Fields.defaulted "damagePreventedBy" Map.empty (Common.naturalMap ObjectId.codec Common.natural) GameState.damagePreventedBy
-  attacksInOwnLastTurn <- Fields.defaulted "attacksInOwnLastTurn" Map.empty (Common.naturalMap PlayerId.codec (Common.seq AttackerDeclared.codec)) (History.attacksInOwnLastTurn . GameState.history)
+  expiredLastTurns <- Fields.defaulted "expiredLastTurns" Set.empty (Common.set PlayerId.codec) (History.expiredLastTurns . GameState.history)
   resolvedNames <- Fields.defaulted "resolvedNames" Map.empty (Common.naturalMap PlayerId.codec (Common.set CardName.codec)) (History.resolvedNames . GameState.history)
   movedUntil <- Fields.defaulted "movedUntil" Map.empty (Common.naturalMap ObjectId.codec ReturnWatch.codec) GameState.movedUntil
   haunting <- Fields.defaulted "haunting" Map.empty (Common.naturalMap ObjectId.codec ObjectId.codec) GameState.haunting
@@ -350,7 +349,7 @@ codec resolve = Fields.object $ do
           History.MkHistory
             { History.triggeredThisGame = triggeredThisGame,
               History.pastTurns = pastTurns,
-              History.attacksInOwnLastTurn = attacksInOwnLastTurn,
+              History.expiredLastTurns = expiredLastTurns,
               History.resolvedNames = resolvedNames
             },
         GameState.pendingControl = pendingControl,

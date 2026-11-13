@@ -857,7 +857,8 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.AttackersDeclaredThisCombat ->
           Just (toInteger (Set.size (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn gs)))))
         -- CR 508.1a as a 0/1, PlayedBy's footing: an object related to a player,
-        -- read off History.attacksInOwnLastTurn rather than the turn's log.
+        -- read off the player's own last turn (Game.ownLastTurn) rather than this
+        -- turn's log.
         Quantity.AttackedInLastTurnOf ref -> case (playersOf ref, mOid) of
           (Just [pid], Just oid) -> Just (if Game.attackedInLastTurnOf gs pid oid then 1 else 0)
           _ -> Nothing

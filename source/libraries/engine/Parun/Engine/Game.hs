@@ -523,7 +523,7 @@ blankHistory :: History.History
 blankHistory =
   History.MkHistory
     { History.pastTurns = Seq.empty,
-      History.attacksInOwnLastTurn = Map.empty,
+      History.expiredLastTurns = Set.empty,
       History.triggeredThisGame = Seq.empty,
       History.resolvedNames = Map.empty
     }
@@ -4466,29 +4466,38 @@ manaExpendedThisTurn gs pid =
 attackersDeclaredThisTurn :: GameState -> PlayerId -> Natural
 attackersDeclaredThisTurn gs pid = Natural.length (filter (declaredBy pid . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
--- CR 508.1a: this turn's attacker declarations, in order, off the log
--- Engine.beginTurn snapshots into History.attacksInOwnLastTurn as it clears it.
-attacksInLog :: GameState -> Seq.Seq AttackerDeclared.AttackerDeclared
-attacksInLog gs = Seq.fromList (Maybe.mapMaybe (attackOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+-- CR 508.1a: a log's attacker declarations, in order.
+attacksInLog :: Seq.Seq LoggedEvent.LoggedEvent -> Seq.Seq AttackerDeclared.AttackerDeclared
+attacksInLog events = Seq.fromList (Maybe.mapMaybe (attackOf . LoggedEvent.event) (Foldable.toList events))
   where
     attackOf event = case event of
       GameEvent.AttackerDeclared x -> Just x
       _ -> Nothing
 
+-- CR 508.1a / 800.4i: the attacker declarations of this player's own most
+-- recent turn (ownLastTurn), every attacking player's on it (CR 805.4). None
+-- before their first turn has ended, nor once a departed player's next turn
+-- would have begun (History.expiredLastTurns).
+attacksInOwnLastTurn :: GameState -> PlayerId -> Seq.Seq AttackerDeclared.AttackerDeclared
+attacksInOwnLastTurn gs pid =
+  let history = GameState.history gs
+   in if Set.member pid (History.expiredLastTurns history)
+        then Seq.empty
+        else maybe Seq.empty (attacksInLog . PastTurn.events . Seq.index (History.pastTurns history)) (ownLastTurn pid gs)
+
 -- CR 508.1a: was this object declared as an attacker during this player's own
 -- most recent turn? Giant Turtle's "if it attacked during your last turn".
 attackedInLastTurnOf :: GameState -> PlayerId -> ObjectId -> Bool
-attackedInLastTurnOf gs pid oid =
-  any ((== oid) . AttackerDeclared.attacker) (Map.findWithDefault Seq.empty pid (History.attacksInOwnLastTurn (GameState.history gs)))
+attackedInLastTurnOf gs pid oid = any ((== oid) . AttackerDeclared.attacker) (attacksInOwnLastTurn gs pid)
 
 -- CR 508.1b / 800.4i: how many players attacked this player during their OWN
 -- most recent turn -- Avenge's "a player attacked you during their last turn".
--- Every row counts, a departed player's among them, CR 800.4i's limb on actions
--- of a player who left the game; the row's own expiry is the seat walk's.
+-- Every seat counts, a departed player's among them, CR 800.4i's limb on
+-- actions of a player who left the game, until attacksInOwnLastTurn expires it.
 attackersInTheirLastTurn :: GameState -> PlayerId -> Natural
 attackersInTheirLastTurn gs victim =
   let attackedVictim attacking row = AttackerDeclared.attackingPlayer row == attacking && AttackerDeclared.target row == AttackTarget.OfPlayer victim
-   in Natural.length (filter (\(attacking, rows) -> any (attackedVictim attacking) rows) (Map.toList (History.attacksInOwnLastTurn (GameState.history gs))))
+   in Natural.length (filter (\attacking -> any (attackedVictim attacking) (attacksInOwnLastTurn gs attacking)) (GameState.turnOrder gs))
 
 -- CR 509.1h / 608.2i: did this OBJECT become a blocked creature this turn?
 -- attackersDeclaredThisTurn's footing over the other combat log, and its extent

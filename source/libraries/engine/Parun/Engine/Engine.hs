@@ -2286,7 +2286,7 @@ walkToNextTurn seatsLeft anchor seat = do
 -- CR 800.4i: a departed player's last turn answers "during their last turn"
 -- only until their next turn would have begun, which is here.
 expireLastTurn :: PlayerId -> GameState -> GameState
-expireLastTurn pid gs = gs {GameState.history = (GameState.history gs) {History.attacksInOwnLastTurn = Map.delete pid (History.attacksInOwnLastTurn (GameState.history gs))}}
+expireLastTurn pid gs = gs {GameState.history = (GameState.history gs) {History.expiredLastTurns = Set.insert pid (History.expiredLastTurns (GameState.history gs))}}
 
 -- CR 611.2a's sweep for a turn that begins: every player who takes it, which
 -- under CR 805.4 is the whole team. A departed teammate's turn is one that
@@ -2387,17 +2387,15 @@ closeTurn gs =
                 -- game's casts (Game.castsThisGame) and earlier damage
                 -- (Game.damageBeforeThisTurn), and, by its stamp, for the count
                 -- the NEXT turn's untap step asks about (CR 502.2,
-                -- Game.spellsCastLastTurn). Forced here, so
+                -- Game.spellsCastLastTurn) and as each taker's own last turn
+                -- (Game.ownLastTurn, CR 805.4). Forced here, so
                 -- no record holds the state it was read from.
                 History.pastTurns =
                   seq (length outgoing) . (History.pastTurns (GameState.history gs) Seq.|>) $!
                     PastTurn.MkPastTurn
                       { PastTurn.activePlayers = outgoing,
                         PastTurn.events = TurnRegisters.events (GameState.turn gs)
-                      },
-                -- CR 508.1a: the outgoing turn becomes each of its takers' own last
-                -- turn, REPLACING the row, an attackless turn included (CR 805.4).
-                History.attacksInOwnLastTurn = List.foldl' (\rows p -> Map.insert p (Game.attacksInLog gs) rows) (History.attacksInOwnLastTurn (GameState.history gs)) outgoing
+                      }
               }
         }
 

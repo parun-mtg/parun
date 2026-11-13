@@ -278,7 +278,7 @@ data Quantity
     AttackersDeclaredThisCombat
   | -- | CR 508.1a: 1 if the object this quantity is evaluated against was
     -- declared as an attacker during that player's own most recent turn
-    -- (History.attacksInOwnLastTurn), else 0.
+    -- (Game.ownLastTurn), else 0.
     AttackedInLastTurnOf PlayerRef.PlayerRef
   | -- | CR 508.1b / 800.4i: how many players attacked that player during their
     -- own most recent turn, a departed one included until their next turn
