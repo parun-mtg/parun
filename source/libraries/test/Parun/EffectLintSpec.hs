@@ -2386,11 +2386,19 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- No subtraction of a minted object's text, which readSinglyInFilters
         -- needs: effectQuantities does not descend into the card a Create or a
         -- Conjure carries.
+        --
+        -- A damage amount aimed at its instruction's own DEALER slot is not one:
+        -- Parun.Engine.Resolve.Arms.Damage reads it once per dealer, the slot
+        -- narrowed to that one, so a group there is read whole (Master of the
+        -- Wild Hunt's Wolves).
         readSinglyInQuantities effects = do
           effect <- effects
           quantity <- effectQuantities effect
           (slot, SlotArity.One) <- Map.toList (Resolve.quantitySlots quantity)
-          pure slot
+          [slot | Just slot /= dealerOf effect]
+        dealerOf effect = case effect of
+          Effect.DealDamage damage -> DealDamage.dealer damage
+          _ -> Nothing
         -- The three READING sides at once: this resolution's own effects, the
         -- conditions of the delayed abilities it arms, and the PlayerRefs its
         -- CLAUSES hold. CR 603.7c is what puts the second there -- the entry
@@ -2458,6 +2466,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- Nothing about the opcode matters: what is on trial is the atom inside
         -- the number.
         counting quantity = Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) quantity Nothing)
+        dealing dealer quantity = Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.InSlot elsewhereSlot) quantity)) (Just dealer) Nothing Nothing Nothing Nothing)
         against slot = Quantity.Type.AgainstSlot (AgainstSlot.MkAgainstSlot slot (Quantity.Type.Measure Measure.Power))
         -- The corpus half of the number leg: does any card read ANY slot inside a
         -- number? A presence probe over the traversal rather than over the arm,
@@ -2597,6 +2606,10 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- the destruction never bound.
     Spec.assertBool s (clashes [destruction, counting (against destroyedSlot)]) "a singular read inside a number is caught"
     Spec.assertBool s (not (clashes [destruction, counting (against elsewhereSlot)])) "a singular read inside a number of another slot is left alone"
+    -- CR 608.2f's several dealers: the amount is read against each in turn, and
+    -- the same amount under another dealer still reads the group singly.
+    Spec.assertBool s (not (clashes [destruction, dealing destroyedSlot (against destroyedSlot)])) "a damage amount read off its own group of dealers is left alone"
+    Spec.assertBool s (clashes [destruction, dealing elsewhereSlot (against destroyedSlot)]) "a damage amount read off a group that is not its dealer is caught"
     -- The same atom under a NEST, which is the half a top-level number cannot
     -- prove: a QuantitySlot.slots answering the empty set for Negate would pass
     -- both assertions above.
