@@ -31,9 +31,9 @@ ghci> System.Environment.withArgs ["-p", "Engine.Trigger"] Parun.Test.main
 When you do want a binary, `cabal build parun` links one executable instead of
 three, and it reaches the other two: `cabal run parun -- test -p Engine.Trigger`
 (`-p SUBSTRING` selects tests and repeats, `--seed N` replays the order a run's
-summary names, `--slowest N` names the N cases that ran longest) and `cabal
-run parun -- bench` (`-p SUBSTRING` selects benchmarks, `--json FILE` writes
-the results).
+summary names, `--json FILE` writes each case's name, failure and nanoseconds)
+and `cabal run parun -- bench` (`-p SUBSTRING` selects benchmarks, `--json
+FILE` writes the results).
 
 Prefer clarity over cleverness: code that is easy to read, debug, and modify.
 See the [style guide][3] for specifics.
