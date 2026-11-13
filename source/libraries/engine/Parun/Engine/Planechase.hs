@@ -61,7 +61,6 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.SideDeck as SideDeck
-import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
@@ -242,23 +241,12 @@ turnUpTop pid = do
 
 -- CR 701.31b's first half: a face-up card goes to the bottom of its owner's
 -- planar deck (CR 901.15c: the communal one) face down, and CR 311.6 / 312.6
--- make it a new object. The old id's CR 608.2h record is filed for an ability
--- of it still on the stack, which Plane.phenomenonOwnerOf reads. Unobserved, as ownersLeft's phenomenon gate
--- is: it needs a planeswalk while that ability waits.
+-- make it a new object. Plane.phenomenonOwnerOf reads the old id's record.
+-- Unobserved, as ownersLeft's phenomenon gate is: it needs a planeswalk while
+-- that ability waits.
 toBottom :: ObjectId -> Game ()
-toBottom oid = do
-  gs <- State.get
-  case Game.lookupObject oid gs of
-    Nothing -> pure ()
-    Just obj -> do
-      fresh <- State.state Game.freshObjectId
-      let holder = Plane.planarDeckHolder (Object.owner obj) gs
-      State.modify' $ \g ->
-        (Game.overSideDecks SideDeck.Planar (Map.insertWith (flip (Seq.><)) holder (Seq.singleton fresh)) g)
-          { GameState.command = Set.delete oid (GameState.command g),
-            GameState.objects = Map.insert fresh (Object.newIncarnation obj) (Map.delete oid (GameState.objects g)),
-            GameState.snapshots = (GameState.snapshots g) {Snapshots.lastKnown = maybe id (Map.insert oid) (Event.lastKnownRecord g oid) (Snapshots.lastKnown (GameState.snapshots g))}
-          }
+toBottom oid = State.modify' $ \gs ->
+  maybe gs (\obj -> Event.turnFaceDownToBottom SideDeck.Planar (Plane.planarDeckHolder (Object.owner obj) gs) oid gs) (Game.lookupObject oid gs)
 
 -- | CR 901.9: how many times this player has rolled the planar die this turn.
 -- A fold over the event log, which is exactly "this turn"

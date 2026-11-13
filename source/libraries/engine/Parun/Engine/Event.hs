@@ -11324,6 +11324,21 @@ forgetObject gs oid = case lastKnownRecord gs oid of
     let cleared = Game.deleteObject oid gs
      in cleared {GameState.snapshots = (GameState.snapshots cleared) {Snapshots.lastKnown = Map.insert oid known (Snapshots.lastKnown (GameState.snapshots cleared))}}
 
+-- | CR 400.9: turn a face-up command-zone card face down and put it on the
+-- bottom of this holder's supplementary deck of this kind, a new object. The
+-- old id's CR 608.2h record is filed for an ability of it still on the stack.
+-- Unknown ids are left alone.
+turnFaceDownToBottom :: SideDeck.SideDeck -> PlayerId -> ObjectId -> GameState -> GameState
+turnFaceDownToBottom kind holder oid gs = case Game.lookupObject oid gs of
+  Nothing -> gs
+  Just obj ->
+    let (fresh, minted) = Game.freshObjectId gs
+     in (Game.overSideDecks kind (Map.insertWith (flip (Seq.><)) holder (Seq.singleton fresh)) minted)
+          { GameState.command = Set.delete oid (GameState.command minted),
+            GameState.objects = Map.insert fresh (Object.newIncarnation obj) (Map.delete oid (GameState.objects minted)),
+            GameState.snapshots = (GameState.snapshots minted) {Snapshots.lastKnown = maybe id (Map.insert oid) (lastKnownRecord gs oid) (Snapshots.lastKnown (GameState.snapshots minted))}
+          }
+
 -- | CR 608.2h: what an object was, read off one board -- the record filed as it
 -- ceases, under the id it had while it existed. Nothing for an id that board
 -- does not hold.

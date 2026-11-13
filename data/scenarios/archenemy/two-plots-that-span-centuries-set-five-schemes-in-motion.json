@@ -141,11 +141,11 @@
       "check": {
         "View": {
           "is": [
-            "$echoes",
             "$lookA",
             "$soilA",
             "$lookB",
-            "$soilB"
+            "$soilB",
+            "My Laughter Echoes"
           ],
           "of": "Zone",
           "player": "alice",
