@@ -53,39 +53,27 @@
                         }
                       },
                       {
-                        "type": "ForEach",
+                        "type": "DealDamage",
                         "value": {
-                          "body": [
+                          "dealer": "wolves",
+                          "parts": [
                             {
-                              "type": "DealDamage",
-                              "value": {
-                                "dealer": "wolf",
-                                "parts": [
-                                  {
-                                    "quantity": {
-                                      "type": "AgainstSlot",
-                                      "value": {
-                                        "quantity": {
-                                          "type": "Measure",
-                                          "value": "Power"
-                                        },
-                                        "slot": "wolf"
-                                      }
-                                    },
-                                    "ref": {
-                                      "type": "InSlot",
-                                      "value": "target"
-                                    }
-                                  }
-                                ]
+                              "quantity": {
+                                "type": "AgainstSlot",
+                                "value": {
+                                  "quantity": {
+                                    "type": "Measure",
+                                    "value": "Power"
+                                  },
+                                  "slot": "wolves"
+                                }
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "target"
                               }
                             }
-                          ],
-                          "ref": {
-                            "type": "InSlot",
-                            "value": "wolves"
-                          },
-                          "slot": "wolf"
+                          ]
                         }
                       },
                       {
