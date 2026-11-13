@@ -598,6 +598,7 @@ import qualified Parun.Codec.ParityOperandSpec
 import qualified Parun.Codec.ParitySpec
 import qualified Parun.Codec.PartnerTextSpec
 import qualified Parun.Codec.PastActivationSpec
+import qualified Parun.Codec.PastTurnSpec
 import qualified Parun.Codec.PayBranchSpec
 import qualified Parun.Codec.PayGateSpec
 import qualified Parun.Codec.PayObligationSpec
@@ -1662,6 +1663,7 @@ spec s registry corpus = do
   Parun.Codec.PayBranchSpec.spec s
   Parun.Codec.PayGateSpec.spec s
   Parun.Codec.PerTargetSpec.spec s
+  Parun.Codec.PastTurnSpec.spec s
   Parun.Codec.PayingSpec.spec s
   Parun.Codec.PaymentDecisionSpec.spec s
   Parun.Codec.PayObligationSpec.spec s

@@ -123,6 +123,7 @@ import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PastTurn as PastTurn
 import qualified Parun.Types.PendingSkipEffect as PendingSkipEffect
 import qualified Parun.Types.PendingTrigger as PendingTrigger
 import qualified Parun.Types.Phase as Phase
@@ -2395,6 +2396,15 @@ closeTurn gs =
                 -- CR 120.1: the outgoing turn's damage joins the game-long record the
                 -- same way, for a look-back as long as an object's own life.
                 History.damageBeforeThisTurn = History.damageBeforeThisTurn (GameState.history gs) <> Game.damageInLog gs,
+                -- CR 608.2i: the outgoing turn, whole, joins the game's finished
+                -- turns before the log holding it is cleared above. Forced here, so
+                -- no record holds the state it was read from.
+                History.pastTurns =
+                  seq (length outgoing) . (History.pastTurns (GameState.history gs) Seq.|>) $!
+                    PastTurn.MkPastTurn
+                      { PastTurn.activePlayers = outgoing,
+                        PastTurn.events = TurnRegisters.events (GameState.turn gs)
+                      },
                 -- CR 508.1a: the outgoing turn becomes each of its takers' own last
                 -- turn, REPLACING the row, an attackless turn included (CR 805.4).
                 History.attacksInOwnLastTurn = List.foldl' (\rows p -> Map.insert p (Game.attacksInLog gs) rows) (History.attacksInOwnLastTurn (GameState.history gs)) outgoing

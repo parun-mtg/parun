@@ -140,6 +140,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Guess as Guess
 import qualified Parun.Types.HiddenZone as HiddenZone
+import qualified Parun.Types.History as History
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import qualified Parun.Types.Keyword as Keyword.Type
@@ -540,6 +541,9 @@ happenedBetween before after =
                 },
             GameState.bookkeeping = GameState.bookkeeping before,
             GameState.snapshots = GameState.snapshots before,
+            -- Written only at the turn handoff, which no instruction spans;
+            -- `before`'s on both sides, so the comparison does not walk the game.
+            GameState.history = (GameState.history gs) {History.pastTurns = History.pastTurns (GameState.history before)},
             GameState.drewFromEmpty = GameState.drewFromEmpty before,
             GameState.exiledWith = GameState.exiledWith before,
             GameState.exilePiles = GameState.exilePiles before,

@@ -525,6 +525,7 @@ blankHistory =
       History.spellsCastLastTurn = 0,
       History.castsBeforeThisTurn = Seq.empty,
       History.damageBeforeThisTurn = Seq.empty,
+      History.pastTurns = Seq.empty,
       History.attacksInOwnLastTurn = Map.empty,
       History.triggeredThisGame = Seq.empty,
       History.resolvedNames = Map.empty

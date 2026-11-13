@@ -1277,6 +1277,8 @@ library codec
     Parun.Codec.PartnerTextSpec
     Parun.Codec.PastActivation
     Parun.Codec.PastActivationSpec
+    Parun.Codec.PastTurn
+    Parun.Codec.PastTurnSpec
     Parun.Codec.PayBranch
     Parun.Codec.PayBranchSpec
     Parun.Codec.PayGate
@@ -3330,6 +3332,7 @@ library types
     Parun.Types.ParityOperand
     Parun.Types.PartnerText
     Parun.Types.PastActivation
+    Parun.Types.PastTurn
     Parun.Types.PayBranch
     Parun.Types.PayerAnswer
     Parun.Types.PayGate

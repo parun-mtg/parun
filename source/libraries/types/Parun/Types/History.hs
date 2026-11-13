@@ -9,6 +9,7 @@ import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.PastTurn as PastTurn
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 
@@ -37,6 +38,9 @@ data History = MkHistory
     -- clears, as castsBeforeThisTurn is. Lookback.AsThisObject's
     -- Filter.DealtDamageTo joins it to the live log.
     damageBeforeThisTurn :: !(Seq.Seq DamageEvent.DamageEvent),
+    -- | CR 608.2i: every finished turn of this game, oldest first, appended at
+    -- the turn handoff (Engine.closeTurn) from the log it clears.
+    pastTurns :: !(Seq.Seq PastTurn.PastTurn),
     -- | CR 508.1a / 608.2i: the attackers declared during each player's OWN
     -- most recent turn, keyed by that player and replaced as their next turn
     -- ends (Engine.beginTurn). A departed player's row stands until their next

@@ -47,6 +47,7 @@ import qualified Parun.Codec.Object as Object
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.OutsideCard as OutsideCard
 import qualified Parun.Codec.OutsideObject as OutsideObject
+import qualified Parun.Codec.PastTurn as PastTurn
 import qualified Parun.Codec.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Codec.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Codec.PendingSkipEffect as PendingSkipEffect
@@ -221,6 +222,7 @@ codec resolve = Fields.object $ do
   eventsLastTurn <- Fields.defaulted "eventsLastTurn" Seq.empty (Common.seq LoggedEvent.codec) (History.eventsLastTurn . GameState.history)
   castsBeforeThisTurn <- Fields.defaulted "castsBeforeThisTurn" Seq.empty (Common.seq SpellWasCast.codec) (History.castsBeforeThisTurn . GameState.history)
   damageBeforeThisTurn <- Fields.defaulted "damageBeforeThisTurn" Seq.empty (Common.seq DamageEvent.codec) (History.damageBeforeThisTurn . GameState.history)
+  pastTurns <- Fields.defaulted "pastTurns" Seq.empty (Common.seq PastTurn.codec) (History.pastTurns . GameState.history)
   damagePreventedBy <- Fields.defaulted "damagePreventedBy" Map.empty (Common.naturalMap ObjectId.codec Common.natural) GameState.damagePreventedBy
   attacksInOwnLastTurn <- Fields.defaulted "attacksInOwnLastTurn" Map.empty (Common.naturalMap PlayerId.codec (Common.seq AttackerDeclared.codec)) (History.attacksInOwnLastTurn . GameState.history)
   resolvedNames <- Fields.defaulted "resolvedNames" Map.empty (Common.naturalMap PlayerId.codec (Common.set CardName.codec)) (History.resolvedNames . GameState.history)
@@ -358,6 +360,7 @@ codec resolve = Fields.object $ do
               History.eventsLastTurn = eventsLastTurn,
               History.castsBeforeThisTurn = castsBeforeThisTurn,
               History.damageBeforeThisTurn = damageBeforeThisTurn,
+              History.pastTurns = pastTurns,
               History.attacksInOwnLastTurn = attacksInOwnLastTurn,
               History.resolvedNames = resolvedNames
             },
