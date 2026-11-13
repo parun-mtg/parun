@@ -90,18 +90,20 @@ named registry = fetchCard registry . CardName.MkCardName . Text.pack
 defaultRoot :: IO FilePath
 defaultRoot = Paths.getDataFileName "cards"
 
--- The registry parun ships: 'fileRegistry' over 'defaultRoot', knowing the
--- printings data/printings.json holds and the sheets data/sticker-sheets does.
-defaultRegistry :: (Applicative m) => IO (Registry m)
-defaultRegistry = do
-  registry <- defaultRoot >>= fileRegistry
+-- The registry parun ships: 'registryOver' the cards 'loadRoot' read from
+-- 'defaultRoot', knowing the printings data/printings.json holds and the sheets
+-- data/sticker-sheets does. Taking the cards loaded lets a caller that also
+-- reads them, the test suite's lints, share each file's one parse with it.
+defaultRegistry :: (Applicative m) => [(FilePath, Either Text.Text Card.Card)] -> IO (Registry m)
+defaultRegistry loaded = do
+  root <- defaultRoot
   path <- printingsPath
   table <- loadPrintings path
   sheets <- StickerSheets.defaultRoot >>= StickerSheets.loadRoot
   let failing (file, problem) = ioError (userError (file <> ": " <> Text.unpack problem))
-  loaded <- either (curry failing path) pure table
+  known <- either (curry failing path) pure table
   bySlug <- either failing pure (sheetsBySlug sheets)
-  pure registry {printings = loaded, stickerSheets = bySlug}
+  pure (registryOver root loaded) {printings = known, stickerSheets = bySlug}
 
 -- Every sheet a root holds by the slug of its name, or the first file that
 -- will not parse.
@@ -120,16 +122,25 @@ loadPrintings path = do
     contents <- either (\err -> Left (Text.pack ("not valid UTF-8: " <> show err))) Right (Encoding.decodeUtf8' bytes)
     Common.parse contents >>= Codec.decode PrintingTable.Codec.codec
 
--- A registry over a directory of one-card-per-file JSON, read once, here, and
--- parsed only as far as lookups reach. It knows no printing and no sticker
--- sheet; 'defaultRegistry' adds the shipped ones.
+-- A registry over a directory of one-card-per-file JSON, read once, here:
+-- 'registryOver' what 'loadRoot' reads.
 --
 -- The root is checked before anything else because a mistyped --cards-dir
 -- otherwise surfaces as N identical failures, one per card, instead of one
 -- clear failure at startup (#167).
+fileRegistry :: (Applicative m) => FilePath -> IO (Registry m)
+fileRegistry root = do
+  exists <- Directory.doesDirectoryExist root
+  if not exists
+    then Exception.throwIO MissingRoot.MkMissingRoot {MissingRoot.path = root}
+    else fmap (registryOver root) (loadRoot root)
+
+-- A registry over the cards 'loadRoot' read from a root, parsed only as far as
+-- lookups reach. It knows no printing and no sticker sheet; 'defaultRegistry'
+-- adds the shipped ones.
 --
--- Every file's bytes are read now and its parse is a pure thunk, shared by
--- every lookup and by `cards`, so each file is parsed at most once (#265)
+-- Each file's parse is a pure thunk, shared by every lookup, by `cards` and by
+-- any other holder of the same list, so each file is parsed at most once (#265)
 -- without a lock or unsafeInterleaveIO. A lookup parses the files whose names
 -- hold its slug as a run of words, which under filedAs is every file the name
 -- can belong to; failing that, it falls back to one index of the whole root,
@@ -141,29 +152,22 @@ loadPrintings path = do
 -- files it reached. The rest of the root is not validated here; the corpus
 -- parun ships is, by the lints the module header names.
 --
--- The two halves of the signature are construction and lookup, and they are not
--- the same monad: building the registry reads the directory, so construction is
--- IO, while a lookup is pure work wrapped in pure, so it works in any
--- Applicative. Applicative rather than Monad because pure is the only thing the
--- body needs of m.
-fileRegistry :: (Applicative m) => FilePath -> IO (Registry m)
-fileRegistry root = do
-  exists <- Directory.doesDirectoryExist root
-  if not exists
-    then Exception.throwIO MissingRoot.MkMissingRoot {MissingRoot.path = root}
-    else do
-      loaded <- loadRoot root
-      let usable :: Either [String] a -> Either InvalidCorpus.InvalidCorpus a
-          usable = Bifunctor.first (\problems -> InvalidCorpus.MkInvalidCorpus {InvalidCorpus.root = root, InvalidCorpus.problems = problems})
-          whole = usable (index loaded)
-          byRun = Map.fromListWith (<>) (concatMap (\entry -> fmap (\run -> (run, [entry])) (Set.toList (runs (stemOf (fst entry))))) loaded)
-          find name = do
-            let slug = slugFor name
-            near <- usable (index (Map.findWithDefault [] slug byRun))
-            case Map.lookup slug near of
-              Just card -> Right (Just card)
-              Nothing -> fmap (Map.lookup slug) whole
-      pure MkRegistry {fetchCard = pure . find, cards = pure (fmap (const (Maybe.mapMaybe referenceCard loaded)) whole), printings = PrintingTable.empty, stickerSheets = Map.empty}
+-- A lookup is pure work wrapped in pure, so it works in any Applicative;
+-- Applicative rather than Monad because pure is the only thing the body needs
+-- of m.
+registryOver :: (Applicative m) => FilePath -> [(FilePath, Either Text.Text Card.Card)] -> Registry m
+registryOver root loaded =
+  let usable :: Either [String] a -> Either InvalidCorpus.InvalidCorpus a
+      usable = Bifunctor.first (\problems -> InvalidCorpus.MkInvalidCorpus {InvalidCorpus.root = root, InvalidCorpus.problems = problems})
+      whole = usable (index loaded)
+      byRun = Map.fromListWith (<>) (concatMap (\entry -> fmap (\run -> (run, [entry])) (Set.toList (runs (stemOf (fst entry))))) loaded)
+      find name = do
+        let slug = slugFor name
+        near <- usable (index (Map.findWithDefault [] slug byRun))
+        case Map.lookup slug near of
+          Just card -> Right (Just card)
+          Nothing -> fmap (Map.lookup slug) whole
+   in MkRegistry {fetchCard = pure . find, cards = pure (fmap (const (Maybe.mapMaybe referenceCard loaded)) whole), printings = PrintingTable.empty, stickerSheets = Map.empty}
 
 -- The slug a card file is named by: its file name, less the directory and the
 -- extension.

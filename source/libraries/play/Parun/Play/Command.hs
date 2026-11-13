@@ -54,7 +54,7 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
   (updates, [one, two], []) -> case foldr (=<<) (Right PlayOptions.none) updates of
     Left problem -> usage [problem]
     Right options -> do
-      registry <- Registry.defaultRegistry
+      registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
       lists <- (,) <$> orExit (load registry one) <*> orExit (load registry two)
       format <- orExit (settle (PlayOptions.format options) [(one, fst lists), (two, snd lists)])
       play options registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)

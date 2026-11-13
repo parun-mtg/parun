@@ -686,6 +686,6 @@ yorionList format = Text.pack (foldMap (\name -> "Format: " <> name <> "\n") for
 -- Command.settle).
 started :: Maybe Text.Text -> [FilePath] -> IO (Either [Text.Text] (Maybe Format.Format))
 started asked paths = do
-  registry <- Registry.defaultRegistry
+  registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
   lists <- traverse (Command.load registry) paths
   either (pure . Left) (Command.settle asked . zip paths) (sequence lists)

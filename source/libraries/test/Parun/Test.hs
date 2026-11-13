@@ -1059,8 +1059,8 @@ import qualified Parun.ZoneTriggerSpec
 main :: IO ()
 main = Runner.main $ do
   root <- Registry.defaultRoot
-  registry <- Registry.defaultRegistry
   corpus <- Registry.loadRoot root
+  registry <- Registry.defaultRegistry corpus
   Writer.execWriterT $ spec Runner.runner registry corpus
 
 -- Specs that reach for card data take a registry over the same monad they
