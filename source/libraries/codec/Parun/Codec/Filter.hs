@@ -129,6 +129,8 @@ codec keywordCodec =
       Arm.nullary "IsLastExiledWithSource" Filter.IsLastExiledWithSource,
       Arm.nullary "OfChosenPlayer" Filter.OfChosenPlayer,
       Arm.payload "OfRelatedPlayer" PlayerRelation.codec Filter.OfRelatedPlayer (\x -> case x of Filter.OfRelatedPlayer y -> Just y; _ -> Nothing),
+      -- Runtime-only, HeldByPlayer's treatment above.
+      Arm.payload "OfSpecificPlayer" PlayerId.codec Filter.OfSpecificPlayer (\x -> case x of Filter.OfSpecificPlayer y -> Just y; _ -> Nothing),
       Arm.optionalPayload "IsAttacking" AloneAmong.codec Filter.IsAttacking (\x -> case x of Filter.IsAttacking y -> Just y; _ -> Nothing),
       Arm.payload "IsAttackingPlayer" PlayerRelation.codec Filter.IsAttackingPlayer (\x -> case x of Filter.IsAttackingPlayer y -> Just y; _ -> Nothing),
       Arm.payload "IsAttackingPlaneswalker" PlayerRelation.codec Filter.IsAttackingPlaneswalker (\x -> case x of Filter.IsAttackingPlaneswalker y -> Just y; _ -> Nothing),
@@ -330,6 +332,7 @@ tagOf x = case x of
   Filter.IsLastExiledWithSource -> "IsLastExiledWithSource"
   Filter.OfChosenPlayer {} -> "OfChosenPlayer"
   Filter.OfRelatedPlayer {} -> "OfRelatedPlayer"
+  Filter.OfSpecificPlayer {} -> "OfSpecificPlayer"
   Filter.IsAttacking {} -> "IsAttacking"
   Filter.IsAttackingPlayer {} -> "IsAttackingPlayer"
   Filter.IsAttackingPlaneswalker {} -> "IsAttackingPlaneswalker"

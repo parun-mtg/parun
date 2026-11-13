@@ -1296,6 +1296,19 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
   -- CR 702.16i / 702.16k: OfChosenPlayer's two halves and its aimer, for every
   -- player relating thus to the perspective. `self`'s perspective is player 0,
   -- who controls `blackCreature`; player 1 owns it.
+  -- CR 702.16k: the same three disjuncts for one player named outright, read
+  -- against no perspective. Player 0 controls `blackCreature`; player 1 owns it.
+  Spec.describe s "OfSpecificPlayer" $ do
+    let ofPlayer n = Filter.Type.OfSpecificPlayer (PlayerId.MkPlayerId n)
+        nobody = Filter.contextFor Teams.none Nothing Nothing
+        loose = blackCreature {Filter.controller = Nothing}
+    Spec.it s "matches what the player controls, or owns while nobody controls it, or aims" $ do
+      Spec.assertBool s (Filter.matches nobody blackCreature (ofPlayer 0)) "controlled by player 0"
+      Spec.assertBool s (not (Filter.matches nobody blackCreature (ofPlayer 1))) "owned by player 1 but controlled elsewhere"
+      Spec.assertBool s (Filter.matches nobody loose (ofPlayer 1)) "owned by player 1, uncontrolled"
+      Spec.assertBool s (not (Filter.matches nobody loose (ofPlayer 2))) "somebody else's card"
+      Spec.assertBool s (Filter.matches nobody {Filter.aimingController = Just (Just (PlayerId.MkPlayerId 2))} loose (ofPlayer 2)) "player 2 is aiming"
+
   Spec.describe s "OfRelatedPlayer" $ do
     let opponents = Filter.Type.OfRelatedPlayer PlayerRelation.Opponent
         from n = Filter.contextFor Teams.none (Just (PlayerId.MkPlayerId n)) Nothing

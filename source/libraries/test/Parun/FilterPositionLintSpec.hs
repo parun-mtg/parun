@@ -3035,6 +3035,20 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) targetSlot) Seq.empty
             }
     Spec.assertEqWith s "a planted atom is seen" (atoms planted) 1
+  -- CR 702.16i's baked half, HeldByPlayer's position: a PlayerId only a
+  -- resolution can know, written by Parun.Engine.Keyword.withRelatedPlayers
+  -- into a granted protection's quality. The UNBAKED OfRelatedPlayer beside it
+  -- is card data -- Figure of Fable writes it -- and is not swept.
+  Spec.it s "CR 702.16i no card writes OfSpecificPlayer" $ do
+    ps <- S.allPrintings s corpus
+    let atoms c = jsonAtoms (Text.pack "OfSpecificPlayer") (Codec.encode (Face.Codec.codec Card.codec) c)
+        offenders = filter (anyFace ((/= 0) . atoms) . Printing.card) ps
+    Spec.assertEqWith s "the baked atom is the engine's alone" (fmap (S.nameOf . Printing.card) offenders) []
+    -- Not vacuous, for the sibling sweep's reason.
+    piker <- S.printingOf s registry "Goblin Piker"
+    let quality = Filter.Type.OfSpecificPlayer (PlayerId.MkPlayerId 1)
+        planted = (S.combinedFace piker) {Face.keywords = Map.singleton (Keyword.Protection (Protection.MkProtection quality Nothing)) 1}
+    Spec.assertEqWith s "a planted atom is seen" (atoms planted) 1
   -- CR 611.2b's baked half, in exactly the position the atom above holds: a
   -- PlayerId only a resolution can know, written by Parun.Engine.Condition.bakeBound
   -- as a "for as long as" duration begins and round-tripped by a total codec
