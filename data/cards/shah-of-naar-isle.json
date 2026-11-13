@@ -1,0 +1,118 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Trample"
+        },
+        {
+          "type": "Echo",
+          "value": {
+            "mana": []
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Shah of Naar Isle",
+      "oracleText": "Trample\nEcho {0} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature's echo cost is paid, each opponent may draw up to three cards.",
+      "power": {
+        "type": "Literal",
+        "value": 6
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 6
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "PermanentActs",
+            "value": {
+              "action": "PayEcho",
+              "permanent": {
+                "type": "Self"
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "ChooseNumber",
+                              "value": {
+                                "chooser": {
+                                  "type": "InSlot",
+                                  "value": "player"
+                                },
+                                "slot": "number",
+                                "upTo": {
+                                  "type": "Literal",
+                                  "value": 3
+                                }
+                              }
+                            },
+                            {
+                              "type": "Draw",
+                              "value": {
+                                "player": {
+                                  "type": "InSlot",
+                                  "value": "player"
+                                },
+                                "quantity": {
+                                  "type": "InSlot",
+                                  "value": "number"
+                                }
+                              }
+                            }
+                          ],
+                          "individually": true,
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "Opponent"
+                              }
+                            }
+                          },
+                          "slot": "player"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Efreet"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

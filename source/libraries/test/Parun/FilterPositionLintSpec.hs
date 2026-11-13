@@ -2415,7 +2415,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                                   PayGate.obligation = PayObligation.Optional,
                                   PayGate.perEach = Nothing,
                                   PayGate.x = Nothing,
-                                  PayGate.offeredAt = Nothing
+                                  PayGate.offeredAt = Nothing,
+                                  PayGate.marks = Nothing
                                 }
                           )
                           (Seq.singleton (Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot slot, SacrificeEffect.sacrificer = Sacrificer.EffectController, SacrificeEffect.sacrificed = Nothing}))
@@ -2620,7 +2621,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
               PayGate.obligation = PayObligation.Optional,
               PayGate.perEach = Just (Quantity.Type.ObjectCounters kind),
               PayGate.x = Nothing,
-              PayGate.offeredAt = Nothing
+              PayGate.offeredAt = Nothing,
+              PayGate.marks = Nothing
             }
         -- The PAIR, not just the Filter: PR #2739's reader's test says a keyword's
         -- own Filter carries KeywordFramed out through every quoting position, and

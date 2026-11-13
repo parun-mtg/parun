@@ -28,4 +28,7 @@ data PermanentAction
     PhaseOut
   | -- | CR 702.26c: it phased in.
     PhaseIn
+  | -- | CR 702.30a: its echo cost was paid, however it was paid (Shah of Naar
+    -- Isle's ruling).
+    PayEcho
   deriving (Bounded, Enum, Eq, Ord, Show)

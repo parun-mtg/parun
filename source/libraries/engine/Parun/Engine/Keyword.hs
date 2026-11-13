@@ -5955,7 +5955,8 @@ extort =
             PayGate.obligation = PayObligation.Optional,
             PayGate.perEach = Nothing,
             PayGate.x = Nothing,
-            PayGate.offeredAt = Nothing
+            PayGate.offeredAt = Nothing,
+            PayGate.marks = Nothing
           }
       loss = Effect.LoseLife (LifeLoss.MkLifeLoss (PlayerRef.Relative PlayerRelation.Opponent) (Quantity.Literal 1) LifeLossCause.ByEffect (Just drained))
       gain = Effect.GainLife (PlayerQuantity.MkPlayerQuantity (PlayerRef.Relative PlayerRelation.You) (Quantity.InSlot drained))
@@ -6314,7 +6315,8 @@ ward w =
             PayGate.obligation = PayObligation.Optional,
             PayGate.perEach = fmap keywordCount (Ward.perEach w),
             PayGate.x = Nothing,
-            PayGate.offeredAt = Nothing
+            PayGate.offeredAt = Nothing,
+            PayGate.marks = Nothing
           }
       effect = Effect.Counter (Counter.MkCounter (ObjectRef.InSlot Binding.targetingObject) Nothing Nothing Nothing)
    in Mint.triggerOf
@@ -6931,7 +6933,8 @@ fabricate n =
             PayGate.obligation = PayObligation.Optional,
             PayGate.perEach = Nothing,
             PayGate.x = Nothing,
-            PayGate.offeredAt = Nothing
+            PayGate.offeredAt = Nothing,
+            PayGate.marks = Nothing
           }
       spawn =
         Effect.Create
@@ -7702,7 +7705,8 @@ recover cost =
             PayGate.obligation = PayObligation.Optional,
             PayGate.perEach = Nothing,
             PayGate.x = Nothing,
-            PayGate.offeredAt = offeredAt
+            PayGate.offeredAt = offeredAt,
+            PayGate.marks = Nothing
           }
       moveTo zone =
         Effect.MoveToZone
@@ -8711,7 +8715,8 @@ cumulativeUpkeep cost =
             PayGate.obligation = PayObligation.Optional,
             PayGate.perEach = Just (Quantity.ObjectCounters CounterKind.Age),
             PayGate.x = Nothing,
-            PayGate.offeredAt = Nothing
+            PayGate.offeredAt = Nothing,
+            PayGate.marks = Nothing
           }
    in Mint.triggerOf
         Mint.yourUpkeep
@@ -8743,6 +8748,9 @@ cumulativeUpkeep cost =
 -- deleted with the permanent), and control moving in response leaves rule
 -- 702.30a's "you" the player who controlled the source when it triggered, whose
 -- own window the clock still holds.
+--
+-- PayGate.marks is what "when this creature's echo cost is paid" watches,
+-- proved by data\/scenarios\/shah-of-naar-isle-lets-each-opponent-draw-up-to-three-when-its-echo-cost-is-paid.
 echo :: Cost Keyword -> TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 echo cost =
   let cameUnderYourControl =
@@ -8761,7 +8769,8 @@ echo cost =
             PayGate.obligation = PayObligation.Optional,
             PayGate.perEach = Nothing,
             PayGate.x = Nothing,
-            PayGate.offeredAt = Nothing
+            PayGate.offeredAt = Nothing,
+            PayGate.marks = Just PermanentAction.PayEcho
           }
       sacrifice =
         Mint.mandatoryPaying

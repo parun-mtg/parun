@@ -9,6 +9,7 @@ import qualified Parun.Codec.CostBasis as CostBasis
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.PayBranch as PayBranch
 import qualified Parun.Codec.PayObligation as PayObligation
+import qualified Parun.Codec.PermanentAction as PermanentAction
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.JsonCodec.Codec as Codec
@@ -24,7 +25,7 @@ import qualified Parun.Types.PayObligation as PayObligation
 -- the branch, where a default would let a card written a word short play as the
 -- opposite card.
 --
--- The other six are elided when unmarked, which is what most cards write: CR
+-- The other seven are elided when unmarked, which is what most cards write: CR
 -- 118.12a's rewriting makes an "unless" cost optional, a clause that names no
 -- other clause makes its own offer, and a cost is offered once rather than once
 -- per counted thing. Rakshasa's Disdain's `perEach` counts a graveyard and
@@ -33,7 +34,7 @@ import qualified Parun.Types.PayObligation as PayObligation
 -- `basis` is Flash's alone: CR 118.6 lets a cost be described in terms of
 -- another object's mana cost rather than printed, and every other gate prints
 -- one. `x` is Flameblast Dragon's: an {X} chosen as the ability resolves (CR
--- 107.3f) rather than announced.
+-- 107.3f) rather than announced. `marks` is CR 702.30a's mint's alone.
 --
 -- `cost` is the gate's first option and `orCosts` the rest, in printed order
 -- (Parun.Types.PayGate.cost), so a one-option gate writes no list.
@@ -48,6 +49,7 @@ codec = Fields.object $ do
   perEach <- Fields.defaulted "perEach" Nothing (Common.maybe Quantity.codec) PayGate.perEach
   x <- Fields.defaulted "x" Nothing (Common.maybe Quantity.codec) PayGate.x
   offeredAt <- Fields.defaulted "offeredAt" Nothing (Common.maybe ClauseIndex.codec) PayGate.offeredAt
+  marks <- Fields.defaulted "marks" Nothing (Common.maybe PermanentAction.codec) PayGate.marks
   pure
     PayGate.MkPayGate
       { PayGate.payer = payer,
@@ -57,5 +59,6 @@ codec = Fields.object $ do
         PayGate.obligation = obligation,
         PayGate.perEach = perEach,
         PayGate.x = x,
-        PayGate.offeredAt = offeredAt
+        PayGate.offeredAt = offeredAt,
+        PayGate.marks = marks
       }
