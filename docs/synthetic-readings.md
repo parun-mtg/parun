@@ -59,6 +59,23 @@ Entries take `docs/decisions.md`'s format and order.
   twin.
 - **Issue**: #2568.
 
+## Whether an attacked planeswalker that stops being an unprotected battle is removed from combat
+
+- **Question**: CR 506.4e removes a planeswalker that stops being a battle
+  "only if it is not controlled by its protector". One that became a battle
+  while attacked has no protector (CR 704.5x waits for the attack to end). Is
+  it removed?
+- **Rules**: CR 506.4e, 310.9g, 310.11, 704.5x; CR of 2026-11-06.
+- **Decision**: Yes. No protector controls it, so the condition holds as
+  written.
+- **Rejected**: Still attacked, reading the sentence as presupposing a
+  protector: its controller was the defending player throughout (CR 508.5).
+- **Site**: `Parun.Engine.Combat.noteAttackingNothing`'s `walkerUnprotected`,
+  proved on Synthetic Besiege the Front and Synthetic Lift the Siege by the
+  scenario
+  `cr-506-4e-704-5x-whole-cards-becoming-a-battle-mid-combat-then-no-battle-he-is-removed`.
+- **Issue**: #7021.
+
 ## Whether a cast redirected off the stack is still a cast
 
 - **Question**: A CR 614 replacement sends a card being cast somewhere other

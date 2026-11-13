@@ -90,7 +90,8 @@ data Combat = MkCombat
     -- for its controller -- CR 508.5 with CR 506.2 makes a defending player the
     -- controller of the planeswalker attacked, so attackedUnder already IS that
     -- permanent's controller -- but gets one when the permanent is a battle too,
-    -- the entry being what tells CR 506.4e's second sentence it was one.
+    -- as its attacker joins combat or at any time after, the entry being what
+    -- tells CR 506.4e's second sentence it was one.
     --
     -- Keyed by the ATTACKER for attackedUnder's reason: a battle one creature
     -- has stopped attacking can still be attacked by another put onto the
@@ -101,7 +102,8 @@ data Combat = MkCombat
     -- Parun.Engine.Combat.putOntoBattlefieldAttacking, pruned by
     -- Parun.Engine.Game.removeFromCombat, and read by
     -- Parun.Engine.Combat.noteAttackingNothing and
-    -- Parun.Engine.Projection.View.attackedControllerHeld, as attackedUnder is.
+    -- Parun.Engine.Projection.View.attackedControllerHeld, as attackedUnder is;
+    -- noteAttackingNothing also writes the late planeswalker entry.
     attackedControlledBy :: Map.Map ObjectId.ObjectId PlayerId.PlayerId,
     -- | WHAT has been attacked this combat phase: the CR 508.1b target announced
     -- for each creature declared as an attacker or put onto the battlefield
