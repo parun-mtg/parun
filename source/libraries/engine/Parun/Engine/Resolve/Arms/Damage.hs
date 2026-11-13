@@ -494,7 +494,7 @@ addMana resolving source controller legal (ManaAddition.MkManaAddition ref produ
             ManaUnit.retention = retention,
             ManaUnit.restriction = restriction,
             ManaUnit.rider = rider,
-            ManaUnit.spendTrigger = Mana.spendTriggerOf controller source gs0 =<< whenSpent,
+            ManaUnit.spendTrigger = Mana.spendTriggerOf (resolvingAbilityName resolving gs0) controller source gs0 =<< whenSpent,
             ManaUnit.sourceChoices = Mana.sourceChoicesOf source gs0,
             ManaUnit.sourceLastExiled = Mana.lastExiledWith (resolvingAbilityName resolving gs0) (Game.readingAcquisition resolving source gs0 source) source gs0
           }

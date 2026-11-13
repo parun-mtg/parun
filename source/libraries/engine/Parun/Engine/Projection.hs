@@ -482,6 +482,16 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- koh-the-face-stealer-has-the-triggered-ability-of-the-last-chosen-card
         -- and koh-the-face-stealer-has-a-triggered-keyword-of-the-chosen-card
         -- prove the two.
+        --
+        -- CR 603.7: with them the delayed abilities those abilities arm by
+        -- name, filed under the lending card's name and titled as the
+        -- triggered ones are, so an acquired ability reads its own card's
+        -- (Binding.delayedAsRead) and one that arms a second reads it too. The
+        -- scenarios koh-the-face-stealer-arms-the-delayed-trigger-of-the-chosen-card
+        -- and myr-welder-arms-the-delayed-trigger-of-an-acquired-ability
+        -- prove the triggered and the activated reader, and
+        -- koh-the-face-stealer-s-borrowed-delayed-trigger-arms-a-second the
+        -- title.
         Modification.GainCardAbilities (CardAbilities.MkCardAbilities from criterion triggered extra) ->
           let (zone, lenders) = case from of
                 LentCards.InExile -> (Zone.Exile, Set.toAscList (GameState.exile gs))
@@ -497,7 +507,8 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
               titled card t = t {TriggeredAbility.name = Just (Binding.acquiredFrom card (TriggeredAbility.name t))}
               triggers card = let copied = copiableCharacteristics card gs in PC.triggeredAbilities copied <> Keyword.triggeredAbilitiesOf (PC.keywords copied)
               fired = if triggered then foldMap (\card -> fmap (titled card) (triggers card)) cards else []
-           in pc {PC.activatedAbilities = PC.activatedAbilities pc <> fmap restricted gained, PC.triggeredAbilities = PC.triggeredAbilities pc <> fired}
+              armable card = Map.mapKeys (Binding.acquiredFrom card . Just) (fmap (titled card) (PC.delayedAbilities (copiableCharacteristics card gs)))
+           in pc {PC.activatedAbilities = PC.activatedAbilities pc <> fmap restricted gained, PC.triggeredAbilities = PC.triggeredAbilities pc <> fired, PC.delayedAbilities = Map.union (PC.delayedAbilities pc) (foldMap armable cards)}
         -- CR 613.1f / 123.7a: the abilities printed on the ability stickers on
         -- `src`, read off the stickers and never off src's projection, so a
         -- layer-6 loss on src does not reach them. Each goes through the
@@ -1603,9 +1614,11 @@ delayedSnapshotOf source gs = PC.delayedAbilities (projectWithLastKnown source g
 armedDelayedAbility :: ObjectId -> ObjectId -> ArmDelayedTrigger.ArmDelayedTrigger (GrantedAbility.GrantedAbility Card.Type.Card) -> GameState -> Maybe (TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
 armedDelayedAbility resolving source arm gs =
   let name = ArmDelayedTrigger.name arm
+      -- CR 613.1f: an ability acquired from a lending card means that card's
+      -- declaration of the name (Binding.delayedAsRead).
       frozen = case fmap Object.source (Game.lookupObject resolving gs) of
-        Just (Source.OfAbility activated) -> Map.lookup name (ActivatedAbilitySource.delayed activated)
-        Just (Source.OfTrigger triggered) -> Map.lookup name (TriggeredAbilitySource.delayed triggered)
+        Just (Source.OfAbility activated) -> Map.lookup name (Binding.delayedAsRead (ActivatedAbility.name (ActivatedAbilitySource.ability activated)) (ActivatedAbilitySource.delayed activated))
+        Just (Source.OfTrigger triggered) -> Map.lookup name (Binding.delayedAsRead (TriggeredAbility.name (TriggeredAbilitySource.ability triggered)) (TriggeredAbilitySource.delayed triggered))
         _ -> Nothing
    in Game.carriedDelayedAbility arm Applicative.<|> frozen Applicative.<|> declaredDelayedAbility source name gs
 

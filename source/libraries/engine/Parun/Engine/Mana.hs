@@ -914,7 +914,7 @@ triggerAdds pid gs pending = case PendingTrigger.source pending of
               ManaUnit.retention = ManaAddition.retention addition,
               ManaUnit.restriction = ManaAddition.restriction addition,
               ManaUnit.rider = ManaAddition.rider addition,
-              ManaUnit.spendTrigger = spendTriggerOf controller source gs =<< ManaAddition.whenSpent addition,
+              ManaUnit.spendTrigger = spendTriggerOf (TriggeredAbility.name (PendingTrigger.ability pending)) controller source gs =<< ManaAddition.whenSpent addition,
               ManaUnit.sourceChoices = sourceChoicesOf source gs,
               ManaUnit.sourceLastExiled = lastExiledWith Nothing (Game.acquisitionOf source gs) source gs
             }
@@ -950,9 +950,14 @@ readsPool (clause, _) = any (poolProduction . ManaAddition.production) (Maybe.ma
 -- one mana is produced, its text read off the source's rules text now.
 -- Nothing for a name the card does not declare, which Parun.AbilitySlotLintSpec
 -- keeps unreachable.
-spendTriggerOf :: PlayerId -> ObjectId -> GameState -> WhenSpent.WhenSpent -> Maybe SpendTrigger.SpendTrigger
-spendTriggerOf controller source gs whenSpent = do
-  ability <- Projection.declaredDelayedAbility source (WhenSpent.ability whenSpent) gs
+--
+-- CR 613.1f: the name as the ability named `reader` means it
+-- (Binding.nameAsRead), so one acquired from a lending card reads that card's
+-- declaration, proved by the scenario
+-- myr-welder-s-acquired-mana-carries-the-delayed-trigger-of-its-card.
+spendTriggerOf :: Maybe AbilityName.AbilityName -> PlayerId -> ObjectId -> GameState -> WhenSpent.WhenSpent -> Maybe SpendTrigger.SpendTrigger
+spendTriggerOf reader controller source gs whenSpent = do
+  ability <- Projection.declaredDelayedAbility source (Binding.nameAsRead reader (WhenSpent.ability whenSpent)) gs
   pure
     SpendTrigger.MkSpendTrigger
       { SpendTrigger.casts = WhenSpent.casts whenSpent,
@@ -1043,7 +1048,7 @@ pricedOptionsVisiting visited rewritesOf paid poolBoard pcs oid gs =
             ManaUnit.spendTrigger = do
               controller <- Projection.controllerOf oid gs
               whenSpent <- ManaAddition.whenSpent addition
-              spendTriggerOf controller oid gs whenSpent,
+              spendTriggerOf reader controller oid gs whenSpent,
             ManaUnit.sourceChoices = choices,
             ManaUnit.sourceLastExiled = lastExiledWith reader (Game.acquisitionFor reader oid gs) oid gs
           }

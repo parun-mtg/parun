@@ -256,7 +256,9 @@ abilitiesOf pc = PC.triggeredAbilities pc <> Projection.mintedTriggeredAbilities
 -- The delayed map is the projection's too (CR 707.2), so a copy reads the
 -- text it copied. A granted ability's arm carries its delayed ability
 -- (Parun.AbilitySlotLintSpec's quoted-arm lint) and EffectZone reads it off
--- the arm, so the host's map never has to hold the grantor's text.
+-- the arm, so the host's map never has to hold the grantor's text;
+-- a lending card's is filed in it under that card's name
+-- (Binding.delayedAsRead).
 -- Parun.Engine.Activatable.abilitiesForGiven carries the same pairing and
 -- the same note.
 battlefieldAbilitiesOf :: PC.ProjectedCharacteristics -> [(TriggerCondition, TriggeredAbility.TriggeredAbility Card (GrantedAbility.GrantedAbility Card))]
@@ -2615,11 +2617,15 @@ zonesFunctionedIn subtypes delayed ability = conditionZones subtypes delayed abi
 --
 -- CR 113.6b ahead of all of it: an ability that states its zones functions
 -- only there, whatever its conditions or its effect would otherwise say.
+--
+-- CR 613.1f: an ability acquired from a lending card arms that card's delayed
+-- ability of a name (Binding.delayedAsRead), proved by the scenario
+-- koh-the-face-stealer-s-borrowed-graveyard-trigger-does-not-function-on-the-battlefield.
 conditionZones :: Set.Set Subtype.Subtype -> Map.Map AbilityName.AbilityName (TriggeredAbility.TriggeredAbility Card (GrantedAbility.GrantedAbility Card)) -> TriggeredAbility.TriggeredAbility Card (GrantedAbility.GrantedAbility Card) -> TriggerCondition -> Set.Set Zone
 conditionZones subtypes delayed ability
   | not (Set.null (TriggeredAbility.functionsFrom ability)) = const (TriggeredAbility.functionsFrom ability)
   | otherwise =
-      let pinned = foldMap (EffectZone.zonesFunctionedFrom (selfNamingSlots (TriggeredAbility.condition ability)) delayed) (Modal.allEffects (TriggeredAbility.modal ability))
+      let pinned = foldMap (EffectZone.zonesFunctionedFrom (selfNamingSlots (TriggeredAbility.condition ability)) (Binding.delayedAsRead (TriggeredAbility.name ability) delayed)) (Modal.allEffects (TriggeredAbility.modal ability))
           exempted c zone = (Set.member Subtype.Aura subtypes && enchantedObjectLeaves c) || conditionPutsSelfInto c zone
           zonesOf c = case c of
             -- The empty list keeps zonesTriggeredFrom's own reading.

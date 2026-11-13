@@ -610,6 +610,22 @@ asWritten name = case name of
 nameAsRead :: Maybe AbilityName.AbilityName -> AbilityName.AbilityName -> AbilityName.AbilityName
 nameAsRead reader name = maybe name (`qualified` name) (pairOf reader)
 
+-- | CR 603.7 / 613.1f: the delayed abilities a name stated inside the ability
+-- `reader` can mean, out of those its source declares. A reader acquired from
+-- a lending card means that card's, which Projection's GainCardAbilities arm
+-- files beside it under acquiredFrom's name, ahead of the holder's own of
+-- the same name; any other reader the declarations as they stand.
+-- data/scenarios/koh-the-face-stealer-arms-the-delayed-trigger-of-the-chosen-card.json
+-- is the proof. The precedence is a regression fence: no board in the suite
+-- has a holder and its lending card declare one name.
+delayedAsRead :: Maybe AbilityName.AbilityName -> Map AbilityName.AbilityName a -> Map AbilityName.AbilityName a
+delayedAsRead reader declared = case pairOf reader of
+  Nothing -> declared
+  Just card ->
+    let prefix = AbilityName.unwrap (qualified card (AbilityName.MkAbilityName Text.empty))
+        lent = Map.fromList [(AbilityName.MkAbilityName name, ability) | (key, ability) <- Map.toList declared, Just name <- [Text.stripPrefix prefix (AbilityName.unwrap key)]]
+     in Map.union lent declared
+
 -- | CR 607.2a / 607.5: whether `link` files its card against `src` in `pile`,
 -- as a reader named `reader` that came with `acquisition` means it. THE one
 -- membership test every reader of GameState.exiledWith goes through
