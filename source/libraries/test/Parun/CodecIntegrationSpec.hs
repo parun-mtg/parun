@@ -355,7 +355,9 @@ gameStateRoundTripSpec s registry corpus = do
               AbilityTriggered.MkAbilityTriggered
                 { AbilityTriggered.source = TriggerSource.OfObject oid,
                   AbilityTriggered.controller = S.alice,
-                  AbilityTriggered.ability = ability
+                  AbilityTriggered.ability = ability,
+                  AbilityTriggered.stackObject = Nothing,
+                  AbilityTriggered.attacker = Nothing
                 }
          in roundTrips "a spent per-game rider" gs {GameState.history = (GameState.history gs) {History.triggeredThisGame = Seq.singleton spent}}
 
@@ -372,7 +374,9 @@ gameStateRoundTripSpec s registry corpus = do
               AbilityTriggered.MkAbilityTriggered
                 { AbilityTriggered.source = TriggerSource.OfObject oid,
                   AbilityTriggered.controller = S.alice,
-                  AbilityTriggered.ability = ability
+                  AbilityTriggered.ability = ability,
+                  AbilityTriggered.stackObject = Nothing,
+                  AbilityTriggered.attacker = Nothing
                 }
          in roundTrips
               "a taken instruction"

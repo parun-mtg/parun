@@ -1608,7 +1608,7 @@ triggerConditionChildren c condition = case condition of
     CrewRole.Vehicle frequency -> fmap (TriggerCondition.Crews . CrewRole.Vehicle) (triggerFrequency c HistoryRead.Crews frequency)
     CrewRole.Crewer -> pure condition
   TriggerCondition.PermanentSacrificed acts -> fmap TriggerCondition.PermanentSacrificed (playerActsOnChildren c acts)
-  TriggerCondition.SagaFinalChapter _ -> pure condition
+  TriggerCondition.AbilityWatch _ -> pure condition
   TriggerCondition.PlayerBecomesMonarch _ -> pure condition
   TriggerCondition.LosesControl subject -> case subject of
     LostPermanent.Self -> pure condition

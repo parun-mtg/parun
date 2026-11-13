@@ -20,6 +20,7 @@ import qualified Parun.Engine.Projection.View as ProjectionView
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
+import qualified Parun.Types.AbilityWatch as AbilityWatch
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.AttachDirection as AttachDirection
 import qualified Parun.Types.AttachmentEnd as AttachmentEnd
@@ -49,6 +50,7 @@ import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CausedBy as CausedBy
+import qualified Parun.Types.ChapterMoment as ChapterMoment
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.CounterChange as CounterChange
 import qualified Parun.Types.CounterGrouping as CounterGrouping
@@ -119,6 +121,7 @@ import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
+import qualified Parun.Types.WatchedAbility as WatchedAbility
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -496,7 +499,7 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- copies nothing (docs/decisions.md, "Whether copying an activation that
   -- never reached the stack copies anything").
   (TriggerCondition.AbilityActivated _, GameEvent.AbilityActivated activated) ->
-    Binding.setTriggerPlayer (AbilityWasActivated.player activated) (maybe id Binding.setActivatedAbility (AbilityWasActivated.ability activated) Map.empty)
+    Binding.setTriggerPlayer (AbilityWasActivated.player activated) (maybe id Binding.setThatAbility (AbilityWasActivated.ability activated) Map.empty)
   -- CR 603.2's "that player": the player who acted, Ob Nixilis, Unshackled's
   -- searcher. Unconditional given a match.
   (TriggerCondition.PlayerActs _, GameEvent.PlayerActed acted) ->
@@ -744,8 +747,12 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   --
   -- ChapterMoment.Resolves's event carries the same record, read the same way:
   -- Narci, Fable Singer's "that Saga's mana value" is the slot's reader.
-  (TriggerCondition.SagaFinalChapter _, GameEvent.AbilityTriggered record) -> sagaChapterBindings record
-  (TriggerCondition.SagaFinalChapter _, GameEvent.TriggeredAbilityFinished record) -> sagaChapterBindings record
+  --
+  -- And CR 707.10's "that ability" for a watcher of the ability TRIGGERING,
+  -- Firebender Ascension's: the id Engine.reactions reserved for it, which
+  -- every record that function mints carries.
+  (TriggerCondition.AbilityWatch _, GameEvent.AbilityTriggered record) -> watchedAbilityBindings record
+  (TriggerCondition.AbilityWatch _, GameEvent.TriggeredAbilityFinished record) -> watchedAbilityBindings record
   -- CR 120.3's "that much", read by the damage's RECIPIENT: Coalhauler Swine's
   -- "whenever this creature is dealt damage, it deals that much damage to each
   -- player". The same reserved slot CR 615.13's prevention and CR 119.9's life
@@ -1396,12 +1403,13 @@ setBecameArrivals m = case Moved.arrivals m of
   only Seq.:<| Seq.Empty -> Binding.setBecame only
   every -> Binding.setBecameGroup every
 
--- CR 715.2d's watcher's bindings off either event's record: the Saga under
--- CR 400.7e's slot and the chapter ability's controller (CR 603.3a).
-sagaChapterBindings :: AbilityTriggered.AbilityTriggered -> Map.Map SlotName.SlotName Binding
-sagaChapterBindings record = case AbilityTriggered.source record of
+-- An AbilityWatch watcher's bindings off either event's record: the watched
+-- ability's source under CR 400.7e's slot, its controller (CR 603.3a), and
+-- the ability itself where the record names its stack object.
+watchedAbilityBindings :: AbilityTriggered.AbilityTriggered -> Map.Map SlotName.SlotName Binding
+watchedAbilityBindings record = case AbilityTriggered.source record of
   TriggerSource.Sourceless -> Map.empty
-  TriggerSource.OfObject saga -> Binding.setBecame saga (Binding.setTriggerPlayer (AbilityTriggered.controller record) Map.empty)
+  TriggerSource.OfObject source -> maybe id Binding.setThatAbility (AbilityTriggered.stackObject record) (Binding.setBecame source (Binding.setTriggerPlayer (AbilityTriggered.controller record) Map.empty))
 
 -- Which slots eventBindings above can stamp for a condition, as a set. A
 -- CLASSIFICATION of a rule 603 trigger condition -- the sibling of
@@ -1748,7 +1756,7 @@ eventBindingSlots cond = case cond of
     ActingPermanent.Matching _ -> Set.fromList [Binding.castSpell, Binding.castSpellTargets, Binding.castSpellX, Binding.triggerPlayer]
   -- The activated ability and its activator, both on every event the condition
   -- admits.
-  TriggerCondition.AbilityActivated _ -> Set.fromList [Binding.activatedAbility, Binding.triggerPlayer]
+  TriggerCondition.AbilityActivated _ -> Set.fromList [Binding.thatAbility, Binding.triggerPlayer]
   TriggerCondition.BecomesTargeted c -> fst (becomesTargetedSlots c)
   -- CR 715.2d's watcher names two things and binds both: CR 113.7's Saga,
   -- which the chapter ability hangs on, under CR 400.7e's slot for the reason
@@ -1761,7 +1769,14 @@ eventBindingSlots cond = case cond of
   -- TriggerSource.Sourceless, so the record it accepts always carries an
   -- ObjectId, and every record carries a controller. Claimed for the CONDITION
   -- rather than for the printing, which is what a per-condition set means.
-  TriggerCondition.SagaFinalChapter _ -> Set.fromList [Binding.became, Binding.triggerPlayer]
+  --
+  -- And the ability itself for a watcher of its TRIGGERING, the record
+  -- Engine.reactions mints always naming its stack object; CR 608.2n's record
+  -- names none, the ability having left the stack.
+  TriggerCondition.AbilityWatch watch -> case AbilityWatch.ability watch of
+    WatchedAbility.SagaFinalChapter ChapterMoment.Triggers -> Set.fromList [Binding.became, Binding.thatAbility, Binding.triggerPlayer]
+    WatchedAbility.SagaFinalChapter ChapterMoment.Resolves -> Set.fromList [Binding.became, Binding.triggerPlayer]
+    WatchedAbility.CausedByOwnAttack -> Set.fromList [Binding.became, Binding.thatAbility, Binding.triggerPlayer]
   -- CR 726.1's newly crowned player -- Garland, Royal Kidnapper watches an
   -- OPPONENT take the crown, so the seat is one nothing else on the ability
   -- names. Under the You relation it is also CR 109.5's "you", a second name for

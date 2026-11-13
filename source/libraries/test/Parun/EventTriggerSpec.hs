@@ -1374,7 +1374,7 @@ wellRestedSpec s registry =
       -- 603.3b's ordering prompt shows the two as written (Engine.entryOf),
       -- so its two entries are equal.
       let granted = PC.triggeredAbilities (Projection.project pikerId stocked)
-          entryFor ability = Engine.entryOf (PendingTrigger.MkPendingTrigger (TriggerSource.OfObject pikerId) S.alice ability Map.empty Nothing Nothing 1 Map.empty)
+          entryFor ability = Engine.entryOf (PendingTrigger.MkPendingTrigger (TriggerSource.OfObject pikerId) S.alice ability Map.empty Nothing Nothing 1 Map.empty Nothing)
       case granted of
         [one, other] -> do
           Spec.assertBool s (one /= other) "each grant is named for its own Aura"
@@ -1393,9 +1393,9 @@ wellRestedSpec s registry =
         [] -> Spec.assertFailure s "Acrobatic Cheerleader should declare one triggered ability"
         ability : _ -> do
           let (oid, g0) = S.addPermanent cheerleader S.alice (Setup.emptyGame S.bothPlayers)
-              record = AbilityTriggered.MkAbilityTriggered (TriggerSource.OfObject oid) S.alice ability
+              record = AbilityTriggered.MkAbilityTriggered (TriggerSource.OfObject oid) S.alice ability Nothing Nothing
               spent = Event.recordEvent (GameEvent.AbilityTriggered record) g0 {GameState.history = (GameState.history g0) {History.triggeredThisGame = Seq.singleton record}}
-              pending n = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) S.alice ability Map.empty Nothing Nothing n Map.empty
+              pending n = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) S.alice ability Map.empty Nothing Nothing n Map.empty Nothing
           Spec.assertEqWith s "the second of two instances still triggers" (length (Event.withinTriggerLimit spent [pending 2])) 1
           Spec.assertEqWith s "while a lone instance is spent" (length (Event.withinTriggerLimit spent [pending 1])) 0
 
@@ -1415,8 +1415,8 @@ baronStruckerSpec s registry =
         [] -> Spec.assertFailure s "Baron Strucker should declare one triggered ability"
         ability : _ -> do
           let (oid, g0) = S.addPermanent baron S.alice (Setup.emptyGame S.bothPlayers)
-              taken = Event.instructionTaken (AbilityTriggered.MkAbilityTriggered (TriggerSource.OfObject oid) S.alice ability) g0
-              pending who = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) who ability Map.empty Nothing Nothing 1 Map.empty
+              taken = Event.instructionTaken (AbilityTriggered.MkAbilityTriggered (TriggerSource.OfObject oid) S.alice ability Nothing Nothing) g0
+              pending who = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) who ability Map.empty Nothing Nothing 1 Map.empty Nothing
           Spec.assertEqWith s "untaken, alice's instance triggers" (length (Event.withinTriggerLimit g0 [pending S.alice])) 1
           Spec.assertEqWith s "taken by alice, her next instance does not" (length (Event.withinTriggerLimit taken [pending S.alice])) 0
           Spec.assertEqWith s "while bob, controlling Baron now, has taken nothing" (length (Event.withinTriggerLimit taken [pending S.bob])) 1

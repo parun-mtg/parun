@@ -112,10 +112,13 @@
         },
         {
           "condition": {
-            "type": "SagaFinalChapter",
+            "type": "AbilityWatch",
             "value": {
-              "controller": "You",
-              "moment": "Triggers"
+              "ability": {
+                "type": "SagaFinalChapter",
+                "value": "Triggers"
+              },
+              "controller": "You"
             }
           },
           "modal": {

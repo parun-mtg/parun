@@ -716,8 +716,8 @@ pileNames stamp = case stamp of
 -- data/cards/ is itself a mana source, the one kind of candidate asked.
 triggeredNames :: ObjectId -> AbilityTriggered.AbilityTriggered -> Bool
 triggeredNames oid entry = case entry of
-  AbilityTriggered.MkAbilityTriggered source _controller ability ->
-    any (Binding.isAcquiredFrom oid) (TriggeredAbility.name ability) || case source of
+  AbilityTriggered.MkAbilityTriggered source _controller ability stackObject attacker ->
+    any (Binding.isAcquiredFrom oid) (TriggeredAbility.name ability) || stackObject == Just oid || attacker == Just oid || case source of
       TriggerSource.OfObject object -> object == oid
       TriggerSource.Sourceless -> False
 

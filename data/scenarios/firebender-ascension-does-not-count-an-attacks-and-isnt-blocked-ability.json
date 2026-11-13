@@ -1,0 +1,19 @@
+{
+  "description": "CR 508.3f: an \"attacks and isn't blocked\" ability triggers in the declare blockers step, not because its creature attacked, so Firebender Ascension gets no quest counter",
+  "note": "Abyssal Nightstalker goes unblocked and bob discards his one card, which shows the ability triggered. docs/decisions.md, \"Which abilities a creature attacking causes to trigger\".",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Firebender Ascension", "label": "ascension"}, {"card": "Abyssal Nightstalker", "label": "stalker", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "hand": [{"card": "Mountain", "label": "held"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$stalker"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $stalker"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Mountain", "count": 1}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Counters": {"object": "$ascension", "kind": {"type": "Named", "value": "quest"}, "count": 0}}}
+  ]
+}

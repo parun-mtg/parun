@@ -1,0 +1,19 @@
+{
+  "description": "CR 508.3d: a \"whenever you attack\" ability of the attacking creature is not caused by that creature attacking, so Firebender Ascension gets no quest counter",
+  "note": "Misty Mountains Raider attacks alone and its ability amasses, but the trigger event is alice attacking (CR 508.3d), not the Raider being declared (CR 508.3a). docs/decisions.md, \"Which abilities a creature attacking causes to trigger\".",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Firebender Ascension", "label": "ascension"}, {"card": "Misty Mountains Raider", "label": "raider", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$raider"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $raider"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Goblin Army Token", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$ascension", "kind": {"type": "Named", "value": "quest"}, "count": 0}}}
+  ]
+}

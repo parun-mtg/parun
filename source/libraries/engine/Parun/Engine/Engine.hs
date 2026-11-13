@@ -82,6 +82,7 @@ import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.Action as Action.Type
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card
@@ -787,9 +788,10 @@ reacts = Maybe.isJust . (Event.abilityTriggeredOf . LoggedEvent.event Monad.<=< 
 -- existing machinery applies unchanged. EVENT triggers and the CR 603.7 delayed
 -- store are scanned; state triggers are not, matching no event. No
 -- bound on the rounds, and none needed: the one condition of this class
--- (TriggerCondition.SagaFinalChapter at ChapterMoment.Triggers) watches a
--- Saga's final chapter ability, which triggers off lore counters (CR 715.2b),
--- never off an ability triggering, so what reacts to it fires nothing further. Every round is
+-- (TriggerCondition.AbilityWatch) watches a Saga's final chapter ability,
+-- which triggers off lore counters (CR 715.2b), or an ability a creature's
+-- attack caused to trigger (CR 508.3a), never one that triggered off an
+-- ability triggering, so what reacts to it fires nothing further. Every round is
 -- filtered by `Event.withinTriggerLimit` first, the ONE place a "triggers only once"
 -- rider is spent.
 --
@@ -803,7 +805,10 @@ reactions incoming = do
   before <- State.get
   case Event.withinTriggerLimit before incoming of
     [] -> pure []
-    batch -> do
+    limited -> do
+      -- CR 603.3: each ability's id as a stack object, reserved here so the
+      -- record below can name it; placeOne spends it.
+      batch <- Monad.mapM reserve limited
       -- One CR 704.3 event group EACH, not one `Event.simultaneously` bracket
       -- around the lot: a batch is "the abilities that have triggered since the
       -- last time a player received priority" (CR 603.3b), which can have
@@ -849,8 +854,21 @@ triggeredEvent pending =
     AbilityTriggered.MkAbilityTriggered
       { AbilityTriggered.source = PendingTrigger.source pending,
         AbilityTriggered.controller = PendingTrigger.controller pending,
-        AbilityTriggered.ability = PendingTrigger.ability pending
+        AbilityTriggered.ability = PendingTrigger.ability pending,
+        AbilityTriggered.stackObject = PendingTrigger.stackId pending,
+        AbilityTriggered.attacker = Maybe.listToMaybe [AttackerDeclared.attacker declared | Just logged <- [PendingTrigger.firedBy pending], GameEvent.AttackerDeclared declared <- [LoggedEvent.event logged]]
       }
+
+-- CR 603.3: reserve the id one triggered ability takes on the stack.
+reserve :: PendingTrigger.PendingTrigger -> Game PendingTrigger.PendingTrigger
+reserve pending = do
+  abilId <- State.state Game.freshObjectId
+  pure pending {PendingTrigger.stackId = Just abilId}
+
+-- The id `reserve` gave a pending trigger, or a fresh one for a trigger placed
+-- without passing through `reactions`.
+stackIdOf :: PendingTrigger.PendingTrigger -> GameState -> (ObjectId.ObjectId, GameState)
+stackIdOf pending gs = maybe (Game.freshObjectId gs) (\abilId -> (abilId, gs)) (PendingTrigger.stackId pending)
 
 -- `triggeredEvent`'s payload, kept only for an ability whose rider is per-GAME
 -- (Parun.Types.TriggerLimit's OncePerGame). A classification of the ABILITY, never
@@ -864,7 +882,9 @@ perGameRecord pending = case TriggeredAbility.limit (PendingTrigger.ability pend
       AbilityTriggered.MkAbilityTriggered
         { AbilityTriggered.source = PendingTrigger.source pending,
           AbilityTriggered.controller = PendingTrigger.controller pending,
-          AbilityTriggered.ability = PendingTrigger.ability pending
+          AbilityTriggered.ability = PendingTrigger.ability pending,
+          AbilityTriggered.stackObject = Nothing,
+          AbilityTriggered.attacker = Nothing
         }
 
 -- Put one triggered ability from the ordered batch on the stack. What it hangs
@@ -899,7 +919,7 @@ placeSourceless pending = do
   let controller = PendingTrigger.controller pending
       ability = PendingTrigger.ability pending
       provided = PendingTrigger.bindings pending
-      (abilId, gs1) = Game.freshObjectId gs
+      (abilId, gs1) = stackIdOf pending gs
       (ts, gs2) = Game.freshTimestamp gs1
       modeCount = Seq.length (Modal.Type.modes (TriggeredAbility.modal ability))
       -- take, not [0 .. modeCount - 1]: a ModeIndex counts in Natural, and
@@ -949,7 +969,7 @@ placeBorne srcId pending = do
   gs <- State.get
   let controller = PendingTrigger.controller pending
       ability = PendingTrigger.ability pending
-      (abilId, gs1) = Game.freshObjectId gs
+      (abilId, gs1) = stackIdOf pending gs
       (ts, gs2) = Game.freshTimestamp gs1
       decider = Decide.deciderFor controller gs
       -- CR 603.2/603.3d: the event's own bindings are known before a target is
