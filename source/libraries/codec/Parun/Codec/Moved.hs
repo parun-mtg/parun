@@ -37,6 +37,8 @@ codec = Fields.object $ do
   causedBy <- Fields.defaulted "causedBy" Nothing (Common.maybe PlayerId.codec) Moved.causedBy
   -- Defaulted for the same reason: a hand-built event leaves it unset.
   arrived <- Fields.defaulted "arrived" Nothing (Common.maybe ObjectSnapshot.codec) Moved.arrived
+  -- Defaulted for the same reason: only a token's creation sets it.
+  created <- Fields.defaulted "created" Nothing (Common.maybe PlayerId.codec) Moved.created
   pure
     Moved.MkMoved
       { Moved.change = change,
@@ -47,5 +49,6 @@ codec = Fields.object $ do
         Moved.revealed = revealed,
         Moved.seenArriving = seenArriving,
         Moved.causedBy = causedBy,
-        Moved.arrived = arrived
+        Moved.arrived = arrived,
+        Moved.created = created
       }

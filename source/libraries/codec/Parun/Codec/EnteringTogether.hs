@@ -7,6 +7,7 @@ import qualified Data.Sequence as Seq
 import qualified Parun.Codec.CandidateId as CandidateId.Codec
 import qualified Parun.Codec.ObjectId as ObjectId.Codec
 import qualified Parun.Codec.OptionalDecision as OptionalDecision.Codec
+import qualified Parun.Codec.PlayerId as PlayerId.Codec
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -21,11 +22,13 @@ codec = Fields.object $ do
   arrivals <- Fields.defaulted "arrivals" Seq.empty (Common.seq ObjectId.Codec.codec) EnteringTogether.arrivals
   minted <- Fields.defaulted "minted" Seq.empty (Common.seq ObjectId.Codec.codec) EnteringTogether.minted
   substitutions <- Fields.defaulted "substitutions" Map.empty (Common.keyedList substitution) EnteringTogether.substitutions
+  creationOrder <- Fields.defaulted "creationOrder" Map.empty (Common.naturalMap PlayerId.Codec.codec (Common.seq CandidateId.Codec.codec)) EnteringTogether.creationOrder
   pure
     EnteringTogether.MkEnteringTogether
       { EnteringTogether.arrivals = arrivals,
         EnteringTogether.minted = minted,
-        EnteringTogether.substitutions = substitutions
+        EnteringTogether.substitutions = substitutions,
+        EnteringTogether.creationOrder = creationOrder
       }
 
 -- | One row's answer, keyed by the row.

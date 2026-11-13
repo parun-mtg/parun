@@ -10,6 +10,7 @@ import qualified Parun.Types.EnteringTogether as EnteringTogether
 import qualified Parun.Types.FloatingCandidate as FloatingCandidate
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Timestamp as Timestamp
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -23,7 +24,8 @@ spec s = Spec.describe s "Parun.Codec.EnteringTogether" $ do
       EnteringTogether.MkEnteringTogether
         { EnteringTogether.arrivals = Seq.fromList [ObjectId.MkObjectId 7, ObjectId.MkObjectId 4],
           EnteringTogether.minted = Seq.singleton (ObjectId.MkObjectId 4),
-          EnteringTogether.substitutions = Map.empty
+          EnteringTogether.substitutions = Map.empty,
+          EnteringTogether.creationOrder = Map.empty
         }
       " {\"arrivals\":[7,4],\"minted\":[4]} "
   -- CR 614.1a: a token row's controller chose to copy object 9 instead.
@@ -38,6 +40,18 @@ spec s = Spec.describe s "Parun.Codec.EnteringTogether" $ do
               (OptionalDecision.Exercises, Just (ObjectId.MkObjectId 9))
         }
       " {\"substitutions\":[{\"by\":{\"type\":\"OfFloating\",\"value\":{\"source\":3,\"timestamp\":8}},\"decision\":\"Exercises\",\"copied\":9}]} "
+  -- CR 616.1: player 1 applied the row of object 3 to this action's tokens.
+  Spec.it s "a batch whose token creation a replacement was applied to" $
+    Common.assertCodec
+      s
+      EnteringTogether.codec
+      EnteringTogether.empty
+        { EnteringTogether.creationOrder =
+            Map.singleton
+              (PlayerId.MkPlayerId 1)
+              (Seq.singleton (CandidateId.OfFloating FloatingCandidate.MkFloatingCandidate {FloatingCandidate.source = ObjectId.MkObjectId 3, FloatingCandidate.timestamp = Timestamp.MkTimestamp 8}))
+        }
+      " {\"creationOrder\":{\"1\":[{\"type\":\"OfFloating\",\"value\":{\"source\":3,\"timestamp\":8}}]}} "
   Spec.it s "an empty batch" $
     Common.assertCodec s EnteringTogether.codec EnteringTogether.empty " {} "
   Spec.it s "has a schema" $
