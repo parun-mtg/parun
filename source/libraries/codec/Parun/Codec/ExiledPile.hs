@@ -12,6 +12,7 @@ codec =
     tagOf
     [ Arm.nullary "OwnAbilities" ExiledPile.OwnAbilities,
       Arm.payload "OfAbility" AbilityName.codec ExiledPile.OfAbility (\x -> case x of ExiledPile.OfAbility y -> Just y; _ -> Nothing),
+      Arm.nullary "LastChosen" ExiledPile.LastChosen,
       Arm.nullary "AsItEntered" ExiledPile.AsItEntered,
       Arm.nullary "CraftMaterials" ExiledPile.CraftMaterials,
       Arm.payload "WithCardsNamed" CardName.codec ExiledPile.WithCardsNamed (\x -> case x of ExiledPile.WithCardsNamed y -> Just y; _ -> Nothing)
@@ -21,6 +22,7 @@ tagOf :: ExiledPile.ExiledPile -> String
 tagOf x = case x of
   ExiledPile.OwnAbilities -> "OwnAbilities"
   ExiledPile.OfAbility {} -> "OfAbility"
+  ExiledPile.LastChosen -> "LastChosen"
   ExiledPile.AsItEntered -> "AsItEntered"
   ExiledPile.CraftMaterials -> "CraftMaterials"
   ExiledPile.WithCardsNamed {} -> "WithCardsNamed"

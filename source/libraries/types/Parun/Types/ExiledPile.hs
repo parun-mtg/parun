@@ -12,6 +12,9 @@ data ExiledPile
   | -- | CR 607.2a: every card the named ability of the source exiled (Synthetic
     -- Split Reliquary).
     OfAbility AbilityName.AbilityName
+  | -- | CR 607.2d: the one card of OwnAbilities' pile last chosen for the source
+    -- (Koh, the Face Stealer).
+    LastChosen
   | -- | CR 607.2b / 614.14: every card the source's as-enters exile took
     -- (Mimeoplasm, Revered One).
     AsItEntered

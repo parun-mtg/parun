@@ -16,6 +16,9 @@ data ExileLink = MkExileLink
     ability :: Maybe AbilityName.AbilityName,
     -- | CR 607.5: the acquisition of the source's abilities the exiling ability
     -- came with, since only that acquisition's abilities refer to the card.
-    acquisition :: Acquisition.Acquisition
+    acquisition :: Acquisition.Acquisition,
+    -- | CR 607.2d: whether this is the card last chosen from among those the
+    -- source's abilities of that acquisition exiled (ChosenQuality.ExiledCard).
+    chosen :: Bool
   }
   deriving (Eq, Ord, Show)

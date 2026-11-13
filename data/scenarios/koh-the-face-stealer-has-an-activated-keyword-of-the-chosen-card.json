@@ -1,0 +1,17 @@
+{
+  "description": "CR 702.1 / 613.1f: Koh, the Face Stealer has an activated keyword ability of the chosen card, so Student of Warfare's level up puts a level counter on Koh",
+  "note": "Koh's entry exiles bob's Student of Warfare, the one card exiled with it, so the choice asks nothing. Before the choice Koh has no second ability; after it, level up {W} (CR 702.87a) is Koh's and its counter goes on Koh. Level up needs no tap, so a Koh that entered this turn can activate it.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "battlefield": [{"card": "Swamp", "label": "s1", "ready": true}, {"card": "Swamp", "label": "s2", "ready": true}, {"card": "Mountain", "label": "m1", "ready": true}, {"card": "Mountain", "label": "m2", "ready": true}, {"card": "Mountain", "label": "m3", "ready": true}, {"card": "Mountain", "label": "m4", "ready": true}, {"card": "Plains", "label": "p1", "ready": true}, {"card": "Plains", "label": "p2", "ready": true}], "hand": [{"card": "Koh, the Face Stealer", "label": "koh"}], "library": [{"card": "Mountain"}, {"card": "Mountain"}]}, {"name": "bob", "battlefield": [{"card": "Student of Warfare", "label": "student"}, {"card": "Shivan Dragon", "label": "dragon"}], "library": [{"card": "Mountain"}, {"card": "Mountain"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$koh", "mana": ["$m1", "$m2", "$m3", "$m4", "$s1", "$s2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$student"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "Koh, the Face Stealer", "ability": 1, "mana": ["$p1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Koh, the Face Stealer", "ability": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "Koh, the Face Stealer", "ability": 1, "mana": ["$p1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Koh, the Face Stealer", "kind": {"type": "Level"}, "count": 1}}}
+  ]
+}

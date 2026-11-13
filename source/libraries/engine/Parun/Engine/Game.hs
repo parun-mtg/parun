@@ -58,6 +58,7 @@ import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.EntryOrigin as EntryOrigin
 import qualified Parun.Types.EventGroup as EventGroup
+import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Expended as Expended
 import Parun.Types.Face (Face)
@@ -203,6 +204,14 @@ linkedPile you reader acquisition pile src gs =
         ExiledPile.WithCardsNamed name -> Maybe.isJust you && Map.lookup o (GameState.exiledBeforeGame gs) == Just name && fmap Object.owner (lookupObject o gs) == you
         _ -> maybe False (Binding.isLinkedExile reader acquisition pile src) (Map.lookup o (GameState.exiledWith gs))
    in filter linked (Set.toAscList (GameState.exile gs))
+
+-- | CR 607.2d: `card` becomes the one chosen card among `pile`, cards in
+-- exile linked to one source, whose earlier choice ends; Nothing leaves none
+-- chosen.
+markChosenExile :: Set.Set ObjectId -> Maybe ObjectId -> GameState -> GameState
+markChosenExile pile card gs =
+  let mark o link = if Set.member o pile then link {ExileLink.chosen = Just o == card} else link
+   in gs {GameState.exiledWith = Map.mapWithKey mark (GameState.exiledWith gs)}
 
 -- | CR 607.2a / 613.7d: the LAST of these cards to have been exiled, the one
 -- with the latest timestamp -- Duplicant's "the last creature card exiled with

@@ -142,10 +142,12 @@ import qualified Parun.Types.ChooseGroup as ChooseGroup
 import qualified Parun.Types.ChooseInstead as ChooseInstead
 import qualified Parun.Types.ChooseNumber as ChooseNumber
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
+import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
+import qualified Parun.Types.ChosenQuality as ChosenQuality
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.Cloak as Cloak
@@ -3580,7 +3582,7 @@ modificationFilters modification = case modification of
     (Unframed, among) : designatorFilters designator
   -- The rider's CR 602.5 conditions, as a printed ability's are swept, and the
   -- Filter naming the exiled cards.
-  Modification.GainCardAbilities (CardAbilities.MkCardAbilities _ cards extra) -> (Unframed, cards) : frame Unframed (concatMap conditionFilters (concatMap restrictionConditions extra))
+  Modification.GainCardAbilities (CardAbilities.MkCardAbilities _ cards _ extra) -> (Unframed, cards) : frame Unframed (concatMap conditionFilters (concatMap restrictionConditions extra))
   Modification.GainAbilitiesOfStickers -> []
   Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness p t) -> foldMap quantityFilters p <> foldMap quantityFilters t
   Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness p t) -> quantityFilters p <> quantityFilters t
@@ -4115,7 +4117,7 @@ entryRewriteFilters entryRewrite = case entryRewrite of
   -- is what proves the descent.
   EntryRewrite.ChoiceOf options -> concatMap entryOptionFilters options
   EntryRewrite.ChoiceByCoinFlip f -> entryOptionFilters (EntryFlip.heads f) <> entryOptionFilters (EntryFlip.tails f)
-  EntryRewrite.ChooseQuality _ -> []
+  EntryRewrite.ChooseQuality quality -> chosenQualityFilters quality
   EntryRewrite.ChoosePlayer _ -> []
   EntryRewrite.ReadAhead -> []
   -- CR 614.1c's amount is a Quantity (Undergrowth Scavenger's "equal to the number
@@ -4244,7 +4246,7 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   ReplacementEffect.TokenR (TokenR.MkTokenR tokenPattern scaling plus _) -> unframed (TokenPattern.whatToken tokenPattern : foldMap tokenPlusFilters plus) <> foldMap scalingFilters scaling
   ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR turnUpPattern _ _ turnUpRewrite) -> unframed [turnUpPattern] <> turnUpRewriteFilters turnUpRewrite
   ReplacementEffect.AttachR (AttachR.MkAttachR attachPattern (AttachRewrite.AsCopy asCopy)) -> unframed [attachPattern] <> asCopyFilters asCopy
-  ReplacementEffect.AttachR (AttachR.MkAttachR attachPattern (AttachRewrite.ChooseQuality _)) -> unframed [attachPattern]
+  ReplacementEffect.AttachR (AttachR.MkAttachR attachPattern (AttachRewrite.ChooseQuality quality)) -> unframed [attachPattern] <> chosenQualityFilters quality
   ReplacementEffect.UntapR _ -> []
   -- A computed scaling's Quantity is the one Filter a life row can hold.
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled scaling)) -> scalingFilters scaling
@@ -4849,6 +4851,18 @@ searchFramed = fmap ((,) SearchFramed)
 
 -- Tag a Filter position as a WISH's -- matched against a printed face rather than
 -- against an object (CR 400.11c), which CR 702.85a's offer restriction is too.
+-- The Filters a choice of a quality states: an exiled card's, listed beside
+-- the pile as ObjectRef.EachCardInExiledPile's are.
+chosenQualityFilters :: ChosenQuality.ChosenQuality -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+chosenQualityFilters quality = case quality of
+  ChosenQuality.Colors _ -> []
+  ChosenQuality.Subtype _ _ -> []
+  ChosenQuality.CardType -> []
+  ChosenQuality.Number _ -> []
+  ChosenQuality.Parity -> []
+  ChosenQuality.Word _ -> []
+  ChosenQuality.ExiledCard pile cards -> unframed [Filter.Type.IsExiledWithSource pile, cards]
+
 outsideTheGameFramed :: [Filter.Type.Filter Keyword.Keyword] -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 outsideTheGameFramed = fmap ((,) OutsideTheGameFramed)
 
@@ -5001,7 +5015,7 @@ effectFilters effect = case effect of
   -- filter a printed face can answer those can too, so this frame is the
   -- stricter of the two.
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName _ restriction _) -> outsideTheGameFramed [restriction]
-  Effect.ChooseQuality _ -> []
+  Effect.ChooseQuality choice -> chosenQualityFilters (ChooseQuality.quality choice)
   -- THE one wish-framed position. CR 400.11c's filter is matched against a
   -- PRINTED FACE (Parun.Engine.Projection.View.viewOfCard) rather than against an
   -- object any of the other framings' evaluators project, which is what makes

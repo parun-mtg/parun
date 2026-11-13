@@ -7517,7 +7517,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
     case beheld of
       Just [chosen] -> do
         arrived <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) chosen Zone.Exile
-        let link = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own}
+        let link = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False}
         State.modify' (\g -> g {GameState.exiledWith = foldr (`Map.insert` link) (GameState.exiledWith g) arrived})
         pure bindsNothing
       _ -> pure Payment.Unpaid
@@ -7859,7 +7859,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
       then do
         arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\c -> (c, Zone.Exile)) (Set.toAscList chosen))
         Monad.when (paidFor == Just oid) $ do
-          let link = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own}
+          let link = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False}
           State.modify' (\g -> g {GameState.exiledWith = foldr (`Map.insert` link) (GameState.exiledWith g) (foldMap Foldable.toList arrived)})
         pure bindsNothing
       else pure Payment.Unpaid

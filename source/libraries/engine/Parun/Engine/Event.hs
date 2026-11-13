@@ -76,6 +76,7 @@ import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Engine.Visibility as Visibility
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActiveCopy as ActiveCopy
@@ -3857,7 +3858,7 @@ apply settle batch applied batchPrevented candidate event =
                 -- data/scenarios/entry-replacement proves it: Spirit Mascot fires once.
                 arrivals <- changeZonesTogether settle (fmap (\card -> (card, Zone.Exile)) chosen)
                 State.modify' $ \gs2 ->
-                  gs2 {GameState.exiledWith = foldr (\arrival -> Map.insert arrival ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = Just Binding.entryExileLink, ExileLink.acquisition = Game.acquisitionOf oid gs2}) (GameState.exiledWith gs2) (foldMap Foldable.toList arrivals)}
+                  gs2 {GameState.exiledWith = foldr (\arrival -> Map.insert arrival ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = Just Binding.entryExileLink, ExileLink.acquisition = Game.acquisitionOf oid gs2, ExileLink.chosen = False}) (GameState.exiledWith gs2) (foldMap Foldable.toList arrivals)}
                 -- "For each creature card exiled this way": the cards that reached
                 -- exile, one choice of kind each.
                 exiled <- State.gets (\gs2 -> filter (`Set.member` GameState.exile gs2) (foldMap Foldable.toList arrivals))
@@ -5808,7 +5809,7 @@ chooseQualityAs candidate quality oid = do
   -- one is materialized before the loop runs), so controllerOf falls back to
   -- its owner. Nothing is chosen rather than the engine choosing for nobody.
   Foldable.for_ (Projection.controllerOf oid gs) $ \controller ->
-    chooseQuality quality controller (Game.acquisitionOf oid gs) oid
+    chooseQuality quality controller Nothing (Game.acquisitionOf oid gs) oid
   Replacement.consume (ReplacementCandidate.identity candidate)
 
 -- CR 614.1c / 607.2d / 608.2d: `chooser` chooses `quality` for `oid`, written
@@ -5829,8 +5830,13 @@ chooseQualityAs candidate quality oid = do
 -- Object.chosenNumber as 0 (even) or 1 (odd), whose parity it is; a word as
 -- its 1-based position among the card's, read by a Quantity.ChosenNumber
 -- condition (CR 614.12c).
-chooseQuality :: ChosenQuality.ChosenQuality -> PlayerId -> Acquisition.Acquisition -> ObjectId -> Game ()
-chooseQuality quality chooser acquisition oid = case quality of
+--
+-- An exiled card is one of the pile as the ability named `reader` reads it
+-- (CR 607.5, Game.linkedPile) that the Filter matches, and is marked on its
+-- link, the pile's other cards unmarked (Game.markChosenExile). Proved by
+-- data/scenarios/koh-the-face-stealer-has-the-triggered-ability-of-the-last-chosen-card.json.
+chooseQuality :: ChosenQuality.ChosenQuality -> PlayerId -> Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> ObjectId -> Game ()
+chooseQuality quality chooser reader acquisition oid = case quality of
   ChosenQuality.Colors range -> do
     let least = ChooseBetween.least range
         most = ChooseBetween.most range
@@ -5876,6 +5882,13 @@ chooseQuality quality chooser acquisition oid = case quality of
     picked <- Game.chooseAmong (\decider who anchors -> Prompt.ChooseWord decider who oid anchors) chooser (fmap snd numbered)
     let position = picked >>= \word -> fst <$> List.find ((== word) . snd) numbered
     Foldable.for_ position $ \n -> State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just n)) oid)
+  ChosenQuality.ExiledCard pile cards -> do
+    gs <- State.get
+    let context = Projection.sourceContext gs (Just chooser) oid
+        whole = Game.linkedPile (Just chooser) reader acquisition pile oid gs
+        candidates = filter (\card -> Filter.matches context (Projection.viewOfObject card gs) cards) whole
+    picked <- Game.chooseAmong (\decider who -> Prompt.ChooseCardFromAmong decider who oid) chooser candidates
+    Foldable.for_ picked $ \card -> State.modify' (Game.markChosenExile (Set.fromList whole) (Just card))
 
 -- CR 607.2d: the field chooseQuality writes `quality` to, put back on `oid` as
 -- `before` held it (Game.restoreChoice).
@@ -5887,6 +5900,11 @@ restoreQuality quality acquisition oid before = case quality of
   ChosenQuality.Number _ -> Game.restoreChoice Chosen.Number acquisition oid before
   ChosenQuality.Parity -> Game.restoreChoice Chosen.Number acquisition oid before
   ChosenQuality.Word _ -> Game.restoreChoice Chosen.Number acquisition oid before
+  -- Every card `oid` exiled under the acquisition, whichever pile was offered.
+  ChosenQuality.ExiledCard _ _ -> \gs ->
+    let mine = Map.keysSet (Map.filter (\link -> ExileLink.source link == oid && ExileLink.acquisition link == acquisition) (GameState.exiledWith gs))
+        marked = Map.keysSet (Map.filter ExileLink.chosen (Map.restrictKeys (GameState.exiledWith before) mine))
+     in Game.markChosenExile mine (Set.lookupMin marked) gs
 
 -- CR 707.5 / 707.4: the copying process an AsCopy rewrite performs, on each
 -- event class it rides (CR 614.1c's entry, CR 614.1e's turning face up, CR
@@ -9322,7 +9340,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                   -- CR 607.2b's link is exactly such a finding.
                   Monad.forM_ (if dest == Zone.Exile then exiledBy else Nothing) $ \linked ->
                     Monad.forM_ arrivals $ \arrival ->
-                      State.modify' (\g -> g {GameState.exiledWith = Map.insert arrival ExileLink.MkExileLink {ExileLink.source = linked, ExileLink.ability = Nothing, ExileLink.acquisition = Game.acquisitionOf linked g} (GameState.exiledWith g)})
+                      State.modify' (\g -> g {GameState.exiledWith = Map.insert arrival ExileLink.MkExileLink {ExileLink.source = linked, ExileLink.ability = Nothing, ExileLink.acquisition = Game.acquisitionOf linked g, ExileLink.chosen = False} (GameState.exiledWith g)})
                   -- ONE Moved event for the whole move, which is CR 713.8's first
                   -- clause: one permanent leaves the battlefield. `newId` is the
                   -- first arrival, so a trigger reading the destination end of this

@@ -2113,7 +2113,7 @@ popControl pid row gs =
 exileFoundFor :: ObjectId -> Seq.Seq ObjectId -> Game ()
 exileFoundFor agent exiled =
   State.modify' $ \gs ->
-    let link = ExileLink.MkExileLink {ExileLink.source = agent, ExileLink.ability = Nothing, ExileLink.acquisition = Game.acquisitionOf agent gs}
+    let link = ExileLink.MkExileLink {ExileLink.source = agent, ExileLink.ability = Nothing, ExileLink.acquisition = Game.acquisitionOf agent gs, ExileLink.chosen = False}
         file oid = Map.insert oid link
         permission you = (ExilePlayPermission.defaultValue you agent) {ExilePlayPermission.spending = ManaSpending.AnyColor}
         grant you o = o {Object.playPermission = Just (permission you)}
@@ -2375,7 +2375,7 @@ linkCraftMaterials :: ObjectId -> ObjectId -> GameState -> GameState
 linkCraftMaterials resolving entered gs =
   let paid = foldMap Set.toList (Map.lookup Binding.craftMaterials (Binding.targetsOf (slotBindings resolving gs)))
       materials = filter (`Set.member` GameState.exile gs) (Maybe.mapMaybe Recipient.objectOf paid)
-      link = ExileLink.MkExileLink {ExileLink.source = entered, ExileLink.ability = Just Binding.craftLink, ExileLink.acquisition = Acquisition.Own}
+      link = ExileLink.MkExileLink {ExileLink.source = entered, ExileLink.ability = Just Binding.craftLink, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False}
    in gs {GameState.exiledWith = foldr (`Map.insert` link) (GameState.exiledWith gs) materials}
 
 -- CR 607.1: the counters this instruction's effect put on or removed from each

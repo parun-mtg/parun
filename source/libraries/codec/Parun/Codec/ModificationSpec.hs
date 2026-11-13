@@ -344,7 +344,7 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
     Common.assertCodec
       s
       codec
-      (Modification.GainCardAbilities CardAbilities.MkCardAbilities {CardAbilities.from = LentCards.InExile, CardAbilities.cards = Filter.IsExiledWithSource ExiledPile.CraftMaterials, CardAbilities.restrictions = [ActivationRestriction.TimesEachTurn 1]})
+      (Modification.GainCardAbilities CardAbilities.MkCardAbilities {CardAbilities.from = LentCards.InExile, CardAbilities.cards = Filter.IsExiledWithSource ExiledPile.CraftMaterials, CardAbilities.triggered = False, CardAbilities.restrictions = [ActivationRestriction.TimesEachTurn 1]})
       " {\"type\":\"GainCardAbilities\",\"value\":{\"cards\":{\"type\":\"IsExiledWithSource\",\"value\":{\"type\":\"CraftMaterials\"}},\"restrictions\":[{\"type\":\"TimesEachTurn\",\"value\":1}]}} "
   -- layer 3, CR 612.5: the two sides come from the effect's affected set, so
   -- the arm itself is payload-free.

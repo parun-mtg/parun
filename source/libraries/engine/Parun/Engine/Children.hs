@@ -1226,7 +1226,7 @@ effectChildren c effect = case effect of
   Effect.Proliferate named -> fmap Effect.Proliferate (traverse (onSlot c) named)
   Effect.ChooseCardName (ChooseCardName.MkChooseCardName who restriction among) ->
     fmap Effect.ChooseCardName (ChooseCardName.MkChooseCardName <$> onPlayer c who <*> onFilter c restriction <*> traverse (onSlot c) among)
-  Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality linked) -> fmap Effect.ChooseQuality (ChooseQuality.MkChooseQuality <$> chosenQualityChildren (onSubtype c) quality <*> pure linked)
+  Effect.ChooseQuality (ChooseQuality.MkChooseQuality quality linked) -> fmap Effect.ChooseQuality (ChooseQuality.MkChooseQuality <$> chosenQualityChildren (onSubtype c) (onFilter c) quality <*> pure linked)
   Effect.Bolster quantity -> fmap Effect.Bolster (onQuantity c quantity)
   Effect.Amass (Amass.MkAmass who quantity kind named) -> fmap Effect.Amass (Amass.MkAmass <$> onPlayer c who <*> onQuantity c quantity <*> pure kind <*> traverse (onSlot c) named)
   Effect.Blight (Blight.MkBlight who quantity named) -> fmap Effect.Blight (Blight.MkBlight <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)
@@ -2332,7 +2332,7 @@ entryRewriteChildren c rewrite = case rewrite of
   EntryRewrite.AsCopy copy -> EntryRewrite.AsCopy <$> replacementCopy c copy
   EntryRewrite.ChoiceOf options -> EntryRewrite.ChoiceOf <$> traverse (entryOptionChildren c) options
   EntryRewrite.ChoiceByCoinFlip (EntryFlip.MkEntryFlip heads tails) -> fmap EntryRewrite.ChoiceByCoinFlip (EntryFlip.MkEntryFlip <$> entryOptionChildren c heads <*> entryOptionChildren c tails)
-  EntryRewrite.ChooseQuality quality -> EntryRewrite.ChooseQuality <$> chosenQualityChildren (replacementSubtype c) quality
+  EntryRewrite.ChooseQuality quality -> EntryRewrite.ChooseQuality <$> chosenQualityChildren (replacementSubtype c) (replacementFilter c) quality
   EntryRewrite.ChoosePlayer _ -> pure rewrite
   EntryRewrite.ChooseCardNames names -> EntryRewrite.ChooseCardNames <$> replacementFilter c names
   EntryRewrite.ChooseCardName names -> EntryRewrite.ChooseCardName <$> replacementFilter c names
@@ -2363,16 +2363,18 @@ entryRewriteChildren c rewrite = case rewrite of
   EntryRewrite.EntersTransformed -> pure rewrite
   EntryRewrite.RunEffects effects -> EntryRewrite.RunEffects <$> traverse (replacementEffect c) effects
 
--- | The subtypes a choice of a quality lists (CR 205.3): its one child, as a
--- colour, a card type, a number and a CR 614.12c anchor word hold none.
-chosenQualityChildren :: (Applicative f) => (Subtype.Subtype -> f Subtype.Subtype) -> ChosenQuality.ChosenQuality -> f ChosenQuality.ChosenQuality
-chosenQualityChildren onListed quality = case quality of
+-- | The subtypes a choice of a quality lists (CR 205.3) and the Filter a
+-- choice of an exiled card states: its children, as a colour, a card type, a
+-- number and a CR 614.12c anchor word hold none.
+chosenQualityChildren :: (Applicative f) => (Subtype.Subtype -> f Subtype.Subtype) -> (Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword)) -> ChosenQuality.ChosenQuality -> f ChosenQuality.ChosenQuality
+chosenQualityChildren onListed onCards quality = case quality of
   ChosenQuality.Colors _ -> pure quality
   ChosenQuality.Subtype family among -> ChosenQuality.Subtype family <$> traverse (traverse onListed) among
   ChosenQuality.CardType -> pure quality
   ChosenQuality.Number _ -> pure quality
   ChosenQuality.Parity -> pure quality
   ChosenQuality.Word _ -> pure quality
+  ChosenQuality.ExiledCard pile cards -> ChosenQuality.ExiledCard pile <$> onCards cards
 
 -- | One option an entering permanent may be (CR 208.2b).
 entryOptionChildren :: (Applicative f) => ReplacementChildren card ability effect f -> EntryOption.EntryOption -> f EntryOption.EntryOption
@@ -2432,7 +2434,7 @@ turnUpRewriteChildren c rewrite = case rewrite of
 attachRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> AttachRewrite.AttachRewrite ability effect -> f (AttachRewrite.AttachRewrite ability effect)
 attachRewriteChildren c rewrite = case rewrite of
   AttachRewrite.AsCopy copy -> AttachRewrite.AsCopy <$> replacementCopy c copy
-  AttachRewrite.ChooseQuality quality -> AttachRewrite.ChooseQuality <$> chosenQualityChildren (replacementSubtype c) quality
+  AttachRewrite.ChooseQuality quality -> AttachRewrite.ChooseQuality <$> chosenQualityChildren (replacementSubtype c) (replacementFilter c) quality
 
 -- | What an untap replacement does (CR 614.1a).
 untapRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> UntapRewrite.UntapRewrite -> f UntapRewrite.UntapRewrite
@@ -3492,8 +3494,8 @@ modificationChildren c modification = case modification of
   Modification.GainAbilitiesOfSource keywords -> Modification.GainAbilitiesOfSource . Set.fromList <$> traverse (modificationStampedKeyword c) (Set.toList keywords)
   Modification.GainKeywordsAmong designator zone among ->
     (\d -> Modification.GainKeywordsAmong d zone) <$> modificationDesignator c designator <*> modificationFilter c among
-  Modification.GainCardAbilities (CardAbilities.MkCardAbilities from cards restrictions) ->
-    fmap Modification.GainCardAbilities (CardAbilities.MkCardAbilities from <$> modificationFilter c cards <*> traverse (modificationRestriction c) restrictions)
+  Modification.GainCardAbilities (CardAbilities.MkCardAbilities from cards triggered restrictions) ->
+    fmap Modification.GainCardAbilities (CardAbilities.MkCardAbilities from <$> modificationFilter c cards <*> pure triggered <*> traverse (modificationRestriction c) restrictions)
   Modification.GainAbilitiesOfStickers -> pure modification
   Modification.LoseAllAbilities -> pure modification
   Modification.LoseNamedAbility name -> Modification.LoseNamedAbility <$> modificationAbilityName c name

@@ -629,6 +629,8 @@ isLinkedExile :: Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> Exi
 isLinkedExile reader acquisition pile src link =
   ExileLink.source link == src && ExileLink.acquisition link == acquisition && case pile of
     ExiledPile.OwnAbilities -> pairOf (ExileLink.ability link) == pairOf reader
+    -- CR 607.2d: the card of that pile Event.chooseQuality last marked.
+    ExiledPile.LastChosen -> ExileLink.chosen link && pairOf (ExileLink.ability link) == pairOf reader
     ExiledPile.OfAbility name -> ExileLink.ability link == Just (nameAsRead reader name)
     ExiledPile.AsItEntered -> ExileLink.ability link == Just entryExileLink
     ExiledPile.CraftMaterials -> ExileLink.ability link == Just craftLink

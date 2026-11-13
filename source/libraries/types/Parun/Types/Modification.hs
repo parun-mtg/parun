@@ -164,7 +164,8 @@ data Modification ability
   | -- | layer 6, CR 613.1f: this object has each activated ability of each
     -- card the payload names, in exile (Locus of Enlightenment, Mairsil, the
     -- Pretender) or atop a library (Conspicuous Snoop), each carrying the
-    -- payload's extra restrictions.
+    -- payload's extra restrictions, and each triggered ability where the
+    -- payload says so (Koh, the Face Stealer).
     GainCardAbilities CardAbilities.CardAbilities
   | -- | layer 6, CR 613.1f / 123.7a: this object has the abilities printed on
     -- the ability stickers on this effect's source, read off the stickers

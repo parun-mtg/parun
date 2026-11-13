@@ -51,7 +51,7 @@ import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.Recruit as Recruit
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Resolve.Common as Common
-import Parun.Engine.Resolve.Slots (battlefieldMatching, effectContext, effectViewOf, legalOne, objectRefObjects, playerRefPlayers, slotBindings)
+import Parun.Engine.Resolve.Slots (battlefieldMatching, effectContext, effectViewOf, legalOne, objectRefObjects, playerRefPlayers, resolvingAbilityName, slotBindings)
 import qualified Parun.Engine.Ring as Ring
 import qualified Parun.Engine.Soulbond as Soulbond
 import qualified Parun.Engine.TimeTravel as TimeTravel
@@ -459,7 +459,7 @@ chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardNam
 chooseQuality :: ObjectId -> ObjectId -> PlayerId -> ChooseQuality.ChooseQuality -> Game ()
 chooseQuality resolving source controller choice = do
   gs <- State.get
-  Event.chooseQuality (ChooseQuality.quality choice) controller (Game.readingAcquisition resolving source gs source) source
+  Event.chooseQuality (ChooseQuality.quality choice) controller (resolvingAbilityName resolving gs) (Game.readingAcquisition resolving source gs source) source
 
 -- CR 400.11c: the resolving controller reveals a card they own from outside the
 -- game matching the filter and puts it into their hand -- Burning Wish.

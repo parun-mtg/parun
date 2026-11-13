@@ -389,7 +389,9 @@ data Prompt r where
   -- battlefield a mandatory Parun.Types.AsCopy choice copies (Dinosaur
   -- Headdress's craft materials), the ObjectId the object choosing. Also CR
   -- 707.10e: which of the objects a replacement made of a copy's stated
-  -- target the copy targets, the ObjectId the resolving effect.
+  -- target the copy targets, the ObjectId the resolving effect. Also CR
+  -- 607.2d: which exiled card a ChosenQuality.ExiledCard choice names, the
+  -- ObjectId the object choosing.
   ChooseCardFromAmong :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ObjectId.ObjectId -> Prompt ObjectId.ObjectId
   -- | CR 309.2a \/ 701.49a: which of the dungeon printings they own a venturing
   -- player brings in from outside the game (CR 400.11), there being no object

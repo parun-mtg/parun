@@ -14,6 +14,8 @@ spec s = Spec.describe s "Parun.Codec.ExiledPile" $ do
     Common.assertCodec s ExiledPile.codec ExiledPile.OwnAbilities " {\"type\":\"OwnAbilities\"} "
   Spec.it s "OfAbility" $
     Common.assertCodec s ExiledPile.codec (ExiledPile.OfAbility (AbilityName.MkAbilityName (Text.pack "warden"))) " {\"type\":\"OfAbility\",\"value\":\"warden\"} "
+  Spec.it s "LastChosen" $
+    Common.assertCodec s ExiledPile.codec ExiledPile.LastChosen " {\"type\":\"LastChosen\"} "
   Spec.it s "AsItEntered" $
     Common.assertCodec s ExiledPile.codec ExiledPile.AsItEntered " {\"type\":\"AsItEntered\"} "
   Spec.it s "CraftMaterials" $
