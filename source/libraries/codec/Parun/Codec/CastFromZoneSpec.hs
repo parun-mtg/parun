@@ -20,6 +20,7 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
+import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.PermissionLimit as PermissionLimit
@@ -155,7 +156,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
             CastFromZone.amount = Nothing,
-            CastFromZone.additionalCosts = [CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (CostAmount.Fixed 3) WhichCounters.OfAnyKind (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]) CounterSpread.FromAmong)]
+            CastFromZone.additionalCosts = [CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly (CostAmount.Fixed 3)) WhichCounters.OfAnyKind (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]) CounterSpread.FromAmong)]
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"pool\":{\"type\":\"InExiledPile\",\"value\":{\"type\":\"OwnAbilities\"}},\"additionalCosts\":[{\"type\":\"RemoveCounters\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":3},\"kind\":{\"type\":\"OfAnyKind\"},\"spread\":\"FromAmong\",\"whichPermanent\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]}}}]} "

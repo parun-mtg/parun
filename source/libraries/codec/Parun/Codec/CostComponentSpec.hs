@@ -188,14 +188,14 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (CostAmount.Fixed 1) (WhichCounters.OfKind CounterKind.PlusOnePlusOne) (Filter.HasCardType CardType.Creature) CounterSpread.FromOne))
+      (CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly (CostAmount.Fixed 1)) (WhichCounters.OfKind CounterKind.PlusOnePlusOne) (Filter.HasCardType CardType.Creature) CounterSpread.FromOne))
       " {\"type\":\"RemoveCounters\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"PlusOnePlusOne\"}},\"whichPermanent\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- Its X form spread from among, Retribution of the Ancients'.
   Spec.it s "RemoveCounters of an announced X" $
     Common.assertCodec
       s
       codec
-      (CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (CostAmount.Announced (SlotName.MkSlotName (Text.pack "X"))) (WhichCounters.OfKind CounterKind.PlusOnePlusOne) (Filter.HasCardType CardType.Creature) CounterSpread.FromAmong))
+      (CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly (CostAmount.Announced (SlotName.MkSlotName (Text.pack "X")))) (WhichCounters.OfKind CounterKind.PlusOnePlusOne) (Filter.HasCardType CardType.Creature) CounterSpread.FromAmong))
       " {\"type\":\"RemoveCounters\",\"value\":{\"count\":{\"type\":\"Announced\",\"value\":\"X\"},\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"PlusOnePlusOne\"}},\"spread\":\"FromAmong\",\"whichPermanent\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- Sacrifice's X form, Grim Hireling's.
   Spec.it s "Sacrifice of an announced X" $

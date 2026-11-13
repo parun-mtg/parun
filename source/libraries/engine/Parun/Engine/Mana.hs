@@ -762,7 +762,7 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
       -- Not implemented: a floor not yet announced (CR 601.2b's X), which is
       -- supplied as the offer prices it (#6152).
       removable option = case [removal | CostComponent.RemoveCounters removal <- Cost.components (ManaOption.cost option)] of
-        [CountersFromPermanents.MkCountersFromPermanents (CostAmount.Fixed floor_) which criterion spread]
+        [CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly (CostAmount.Fixed floor_)) which criterion spread]
           | any (any (Set.member Binding.removedCounters . QuantitySlot.slots . ManaAddition.count) . Maybe.mapMaybe ManaAbility.manaProduced . Foldable.toList . Clause.effects . fst) (ManaOption.steps option) ->
               let context = Projection.sourceContext gs (Just pid) oid
                   carried candidate = case which of

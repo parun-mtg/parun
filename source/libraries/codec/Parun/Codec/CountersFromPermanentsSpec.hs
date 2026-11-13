@@ -10,10 +10,12 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.WhichCounters as WhichCounters
 
 -- | Instantiated at 'Keyword.Keyword', the only concrete instantiation anywhere
@@ -31,7 +33,7 @@ spec s = Spec.describe s "Parun.Codec.CountersFromPermanents" $ do
       s
       codec
       ( CountersFromPermanents.MkCountersFromPermanents
-          { CountersFromPermanents.count = CostAmount.Fixed 1,
+          { CountersFromPermanents.count = ObjectCount.Exactly (CostAmount.Fixed 1),
             CountersFromPermanents.kind = WhichCounters.OfKind CounterKind.PlusOnePlusOne,
             CountersFromPermanents.whichPermanent = Filter.HasCardType CardType.Creature,
             CountersFromPermanents.spread = CounterSpread.FromOne
@@ -46,13 +48,31 @@ spec s = Spec.describe s "Parun.Codec.CountersFromPermanents" $ do
       s
       codec
       ( CountersFromPermanents.MkCountersFromPermanents
-          { CountersFromPermanents.count = CostAmount.Fixed 3,
+          { CountersFromPermanents.count = ObjectCount.Exactly (CostAmount.Fixed 3),
             CountersFromPermanents.kind = WhichCounters.OfAnyKind,
             CountersFromPermanents.whichPermanent = Filter.HasCardType CardType.Creature,
             CountersFromPermanents.spread = CounterSpread.FromAmong
           }
       )
       " {\"count\":{\"type\":\"Fixed\",\"value\":3},\"kind\":{\"type\":\"OfAnyKind\"},\"whichPermanent\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"spread\":\"FromAmong\"} "
+  -- Hankyu's "Remove all aim counters".
+  Spec.it s "Every" $
+    Common.assertCodec
+      s
+      codec
+      ( CountersFromPermanents.MkCountersFromPermanents
+          { CountersFromPermanents.count = ObjectCount.Every,
+            CountersFromPermanents.kind = WhichCounters.OfKind (CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "aim"))),
+            CountersFromPermanents.whichPermanent = Filter.IsSource,
+            CountersFromPermanents.spread = CounterSpread.FromAmong
+          }
+      )
+      " {\"count\":{\"type\":\"Every\"},\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"Named\",\"value\":\"aim\"}},\"whichPermanent\":{\"type\":\"IsSource\"},\"spread\":\"FromAmong\"} "
+  Spec.it s "rejects every counter off one permanent" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode codec =<< Common.parse (Text.pack "{\"count\":{\"type\":\"Every\"},\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"Stun\"}},\"whichPermanent\":{\"type\":\"IsSource\"}}")))
+      "expected a decode failure"
   Spec.it s "rejects counters of any kind at a floor" $
     Spec.assertBool
       s

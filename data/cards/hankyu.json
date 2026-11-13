@@ -1,0 +1,167 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Equip",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 4
+                }
+              ]
+            },
+            "quality": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        }
+      ],
+      "name": "Hankyu",
+      "oracleText": "Equipped creature has \"{T}: Put an aim counter on Hankyu\" and \"{T}, Remove all aim counters from Hankyu: This creature deals damage to any target equal to the number of aim counters removed this way.\"\nEquip {4} ({4}: Attach to target creature you control. Equip only as a sorcery.)",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Attached"
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Activated",
+                "value": {
+                  "cost": {
+                    "components": [
+                      {
+                        "type": "TapThis"
+                      }
+                    ],
+                    "mana": []
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "PutCounters",
+                                "value": {
+                                  "kind": {
+                                    "type": "Named",
+                                    "value": "aim"
+                                  },
+                                  "quantity": {
+                                    "type": "Literal",
+                                    "value": 1
+                                  },
+                                  "ref": {
+                                    "type": "EachMatching",
+                                    "value": {
+                                      "type": "IsBound",
+                                      "value": "thatGrantingPermanent"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Activated",
+                "value": {
+                  "cost": {
+                    "components": [
+                      {
+                        "type": "TapThis"
+                      },
+                      {
+                        "type": "RemoveCounters",
+                        "value": {
+                          "count": {
+                            "type": "Every"
+                          },
+                          "kind": {
+                            "type": "OfKind",
+                            "value": {
+                              "type": "Named",
+                              "value": "aim"
+                            }
+                          },
+                          "spread": "FromAmong",
+                          "whichPermanent": {
+                            "type": "IsBound",
+                            "value": "thatGrantingPermanent"
+                          }
+                        }
+                      }
+                    ],
+                    "mana": []
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "DealDamage",
+                                "value": {
+                                  "parts": [
+                                    {
+                                      "quantity": {
+                                        "type": "InSlot",
+                                        "value": "thatManyCountersRemoved"
+                                      },
+                                      "ref": {
+                                        "type": "InSlot",
+                                        "value": "target"
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "targetSlots": {
+                          "target": {
+                            "pool": {
+                              "type": "AnyTarget"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Equipment"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}
