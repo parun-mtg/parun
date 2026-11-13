@@ -5,6 +5,7 @@ import qualified Data.Sequence as Seq
 import qualified Parun.Types.CandidateId as CandidateId
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
+import qualified Parun.Types.PlayerId as PlayerId
 
 -- | CR 613.7m: the objects one CR 608.2f action has put onto the battlefield so
 -- far, whose relative timestamps are ordered once the action ends
@@ -18,10 +19,14 @@ data EnteringTogether = MkEnteringTogether
     -- | CR 614.1a: what each token replacement's controller answered for this
     -- action's creations, and the permanent a copying one copies, so the one
     -- event is asked about once (Parun.Engine.Event.apply's TokenR arm).
-    substitutions :: Map.Map CandidateId.CandidateId (OptionalDecision.OptionalDecision, Maybe ObjectId.ObjectId)
+    substitutions :: Map.Map CandidateId.CandidateId (OptionalDecision.OptionalDecision, Maybe ObjectId.ObjectId),
+    -- | CR 616.1: the replacements each player has applied to this action's
+    -- token creations, first applied first, so the one event keeps one order
+    -- (Parun.Engine.Event.inCreationOrder).
+    creationOrder :: Map.Map PlayerId.PlayerId (Seq.Seq CandidateId.CandidateId)
   }
   deriving (Eq, Ord, Show)
 
 -- | Nothing has entered yet.
 empty :: EnteringTogether
-empty = MkEnteringTogether Seq.empty Seq.empty Map.empty
+empty = MkEnteringTogether Seq.empty Seq.empty Map.empty Map.empty

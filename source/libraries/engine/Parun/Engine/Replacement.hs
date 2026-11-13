@@ -102,6 +102,7 @@ import qualified Parun.Types.DrawKind as DrawKind
 import qualified Parun.Types.DrawR as DrawR
 import qualified Parun.Types.DrawRewrite as DrawRewrite
 import qualified Parun.Types.Effect as Effect
+import qualified Parun.Types.EnteringTogether as EnteringTogether
 import qualified Parun.Types.EntryOption as EntryOption
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
@@ -957,8 +958,12 @@ matchesPrinted viewOf gs event candidate =
             -- earlier creation of the player's spends it, one the row declined or
             -- was not there for included (Esix, Fractal Bloom's rulings, the
             -- same wording). Read off the log, so the tokens of the event being
-            -- replaced are not yet in it.
-            && not (TokenPattern.firstEachTurn pat && Game.createdTokenThisTurn pid gs)
+            -- replaced are not yet in it, but for a lot of the same CR 608.2f
+            -- action a redirect took, logged as it went (Event.placeDiverted):
+            -- a row already applied to that action is still in its event. The
+            -- scenario mirrormind-crown-under-hallowed-moonlight-reaches-every-token-of-multiversal-incursion
+            -- proves it.
+            && not (TokenPattern.firstEachTurn pat && Game.createdTokenThisTurn pid gs && notElem (ReplacementCandidate.identity candidate) (creationOrder pid gs))
             && any (\lot -> reachesLot pat lot && matchesTokenLot gs (candidateContext gs candidate) (TokenPattern.whatToken pat) pid lot) lots
         -- CR 614.1b / 500.11: a skip intercepts a step, phase or turn
         -- BEGINNING, and names exactly which one -- and, for a player-scoped
@@ -2642,6 +2647,11 @@ computedAmount rewrite = case rewrite of
   DamageRewrite.TurnFaceUp -> False
   DamageRewrite.AlsoToSourceController -> False
   DamageRewrite.HealSourceFirst -> False
+
+-- CR 616.1: the rows this player has applied to the token creations of the CR
+-- 608.2f action under way, first applied first. Empty outside one.
+creationOrder :: PlayerId -> GameState -> Seq.Seq CandidateId
+creationOrder pid gs = maybe Seq.empty (Map.findWithDefault Seq.empty pid . EnteringTogether.creationOrder) (Scratch.enteringTogether (GameState.scratch gs))
 
 -- CR 707.2: does this token row make copies of a permanent it names, rather
 -- than tokens whose text it gives?

@@ -2631,12 +2631,38 @@ freshCandidates asOf gs batch allowances applied prevented split event =
 -- of it.
 chooseAndApply :: Game () -> Maybe GameState -> Set ObjectId -> Maybe Zone -> Map CandidateId Natural -> Set CandidateId -> Replacement.Tally -> Maybe ObjectId -> Bool -> ComponentSplit -> GameState -> ProposedEvent -> [ReplacementCandidate] -> Game (Maybe ProposedEvent, [Either Replacement.DamageThread ProposedEvent], Replacement.Tally, Maybe ObjectId, Bool, ComponentSplit)
 chooseAndApply settle asOf batch diverting allowances applied prevented exiledBy shuffling split gs event bucket = do
-  picked <- Replacement.choose gs event bucket
+  picked <- Replacement.choose gs event (inCreationOrder gs event bucket)
   case picked of
     -- Unreachable: highestBucket returns [] for an empty input, so `bucket`
     -- is non-empty and `choose` always picks. Total rather than partial.
     Nothing -> pure (Just event, [], prevented, exiledBy, shuffling, split)
-    Just candidate -> applyPicked settle asOf batch diverting allowances applied prevented exiledBy shuffling split gs event candidate
+    Just candidate -> do
+      noteCreationOrder event candidate
+      applyPicked settle asOf batch diverting allowances applied prevented exiledBy shuffling split gs event candidate
+
+-- CR 616.1 / 608.2f: one action creating through several createTokens calls
+-- (Event.together) is one event with one order, so of the rows the player
+-- already ordered for it only the earliest is offered, beside any row new to
+-- it. Every row, outside such an action. Proved by the scenario
+-- mirrormind-crowns-on-two-creatures-are-ordered-once-for-multiversal-incursion-s-copies.
+inCreationOrder :: GameState -> ProposedEvent -> [ReplacementCandidate] -> [ReplacementCandidate]
+inCreationOrder gs event bucket = case event of
+  ProposedEvent.WouldCreateTokens pid _ ->
+    let position candidate = Seq.elemIndexL (ReplacementCandidate.identity candidate) (Replacement.creationOrder pid gs)
+        earliest = Maybe.listToMaybe (List.sort (Maybe.mapMaybe position bucket))
+     in filter (maybe True ((== earliest) . Just) . position) bucket
+  _ -> bucket
+
+-- CR 616.1: record the row a player applies to a token creation inside a CR
+-- 608.2f action, in the order applied (inCreationOrder).
+noteCreationOrder :: ProposedEvent -> ReplacementCandidate -> Game ()
+noteCreationOrder event candidate = case event of
+  ProposedEvent.WouldCreateTokens pid _ ->
+    let row = ReplacementCandidate.identity candidate
+        after ordered = if Foldable.elem row ordered then ordered else ordered Seq.|> row
+        note open = open {EnteringTogether.creationOrder = Map.alter (Just . after . Maybe.fromMaybe Seq.empty) pid (EnteringTogether.creationOrder open)}
+     in State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringTogether = fmap note (Scratch.enteringTogether (GameState.scratch g))}})
+  _ -> pure ()
 
 -- The application of the candidate CR 616.1 picked, by the shape of what it
 -- covers.
@@ -5436,7 +5462,8 @@ apply settle batch applied batchPrevented candidate event =
     --
     -- One CR 608.2f action creating through several createTokens calls is one
     -- event to the row (Event.together), so its first answer stands for the
-    -- rest: EnteringTogether.substitutions.
+    -- rest: EnteringTogether.substitutions. Its place among the rows stands
+    -- too (inCreationOrder).
     (ReplacementEffect.TokenR (TokenR.MkTokenR pat scaling plus optional), ProposedEvent.WouldCreateTokens pid lots) -> do
       asked <- State.get
       let identity_ = ReplacementCandidate.identity candidate
@@ -9262,7 +9289,10 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                         Moved.revealed = revealedLeaving,
                         Moved.seenArriving = seenArriving,
                         Moved.causedBy = causer,
-                        Moved.arrived = arrivedAs
+                        Moved.arrived = arrivedAs,
+                        -- CR 111.13: a copy of a permanent spell becoming a
+                        -- token is not created, and nothing else moving is.
+                        Moved.created = Nothing
                       }
                   -- CR 713.8's second clause: "two cards are put into the
                   -- appropriate zone". One event per card AFTER the leading one,
@@ -10664,14 +10694,18 @@ settleMinted start ids = do
 -- `lastKnown` entry to find -- a token has no prior incarnation (CR 111.2), and a
 -- conjured card was in no zone. `zone` is the battlefield but for placeDiverted's
 -- redirect.
+--
+-- CR 111.2: a token's entry names its creator, its owner, so a later reader
+-- need not ask what the object has become since (Game.createdTokenThisTurn).
 recordMintedArrival :: Zone -> ObjectId -> Game ()
 recordMintedArrival zone newId = do
   placed <- State.get
   let snapshot = Projection.project newId placed
+      creator = if Game.isToken newId placed then fmap Object.owner (Game.lookupObject newId placed) else Nothing
   -- Moved.revealed is read by no look-back here: none reaches a battlefield
   -- destination (Event.Trigger.looksBack), and every battlefield-bound redirect
   -- in data/cards/ exiles, a public zone, so the public origin answers.
-  State.modify' (recordEvent (GameEvent.Moved ((Moved.moved (ZoneChange.MkZoneChange newId newId zone zone) snapshot) {Moved.revealed = True, Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = Scratch.causing (GameState.scratch placed), Moved.arrived = Projection.objectSnapshot newId placed})))
+  State.modify' (recordEvent (GameEvent.Moved ((Moved.moved (ZoneChange.MkZoneChange newId newId zone zone) snapshot) {Moved.revealed = True, Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = Scratch.causing (GameState.scratch placed), Moved.arrived = Projection.objectSnapshot newId placed, Moved.created = creator})))
 
 -- CR 701.42a: meld these cards -- "put them onto the battlefield with their back
 -- faces up and combined. The resulting permanent is a single object represented by
