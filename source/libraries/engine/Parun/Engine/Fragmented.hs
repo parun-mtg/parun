@@ -49,6 +49,7 @@ import Parun.Types.GameEvent (GameEvent)
 import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.History as History
 import qualified Parun.Types.HistoryRead as HistoryRead
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LastKnown as LastKnown
@@ -106,6 +107,9 @@ import qualified Text.Read as Read
 -- only the entries of the ids the rest of
 -- the state holds are compared.
 --
+-- Dropped as a cost, not a difference: History.pastTurns, which only the turn
+-- handoff writes, so two states of one turn hold the same list.
+--
 -- Dropped as history a card CAN read: `events` and `activationsThisTurn`.
 -- Compared, no state could recur, since every action appends to both; so they
 -- ride along uncompared, and `lapIsRead` asks whether anything in the game
@@ -133,6 +137,8 @@ digest gs =
             -- Only a countdown shield's key is read, and its row, compared here, shrinks as it grows.
             GameState.damagePreventedBy = Map.empty,
             GameState.loopInvolvement = Map.empty,
+            -- Written only at the turn handoff, and the digest keeps turnNumber.
+            GameState.history = (GameState.history gs) {History.pastTurns = Seq.empty},
             GameState.bookkeeping = Game.blankBookkeeping,
             GameState.snapshots = Game.blankSnapshots,
             GameState.cardsPlayed = Map.empty,

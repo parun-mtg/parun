@@ -62,6 +62,7 @@ import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.PastTurn as PastTurn
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -407,6 +408,26 @@ gameStateRoundTripSpec s registry corpus = do
         handed = Engine.beginTurnOf S.bob (S.withEvents [GameEvent.DamageDealt dealt] gs)
     Spec.assertEqWith s "the handoff kept the Giant's 3" (fmap DamageEvent.amount (Foldable.toList (History.damageBeforeThisTurn (GameState.history handed)))) [3]
     roundTrips "damage on an earlier turn" handed
+
+  -- History.pastTurns, CR 608.2i's finished turns, filed whole at the same
+  -- handoff: one record a turn, oldest first, stamped with whose turn it was
+  -- and holding the log the handoff cleared.
+  Spec.it s "CR 608.2i each handoff files the finished turn, oldest first" $ do
+    hillGiant <- S.printingOf s registry "Hill Giant"
+    let (giant, gs) = S.addPermanent hillGiant S.alice (Setup.emptyGame S.bothPlayers)
+        dealt = Event.damageEvent gs DamageKind.Combat giant (Recipient.ToPlayer S.bob) 3
+        first = S.withEvents [GameEvent.DamageDealt dealt] gs
+        handed = Engine.beginTurnOf S.bob first
+        second = S.withEvents [GameEvent.DamageDealt dealt, GameEvent.DamageDealt dealt] handed
+        again = Engine.beginTurnOf S.alice second
+        filed = Foldable.toList . History.pastTurns . GameState.history
+        expected turn = PastTurn.MkPastTurn {PastTurn.activePlayers = [TurnRegisters.activePlayer (GameState.turn turn)], PastTurn.events = TurnRegisters.events (GameState.turn turn)}
+    Spec.assertEqWith s "nothing is filed before a handoff" (filed first) []
+    Spec.assertEqWith s "the first turn's log is not empty" (Seq.length (TurnRegisters.events (GameState.turn first))) 1
+    Spec.assertEqWith s "the handoff filed alice's turn" (filed handed) [expected first]
+    Spec.assertEqWith s "the next handoff filed bob's turn after it" (filed again) [expected first, expected second]
+    Spec.assertEqWith s "the handoff cleared the live log" (Seq.length (TurnRegisters.events (GameState.turn again))) 0
+    roundTrips "two finished turns" again
 
   -- GameState.departedThisTurn, CR 801.2c's seats that still count until the
   -- next turn begins. Non-empty for the reason the case above gives.

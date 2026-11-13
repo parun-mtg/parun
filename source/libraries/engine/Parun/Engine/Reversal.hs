@@ -190,6 +190,9 @@ withoutAnnouncement before entry closed = do
   castsBeforeThisTurn <- one (History.castsBeforeThisTurn . GameState.history)
   -- Written only at the turn handoff, which no announcement spans.
   damageBeforeThisTurn <- one (History.damageBeforeThisTurn . GameState.history)
+  -- Written only at the turn handoff, which no announcement spans, so the
+  -- three agree; taken rather than compared, which would walk the game.
+  pastTurns <- newest (History.pastTurns . GameState.history)
   damagePreventedBy <- mapOf GameState.damagePreventedBy
   attacksInOwnLastTurn <- one (History.attacksInOwnLastTurn . GameState.history)
   resolvedNames <- mapOf (History.resolvedNames . GameState.history)
@@ -362,6 +365,7 @@ withoutAnnouncement before entry closed = do
               History.eventsLastTurn = eventsLastTurn,
               History.castsBeforeThisTurn = castsBeforeThisTurn,
               History.damageBeforeThisTurn = damageBeforeThisTurn,
+              History.pastTurns = pastTurns,
               History.attacksInOwnLastTurn = attacksInOwnLastTurn,
               History.resolvedNames = resolvedNames
             },

@@ -317,6 +317,8 @@ representatives pcs gs candidates =
 --   * History.eventsLastTurn is read by the per-seat view and by the "last
 --     turn" tallies (Quantity's SpellsCast and LifeChanged), which count per
 --     PLAYER and name no object, so no choice between objects can turn on it.
+--   * History.pastTurns holds every finished turn's log and is read by
+--     nothing yet (gap #6034); a reader owes a line here.
 --   * TurnRegisters.permanentsAsTurnBegan is keyed by every permanent, but no
 --     choice this turn can change it and it is read only by a Count over the
 --     whole record, so what two candidates' entries say cannot separate them.
