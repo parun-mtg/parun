@@ -921,7 +921,7 @@ searchPortion pid gs =
         PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
         PlayerEffect.IncreaseDevotion _ -> Nothing
         PlayerEffect.ReduceMaximumHandSize _ -> Nothing
-        PlayerEffect.DontLoseUnspentMana _ -> Nothing
+        PlayerEffect.DontLoseUnspentMana _ _ -> Nothing
         PlayerEffect.LoseLifeForUnspentMana -> Nothing
         PlayerEffect.MayPayLifeForMana {} -> Nothing
         PlayerEffect.SpendManaAsThough _ -> Nothing
