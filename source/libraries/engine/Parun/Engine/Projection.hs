@@ -1728,8 +1728,13 @@ freezeQuantities viewOf gs announcedOn source context m =
         -- into a "protection from the chosen color" grant, ChosenColor's reason
         -- below -- the spell is in a graveyard by the time the grant is
         -- projected (Stave Off). data/scenarios/'s Stave Off scenario proves it.
+        --
+        -- CR 702.16i / 109.5: "each of your opponents" is locked in likewise,
+        -- as the players relating thus to the resolving ability's controller,
+        -- the context's perspective (Figure of Fable).
         Modification.GainKeyword k ->
-          Just (Modification.GainKeyword (Keyword.withChosenColors (Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Colors (Game.readingAcquisition announcedOn source gs source) source gs)) k))
+          let related relation = [q | you <- Foldable.toList (Filter.perspective context), q <- Game.stillPlaying gs, PlayerRelation.holds (Filter.teams context) relation you q]
+           in Just (Modification.GainKeyword (Keyword.withRelatedPlayers related (Keyword.withChosenColors (Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Colors (Game.readingAcquisition announcedOn source gs source) source gs)) k)))
         -- Its cost is derived at projection time, not evaluated from a Quantity,
         -- so there is nothing here to freeze.
         Modification.GainKeywordAtManaCost _ -> Just m
@@ -4104,6 +4109,7 @@ filterReads f = case f of
   -- 702.16k's other half is an owner, which CR 108.3 never projects.
   Filter.Type.OfChosenPlayer -> Set.singleton Controller
   Filter.Type.OfRelatedPlayer _ -> Set.singleton Controller
+  Filter.Type.OfSpecificPlayer _ -> Set.singleton Controller
   Filter.Type.IsPlayer _ -> Set.empty
   -- Reads a CONTROLLER rather than a characteristic (CR 109.3 lists none).
   Filter.Type.IsControllerOfBound _ -> Set.empty
@@ -4461,6 +4467,7 @@ filterReadsPeers f = case f of
   -- controller and owner are read off its view, so no PEER is projected.
   Filter.Type.OfChosenPlayer -> False
   Filter.Type.OfRelatedPlayer _ -> False
+  Filter.Type.OfSpecificPlayer _ -> False
   Filter.Type.IsPlayer _ -> False
   Filter.Type.IsControllerOfBound _ -> False
   Filter.Type.CardsInGraveyardAtLeast _ -> False

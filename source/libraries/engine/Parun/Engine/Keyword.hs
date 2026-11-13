@@ -4730,6 +4730,25 @@ withChosenColors chosen keyword = case keyword of
       [color] -> Filter.HasColor color
       colors -> Filter.Or (fmap Filter.HasColor colors)
 
+-- CR 702.16i / 608.2h: a bare Filter.OfRelatedPlayer protection quality with
+-- the players `related` answers for it written in -- an Or of Filter.OfSpecificPlayer,
+-- and the empty Or, protection from nothing, where there are none.
+-- Parun.Engine.Projection.freezeQuantities' answer for a resolution's grant
+-- (Figure of Fable), whose "your" is the resolving ability's controller where
+-- the unbaked atom reads the carrier's. A bare atom only, withChosenColors'
+-- posture. Proved by data/scenarios/'s Figure of Fable control-change
+-- scenario.
+--
+-- grantedBy does not call it: no static ability grants a permanent this
+-- quality (Scryfall o:"protection from each of your opponents", 2026-11-13,
+-- four cards; an Aura reading "enchanted creature has" it would refute this).
+withRelatedPlayers :: (PlayerRelation.PlayerRelation -> [PlayerId]) -> Keyword -> Keyword
+withRelatedPlayers related keyword = case keyword of
+  Keyword.Protection protection
+    | Filter.OfRelatedPlayer relation <- Protection.quality protection ->
+        Keyword.Protection protection {Protection.quality = Filter.Or (fmap Filter.OfSpecificPlayer (related relation))}
+  _ -> keyword
+
 -- The attachment prohibitions one keyword states.
 mintedAttachRestrictionsFor :: Keyword -> [AttachRestriction.AttachRestriction]
 mintedAttachRestrictionsFor = KeywordExpansion.attachRestrictions . expansionOf

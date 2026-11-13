@@ -261,6 +261,9 @@ data Filter keyword
     -- to the perspective controls, or owns while no player controls it, or that
     -- an aiming spell or ability such a player controls is aimed from.
     OfRelatedPlayer PlayerRelation.PlayerRelation
+  | -- | CR 702.16k: the candidate is this player's, by the atom above's three
+    -- readings. Runtime-only, HeldByPlayer's posture.
+    OfSpecificPlayer PlayerId.PlayerId
   | -- | CR 115.1: the candidate is a PLAYER who relates thus to the perspective
     -- -- "target opponent". Separate from HeldBy, which asks who holds
     -- an object candidate rather than who the candidate is (CR 109.1, CR 108.4).

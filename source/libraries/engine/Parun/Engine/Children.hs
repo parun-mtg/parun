@@ -584,6 +584,7 @@ filterChildren children predicate = case predicate of
   Filter.IsLastExiledWithSource -> pure predicate
   Filter.OfChosenPlayer -> pure predicate
   Filter.OfRelatedPlayer _ -> pure predicate
+  Filter.OfSpecificPlayer _ -> pure predicate
   Filter.IsPlayer _ -> pure predicate
   -- ONE: the controller of the one object the slot names (CR 608.2h), read
   -- through Parun.Engine.Filter.slotOneObject.

@@ -361,6 +361,13 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.OfRelatedPlayer PlayerRelation.Opponent)
       " {\"type\":\"OfRelatedPlayer\",\"value\":\"Opponent\"} "
+  -- Runtime-only for HeldByPlayer's reason, and round-tripped for it too.
+  Spec.it s "OfSpecificPlayer" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.OfSpecificPlayer (PlayerId.MkPlayerId 1))
+      " {\"type\":\"OfSpecificPlayer\",\"value\":1} "
   Spec.it s "IsAttacking" $
     Common.assertCodec
       s
