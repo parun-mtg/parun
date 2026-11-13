@@ -382,9 +382,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
           -- by slot is named for it, so Binding.setGranter can bind the slot as
           -- it is activated (CR 608.2h).
           GrantedAbility.Activated a ->
-            let named
-                  | Keyword.countsActivations a || readsGranter (ActivatedAbility.modal a) = a {ActivatedAbility.name = Just (Binding.acquiredFrom src (ActivatedAbility.name a))}
-                  | otherwise = a
+            let named = namedForGranter src a
              in pc {PC.activatedAbilities = PC.activatedAbilities pc <> [named {ActivatedAbility.cost = Filter.bakeCost Binding.grantingPermanent src (ActivatedAbility.cost a), ActivatedAbility.costChoices = fmap (CostChoice.MkCostChoice . fmap (Filter.bakeCost Binding.grantingPermanent src) . CostChoice.unwrap) (ActivatedAbility.costChoices a), ActivatedAbility.modal = bakeGranter src (ActivatedAbility.modal a)}]}
           GrantedAbility.Triggered t ->
             let named = case TriggeredAbility.limit t of
@@ -926,6 +924,14 @@ bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.mod
     condition = Identity.runIdentity . Children.conditionChildren Children.conditionLeaves {Children.conditionQuantity = Identity.Identity . quantity, Children.conditionNested = Identity.Identity . condition}
     quantity = Identity.runIdentity . Children.quantityChildren (Children.descendingQuantities (Identity.Identity . quantity)) {Children.nest = Identity.Identity . bake}
     bake = Filter.bakeBound Map.empty (Map.singleton Binding.grantingPermanent (Set.singleton granter)) Map.empty
+
+-- CR 113.2c / 201.5a: a granted activated ability, named for its granter
+-- (Binding.acquiredFrom) where a rider counts its activations or a quantity of
+-- it reads the granter by slot (readsGranter).
+namedForGranter :: ObjectId -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
+namedForGranter src a
+  | Keyword.countsActivations a || readsGranter (ActivatedAbility.modal a) = a {ActivatedAbility.name = Just (Binding.acquiredFrom src (ActivatedAbility.name a))}
+  | otherwise = a
 
 -- CR 201.5a / 608.2h: whether a quantity of the granted ability reads its
 -- granter by slot (Binding.grantingPermanent), which only a binding answers off
