@@ -24,6 +24,8 @@ import qualified Parun.Engine.GrandMelee as GrandMelee
 import qualified Parun.Engine.Mulligan as Mulligan
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Planechase as Planechase
+import qualified Parun.Engine.PregameExile as PregameExile.Engine
+import qualified Parun.Engine.RuleFamily as RuleFamily
 import qualified Parun.Engine.Scheme as Scheme
 import qualified Parun.Engine.Seating as Seating
 import qualified Parun.Engine.Turn as Turn
@@ -36,6 +38,7 @@ import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Emperors as Emperors
 import qualified Parun.Types.EndTurnSignal as EndTurnSignal
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.Format as Format
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
@@ -53,6 +56,7 @@ import qualified Parun.Types.OutsideCard as OutsideCard
 import qualified Parun.Types.OutsideObject as OutsideObject
 import qualified Parun.Types.Player as Player
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.PregameExile as PregameExile
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RestartSignal as RestartSignal
@@ -818,19 +822,17 @@ startGameFromCards perform exemptions = do
               TurnRegisters.stackedIn = Map.empty
             }
       }
-  -- CR 607.2n's exile before the shuffle is NOT offered again here, nor in a
-  -- subgame: the first game takes it from the deck list, so a restarted game
-  -- keeps whatever that stated and a subgame begins with none (#7201).
-  --
   -- CR 728.1 / 103.2e / 315.2: the new game places its conspiracies again,
   -- before decks are shuffled, so CR 702.106a turns each hidden agenda face
   -- down and asks a fresh name. Nothing done in the restarted game carries over:
   -- a conspiracy turned face up there goes back face down.
   -- Parun.ConspiracySpec's restart case proves it. Then each player may add
-  -- more from their sideboard (chooseConspiracies).
+  -- more from their sideboard (chooseConspiracies), and exile again before
+  -- shuffling (exileBeforeShuffling).
   Monad.forM_ owners $ \pid -> do
     Monad.forM_ (filter (\oid -> fmap Object.owner (Map.lookup oid rebuilt) == Just pid) (Set.toAscList conspiracyIds)) (Conspiracy.hideAgenda pid)
     chooseConspiracies pid
+    exileBeforeShuffling pid
   Monad.forM_ owners Event.shuffleLibrary
   -- CR 901.15c: the rebuild regrouped the planar cards by owner.
   State.modify' Planechase.gather
@@ -877,6 +879,50 @@ chooseConspiracies pid = do
         State.modify' (Event.spendFromPool pid printingId)
         createInCommandZone pid printingId >>= Conspiracy.hideAgenda pid
       OutsideCard.InAnotherGame _ -> pure ()
+
+-- CR 607.2n / 103.3: in a game rebuilt from cards (CR 728.1, 730.2), this
+-- player may again reveal each card of their deck that prints an exile "before
+-- you shuffle your deck to start the game" and exile cards they drafted that
+-- are not in it, linked by the revealed card's name. One question a name, its
+-- cards being one ability (Parun.Legality.exiledBeforeGame). Which cards those
+-- are is docs/decisions.md's "Which cards a rebuilt game offers to exile before
+-- shuffling": what Event.outsideOffer finds outside the game, unless the
+-- format's decks are not drafted. Each is brought in as a wished-in card is
+-- (Event.bringChosen), so CR 730.5 puts one a subgame exiled into its owner's
+-- main-game library. Parun.SetupSpec's "exiling before the shuffle" cases
+-- prove it.
+--
+-- The first game's is the deck list's (createDeck). Nothing is asked where no
+-- legal number is on offer. FILTERED, NOT TRUSTED: an answer naming a number
+-- the revealed cards cannot exile between them (one or two for Volatile
+-- Chimera's "three or more") is read as declining, the prompt's bounds having
+-- no gap to state.
+exileBeforeShuffling :: PlayerId -> Game ()
+exileBeforeShuffling pid = do
+  gs0 <- State.get
+  let drafted = maybe True (RuleFamily.drafted . Format.rules) (GameSettings.format (MatchScope.settings (GameState.match gs0)))
+      -- The first card of each name stands as the ability's source; how many
+      -- there are is how many may be revealed.
+      revealable =
+        Map.fromListWith
+          (\_ (exile, source, copies) -> (exile, source, copies + 1 :: Natural))
+          [ (Face.name face, (exile, oid, 1))
+          | oid <- Game.zoneMembers Zone.Library pid gs0,
+            Just face <- [Game.faceOf oid gs0],
+            Just exile <- [Face.pregameExile face]
+          ]
+  Monad.when drafted . Monad.forM_ (Map.toAscList revealable) $ \(name, (exile, source, copies)) -> do
+    gs <- State.get
+    let available = Event.outsideOffer (PregameExile.filter exile) source pid gs
+        offered = sum (Map.elems available)
+        atMost = maybe offered (min offered . (* copies)) (PregameExile.atMost exile)
+    Monad.forM_ (NonEmpty.nonEmpty (Map.toList available)) $ \candidates ->
+      Monad.when (any (PregameExile.Engine.admits exile copies) [1 .. atMost]) $ do
+        answer <- Game.choose (Prompt.ChooseFromOutsideTheGame (Decide.deciderFor pid gs) pid candidates 0 atMost)
+        let chosen = Event.settleOutside id available 0 atMost answer
+        Monad.when (PregameExile.Engine.admits exile copies (List.genericLength chosen)) $ do
+          exiled <- Event.bringChosen (Zone.Exile, LibraryPosition.defaultValue) False pid chosen
+          State.modify' (\g -> g {GameState.exiledBeforeGame = Foldable.foldl' (\linked oid -> Map.insert oid name linked) (GameState.exiledBeforeGame g) exiled})
 
 -- CR 407.2: when playing for ante, each player in turn order puts one random
 -- card from their library into the ante, through the zone-change funnel. Run

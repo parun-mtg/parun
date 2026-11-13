@@ -1976,6 +1976,7 @@ library engine
     Parun.Engine.PlayerView
     Parun.Engine.Plot
     Parun.Engine.Populate
+    Parun.Engine.PregameExile
     Parun.Engine.Prepare
     Parun.Engine.Projection
     Parun.Engine.Projection.Rewrite

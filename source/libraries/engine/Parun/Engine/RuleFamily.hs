@@ -14,3 +14,15 @@ minimumDeckSize family = case family of
   RuleFamily.Commander -> 100
   RuleFamily.Brawl -> 60
   RuleFamily.CommanderDraft -> 60
+
+-- | Whether a deck of this family is built from cards its player drafted, so
+-- that its sideboard is what the player drafted and left out (CR 100.4b,
+-- 903.13a; docs/decisions.md, "Which cards a player drafted that aren't in
+-- their deck").
+drafted :: RuleFamily.RuleFamily -> Bool
+drafted family = case family of
+  RuleFamily.Constructed -> False
+  RuleFamily.Limited -> True
+  RuleFamily.Commander -> False
+  RuleFamily.Brawl -> False
+  RuleFamily.CommanderDraft -> True
