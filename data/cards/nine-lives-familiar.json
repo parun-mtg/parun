@@ -140,6 +140,13 @@
                         "value": "Command"
                       }
                     ]
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Caster",
+                      "relation": "You"
+                    }
                   }
                 ]
               },

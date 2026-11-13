@@ -6,4 +6,6 @@ data Holder
     Controller
   | -- | CR 108.3: its owner.
     Owner
+  | -- | CR 400.7d / 601.2a: who cast the spell this permanent was.
+    Caster
   deriving (Bounded, Enum, Eq, Ord, Show)

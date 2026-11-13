@@ -435,6 +435,7 @@ player context ref = case ref of
       holderWord h = case h of
         Holder.Owner -> "owner"
         Holder.Controller -> "controller"
+        Holder.Caster -> "caster"
   _ -> []
 
 -- | A target slot as its announcement reads: "target creature", "any

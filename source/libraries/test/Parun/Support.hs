@@ -1947,6 +1947,7 @@ stubView table oid =
                 -- CR 601.2a: the table registers no cast either, so WasCastFrom
                 -- is vacuously False against this stub.
                 Filter.castFrom = Nothing,
+                Filter.castBy = Nothing,
                 -- CR 115.1: the stub is of a permanent, which targets nothing.
                 Filter.targets = Set.empty,
                 Filter.targetViews = Map.empty,
