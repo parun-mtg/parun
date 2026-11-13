@@ -1438,6 +1438,14 @@ chaosEnsues = State.modify' (Event.recordEvent GameEvent.ChaosEnsued)
 abandon :: ObjectId -> Game ()
 abandon = Archenemy.abandon
 
+-- CR 701.32b: the resolving controller sets each scheme the reference names
+-- in motion.
+setInMotion :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
+setInMotion resolving source controller legal ref = do
+  gs <- State.get
+  Monad.forM_ (Maybe.mapMaybe Recipient.objectOf (Common.objectRefRecipients legal resolving controller source gs ref)) $ \scheme ->
+    Archenemy.setInMotion (Just scheme) controller
+
 -- CR 702.159b: the prize's actions are the effects after this one, so the
 -- claim itself is only the event "whenever you claim the prize" reads.
 claimPrize :: PlayerId -> Game ()

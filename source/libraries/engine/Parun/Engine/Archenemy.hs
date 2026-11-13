@@ -12,14 +12,18 @@ module Parun.Engine.Archenemy where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Trigger as Trigger
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
+import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Scheme as Scheme
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AttackOption as AttackOption
 import qualified Parun.Types.Deck as Deck
 import Parun.Types.Game (Game)
@@ -32,6 +36,8 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PendingTrigger as PendingTrigger
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.PlayerInstruction as PlayerInstruction
+import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.TeamId as TeamId
@@ -86,28 +92,48 @@ lifeBonus = 20
 faceUp :: GameState -> [ObjectId]
 faceUp gs = filter (`Scheme.isScheme` gs) (Set.toAscList (GameState.command gs))
 
--- | CR 701.32b / 904.9: move the top card of this archenemy's scheme deck off it
--- and turn it face up, which is joining GameState.command. The event is what
--- CR 904.9's "When you set this scheme in motion" triggers on. A fresh
--- timestamp, Parun.Engine.Planechase.turnUpTop's reason.
+-- | CR 701.32 / 904.9: this archenemy sets a scheme in motion -- the one
+-- named (My Laughter Echoes' "that scheme"), or the top card of their scheme
+-- deck. Proposed first as WouldPerform, so a row can change how many (Plots
+-- That Span Centuries), and CR 701.32c sets several one at a time, each
+-- proposed in its turn. A rewritten instruction names no scheme, so each of
+-- its schemes comes off the top of the deck (docs/decisions.md, "Plots That
+-- Span Centuries replaces a named scheme's set in motion with three off the
+-- deck" and "Two Plots That Span Centuries set five schemes in motion").
 --
--- CR 101.2: nothing happens while an effect says schemes can't be set in motion
--- (All in Good Time, PlayerEffect.schemesCantBeSetInMotion).
-setInMotion :: PlayerId -> Game ()
-setInMotion pid = do
+-- CR 101.2 / 614.17c: nothing happens, and nothing is replaced, while an effect
+-- says schemes can't be set in motion (All in Good Time,
+-- PlayerEffect.schemesCantBeSetInMotion).
+setInMotion :: Maybe ObjectId -> PlayerId -> Game ()
+setInMotion named pid = do
   gs <- State.get
-  case deckOf pid gs of
-    _ | PlayerEffect.schemesCantBeSetInMotion gs -> pure ()
-    [] -> pure ()
-    top : rest -> do
+  Monad.unless (PlayerEffect.schemesCantBeSetInMotion gs) $ do
+    outcome <- Event.applyReplacements (ProposedEvent.WouldPerform PlayerInstruction.SetInMotion Nothing pid 1)
+    Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.SetInMotion) $ \(setter, times) ->
+      if times == 1
+        then State.gets (\g -> Foldable.asum [named, Maybe.listToMaybe (deckOf setter g)]) >>= Foldable.traverse_ (setOne setter)
+        else Monad.replicateM_ (Natural.toIntSaturating times) (setInMotion Nothing setter)
+
+-- CR 701.32b: move this scheme off the top of its deck if it is there and turn
+-- it face up, which is joining GameState.command, with a fresh timestamp
+-- (Parun.Engine.Planechase.turnUpTop's reason). The event is recorded whether
+-- or not either action was performed, rule 701.32b's last sentence, so a
+-- scheme already face up is set in motion all the same (My Laughter Echoes);
+-- it is what CR 904.9's "When you set this scheme in motion" triggers on, and
+-- the game is filed after it so a trigger reads the schemes face up then (CR
+-- 701.32c).
+setOne :: PlayerId -> ObjectId -> Game ()
+setOne pid oid = do
+  gs <- State.get
+  Monad.when (Scheme.isScheme oid gs) $ do
+    Monad.when (Maybe.listToMaybe (deckOf pid gs) == Just oid) $ do
       ts <- State.state Game.freshTimestamp
       State.modify' $ \g ->
-        Event.recordEvent
-          (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Scheme pid top Set.empty))
-          (Game.overSideDecks SideDeck.Scheme (Map.insert pid (Seq.fromList rest)) g)
-            { GameState.command = Set.insert top (GameState.command g),
-              GameState.objects = Map.adjust (\o -> o {Object.timestamp = ts}) top (GameState.objects g)
-            }
+        (Game.overSideDecks SideDeck.Scheme (Map.adjust (Seq.drop 1) pid) g)
+          { GameState.command = Set.insert oid (GameState.command g),
+            GameState.objects = Map.adjust (\o -> o {Object.timestamp = ts}) oid (GameState.objects g)
+          }
+    State.modify' (Trigger.fileBoards . Event.recordEvent (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Scheme pid oid Set.empty)))
 
 -- | CR 701.33a: may this scheme be abandoned? Only a face-up ongoing one.
 canAbandon :: ObjectId -> GameState -> Bool

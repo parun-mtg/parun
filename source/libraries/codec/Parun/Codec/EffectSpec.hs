@@ -2639,6 +2639,14 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       Effect.Abandon
       " {\"type\":\"Abandon\"} "
+  -- CR 701.32b: My Laughter Echoes' "set that scheme in motion again".
+  Spec.it s "SetInMotion" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.SetInMotion (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "became"))))
+      " {\"type\":\"SetInMotion\",\"value\":{\"type\":\"InSlot\",\"value\":\"became\"}} "
   -- CR 701.31: nullary, the rule fixing whose deck and which card.
   Spec.it s "Planeswalk" $
     Common.assertJsonCodec

@@ -177,6 +177,7 @@ codec cardCodec abilityCodec =
           Arm.nullary "Planeswalk" Effect.Planeswalk,
           Arm.nullary "ChaosEnsues" Effect.ChaosEnsues,
           Arm.nullary "Abandon" Effect.Abandon,
+          Arm.payload "SetInMotion" ObjectRef.codec Effect.SetInMotion (\x -> case x of Effect.SetInMotion y -> Just y; _ -> Nothing),
           Arm.nullary "ClaimPrize" Effect.ClaimPrize,
           Arm.nullary "Forage" Effect.Forage,
           Arm.nullary "Populate" Effect.Populate,
@@ -364,6 +365,7 @@ tagOf x = case x of
   Effect.Planeswalk {} -> "Planeswalk"
   Effect.ChaosEnsues {} -> "ChaosEnsues"
   Effect.Abandon {} -> "Abandon"
+  Effect.SetInMotion {} -> "SetInMotion"
   Effect.ClaimPrize {} -> "ClaimPrize"
   Effect.Forage {} -> "Forage"
   Effect.Populate {} -> "Populate"

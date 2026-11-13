@@ -631,7 +631,7 @@ runTurnBasedActions phase = do
       -- CR 703.4e / 904.9: first, each archenemy sets a scheme in motion.
       Monad.forM_ live $ \pid -> do
         archenemy <- State.gets (Archenemy.isArchenemy pid)
-        Monad.when archenemy (Archenemy.setInMotion pid)
+        Monad.when archenemy (Archenemy.setInMotion Nothing pid)
       Monad.mapM_ advanceSagas live
       Monad.forM_ live $ \pid -> do
         visits <- State.gets (Attraction.controlsSubtype Subtype.Attraction pid)

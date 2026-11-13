@@ -1,0 +1,58 @@
+{
+  "faces": [
+    {
+      "name": "Plots That Span Centuries",
+      "oracleText": "When you set this scheme in motion, the next time you would set a scheme in motion, set three schemes in motion instead.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "TurnedUpOffDeck",
+            "value": {
+              "type": "Self"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Replace",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "effect": {
+                            "type": "InstructionR",
+                            "value": {
+                              "instruction": "SetInMotion",
+                              "rewrite": {
+                                "type": "SetTo",
+                                "value": 3
+                              },
+                              "whose": {
+                                "type": "You"
+                              }
+                            }
+                          },
+                          "origin": "Other",
+                          "uses": "Once"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Scheme"
+        ]
+      }
+    }
+  ]
+}

@@ -47,4 +47,7 @@ data PlayerInstruction
     -- Parun.Engine.Resolve.Common.conniveOne, for a positive N only (CR
     -- 701.50e).
     Connive
+  | -- | CR 701.32c: set this many schemes in motion. Raised once per
+    -- instruction by Parun.Engine.Archenemy.setInMotion.
+    SetInMotion
   deriving (Bounded, Enum, Eq, Ord, Show)

@@ -3581,6 +3581,11 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
   Effect.ChaosEnsues -> False
   -- CR 701.33a: only a face-up ongoing scheme may be abandoned.
   Effect.Abandon -> not (Archenemy.canAbandon source gs)
+  -- CR 101.2 / 614.17c: All in Good Time's prohibition is not this question's.
+  -- Parun.Engine.Archenemy.setInMotion observes it as the effect runs, where
+  -- this answers whether the clause is OFFERED (CR 608.2d), and the "may" My
+  -- Laughter Echoes offers is its abandoning rather than this.
+  Effect.SetInMotion _ -> False
   Effect.ClaimPrize -> False
   -- CR 701.61a: neither half of forage can be carried out by a player holding
   -- fewer than three cards in their graveyard who controls no Food, which is

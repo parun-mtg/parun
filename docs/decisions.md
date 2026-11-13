@@ -827,6 +827,44 @@ Entries are ordered by the first rule each cites.
   after a removal that had wiped its grant" and its face-up twin.
 - **Issue**: PR #1607.
 
+## Plots That Span Centuries replaces a named scheme's set in motion with three off the deck
+
+- **Question**: Plots That Span Centuries' effect is waiting, and My Laughter
+  Echoes says "set that scheme in motion again". Which three schemes are set in
+  motion instead?
+- **Rules**: CR 614.1a, 614.6, 701.32b, 701.32c, 904.9; CR of 2026-11-06.
+  Neither card has a ruling on it.
+- **Decision**: The top three of the scheme deck, one at a time. "Set three
+  schemes in motion" names none, as CR 904.9's action names none, and the
+  replaced event never happens (CR 614.6), so that scheme is not set in motion
+  again.
+- **Rejected**: That scheme three times, which reads "three schemes" as one
+  scheme. That scheme and two off the deck, which keeps part of an event CR
+  614.6 says never happens.
+- **Site**: `Parun.Engine.Archenemy.setInMotion`, proved by the scenario
+  `plots-that-span-centuries-replaces-my-laughter-echoes-set-in-motion-with-three-off-the-deck`.
+- **Issue**: #6206.
+
+## Two Plots That Span Centuries set five schemes in motion
+
+- **Question**: Two of Plots That Span Centuries' effects are waiting when the
+  archenemy would set a scheme in motion. How many schemes are set in motion?
+- **Rules**: CR 614.1a, 614.5, 616.1f, 701.32c, 121.2; CR of 2026-11-06.
+  Thought Reflection's rulings of 2020-08-07 make two "draw two cards instead"
+  effects cumulative, each draw of the first's two being replaced by the
+  second, on CR 121.2's wording, which CR 701.32c repeats for schemes.
+- **Decision**: Five. One effect replaces the event with three, each an event
+  of its own under CR 701.32c, and the other replaces the first of those with
+  three more.
+- **Rejected**: Three, both effects spent on the one event, the second
+  replacing "set three schemes in motion" with itself: it reads the three as
+  one event, where CR 701.32c makes them three. Nine, which reads "three" as
+  "three times as many".
+- **Site**: `Parun.Engine.Replacement.matchesPrinted`'s InstructionR arm and
+  `Parun.Engine.Archenemy.setInMotion`, proved by the scenario
+  `two-plots-that-span-centuries-set-five-schemes-in-motion`.
+- **Issue**: #6206.
+
 ## How many times a prevention's additional effect runs
 
 - **Question**: One application of a shield stops damage from two sources at once.

@@ -5325,9 +5325,10 @@ apply settle batch applied batchPrevented candidate event =
         gs <- State.get
         pure (Just (ProposedEvent.WouldThrow throw {Throw.units = fmap (Replacement.scale gs candidate scaling) (Throw.units throw)}))
       -- Unreachable: the same lint admits DrawInstead on a scry alone, and
-      -- DrawFirst on an instruction a WouldPerform carries.
+      -- DrawFirst and SetTo on an instruction a WouldPerform carries.
       InstructionRewrite.DrawInstead -> pure (Just event)
       InstructionRewrite.DrawFirst -> pure (Just event)
+      InstructionRewrite.SetTo _ -> pure (Just event)
       InstructionRewrite.RollD20Instead -> do
         exercised <- substitutes candidate
         pure . Just $
@@ -7257,6 +7258,9 @@ performRewritten settle candidate event rewrite = case event of
       Replacement.consume (ReplacementCandidate.identity candidate)
       gs <- State.get
       pure (Just (ProposedEvent.WouldPerform instruction performer pid (Replacement.scale gs candidate scaling n)))
+    InstructionRewrite.SetTo count -> do
+      Replacement.consume (ReplacementCandidate.identity candidate)
+      pure (Just (ProposedEvent.WouldPerform instruction performer pid count))
     InstructionRewrite.DrawInstead -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
       drawInstruction pid n
@@ -12162,7 +12166,7 @@ controllerTurnScoped cond = case cond of
   TriggerCondition.Visit -> False
   TriggerCondition.ChaosEnsues -> False
   TriggerCondition.PlayerRollsPlaneswalker _ -> False
-  TriggerCondition.SelfTurnedUpOffDeck -> False
+  TriggerCondition.TurnedUpOffDeck _ -> False
   TriggerCondition.SelfPlaneswalkedAwayFrom -> False
   TriggerCondition.FlipsCoin _ -> False
   -- CR 701.3a names no turn: an Aura can be cast, and an Equipment equipped, on

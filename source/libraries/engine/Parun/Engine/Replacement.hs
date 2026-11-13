@@ -1130,9 +1130,19 @@ matchesPrinted viewOf gs event candidate =
         -- threshold where DrawCountR has one: Bruvac the Grandiloquent's "one or
         -- more" is met by every proposed instruction. No `admits` either: every
         -- printed rewrite changes the event.
-        (ReplacementEffect.InstructionR row, ProposedEvent.WouldPerform instruction _ pid _) ->
+        --
+        -- A SetTo row watches one performance and not an instruction a row
+        -- already made several (docs/decisions.md, "Two Plots That Span
+        -- Centuries set five schemes in motion").
+        (ReplacementEffect.InstructionR row, ProposedEvent.WouldPerform instruction _ pid n) ->
           InstructionR.instruction row == instruction
             && matchesPlayer gs candidate (InstructionR.whose row) pid
+            && case InstructionR.rewrite row of
+              InstructionRewrite.SetTo _ -> n == 1
+              InstructionRewrite.Scaled _ -> True
+              InstructionRewrite.DrawInstead -> True
+              InstructionRewrite.RollD20Instead -> True
+              InstructionRewrite.DrawFirst -> True
         -- The same, for the one instruction no WouldPerform carries: a flip is a
         -- WouldThrow of coins (Parun.Types.Throw), and a row naming FlipCoin
         -- watches its flipper.
@@ -2592,6 +2602,8 @@ instructionRewriteReadsApplier rewrite = case rewrite of
   InstructionRewrite.RollD20Instead -> False
   -- CR 109.5: Leader, Super-Genius's "you draw a card" is the row's controller.
   InstructionRewrite.DrawFirst -> True
+  -- A fixed count for the seat the event named, Scaled's answer.
+  InstructionRewrite.SetTo _ -> False
 
 -- CR 614.6: does applying this effect replace a coin flip with a die roll or a
 -- roll with a flip (Pokey, the Scallywagg), so the funnel that proposed one has
@@ -2631,6 +2643,7 @@ instructionRewriteSubstitutes rewrite = case rewrite of
   InstructionRewrite.DrawInstead -> False
   InstructionRewrite.RollD20Instead -> True
   InstructionRewrite.DrawFirst -> False
+  InstructionRewrite.SetTo _ -> False
 
 -- Is this rewrite's amount not a literal -- a CR 702.64a ceiling, or a computed
 -- AddMore -- so that Event.apply evaluates it against the applying candidate's
@@ -2779,6 +2792,7 @@ instructionRewriteReadsSource rewrite = case rewrite of
   InstructionRewrite.DrawInstead -> False
   InstructionRewrite.RollD20Instead -> False
   InstructionRewrite.DrawFirst -> False
+  InstructionRewrite.SetTo _ -> False
 
 -- CR 616.1: the affected object's controller (or its owner if it has none), or
 -- the affected player, chooses one to apply. Anything not elided below prompts.

@@ -768,6 +768,9 @@ data Effect card ability
   | -- | CR 701.33: abandon this scheme -- the effect's source (CR 314.7) --
     -- performed by Parun.Engine.Archenemy.abandon.
     Abandon
+  | -- | CR 701.32b: the resolving controller sets the named scheme in motion,
+    -- performed by Parun.Engine.Archenemy.setInMotion.
+    SetInMotion ObjectRef.ObjectRef
   | -- | CR 702.159b: the resolving controller claims the prize; the actions
     -- after the long dash are the effects that follow this one.
     ClaimPrize

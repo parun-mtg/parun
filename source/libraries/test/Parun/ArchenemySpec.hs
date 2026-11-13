@@ -2,8 +2,8 @@
 {-# LANGUAGE RankNTypes #-}
 
 -- | CR 904, the Archenemy variant: Parun.Engine.Archenemy and Parun.Engine.Scheme,
--- with Parun.Types.TriggerCondition's SelfTurnedUpOffDeck and Parun.Types.Effect's
--- Abandon.
+-- with Parun.Types.TriggerCondition's TurnedUpOffDeck and Parun.Types.Effect's
+-- Abandon and SetInMotion.
 module Parun.ArchenemySpec where
 
 import qualified Data.List as List

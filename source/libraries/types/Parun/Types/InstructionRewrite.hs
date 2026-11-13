@@ -1,5 +1,6 @@
 module Parun.Types.InstructionRewrite where
 
+import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Scaling as Scaling
 
 -- | CR 614.1a: how a replacement rewrites a player's instruction to do something
@@ -25,4 +26,7 @@ data InstructionRewrite
     -- connives" (CR 614.1a): the replacement's controller draws a card, then
     -- the instruction happens as it stood, CR 614.5 keeping this row off it.
     DrawFirst
+  | -- | Plots That Span Centuries' "set three schemes in motion instead" (CR
+    -- 614.1a): the instruction stands at this count, whatever it was.
+    SetTo Natural.Natural
   deriving (Eq, Ord, Show)

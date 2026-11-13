@@ -1,0 +1,122 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Scheme",
+            "value": [
+              {
+                "card": "Look Skyward and Despair",
+                "label": "look"
+              },
+              {
+                "card": "The Very Soil Shall Shake",
+                "label": "soil"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "command": [
+          {
+            "card": "My Laughter Echoes",
+            "label": "echoes"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob",
+        "sideDecks": [
+          {
+            "key": "Scheme",
+            "value": [
+              {
+                "card": "The Very Soil Shall Shake",
+                "label": "bobs"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 109.5 My Laughter Echoes ignores a scheme another archenemy sets in motion",
+  "note": "CR 904.12's Supervillain Rumble: bob's My Laughter Echoes is face up when alice sets Look Skyward and Despair in motion. \"Whenever you set\" is bob (CR 109.5), so only Look Skyward's own ability triggers.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $look"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Dragon Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -273,8 +273,10 @@ data TriggerCondition
     PlayerRollsPlaneswalker PlayerRelation.PlayerRelation
   | -- | CR 904.9 / 312.5 / 701.31d: "When you set this scheme in motion", "When
     -- you encounter [this phenomenon]" and "When you planeswalk to [this
-    -- plane]", against a GameEvent.TurnedUpOffDeck naming the ability's own card.
-    SelfTurnedUpOffDeck
+    -- plane]" (Self), and CR 701.32b's "whenever you set a non-ongoing scheme
+    -- in motion" (Matching, My Laughter Echoes), against a
+    -- GameEvent.TurnedUpOffDeck.
+    TurnedUpOffDeck ActingPermanent.ActingPermanent
   | -- | CR 701.31d / 603.10g: "When you planeswalk away from [this plane]",
     -- against a GameEvent.TurnedUpOffDeck naming the ability's own card among
     -- those walked away from. A look-back.

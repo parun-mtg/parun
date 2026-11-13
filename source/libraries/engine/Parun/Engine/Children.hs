@@ -1234,6 +1234,7 @@ effectChildren c effect = case effect of
   Effect.Planeswalk -> pure effect
   Effect.ChaosEnsues -> pure effect
   Effect.Abandon -> pure effect
+  Effect.SetInMotion ref -> fmap Effect.SetInMotion (onObjectRef c ref)
   Effect.ClaimPrize -> pure effect
   Effect.Forage -> pure effect
   Effect.Populate -> pure effect
@@ -1616,7 +1617,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.PlayerExpends _ -> pure condition
   TriggerCondition.ChaosEnsues -> pure condition
   TriggerCondition.PlayerRollsPlaneswalker _ -> pure condition
-  TriggerCondition.SelfTurnedUpOffDeck -> pure condition
+  TriggerCondition.TurnedUpOffDeck subject -> fmap TriggerCondition.TurnedUpOffDeck (actingChildren c subject)
   TriggerCondition.SelfPlaneswalkedAwayFrom -> pure condition
   TriggerCondition.PlayerRollsResult (DieResult.MkDieResult _ _) -> pure condition
   TriggerCondition.Visit -> pure condition
@@ -2454,6 +2455,7 @@ instructionRewriteChildren c rewrite = case rewrite of
   InstructionRewrite.DrawInstead -> pure rewrite
   InstructionRewrite.RollD20Instead -> pure rewrite
   InstructionRewrite.DrawFirst -> pure rewrite
+  InstructionRewrite.SetTo _ -> pure rewrite
 
 -- | What a planeswalk replacement does (CR 701.31).
 planeswalkRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> PlaneswalkRewrite.PlaneswalkRewrite effect -> f (PlaneswalkRewrite.PlaneswalkRewrite effect)

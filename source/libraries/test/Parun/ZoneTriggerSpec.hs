@@ -2343,7 +2343,7 @@ representativeEvents cond =
         -- CR 901.9c's own event, a planar die showing the Planeswalker symbol.
         TriggerCondition.PlayerRollsPlaneswalker _ -> one (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled S.bob PlanarDieFace.Planeswalker))
         -- CR 701.32's own event, and the only one this condition admits.
-        TriggerCondition.SelfTurnedUpOffDeck -> one (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Scheme S.bob departed Set.empty))
+        TriggerCondition.TurnedUpOffDeck _ -> one (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Scheme S.bob departed Set.empty))
         -- CR 701.31d's own event, naming the bearer among the planes walked
         -- away from, and the only one this condition admits.
         TriggerCondition.SelfPlaneswalkedAwayFrom -> one (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Planar S.bob arrived (Set.singleton departed)))
@@ -2667,7 +2667,8 @@ everyTriggerCondition =
     TriggerCondition.ChaosEnsues,
     TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.You,
     TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.Opponent,
-    TriggerCondition.SelfTurnedUpOffDeck,
+    TriggerCondition.TurnedUpOffDeck ActingPermanent.Self,
+    TriggerCondition.TurnedUpOffDeck (ActingPermanent.Matching (Filter.Type.And [])),
     TriggerCondition.SelfPlaneswalkedAwayFrom,
     TriggerCondition.FlipsCoin (CoinFlipTrigger.MkCoinFlipTrigger PlayerRelation.You FlipOutcome.Won),
     TriggerCondition.FlipsCoin (CoinFlipTrigger.MkCoinFlipTrigger PlayerRelation.Opponent FlipOutcome.Won),
