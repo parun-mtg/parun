@@ -766,7 +766,7 @@ armBecame oid obj gs1 arrivals = do
   let permanents = filter (\arrival -> fmap Object.zone (Game.lookupObject arrival gs) == Just Zone.Battlefield) (Foldable.toList arrivals)
       stillHas keyword = Map.member keyword (Projection.keywordsOf oid gs1)
       ability = Keyword.resolutionDelayedAbility (Monad.mfilter stillHas (Object.castUsing obj)) >>= Keyword.mintedDelayedAbility
-      arm delayed permanent = Event.armDelayed delayed oid (Resolve.spellController obj oid gs1) (Map.singleton Keyword.becameSlot (Binding.toObject permanent)) (Just TurnWindow.AnyTurn) Nothing
+      arm delayed permanent = Event.armDelayed delayed (Projection.delayedSnapshotOf oid gs1) oid (Resolve.spellController obj oid gs1) (Map.singleton Keyword.becameSlot (Binding.toObject permanent)) (Just TurnWindow.AnyTurn) Nothing
       -- CR 603.7g: a delayed ability the cast itself created
       -- (Parun.Engine.Cast.armCastUnder) names the spell under that slot until
       -- now. Ahead of the arming below, whose entries already name a permanent.

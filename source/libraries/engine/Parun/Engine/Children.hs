@@ -3095,12 +3095,13 @@ activeReplacementChildren c (ActiveReplacement.MkActiveReplacement effect source
 
 -- | A delayed triggered ability's children (CR 603.7a).
 delayedTriggerChildren :: (Applicative f) => StoredChildren f -> DelayedTrigger.DelayedTrigger -> f DelayedTrigger.DelayedTrigger
-delayedTriggerChildren c (DelayedTrigger.MkDelayedTrigger ability source controller bindings window expiry createdAt) =
+delayedTriggerChildren c (DelayedTrigger.MkDelayedTrigger ability source controller bindings delayed window expiry createdAt) =
   DelayedTrigger.MkDelayedTrigger
     <$> storedTriggered c ability
     <*> storedObject c source
     <*> pure controller
     <*> traverseSlots c (storedBinding c) bindings
+    <*> traverse (storedTriggered c) delayed
     <*> pure window
     <*> traverse (expiryChildren c) expiry
     <*> pure createdAt

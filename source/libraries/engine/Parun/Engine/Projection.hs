@@ -1640,11 +1640,26 @@ armedDelayedAbility resolving source arm gs =
       -- Not implemented: that reading for a mana ability, which has no object
       -- to name it (CR 605.3b) and so reads the source's own declarations
       -- (#7307).
-      frozen = case fmap Object.source (Game.lookupObject resolving gs) of
-        Just (Source.OfAbility activated) -> Map.lookup name (Binding.delayedAsRead (ActivatedAbility.name (ActivatedAbilitySource.ability activated)) (ActivatedAbilitySource.delayed activated))
-        Just (Source.OfTrigger triggered) -> Map.lookup name (Binding.delayedAsRead (TriggeredAbility.name (TriggeredAbilitySource.ability triggered)) (TriggeredAbilitySource.delayed triggered))
-        _ -> Nothing
+      frozen = frozenDelayed resolving gs >>= \(reader, delayed) -> Map.lookup name (Binding.delayedAsRead reader delayed)
    in Game.carriedDelayedAbility arm Applicative.<|> frozen Applicative.<|> declaredDelayedAbility source name gs
+
+-- CR 113.7a: the name of an ability object and the declarations it froze as it
+-- was activated or triggered; Nothing for a spell, which froze none.
+frozenDelayed :: ObjectId -> GameState -> Maybe (Maybe AbilityName.AbilityName, Map.Map AbilityName.AbilityName (TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)))
+frozenDelayed resolving gs = case fmap Object.source (Game.lookupObject resolving gs) of
+  Just (Source.OfAbility activated) -> Just (ActivatedAbility.name (ActivatedAbilitySource.ability activated), ActivatedAbilitySource.delayed activated)
+  Just (Source.OfTrigger triggered) -> Just (TriggeredAbility.name (TriggeredAbilitySource.ability triggered), TriggeredAbilitySource.delayed triggered)
+  _ -> Nothing
+
+-- CR 603.7 / 113.7a: the declarations a delayed ability `resolving` creates
+-- can arm in its turn (DelayedTrigger.delayed) -- the ones `resolving` itself
+-- reads, an ability object's frozen and a spell's its own text. So a delayed
+-- ability an acquired ability armed still arms the lending card's second
+-- after its holder has lost the first, which
+-- data/scenarios/koh-the-face-stealer-s-borrowed-delayed-trigger-outlives-the-choice.json
+-- proves.
+delayedReadBy :: ObjectId -> ObjectId -> GameState -> Map.Map AbilityName.AbilityName (TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
+delayedReadBy resolving source gs = maybe (delayedSnapshotOf source gs) snd (frozenDelayed resolving gs)
 
 -- The ViewOf a count gets when it is evaluated while `bound` is being applied:
 -- candidates projected through the layers BEFORE that one. EVERY object in the

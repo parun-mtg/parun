@@ -1,6 +1,7 @@
 module Parun.Types.DelayedTrigger where
 
 import qualified Data.Map.Strict as Map
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.Expiry as Expiry
@@ -51,6 +52,10 @@ data DelayedTrigger = MkDelayedTrigger
     source :: ObjectId.ObjectId,
     controller :: PlayerId.PlayerId,
     bindings :: Map.Map SlotName.SlotName Binding.Binding,
+    -- | CR 603.7 / 113.7a: the delayed abilities this one can arm by name,
+    -- frozen as it was created, so it reads its own text whatever its source
+    -- has since become.
+    delayed :: Map.Map AbilityName.AbilityName (TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)),
     -- | Parun.Types.Onset as the game remembers it: which turns this entry may
     -- fire on. TurnWindow.AnyTurn is the ordinary case, CR 603.7a's floor. The
     -- other arms are an onset-gated entry before and after the turn it

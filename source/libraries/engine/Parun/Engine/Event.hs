@@ -3142,7 +3142,7 @@ apply settle batch applied batchPrevented candidate event =
           -- its controller's (Replacement.linkedTrigger). No controller,
           -- no "you" to do it.
           Foldable.for_ ((,) <$> Replacement.linkedTrigger whenYouDo <*> ReplacementCandidate.controller candidate) $ \(linked, you) ->
-            State.modify' (armDelayed linked (ReplacementCandidate.source candidate) you Map.empty (Just TurnWindow.AnyTurn) Nothing)
+            State.modify' (\g -> armDelayed linked (Projection.delayedSnapshotOf (ReplacementCandidate.source candidate) g) (ReplacementCandidate.source candidate) you Map.empty (Just TurnWindow.AnyTurn) Nothing g)
           pure (Just (ProposedEvent.WouldChangeZone zc {ZoneChange.to = toDest} discarded settledPosition resolving))
     -- Unreachable: `applies` admits ZoneChangeR only against WouldChangeZone.
     (ReplacementEffect.ZoneChangeR {}, _) -> pure (Just event)
@@ -6068,7 +6068,7 @@ becomeCopyAs batch candidate asCopy oid = do
         let linkedEarlier entry = DelayedTrigger.source entry == oid && Map.member Binding.copiedObject (DelayedTrigger.bindings entry)
         State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.delayedTriggers = Seq.filter (not . linkedEarlier) (StoredEffects.delayedTriggers (GameState.stored g))}})
         Foldable.for_ (Replacement.linkedTrigger (AsCopy.whenYouDo asCopy)) $ \linked ->
-          State.modify' (armDelayed linked oid controller (Map.singleton Binding.copiedObject (Binding.toObject src2)) (Just TurnWindow.AnyTurn) Nothing)
+          State.modify' (\g -> armDelayed linked (Projection.delayedSnapshotOf oid g) oid controller (Map.singleton Binding.copiedObject (Binding.toObject src2)) (Just TurnWindow.AnyTurn) Nothing g)
       pure (fmap (\src2 -> (src2, Maybe.mapMaybe CopyClause.counters applying)) chosen)
 
 -- CR 707.2 / 202.3b / 202.3c: the copiable values a copy takes off the object it
@@ -12415,8 +12415,13 @@ controllerTurnScoped cond = case cond of
 --
 -- The window is armOnset's answer, taken already armed so the caller reads any
 -- player the onset names against its own slots.
-armDelayed :: TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.Type.GrantedAbility Card.Type.Card) -> ObjectId -> PlayerId -> Map.Map SlotName.SlotName Binding.Type.Binding -> Maybe TurnWindow -> Maybe Expiry.Type.Expiry -> GameState -> GameState
-armDelayed ability source controller captured armed expiry gs = case armed of
+--
+-- CR 113.7a: `declared` is what the entry can arm by name, the declarations
+-- its creator read: Projection.delayedReadBy for a resolving object, and for
+-- every other creator its source's as they stand
+-- (Projection.delayedSnapshotOf).
+armDelayed :: TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.Type.GrantedAbility Card.Type.Card) -> Map.Map AbilityName.AbilityName (TriggeredAbility.TriggeredAbility Card.Type.Card (GrantedAbility.Type.GrantedAbility Card.Type.Card)) -> ObjectId -> PlayerId -> Map.Map SlotName.SlotName Binding.Type.Binding -> Maybe TurnWindow -> Maybe Expiry.Type.Expiry -> GameState -> GameState
+armDelayed ability declared source controller captured armed expiry gs = case armed of
   -- "That turn" names no turn this resolution created, or "that player's next
   -- turn" no player, so the ability could never fire (CR 603.7a).
   Nothing -> gs
@@ -12433,6 +12438,7 @@ armDelayed ability source controller captured armed expiry gs = case armed of
               DelayedTrigger.source = source,
               DelayedTrigger.controller = controller,
               DelayedTrigger.bindings = captured,
+              DelayedTrigger.delayed = declared,
               DelayedTrigger.window = window,
               DelayedTrigger.expiry = expiry,
               DelayedTrigger.createdAt = createdAt
@@ -12571,7 +12577,7 @@ reactionTriggersGiven scope standing events gs = filter (interveningHolds gs) (e
 -- (2026-09-26).
 triggeredSources :: [GameState] -> GameState -> Set ObjectId
 triggeredSources boards gs =
-  let reflexive = [reflexiveFiring gs entry | entry <- Foldable.toList (StoredEffects.delayedTriggers (GameState.stored gs)), isReflexive entry, delayedArmed gs entry]
+  let reflexive = [reflexiveFiring entry | entry <- Foldable.toList (StoredEffects.delayedTriggers (GameState.stored gs)), isReflexive entry, delayedArmed gs entry]
       pending = filter (interveningHolds gs) (eventTriggers (unscannedGrouped gs) gs <> reflexive) <> stateTriggers boards gs
    in Set.fromList [oid | TriggerSource.OfObject oid <- fmap PendingTrigger.source (withinTriggerLimit gs pending)]
 
