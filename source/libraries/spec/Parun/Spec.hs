@@ -24,11 +24,12 @@ assertBool s b = Monad.unless b . assertFailure s
 prefixed :: String -> String -> String
 prefixed m t = if null m then t else m <> ": " <> t
 
--- | Asserts that a binary relation holds between two values.
+-- | Asserts that a binary relation holds between the actual value and the
+-- expected one, naming each on a line of its own when it does not.
 assertOp :: (Stack.HasCallStack, Applicative m, Show a) => Spec m n -> String -> String -> (a -> a -> Bool) -> a -> a -> m ()
-assertOp s m op f x y = assertBool s (f x y) . prefixed m $ "expected: " <> show x <> " " <> op <> " " <> show y
+assertOp s m op f x y = assertBool s (f x y) . prefixed m $ "expected actual " <> op <> " expected\n  actual:   " <> show x <> "\n  expected: " <> show y
 
--- | Asserts that two values are equal.
+-- | Asserts that the actual value, given first, equals the expected one.
 assertEq :: (Stack.HasCallStack, Applicative m, Eq a, Show a) => Spec m n -> a -> a -> m ()
 assertEq s = assertEqWith s ""
 

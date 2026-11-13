@@ -123,6 +123,12 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
       Spec.assertBool s (all (maybe False (Text.isPrefixOf $ Text.pack "boom") . Runner.failure) (named "g.slow") && length (named "g.slow") == 1) $ "no failure: " <> show ran
       Spec.assertBool s (all ((>= 50000000) . Runner.nanoseconds) $ named "g.slow") $ "too quick: " <> show ran
 
+  Spec.describe s "assertEqWith" $ do
+    Spec.it s "names the actual value and the expected one on lines of their own" $ do
+      cases <- collect . Spec.it r "asserts" $ Spec.assertEqWith r "label" 'a' 'b'
+      ran <- Runner.run (const $ pure ()) Nothing (Foldable.toList cases)
+      Spec.assertEq s (fmap (fmap (Text.takeWhile (/= 'C')) . Runner.failure) ran) [Just $ Text.pack "label: expected actual == expected\n  actual:   'a'\n  expected: 'b'\n"]
+
   Spec.describe s "shown" $ do
     let passed = Runner.MkResult (Text.pack "g.a") Nothing Nothing 5
         failed = Runner.MkResult (Text.pack "g.b") (Just $ Text.pack "boom") Nothing 5

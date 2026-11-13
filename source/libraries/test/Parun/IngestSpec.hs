@@ -51,7 +51,7 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
             maybe True (not . Oracle.says card name) text
           ]
     Spec.assertBool s (not (null rendered)) "no card renders"
-    Spec.assertEq s [] disagreements
+    Spec.assertEq s disagreements []
 
   -- The check above passes over a card that does not render, so each card
   -- that does not has an empty marker, data/oracle-unrendered/SLUG.txt, one
@@ -64,8 +64,8 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
     markers <- Directory.listDirectory (root <> "/../oracle-unrendered")
     let listed = Set.fromList [Text.unpack (Maybe.fromMaybe name (Text.stripSuffix (Text.pack ".txt") name)) | name <- fmap Text.pack markers]
     let unrendered = Set.fromList [Text.unpack (Slug.unwrap (Registry.filedAs card)) | entry@(_, Right card) <- corpus, Maybe.isJust (Registry.referenceCard entry), Maybe.isNothing (Oracle.render card)]
-    Spec.assertEqWith s "listed, but renders or is no pool card" [] (Set.toList (Set.difference listed unrendered))
-    Spec.assertEqWith s "does not render, but unlisted" [] (Set.toList (Set.difference unrendered listed))
+    Spec.assertEqWith s "listed, but renders or is no pool card" (Set.toList (Set.difference listed unrendered)) []
+    Spec.assertEqWith s "does not render, but unlisted" (Set.toList (Set.difference unrendered listed)) []
 
   -- `parun ingest` stamps the text on every card MTGJSON has; a dungeon (CR
   -- 309) is not among them, since MTGJSON files dungeons with the tokens.
@@ -78,16 +78,16 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
             Maybe.isNothing (Face.oracleText face),
             CardType.Dungeon `Set.notMember` TypeLine.types (Face.typeLine face)
           ]
-    Spec.assertEq s [] missing
+    Spec.assertEq s missing []
 
   Spec.it s "render answers for a pool card it renders and not for a split card" $ do
     registry <- Registry.defaultRoot >>= Registry.fileRegistry
     elves <- Registry.named registry "Llanowar Elves"
-    Spec.assertEq s (Right (Just (Just (Text.pack "{T}: Add {G}.")))) (fmap (fmap Oracle.render) elves)
+    Spec.assertEq s (fmap (fmap Oracle.render) elves) (Right (Just (Just (Text.pack "{T}: Add {G}."))))
     angel <- Registry.named registry "Serra Angel"
-    Spec.assertEq s (Right (Just (Just (Text.pack "Flying\nVigilance")))) (fmap (fmap Oracle.render) angel)
+    Spec.assertEq s (fmap (fmap Oracle.render) angel) (Right (Just (Just (Text.pack "Flying\nVigilance"))))
     wax <- Registry.named registry "Wax"
-    Spec.assertEq s (Right (Just Nothing)) (fmap (fmap Oracle.render) wax)
+    Spec.assertEq s (fmap (fmap Oracle.render) wax) (Right (Just Nothing))
 
   Spec.it s "each standalone keyword prints as its codec tag spells it" $
     Monad.forM_
@@ -126,7 +126,7 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
         payloaded line = case Text.breakOnEnd (Text.pack " ") line of
           (name, payload) -> Text.all (\c -> Char.isLetter c || c `elem` " -") name && not (Text.null payload) && Text.all (\c -> Char.isAlphaNum c || c `elem` "{}/\8212") payload && Text.any (\c -> Char.isDigit c || c == '{') payload
     Spec.assertBool s (length lines' > 50) "too few payload keywords in the pool"
-    Spec.assertEq s [] [(show k, line) | (k, line) <- lines', Ingest.keyword line /= Right k]
+    Spec.assertEq s [(show k, line) | (k, line) <- lines', Ingest.keyword line /= Right k] []
 
   -- Each record as script/ingest/candidates.jq writes it, against a card
   -- written by hand and checked against Scryfall, so the two are independent.
@@ -161,7 +161,7 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
         json = "[{\"card\":\"Eiganjo Dynastorian // Replenish\",\"name\":\"Replenish\",\"text\":\"Return all enchantment cards from your graveyard to the battlefield.\"},{\"card\":\"Replenish\",\"name\":\"Replenish\",\"text\":\"" <> own <> "\"}]"
         unstamped c = c {Card.faces = fmap (\f -> f {Face.oracleText = Nothing}) (Card.faces c)}
     case (Common.parse (Text.pack json) >>= Ingest.texts, replenish) of
-      (Right known, Right (Just card)) -> Spec.assertEq s (Just (Text.pack own)) (Face.oracleText (NonEmpty.head (Card.faces (Ingest.stamp known (unstamped card)))))
+      (Right known, Right (Just card)) -> Spec.assertEq s (Face.oracleText (NonEmpty.head (Card.faces (Ingest.stamp known (unstamped card))))) (Just (Text.pack own))
       _ -> Spec.assertFailure s "Replenish: no texts or no card"
 
   -- mtgish's AST for Dragon Engine predates its Dragon subtype; Maro's star
@@ -194,11 +194,11 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
 
   Spec.it s "candidate leaves out a card it would have to guess at" $ do
     let reason json = Common.parse (Text.pack json) >>= Monad.void . Ingest.candidate
-    Spec.assertEq s (Left (Text.pack "text: ward\8212pay 3 life")) (reason "{\"name\":\"X\",\"manaCost\":\"{1}\",\"supertypes\":[],\"types\":[\"Creature\"],\"subtypes\":[],\"power\":\"1\",\"toughness\":\"1\",\"text\":\"Ward\8212Pay 3 life\"}")
-    Spec.assertEq s (Left (Text.pack "text: equip planeswalker {1}")) (reason "{\"name\":\"X\",\"manaCost\":\"{1}\",\"supertypes\":[],\"types\":[\"Artifact\"],\"subtypes\":[\"Equipment\"],\"text\":\"Equip planeswalker {1}\"}")
-    Spec.assertEq s (Left (Text.pack "power/toughness: *")) (reason "{\"name\":\"X\",\"manaCost\":\"{1}\",\"supertypes\":[],\"types\":[\"Creature\"],\"subtypes\":[],\"power\":\"*\",\"toughness\":\"1\",\"text\":null}")
-    Spec.assertEq s (Left (Text.pack "faces: more than one")) (reason "{\"name\":\"X // Y\",\"faces\":[]}")
-    Spec.assertEq s (Left (Text.pack "subtype: Nonesuch")) (reason "{\"name\":\"X\",\"manaCost\":\"{1}\",\"supertypes\":[],\"types\":[\"Creature\"],\"subtypes\":[\"Nonesuch\"],\"power\":\"1\",\"toughness\":\"1\",\"text\":null}")
+    Spec.assertEq s (reason "{\"name\":\"X\",\"manaCost\":\"{1}\",\"supertypes\":[],\"types\":[\"Creature\"],\"subtypes\":[],\"power\":\"1\",\"toughness\":\"1\",\"text\":\"Ward\8212Pay 3 life\"}") (Left (Text.pack "text: ward\8212pay 3 life"))
+    Spec.assertEq s (reason "{\"name\":\"X\",\"manaCost\":\"{1}\",\"supertypes\":[],\"types\":[\"Artifact\"],\"subtypes\":[\"Equipment\"],\"text\":\"Equip planeswalker {1}\"}") (Left (Text.pack "text: equip planeswalker {1}"))
+    Spec.assertEq s (reason "{\"name\":\"X\",\"manaCost\":\"{1}\",\"supertypes\":[],\"types\":[\"Creature\"],\"subtypes\":[],\"power\":\"*\",\"toughness\":\"1\",\"text\":null}") (Left (Text.pack "power/toughness: *"))
+    Spec.assertEq s (reason "{\"name\":\"X // Y\",\"faces\":[]}") (Left (Text.pack "faces: more than one"))
+    Spec.assertEq s (reason "{\"name\":\"X\",\"manaCost\":\"{1}\",\"supertypes\":[],\"types\":[\"Creature\"],\"subtypes\":[\"Nonesuch\"],\"power\":\"1\",\"toughness\":\"1\",\"text\":null}") (Left (Text.pack "subtype: Nonesuch"))
 
 -- A printed keyword as its constructor's name: each word capitalised, then
 -- everything but letters dropped ("Jump-start" is JumpStart).
