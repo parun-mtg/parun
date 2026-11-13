@@ -4580,7 +4580,7 @@ affectedReadsPeers a = case a of
 -- Which aspects a Modification writes -- the other half of the pair above.
 --
 -- The arms that write Keywords: GainKeyword, LoseKeyword, LoseKeywordFamily,
--- GainEnchant and LoseAllAbilities per CR 613.1f, both subtype-setting arms per
+-- CantHaveKeyword, GainEnchant and LoseAllAbilities per CR 613.1f, both subtype-setting arms per
 -- CR 305.7, and ChangeWord per CR 612.1, a text change reaching the land
 -- type inside a landwalk keyword.
 --

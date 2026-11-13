@@ -34,8 +34,8 @@ import qualified Parun.Types.Zone as Zone
 -- constructor -- the same standing Parun.Engine.Resolve has over Effect.
 -- Parun.CardSpec's lints also case on it, legitimately: a test-suite lint that
 -- walks the card pool is not rules core. GainKeyword and LoseKeyword carry a
--- Keyword, LoseKeywordFamily a KeywordFamily and GainKeywordAtManaCost a
--- CostKeyword, closed-half CITATIONS, so
+-- Keyword, LoseKeywordFamily a KeywordFamily, CantHaveKeyword a designator of
+-- either and GainKeywordAtManaCost a CostKeyword, closed-half CITATIONS, so
 -- casing on them is not an invariant violation; and GainAbility carries a whole open-half ability that nothing cases on beyond CR
 -- 113.3's ability KIND -- the projection appends it to one of two lists, and
 -- every reader downstream treats it as any other ability. The P/T arms carry

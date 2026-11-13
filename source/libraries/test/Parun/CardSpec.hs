@@ -3554,7 +3554,7 @@ modificationFilters modification = case modification of
     CostKeyword.BeamMeUp unreturnable -> keywordFramed (Maybe.maybeToList unreturnable)
   -- CR 702.5a again: the granted slot's own Filter, which is card text like any
   -- other and has to be swept. NOT [] -- this, LoseEnchant beside it,
-  -- GainKeyword above, GainKeywordsAmong, LoseKeyword,
+  -- GainKeyword above, GainKeywordsAmong, LoseKeyword, CantHaveKeyword,
   -- SetCreatureSubtypesOfLastCardExiledWith and AddNamesMatching below are the
   -- arms that answer with something, and every other one carries no Filter at
   -- all, LoseKeywordFamily's payload-free family included.
