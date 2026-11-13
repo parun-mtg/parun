@@ -184,8 +184,6 @@ withoutAnnouncement before entry closed = do
   initiative <- one GameState.initiative
   daytime <- one GameState.daytime
   spellsCastLastTurn <- one (History.spellsCastLastTurn . GameState.history)
-  -- Written only at the turn handoff, which no announcement spans.
-  damageBeforeThisTurn <- one (History.damageBeforeThisTurn . GameState.history)
   -- Written only at the turn handoff, which no announcement spans, so the
   -- three agree; taken rather than compared, which would walk the game.
   pastTurns <- newest (History.pastTurns . GameState.history)
@@ -358,7 +356,6 @@ withoutAnnouncement before entry closed = do
           History.MkHistory
             { History.triggeredThisGame = triggeredThisGame,
               History.spellsCastLastTurn = spellsCastLastTurn,
-              History.damageBeforeThisTurn = damageBeforeThisTurn,
               History.pastTurns = pastTurns,
               History.attacksInOwnLastTurn = attacksInOwnLastTurn,
               History.resolvedNames = resolvedNames

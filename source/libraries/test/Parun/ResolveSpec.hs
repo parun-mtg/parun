@@ -735,7 +735,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
             []
             []
             Nothing
-            (Mint.oneMode (Seq.fromList [Effect.Search Search.MkSearch {Search.searcher = PlayerRef.Relative PlayerRelation.You, Search.owner = PlayerRef.Relative PlayerRelation.You, Search.zones = Set.singleton Zone.Library, Search.outsideTheGame = False, Search.quantity = Just (Quantity.Literal 1), Search.filter = basicLandFilter, Search.descriptions = Seq.empty, Search.upTo = False, Search.destination = SearchDestination.BattlefieldTapped, Search.counters = Map.empty, Search.subject = Nothing, Search.slot = Nothing, Search.handSlot = Nothing, Search.librarySlot = Nothing, Search.differentIn = Set.empty, Search.exactly = False, Search.andOr = False}]))
+            (Mint.oneMode (Seq.fromList [Effect.Search Search.MkSearch {Search.searcher = PlayerRef.Relative PlayerRelation.You, Search.owner = PlayerRef.Relative PlayerRelation.You, Search.zones = Set.singleton Zone.Library, Search.outsideTheGame = False, Search.quantity = Just (Quantity.Literal 1), Search.filter = basicLandFilter, Search.descriptions = Seq.empty, Search.upTo = False, Search.destination = SearchDestination.BattlefieldTapped, Search.counters = Map.empty, Search.subject = Nothing, Search.slot = Nothing, Search.handSlot = Nothing, Search.librarySlot = Nothing, Search.differentIn = Set.empty, Search.exactly = False, Search.andOr = False, Search.top = Nothing}]))
             []
             (Activator.Related PlayerRelation.You)
             Nothing
@@ -764,7 +764,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
     mountain <- S.printingOf s registry "Mountain"
     let base = Setup.emptyGame S.bothPlayers
         (_, g1) = S.addLibraryCard mountain S.alice base
-        ability = ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Mint.oneMode (Seq.fromList [Effect.Search Search.MkSearch {Search.searcher = PlayerRef.Relative PlayerRelation.You, Search.owner = PlayerRef.Relative PlayerRelation.You, Search.zones = Set.singleton Zone.Library, Search.outsideTheGame = False, Search.quantity = Just (Quantity.Literal 1), Search.filter = basicLandFilter, Search.descriptions = Seq.empty, Search.upTo = False, Search.destination = SearchDestination.BattlefieldTapped, Search.counters = Map.empty, Search.subject = Nothing, Search.slot = Nothing, Search.handSlot = Nothing, Search.librarySlot = Nothing, Search.differentIn = Set.empty, Search.exactly = False, Search.andOr = False}])) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
+        ability = ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Mint.oneMode (Seq.fromList [Effect.Search Search.MkSearch {Search.searcher = PlayerRef.Relative PlayerRelation.You, Search.owner = PlayerRef.Relative PlayerRelation.You, Search.zones = Set.singleton Zone.Library, Search.outsideTheGame = False, Search.quantity = Just (Quantity.Literal 1), Search.filter = basicLandFilter, Search.descriptions = Seq.empty, Search.upTo = False, Search.destination = SearchDestination.BattlefieldTapped, Search.counters = Map.empty, Search.subject = Nothing, Search.slot = Nothing, Search.handSlot = Nothing, Search.librarySlot = Nothing, Search.differentIn = Set.empty, Search.exactly = False, Search.andOr = False, Search.top = Nothing}])) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
         (abilId, g2) = Game.freshObjectId g1
         (ts, g3) = Game.freshTimestamp g2
         abilObj =
@@ -802,7 +802,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
             []
             []
             Nothing
-            (Mint.oneMode (Seq.fromList [Effect.Search Search.MkSearch {Search.searcher = PlayerRef.Relative PlayerRelation.You, Search.owner = PlayerRef.Relative PlayerRelation.You, Search.zones = Set.singleton Zone.Library, Search.outsideTheGame = False, Search.quantity = Just (Quantity.Literal 1), Search.filter = basicLandFilter, Search.descriptions = Seq.empty, Search.upTo = False, Search.destination = SearchDestination.BattlefieldTapped, Search.counters = Map.empty, Search.subject = Nothing, Search.slot = Nothing, Search.handSlot = Nothing, Search.librarySlot = Nothing, Search.differentIn = Set.empty, Search.exactly = False, Search.andOr = False}]))
+            (Mint.oneMode (Seq.fromList [Effect.Search Search.MkSearch {Search.searcher = PlayerRef.Relative PlayerRelation.You, Search.owner = PlayerRef.Relative PlayerRelation.You, Search.zones = Set.singleton Zone.Library, Search.outsideTheGame = False, Search.quantity = Just (Quantity.Literal 1), Search.filter = basicLandFilter, Search.descriptions = Seq.empty, Search.upTo = False, Search.destination = SearchDestination.BattlefieldTapped, Search.counters = Map.empty, Search.subject = Nothing, Search.slot = Nothing, Search.handSlot = Nothing, Search.librarySlot = Nothing, Search.differentIn = Set.empty, Search.exactly = False, Search.andOr = False, Search.top = Nothing}]))
             []
             (Activator.Related PlayerRelation.You)
             Nothing
@@ -842,7 +842,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
             []
             []
             Nothing
-            (Mint.oneMode (Seq.fromList [Effect.Search Search.MkSearch {Search.searcher = PlayerRef.Relative PlayerRelation.You, Search.owner = PlayerRef.Relative PlayerRelation.You, Search.zones = Set.singleton Zone.Library, Search.outsideTheGame = False, Search.quantity = Just (Quantity.Literal 1), Search.filter = basicLandFilter, Search.descriptions = Seq.empty, Search.upTo = False, Search.destination = SearchDestination.BattlefieldTapped, Search.counters = Map.empty, Search.subject = Nothing, Search.slot = Nothing, Search.handSlot = Nothing, Search.librarySlot = Nothing, Search.differentIn = Set.empty, Search.exactly = False, Search.andOr = False}]))
+            (Mint.oneMode (Seq.fromList [Effect.Search Search.MkSearch {Search.searcher = PlayerRef.Relative PlayerRelation.You, Search.owner = PlayerRef.Relative PlayerRelation.You, Search.zones = Set.singleton Zone.Library, Search.outsideTheGame = False, Search.quantity = Just (Quantity.Literal 1), Search.filter = basicLandFilter, Search.descriptions = Seq.empty, Search.upTo = False, Search.destination = SearchDestination.BattlefieldTapped, Search.counters = Map.empty, Search.subject = Nothing, Search.slot = Nothing, Search.handSlot = Nothing, Search.librarySlot = Nothing, Search.differentIn = Set.empty, Search.exactly = False, Search.andOr = False, Search.top = Nothing}]))
             []
             (Activator.Related PlayerRelation.You)
             Nothing

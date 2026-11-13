@@ -6800,6 +6800,10 @@ tapForManaWith perform window inFlight refused activator oid = do
                   gated cIdx answers clause = case Clause.payGate clause of
                     Nothing -> pure (True, answers)
                     Just gate -> ManaAbilityPerformer.payGate perform oid controller cIdx gate answers
+                  -- CR 613.1f: the ability's name, which is how its effects
+                  -- read the card it was acquired from (CR 605.3b leaves no
+                  -- ability object to carry it).
+                  reader = ActivatedAbility.name =<< ManaOption.ability chosen
                   step (answers, bound, filled, made) (cIdx, (i, (clause, share))) = do
                     holds <- happens clause
                     (admitted, answers2) <- if holds then gated cIdx answers clause else pure (False, answers)
@@ -6807,7 +6811,7 @@ tapForManaWith perform window inFlight refused activator oid = do
                       then pure (answers2, bound, filled, made)
                       else do
                         let (leading, trailing) = List.break (Maybe.isJust . ManaAbility.manaProduced) (Foldable.toList (Clause.effects clause))
-                        bound1 <- ManaAbilityPerformer.effects perform oid controller bound leading
+                        bound1 <- ManaAbilityPerformer.effects perform oid reader controller bound leading
                         gsNow <- State.get
                         let chosenPlayers = Map.filter (not . Set.null) (fmap (Set.fromList . Maybe.mapMaybe Recipient.playerOf . Set.toList) bound1)
                         parts <- traverse (\(ref, mana) -> traverse (\recipient -> fmap ((,) recipient) (pickShare i ref recipient mana)) (Mana.recipientsOf controller chosenPlayers gsNow ref)) (Map.toList share)
@@ -6842,7 +6846,7 @@ tapForManaWith perform window inFlight refused activator oid = do
                             standing = Game.choiceWithLastKnown Chosen.Colors acquisition oid gsNow
                         Monad.when choosing $
                           State.modify' (Game.recordChoice Chosen.Colors acquisition (const (Just (Mana.colorsAmong (fmap ManaUnit.manaType (concatMap snd shares))))) oid)
-                        bound2 <- ManaAbilityPerformer.effects perform oid controller bound1 (filter (Maybe.isNothing . ManaAbility.manaProduced) trailing)
+                        bound2 <- ManaAbilityPerformer.effects perform oid reader controller bound1 (filter (Maybe.isNothing . ManaAbility.manaProduced) trailing)
                         Monad.when choosing $
                           State.modify' (Game.recordChoice Chosen.Colors acquisition (const standing) oid)
                         pure (answers2, bound2, filled <> shares, made <> produced)

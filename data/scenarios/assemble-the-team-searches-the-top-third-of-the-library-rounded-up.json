@@ -1,0 +1,161 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s0",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f0",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Assemble the Team",
+            "label": "team"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant",
+            "label": "giant-0"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-1"
+          },
+          {
+            "card": "Plains",
+            "label": "third-plains"
+          },
+          {
+            "card": "Forest",
+            "label": "fourth-forest"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-2"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-3"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-4"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Assemble the Team searches the top third of the library, rounded up",
+  "final": [
+    {
+      "Count": {
+        "card": "Plains",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Forest",
+        "count": 0,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Forest",
+        "count": 1,
+        "player": "alice",
+        "zone": "Library"
+      }
+    }
+  ],
+  "note": "CR 701.23a, 107.1a. Seven cards make a top third of three. Alice names the Forest fourth from the top ahead of the Plains third from it: the Forest is no card of the search, so the Plains is the find (CR 701.23d), the three cards on top are all she is shown, and all of what is left is shuffled.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s0",
+            "$f0"
+          ],
+          "object": "$team"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "unoffered": true,
+          "with": [
+            "$fourth-forest",
+            "$third-plains"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$fourth-forest",
+            "$giant-0",
+            "$giant-1",
+            "$giant-2",
+            "$giant-3",
+            "$giant-4"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Hill Giant",
+            "Hill Giant",
+            "Plains"
+          ],
+          "of": "Witnessed",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

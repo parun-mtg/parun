@@ -1,0 +1,200 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s0",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f0",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Assemble the Team",
+            "label": "team"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant",
+            "label": "giant-0"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-1"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-2"
+          },
+          {
+            "card": "Plains",
+            "label": "fourth-plains"
+          },
+          {
+            "card": "Forest",
+            "label": "fifth-forest"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-3"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-4"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-5"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-6"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-7"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-8"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-9"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-10"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-11"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-12"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Aven Mindcensor",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Aven Mindcensor narrows Assemble the Team's top third to the top four cards",
+  "final": [
+    {
+      "Count": {
+        "card": "Plains",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Forest",
+        "count": 0,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "docs/decisions.md, \"What a replaced search leaves of a search printed over a portion\". Fifteen cards make a top third of five, and bob's Aven Mindcensor leaves four of them. Alice names the Forest fifth from the top ahead of the Plains fourth from it, finds the Plains, and is shown four cards.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$s0",
+            "$f0"
+          ],
+          "object": "$team"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "unoffered": true,
+          "with": [
+            "$fifth-forest",
+            "$fourth-plains"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$fifth-forest",
+            "$giant-0",
+            "$giant-1",
+            "$giant-10",
+            "$giant-11",
+            "$giant-12",
+            "$giant-2",
+            "$giant-3",
+            "$giant-4",
+            "$giant-5",
+            "$giant-6",
+            "$giant-7",
+            "$giant-8",
+            "$giant-9"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Hill Giant",
+            "Hill Giant",
+            "Hill Giant",
+            "Plains"
+          ],
+          "of": "Witnessed",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
