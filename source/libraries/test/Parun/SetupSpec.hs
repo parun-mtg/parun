@@ -1529,7 +1529,6 @@ pregameExileSpec s registry = Spec.describe s "exiling before the shuffle" $ do
               )
               (S.addCounter CounterKind.Loyalty 14 karnId withKarn)
           )
-      run pick answer before = State.runState (Engine.runGameAsked (exiling pick answer) before Engine.priorityLoop) []
       offersOf asked = [o | o@OfferedExile {} <- asked]
       linkedAt depth asked = Maybe.listToMaybe [linked | Linked d linked <- asked, d == depth]
 
@@ -1538,8 +1537,8 @@ pregameExileSpec s registry = Spec.describe s "exiling before the shuffle" $ do
   Spec.it s "CR 728.1 / 607.2n a restart offers the exile again, a card for each Arcane Savant" $ do
     before <- restarting =<< exileBoard s registry (Just RuleFamily.Limited) "Arcane Savant" 2 [("Lightning Bolt", 1), ("Shock", 1), ("Mountain", 1)]
     one <- restarting =<< exileBoard s registry (Just RuleFamily.Limited) "Arcane Savant" 1 [("Lightning Bolt", 1), ("Shock", 1), ("Mountain", 1)]
-    let ((_, taken), asked) = run (const True) karnAnswer before
-        ((_, declined), _) = run (const False) karnAnswer before
+    let ((_, taken), asked) = runExiling (const True) karnAnswer before
+        ((_, declined), _) = runExiling (const False) karnAnswer before
     Spec.assertEqWith s "setup: nothing is exiled before the restart" (GameState.exiledBeforeGame before) Map.empty
     Spec.assertEqWith s "alice is offered her two instants, up to two" (offersOf asked) [OfferedExile 0 S.alice ["Lightning Bolt", "Shock"] 0 2]
     Spec.assertEqWith s "taken, both are in exile, linked by the name" (linkedAt 0 asked) (Just [("Lightning Bolt", "Arcane Savant"), ("Shock", "Arcane Savant")])
@@ -1547,17 +1546,16 @@ pregameExileSpec s registry = Spec.describe s "exiling before the shuffle" $ do
     Spec.assertEqWith s "CR 400.11b and her sideboard holds only the Mountain" (poolNames S.alice taken) [("Mountain", 1)]
     Spec.assertEqWith s "declined, nothing is exiled" (GameState.exiledBeforeGame declined) Map.empty
     Spec.assertEqWith s "and her sideboard is whole" (poolNames S.alice declined) [("Lightning Bolt", 1), ("Mountain", 1), ("Shock", 1)]
-    Spec.assertEqWith s "one Savant exiles at most one" (offersOf (snd (run (const True) karnAnswer one))) [OfferedExile 0 S.alice ["Lightning Bolt", "Shock"] 0 1]
+    Spec.assertEqWith s "one Savant exiles at most one" (offersOf (snd (runExiling (const True) karnAnswer one))) [OfferedExile 0 S.alice ["Lightning Bolt", "Shock"] 0 1]
 
   -- docs/decisions.md, "Which cards a rebuilt game offers to exile before
   -- shuffling": a constructed sideboard was not drafted, and a game under no
   -- format asks.
   Spec.it s "CR 607.2n a restart offers no exile from a constructed sideboard" $ do
-    let sideboard = [("Lightning Bolt", 1)]
-    constructed <- restarting =<< exileBoard s registry (Just RuleFamily.Constructed) "Arcane Savant" 1 sideboard
-    unformatted <- restarting =<< exileBoard s registry Nothing "Arcane Savant" 1 sideboard
-    Spec.assertEqWith s "constructed: nothing is asked" (offersOf (snd (run (const True) karnAnswer constructed))) []
-    Spec.assertEqWith s "no format: alice is asked" (offersOf (snd (run (const True) karnAnswer unformatted))) [OfferedExile 0 S.alice ["Lightning Bolt"] 0 1]
+    constructed <- restarting =<< exileBoard s registry (Just RuleFamily.Constructed) "Arcane Savant" 1 [("Lightning Bolt", 1)]
+    unformatted <- restarting =<< exileBoard s registry Nothing "Arcane Savant" 1 [("Lightning Bolt", 1)]
+    Spec.assertEqWith s "constructed: nothing is asked" (offersOf (snd (runExiling (const True) karnAnswer constructed))) []
+    Spec.assertEqWith s "no format: alice is asked" (offersOf (snd (runExiling (const True) karnAnswer unformatted))) [OfferedExile 0 S.alice ["Lightning Bolt"] 0 1]
 
   -- Volatile Chimera's ruling of 2016-08-23: one revealed exiles three or
   -- more, so two is not a number she can exile and one question covers every
@@ -1565,14 +1563,14 @@ pregameExileSpec s registry = Spec.describe s "exiling before the shuffle" $ do
   Spec.it s "CR 607.2n a restart offers Volatile Chimera three or more creature cards, or none" $ do
     before <- restarting =<< exileBoard s registry (Just RuleFamily.Limited) "Volatile Chimera" 1 [("Grizzly Bears", 2), ("Goblin Piker", 1), ("Shock", 1)]
     short <- restarting =<< exileBoard s registry (Just RuleFamily.Limited) "Volatile Chimera" 1 [("Grizzly Bears", 2), ("Shock", 1)]
-    let ((_, taken), asked) = run (const True) karnAnswer before
-        ((_, two), _) = run (== "Grizzly Bears") karnAnswer before
+    let ((_, taken), asked) = runExiling (const True) karnAnswer before
+        ((_, two), _) = runExiling (== "Grizzly Bears") karnAnswer before
     Spec.assertEqWith s "alice is offered her creature cards, every one" (offersOf asked) [OfferedExile 0 S.alice ["Goblin Piker", "Grizzly Bears"] 0 3]
     Spec.assertEqWith s "taken, the three are exiled, linked by the name" (linkedAt 0 asked) (Just [("Goblin Piker", "Volatile Chimera"), ("Grizzly Bears", "Volatile Chimera"), ("Grizzly Bears", "Volatile Chimera")])
     Spec.assertEqWith s "and only the Shock is left in her sideboard" (poolNames S.alice taken) [("Shock", 1)]
     Spec.assertEqWith s "two named is none exiled" (GameState.exiledBeforeGame two) Map.empty
     Spec.assertEqWith s "and her sideboard is whole" (poolNames S.alice two) [("Goblin Piker", 1), ("Grizzly Bears", 2), ("Shock", 1)]
-    Spec.assertEqWith s "two creature cards are not enough to ask about" (offersOf (snd (run (const True) karnAnswer short))) []
+    Spec.assertEqWith s "two creature cards are not enough to ask about" (offersOf (snd (runExiling (const True) karnAnswer short))) []
 
   -- CR 730.2 / 730.4: the Shahrazad subgame's deck is alice's main-game
   -- library, so the Shock in her main-game hand is not in it either. CR 730.5:
@@ -1582,7 +1580,7 @@ pregameExileSpec s registry = Spec.describe s "exiling before the shuffle" $ do
     shock <- S.printingOf s registry "Shock"
     board <- exileBoard s registry (Just RuleFamily.Limited) "Arcane Savant" 2 [("Lightning Bolt", 1), ("Mountain", 1)]
     before <- withShahrazad s registry (snd (S.addHandCard shock S.alice board))
-    let ((_, after), asked) = run (/= "Shahrazad") castAnswer before
+    let ((_, after), asked) = runExiling (/= "Shahrazad") castAnswer before
         libraryNames = cardNames (Game.zoneMembers Zone.Library S.alice after) after
         handNames = cardNames (Game.zoneMembers Zone.Hand S.alice after) after
     Spec.assertEqWith s "alice is offered both as the subgame starts, and the resolving Shahrazad" (offersOf asked) [OfferedExile 1 S.alice ["Lightning Bolt", "Shahrazad", "Shock"] 0 2]
@@ -1600,6 +1598,10 @@ exileBoard s registry family name copies sideboard = do
   held <- Monad.forM sideboard (\(card, n) -> fmap (\printing -> (printing, n)) (S.printingOf s registry card))
   let settings = GameSettings.plain {GameSettings.format = fmap (\rules -> Format.MkFormat rules Nothing Set.empty) family}
   supplementaryBoardWith settings s registry (\d -> d {Deck.cards = Map.insert exiler copies (Deck.cards d), Deck.sideboard = Map.fromList held}) id
+
+-- The priority loop from this state, answered by `exiling`.
+runExiling :: (String -> Bool) -> (forall a. Prompt.Prompt a -> a) -> GameState.GameState -> (((), GameState.GameState), [Exiling])
+runExiling pick answer before = State.runState (Engine.runGameAsked (exiling pick answer) before Engine.priorityLoop) []
 
 -- What `exiling` saw, each with how deep it was asked: CR 607.2n's offer, to
 -- whom, its cards by name in name order and its bounds; and, at a CR 103.5
