@@ -101,7 +101,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 715.2b, 715.3c, 715.4, 115.3, 202.3, 611.2b, 701.14a: The Super Hero Civil War's chapter I gains control of up to two target creatures with total mana value 6 or less for as long as the Saga remains, II pumps and gives vigilance to creatures you control, and III makes a creature you control fight up to one other; control returns when the Saga is sacrificed after III",
-  "note": "Bob's Craw Wurm (MV 6) with Grizzly Bears (MV 2) totals 8 and is refused, as are one Grizzly Bears named twice (4 would fit the total) and Enormous Baloth (MV 7) alone; Hill Giant (MV 4) and Grizzly Bears total exactly 6. On turn 3 chapter II makes the stolen Hill Giant 4/4 with vigilance and leaves bob's Craw Wurm 6/4 without. On turn 5 bob's Craw Wurm is refused as the creature alice controls, Air Elemental is refused as its own fight partner, and Air Elemental (4/4) and Craw Wurm (6/4) fight and both die; the Saga is then sacrificed and the Giant and the Bears return to bob.",
+  "note": "Bob's Craw Wurm (MV 6) with Grizzly Bears (MV 2) totals 8 and is refused, as is Enormous Baloth (MV 7) alone; Hill Giant (MV 4) and Grizzly Bears total exactly 6. On turn 3 chapter II makes the stolen Hill Giant 4/4 with vigilance and leaves bob's Craw Wurm 6/4 without. On turn 5 bob's Craw Wurm is refused as the creature alice controls, Air Elemental is refused as its own fight partner, and Air Elemental (4/4) and Craw Wurm (6/4) fight and both die; the Saga is then sacrificed and the Giant and the Bears return to bob.",
   "timeline": [
     {
       "do": {
@@ -130,10 +130,8 @@
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
-          "first": [
-            "$b-wurm"
-          ],
-          "second": [
+          "target": [
+            "$b-wurm",
             "$b-bears"
           ]
         }
@@ -145,25 +143,9 @@
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
-          "first": [
-            "$b-bears"
-          ],
-          "second": [
-            "$b-bears"
-          ]
-        }
-      },
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "player": "alice",
-      "refuse": {
-        "ChooseTargets": {
-          "first": [
+          "target": [
             "$b-baloth"
-          ],
-          "second": []
+          ]
         }
       },
       "step": "PrecombatMain",
@@ -172,10 +154,8 @@
     {
       "do": {
         "ChooseTargets": {
-          "first": [
-            "$b-giant"
-          ],
-          "second": [
+          "target": [
+            "$b-giant",
             "$b-bears"
           ]
         }

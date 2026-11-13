@@ -40,6 +40,7 @@ import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SlotName as SlotName
 import Parun.Types.TargetSlot (TargetSlot)
 import qualified Parun.Types.TargetSlot as TargetSlot
+import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.ZoneScope as ZoneScope
 import qualified Text.Read as Read
 
@@ -295,7 +296,7 @@ ownSlot mi declared slot = if Set.member slot declared then instanceSlot mi slot
 -- the atoms beside it, which Parun.Engine.Filter.renameBound and boundSlots share
 -- one walk over), and the CR 202.3 computed bound the slot's `amount` carries
 -- (Parun.Engine.QuantitySlot.renameSlots, paired with that module's `slots` the
--- same way). Those four fields are the whole of what a TargetSlot names; a
+-- same way). Those fields and the `divided` and `total` quantities are the whole of what a TargetSlot names; a
 -- `count` that is a printed number or CR 601.2b's announced X names no slot, and
 -- a computed one is a Quantity renamed exactly as the bound beside it is.
 --
@@ -308,6 +309,7 @@ instanceScope rename slot =
       TargetSlot.asCast = fmap (Filter.renameBound rename) (TargetSlot.asCast slot),
       TargetSlot.amount = fmap (QuantitySlot.renameSlots rename) (TargetSlot.amount slot),
       TargetSlot.divided = fmap (QuantitySlot.renameSlots rename) (TargetSlot.divided slot),
+      TargetSlot.total = fmap (\(TotalCap.MkTotalCap weight most) -> TotalCap.MkTotalCap (QuantitySlot.renameSlots rename weight) (QuantitySlot.renameSlots rename most)) (TargetSlot.total slot),
       TargetSlot.count = SlotCount.mapQuantity (QuantitySlot.renameSlots rename) (TargetSlot.count slot)
     }
 

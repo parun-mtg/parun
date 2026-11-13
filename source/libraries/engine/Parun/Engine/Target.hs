@@ -86,6 +86,7 @@ import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.Together as Together
+import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneScope as ZoneScope
@@ -1232,6 +1233,17 @@ stillLegal :: StackObjectKind.StackObjectKind -> Maybe AbilityName.AbilityName -
 stillLegal kind reader perspective bindings acquisition source recipient slot gs =
   Set.member recipient (legalRecipientsGiven kind reader (wholePools gs) perspective False bindings acquisition source slot gs)
 
+-- CR 608.2b over one slot's targets: each judged alone (stillLegal), then
+-- the survivors together against the slot's `total`, which refuses them all
+-- (Reunion of the House's ruling, "the entire selection of targets is
+-- illegal"). The total is over the targets still legal alone
+-- (docs/decisions.md, "A capped target set is re-totalled over its legal
+-- targets"). data/scenarios/target's Cytoshape case proves it.
+stillLegalAmong :: StackObjectKind.StackObjectKind -> Maybe AbilityName.AbilityName -> Maybe PlayerId -> Map SlotName Binding.Type.Binding -> Acquisition.Acquisition -> ObjectId -> TargetSlot -> Set Recipient -> GameState -> Set Recipient
+stillLegalAmong kind reader perspective bindings acquisition source slot recipients gs =
+  let alone = Set.filter (\recipient -> stillLegal kind reader perspective bindings acquisition source recipient slot gs) recipients
+   in Set.difference alone (totalRefused (countingBy reader perspective bindings source gs) slot alone gs)
+
 -- CR 303.4c: is `recipient` still one the slot ADMITS -- the same membership
 -- question stillLegal asks, minus rule 702's targeting restrictions. See
 -- admittedRecipients for why an attached Aura is not asked a targeting question.
@@ -1570,7 +1582,8 @@ boundSiblings declared slot =
 --   * the CR 202.3 computed BOUND names one (boundNamesSibling above).
 --
 -- A fourth reads no sibling but the slot's OWN other targets: TargetSlot's
--- `together`, Decompose's "from a single graveyard" (togetherRefused).
+-- `together`, Decompose's "from a single graveyard" (togetherRefused), and its
+-- `total`, Fire Lord Sozin's "with total mana value X or less" (totalRefused).
 --
 -- Filter.boundSlots is the read half, the same set Parun.Engine.Resolve's dataflow
 -- lint folds over a mode's slots, so an atom that function does not report is one
@@ -1602,6 +1615,7 @@ jointlyJudged declared slot =
     -- widening -- so this is where the announcement's own choice narrows it back.
     || boundNamesSibling declared slot
     || Maybe.isJust (TargetSlot.together slot)
+    || Maybe.isJust (TargetSlot.total slot)
 
 -- Does this pool's candidate set depend on what another target slot is answered
 -- with (CR 601.2c)? A ZoneScope's InSlot is the one axis that does, wherever
@@ -1762,7 +1776,17 @@ countAt counting x count = case (x, count) of
 slotCapacities :: (Quantity -> Natural) -> Maybe Natural -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> GameState -> Map SlotName Natural
 slotCapacities counting x slots sets gs =
   let legalOf name = Map.findWithDefault Set.empty name sets
-      capacity name slot = min (scoped name slot) (togetherCapacity slot (legalOf name))
+      capacity name slot = min (scoped name slot) (min (togetherCapacity slot (legalOf name)) (totalCapacity slot (legalOf name)))
+      -- TargetSlot's `total`: the most of the legal set that fit under the
+      -- ceiling together, which is the lightest of them taken in order
+      -- (totalRefused). A ceiling reading an X not yet announced (CR 601.2b)
+      -- narrows nothing, countAt's posture.
+      totalCapacity slot legal = case TargetSlot.total slot of
+        Just (TotalCap.MkTotalCap weight most)
+          | Maybe.isJust x || Set.notMember Binding.variableX (QuantitySlot.allSlots most) ->
+              let weights = List.sort (fmap (weighing gs weight) (Set.toList legal))
+               in Natural.length (takeWhile (<= counting most) (drop 1 (scanl (+) 0 weights)))
+        _ -> Natural.length legal
       -- TargetSlot's `together`: the most of the legal set one zone holds, plus
       -- whatever is in none (togetherRefused).
       togetherCapacity slot legal = case TargetSlot.together slot of
@@ -2232,7 +2256,7 @@ jointlyIllegalGiven kind reader pools perspective unannounced seed source slots 
         let picked = Map.findWithDefault Set.empty slot chosen
          in Set.union
               (Set.difference picked (legalRecipientsGiven kind reader pools perspective unannounced bindings (Game.acquisitionFor reader source gs) source targetSlot gs))
-              (togetherRefused targetSlot picked gs)
+              (Set.union (togetherRefused targetSlot picked gs) (totalRefused (countingBy reader perspective seed source gs) targetSlot picked gs))
    in Map.mapWithKey refused (Map.filter (jointlyJudged (Map.keysSet slots)) slots)
 
 -- CR 601.2c: the targets a slot's `together` refuses as a whole -- every one of
@@ -2247,6 +2271,23 @@ togetherRefused slot picked gs = case TargetSlot.together slot of
   Just Together.InOneZone
     | Set.size (Set.fromList (Maybe.mapMaybe (zoneHolding gs) (Set.toList picked))) > 1 -> picked
     | otherwise -> Set.empty
+
+-- CR 601.2c: the targets a slot's `total` refuses as a whole -- every one of
+-- them when their weights sum past its ceiling, togetherRefused's posture and
+-- its roads, and CR 608.2b's too (stillLegalAmong).
+-- data/scenarios/target's Fire Lord Sozin cases prove it.
+totalRefused :: (Quantity -> Natural) -> TargetSlot -> Set Recipient -> GameState -> Set Recipient
+totalRefused counting slot picked gs = case TargetSlot.total slot of
+  Just (TotalCap.MkTotalCap weight most)
+    | sum (fmap (weighing gs weight) (Set.toList picked)) > counting most -> picked
+  _ -> Set.empty
+
+-- TotalCap.weight's read and clamp for one target: against that object's own
+-- projection, a player weighing nothing.
+weighing :: GameState -> Quantity -> Recipient -> Natural
+weighing gs weight recipient = case Recipient.objectOf recipient of
+  Nothing -> 0
+  Just oid -> maybe 0 Integer.toNaturalSaturating (Quantity.evaluate (Projection.fullView gs) (Filter.contextIn gs Nothing (Just oid)) gs oid weight)
 
 -- CR 400.1: the zone holding a recipient's object, a player's own zone named
 -- with its player -- the owner, CR 400.3 -- and a shared one alone. Nothing for
@@ -2508,6 +2549,7 @@ bakeSlot players slot =
       TargetSlot.asCast = fmap (Filter.bakeBound players Map.empty Map.empty) (TargetSlot.asCast slot),
       TargetSlot.amount = fmap (Quantity.bakeBound players Map.empty) (TargetSlot.amount slot),
       TargetSlot.divided = fmap (Quantity.bakeBound players Map.empty) (TargetSlot.divided slot),
+      TargetSlot.total = fmap (\(TotalCap.MkTotalCap weight most) -> TotalCap.MkTotalCap (Quantity.bakeBound players Map.empty weight) (Quantity.bakeBound players Map.empty most)) (TargetSlot.total slot),
       -- CR 601.2c's count reads a Quantity of its own, so it is baked beside the
       -- bound for that field's reason. A REGRESSION FENCE rather than a proved
       -- behaviour: no committed count holds a PlayerRef.InSlot -- Mogis's

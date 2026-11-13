@@ -7,6 +7,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
@@ -16,6 +17,7 @@ import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TargetSlot as TargetSlot
+import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.ZoneScope as ZoneScope
 
 -- Filter's own coverage lives in Parun.Codec.FilterSpec, so these cases exercise
@@ -109,6 +111,14 @@ spec s = Spec.describe s "Parun.Codec.TargetSlot" $ do
       TargetSlot.codec
       ((TargetSlot.required Pool.Creatures Nothing) {TargetSlot.count = SlotCount.Printed (TargetCount.MkTargetCount 1 (Just 3)), TargetSlot.divided = Just (Quantity.Literal 4)})
       " {\"pool\":{\"type\":\"Creatures\"},\"count\":{\"type\":\"Printed\",\"value\":{\"least\":1,\"most\":3}},\"divided\":{\"type\":\"Literal\",\"value\":4}} "
+  -- CR 601.2c's capped total: the one case that spends the total key (Fire
+  -- Lord Sozin).
+  Spec.it s "a total spec" $
+    Common.assertCodec
+      s
+      TargetSlot.codec
+      ((TargetSlot.anyNumber Pool.Creatures Nothing) {TargetSlot.total = Just TotalCap.MkTotalCap {TotalCap.weight = Quantity.Measure Measure.ManaValue, TotalCap.most = Quantity.Literal 6}})
+      " {\"pool\":{\"type\":\"Creatures\"},\"count\":{\"type\":\"Printed\",\"value\":{\"least\":0}},\"total\":{\"weight\":{\"type\":\"Measure\",\"value\":\"ManaValue\"},\"most\":{\"type\":\"Literal\",\"value\":6}}} "
   -- The slot-keyed map is a JSON OBJECT keyed by the slot name (#1303). The two
   -- entries are inserted in DESCENDING slot-name order, so a trip that emitted
   -- the map's incidental traversal order rather than Map.toAscList fails this

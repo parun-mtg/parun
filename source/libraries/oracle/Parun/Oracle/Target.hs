@@ -452,6 +452,7 @@ target context s = case Map.lookup s (slots context) of
     | Maybe.isNothing (TargetSlot.chooser slot),
       Maybe.isNothing (TargetSlot.perPlayer slot),
       Maybe.isNothing (TargetSlot.amount slot),
+      Maybe.isNothing (TargetSlot.total slot),
       Maybe.isNothing (TargetSlot.divided slot) -> do
         (one, many) <- heads context slot
         (text, n) <- counted (TargetSlot.count slot) one many
@@ -467,6 +468,7 @@ among context s = case Map.lookup s (slots context) of
       Maybe.isNothing (TargetSlot.perPlayer slot),
       Maybe.isNothing (TargetSlot.together slot),
       Maybe.isNothing (TargetSlot.amount slot),
+      Maybe.isNothing (TargetSlot.total slot),
       Just total <- TargetSlot.divided slot -> do
         (_, many) <- heads context slot
         text <- case TargetSlot.count slot of

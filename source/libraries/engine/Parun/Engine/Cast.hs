@@ -3411,7 +3411,8 @@ targetSlotSiblingNames slot =
       maybe Set.empty Filter.boundSlots (TargetSlot.asCast slot),
       maybe Set.empty (Map.keysSet . Slots.quantitySlots) (TargetSlot.amount slot),
       maybe Set.empty (Map.keysSet . Slots.quantitySlots) (SlotCount.quantity (TargetSlot.count slot)),
-      maybe Set.empty (Map.keysSet . Slots.quantitySlots) (TargetSlot.divided slot)
+      maybe Set.empty (Map.keysSet . Slots.quantitySlots) (TargetSlot.divided slot),
+      foldMap (Map.keysSet . Slots.quantitySlots) (Slots.totalCapQuantities (TargetSlot.total slot))
     ]
 
 -- The sibling slot ONE pool names, Card.instancePool's own two arms: only

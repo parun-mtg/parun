@@ -1601,7 +1601,7 @@ handActionSlotsOffend card =
 modalReadsAnnouncedX :: Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 modalReadsAnnouncedX modal =
   selectionReadsX (Modal.selection modal)
-    || any (\slot -> countReadsX (TargetSlot.count slot) || any (Set.member Binding.variableX . QuantitySlot.slots) (TargetSlot.amount slot) || any (Set.member Binding.variableX . QuantitySlot.slots) (TargetSlot.divided slot)) (Modal.allTargetSlots modal)
+    || any (\slot -> countReadsX (TargetSlot.count slot) || any (Set.member Binding.variableX . QuantitySlot.slots) (TargetSlot.amount slot) || any (Set.member Binding.variableX . QuantitySlot.slots) (TargetSlot.divided slot) || any (Set.member Binding.variableX . QuantitySlot.slots) (Resolve.totalCapQuantities (TargetSlot.total slot))) (Modal.allTargetSlots modal)
 
 -- CR 700.2: does this mode count read the announced X?
 selectionReadsX :: ModeSelection.ModeSelection -> Bool
@@ -3151,6 +3151,8 @@ targetSlotFilters slot =
     <> concatMap quantityFilters (Maybe.maybeToList (SlotCount.quantity (TargetSlot.count slot)))
     -- And CR 601.2d's divided total.
     <> concatMap quantityFilters (Maybe.maybeToList (TargetSlot.divided slot))
+    -- And CR 601.2c's total cap, weight and ceiling.
+    <> concatMap quantityFilters (Resolve.totalCapQuantities (TargetSlot.total slot))
 
 -- A continuous effect's affected set (Parun.Types.Affected), wherever one is
 -- written -- a static ability, a combat restriction, an attack or block
