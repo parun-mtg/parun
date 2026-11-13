@@ -2105,7 +2105,7 @@ representativeEvents cond =
         -- CR 701.6a's event for the kind: both arms carry the same record, so
         -- the floor is the same for each -- empty, the condition binding nothing.
         TriggerCondition.Countered t ->
-          let countering = Countering.MkCountering departed arrived S.alice
+          let countering = Countering.MkCountering departed arrived S.alice (Just S.alice)
            in one $ case CounteringTrigger.countered t of
                 CounteredKind.Spell -> GameEvent.SpellCountered countering
                 CounteredKind.Ability -> GameEvent.AbilityCountered countering
@@ -2508,8 +2508,8 @@ everyTriggerCondition =
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Bound (SlotName.MkSlotName (Text.pack "target"))},
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Matching Filter.Type.IsSource, LeavesTrigger.batching = Batching.OneOrMore},
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Haunted},
-    TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger CounteredKind.Spell PlayerRelation.You),
-    TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger CounteredKind.Ability PlayerRelation.AnyPlayer),
+    TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger CounteredKind.Spell PlayerRelation.You PlayerRelation.You),
+    TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger CounteredKind.Ability PlayerRelation.AnyPlayer PlayerRelation.AnyPlayer),
     TriggerCondition.DamageToPlayerPrevented PlayerRelation.You,
     TriggerCondition.SelfPreventsDamage (Filter.Type.And []),
     TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Gained PlayerRelation.You (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.EveryTime),

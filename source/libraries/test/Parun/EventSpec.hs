@@ -175,7 +175,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event" $ do
       s
       "and a countering event names the spell, the source and its controller"
       (counteringsOf after)
-      [Countering.MkCountering spellId S.noSource S.alice]
+      [Countering.MkCountering spellId S.noSource S.alice Nothing]
     Spec.assertEqWith s "beside the zone change, not instead of it" (length (S.zoneChangesOf after)) 1
 
   -- CR 113.6g at the funnel itself, without a countering spell in the way:

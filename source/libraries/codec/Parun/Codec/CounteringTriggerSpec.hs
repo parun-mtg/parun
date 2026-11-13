@@ -11,11 +11,11 @@ spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.CounteringTrigger" $ do
   Spec.it s "writes no key for the defaults" $
     Common.assertCodec s CounteringTrigger.codec CounteringTrigger.defaultValue " {} "
-  -- Neither field at its default, so a dropped key fails to round-trip.
+  -- No field at its default, so a dropped key fails to round-trip.
   Spec.it s "round-trips every field" $
     Common.assertCodec
       s
       CounteringTrigger.codec
-      (CounteringTrigger.MkCounteringTrigger CounteredKind.Ability PlayerRelation.You)
-      " {\"countered\":\"Ability\",\"counterer\":\"You\"} "
+      (CounteringTrigger.MkCounteringTrigger CounteredKind.Ability PlayerRelation.You PlayerRelation.Opponent)
+      " {\"countered\":\"Ability\",\"counterer\":\"You\",\"caster\":\"Opponent\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CounteringTrigger.codec

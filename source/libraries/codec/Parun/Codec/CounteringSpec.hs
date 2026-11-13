@@ -16,6 +16,7 @@ spec s =
       Countering.MkCountering
         { Countering.countered = ObjectId.MkObjectId 4,
           Countering.source = ObjectId.MkObjectId 5,
-          Countering.controller = PlayerId.MkPlayerId 1
+          Countering.controller = PlayerId.MkPlayerId 1,
+          Countering.caster = Just (PlayerId.MkPlayerId 2)
         }
-      " {\"countered\":4,\"source\":5,\"controller\":1} "
+      " {\"countered\":4,\"source\":5,\"controller\":1,\"caster\":2} "

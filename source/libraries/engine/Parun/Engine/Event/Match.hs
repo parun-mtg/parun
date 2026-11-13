@@ -1327,8 +1327,15 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- spell, CR 613.11's on a permanent's static ability: a spell that can't be
   -- countered is not countered at all (CR 101.2), so `counter` records nothing
   -- and there is no event for this arm to see.
-  TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger kind relation) ->
-    let counteredBy c = PlayerRelation.holds (Game.teams gs) relation you (Countering.controller c)
+  --
+  -- CR 603.10e: the countered spell's caster comes from the event too, as the
+  -- spell left the stack. A spell CR 608.2b removes is not countered (Multani's
+  -- Presence's ruling) and records no event. data/scenarios/multanis-presence
+  -- proves both.
+  TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger kind relation caster) ->
+    let counteredBy c =
+          PlayerRelation.holds (Game.teams gs) relation you (Countering.controller c)
+            && PlayerRelation.holdsFor (Game.teams gs) caster (Just you) (Countering.caster c)
      in case (kind, event) of
           (CounteredKind.Spell, GameEvent.SpellCountered c) -> counteredBy c
           (CounteredKind.Ability, GameEvent.AbilityCountered c) -> counteredBy c

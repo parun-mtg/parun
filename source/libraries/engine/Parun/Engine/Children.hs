@@ -1544,7 +1544,7 @@ triggerConditionChildren c condition = case condition of
       )
   TriggerCondition.AbilityAddsMana (AbilityAddsMana.MkAbilityAddsMana who source mana) -> fmap TriggerCondition.AbilityAddsMana (AbilityAddsMana.MkAbilityAddsMana who <$> triggerFilter c source <*> triggerMana c mana)
   TriggerCondition.SelfManaAbilityResolves -> pure condition
-  TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger _ _) -> pure condition
+  TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger {}) -> pure condition
   TriggerCondition.DamageToPlayerPrevented _ -> pure condition
   TriggerCondition.SelfPreventsDamage filter_ -> fmap TriggerCondition.SelfPreventsDamage (triggerFilter c filter_)
   TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger direction who turn batching frequency) ->

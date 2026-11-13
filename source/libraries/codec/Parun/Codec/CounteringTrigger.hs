@@ -14,8 +14,10 @@ codec :: Codec.Codec CounteringTrigger.CounteringTrigger
 codec = Fields.object $ do
   countered <- Fields.defaulted "countered" (CounteringTrigger.countered CounteringTrigger.defaultValue) CounteredKind.codec CounteringTrigger.countered
   counterer <- Fields.defaulted "counterer" (CounteringTrigger.counterer CounteringTrigger.defaultValue) PlayerRelation.codec CounteringTrigger.counterer
+  caster <- Fields.defaulted "caster" (CounteringTrigger.caster CounteringTrigger.defaultValue) PlayerRelation.codec CounteringTrigger.caster
   pure
     CounteringTrigger.MkCounteringTrigger
       { CounteringTrigger.countered = countered,
-        CounteringTrigger.counterer = counterer
+        CounteringTrigger.counterer = counterer,
+        CounteringTrigger.caster = caster
       }

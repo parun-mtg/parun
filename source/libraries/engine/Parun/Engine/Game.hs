@@ -3457,6 +3457,18 @@ castsBefore spell gs =
     (_, []) -> Nothing
     (before, _) -> Just before
 
+-- CR 601.2i: who cast `spell`, off the turn's log, which outlives the spell's
+-- leaving the stack. Nothing for a spell that was never cast (CR 707.10's
+-- copy).
+casterOf :: ObjectId -> GameState -> Maybe PlayerId
+casterOf spell =
+  fmap SpellWasCast.player
+    . List.find ((== spell) . SpellWasCast.spell)
+    . Maybe.mapMaybe (castOf . LoggedEvent.event)
+    . Foldable.toList
+    . TurnRegisters.events
+    . GameState.turn
+
 -- CR 601.2i: how many spells each player cast during the turn this log holds --
 -- turnLog's, or the outgoing one Engine.beginTurn folds CR 502.2's scalar out
 -- of. Parun.Engine.PlayerEffect.castsThisTurn and Parun.Engine.Quantity's

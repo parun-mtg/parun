@@ -148,7 +148,8 @@ data TriggerCondition
   | -- | CR 701.6a: a spell or ability was countered, by a spell or ability a
     -- related player controlled -- "a spell or ability you control counters a
     -- spell" (Baral, Chief of Compliance), "an ability is countered" (Synthetic
-    -- Echo Silencer).
+    -- Echo Silencer), "a spell you've cast is countered" (Multani's Presence,
+    -- CR 603.10e).
     Countered CounteringTrigger.CounteringTrigger
   | -- | CR 615.13: "whenever damage that would be dealt to you is prevented"
     -- (Selfless Squire), blind to which prevention effect applied.
