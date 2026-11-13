@@ -1198,7 +1198,7 @@ cantBeBlockedBy defending blockers attackers gs =
 -- DefendingPlayerOfBlockGate group is the proof.
 barredBlocks :: [ObjectId] -> [ObjectId] -> GameState -> Set (ObjectId, ObjectId)
 barredBlocks blockers attackers gs =
-  let seatOf attacker = Defender.playerOfAttacker Projection.controllerWithLastKnown attacker gs
+  let seatOf attacker = Defender.playerOfAttacker Projection.viewWithLastKnownAnywhere attacker gs
       bySeat = Map.fromListWith (flip (<>)) (fmap (\attacker -> (seatOf attacker, [attacker])) attackers)
       atSeat (seat, theirs) = Set.union (cantBeBlockedBy seat blockers theirs gs) (cantBlockCreatures seat blockers theirs gs)
    in Set.unions (storedEvasions blockers attackers gs : fmap atSeat (Map.toList bySeat))

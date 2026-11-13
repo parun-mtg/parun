@@ -257,8 +257,8 @@ lethalRemaining gs oid =
 -- Defender.defendingPlayers: CR 802.2a resolves "a defending player" per
 -- attacking creature from what that creature is attacking, which at three or more
 -- seats is a different player from the group's first. CR 508.5's second sentence
--- is why it is still answerable once the planeswalker is gone -- the controller
--- lookup is Projection.controllerWithLastKnown, CR 608.2h's last known
+-- is why it is still answerable once the planeswalker is gone -- the view
+-- lookup is Projection.viewWithLastKnownAnywhere, CR 608.2h's last known
 -- information, the same reader attackerAssignment's `defending` passes so the CR
 -- 702.19c threshold map and this recipient cannot name different seats.
 -- Parun.CombatEffectSpec's "CR 802.2a the removed planeswalker's trampler drains
@@ -295,7 +295,7 @@ combatRecipient gs attacker target =
             Combat.targetStillAttacked target gs ->
               Just (Recipient.ToBattle oid)
           | Projection.hasKeyword Keyword.TrampleOverPlaneswalkers attacker gs ->
-              stillPlaying =<< Defender.defenderOfAttack Projection.controllerWithLastKnown attacker target gs
+              stillPlaying =<< Defender.defenderOfAttack Projection.viewWithLastKnownAnywhere attacker target gs
           | otherwise -> Nothing
         -- CR 310.5 / 506.4, the planeswalker arm's twin: a battle that has left the
         -- battlefield is removed from combat and stops being attacked, so CR 510.1b
@@ -357,7 +357,7 @@ attackerAssignment gs announced contested (attacker, target) = case Projection.c
             -- CR 508.5 / CR 310.9d, shared with the landwalk reading in
             -- Defender.defenderOfAttack so the two cannot drift. Read once, for CR
             -- 702.19c's third recipient below and for CR 702.22j's chooser.
-            defending = Defender.defenderOfAttack Projection.controllerWithLastKnown attacker target gs
+            defending = Defender.defenderOfAttack Projection.viewWithLastKnownAnywhere attacker target gs
             -- CR 702.19b: the trample-through recipient is whatever the creature
             -- is attacking, at threshold 0 -- there is no minimum to assign to it.
             --
@@ -783,7 +783,7 @@ wouldAssign gs entry =
           asThoughUnblocked = Projection.hasCombatDamageOption CombatDamageOption.AsThoughUnblocked attacker gs
           toCreature =
             Projection.hasCombatDamageOption CombatDamageOption.ToDefendingCreature attacker gs
-              && any (\pid -> any (`Projection.isCreatureOf` gs) (Projection.controls pid gs)) (Defender.defenderOfAttack Projection.controllerWithLastKnown attacker target gs)
+              && any (\pid -> any (`Projection.isCreatureOf` gs) (Projection.controls pid gs)) (Defender.defenderOfAttack Projection.viewWithLastKnownAnywhere attacker target gs)
        in if Combat.isBlocked attacker gs then blocking || ((trample || asThoughUnblocked) && attacked) else attacked || toCreature
     Right (_, blocked) -> any (`onBattlefield` gs) blocked
   where
