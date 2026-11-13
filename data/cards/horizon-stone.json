@@ -1,0 +1,37 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        }
+      ],
+      "name": "Horizon Stone",
+      "oracleText": "If you would lose unspent mana, that mana becomes colorless instead.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "DontLoseUnspentMana",
+            "value": {
+              "becomes": {
+                "type": "Colorless"
+              },
+              "mana": {
+                "type": "Any"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

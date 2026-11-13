@@ -1,0 +1,106 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Diligent Zookeeper",
+      "oracleText": "Each non-Human creature you control gets +1/+1 for each of its creature types, to a maximum of 10.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "Not",
+                  "value": {
+                    "type": "HasSubtype",
+                    "value": "Human"
+                  }
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "AtMost",
+                  "value": {
+                    "limits": [
+                      {
+                        "type": "Literal",
+                        "value": 10
+                      }
+                    ],
+                    "quantity": {
+                      "type": "Measure",
+                      "value": "CreatureTypeCount"
+                    }
+                  }
+                },
+                "toughness": {
+                  "type": "AtMost",
+                  "value": {
+                    "limits": [
+                      {
+                        "type": "Literal",
+                        "value": 10
+                      }
+                    ],
+                    "quantity": {
+                      "type": "Measure",
+                      "value": "CreatureTypeCount"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Ally",
+          "Citizen",
+          "Human"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

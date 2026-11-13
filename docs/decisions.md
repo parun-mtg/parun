@@ -1386,7 +1386,7 @@ Entries are ordered by the first rule each cites.
 - **Rejected**: Every running turn's history together, which makes a tally
   count what happened on another stack.
 - **Site**: `Parun.Types.TurnRegisters` (each turn's log) and
-  `Parun.Engine.Engine.closeTurn` (`GameState.eventsLastTurn`). No test
+  `Parun.Engine.Engine.closeTurn` (`History.pastTurns`). No test
   reaches it.
 - **Issue**: #6117.
 
@@ -2043,3 +2043,20 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Target.stillLegalAmong`, proved by the scenario
   `cr-608-2b-the-super-hero-civil-war-re-totals-over-the-targets-still-legal`.
 - **Issue**: #7229.
+
+## Two "that mana becomes" replacements are chosen between once for the pool
+
+- **Question**: Ozai, the Phoenix King and Horizon Stone each replace the
+  loss of a player's unspent mana, with red and with colorless. With {G}{G}
+  floating as a step ends, may the player make one mana red and the other
+  colorless?
+- **Rules**: CR 500.5, 703.4q, 614.1a, 616.1, 616.1f; CR of 2026-11-06. No
+  ruling on either card speaks to it.
+- **Decision**: No. A pool emptying is one event, so the player chooses one
+  effect for all the mana it would take; the next loss is a new choice.
+- **Rejected**: One choice per mana, each being lost separately. CR 500.5 and
+  703.4q have "any unspent mana" empty as one turn-based action, and both
+  cards say "that mana" of the whole loss.
+- **Site**: `Parun.Engine.Mana.chooseLossReplacements`, proved by the scenario
+  `ozai-the-phoenix-king-and-horizon-stone-ask-which-type-the-lost-mana-becomes`.
+- **Issue**: #7231.

@@ -104,8 +104,9 @@ data PlayerEffect
     -- each combination of colours is INCREASED by this number.
     IncreaseDevotion Natural.Natural
   | -- | CR 500.5 / 703.4q / Upwelling, Omnath Locus of Mana: this player does not
-    -- lose the mana the filter names as a step or phase ends.
-    DontLoseUnspentMana ManaFilter.ManaFilter
+    -- lose the mana the filter names as a step or phase ends. With a type, CR
+    -- 614.1a / Ozai, the Phoenix King: mana they would lose becomes it instead.
+    DontLoseUnspentMana ManaFilter.ManaFilter (Maybe ManaType.ManaType)
   | -- | CR 500.5 / 119.3 / Yurlok of Scorch Thrash: as this player loses unspent
     -- mana, they lose that much life.
     LoseLifeForUnspentMana

@@ -107,6 +107,7 @@ import qualified Parun.Types.LastKnown as LastKnown
 import Parun.Types.Layer (Layer)
 import qualified Parun.Types.Layer as Layer
 import qualified Parun.Types.LentCards as LentCards
+import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ManaCost as ManaCost
@@ -483,6 +484,20 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- and koh-the-face-stealer-has-a-triggered-keyword-of-the-chosen-card
         -- prove the two.
         --
+        -- CR 702.1d: a keyword lending either is RECORDED (PC.lentKeywords),
+        -- so the object is one with that keyword (Keyword.heldBy) and its
+        -- abilities are minted from the record, named and restricted as the
+        -- printed ones are. Never added to PC.keywords: the keyword's static
+        -- and replacement abilities are not lent, and a wholly static keyword
+        -- is not recorded (Keyword.lends), which
+        -- koh-the-face-stealer-has-no-static-keyword-of-the-chosen-card proves.
+        --
+        -- LoseKeyword, LoseKeywordFamily and CantHaveKeyword below take a
+        -- recorded keyword, and CR 113.11's bar here keeps one out. Unproven:
+        -- no card in data/cards/ names in one of them a keyword with a
+        -- battlefield activated or triggered ability (`jq` over the three
+        -- payloads, 2026-11-13); "loses flanking" would.
+        --
         -- CR 603.7: with them the delayed abilities those abilities arm by
         -- name, filed under the lending card's name and titled as the
         -- triggered ones are, so an acquired ability reads its own card's
@@ -501,14 +516,15 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
               named card a = a {ActivatedAbility.name = Just (Binding.acquiredFrom card (ActivatedAbility.name a))}
               -- CR 113.6 / 702.178b: a card has, where it is, only the "as long
               -- as" grants that function there (AbilityZone.grantFunctionsIn).
-              lent card = let copied = copiableCharacteristics card gs in filter (AbilityZone.grantFunctionsIn Zone.Battlefield (PC.delayedAbilities copied) zone) (PC.activatedAbilities copied <> Keyword.battlefieldAbilitiesOf (PC.keywords copied))
+              lent card = let copied = copiableCharacteristics card gs in filter (AbilityZone.grantFunctionsIn Zone.Battlefield (PC.delayedAbilities copied) zone) (PC.activatedAbilities copied)
               gained = foldMap (\card -> fmap (named card) (lent card)) cards
               restricted a = a {ActivatedAbility.restrictions = ActivatedAbility.restrictions a <> extra}
               titled card t = t {TriggeredAbility.name = Just (Binding.acquiredFrom card (TriggeredAbility.name t))}
-              triggers card = let copied = copiableCharacteristics card gs in PC.triggeredAbilities copied <> Keyword.triggeredAbilitiesOf (PC.keywords copied)
+              triggers card = PC.triggeredAbilities (copiableCharacteristics card gs)
+              keywords card = [LentKeyword.MkLentKeyword k n (Binding.acquiredFrom card Nothing) triggered extra | (k, n) <- Map.toAscList (PC.keywords (copiableCharacteristics card gs)), Keyword.lends triggered k n, not (barred (PC.barredKeywords pc) k)]
               fired = if triggered then foldMap (\card -> fmap (titled card) (triggers card)) cards else []
               armable card = Map.mapKeys (Binding.acquiredFrom card . Just) (fmap (titled card) (PC.delayedAbilities (copiableCharacteristics card gs)))
-           in pc {PC.activatedAbilities = PC.activatedAbilities pc <> fmap restricted gained, PC.triggeredAbilities = PC.triggeredAbilities pc <> fired, PC.delayedAbilities = Map.union (PC.delayedAbilities pc) (foldMap armable cards)}
+           in pc {PC.activatedAbilities = PC.activatedAbilities pc <> fmap restricted gained, PC.triggeredAbilities = PC.triggeredAbilities pc <> fired, PC.delayedAbilities = Map.union (PC.delayedAbilities pc) (foldMap armable cards), PC.lentKeywords = PC.lentKeywords pc <> foldMap keywords cards}
         -- CR 613.1f / 123.7a: the abilities printed on the ability stickers on
         -- `src`, read off the stickers and never off src's projection, so a
         -- layer-6 loss on src does not reach them. Each goes through the
@@ -521,6 +537,9 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         Modification.LoseAllAbilities ->
           pc
             { PC.keywords = Map.empty,
+              -- data/scenarios/agatha-s-soul-cauldron-s-lent-keyword-ability-is-lost-with-all-abilities.json
+              -- proves it.
+              PC.lentKeywords = [],
               PC.characteristicPT = Nothing,
               PC.definesChosenColor = False,
               PC.activatedAbilities = [],
@@ -600,7 +619,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- back, which is CR 613.7 and not this arm. Keyword.removedWith adds
         -- CR 702.22b's "bands with other" abilities to banding.
         Modification.LoseKeyword k ->
-          pc {PC.keywords = Map.filterWithKey (\held _ -> not (Keyword.removedWith k held)) (PC.keywords pc)}
+          pc {PC.keywords = Map.filterWithKey (\held _ -> not (Keyword.removedWith k held)) (PC.keywords pc), PC.lentKeywords = filter (not . Keyword.removedWith k . LentKeyword.keyword) (PC.lentKeywords pc)}
         -- CR 613.1f layer 6, scoped to CR 702.14a's generic term rather than to
         -- one written instance: every key whose family matches goes, so
         -- Hammerheim takes forestwalk and swampwalk off a Stalker Hag together.
@@ -610,12 +629,13 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- Keyword.familyOf answers Nothing for a nullary keyword, which the Just
         -- here keeps out: flying has no family, so no family removal reaches it.
         Modification.LoseKeywordFamily f ->
-          pc {PC.keywords = Map.filterWithKey (\k _ -> Keyword.familyOf k /= Just f) (PC.keywords pc)}
+          pc {PC.keywords = Map.filterWithKey (\k _ -> Keyword.familyOf k /= Just f) (PC.keywords pc), PC.lentKeywords = filter ((/= Just f) . Keyword.familyOf . LentKeyword.keyword) (PC.lentKeywords pc)}
         -- CR 113.11: the object loses the keyword, as the two arms above take
         -- it, and `granting` adds it no more for as long as this applies.
         Modification.CantHaveKeyword d ->
           pc
             { PC.keywords = Map.filterWithKey (\k _ -> not (Keyword.designates d k)) (PC.keywords pc),
+              PC.lentKeywords = filter (not . Keyword.designates d . LentKeyword.keyword) (PC.lentKeywords pc),
               PC.barredKeywords = Set.insert d (PC.barredKeywords pc)
             }
         -- An absent half is not set at all (CR 613.4b's "and/or").
@@ -4067,6 +4087,11 @@ measureReads measure = case measure of
   Measure.TotalPowerAndToughness -> Set.singleton PowerA
   Measure.ManaValue -> Set.empty
   Measure.ColorCount -> Set.singleton Colors
+  -- CR 205.3m's creature types are layer 4's (CR 613.1d). A regression fence
+  -- rather than a proved behaviour: Diligent Zookeeper reads the count in
+  -- layer 7c, where nothing writes a subtype, so answering Set.empty leaves
+  -- its scenarios green (mutated 2026-11-13).
+  Measure.CreatureTypeCount -> Set.singleton Subtypes
   -- CR 306.5c's counters are no layer's; being a planeswalker is layer 4's.
   Measure.Loyalty -> Set.singleton Types
 
@@ -6987,12 +7012,13 @@ triggeredAbilitiesOf :: ObjectId -> GameState -> [TriggeredAbility Card.Type.Car
 triggeredAbilitiesOf oid gs = PC.triggeredAbilities (project oid gs)
 
 -- The other half of that list: the triggered abilities rule 702 MINTS from a
--- finished projection's keyword counts. No CR 612 text change reaches what the
+-- finished projection's keyword counts, a lending card's keywords
+-- (PC.lentKeywords) after its own. No CR 612 text change reaches what the
 -- mint writes: those words are the rule's, which CR 207.2a's reminder text only
 -- summarizes, and a keyword's own written word (champion's quality) was already
 -- swapped at layer 3 (CR 702.1, 612.1).
 mintedTriggeredAbilitiesOf :: ProjectedCharacteristics -> [TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
-mintedTriggeredAbilitiesOf = Keyword.triggeredAbilitiesOf . PC.keywords
+mintedTriggeredAbilitiesOf pc = Keyword.triggeredAbilitiesOf (PC.keywords pc) <> Keyword.lentTriggeredAbilitiesOf (PC.lentKeywords pc)
 
 -- CR 702.5a / 613 layer 6: the object's enchant abilities after the fold --
 -- printed and granted together, which is what Modification.GainEnchant exists to

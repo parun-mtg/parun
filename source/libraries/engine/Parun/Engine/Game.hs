@@ -97,6 +97,7 @@ import Parun.Types.Object (Object)
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.PastTurn as PastTurn
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
@@ -521,8 +522,7 @@ blankScratch =
 blankHistory :: History.History
 blankHistory =
   History.MkHistory
-    { History.eventsLastTurn = Seq.empty,
-      History.spellsCastLastTurn = 0,
+    { History.spellsCastLastTurn = 0,
       History.castsBeforeThisTurn = Seq.empty,
       History.damageBeforeThisTurn = Seq.empty,
       History.pastTurns = Seq.empty,
@@ -3515,12 +3515,15 @@ castsPerPlayer events =
     (fmap (\cast -> (SpellWasCast.player cast, 1)) (Maybe.mapMaybe (castOf . LoggedEvent.event) (Foldable.toList events)))
 
 -- CR 608.2i: the log of the turn a tally names. TurnRegisters.events is the turn in
--- progress, Engine.beginTurn clearing it at the handoff; History.eventsLastTurn
--- is the one before, whoever's it was, and empty on the game's first turn.
+-- progress, Engine.beginTurn clearing it at the handoff; the newest of
+-- History.pastTurns is the one before, whoever's it was. None on the game's
+-- first turn; the second turn's holds the pre-game entries too.
 turnLog :: WhichTurn.WhichTurn -> GameState -> Seq.Seq LoggedEvent.LoggedEvent
 turnLog which gs = case which of
   WhichTurn.ThisTurn -> TurnRegisters.events (GameState.turn gs)
-  WhichTurn.LastTurn -> History.eventsLastTurn (GameState.history gs)
+  WhichTurn.LastTurn -> case Seq.viewr (History.pastTurns (GameState.history gs)) of
+    _ Seq.:> newest -> PastTurn.events newest
+    Seq.EmptyR -> Seq.empty
 
 -- CR 601.2i: this turn's casts, in the order they became cast, off the log
 -- Engine.handoffTurn clears.

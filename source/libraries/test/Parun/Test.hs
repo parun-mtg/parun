@@ -484,6 +484,7 @@ import qualified Parun.Codec.LeavingPermanentSpec
 import qualified Parun.Codec.LeftTheGameSpec
 import qualified Parun.Codec.LegalitySpec
 import qualified Parun.Codec.LegalityTableSpec
+import qualified Parun.Codec.LentKeywordSpec
 import qualified Parun.Codec.LibraryDepartureSpec
 import qualified Parun.Codec.LibraryDepthSpec
 import qualified Parun.Codec.LibraryPlacementSpec
@@ -1384,6 +1385,7 @@ spec s registry corpus = do
   Parun.Codec.FormatSpec.spec s
   Parun.Codec.LegalitySpec.spec s
   Parun.Codec.LegalityTableSpec.spec s
+  Parun.Codec.LentKeywordSpec.spec s
   Parun.Codec.PrintingTableSpec.spec s
   Parun.Codec.RuleFamilySpec.spec s
   Parun.Codec.DeclarationTriggerSpec.spec s

@@ -167,7 +167,7 @@ objects pcs gs a b =
       -- land played this turn cycle is the older one's twin. A new reader owes a
       -- line here. Compared where the projection is missing, which cannot make
       -- a player's choice.
-      sameClock = maybe True (any ((== Just KeywordFamily.Echo) . Keyword.Engine.familyOf) . Map.keys . PC.keywords) (Map.lookup a pcs)
+      sameClock = maybe True (any ((== Just KeywordFamily.Echo) . Keyword.Engine.familyOf) . Keyword.Engine.heldBy) (Map.lookup a pcs)
       withoutSerials obj = obj {Object.identity = fmap unserial (Object.identity obj), Object.source = unserialSource (Object.source obj)}
       grants = Projection.View.controlGrants gs
       viewOf oid = Projection.viewOfObjectGiven pcs grants oid gs
@@ -314,10 +314,10 @@ representatives pcs gs candidates =
 --     namedByRelation and actedOnBy; its stacks are a zone, as
 --     TurnRegisters.stack is. Its look-back fields are not read through the two
 --     views, which read the live turn's alone (gap #6538).
---   * History.eventsLastTurn is read by the per-seat view and by the "last
---     turn" tallies (Quantity's SpellsCast and LifeChanged), which count per
---     PLAYER and name no object, so no choice between objects can turn on it.
---   * History.pastTurns holds every finished turn's log and is read by
+--   * History.pastTurns holds every finished turn's log. Its newest is read
+--     by the per-seat view and by the "last turn" tallies (Quantity's
+--     SpellsCast and LifeChanged), which count per PLAYER and name no object,
+--     so no choice between objects can turn on it. The older ones are read by
 --     nothing yet (gap #6034); a reader owes a line here.
 --   * TurnRegisters.permanentsAsTurnBegan is keyed by every permanent, but no
 --     choice this turn can change it and it is read only by a Count over the

@@ -276,7 +276,7 @@ manaSpec s registry = Spec.describe s "Mana" $ do
     case Game.zoneMembers Zone.Battlefield S.alice gs of
       [] -> Spec.assertFailure s "fixture should have one Mountain"
       oid : _ ->
-        Spec.assertEqWith s "emptied" (poolSize S.alice (Mana.emptiedManaPools (S.runPure S.identityAnswer gs (S.tapForMana oid)))) 0
+        Spec.assertEqWith s "emptied" (poolSize S.alice (Mana.emptiedManaPools Map.empty (S.runPure S.identityAnswer gs (S.tapForMana oid)))) 0
 
   -- CR 122.1 / CR 105.4: "{T}: Add {C}. If Gemstone Caverns has a luck counter on
   -- it, instead add one mana of any color." parun carries the sentence as one
@@ -907,7 +907,7 @@ upwellingSpec s registry = Spec.describe s "Upwelling" $ do
   Spec.it s "CR 500.5 without Upwelling both players lose their unspent mana" $ do
     forest <- S.printingOf s registry "Forest"
     let (_, floated) = floatedPools [] forest
-        ended = Mana.emptiedManaPools floated
+        ended = Mana.emptiedManaPools Map.empty floated
     Spec.assertEqWith s "alice floated one" (poolSize S.alice floated) 1
     Spec.assertEqWith s "bob floated one" (poolSize S.bob floated) 1
     Spec.assertEqWith s "alice lost it" (poolSize S.alice ended) 0
@@ -917,7 +917,7 @@ upwellingSpec s registry = Spec.describe s "Upwelling" $ do
     forest <- S.printingOf s registry "Forest"
     upwelling <- S.printingOf s registry "Upwelling"
     let (_, floated) = floatedPools [upwelling] forest
-    Spec.assertEqWith s "alice kept it" (poolSize S.alice (Mana.emptiedManaPools floated)) 1
+    Spec.assertEqWith s "alice kept it" (poolSize S.alice (Mana.emptiedManaPools Map.empty floated)) 1
 
   -- The discriminating half of the scope. Alice controls the Upwelling and
   -- bob keeps his mana anyway -- that is what PlayerScope.Related AnyPlayer means,
@@ -926,7 +926,7 @@ upwellingSpec s registry = Spec.describe s "Upwelling" $ do
     forest <- S.printingOf s registry "Forest"
     upwelling <- S.printingOf s registry "Upwelling"
     let (_, floated) = floatedPools [upwelling] forest
-    Spec.assertEqWith s "bob kept it, though alice controls the Upwelling" (poolSize S.bob (Mana.emptiedManaPools floated)) 1
+    Spec.assertEqWith s "bob kept it, though alice controls the Upwelling" (poolSize S.bob (Mana.emptiedManaPools Map.empty floated)) 1
 
   -- CR 604.2: a static ability's continuous effect is active only while its
   -- permanent "remains on the battlefield and has the ability". The effect is
@@ -940,9 +940,9 @@ upwellingSpec s registry = Spec.describe s "Upwelling" $ do
       [] -> Spec.assertFailure s "fixture should have an Upwelling on the battlefield"
       oid : _ -> do
         let gone = S.runPure S.identityAnswer floated (Event.destroy (pure ()) Regenerability.Regenerable [oid])
-        Spec.assertEqWith s "kept while it stands" (poolSize S.alice (Mana.emptiedManaPools floated)) 1
-        Spec.assertEqWith s "alice loses it once it is gone" (poolSize S.alice (Mana.emptiedManaPools gone)) 0
-        Spec.assertEqWith s "and so does bob" (poolSize S.bob (Mana.emptiedManaPools gone)) 0
+        Spec.assertEqWith s "kept while it stands" (poolSize S.alice (Mana.emptiedManaPools Map.empty floated)) 1
+        Spec.assertEqWith s "alice loses it once it is gone" (poolSize S.alice (Mana.emptiedManaPools Map.empty gone)) 0
+        Spec.assertEqWith s "and so does bob" (poolSize S.bob (Mana.emptiedManaPools Map.empty gone)) 0
 
   -- The gameplay-level proof (design.md section 4), end to end through
   -- Engine.runStep. Alice taps a Birds of Paradise for BLUE toward a green
@@ -1004,7 +1004,7 @@ omnathSpec s registry = Spec.describe s "Omnath, Locus of Mana" $ do
         (forestId, g2) = S.addPermanent forest S.alice g1
         (islandId, g3) = S.addPermanent island S.alice g2
         floated = S.runPure S.identityAnswer (S.runPure S.identityAnswer g3 (S.tapForMana forestId)) (S.tapForMana islandId)
-        ended = Mana.emptiedManaPools floated
+        ended = Mana.emptiedManaPools Map.empty floated
     Spec.assertEqWith s "two floated" (poolSize S.alice floated) 2
     Spec.assertEqWith s "one survives the step's end" (poolSize S.alice ended) 1
     Spec.assertEqWith
@@ -1024,7 +1024,7 @@ omnathSpec s registry = Spec.describe s "Omnath, Locus of Mana" $ do
         (alicesForest, g2) = S.addPermanent forest S.alice g1
         (bobsForest, g3) = S.addPermanent forest S.bob g2
         floated = S.runPure S.identityAnswer (S.runPure S.identityAnswer g3 (S.tapForMana alicesForest)) (S.tapForMana bobsForest)
-        ended = Mana.emptiedManaPools floated
+        ended = Mana.emptiedManaPools Map.empty floated
     Spec.assertEqWith s "alice keeps hers" (poolSize S.alice ended) 1
     Spec.assertEqWith s "bob loses his" (poolSize S.bob ended) 0
 

@@ -443,8 +443,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.colors = PC.colors pc,
       Filter.subtypes = PC.subtypes pc,
       -- CR 109.3 / 613.1f: abilities are characteristics and layer 6 writes them.
-      -- keysSet because PC.keywords counts instances and HasKeyword asks membership.
-      Filter.keywords = Map.keysSet (PC.keywords pc),
+      -- A set because PC.keywords counts instances and HasKeyword asks membership.
+      Filter.keywords = Keyword.heldBy pc,
       Filter.power = PC.power pc,
       Filter.toughness = PC.toughness pc,
       Filter.intensity = PC.intensity pc,
@@ -1862,6 +1862,7 @@ noCharacteristics =
       PC.ruleAbilities = mempty,
       PC.lostAllAbilities = False,
       PC.barredKeywords = Set.empty,
+      PC.lentKeywords = [],
       PC.hasFullText = False,
       PC.wordChanges = [],
       PC.textChangedKeywords = Map.empty,
@@ -2051,6 +2052,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               -- applyModification's LoseAllAbilities arm is the only writer.
               PC.lostAllAbilities = False,
               PC.barredKeywords = Set.empty,
+              PC.lentKeywords = [],
               -- Nor has layer 3.
               PC.hasFullText = False,
               -- The seed is CR 613.1's starting point, before layer 3 has run.

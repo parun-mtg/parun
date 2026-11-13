@@ -2392,10 +2392,6 @@ closeTurn gs =
                 -- whether ANY cast two or more, and the most any one of them cast
                 -- answers both.
                 History.spellsCastLastTurn = List.foldl' max 0 (fmap (\p -> Map.findWithDefault 0 p casts) outgoing),
-                -- CR 608.2i: the outgoing log, kept before it is cleared above, for
-                -- the per-seat view and for every "last turn" tally a CARD asks
-                -- (Quantity's SpellsCast and LifeChanged at WhichTurn.LastTurn).
-                History.eventsLastTurn = TurnRegisters.events (GameState.turn gs),
                 -- CR 601.2i: the outgoing turn's casts join the game-long record
                 -- before the log holding them is cleared above.
                 History.castsBeforeThisTurn = History.castsBeforeThisTurn (GameState.history gs) <> Game.castsInLog gs,
@@ -2403,7 +2399,9 @@ closeTurn gs =
                 -- same way, for a look-back as long as an object's own life.
                 History.damageBeforeThisTurn = History.damageBeforeThisTurn (GameState.history gs) <> Game.damageInLog gs,
                 -- CR 608.2i: the outgoing turn, whole, joins the game's finished
-                -- turns before the log holding it is cleared above. Forced here, so
+                -- turns before the log holding it is cleared above, for the per-seat
+                -- view and for every "last turn" tally a CARD asks (Quantity's
+                -- SpellsCast and LifeChanged at WhichTurn.LastTurn). Forced here, so
                 -- no record holds the state it was read from.
                 History.pastTurns =
                   seq (length outgoing) . (History.pastTurns (GameState.history gs) Seq.|>) $!
