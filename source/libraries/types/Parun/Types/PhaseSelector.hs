@@ -18,9 +18,9 @@ import qualified Parun.Types.Phase as Phase
 -- `WholePhase PhaseKind`, and none for either main phase, so that every namable
 -- window has exactly ONE spelling and no reader owes two cases for it.
 --
--- Vocabulary on a finished axis: CR 500.1 fixes the set at three, so all three
--- are here though the beginning phase has no producer in the pool. Stonehorn
--- Dignitary writes CombatPhase and Synthetic Curfew Bell writes EndingPhase.
+-- Vocabulary on a finished axis: CR 500.1 fixes the set at three. Stonehorn
+-- Dignitary writes CombatPhase, Synthetic Curfew Bell writes EndingPhase, and
+-- Dose of Dawnglow writes all three.
 data PhaseSelector
   = Step Phase.Phase
   | BeginningPhase

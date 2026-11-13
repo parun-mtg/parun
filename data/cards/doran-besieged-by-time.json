@@ -1,0 +1,452 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Doran, Besieged by Time",
+      "oracleText": "Each creature spell you cast with toughness greater than its power costs {1} less to cast.\nWhenever a creature you control attacks or blocks, it gets +X/+X until end of turn, where X is the difference between its power and toughness.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Reduce",
+                "value": {
+                  "amount": [
+                    {
+                      "type": "Generic",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  {
+                    "type": "Measures",
+                    "value": {
+                      "comparison": "GreaterThan",
+                      "measure": "Toughness",
+                      "operand": {
+                        "type": "Own",
+                        "value": "Power"
+                      }
+                    }
+                  }
+                ]
+              },
+              "subject": {
+                "type": "Spells"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 0
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "Attacks",
+                "value": {
+                  "type": "Attacker",
+                  "value": {
+                    "creature": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "Blocks",
+                "value": {
+                  "creature": {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  },
+                  "role": "Blocker"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Plus",
+                                "value": {
+                                  "left": {
+                                    "type": "NonNegative",
+                                    "value": {
+                                      "type": "Plus",
+                                      "value": {
+                                        "left": {
+                                          "type": "AgainstSlot",
+                                          "value": {
+                                            "quantity": {
+                                              "type": "Measure",
+                                              "value": "Power"
+                                            },
+                                            "slot": "thatAttackingCreature"
+                                          }
+                                        },
+                                        "right": {
+                                          "type": "Negate",
+                                          "value": {
+                                            "type": "AgainstSlot",
+                                            "value": {
+                                              "quantity": {
+                                                "type": "Measure",
+                                                "value": "Toughness"
+                                              },
+                                              "slot": "thatAttackingCreature"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "type": "NonNegative",
+                                    "value": {
+                                      "type": "Plus",
+                                      "value": {
+                                        "left": {
+                                          "type": "AgainstSlot",
+                                          "value": {
+                                            "quantity": {
+                                              "type": "Measure",
+                                              "value": "Toughness"
+                                            },
+                                            "slot": "thatAttackingCreature"
+                                          }
+                                        },
+                                        "right": {
+                                          "type": "Negate",
+                                          "value": {
+                                            "type": "AgainstSlot",
+                                            "value": {
+                                              "quantity": {
+                                                "type": "Measure",
+                                                "value": "Power"
+                                              },
+                                              "slot": "thatAttackingCreature"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "toughness": {
+                                "type": "Plus",
+                                "value": {
+                                  "left": {
+                                    "type": "NonNegative",
+                                    "value": {
+                                      "type": "Plus",
+                                      "value": {
+                                        "left": {
+                                          "type": "AgainstSlot",
+                                          "value": {
+                                            "quantity": {
+                                              "type": "Measure",
+                                              "value": "Power"
+                                            },
+                                            "slot": "thatAttackingCreature"
+                                          }
+                                        },
+                                        "right": {
+                                          "type": "Negate",
+                                          "value": {
+                                            "type": "AgainstSlot",
+                                            "value": {
+                                              "quantity": {
+                                                "type": "Measure",
+                                                "value": "Toughness"
+                                              },
+                                              "slot": "thatAttackingCreature"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "type": "NonNegative",
+                                    "value": {
+                                      "type": "Plus",
+                                      "value": {
+                                        "left": {
+                                          "type": "AgainstSlot",
+                                          "value": {
+                                            "quantity": {
+                                              "type": "Measure",
+                                              "value": "Toughness"
+                                            },
+                                            "slot": "thatAttackingCreature"
+                                          }
+                                        },
+                                        "right": {
+                                          "type": "Negate",
+                                          "value": {
+                                            "type": "AgainstSlot",
+                                            "value": {
+                                              "quantity": {
+                                                "type": "Measure",
+                                                "value": "Power"
+                                              },
+                                              "slot": "thatAttackingCreature"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatAttackingCreature"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Plus",
+                                "value": {
+                                  "left": {
+                                    "type": "NonNegative",
+                                    "value": {
+                                      "type": "Plus",
+                                      "value": {
+                                        "left": {
+                                          "type": "AgainstSlot",
+                                          "value": {
+                                            "quantity": {
+                                              "type": "Measure",
+                                              "value": "Power"
+                                            },
+                                            "slot": "thatBlocker"
+                                          }
+                                        },
+                                        "right": {
+                                          "type": "Negate",
+                                          "value": {
+                                            "type": "AgainstSlot",
+                                            "value": {
+                                              "quantity": {
+                                                "type": "Measure",
+                                                "value": "Toughness"
+                                              },
+                                              "slot": "thatBlocker"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "type": "NonNegative",
+                                    "value": {
+                                      "type": "Plus",
+                                      "value": {
+                                        "left": {
+                                          "type": "AgainstSlot",
+                                          "value": {
+                                            "quantity": {
+                                              "type": "Measure",
+                                              "value": "Toughness"
+                                            },
+                                            "slot": "thatBlocker"
+                                          }
+                                        },
+                                        "right": {
+                                          "type": "Negate",
+                                          "value": {
+                                            "type": "AgainstSlot",
+                                            "value": {
+                                              "quantity": {
+                                                "type": "Measure",
+                                                "value": "Power"
+                                              },
+                                              "slot": "thatBlocker"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "toughness": {
+                                "type": "Plus",
+                                "value": {
+                                  "left": {
+                                    "type": "NonNegative",
+                                    "value": {
+                                      "type": "Plus",
+                                      "value": {
+                                        "left": {
+                                          "type": "AgainstSlot",
+                                          "value": {
+                                            "quantity": {
+                                              "type": "Measure",
+                                              "value": "Power"
+                                            },
+                                            "slot": "thatBlocker"
+                                          }
+                                        },
+                                        "right": {
+                                          "type": "Negate",
+                                          "value": {
+                                            "type": "AgainstSlot",
+                                            "value": {
+                                              "quantity": {
+                                                "type": "Measure",
+                                                "value": "Toughness"
+                                              },
+                                              "slot": "thatBlocker"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "right": {
+                                    "type": "NonNegative",
+                                    "value": {
+                                      "type": "Plus",
+                                      "value": {
+                                        "left": {
+                                          "type": "AgainstSlot",
+                                          "value": {
+                                            "quantity": {
+                                              "type": "Measure",
+                                              "value": "Toughness"
+                                            },
+                                            "slot": "thatBlocker"
+                                          }
+                                        },
+                                        "right": {
+                                          "type": "Negate",
+                                          "value": {
+                                            "type": "AgainstSlot",
+                                            "value": {
+                                              "quantity": {
+                                                "type": "Measure",
+                                                "value": "Power"
+                                              },
+                                              "slot": "thatBlocker"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatBlocker"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Druid",
+          "Treefolk"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
