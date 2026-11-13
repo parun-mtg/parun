@@ -2759,21 +2759,24 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- Parun.Engine.Keyword's keywords and Parun.Engine.Ring's emblem write them, and
   -- this is what keeps that true.
   Spec.it s "CR 702.134a / 702.60a / 702.78a no card compares against the source outside the positions that fill it" $ do
-    ps <- S.allPrintings s corpus
     let ofSource = Value.String (String.MkString (Text.pack "OfSource"))
         needles = ofSource : fmap (\trait -> atomJson (Filter.Type.Shares trait Anchor.Source)) [Trait.Name, Trait.Color, Trait.Sector]
-        encoded = Codec.encode (Face.Codec.codec Card.codec)
-        pairwise needle c = sum (fmap (occurrences needle . atomJson) (concatMap pairwiseFilters (Face.combatRestrictions c))) + evasionBlockerAtoms needle (encoded c)
+        encoded = Codec.encode (Face.Codec.codec Card.codec) . surveyedFace
+        pairwise e needle c = sum (fmap (occurrences needle . atomJson) (concatMap pairwiseFilters (Face.combatRestrictions (surveyedFace c)))) + evasionBlockerAtoms needle e
         pairwiseFilters r = case r of
           CombatRestriction.CantBeBlockedBy x -> [CantBeBlockedBy.blockers x]
           CombatRestriction.CantBlockCreatures x -> [CantBlockCreatures.attackers x]
           CombatRestriction.CantAttackAlone x -> Maybe.maybeToList (AloneUnless.alongside x)
           CombatRestriction.CantBlockAlone x -> Maybe.maybeToList (AloneUnless.alongside x)
           _ -> []
-        inSlots needle c = sum [occurrences needle (atomJson f) | (InTargetSlot, f) <- cardFilters c]
-        admitted needle c = (pairwise needle c, wishFilterAtoms needle (encoded c), triggerConditionAtoms needle (encoded c), inSlots needle c)
-        outside needle c = let (p, w, t, i) = admitted needle c in occurrences needle (encoded c) - p - w - t - i
-        offenders = [(needle, S.nameOf (Printing.card p)) | needle <- needles, p <- ps, anyFace (\c -> outside needle c /= 0) (Printing.card p)]
+        inSlots needle c = sum [occurrences needle (atomJson f) | (InTargetSlot, f) <- surveyedFilters c]
+        -- `e` is the face's encoding, made once however many needles read it.
+        admittedIn e needle c = (pairwise e needle c, wishFilterAtoms needle e, triggerConditionAtoms needle e, inSlots needle c)
+        outsideIn e needle c = let (p, w, t, i) = admittedIn e needle c in occurrences needle e - p - w - t - i
+        admitted needle c = admittedIn (encoded c) needle c
+        outside needle c = outsideIn (encoded c) needle c
+        strays c = let e = encoded c in filter (\needle -> outsideIn e needle c /= 0) needles
+        offenders = [(needle, S.nameOf (Printing.card p)) | (p, faces) <- pool, needle <- concatMap strays faces]
     Spec.assertEqWith s "the atoms are written only where the source is filled" offenders []
     -- NOT vacuous: each admitted position has its author, and each is accepted.
     djinn <- S.printingOf s registry "Synthetic Wishful Djinn"
@@ -2783,13 +2786,13 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "the Djinn's is in a wish, the Kami's in a trigger condition, the Handler's pairwise, the Giant's in a target slot"
-      (fmap (\p -> (admitted ofSource (S.combinedFace p), outside ofSource (S.combinedFace p))) [djinn, kami, spitfire, giant])
+      (fmap (\p -> (admitted ofSource (survey (S.combinedFace p)), outside ofSource (survey (S.combinedFace p)))) [djinn, kami, spitfire, giant])
       [((0, 1, 0, 0), 0), ((0, 0, 1, 0), 0), ((1, 0, 0, 0), 0), ((0, 0, 0, 1), 0)]
     -- The resolved row's blocker filter is pairwise too, and Space Beleren's +1
     -- writes one there.
     beleren <- S.printingOf s registry "Space Beleren"
     let sameSector = atomJson (Filter.Type.Shares Trait.Sector Anchor.Source)
-    Spec.assertEqWith s "Space Beleren's is in a resolved evasion's blocker filter" (admitted sameSector (S.combinedFace beleren), outside sameSector (S.combinedFace beleren)) ((1, 0, 0, 0), 0)
+    Spec.assertEqWith s "Space Beleren's is in a resolved evasion's blocker filter" (admitted sameSector (survey (S.combinedFace beleren)), outside sameSector (survey (S.combinedFace beleren))) ((1, 0, 0, 0), 0)
     -- NOT vacuous the other way either: the same counter over a hand-built face
     -- that DOES carry each atom -- buried under all three combinators, in a
     -- static ability's affected set, whose Projection.affectedContext fills no
@@ -2810,7 +2813,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                     (NonEmpty.singleton Modification.LoseAllAbilities)
                 ]
             }
-    Spec.assertEqWith s "a planted atom is seen" (zipWith (\needle atom -> outside needle (planted atom)) needles atoms) [1, 1, 1, 1]
+    Spec.assertEqWith s "a planted atom is seen" (zipWith (\needle atom -> outside needle (survey (planted atom))) needles atoms) [1, 1, 1, 1]
   -- CR 120.1: what the SOURCE dealt is answerable only where
   -- Parun.Engine.Projection.withCharacteristicsOf fills it; empty inside the CR
   -- 613 layer fold and a bare Filter.contextFor, so a card's affected set would
