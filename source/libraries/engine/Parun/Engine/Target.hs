@@ -1845,7 +1845,7 @@ slotCapacities counting x slots sets gs =
         Just (TotalCap.MkTotalCap weight most)
           | Maybe.isJust x || Set.notMember Binding.variableX (QuantitySlot.allSlots most) ->
               let weights = List.sort (fmap (weighing gs weight) (Set.toList legal))
-               in Natural.length (takeWhile (<= counting most) (drop 1 (scanl (+) 0 weights)))
+               in Natural.length (takeWhile (<= toInteger (counting most)) (drop 1 (scanl (+) 0 weights)))
         _ -> Natural.length legal
       -- TargetSlot's `together`: the most of the legal set one zone holds, plus
       -- whatever is in none (togetherRefused).
@@ -2339,15 +2339,16 @@ togetherRefused slot picked gs = case TargetSlot.together slot of
 totalRefused :: (Quantity -> Natural) -> TargetSlot -> Set Recipient -> GameState -> Set Recipient
 totalRefused counting slot picked gs = case TargetSlot.total slot of
   Just (TotalCap.MkTotalCap weight most)
-    | sum (fmap (weighing gs weight) (Set.toList picked)) > counting most -> picked
+    | sum (fmap (weighing gs weight) (Set.toList picked)) > toInteger (counting most) -> picked
   _ -> Set.empty
 
--- TotalCap.weight's read and clamp for one target: against that object's own
--- projection, a player weighing nothing.
-weighing :: GameState -> Quantity -> Recipient -> Natural
+-- TotalCap.weight's read for one target: against that object's own
+-- projection, a player weighing nothing. A negative weight is unobserved, no
+-- card capping a target set by anything but mana value (CR 202.3).
+weighing :: GameState -> Quantity -> Recipient -> Integer
 weighing gs weight recipient = case Recipient.objectOf recipient of
   Nothing -> 0
-  Just oid -> maybe 0 Integer.toNaturalSaturating (Quantity.evaluate (Projection.fullView gs) (Filter.contextIn gs Nothing (Just oid)) gs oid weight)
+  Just oid -> Maybe.fromMaybe 0 (Quantity.evaluate (Projection.fullView gs) (Filter.contextIn gs Nothing (Just oid)) gs oid weight)
 
 -- CR 400.1: the zone holding a recipient's object, a player's own zone named
 -- with its player -- the owner, CR 400.3 -- and a shared one alone. Nothing for

@@ -899,7 +899,7 @@ playerRefPositions =
         ("divide", Effect.Divide (Divide.MkDivide one (plantedRef "dv") (plantedPlayer "dv") (SlotName.MkSlotName (Text.pack "split"))), [plantedPlayer "dv"]),
         ("cloak", Effect.Cloak (Cloak.MkCloak (plantedPlayer "ck") (Just (plantedPlayer "ck-library"))), [plantedPlayer "ck", plantedPlayer "ck-library"]),
         ("manifestDread", Effect.ManifestDread (plantedPlayer "md"), [plantedPlayer "md"]),
-        ("choose-permanents", Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") (HowMany.UpTo Nothing) Zone.Battlefield) (SlotName.MkSlotName (Text.pack "cp")) (Just (plantedPlayer "cp-piles")) Nothing), [plantedPlayer "cp", plantedPlayer "cp-piles"]),
+        ("choose-permanents", Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") (HowMany.UpTo Nothing) Nothing Zone.Battlefield) (SlotName.MkSlotName (Text.pack "cp")) (Just (plantedPlayer "cp-piles")) Nothing), [plantedPlayer "cp", plantedPlayer "cp-piles"]),
         ("discard-counted", Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard (plantedPlayer "dc") one Nothing)), [plantedPlayer "dc"]),
         ("discard-any-number", Effect.Discard (Discard.AnyNumber (AnyNumberDiscard.MkAnyNumberDiscard (plantedPlayer "da") (AnyNumberMatching.MkAnyNumberMatching (Filter.Type.And []) Nothing) Nothing)), [plantedPlayer "da"]),
         ("player-sacrifices", Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices (plantedPlayer "ps") (Filter.Type.And []) one Nothing), [plantedPlayer "ps"]),
@@ -947,7 +947,7 @@ objectRefPlayerRefPositions =
     ("chosen-card-from-among", ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong (SlotName.MkSlotName (Text.pack "group")) (Filter.Type.And []) HowMany.one Nothing Nothing (plantedPlayer "cfa") Nothing False CardSelection.ByChoice), [plantedPlayer "cfa"]),
     -- And Fact or Fiction's pile chooser beside the separating one (CR 700.3).
     ("chosen-card-from-among-pile", ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong (SlotName.MkSlotName (Text.pack "group")) (Filter.Type.And []) (HowMany.UpTo Nothing) Nothing Nothing (plantedPlayer "cfa-split") (Just (plantedPlayer "cfa-pile")) False CardSelection.ByChoice), [plantedPlayer "cfa-split", plantedPlayer "cfa-pile"]),
-    ("chosen-permanents", ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") HowMany.one Zone.Battlefield), [plantedPlayer "cp"])
+    ("chosen-permanents", ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") HowMany.one Nothing Zone.Battlefield), [plantedPlayer "cp"])
   ]
 
 -- plantedRef's player half, named for its position for that function's reason.
@@ -1140,7 +1140,7 @@ ownCounts =
                   ),
               Children.onMovedKinds = Const.Const . foldMap quantityCounts . MovedKinds.quantityOf,
               Children.onRemovalCount = Const.Const . foldMap quantityCounts . RemovalCount.quantityOf,
-              Children.onChosenPermanents = Const.Const . foldMap quantityCounts . HowMany.quantity . ChosenPermanents.count
+              Children.onChosenPermanents = Const.Const . foldMap quantityCounts . Resolve.chosenPermanentsQuantities
             }
 
 -- Every effect a card can RESOLVE: its spell's modes, its activated and
@@ -3334,7 +3334,7 @@ objectRefFilters ref = case ref of
   -- so it is framed the same way. The ownership and control the card prints are
   -- conjuncts of that Filter, which is what this traversal hands to the Filter
   -- lints; the ceiling is reached through refFilters beside it.
-  ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents f _ _ _) -> unframed [f] <> refFilters ref
+  ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents f _ _ _ _) -> unframed [f] <> refFilters ref
   -- Rhuk's "all Equipment attached to that creature".
   ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound _ f) -> unframed [f]
   ObjectRef.AttackedBy _ -> []
@@ -5300,7 +5300,7 @@ effectFilters effect = case effect of
   Effect.ChoosePlayer _ -> []
   Effect.ChoosePlayerAtRandom _ -> []
   Effect.ChooseGroup _ -> []
-  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents f _ count _) _ _ _) -> unframed [f] <> frame Unframed (foldMap quantityFilters (HowMany.quantity count))
+  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _) -> unframed [ChosenPermanents.filter choice] <> frame Unframed (foldMap quantityFilters (Resolve.chosenPermanentsQuantities choice))
   -- CR 706.2's modifier is a Quantity, so its filters are reachable here.
   Effect.RollDie rollDie -> frame Unframed (quantityFilters (RollDie.count rollDie) <> foldMap quantityFilters (RollDie.modifier rollDie))
   -- CR 705.1's number of coins is a Quantity, so its filters are reachable here.

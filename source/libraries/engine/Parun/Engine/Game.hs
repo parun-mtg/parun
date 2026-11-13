@@ -4515,10 +4515,13 @@ chooseUpTo ceiling_ candidates prompt = again Set.empty
 --
 --
 -- UpTo under `admits` (the picks so far, and whether a candidate may join
--- them: Parun.Types.ChosenCardFromAmong's total and perColor): one ask PER
--- PICK, the sequence above, each offering only the candidates the earlier picks
--- admit and each declinable, so no answer can break the bound and every set
--- within it is reachable in any order. A count other than UpTo reads none.
+-- them: Parun.Types.ChosenCardFromAmong's total and perColor,
+-- Parun.Types.ChosenPermanents' total): one ask PER PICK, the sequence above,
+-- each offering only the candidates the earlier picks admit and each
+-- declinable, so no answer can break the bound and every set within it is
+-- reachable -- in any order, but that a pick weighing less than nothing (CR
+-- 107.1b) comes before the one it makes room for. A count other than UpTo
+-- reads none.
 -- Proved by the scenarios "Michelangelo's Technique offers a second card only
 -- within the mana value left" and "Sanar, Innovative First-Year offers no
 -- second card of a color already answered for".
@@ -4543,7 +4546,7 @@ pickCounted named chooser one_ several amount count admits candidates = case cou
     | null offer || ceiling_ == Just 0 -> pure (Nothing, [])
     | otherwise -> asking $ \who -> case admits of
         Nothing -> upTo who ceiling_ offer
-        Just admitted -> within who admitted ceiling_ [] offer
+        Just admitted -> within who admitted ceiling_ [] candidates
     where
       ceiling_ = fmap amount q
       offer = maybe candidates (\admitted -> filter (admitted []) candidates) admits

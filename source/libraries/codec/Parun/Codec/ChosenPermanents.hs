@@ -7,8 +7,10 @@ import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.HowMany as HowMany
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.PlayerRef as PlayerRef
+import qualified Parun.Codec.TotalCap as TotalCap
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.HowMany as HowMany
@@ -29,12 +31,14 @@ codec = Fields.objectWith sharedZone $ do
   filter_ <- Fields.required "filter" (Filter.codec Keyword.codec) ChosenPermanents.filter
   chooser <- Fields.defaulted "chooser" (PlayerRef.Relative PlayerRelation.You) PlayerRef.codec ChosenPermanents.chooser
   count <- Fields.defaulted "count" HowMany.one HowMany.codec ChosenPermanents.count
+  total <- Fields.defaulted "total" Nothing (Common.maybe TotalCap.codec) ChosenPermanents.total
   zone <- Fields.defaulted "zone" Zone.Battlefield Zone.codec ChosenPermanents.zone
   pure
     ChosenPermanents.MkChosenPermanents
       { ChosenPermanents.filter = filter_,
         ChosenPermanents.chooser = chooser,
         ChosenPermanents.count = count,
+        ChosenPermanents.total = total,
         ChosenPermanents.zone = zone
       }
 

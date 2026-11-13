@@ -179,8 +179,9 @@ offerCast runSubgame context reading named caster optionality verb retake repeti
     CastRepetition.WithinTotal (TotalCap.MkTotalCap weight most) -> again (Just (weighs weight, Maybe.fromMaybe 0 (reading Nothing most))) Nothing subjects
     CastRepetition.UpTo quantity -> again Nothing (Just (Maybe.fromMaybe 0 (reading Nothing quantity))) subjects
   where
-    -- TotalCap.weight's read and clamp.
-    weighs weight oid view = max 0 (Maybe.fromMaybe 0 (reading (Just (oid, view)) weight))
+    -- TotalCap.weight's read; a negative one is unobserved, mana value having
+    -- none (CR 202.3).
+    weighs weight oid view = Maybe.fromMaybe 0 (reading (Just (oid, view)) weight)
     again :: Maybe (ObjectId -> Filter.View -> Integer, Integer) -> Maybe Integer -> [ObjectId] -> Game [ObjectId]
     again _ (Just casts) _ | casts <= 0 = pure []
     again budget casts remaining = do

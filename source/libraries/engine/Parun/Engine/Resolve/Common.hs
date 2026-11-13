@@ -696,7 +696,9 @@ chosenPermanents purpose legal resolving controller source choice = do
       chooser = ChosenPermanents.chooser choice
       count = ChosenPermanents.count choice
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-      amount = maybe 0 Integer.toNaturalSaturating . Quantity.evaluateFor (effectViewOf resolving source legal gs) context gs resolving source
+      viewOf = effectViewOf resolving source legal gs
+      amount = maybe 0 Integer.toNaturalSaturating . Quantity.evaluateFor viewOf context gs resolving source
+      weighs = Quantity.evaluateFor viewOf context gs resolving
       earlier = Maybe.fromMaybe Seq.empty (Scratch.loopPicks (GameState.scratch gs))
   pickByChooser
     resolving
@@ -708,8 +710,19 @@ chosenPermanents purpose legal resolving controller source choice = do
     (\decider who pool ceiling_ -> Prompt.ChooseAnyNumber decider who source purpose pool ceiling_ earlier)
     amount
     count
-    Nothing
+    (fmap (withinTotal weighs amount) (ChosenPermanents.total choice))
     candidates
+
+-- CR 608.2d: may a candidate join the picks so far under a TotalCap? Each is
+-- weighed against its own projection, a negative weight counting as it is (CR
+-- 107.1b, and Destined Confrontation's ruling that a power less than 0
+-- subtracts) and an unevaluable one as zero (CR 107.2). Proved by the scenarios
+-- "Destined Confrontation offers a second creature only within the power
+-- left" and "CR 107.1b Destined Confrontation counts a negative power as it
+-- is".
+withinTotal :: (ObjectId -> Quantity.Type.Quantity -> Maybe Integer) -> (Quantity.Type.Quantity -> Natural) -> TotalCap.TotalCap -> [ObjectId] -> ObjectId -> Bool
+withinTotal weighs amount (TotalCap.MkTotalCap weight most) taken oid =
+  sum (fmap (\pick -> Maybe.fromMaybe 0 (weighs pick weight)) (oid : taken)) <= toInteger (amount most)
 
 -- Game.pickCounted with the seat a chooser ref names, for chosenPermanents and
 -- chooseCardFromAmong. CR 801.5a under a limited range: the chooser names only
@@ -2267,15 +2280,12 @@ chooseCardFromAmong offered resolving source controller legal chosen (ChosenCard
         Present -> stillPresent gs members
         LastKnown -> members
       matching = matchingFromAmong legal resolving controller source gs filter_ candidates
-      -- Each candidate weighed against its own projection, TopOfLibraryUntil's
-      -- read and clamp.
-      weighs weight oid = maybe 0 Integer.toNaturalSaturating (Quantity.evaluateFor viewOf context gs resolving oid weight)
-      withinTotal (TotalCap.MkTotalCap weight most) taken oid = sum (fmap (weighs weight) (oid : taken)) <= amount most
+      weighs = Quantity.evaluateFor viewOf context gs resolving
       colorsOf = foldMap Filter.colors . viewOf
       oneEach among =
         let palette = foldMap colorsOf (battlefieldMatching legal resolving controller source gs among)
          in \taken oid -> distinctlyAssigned (fmap (Set.toList . Set.intersection palette . colorsOf) (oid : taken))
-      bounds = Foldable.toList (fmap withinTotal total) <> Foldable.toList (fmap oneEach perColor)
+      bounds = Foldable.toList (fmap (withinTotal weighs amount) total) <> Foldable.toList (fmap oneEach perColor)
       admits = if null bounds then Nothing else Just (\taken oid -> all (\bound -> bound taken oid) bounds)
       pick purpose = case selection of
         CardSelection.AtRandom -> \pool -> Game.drawDistinct Prompt.RandomObject (maybe (List.genericLength pool) amount (HowMany.quantity count)) pool

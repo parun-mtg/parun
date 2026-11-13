@@ -375,7 +375,7 @@ object context determiner ref = case ref of
         text <- Filter.describe Filter.Plural permanent (Filter.merge p (Filter.MkPhrase [] [card] [from]))
         [MkReference (Text.pack "all " <> text) [] Filter.Plural []]
   ObjectRef.ChosenPermanents c
-    | ChosenPermanents.chooser c == PlayerRef.Relative PlayerRelation.You && ChosenPermanents.zone c == Zone.Battlefield -> do
+    | ChosenPermanents.chooser c == PlayerRef.Relative PlayerRelation.You && ChosenPermanents.zone c == Zone.Battlefield && Maybe.isNothing (ChosenPermanents.total c) -> do
         p <- Filter.phrase (ChosenPermanents.filter c) (keyword context)
         one <- Filter.describe Filter.Singular permanent p
         many <- Filter.describe Filter.Plural permanent p

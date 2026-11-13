@@ -606,7 +606,7 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- above, which is what makes a chooser's slot a read. The CEILING is TopOfLibrary's read.
   -- The Filter's read is a REGRESSION FENCE: no card in data/cards/ reads a slot
   -- only through this Filter, so dropping it leaves the suite green.
-  ObjectRef.ChosenPermanents choice -> joinTwo (filterSlotsOf (ChosenPermanents.filter choice)) (maybe Map.empty quantitySlots (HowMany.quantity (ChosenPermanents.count choice)))
+  ObjectRef.ChosenPermanents choice -> joinSlots (filterSlotsOf (ChosenPermanents.filter choice) : fmap quantitySlots (chosenPermanentsQuantities choice))
   -- The host is read out of the slot, and the Filter over what is attached to
   -- it may name slots of its own.
   ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound slot filter_) -> joinTwo (Map.singleton slot SlotArity.Many) (filterSlotsOf filter_)
@@ -624,6 +624,10 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
 -- that let a widened field go unread (#2729).
 -- A total's weight and bound, the Quantities a ChosenCardFromAmong reads
 -- beside its count.
+-- The Quantities a battlefield choice reads: its count and its total.
+chosenPermanentsQuantities :: ChosenPermanents.ChosenPermanents -> [Quantity.Type.Quantity]
+chosenPermanentsQuantities choice = Foldable.toList (HowMany.quantity (ChosenPermanents.count choice)) <> totalCapQuantities (ChosenPermanents.total choice)
+
 totalCapQuantities :: Maybe TotalCap.TotalCap -> [Quantity.Type.Quantity]
 totalCapQuantities = foldMap (\(TotalCap.MkTotalCap weight most) -> [weight, most])
 
@@ -672,7 +676,7 @@ objectRefQuantities ref = case ref of
   ObjectRef.AtRandom inner -> objectRefQuantities inner
   -- At most how many permanents are chosen -- Teferi, Hero of Dominaria's
   -- printed two.
-  ObjectRef.ChosenPermanents choice -> Foldable.toList (HowMany.quantity (ChosenPermanents.count choice))
+  ObjectRef.ChosenPermanents choice -> chosenPermanentsQuantities choice
   ObjectRef.AttachedToBound _ -> []
   ObjectRef.AttackedBy _ -> []
   ObjectRef.FromAnywhere _ -> []
@@ -1433,8 +1437,8 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.ChoosePlayerAtRandom _ -> Map.empty
   -- The slot is a DEFINITION; the reads are the ceiling's and the Filter's, and
   -- the chooser is a PlayerRef, reported at the head with every other one.
-  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents filter_ _ count _) _ _ _) ->
-    joinTwo (maybe Map.empty quantitySlots (HowMany.quantity count)) (filterSlotsOf filter_)
+  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _) ->
+    joinSlots (filterSlotsOf (ChosenPermanents.filter choice) : fmap quantitySlots (chosenPermanentsQuantities choice))
   -- A DEFINITION for the result slot (boundSlots below), but CR 706.2's modifier
   -- is a READ: the instruction's own Quantity may name a slot an earlier effect
   -- of this same resolution bound, CR 608.2c following the list in written order.
@@ -2254,7 +2258,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.ChoosePlayer _ -> True
   Effect.ChooseGroup _ -> True
   Effect.ChoosePlayerAtRandom _ -> True
-  Effect.ChoosePermanents choice -> all Quantity.slotsAreExhaustive (HowMany.quantity (ChosenPermanents.count (ChoosePermanents.permanents choice)))
+  Effect.ChoosePermanents choice -> all Quantity.slotsAreExhaustive (chosenPermanentsQuantities (ChoosePermanents.permanents choice))
   Effect.RollDie rollDie -> Quantity.slotsAreExhaustive (RollDie.count rollDie) && all Quantity.slotsAreExhaustive (RollDie.modifier rollDie)
   Effect.FlipCoin flipCoin -> Quantity.slotsAreExhaustive (FlipCoin.count flipCoin)
   Effect.TakeExtraTurn takeExtraTurn -> Quantity.slotsAreExhaustive (TakeExtraTurn.count takeExtraTurn)
@@ -2523,7 +2527,7 @@ hasRead wanted =
         Effect.ChoosePlayer _ -> False
         Effect.ChooseGroup _ -> False
         Effect.ChoosePlayerAtRandom _ -> False
-        Effect.ChoosePermanents choice -> any (Quantity.hasRead wanted) (HowMany.quantity (ChosenPermanents.count (ChoosePermanents.permanents choice)))
+        Effect.ChoosePermanents choice -> any (Quantity.hasRead wanted) (chosenPermanentsQuantities (ChoosePermanents.permanents choice))
         -- CR 706.2's modifier and CR 706.1's count are ordinary Quantities, so
         -- either may be the X the caster announced (CR 601.2b; Neverwinter
         -- Hydra's "roll X dice").
