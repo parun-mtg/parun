@@ -44,15 +44,24 @@ data DealDamage = MkDealDamage
     -- redirects every one of them at once.
     --
     -- A SlotName rather than an ObjectRef, where a clause's ref above is the
-    -- wider type: a damage event has exactly ONE source (CR 120.1), and every
-    -- dealer in the pool is a single object named before the effect runs -- CR
-    -- 115.10a's distinction, which is exactly the InSlot arm's. A swept SET of
-    -- dealers would be a different sentence and no card in the pool writes one.
+    -- wider type: every dealer in the pool is named before the effect runs --
+    -- CR 115.10a's distinction, which is exactly the InSlot arm's.
+    --
+    -- A slot naming SEVERAL objects names several dealers, Allies at Last's "up
+    -- to two target creatures you control each deal damage equal to their
+    -- power": every one deals to every recipient in the one batch (CR 608.2f),
+    -- each the source of its own event (CR 120.1), and an amount reading this
+    -- slot reads the one dealer whose damage it is.
+    -- data/scenarios/allies-at-last-a-shield-is-divided-between-its-two-dealers.json
+    -- proves the batch by CR 615.7's choice.
+    --
+    -- Not implemented: several dealers beside `excess` or `excessTally`
+    -- (#7272).
     --
     -- An empty slot deals nothing. The dealer of a printed card is a TARGET, so
-    -- one that has become illegal (CR 608.2b) leaves the instruction with no
-    -- source and it does as much as it can, which is nothing -- not damage from
-    -- the resolving object instead.
+    -- one that has become illegal (CR 608.2b) leaves the instruction without
+    -- that source and it does as much as it can -- not damage from the
+    -- resolving object instead.
     dealer :: Maybe SlotName.SlotName,
     -- | WHERE THE EXCESS GOES -- CR 120.4a's first sentence, which happens only
     -- when "an effect that's causing damage to be dealt STATES that excess

@@ -1087,11 +1087,18 @@ sequenceSlots defined = joinSlots . snd . List.mapAccumL (\seen effect -> (seen 
 -- Exhaustive, not over Parun.Engine.Children: a classification, every slot judged a read or a definition, at its reader's arity.
 slotsOf :: Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Map.Map SlotName SlotArity
 slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectRefs effect))) (joinSlots (fmap playerRefSlots (effectPlayerRefs effect)))) $ case effect of
-  -- The dealer is a read like any other (CR 120.2b), and one object (CR 120.1).
-  Effect.DealDamage (DealDamage.MkDealDamage parts dealer _ _ _ _) ->
-    joinTwo
-      (joinSlots (fmap (quantitySlots . DamagePart.quantity) (Foldable.toList parts)))
-      (maybe Map.empty oneSlot dealer)
+  -- The dealer is a read like any other (CR 120.2b), and of every object the
+  -- slot names: each deals (CR 608.2f), and an amount reading that slot reads
+  -- it one dealer at a time, so its singular read is no claim on the slot.
+  --
+  -- Not implemented: several dealers under an instruction that states or
+  -- tallies excess damage (CR 120.4a, 120.10), whose dealer stays one object
+  -- (#7272).
+  Effect.DealDamage (DealDamage.MkDealDamage parts dealer excess _ _ excessTally) ->
+    let amounts = joinSlots (fmap (quantitySlots . DamagePart.quantity) (Foldable.toList parts))
+     in case dealer of
+          Just slot | Maybe.isNothing excess && Maybe.isNothing excessTally -> Map.insert slot SlotArity.Many amounts
+          _ -> joinTwo amounts (maybe Map.empty oneSlot dealer)
   -- BOTH fighters: CR 701.14a reads each one's power against the other, so a
   -- slot named by only one half would still look dangling.
   Effect.Fight (Fight.MkFight first second _) -> joinTwo (oneSlot first) (oneSlot second)
