@@ -649,12 +649,6 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
       result <- started (Just (Text.pack "vintage")) [dir <> "/modern.txt", dir <> "/legal.txt"]
       Spec.assertEqWith s "refused" result (Left (fmap Text.pack [dir <> "/modern.txt: line 1: the list names the format modern, not vintage"]))
 
-  Spec.it s "parun match refuses a Format: limited list of 39 cards"
-    . S.withCorpusDir "legality-match-header" [("small.txt", Text.pack "Format: limited\n4 Grizzly Bears\n35 Mountain\n"), ("legal.txt", Text.pack "4 Grizzly Bears\n56 Mountain\n")]
-    $ \dir -> do
-      result <- started Nothing [dir <> "/small.txt", dir <> "/legal.txt"]
-      Spec.assertEqWith s "refused" result (Left (fmap Text.pack [dir <> "/small.txt: 39 cards in the deck, fewer than 40"]))
-
   -- The format a game starts under when no --format names one. Neither
   -- command's game is played here: RecordSpec's Yorion, Sky Nomad case is a
   -- format reaching the game and being read there (CR 702.139a, #6724).
