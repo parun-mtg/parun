@@ -2421,7 +2421,7 @@ drawRewriteChildren c rewrite = case rewrite of
   DrawRewrite.DrawInstead _ -> pure rewrite
   DrawRewrite.DiscardThenDrawOrMill -> pure rewrite
   DrawRewrite.KeepOneOfTopThenDraw count -> DrawRewrite.KeepOneOfTopThenDraw <$> replacementQuantity c count
-  DrawRewrite.MaySkipFor effects -> DrawRewrite.MaySkipFor <$> traverse (replacementEffect c) effects
+  DrawRewrite.RunEffects optional effects -> DrawRewrite.RunEffects optional <$> traverse (replacementEffect c) effects
 
 -- | What a turn-up replacement does (CR 614.1e).
 turnUpRewriteChildren :: (Applicative f) => ReplacementChildren card ability effect f -> TurnUpRewrite.TurnUpRewrite ability effect -> f (TurnUpRewrite.TurnUpRewrite ability effect)

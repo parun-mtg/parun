@@ -1,0 +1,59 @@
+{
+  "description": "CR 614.1a Words of Waste has each opponent discard in place of its controller's draw",
+  "note": "alice activates Words of Waste in her upkeep. Her draw step's draw never happens (CR 614.6): Hill Giant stays on her library, and bob, asked nothing but which card, discards his Island. Nobody is asked whether to apply it, the rewrite having no \"may\".",
+  "board": {
+    "active": "alice",
+    "turn": 2,
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Words of Waste",
+            "label": "words"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "hand": [
+          {
+            "card": "Island",
+            "label": "held"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": {"Activate": {"object": "$words", "mana": ["$swamp"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "DrawStep", "player": "bob", "do": {"Answer": {"prompt": "ChooseDiscard", "with": ["$held"]}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Hill Giant", "count": 1}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Hill Giant", "count": 0}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Island", "count": 1}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Forest", "count": 1}}}
+  ]
+}

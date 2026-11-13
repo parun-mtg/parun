@@ -5227,9 +5227,15 @@ apply settle batch applied batchPrevented candidate event =
       -- leaves the event STANDING for the same reason, and a draw off an empty
       -- library is still offered (CR 614.11). Skipped, the effects are queued, the
       -- PlaneswalkRewrite.RunEffects arm's reason.
-      DrawRewrite.MaySkipFor effects -> do
+      --
+      -- CR 614.1a / 614.6: Words of Waste's "each opponent discards a card
+      -- instead" has no "may", so nobody is asked and the draw never happens.
+      DrawRewrite.RunEffects optional effects -> do
         gs <- State.get
-        answer <- Game.choose (Prompt.ChooseSubstitute (Decide.deciderFor pid gs) pid (ReplacementCandidate.source candidate))
+        answer <-
+          if optional
+            then Game.choose (Prompt.ChooseSubstitute (Decide.deciderFor pid gs) pid (ReplacementCandidate.source candidate))
+            else pure OptionalDecision.Exercises
         case answer of
           OptionalDecision.Declines -> pure (Just event)
           OptionalDecision.Exercises -> do
@@ -5616,7 +5622,7 @@ apply settle batch applied batchPrevented candidate event =
     -- CR 614.10b: Time Vault's "you may skip that turn instead. If you do, untap
     -- this artifact". The row's controller decides (CR 109.5), who is the player
     -- beginning it but for a teammate's row under CR 805.8; declining leaves the
-    -- event standing, DrawRewrite.MaySkipFor's posture. Skipped, the effects wait
+    -- event standing, DrawRewrite.RunEffects' posture. Skipped, the effects wait
     -- for the next step to actually begin (StoredEffects.pendingSkipEffects), where
     -- pendingReplacementEffects' drains would run them at once.
     --
@@ -11611,9 +11617,41 @@ drawSeries settle spent pid n = Maybe.catMaybes <$> Monad.replicateM (Natural.to
         else pure Nothing
 
 -- CR 504.1: the active player's turn-based draw in their draw step. `settle`
--- is drawSeries', for a sequence a replacement makes in its place.
+-- is drawSeries', for a sequence a replacement makes in its place, and is run
+-- after the draw as well, so what a replacement queued in its place is done
+-- before a teammate's draw (CR 805.6a).
 drawForTurn :: Game () -> PlayerId -> Game ()
-drawForTurn settle pid = Monad.void (drawCardSpentReturning (DrawKind.TurnBased pid) settle Set.empty pid)
+drawForTurn settle pid = Monad.void (drawCardSpentReturning (DrawKind.TurnBased pid) settle Set.empty pid) <* settle
+
+-- CR 121.2d / 805.6a: run `act` for each of these players, each about to
+-- perform their draws -- the active team's in whatever order that team likes,
+-- then the rest in the order given, which the caller makes turn order. Without
+-- the shared team turns option the active team is one seat and nothing is
+-- asked.
+--
+-- The team's choice is its primary player's (CR 805.2), asked one drawer at a
+-- time through Prompt.ChooseActivePlayer, so the team sees each teammate's
+-- draws before naming the next: docs/decisions.md, "When a team sharing a turn
+-- settles the order its players draw in". The scenarios "CR 805.6a the active
+-- team names which teammate draws first" and "CR 121.2d the active team names
+-- which teammate draws first for Temple Bell" prove the choice.
+--
+-- Not implemented: the question where no replacement effect applies to any of
+-- the team's draws -- `proposals` names each drawer's -- and seat order is
+-- taken (#7293).
+inDrawOrder :: (PlayerId -> [ProposedEvent]) -> [PlayerId] -> (PlayerId -> Game a) -> Game [a]
+inDrawOrder proposals drawers act = do
+  gs <- State.get
+  let (team, rest) = List.partition (Turn.isActive gs) drawers
+      replaced pid = not (PlayerEffect.prohibitsDrawing pid gs || all (null . Replacement.applicable Nothing gs) (proposals pid))
+  next <- case team of
+    _ : _ : _ | any replaced team -> Game.chooseAmong Prompt.ChooseActivePlayer (Game.primaryOf gs (TurnRegisters.activePlayer (GameState.turn gs))) team
+    _ -> pure (Maybe.listToMaybe team)
+  case next of
+    Nothing -> traverse act rest
+    Just pid -> do
+      result <- act pid
+      (result :) <$> inDrawOrder proposals (filter (/= pid) drawers) act
 
 -- CR 614.5: the rows a replacement's own new events are not offered to -- those
 -- already applied to the event it replaced, and itself.

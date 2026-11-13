@@ -1682,7 +1682,7 @@ replacementRewriteEffects replacement = case replacement of
   ReplacementEffect.LifeLossR {} -> []
   ReplacementEffect.LifeGainR {} -> []
   ReplacementEffect.CounterLossR {} -> []
-  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.MaySkipFor effects)) -> Foldable.toList effects
+  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.RunEffects _ effects)) -> Foldable.toList effects
   ReplacementEffect.DrawR {} -> []
   ReplacementEffect.DrawCountR {} -> []
   ReplacementEffect.InstructionR {} -> []
@@ -4270,7 +4270,7 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.DrawInstead _)) -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ DrawRewrite.DiscardThenDrawOrMill) -> []
   ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.KeepOneOfTopThenDraw quantity)) -> quantityFilters quantity
-  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.MaySkipFor _)) -> []
+  ReplacementEffect.DrawR (DrawR.MkDrawR _ _ (DrawRewrite.RunEffects _ _)) -> []
   ReplacementEffect.DrawCountR {} -> []
   ReplacementEffect.InstructionR (InstructionR.MkInstructionR _ _ (InstructionRewrite.Scaled scaling)) -> scalingFilters scaling
   ReplacementEffect.InstructionR {} -> []

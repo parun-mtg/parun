@@ -75,6 +75,7 @@ import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.Discovered as Discovered
 import qualified Parun.Types.Draw as Draw
+import qualified Parun.Types.DrawKind as DrawKind
 import qualified Parun.Types.EachCardFromAmong as EachCardFromAmong
 import Parun.Types.Effect (Effect)
 import qualified Parun.Types.Effect as Effect
@@ -1192,36 +1193,41 @@ draw settle resolving source controller legal (Draw.MkDraw ref quantity mSlot) =
       named = playerRefPlayers legal resolving source controller gs ref
       -- CR 121.2c: the active player draws first, then each other player in turn
       -- order. Observable rather than cosmetic: each draw records a zone change
-      -- the trigger scan reads (CR 603.2). Not implemented: CR 121.2d's order within
-      -- the active team, which that team chooses (#4014). An intersection: apnapOrder supplies the ORDER and `named`
+      -- the trigger scan reads (CR 603.2). An intersection: apnapOrder supplies the ORDER and `named`
       -- the MEMBERSHIP, which matters for a seat apnapOrder names and `named`
       -- does not -- a departure leaves the roster (CR 800.4k) but takes the
       -- library (CR 800.4a), so drawing would write drewFromEmpty.
-      drawers = filter (\pid -> List.elem pid named) (Game.apnapOrder gs)
-  -- PER DRAWER (evaluateForRecipient), every amount off the same pre-effect `gs`,
-  -- so a seat drawing first cannot change what a later seat draws.
-  drawn <- fmap concat . Monad.forM drawers $ \pid ->
-    case Common.evaluateForRecipient viewOf context gs resolving source pid quantity of
-      Just n
-        | n > 0 -> do
-            -- CR 121.2a: the INSTRUCTION is its own replaceable event, and rule
-            -- 616.1g settles it before any of the individual draws below -- so
-            -- the count those draws run on is the one this loop leaves standing,
-            -- and a row that replaced the instruction outright leaves none.
-            outcome <- Event.applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid (Integer.toNaturalSaturating n))
-            got <- case outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards of
-              Nothing -> pure []
-              -- CR 121.2: draw the settled count one at a time, so each draw
-              -- re-reads the library top and the CR 104.3c empty-library loss is
-              -- preserved; CR 614.11a: what a replacement queued in one draw's
-              -- place lands before the next.
-              Just (drawer, settled) -> Event.drawSeries settle Set.empty drawer settled
-            -- CR 603.12: fewer cards drawn than the instruction named, against
-            -- the count BEFORE any replacement -- The Royal Scions' 2019-10-04
-            -- rulings, fewer than four does not trigger and five or more does.
-            Monad.when (List.genericLength got < n) Common.fallShort
-            pure got
-      _ -> pure []
+      --
+      -- PER DRAWER (evaluateForRecipient), every amount off the same pre-effect `gs`,
+      -- so a seat drawing first cannot change what a later seat draws.
+      instructed =
+        Map.fromList
+          [ (pid, n)
+          | pid <- named,
+            Just n <- [Common.evaluateForRecipient viewOf context gs resolving source pid quantity],
+            n > 0
+          ]
+      drawers = filter (`Map.member` instructed) (Game.apnapOrder gs)
+      instruction pid = ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid (Integer.toNaturalSaturating (Map.findWithDefault 0 pid instructed))
+  -- CR 121.2d: the active team's drawers in the order that team likes.
+  drawn <- fmap concat . Event.inDrawOrder (\pid -> [instruction pid, ProposedEvent.WouldDraw pid DrawKind.Other]) drawers $ \pid -> do
+    -- CR 121.2a: the INSTRUCTION is its own replaceable event, and rule
+    -- 616.1g settles it before any of the individual draws below -- so
+    -- the count those draws run on is the one this loop leaves standing,
+    -- and a row that replaced the instruction outright leaves none.
+    outcome <- Event.applyReplacementsIn settle Nothing Set.empty Set.empty (instruction pid)
+    got <- case outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards of
+      Nothing -> pure []
+      -- CR 121.2: draw the settled count one at a time, so each draw
+      -- re-reads the library top and the CR 104.3c empty-library loss is
+      -- preserved; CR 614.11a: what a replacement queued in one draw's
+      -- place lands before the next.
+      Just (drawer, settled) -> Event.drawSeries settle Set.empty drawer settled
+    -- CR 603.12: fewer cards drawn than the instruction named, against
+    -- the count BEFORE any replacement -- The Royal Scions' 2019-10-04
+    -- rulings, fewer than four does not trigger and five or more does.
+    Monad.when (List.genericLength got < Map.findWithDefault 0 pid instructed) Common.fallShort
+    pure got
   -- CR 121.6c's "and reveal IT": the cards the draw put into a hand, for a later
   -- clause of this resolution to name (#1899). The ids are the ones the CR 400.7
   -- funnel ANSWERED -- the incarnation in the hand -- so a reader finds the card

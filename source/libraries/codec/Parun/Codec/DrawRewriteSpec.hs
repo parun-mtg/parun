@@ -97,10 +97,17 @@ spec s = Spec.describe s "Parun.Codec.DrawRewrite" $ do
       (DrawRewrite.KeepOneOfTopThenDraw (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))))
       " {\"type\":\"KeepOneOfTopThenDraw\",\"value\":{\"type\":\"InSlot\",\"value\":\"X\"}} "
   -- CR 614.10: Island Sanctuary.
-  Spec.it s "MaySkipFor" $
+  Spec.it s "RunEffects, optional" $
     Common.assertCodec
       s
       (DrawRewrite.codec Common.natural)
-      (DrawRewrite.MaySkipFor (Seq.fromList [7]))
-      " {\"type\":\"MaySkipFor\",\"value\":[7]} "
+      (DrawRewrite.RunEffects True (Seq.fromList [7]))
+      " {\"type\":\"RunEffects\",\"value\":{\"optional\":true,\"effects\":[7]}} "
+  -- CR 614.1a: Words of Waste.
+  Spec.it s "RunEffects, mandatory" $
+    Common.assertCodec
+      s
+      (DrawRewrite.codec Common.natural)
+      (DrawRewrite.RunEffects False (Seq.fromList [7]))
+      " {\"type\":\"RunEffects\",\"value\":{\"optional\":false,\"effects\":[7]}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (DrawRewrite.codec Common.natural)
