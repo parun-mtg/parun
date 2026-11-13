@@ -230,7 +230,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.Measure measure ->
           mView >>= \view ->
             Filter.measureOf measure view
-              <|> if Filter.zeroMissingPowerToughness context && Maybe.isNothing (Filter.playerIdentity view) && elem measure [Measure.Power, Measure.Toughness] then Just 0 else Nothing
+              <|> if Filter.zeroMissingPowerToughness context && Maybe.isNothing (Filter.playerIdentity view) && elem measure [Measure.Power, Measure.Toughness, Measure.TotalPowerAndToughness] then Just 0 else Nothing
         -- Alchemy's intensity, read off the same view in every zone: Static
         -- Discharge reads its own on the stack.
         Quantity.Intensity -> mView >>= Filter.intensity
