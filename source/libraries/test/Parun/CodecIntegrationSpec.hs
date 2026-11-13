@@ -139,67 +139,58 @@ spec s registry corpus = Spec.describe s "Parun.Codec (integration)" $ do
   -- elision in both directions, lives in Parun.Codec.ModeSpec now; Modal's own
   -- coverage, including the empty-modes decode failure, lives in
   -- Parun.Codec.ModalSpec.
-  Spec.describe s "honesty round-trip over allPrintings" $ do
-    Spec.it s "P1: Codec.decode Printing.Codec.codec . Codec.encode Printing.Codec.codec == Right" $ do
-      ps <- S.allPrintings s corpus
-      mapM_ (\p -> Spec.assertEqWith s (show (Face.name (S.combinedFace p))) (Codec.decode Printing.Codec.codec (Codec.encode Printing.Codec.codec p)) (Right p)) ps
-    Spec.it s "P2: through text" $ do
-      ps <- S.allPrintings s corpus
-      mapM_
-        (\p -> Spec.assertEqWith s (show (Face.name (S.combinedFace p))) (Common.parse (Common.render (Codec.encode Printing.Codec.codec p)) >>= Codec.decode Printing.Codec.codec) (Right p))
-        ps
-    Spec.it s "M4e Cancel loads as a single Counter effect targeting a spell" $ do
-      cancel <- S.printingOf s registry "Cancel"
-      let card = S.combinedFace cancel
-      Spec.assertEqWith
-        s
-        "effects"
-        (Card.allEffects card)
-        [Effect.Counter (Counter.MkCounter (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) Nothing Nothing Nothing)]
-      Spec.assertEqWith
-        s
-        "target slot"
-        (Card.allTargetSlots card)
-        (Map.singleton (SlotName.MkSlotName (Text.pack "spell")) (TargetSlot.required Pool.Spells Nothing))
-    -- Stifle beside it, and the pair is the point: ONE Counter opcode, TWO
-    -- pools. CR 113.9 -- "activated and triggered abilities on the stack aren't
-    -- spells, and therefore can't be countered by anything that counters only
-    -- spells" -- is carried entirely by which Pool the slot names, so a card
-    -- file that reached for Pool.Spells here would let Stifle counter a spell.
-    --
-    -- Stifle's parenthetical is reminder text and decodes to nothing: CR 605.3b
-    -- and CR 605.4a keep a mana ability off the stack, so there is no filter for
-    -- it to become (hence the Nothing beside Pool.Abilities).
-    Spec.it s "CR 113.9 Stifle loads as the same Counter effect over Pool.Abilities" $ do
-      stifle <- S.printingOf s registry "Stifle"
-      let card = S.combinedFace stifle
-      Spec.assertEqWith
-        s
-        "effects"
-        (Card.allEffects card)
-        [Effect.Counter (Counter.MkCounter (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "ability"))) Nothing Nothing Nothing)]
-      Spec.assertEqWith
-        s
-        "target slot"
-        (Card.allTargetSlots card)
-        (Map.singleton (SlotName.MkSlotName (Text.pack "ability")) (TargetSlot.required Pool.Abilities Nothing))
-    -- The key is omitted when Counterable, so this pins BOTH directions of
-    -- that default: the one card that prints the clause decodes as
-    -- CantBeCountered, and a card that says nothing decodes as Counterable
-    -- rather than as whatever a missing key might otherwise become.
-    Spec.it s "CR 113.6g counterability decodes from the card, and defaults when the key is absent" $ do
-      rendingVolley <- S.printingOf s registry "Rending Volley"
-      cancel <- S.printingOf s registry "Cancel"
-      Spec.assertEqWith
-        s
-        "Rending Volley says it"
-        (Face.counterability (S.combinedFace rendingVolley))
-        (Counterability.CantBeCountered Nothing)
-      Spec.assertEqWith
-        s
-        "Cancel does not, and its file has no counterability key"
-        (Face.counterability (S.combinedFace cancel))
-        Counterability.Counterable
+  Spec.it s "M4e Cancel loads as a single Counter effect targeting a spell" $ do
+    cancel <- S.printingOf s registry "Cancel"
+    let card = S.combinedFace cancel
+    Spec.assertEqWith
+      s
+      "effects"
+      (Card.allEffects card)
+      [Effect.Counter (Counter.MkCounter (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) Nothing Nothing Nothing)]
+    Spec.assertEqWith
+      s
+      "target slot"
+      (Card.allTargetSlots card)
+      (Map.singleton (SlotName.MkSlotName (Text.pack "spell")) (TargetSlot.required Pool.Spells Nothing))
+  -- Stifle beside it, and the pair is the point: ONE Counter opcode, TWO
+  -- pools. CR 113.9 -- "activated and triggered abilities on the stack aren't
+  -- spells, and therefore can't be countered by anything that counters only
+  -- spells" -- is carried entirely by which Pool the slot names, so a card
+  -- file that reached for Pool.Spells here would let Stifle counter a spell.
+  --
+  -- Stifle's parenthetical is reminder text and decodes to nothing: CR 605.3b
+  -- and CR 605.4a keep a mana ability off the stack, so there is no filter for
+  -- it to become (hence the Nothing beside Pool.Abilities).
+  Spec.it s "CR 113.9 Stifle loads as the same Counter effect over Pool.Abilities" $ do
+    stifle <- S.printingOf s registry "Stifle"
+    let card = S.combinedFace stifle
+    Spec.assertEqWith
+      s
+      "effects"
+      (Card.allEffects card)
+      [Effect.Counter (Counter.MkCounter (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "ability"))) Nothing Nothing Nothing)]
+    Spec.assertEqWith
+      s
+      "target slot"
+      (Card.allTargetSlots card)
+      (Map.singleton (SlotName.MkSlotName (Text.pack "ability")) (TargetSlot.required Pool.Abilities Nothing))
+  -- The key is omitted when Counterable, so this pins BOTH directions of
+  -- that default: the one card that prints the clause decodes as
+  -- CantBeCountered, and a card that says nothing decodes as Counterable
+  -- rather than as whatever a missing key might otherwise become.
+  Spec.it s "CR 113.6g counterability decodes from the card, and defaults when the key is absent" $ do
+    rendingVolley <- S.printingOf s registry "Rending Volley"
+    cancel <- S.printingOf s registry "Cancel"
+    Spec.assertEqWith
+      s
+      "Rending Volley says it"
+      (Face.counterability (S.combinedFace rendingVolley))
+      (Counterability.CantBeCountered Nothing)
+    Spec.assertEqWith
+      s
+      "Cancel does not, and its file has no counterability key"
+      (Face.counterability (S.combinedFace cancel))
+      Counterability.Counterable
   Spec.describe s "P4 runtime types" $ do
     -- A real permanent, not a projection of a nonexistent object: Typhoid
     -- Rats (1/1 deathtouch) populates keywords, colors, power, toughness,

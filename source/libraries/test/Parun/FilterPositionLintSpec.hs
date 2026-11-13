@@ -315,7 +315,7 @@ canHostSubjectCounts card =
 -- Every occurrence of one atom's codec tag in an ENCODED face. The completeness
 -- witness for the traversal above: Parun.Codec.Face.toJson visits every field
 -- of a Face and every type under it, is round-tripped by
--- Parun.CodecIntegrationSpec's "honesty round-trip over allPrintings", and was
+-- Parun.CardsSpec's per-card round trip, and was
 -- written for another purpose entirely -- so a Filter position cardFilters forgets
 -- is one this still sees.
 --
