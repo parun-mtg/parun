@@ -91,7 +91,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.2d: Katara, the Fearless makes a triggered ability of an Ally you control trigger an additional time, not a non-Ally's and not an opponent's Ally's",
+  "description": "CR 603.2d: Katara, the Fearless makes a triggered ability of an Ally you control trigger an additional time, not a non-Ally's, yours or an opponent's",
   "timeline": [
     {
       "do": {

@@ -154,8 +154,8 @@
       "player": "bob",
       "refuse": {
         "Block": {
-          "$ninja": [
-            "$drake"
+          "$drake": [
+            "$ninja"
           ]
         }
       },
