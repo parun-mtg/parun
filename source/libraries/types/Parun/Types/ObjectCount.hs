@@ -3,7 +3,8 @@ module Parun.Types.ObjectCount where
 import qualified Parun.Types.CostAmount as CostAmount
 
 -- | How many matching objects a cost takes: Parun.Types.Sacrifice's
--- permanents, Parun.Types.DiscardCards' cards.
+-- permanents, Parun.Types.DiscardCards' cards, or
+-- Parun.Types.CountersFromPermanents' counters.
 data ObjectCount
   = -- | This many: Cathartic Reunion's "Discard two cards".
     Exactly CostAmount.CostAmount

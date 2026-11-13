@@ -1882,7 +1882,7 @@ traverseAmount f component = case component of
   -- that licence scopes.
   CostComponent.Waterbend amount -> CostComponent.Waterbend <$> f amount
   CostComponent.Sacrifice sacrifice -> (\count -> CostComponent.Sacrifice sacrifice {Sacrifice.count = count}) <$> traverseCount f (Sacrifice.count sacrifice)
-  CostComponent.RemoveCounters remove -> (\amount -> CostComponent.RemoveCounters remove {CountersFromPermanents.count = amount}) <$> f (CountersFromPermanents.count remove)
+  CostComponent.RemoveCounters remove -> (\amount -> CostComponent.RemoveCounters remove {CountersFromPermanents.count = amount}) <$> traverseCount f (CountersFromPermanents.count remove)
   CostComponent.PayComputedLife _ -> pure component
   CostComponent.TapThis -> pure component
   CostComponent.UntapThis -> pure component
@@ -2051,7 +2051,7 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.RemoveCountersFromThis _ -> False
   -- CR 118.3 measures the announced count against the counters the criterion
   -- admits between them, so a big enough X refuses.
-  CostComponent.RemoveCounters remove -> CountersFromPermanents.count remove == announced
+  CostComponent.RemoveCounters remove -> CountersFromPermanents.count remove == ObjectCount.Exactly announced
   CostComponent.PutCountersOnThis _ -> False
   CostComponent.PutCountersOnPayer _ -> False
   CostComponent.Forage -> False
@@ -4540,7 +4540,11 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- This component ALONE, Sacrifice's caveat -- but `claimOf` states no claim
   -- for it, CR 122.1's counter being a marker, so `jointlyPayable` has nothing
   -- to add and two such components of one cost can each see the same permanent.
-  CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents amount which criterion spread) -> payableAnnounced amount $ \n -> case spread of
+  --
+  -- EVERY counter is payable whatever the board: all of none is still all, so
+  -- CR 118.3 finds nothing missing (Sacrifice's Every, above).
+  CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents ObjectCount.Every _ _ _) -> True
+  CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly amount) which criterion spread) -> payableAnnounced amount $ \n -> case spread of
     CounterSpread.FromOne -> not (null (counterRemovalCandidates slots pid oid n which criterion gs))
     CounterSpread.FromAmong -> sum (spreadRemovalCandidates slots pid oid which criterion gs) >= n
     CounterSpread.FromAmongAtLeast -> sum (spreadRemovalCandidates slots pid oid which criterion gs) >= n
@@ -7642,7 +7646,15 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- With the count a FLOOR (FromAmongAtLeast), the payer also settles how many,
   -- so the prompt stands even over one candidate and is elided only where the
   -- candidates carry exactly the floor. Parun.CostSpec's Ooze Flux group proves it.
-  CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents amount which criterion spread) -> paidAnnounced amount $ \n -> do
+  --
+  -- EVERY counter the criterion reaches comes off, so nothing is chosen and the
+  -- prompt never arises; none at all binds zero. Hankyu's scenarios prove it.
+  CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents ObjectCount.Every which criterion _) -> do
+    gs <- State.get
+    let flat = flattenMixed (mixedRemovalCandidates slots pid oid which criterion gs)
+    Monad.forM_ (Map.toList flat) (\((chosen, kind), taken) -> Event.removeCounters chosen kind taken)
+    pure (Payment.Paid (Map.singleton Binding.removedCounters (Binding.toAmount (sum flat))))
+  CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly amount) which criterion spread) -> paidAnnounced amount $ \n -> do
     gs <- State.get
     let decider = Decide.deciderFor pid gs
         removed taken = Payment.Paid (Map.singleton Binding.removedCounters (Binding.toAmount taken))

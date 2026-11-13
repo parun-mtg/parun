@@ -1996,7 +1996,7 @@ costComponentChildren c component = case component of
   CostComponent.AddLoyaltyToThis _ -> component <$ costLooksBack c HistoryRead.LoyaltyActivations
   CostComponent.RemoveLoyaltyFromThis amount -> CostComponent.RemoveLoyaltyFromThis <$ costLooksBack c HistoryRead.LoyaltyActivations <*> costAmountChildren c amount
   CostComponent.RemoveCountersFromThis counters -> CostComponent.RemoveCountersFromThis <$> countersOnThisChildren c counters
-  CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents n which criterion spread) -> fmap CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents <$> costAmountChildren c n <*> whichCountersChildren c which <*> costFilter c criterion <*> pure spread)
+  CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents n which criterion spread) -> fmap CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents <$> objectCountChildren c n <*> whichCountersChildren c which <*> costFilter c criterion <*> pure spread)
   CostComponent.PutCountersOnThis counters -> CostComponent.PutCountersOnThis <$> countersOnThisChildren c counters
   CostComponent.PutCountersOnPayer _ -> pure component
   CostComponent.Blight amount -> CostComponent.Blight <$> costAmountChildren c amount

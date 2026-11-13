@@ -838,7 +838,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   Spec.it s "render prints the costs of returning, exiling, tapping and removing counters" $ do
     let costed components = Oracle.render (withFace (\f -> f {Face.activatedAbilities = [activated (Cost.MkCost (Just (ManaCost.MkManaCost [])) components) (draw (PlayerRef.Relative PlayerRelation.You) 1)]}))
         yours = Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]
-        removing n spread f = CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents n (WhichCounters.OfKind CounterKind.PlusOnePlusOne) f spread)
+        removing n spread f = CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly n) (WhichCounters.OfKind CounterKind.PlusOnePlusOne) f spread)
     Spec.assertEq s (Just (Text.pack "Return Spark to its owner's hand: Draw a card.")) (costed [CostComponent.ReturnThis])
     Spec.assertEq s (Just (Text.pack "{T}, Exile Spark: Draw a card.")) (costed [CostComponent.TapThis, CostComponent.ExileThis])
     Spec.assertEq s (Just (Text.pack "Exile Spark from your graveyard: Draw a card.")) (costed [CostComponent.ExileThisFrom Zone.Graveyard])
@@ -854,7 +854,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s (Just (Text.pack "Remove one or more +1/+1 counters from among creatures you control: Draw a card.")) (costed [removing (CostAmount.Fixed 1) CounterSpread.FromAmongAtLeast yours])
     Spec.assertEq s (Just (Text.pack "Remove any number of +1/+1 counters from Spark: Draw a card.")) (costed [removing (CostAmount.Fixed 0) CounterSpread.FromAmongAtLeast Filter.IsSource])
     Spec.assertEq s (Just (Text.pack "Remove X +1/+1 counters from Spark: Draw a card.")) (costed [removing (CostAmount.Announced (SlotName.MkSlotName (Text.pack "X"))) CounterSpread.FromAmong Filter.IsSource])
-    Spec.assertEq s (Just (Text.pack "Remove three counters from among creatures you control: Draw a card.")) (costed [CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (CostAmount.Fixed 3) WhichCounters.OfAnyKind yours CounterSpread.FromAmong)])
+    Spec.assertEq s (Just (Text.pack "Remove all wish counters from Spark: Draw a card.")) (costed [CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents ObjectCount.Every (WhichCounters.OfKind (CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "wish")))) Filter.IsSource CounterSpread.FromAmong)])
+    Spec.assertEq s (Just (Text.pack "Remove three counters from among creatures you control: Draw a card.")) (costed [CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly (CostAmount.Fixed 3)) WhichCounters.OfAnyKind yours CounterSpread.FromAmong)])
     let untapped = Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Not Filter.IsTapped]
     Spec.assertEq s (Just (Text.pack "Tap an untapped creature you control: Draw a card.")) (costed [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) untapped False)])
     Spec.assertEq s (Just (Text.pack "Tap two untapped creatures you control that share a creature type: Draw a card.")) (costed [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 2) untapped True)])

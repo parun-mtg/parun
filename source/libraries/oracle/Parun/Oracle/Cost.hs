@@ -170,13 +170,14 @@ component self named c = case c of
       WhichCounters.OfKind kind -> fmap (<> Text.pack " ") (counterWord named kind)
       WhichCounters.OfAnyKind -> [Text.empty]
     removed <- case (spread, amount) of
-      (CounterSpread.FromAmongAtLeast, CostAmount.Fixed 0) -> [Text.pack "any number of " <> word <> Text.pack "counters"]
-      (CounterSpread.FromAmongAtLeast, CostAmount.Fixed 1) -> [Text.pack "one or more " <> word <> Text.pack "counters"]
+      (_, ObjectCount.Every) -> [Text.pack "all " <> word <> Text.pack "counters"]
+      (CounterSpread.FromAmongAtLeast, ObjectCount.Exactly (CostAmount.Fixed 0)) -> [Text.pack "any number of " <> word <> Text.pack "counters"]
+      (CounterSpread.FromAmongAtLeast, ObjectCount.Exactly (CostAmount.Fixed 1)) -> [Text.pack "one or more " <> word <> Text.pack "counters"]
       (CounterSpread.FromAmongAtLeast, _) -> []
       -- Refused by Parun.Codec.CountersFromPermanents.
       (CounterSpread.FromAmongAtMost, _) -> []
-      (_, CostAmount.Fixed n) -> counted word (toInteger n)
-      (_, CostAmount.Announced _) -> [Text.pack "X " <> word <> Text.pack "counters"]
+      (_, ObjectCount.Exactly (CostAmount.Fixed n)) -> counted word (toInteger n)
+      (_, ObjectCount.Exactly (CostAmount.Announced _)) -> [Text.pack "X " <> word <> Text.pack "counters"]
     from <- case (f, spread) of
       (Filter.Type.IsSource, _) -> [self]
       (_, CounterSpread.FromOne) -> some 1 permanent =<< Filter.phrase f named

@@ -1,8 +1,8 @@
 module Parun.Types.CountersFromPermanents where
 
-import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.WhichCounters as WhichCounters
 
 -- | The payload of Parun.Types.CostComponent's RemoveCounters arm: CR 118.1's
@@ -11,12 +11,14 @@ import qualified Parun.Types.WhichCounters as WhichCounters
 -- Filter admits -- off one the payer chooses (Zameck Guildmage), or divided
 -- among several as the payer pays (Novijen Sages), per the spread.
 --
--- The count is COUNTERS, where Parun.Types.TapPermanents' is objects.
+-- The count is COUNTERS, where Parun.Types.TapPermanents' is objects: Every
+-- is every counter of the kind on every permanent the Filter admits, none
+-- included (Hankyu's "Remove all aim counters").
 --
 -- PARAMETRIC in the keyword for the Filter it carries, exactly as
 -- Parun.Types.CostComponent is.
 data CountersFromPermanents keyword = MkCountersFromPermanents
-  { count :: CostAmount.CostAmount,
+  { count :: ObjectCount.ObjectCount,
     kind :: WhichCounters.WhichCounters keyword,
     whichPermanent :: Filter.Filter keyword,
     spread :: CounterSpread.CounterSpread
