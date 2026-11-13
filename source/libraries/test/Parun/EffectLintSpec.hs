@@ -3019,7 +3019,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Just (EntryHost.Specified _) -> True
           _ -> False
         chosenAmong riders = case EntryRiders.attachedTo riders of
-          Just (EntryHost.Chosen _) -> True
+          Just (EntryHost.Chosen _ _) -> True
           _ -> False
         offends effect = case effect of
           Effect.MoveToZone (MoveToZone.MkMoveToZone _ zone riders _ _ _ _) -> (specified riders || chosenAmong riders) && zone /= Zone.Battlefield

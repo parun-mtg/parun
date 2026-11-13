@@ -1511,11 +1511,10 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- CR 701.3a: "An Aura, Equipment, or Fortification can't be attached to an
   -- object or player it couldn't enchant, equip, or fortify, respectively." The
   -- atom that asks that question is answerable only where an attach frames the
-  -- match, and vacuously False everywhere else. Not implemented: the atom at a
-  -- RESOLUTION-TIME choice, where Infectious Rage's "choose a creature at random
-  -- this Aura can enchant. Return this card to the battlefield attached to that
-  -- creature" writes it (#3871). See canHostSubjectOffends for the
-  -- two offences this one predicate covers.
+  -- match, and vacuously False everywhere else. A RESOLUTION-TIME choice of
+  -- host never writes it: Infectious Rage's "a creature at random this Aura can
+  -- enchant" is EntryHost.Chosen, whose offer is already the Aura's own. See
+  -- canHostSubjectOffends for the two offences this one predicate covers.
   Spec.it s "CR 701.3a no card asks CanHostSubject outside a position an attach frames" $ do
     let offenders = fmap fst (filter (any canHostSubjectOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only where an attach frames it" (fmap (S.nameOf . Printing.card) offenders) []

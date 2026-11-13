@@ -36,24 +36,26 @@
                             "attachedTo": {
                               "type": "Chosen",
                               "value": {
-                                "type": "And",
-                                "value": [
-                                  {
-                                    "type": "HasCardType",
-                                    "value": "Creature"
-                                  },
-                                  {
-                                    "type": "IsInZone",
-                                    "value": "Battlefield"
-                                  },
-                                  {
-                                    "type": "HeldBy",
-                                    "value": {
-                                      "holder": "Controller",
-                                      "relation": "You"
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "HasCardType",
+                                      "value": "Creature"
+                                    },
+                                    {
+                                      "type": "IsInZone",
+                                      "value": "Battlefield"
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Controller",
+                                        "relation": "You"
+                                      }
                                     }
-                                  }
-                                ]
+                                  ]
+                                }
                               }
                             }
                           },
