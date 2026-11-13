@@ -2,6 +2,7 @@
 -- as a scenario, and that scenario replayed.
 module Parun.RecordSpec where
 
+import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
@@ -12,11 +13,13 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Word as Word
+import Numeric.Natural (Natural)
 import qualified Parun.BotSpec as BotSpec
 import qualified Parun.ClientSpec as ClientSpec
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.CompanionSpec as CompanionSpec
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.Play.Client as Client
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Record as Record
 import qualified Parun.Registry as Registry
@@ -43,11 +46,12 @@ import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.Terminal as Terminal
 import qualified Parun.Types.Timed as Timed
+import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Record" $ do
   Spec.it s "a recorded bot game replays clean to the same result" $ do
-    matchup <- BotSpec.bears s registry
+    matchup <- BotSpec.sevens s registry
     let (outcome, timeline) = recorded bots matchup
     replayed <- Scenario.run registry (saved matchup timeline)
     case (outcome, replayed) of
@@ -57,8 +61,8 @@ spec s registry = Spec.describe s "Record" $ do
 
   Spec.it s "a game cut short replays to where it stopped" $ do
     matchup <- BotSpec.bears s registry
-    let seats = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) (lifted (ClientSpec.screen 40 ClientSpec.plays)) (const (Right Nothing))), (S.bob, Game.bot (S.fixtureRegistry []))]
-        (outcome, (timeline, cut)) = watched 1 Nothing seats Map.empty matchup
+    let seats = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) (lifted (ClientSpec.screen 12 ClientSpec.plays)) (const (Right Nothing))), (S.bob, Game.bot (S.fixtureRegistry []))]
+        (outcome, (timeline, cut)) = watched Nothing 1 Nothing seats Map.empty matchup
     replayed <- Scenario.run registry (saved matchup timeline)
     Spec.assertEqWith s "cut" (fmap fst outcome) (Left (Text.pack "end of input"))
     case replayed of
@@ -66,56 +70,52 @@ spec s registry = Spec.describe s "Record" $ do
       Left failure -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
 
   Spec.it s "CR 404.3: a seat arranging its graveyard is asked again on replay" $ do
-    matchup <- BotSpec.bears s registry
+    matchup <- scours s registry
     let orders = Map.fromList [(S.alice, GraveyardOrder.Matters), (S.bob, GraveyardOrder.Matters)]
-        -- Seed 1's game puts cards into a graveyard together.
-        (outcome, (timeline, _)) = watched 1 Nothing bots orders matchup
+        (_, (timeline, _)) = watched (Just 3) 1 Nothing bots orders matchup
         arranged = Seq.filter ((== Just (Text.pack "ArrangeGraveyardArrivals")) . answered) timeline
     Spec.assertBool s (not (Seq.null arranged)) "a seat arranged a batch"
-    replayed <- Scenario.run registry (savedWith orders matchup timeline)
-    case (outcome, replayed) of
-      (Right (result, _), Right final) -> Spec.assertEqWith s "same result" (GameState.result final) (Just result)
-      (_, Left failure) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
-      (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
+    replaysClean s registry (savedWith orders matchup timeline)
 
   Spec.it s "CR 405.2: a seat targeting a trigger names it by its place on the stack" $ do
     matchup <- stifles s registry
-    let (outcome, timeline) = recorded bots matchup
+    -- Seed 5's game has a Stifle cast at a trigger on turn 9.
+    let (_, (timeline, _)) = watched (Just 9) 5 Nothing bots Map.empty matchup
     Spec.assertBool s (any targetsStack timeline) "a seat targeted the stack"
-    replayed <- Scenario.run registry (saved matchup timeline)
-    case (outcome, replayed) of
-      (Right (result, _), Right final) -> Spec.assertEqWith s "same result" (GameState.result final) (Just result)
-      (_, Left failure) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
-      (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
+    replaysClean s registry (saved matchup timeline)
 
   -- CR 702.139a: Yorion, Sky Nomad's condition reads the game's format, which
   -- `parun play --format` names and its saved game carries. CR 100.2b: sixty
-  -- cards are twenty over limited's forty.
+  -- cards are twenty over limited's forty. CR 103.2b offers the companion
+  -- before the game begins, so its first turn is all either game needs.
   Spec.it s "CR 100.2 a game played under a format offers Yorion, and replays under it" $ do
     matchup <- yorions s registry
     let limited = Just (Format.MkFormat RuleFamily.Limited Nothing Set.empty)
-        (outcome, (timeline, _)) = watched 1 limited bots Map.empty matchup
-        (_, (unformatted, _)) = watched 1 Nothing bots Map.empty matchup
+        (_, (timeline, _)) = watched (Just 1) 1 limited bots Map.empty matchup
+        (_, (unformatted, _)) = watched (Just 1) 1 Nothing bots Map.empty matchup
         offers = Seq.length . Seq.filter ((== Just (Text.pack "ChooseCompanion")) . answered)
     Spec.assertEqWith s "CR 103.2b: each seat is offered Yorion" (offers timeline) 2
     Spec.assertEqWith s "CR 100.2: under no format, neither is" (offers unformatted) 0
-    replayed <- Scenario.run registry (savedUnder limited Map.empty matchup timeline)
-    case (outcome, replayed) of
-      (Right (result, played), Right final) -> do
-        Spec.assertEqWith s "same result" (GameState.result final) (Just result)
-        Spec.assertEqWith s "same companions" (fmap (`CompanionSpec.companionOf` final) [S.alice, S.bob]) (fmap (`CompanionSpec.companionOf` played) [S.alice, S.bob])
-      (_, Left failure) -> Spec.assertFailure s (Text.unpack (Scenario.render failure))
-      (Left reason, _) -> Spec.assertFailure s (Text.unpack reason)
+    replaysClean s registry (savedUnder limited Map.empty matchup timeline)
 
   Spec.it s "a timeline missing an answer fails to replay" $ do
     matchup <- BotSpec.bears s registry
-    let (_, timeline) = recorded bots matchup
+    -- Seed 3's game attacks on turn 5.
+    let (_, (timeline, _)) = watched (Just 6) 3 Nothing bots Map.empty matchup
         half = Seq.length timeline `div` 2
     -- An attack from the second half on: a passed priority left out replays
     -- the same, the runner passing for a seat with nothing scheduled.
     missing <- maybe (Spec.assertFailure s "no attack to leave out") (pure . (+ half)) (Seq.findIndexL attacks (Seq.drop half timeline))
     replayed <- Scenario.run registry (saved matchup (Seq.deleteAt missing timeline))
     Spec.assertBool s (Either.isLeft replayed) "desync"
+
+-- Asserts that a recording replays without a desync: every answer it holds
+-- is asked for where it stands, as "a timeline missing an answer" shows a
+-- replay demands.
+replaysClean :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> Scenario.Type.Scenario -> m ()
+replaysClean s registry scenario = do
+  replayed <- Scenario.run registry scenario
+  either (Spec.assertFailure s . Text.unpack . Scenario.render) (const (pure ())) replayed
 
 -- Whether an entry chooses targets, one of them named by its place on the
 -- stack.
@@ -141,6 +141,15 @@ stifles s registry = do
   island <- S.printingOf s registry "Island"
   plains <- S.printingOf s registry "Plains"
   let deck = Deck.fromCards (Map.fromList [(council, 8), (stifle, 8), (warden, 4), (island, 8), (plains, 4)])
+  pure ((S.alice, deck) NonEmpty.:| [(S.bob, deck)])
+
+-- Twelve Tome Scours and eight Islands apiece: a Scour mills five cards at
+-- once, a batch its owner arranges (CR 404.3), from the first turn.
+scours :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck))
+scours s registry = do
+  scour <- S.printingOf s registry "Tome Scour"
+  island <- S.printingOf s registry "Island"
+  let deck = Deck.fromCards (Map.fromList [(scour, 12), (island, 8)])
   pure ((S.alice, deck) NonEmpty.:| [(S.bob, deck)])
 
 -- Two seats of Grizzly Bears and Forests, sixty cards with Yorion, Sky Nomad
@@ -172,14 +181,23 @@ type Base = State.StateT (Seq.Seq Timed.Timed, Maybe GameState.GameState) (State
 -- A game seeded 1 between these seats, and every entry its answers recorded,
 -- however it ended.
 recorded :: Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), Seq.Seq Timed.Timed)
-recorded seats matchup = fmap fst (watched 1 Nothing seats Map.empty matchup)
+recorded seats matchup = fmap fst (watched Nothing 1 Nothing seats Map.empty matchup)
 
 -- recorded's game at a seed under a format, each seat at its graveyard order
 -- in `orders`.
-watched :: Word.Word32 -> Maybe Format.Format -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), (Seq.Seq Timed.Timed, Maybe GameState.GameState))
-watched seed format seats orders matchup =
-  let played = Game.run (S.fixtureRegistry []) format [Record.recording labels sink, lastAsked] seats (const (pure ())) Hotseat.fresh {Hotseat.facing = Just S.alice} (S.seeded seed) orders matchup
+watched :: Maybe Natural -> Word.Word32 -> Maybe Format.Format -> Map.Map PlayerId.PlayerId (Answerer.Answerer (Asked.Asked GameState.GameState) (Game.Play Base)) -> Map.Map PlayerId.PlayerId GraveyardOrder.GraveyardOrder -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> (Either Text.Text (Result.Result, GameState.GameState), (Seq.Seq Timed.Timed, Maybe GameState.GameState))
+watched curfew seed format seats orders matchup =
+  let played = Game.run (S.fixtureRegistry []) format ([Record.recording labels sink, lastAsked] <> foldMap (pure . after) curfew) seats (const (pure ())) Hotseat.fresh {Hotseat.facing = Just S.alice} (S.seeded seed) orders matchup
    in State.evalState (State.runStateT played (Seq.empty, Nothing)) ClientSpec.blank
+
+-- Stops play, as a seat out of input does, at the first question of a turn
+-- after `turn`.
+after :: Natural -> Observer.Observer (Game.Play Base)
+after turn =
+  Observer.MkObserver
+    { Observer.before = \asked -> Monad.when (TurnRegisters.turnNumber (GameState.turn (Asked.game asked)) > turn) (Trans.lift (Client.stop (Text.pack "curfew"))),
+      Observer.after = \_ _ -> pure ()
+    }
 
 lastAsked :: Observer.Observer (Game.Play Base)
 lastAsked = Observer.MkObserver {Observer.before = Game.underneath . State.modify' . fmap . const . Just . Asked.game, Observer.after = \_ _ -> pure ()}

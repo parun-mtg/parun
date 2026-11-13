@@ -1,0 +1,416 @@
+{
+  "board": {
+    "active": "carol",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mangara, the Diplomat",
+            "label": "mg",
+            "ready": true
+          },
+          {
+            "card": "Labyrinth of Skophos",
+            "label": "lab"
+          },
+          {
+            "card": "Reliquary Tower",
+            "label": "rt"
+          },
+          {
+            "card": "Plains",
+            "label": "pl1"
+          },
+          {
+            "card": "Plains",
+            "label": "pl2"
+          },
+          {
+            "card": "Plains",
+            "label": "pl3"
+          },
+          {
+            "card": "Plains",
+            "label": "pl4"
+          },
+          {
+            "card": "Mountain",
+            "label": "n4"
+          },
+          {
+            "card": "Mountain",
+            "label": "n5"
+          },
+          {
+            "card": "Mountain",
+            "label": "n6"
+          },
+          {
+            "card": "Mountain",
+            "label": "n7"
+          },
+          {
+            "card": "Mountain",
+            "label": "n8"
+          },
+          {
+            "card": "Mountain",
+            "label": "n9"
+          },
+          {
+            "card": "Mountain",
+            "label": "n10"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "x3"
+          },
+          {
+            "card": "Word of Seizing",
+            "label": "wa"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 60,
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "b6",
+            "ready": true
+          },
+          {
+            "card": "Mu Yanling, Sky Dancer",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 30
+              }
+            ],
+            "label": "bw"
+          },
+          {
+            "card": "Mountain",
+            "label": "bm5"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 60,
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "c1",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "c2",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "c3",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "c4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "cm3"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 60,
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Mangara, the Diplomat does not count a dead attacker's planeswalker that you took control of afterwards.",
+  "note": "docs/decisions.md, \"The seat of a departed attacker's planeswalker\": one Bears is left attacking alice, one is removed from combat, and the one at bob's Mu Yanling dies before alice takes Mu Yanling with Word of Seizing. It left attacking bob's planeswalker, so it adds nothing: no draw.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$c2",
+          "$c3",
+          "$c4"
+        ]
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$alice"
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$alice"
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bw"
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$pl1",
+            "$pl2",
+            "$pl3",
+            "$pl4",
+            null
+          ],
+          "object": "$lab",
+          "targets": [
+            "$c3"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$n4",
+            null
+          ],
+          "object": "$x3",
+          "targets": [
+            "$c4"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$n5",
+            "$n6",
+            "$n7",
+            "$n8",
+            "$n9",
+            null
+          ],
+          "object": "$wa",
+          "targets": [
+            "$bw"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

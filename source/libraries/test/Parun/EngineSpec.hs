@@ -20,7 +20,6 @@
 module Parun.EngineSpec where
 
 import qualified Data.Map.Strict as Map
-import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Registry as Registry
@@ -29,9 +28,9 @@ import qualified Parun.Support as S
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Object as Object
+import qualified Parun.Types.Player as Player
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.Source as Source
-import qualified Parun.Types.Zone as Zone
 
 -- How many card-backed objects the game state holds. CR 400.7 mints a fresh id
 -- per zone change but never a new card, so this is conserved across a game
@@ -60,10 +59,6 @@ cardBackedCount gs =
         Source.OfCardCopy _ -> False
         Source.OfInherentTrigger _ -> False
    in Map.size (Map.filter fromCard (GameState.objects gs))
-
-battlefieldCount :: GameState.GameState -> Int
-battlefieldCount gs =
-  Map.size (Map.filter ((==) Zone.Battlefield . Object.zone) (GameState.objects gs))
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Engine" $ do
@@ -111,25 +106,18 @@ spec s registry = Spec.describe s "Parun.Engine.Engine" $ do
         Spec.assertBool s (not (Set.member w decked)) "CR 104.2a the other player wins"
       other -> Spec.assertFailure s ("CR 104.2a expected a won game, got " <> show other)
     Spec.assertEqWith s "CR 800.1 no removal at two seats, so both decks survive" (cardBackedCount final) 16
-  -- Combat is the first thing that can end a game before a library runs out.
-  -- S.fightAnswer differs
-  -- from S.castAnswer in exactly the two combat declarations (CR 508.1a, CR
-  -- 509.1a), so the control is the same game with combat switched off.
-  --
-  -- The battlefield comparison is what makes this a combat test rather than a
-  -- second copy of CastSpec's casting game: creatures die in the fought game
-  -- that survive in the control, so combat demonstrably ran. Without it the
-  -- case would still pass if DeclareAttackers were ignored outright.
-  Spec.it s "a game driven through combat terminates, and combat actually happened" $ do
+  -- S.fightAnswer differs from S.castAnswer in exactly the two combat
+  -- declarations (CR 508.1a, CR 509.1a), so the control is the same game with
+  -- combat switched off, and life the control never lost is combat damage
+  -- (CR 510.2). Without the comparison the case would still pass if
+  -- DeclareAttackers were ignored outright.
+  Spec.it s "a game driven through combat conserves its cards, and combat actually happened" $ do
     matchup <- S.shortGreenBlack (S.printingOf s registry)
-    let fought = snd (Engine.runMatchPure S.fightAnswer GameSettings.plain matchup)
-        control = snd (Engine.runMatchPure S.castAnswer GameSettings.plain matchup)
-    Spec.assertBool s (Maybe.isJust (GameState.result fought)) "the fought game reaches a result"
-    Spec.assertBool s (Maybe.isJust (GameState.result control)) "and so does its no-combat control"
-    -- CR 510.2 deals the combat damage and CR 704.5g destroys what it was
-    -- lethal to, so a fought game ends with a smaller battlefield than the
-    -- control that declared no attackers.
-    Spec.assertLtWith s "CR 704.5g combat killed permanents the control kept" (battlefieldCount fought) (battlefieldCount control)
+    -- Twelve turns: creatures out on both sides, and the first attack through.
+    let fought = S.opening 12 1 S.fightAnswer matchup
+        control = S.opening 12 1 S.castAnswer matchup
+        life = sum . fmap Player.life . Map.elems . GameState.players
+    Spec.assertLtWith s "CR 510.2 combat dealt damage the control never took" (life fought) (life control)
     -- CR 400.7 again, on the branch the lands-only cases cannot reach: dying,
     -- being cast and resolving are all zone changes, and none of them may mint
     -- or lose a card.

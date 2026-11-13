@@ -58,8 +58,11 @@ then a summary line naming the seed the run shuffled the tests with; `--seed N`
 replays that order. Iterate on your subtree, and before pushing run the tests
 your change can reach, not the whole suite: CI runs that on every push and
 the merge queue runs it again. Never run the whole suite locally: a local
-build is unoptimized (`cabal.project`), where it takes a quarter of an hour
-and its full-game cases time out; if CI fails, run the cases it names.
+build is unoptimized (`cabal.project`), where it takes nine minutes; if CI
+fails, run the cases it names. No case plays a whole game: one that needs a
+result plays seven-card decks (`BotSpec.sevens`), and one that needs play
+stops after the turn that shows it (`S.playedThrough`). `--slowest N` names
+the cases that ran longest.
 Redirect output to a file and read the file. Build with `cabal build -v0`. No
 `cabal clean`, and never turn the optimizer on: `script/mutate.sh` needs the
 same build.

@@ -8,13 +8,17 @@ import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Control.Monad.Trans.Writer as Writer
+import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
 import qualified Data.List as List
+import qualified Data.Ord as Ord
 import qualified Data.Sequence as Seq
 import qualified Data.Text as Text
 import qualified Data.Text.IO as TextIO
+import qualified Data.Word as Word
+import qualified GHC.Clock as Clock
 import qualified GHC.Stack as Stack
 import Numeric.Natural (Natural)
 import qualified Parun.Exceptions.AssertionFailed as AssertionFailed
@@ -43,11 +47,13 @@ data Outcome
   deriving (Eq, Show)
 
 -- | The command line: the substrings selecting cases (any of them; every case
--- when none), the per-case budget in microseconds, and the shuffle's seed.
+-- when none), the per-case budget in microseconds, the shuffle's seed, and how
+-- many of the slowest cases to name.
 data Options = MkOptions
   { patterns :: [Text.Text],
     timeout :: Maybe Natural,
-    seed :: Maybe Key.Type.Key
+    seed :: Maybe Key.Type.Key,
+    slowest :: Natural
   }
   deriving (Eq, Show)
 
@@ -92,12 +98,13 @@ flags :: [GetOpt.OptDescr (Options -> Either String Options)]
 flags =
   [ GetOpt.Option "p" ["pattern"] (GetOpt.ReqArg (\s o -> Right o {patterns = patterns o <> [Text.pack s]}) "SUBSTRING") "run the cases whose path holds this; repeated, those matching any",
     GetOpt.Option [] ["timeout"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a duration: " <> s) (\n -> Right o {timeout = Just n}) $ duration s) "DURATION") "fail a case still running after this long: seconds, or a number ending in ms, s, m or h",
-    GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a seed: " <> s) (\k -> Right o {seed = Just k}) . Key.fromHex $ Text.pack s) "KEY") "the shuffle's key, 64 hexadecimal digits; drawn from the operating system when absent"
+    GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a seed: " <> s) (\k -> Right o {seed = Just k}) . Key.fromHex $ Text.pack s) "KEY") "the shuffle's key, 64 hexadecimal digits; drawn from the operating system when absent",
+    GetOpt.Option [] ["slowest"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a number of cases: " <> s) (\n -> Right o {slowest = n}) $ Read.readMaybe s) "N") "name the N cases that ran longest, and for how long, before the summary"
   ]
 
 parseOptions :: [String] -> Either String Options
 parseOptions arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
-  (updates, [], []) -> Monad.foldM (\o f -> f o) MkOptions {patterns = [], timeout = Nothing, seed = Nothing} updates
+  (updates, [], []) -> Monad.foldM (\o f -> f o) MkOptions {patterns = [], timeout = Nothing, seed = Nothing, slowest = 0} updates
   (_, argument : _, []) -> Left $ "unexpected argument: " <> argument
   (_, _, problem : _) -> Left $ List.dropWhileEnd Char.isSpace problem
 
@@ -123,12 +130,13 @@ selected :: Options -> Case -> Bool
 selected options c = null (patterns options) || any (\p -> Text.isInfixOf p $ name c) (patterns options)
 
 -- | Runs the selected cases in an order shuffled by the seed, handing each
--- failure's line to @report@ as it lands.
+-- failure's line to @report@ as it lands, then the slowest cases' lines.
 run :: (Text.Text -> IO ()) -> Options -> Key.Type.Key -> Seq.Seq Case -> IO Summary
 run report options s cases = do
   let order = ordered options s cases
   queue <- IORef.newIORef order
   failed <- IORef.newIORef (0 :: Natural)
+  durations <- IORef.newIORef []
   let worker = do
         next <- IORef.atomicModifyIORef' queue $ \q -> case q of
           [] -> ([], Nothing)
@@ -136,7 +144,10 @@ run report options s cases = do
         case next of
           Nothing -> pure ()
           Just c -> do
+            started <- Clock.getMonotonicTimeNSec
             outcome <- runCase (timeout options) c
+            finished <- Clock.getMonotonicTimeNSec
+            IORef.atomicModifyIORef' durations $ \ds -> (((finished - started) `div` 1000000, name c) : ds, ())
             case outcome of
               Passed -> pure ()
               Failed m -> do
@@ -150,7 +161,13 @@ run report options s cases = do
     pure done
   Foldable.traverse_ Concurrent.takeMVar dones
   n <- IORef.readIORef failed
+  IORef.readIORef durations >>= Foldable.traverse_ report . slowestLines (slowest options)
   pure MkSummary {total = Natural.length order, failures = n}
+
+-- | A line for each of the @n@ cases that ran longest, longest first: its
+-- milliseconds, then its path.
+slowestLines :: Natural -> [(Word.Word64, Text.Text)] -> [Text.Text]
+slowestLines n = fmap (\(ms, path') -> Text.pack ("SLOW " <> show ms <> "ms ") <> path') . take (Natural.toIntSaturating n) . List.sortOn (Bifunctor.first Ord.Down)
 
 -- | The selected cases, in the order the seed shuffles them into.
 ordered :: Options -> Key.Type.Key -> Seq.Seq Case -> [Case]

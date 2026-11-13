@@ -31,6 +31,7 @@ import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Departure as Departure
+import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Trigger as Event
@@ -49,6 +50,7 @@ import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Play.Chance as Chance
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Spec as Spec
@@ -60,6 +62,8 @@ import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.Aggregation as Aggregation
+import qualified Parun.Types.Answerer as Answerer
+import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackOption as AttackOption
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
@@ -115,6 +119,7 @@ import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
+import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Placement as Placement
@@ -564,8 +569,7 @@ redRed fetch = do
   deck <- Cards.redDeck fetch
   pure (Setup.mirror deck bothPlayers)
 
--- The red mirror at half the counts, for the specs that play a whole game out.
--- They need a deck-out, not a tournament-length one.
+-- The red mirror at half the counts.
 shortRedRed :: (Monad m) => Cards.Fetch m -> m (NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck))
 shortRedRed fetch = do
   deck <- Cards.redDeck fetch
@@ -677,6 +681,21 @@ identityAnswer p = case p of
   -- discriminating.
   Prompt.ChooseAction {} -> A.Pass
   _ -> Script.declining p
+
+-- A match set up and played to the end of turn `final`, or to its result if
+-- that comes first: a game's opening, for a case that needs no ending.
+playedThrough :: (Monad m) => Natural -> [Observer.Observer m] -> Answerer.Answerer (Asked.Asked GameState.GameState) m -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> m GameState.GameState
+playedThrough final observers answerer matchup = do
+  (_, begun) <- Engine.runGameAsked (Driver.ask observers answerer) (Setup.gameWith GameSettings.plain (fmap fst matchup)) (Setup.newGame (Resolve.performHandAction Engine.playSubgame) matchup)
+  Driver.drive observers answerer 100000 (\gs -> pure (TurnRegisters.turnNumber (GameState.turn gs) > final)) begun
+
+-- playedThrough for seats that answer without a monad, each library shuffled
+-- from `seed`: unshuffled, a deck's lands can sit under everything else and
+-- its first turns hold no play at all.
+opening :: Natural -> Word.Word32 -> (forall r. Prompt.Prompt r -> r) -> NonEmpty.NonEmpty (PlayerId.PlayerId, Deck.Deck) -> GameState.GameState
+opening final seed answer matchup =
+  let seat = Answerer.MkAnswerer (pure . answer . Asked.prompt)
+   in State.evalState (playedThrough final [] (Driver.bySeat (Map.fromList (NonEmpty.toList (fmap (\(pid, _) -> (pid, seat)) matchup))) Chance.chance) matchup) (seeded seed)
 
 -- Casts when legal, otherwise plays a land, otherwise passes.
 castAnswer :: Prompt.Prompt r -> r
