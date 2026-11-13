@@ -183,8 +183,8 @@
       "check": {
         "View": {
           "is": [
-            "$plots",
-            "$soil"
+            "$soil",
+            "Plots That Span Centuries"
           ],
           "of": "Zone",
           "player": "alice",

@@ -457,7 +457,7 @@ layeredBetween a b gs = case (Map.lookup a (GameState.objects gs), Map.lookup b 
 -- a new Combat field is an arity error here.
 combatNames :: ObjectId -> Combat.Combat -> Bool
 combatNames oid combat = case combat of
-  Combat.MkCombat attackers blockers struckFirst joinedUnder attackedUnder attackedControlledBy attacked declaredAttacked declaredAttackedBy declaredAttackedThisStep declaredAttackers declaredBlockers _blockersDeclared attackingNothing blockingNothing removedDefending _defenders _barred bands pileBlocks blockedBy ->
+  Combat.MkCombat attackers blockers struckFirst joinedUnder attackedUnder attackedControlledBy attackedProtectedBy attacked declaredAttacked declaredAttackedBy declaredAttackedThisStep declaredAttackers declaredBlockers _blockersDeclared attackingNothing blockingNothing removedDefending _defenders _barred bands pileBlocks blockedBy ->
     Map.member oid attackers
       || any (attackTargetNames oid) (Map.elems attackers)
       || Map.member oid blockers
@@ -466,6 +466,7 @@ combatNames oid combat = case combat of
       || Map.member oid joinedUnder
       || Map.member oid attackedUnder
       || Map.member oid attackedControlledBy
+      || Map.member oid attackedProtectedBy
       || any (attackTargetNames oid) attacked
       || any (attackTargetNames oid) declaredAttacked
       || any (any (attackTargetNames oid)) (Map.elems declaredAttackedBy)

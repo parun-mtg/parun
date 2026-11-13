@@ -1,0 +1,22 @@
+{
+  "description": "CR 601.2b / 107.3c: Caller of the Untamed is offered where its controller can pay for some card they exiled with it, and choosing a card they cannot pay for reverses the activation",
+  "note": "alice exiled Hill Giant (mana value 4) and Grizzly Bears (2) and has two Forests. The ability is offered, the Bears being payable; choosing the Giant makes X 4, which two Forests do not pay.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Caller of the Untamed", "label": "caller", "ready": true}, {"card": "Forest", "label": "f1", "ready": true}, {"card": "Forest", "label": "f2", "ready": true}], "exile": [{"card": "Hill Giant", "label": "giant", "exiledWith": "Caller of the Untamed"}, {"card": "Grizzly Bears", "label": "bears", "exiledWith": "Caller of the Untamed"}], "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]},
+      {"name": "bob", "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Activate $caller", "ActivateManaAbility $f1", "ActivateManaAbility $f2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$caller", "mana": ["$f1", "$f2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChoosePermanent", "with": "$giant"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$caller", "mana": ["$f1", "$f2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChoosePermanent", "with": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 0}}}
+  ]
+}

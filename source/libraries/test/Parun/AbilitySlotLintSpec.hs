@@ -86,6 +86,7 @@ import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
+import qualified Parun.Types.DefinedX as DefinedX
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.Duration as Duration
@@ -342,6 +343,9 @@ triggeredAbilityOffendsGiven inherited ability =
 --   * payGateBound, the slot its own CR 118.12 cost binds as the ability
 --     resolves -- written on the same ability object, by Resolve rather than
 --     Activate.
+--   * Binding.definingCard, and only when a choice defines the ability's X
+--     (DefinedX.choice): CR 601.2b's announcement binds the chosen card, so
+--     Caller of the Untamed's "that card" is an ordinary slot read.
 --
 -- What is NOT on it is the point:
 --
@@ -402,7 +406,11 @@ activatedAbilityOffends ability =
         if removesCountersAsCost (ActivatedAbility.cost ability)
           then Set.singleton Binding.removedCounters
           else Set.empty
-   in modalSlotsOffend (const Set.empty) (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, totalled, discarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
+      defining =
+        if any (Maybe.isJust . DefinedX.choice) (ActivatedAbility.definedX ability)
+          then Set.singleton Binding.definingCard
+          else Set.empty
+   in modalSlotsOffend (const Set.empty) (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, defining, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, totalled, discarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
 
 -- Does this cost tap permanents the payer CHOOSES? sacrificesAsCost's shape, and
 -- the same reason: CR 601.2h's payment binds Binding.tappedPermanent

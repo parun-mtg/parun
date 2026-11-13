@@ -2137,6 +2137,7 @@ departedAttackerSpec s registry =
                             -- declaration would have recorded.
                             Combat.Type.attackedUnder = Map.singleton attacker S.bob,
                             Combat.Type.attackedControlledBy = Map.empty,
+                            Combat.Type.attackedProtectedBy = Map.empty,
                             Combat.Type.joinedUnder = Map.fromList [(attacker, S.alice), (blocker, S.bob)],
                             Combat.Type.attacked = Set.singleton (AttackTarget.OfPlayer S.bob),
                             Combat.Type.declaredAttacked = Set.singleton (AttackTarget.OfPlayer S.bob),
@@ -2192,6 +2193,7 @@ departedDefenderSpec s registry =
                             Combat.Type.struckFirst = Nothing,
                             Combat.Type.attackedUnder = Map.singleton attacker S.bob,
                             Combat.Type.attackedControlledBy = Map.empty,
+                            Combat.Type.attackedProtectedBy = Map.empty,
                             Combat.Type.joinedUnder = Map.singleton attacker S.alice,
                             Combat.Type.attacked = Set.singleton (AttackTarget.OfPlayer S.bob),
                             Combat.Type.declaredAttacked = Set.singleton (AttackTarget.OfPlayer S.bob),

@@ -187,8 +187,8 @@
       "check": {
         "View": {
           "is": [
-            "$echoes",
-            "$soil"
+            "$soil",
+            "My Laughter Echoes"
           ],
           "of": "Zone",
           "player": "alice",

@@ -93,10 +93,11 @@ data TargetSlot = MkTargetSlot
     -- their choice". Nothing is the rule's default, the controller, which is
     -- every other slot in the corpus.
     --
-    -- Never a seat by id: CR 601.2c's announcement precedes every binding the
-    -- announcement itself makes, so a slot names its chooser by relation to the
-    -- controller or through a binding the announcement already holds -- CR
-    -- 603.2's trigger-event bindings, there before CR 603.3d's announcement.
+    -- Never a seat by id: a slot names its chooser by relation to the
+    -- controller or through a binding the announcement holds by then -- CR
+    -- 603.2's trigger-event bindings, there before CR 603.3d's announcement,
+    -- or a slot the controller announced first (CR 602.3b; Mogg Assassin's
+    -- "that opponent").
     -- Resolving it to a seat is Parun.Engine.Target.chooserOf's.
     --
     -- ON THE SLOT rather than on the ability, because Cuombajj Witches prints

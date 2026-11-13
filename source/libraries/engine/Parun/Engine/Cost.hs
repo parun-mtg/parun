@@ -115,6 +115,7 @@ import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnPayer as CountersOnPayer
 import qualified Parun.Types.CountersOnThis as CountersOnThis
+import qualified Parun.Types.DefinedX as DefinedX
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
@@ -2107,16 +2108,35 @@ ceilingOf reader pid oid quantities gs = case fmap (xValue reader pid oid gs) qu
 
 -- | CR 107.3c: the X an activated ability's own text defines
 -- (ActivatedAbility.definedX), read off its source as it reads, ceilingOf's
--- way; Nothing for an X its activator announces.
-definedX :: PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility card ability -> GameState -> Maybe Natural
-definedX pid oid ability gs = fmap (xValue (ActivatedAbility.name ability) pid oid gs) (ActivatedAbility.definedX ability)
+-- way; Nothing for an X its activator announces. `chosen` is the card CR
+-- 601.2b's choice named (definingCandidates), read as Binding.definingCard.
+definedX :: Maybe ObjectId -> PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility card ability -> GameState -> Maybe Natural
+definedX chosen pid oid ability gs =
+  let named = maybe Map.empty (Map.singleton Binding.definingCard . Set.singleton . Recipient.ToObject) chosen
+   in fmap (xValueIn (Projection.framedBySlots gs named (xContext (ActivatedAbility.name ability) pid oid gs)) oid gs . DefinedX.quantity) (ActivatedAbility.definedX ability)
+
+-- | CR 601.2b / 607.3: the cards the choice defining this ability's X is among
+-- (DefinedX.choice), the pile as the ability reads it, or Nothing for an X no
+-- choice defines. An empty pile leaves X undefined, so the ability can't be
+-- activated (Prototype Portal's ruling of 2011-01-01).
+definingCandidates :: PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility card ability -> GameState -> Maybe [ObjectId]
+definingCandidates pid oid ability gs = do
+  pile <- DefinedX.choice =<< ActivatedAbility.definedX ability
+  let reader = ActivatedAbility.name ability
+  pure (Game.linkedPile (Just pid) reader (Game.acquisitionFor reader oid gs) pile oid gs)
 
 -- One quantity bounding or defining an X, off `oid` as the ability named
 -- `reader` reads it. Unreadable or negative is 0.
 xValue :: Maybe AbilityName.AbilityName -> PlayerId -> ObjectId -> GameState -> Quantity.Type.Quantity -> Natural
-xValue reader pid oid gs quantity =
-  let context = (Projection.sourceContext gs (Just pid) oid) {Filter.reader = reader}
-   in Integer.toNaturalSaturating (Maybe.fromMaybe 0 (Quantity.evaluate (Projection.fullView gs) context gs oid quantity))
+xValue reader pid oid gs = xValueIn (xContext reader pid oid gs) oid gs
+
+-- xValue's context: `oid` as the ability named `reader` reads it.
+xContext :: Maybe AbilityName.AbilityName -> PlayerId -> ObjectId -> GameState -> Filter.Context
+xContext reader pid oid gs = (Projection.sourceContext gs (Just pid) oid) {Filter.reader = reader}
+
+xValueIn :: Filter.Context -> ObjectId -> GameState -> Quantity.Type.Quantity -> Natural
+xValueIn context oid gs quantity =
+  Integer.toNaturalSaturating (Maybe.fromMaybe 0 (Quantity.evaluate (Projection.fullView gs) context gs oid quantity))
 
 -- CR 118.13: a mana symbol payable in multiple ways has its payment chosen by
 -- the payer -- CR 107.4f's Phyrexian symbol and both of CR 107.4e's hybrids.

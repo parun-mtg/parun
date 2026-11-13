@@ -205,6 +205,7 @@ import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.DeclarationTrigger as DeclarationTrigger
 import qualified Parun.Types.Defense as Defense
+import qualified Parun.Types.DefinedX as DefinedX
 import qualified Parun.Types.Designate as Designate
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Destroy as Destroy
@@ -2061,6 +2062,7 @@ reservedSlots =
       Binding.copiedObject,
       Binding.tappedForTotalPower,
       Binding.revealedCard,
+      Binding.definingCard,
       Binding.beheldObject,
       Binding.collectedEvidence,
       Binding.waterbendCost,
@@ -2576,6 +2578,13 @@ counterKindFilters kind = case kind of
 -- fallthrough decides only a FRAMING and answers KeywordFramed for it. A new
 -- rule-702 keyword that transplanted its payload into a minted slot the way
 -- equip does would owe an arm here, and nothing but this comment says so.
+designatorFilters :: KeywordDesignator.KeywordDesignator Keyword.Keyword -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+designatorFilters designator = case designator of
+  KeywordDesignator.OfKeyword keyword -> keywordFilters keyword
+  KeywordDesignator.OfInstance keyword _ -> keywordFilters keyword
+  KeywordDesignator.OfFamily _ -> []
+  KeywordDesignator.Printed _ -> []
+
 keywordFilters :: Keyword.Keyword -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 keywordFilters keyword = case keyword of
   Keyword.Equip (Equip.MkEquip cost mQuality _ _) -> keywordFramed (costFilters cost) <> mintedTargetSlot (Maybe.maybeToList mQuality)
@@ -3547,7 +3556,7 @@ modificationFilters modification = case modification of
     CostKeyword.BeamMeUp unreturnable -> keywordFramed (Maybe.maybeToList unreturnable)
   -- CR 702.5a again: the granted slot's own Filter, which is card text like any
   -- other and has to be swept. NOT [] -- this, LoseEnchant beside it,
-  -- GainKeyword above, GainKeywordsAmong, LoseKeyword,
+  -- GainKeyword above, GainKeywordsAmong, LoseKeyword, CantHaveKeyword,
   -- SetCreatureSubtypesOfLastCardExiledWith and AddNamesMatching below are the
   -- arms that answer with something, and every other one carries no Filter at
   -- all, LoseKeywordFamily's payload-free family included.
@@ -3564,11 +3573,7 @@ modificationFilters modification = case modification of
   Modification.GainAbilitiesOfSource _ -> []
   -- The permanents swept for the keywords, and a written keyword's own Filter.
   Modification.GainKeywordsAmong designator _ among ->
-    (Unframed, among) : case designator of
-      KeywordDesignator.OfKeyword keyword -> keywordFilters keyword
-      KeywordDesignator.OfInstance keyword _ -> keywordFilters keyword
-      KeywordDesignator.OfFamily _ -> []
-      KeywordDesignator.Printed _ -> []
+    (Unframed, among) : designatorFilters designator
   -- The rider's CR 602.5 conditions, as a printed ability's are swept, and the
   -- Filter naming the exiled cards.
   Modification.GainCardAbilities (CardAbilities.MkCardAbilities _ cards extra) -> (Unframed, cards) : frame Unframed (concatMap conditionFilters (concatMap restrictionConditions extra))
@@ -3585,6 +3590,7 @@ modificationFilters modification = case modification of
   -- carries no Filter at all -- Hammerheim's "all landwalk abilities" names no
   -- land type for this sweep to reach.
   Modification.LoseKeywordFamily _ -> []
+  Modification.CantHaveKeyword designator -> designatorFilters designator
   Modification.LandSubtype {} -> []
   Modification.ChosenSubtype {} -> []
   Modification.CreatureSubtype {} -> []
@@ -5573,7 +5579,7 @@ activatedAbilityFilters ability =
     -- treatment of Face.maximumX one type over (Blighted Nightmare).
     <> frame Unframed (concatMap quantityFilters (ActivatedAbility.maximumX ability))
     -- CR 107.3c's defined X, the same position.
-    <> frame Unframed (foldMap quantityFilters (ActivatedAbility.definedX ability))
+    <> frame Unframed (foldMap (quantityFilters . DefinedX.quantity) (ActivatedAbility.definedX ability))
     -- CR 702.178a's "as long as" gate, the triggeredAbilityFilters treatment of
     -- CR 603.4's intervening "if" one field over.
     <> frame Unframed (concatMap conditionFilters (Maybe.maybeToList (ActivatedAbility.condition ability)))

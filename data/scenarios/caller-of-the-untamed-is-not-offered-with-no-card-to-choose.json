@@ -1,0 +1,15 @@
+{
+  "description": "CR 107.3c: Caller of the Untamed's X is undefined where its controller exiled no card with cards named Caller of the Untamed, so the ability is not offered",
+  "note": "alice's Hill Giant in exile was not exiled with a Caller, and bob's was exiled with his own (CR 607.2n). Read as X 0, the ability would be offered.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Caller of the Untamed", "label": "caller", "ready": true}, {"card": "Forest", "label": "f1", "ready": true}], "exile": [{"card": "Hill Giant", "label": "giant"}], "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]},
+      {"name": "bob", "exile": [{"card": "Hill Giant", "label": "strays", "exiledWith": "Caller of the Untamed"}], "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "ActivateManaAbility $f1"]}}}
+  ]
+}

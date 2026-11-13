@@ -564,13 +564,17 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- controller from INSIDE the CR 613 layer fold, so asking it for one more
       -- object re-enters nothing that `peers` guards against.
       Filter.attackingPlaneswalkerController = case Map.lookup oid (Combat.attackers (TurnRegisters.combat (GameState.turn gs))) of
-        Just (AttackTarget.OfPlaneswalker pw)
+        Just target@(AttackTarget.OfPlaneswalker pw)
           | Set.notMember oid (Combat.attackingNothing (TurnRegisters.combat (GameState.turn gs))),
             Set.member pw (GameState.battlefield gs),
             Maybe.maybe
               (List.any (\defending -> controllerOf pw gs == Just defending) (Defender.defendingPlayers gs))
               (\seat -> controllerOf pw gs == Just seat)
               (Map.lookup oid (Combat.attackedUnder (TurnRegisters.combat (GameState.turn gs)))),
+            -- CR 506.4's protector clause for one that is a battle too. A
+            -- regression fence, as below: the battle field's twin arm is the
+            -- proven one.
+            attackedProtectorHeld oid target gs,
             any (Set.member CardType.Planeswalker . Filter.cardTypes) (peers pw),
             -- CR 506.4e's second sentence, Parun.Engine.Combat.noteAttackingNothing's
             -- walkerUnprotected asked live. A regression fence: no test reads this
@@ -588,7 +592,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
           | Set.notMember oid (Combat.attackingNothing (TurnRegisters.combat (GameState.turn gs))),
             Set.member pw (GameState.battlefield gs),
             attackedControllerHeld oid target gs,
-            attackedProtectorHeld oid pw gs,
+            attackedProtectorHeld oid target gs,
             Maybe.isJust (Battle.protectorOf pw gs),
             controllerOf pw gs == Battle.protectorOf pw gs,
             List.any (\defending -> controllerOf pw gs == Just defending) (Defender.defendingPlayers gs),
@@ -644,7 +648,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
           | Set.notMember oid (Combat.attackingNothing (TurnRegisters.combat (GameState.turn gs))),
             Set.member battle (GameState.battlefield gs),
             attackedControllerHeld oid target gs,
-            attackedProtectorHeld oid battle gs,
+            attackedProtectorHeld oid target gs,
             any (Set.member CardType.Battle . Filter.cardTypes) (peers battle) ->
               Battle.protectorOf battle gs
         -- CR 506.4e: a planeswalker announcement whose permanent is a battle
@@ -655,6 +659,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
           | Set.notMember oid (Combat.attackingNothing (TurnRegisters.combat (GameState.turn gs))),
             Set.member battle (GameState.battlefield gs),
             attackedControllerHeld oid target gs,
+            attackedProtectorHeld oid target gs,
             any (Set.member CardType.Battle . Filter.cardTypes) (peers battle) ->
               Battle.protectorOf battle gs
         _ -> Nothing,
@@ -932,18 +937,30 @@ attackedControllerHeld attacker target gs =
         AttackTarget.OfBattle battle -> held Combat.attackedControlledBy battle
 
 -- CR 506.4's protector clause, asked live: is the battle this attacker's
--- announcement names still protected by the player recorded as the attacker
--- joined combat (Parun.Types.Combat's attackedUnder, CR 310.9d's seat)?
+-- announcement names still protected by the player recorded for the attack
+-- (Parun.Types.Combat's attackedUnder, CR 310.9d's seat, for a battle
+-- announcement and attackedProtectedBy for a planeswalker one)?
 -- Parun.Engine.Combat.noteAttackingNothing asks the same at CR 117.5's moments.
--- Where nothing was recorded -- a combat record built by hand -- membership in
--- Defender.defendingPlayers stands in, which CR 802.2's several defending
--- players make only an approximation.
-attackedProtectorHeld :: ObjectId -> ObjectId -> GameState -> Bool
-attackedProtectorHeld attacker battle gs =
-  maybe
-    (List.any (\defending -> Battle.protectorOf battle gs == Just defending) (Defender.defendingPlayers gs))
-    (\seat -> Battle.protectorOf battle gs == Just seat)
-    (Map.lookup attacker (Combat.attackedUnder (TurnRegisters.combat (GameState.turn gs))))
+-- Where nothing was recorded, a battle announcement -- a combat record built by
+-- hand -- falls back on membership in Defender.defendingPlayers, which CR
+-- 802.2's several defending players make only an approximation, and a
+-- planeswalker one, whose permanent need be no battle, answers True.
+--
+-- data/scenarios/planeswalker-combat's "a Siege whose protector changes" pair
+-- proves the planeswalker arm, Synthetic Shifting Allegiance looking for its
+-- attackers inside the resolution that moved the protector.
+attackedProtectorHeld :: ObjectId -> AttackTarget.AttackTarget -> GameState -> Bool
+attackedProtectorHeld attacker target gs =
+  let c = TurnRegisters.combat (GameState.turn gs)
+      held attacked seat = Battle.protectorOf attacked gs == Just seat
+   in case target of
+        AttackTarget.OfPlayer _ -> True
+        AttackTarget.OfPlaneswalker pw -> maybe True (held pw) (Map.lookup attacker (Combat.attackedProtectedBy c))
+        AttackTarget.OfBattle battle ->
+          maybe
+            (List.any (held battle) (Defender.defendingPlayers gs))
+            (held battle)
+            (Map.lookup attacker (Combat.attackedUnder c))
 
 -- CR 122.1: the counters on an object right now, and none for an id naming nothing.
 countersOf :: ObjectId -> GameState -> Map (CounterKind.CounterKind Keyword.Type.Keyword) Natural
@@ -1844,6 +1861,7 @@ noCharacteristics =
       -- CR 613.11: no characteristics, so none of the sixteen families either.
       PC.ruleAbilities = mempty,
       PC.lostAllAbilities = False,
+      PC.barredKeywords = Set.empty,
       PC.hasFullText = False,
       PC.wordChanges = [],
       PC.textChangedKeywords = Map.empty,
@@ -2032,6 +2050,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               -- CR 613.1's starting point, before layer 6 has run:
               -- applyModification's LoseAllAbilities arm is the only writer.
               PC.lostAllAbilities = False,
+              PC.barredKeywords = Set.empty,
               -- Nor has layer 3.
               PC.hasFullText = False,
               -- The seed is CR 613.1's starting point, before layer 3 has run.

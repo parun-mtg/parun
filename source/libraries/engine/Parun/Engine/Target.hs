@@ -1802,9 +1802,16 @@ slotCapacities counting x slots sets gs =
 -- an earlier one answered, and the joint check (selectionLegal,
 -- jointlyCoherent) is still taken over the whole announcement afterwards.
 --
--- The controller's slots go first (Ord on Maybe), and the rest follow in the
--- chooser's own order. Rule 601.2c fixes no order between choosers; this one is
--- deterministic, which a replay needs.
+-- The controller's slots go first (Ord on Maybe; CR 601.7b, CR 602.3b), and the
+-- rest follow in the chooser's own order, deterministic for a replay.
+--
+-- WHO a group's seat is reads the answers of the groups before it: Mogg
+-- Assassin's "that opponent" is the controller of the creature its controller
+-- just named (HolderOfBound over the first slot). Only the seat does -- the
+-- offer and every count still read `seed` alone. A chooser naming a slot a
+-- LATER group answers finds it unbound and asks nobody.
+-- data/scenarios/target/cr-602-3b-mogg-assassin-s-second-target-is-chosen-by-the-first-target-s-controller.json
+-- proves it.
 --
 -- TWO object ids, and they differ on the ability roads. `oid` is the STACK
 -- OBJECT this announcement is being made for, which is what a prompt names and
@@ -1825,27 +1832,29 @@ slotCapacities counting x slots sets gs =
 chooseTargets :: Maybe AbilityName.AbilityName -> PlayerId -> ObjectId -> ObjectId -> Map SlotName Binding.Type.Binding -> Natural -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> Game (Map SlotName (Set Recipient), Set ObjectId)
 chooseTargets reader pid oid source seed x slots sets = do
   let groups = Map.fromListWith Set.union [(TargetSlot.chooser slot, Set.singleton name) | (name, slot) <- Map.toList slots]
-  answers <-
-    traverse
-      ( \(named, mine) -> do
-          seat <- chooserOf pid oid source seed named
-          case seat of
-            -- CR 601.2c has nobody to announce with, where a game of one seat has no
-            -- opponent under an "of an opponent's choice" slot. The slots go unanswered,
-            -- which the callers' own gate then refuses (CR 601.2e, CR 602.2, CR
-            -- 603.3d's removal).
-            Nothing -> pure (Map.empty, Set.empty)
-            Just chooser -> askChooser reader pid chooser oid source seed x slots sets mine
-      )
-      (Map.toAscList groups)
-  pure (Map.unions (fmap fst answers), foldMap snd answers)
+  Monad.foldM
+    ( \(chosen, drawn) (named, mine) -> do
+        seat <- chooserOf pid oid source (Map.unionWith Binding.mergeBinding (fmap Binding.toRecipients chosen) seed) named
+        case seat of
+          -- CR 601.2c has nobody to announce with, where a game of one seat has no
+          -- opponent under an "of an opponent's choice" slot. The slots go unanswered,
+          -- which the callers' own gate then refuses (CR 601.2e, CR 602.2, CR
+          -- 603.3d's removal).
+          Nothing -> pure (chosen, drawn)
+          Just chooser -> do
+            (answer, cards) <- askChooser reader pid chooser oid source seed x slots sets mine
+            pure (Map.union chosen answer, Set.union drawn cards)
+    )
+    (Map.empty, Set.empty)
+    (Map.toAscList groups)
 
 -- CR 115.1 with CR 601.2c: which seat announces the slots a chooser names.
 --
 -- Nothing on the slot is the rule's default and asks nobody -- the controller
 -- announces. Any other PlayerRef is read by Players.named, off `seed` -- the
 -- bindings the announcement already holds, which for a triggered ability are
--- CR 603.2's event bindings (Curse of Inertia's "that attacking player") -- with
+-- CR 603.2's event bindings (Curse of Inertia's "that attacking player") and
+-- for a later chooser the earlier choosers' targets (chooseTargets) -- with
 -- CR 608.2h's last-known controller (Necrotic Plague's "its controller", the
 -- creature that died). SEVERAL seats are a choice the CONTROLLER makes, CR
 -- 801.5a's example being the rule text that says so ("choosing Rob as the

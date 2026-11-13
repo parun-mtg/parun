@@ -1905,6 +1905,29 @@ Entries are ordered by the first rule each cites.
   a deck exiles before the game only what its cards of the name exile".
 - **Issue**: #6205.
 
+## Which cards a rebuilt game offers to exile before shuffling
+
+- **Question**: A restarted game and a subgame start by rule 103 again, so
+  Arcane Savant's "exile an instant or sorcery card you drafted that isn't in
+  your deck" is owed again. From which cards, and in which games?
+- **Rules**: CR 100.4b, 400.11a, 400.11c, 607.2n, 728.1, 728.2, 728.5, 730.2,
+  730.4, 730.5 (CR of 2026-11-06).
+- **Decision**: Every card the player owns outside the new game that the
+  ability's filter admits, which is what a wish there reaches: their
+  sideboard, and in a subgame their main-game cards too (CR 730.4), the
+  subgame's deck being only the main-game library. Offered unless the game's
+  format builds decks that are not drafted; a game under no format offers,
+  as its first game takes a deck list's exile unchecked.
+- **Rejected**: The sideboard alone in a subgame, which calls a drafted card
+  in the main-game hand "in your deck" when CR 730.2 moved only the library.
+  Also a card CR 728.5 keeps out of the restarted deck: it is already in the
+  new game's exile, and the effect that exempted it still acts on it. Not
+  offering under no format, which denies a limited game its choice where
+  offering costs a constructed player only a question to decline.
+- **Site**: `Parun.Engine.Setup.exileBeforeShuffling`. Proved by
+  `Parun.SetupSpec`'s "exiling before the shuffle" cases.
+- **Issue**: #7201.
+
 ## Who says which permission a cast of Spider Climb used
 
 - **Question**: Spider Climb's ruling of 2022-12-08 has the sacrifice occur

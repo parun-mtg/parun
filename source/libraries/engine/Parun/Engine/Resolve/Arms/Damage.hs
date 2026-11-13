@@ -368,7 +368,14 @@ modifyTarget resolving source controller legal chosen (ModifyTarget.MkModifyTarg
               frozenSets = case each of
                 Nothing -> [freezeFor targets context]
                 Just slot -> [freezeFor [t] (effectContextNaming slot t gs resolving controller source legal (slotBindings resolving gs)) | t <- targets]
-              store objs g m =
+              -- CR 113.11: a part adding a keyword is not created for an
+              -- object that can't have it now, and never comes back. The
+              -- scenario archetype-of-courage/cr-113-11-a-resolved-grant-is-not-created-and-stays-gone-after-the-archetype-leaves
+              -- proves it.
+              store swept g m = case (live, Projection.admitting gs m swept) of
+                (Nothing, []) -> g
+                (_, objs) -> stored objs g m
+              stored objs g m =
                 let (ts, g1) = Game.freshTimestamp g
                     eff =
                       ContinuousEffect.MkContinuousEffect

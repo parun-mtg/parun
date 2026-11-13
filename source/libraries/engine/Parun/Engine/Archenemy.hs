@@ -147,15 +147,11 @@ abandon oid = do
   Monad.when (canAbandon oid gs) (State.modify' (toBottom oid))
 
 -- | CR 701.33b / 704.6e: a face-up scheme goes to the bottom of its owner's
--- scheme deck, face down. The same object: unlike a plane (CR 311.6), no rule
--- makes a scheme turned face down a new one.
+-- scheme deck, face down, a new object (CR 400.9). data/scenarios/archenemy's
+-- "CR 400.9 an abandoned scheme set in motion again is a new object" proves
+-- it.
 toBottom :: ObjectId -> GameState -> GameState
-toBottom oid gs = case Game.lookupObject oid gs of
-  Nothing -> gs
-  Just obj ->
-    (Game.overSideDecks SideDeck.Scheme (Map.insertWith (flip (Seq.><)) (Object.owner obj) (Seq.singleton oid)) gs)
-      { GameState.command = Set.delete oid (GameState.command gs)
-      }
+toBottom oid gs = maybe gs (\obj -> Event.turnFaceDownToBottom SideDeck.Scheme (Object.owner obj) oid gs) (Game.lookupObject oid gs)
 
 -- | CR 704.6e / 314.6: the face-up non-ongoing schemes to put on the bottom of
 -- their decks, when no triggered ability of any scheme is on the stack or
@@ -170,7 +166,9 @@ abandonedBySba gs =
   let spent = filter (\oid -> not (Scheme.isOngoing oid gs)) (faceUp gs)
       schemeOnStack = any fromScheme (Game.allStacks gs)
       fromScheme stacked = case fmap Object.source (Game.lookupObject stacked gs) of
-        Just (Source.OfTrigger triggered) -> Scheme.isScheme (TriggeredAbilitySource.source triggered) gs
+        -- Through last-known information: an abandoned scheme's id names no
+        -- object (CR 400.9), and its ability may still be on the stack.
+        Just (Source.OfTrigger triggered) -> maybe False Scheme.isSchemeFace (Game.faceOfWithLastKnown (TriggeredAbilitySource.source triggered) gs)
         _ -> False
       waiting = any pendingFromScheme (Trigger.eventTriggers (Event.unscannedGrouped gs) gs)
       pendingFromScheme pending = case PendingTrigger.source pending of

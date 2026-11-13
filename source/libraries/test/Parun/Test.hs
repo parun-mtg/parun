@@ -309,6 +309,7 @@ import qualified Parun.Codec.DeckLimitSpec
 import qualified Parun.Codec.DeclarationTriggerSpec
 import qualified Parun.Codec.DefendersAreSpec
 import qualified Parun.Codec.DefenseSpec
+import qualified Parun.Codec.DefinedXSpec
 import qualified Parun.Codec.DelayedTriggerSpec
 import qualified Parun.Codec.DepartureSpec
 import qualified Parun.Codec.DesignateSpec
@@ -1376,6 +1377,7 @@ spec s registry corpus = do
   Parun.Codec.DeclarationTriggerSpec.spec s
   Parun.Codec.DefendersAreSpec.spec s
   Parun.Codec.DefenseSpec.spec s
+  Parun.Codec.DefinedXSpec.spec s
   Parun.Codec.DelayedTriggerSpec.spec s
   Parun.Codec.DepartureSpec.spec s
   Parun.Codec.DesignateSpec.spec s
