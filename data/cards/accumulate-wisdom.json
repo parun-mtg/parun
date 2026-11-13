@@ -1,0 +1,204 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Accumulate Wisdom",
+      "oracleText": "Look at the top three cards of your library. Put one of those cards into your hand and the rest on the bottom of your library in any order. Put each of those cards into your hand instead if there are three or more Lesson cards in your graveyard.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "LookAt",
+                    "value": {
+                      "ref": {
+                        "type": "TopOfLibrary",
+                        "value": {
+                          "count": {
+                            "type": "Literal",
+                            "value": 3
+                          },
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        }
+                      },
+                      "slot": "looked"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtMost",
+                    "measured": {
+                      "type": "Count",
+                      "value": {
+                        "aggregation": {
+                          "type": "Members"
+                        },
+                        "filter": {
+                          "type": "HasSubtype",
+                          "value": "Lesson"
+                        },
+                        "scope": {
+                          "type": "InZone",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "zone": "Graveyard"
+                          }
+                        }
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 2
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardFromAmong",
+                        "value": {
+                          "filter": {
+                            "type": "And",
+                            "value": []
+                          },
+                          "slot": "looked"
+                        }
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtMost",
+                    "measured": {
+                      "type": "Count",
+                      "value": {
+                        "aggregation": {
+                          "type": "Members"
+                        },
+                        "filter": {
+                          "type": "HasSubtype",
+                          "value": "Lesson"
+                        },
+                        "scope": {
+                          "type": "InZone",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "zone": "Graveyard"
+                          }
+                        }
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 2
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "looked"
+                      },
+                      "zone": "Library"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measured": {
+                      "type": "Count",
+                      "value": {
+                        "aggregation": {
+                          "type": "Members"
+                        },
+                        "filter": {
+                          "type": "HasSubtype",
+                          "value": "Lesson"
+                        },
+                        "scope": {
+                          "type": "InZone",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "zone": "Graveyard"
+                          }
+                        }
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 3
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "looked"
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "subtypes": [
+          "Lesson"
+        ],
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

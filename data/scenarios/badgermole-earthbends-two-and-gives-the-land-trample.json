@@ -1,0 +1,31 @@
+{
+  "description": "CR 701.66a, 613.1f: Badgermole earthbends 2 as it enters, and the land creature has trample for its +1/+1 counters while Badgermole has none",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "GGGGG",
+        "hand": [{"card": "Badgermole", "label": "mole"}],
+        "battlefield": [{"card": "Forest", "label": "f1"}, {"card": "Grizzly Bears", "label": "bears"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "theirs", "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 1}]}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$mole", "mana": [null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$f1", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$f1", "keyword": {"type": "Trample"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "Badgermole", "keyword": {"type": "Trample"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Trample"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$theirs", "keyword": {"type": "Trample"}, "count": 0}}}
+  ]
+}

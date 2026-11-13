@@ -1,0 +1,34 @@
+{
+  "description": "CR 701.67a, 701.27a: waterbend {8} transforms Aang, Swift Savior, and Aang and La put a +1/+1 counter on each tapped creature their controller controls as they attack",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "UUUU",
+        "battlefield": [{"card": "Aang, Swift Savior", "label": "aang", "ready": true}, {"card": "Goblin Piker", "label": "pk1", "ready": true}, {"card": "Goblin Piker", "label": "pk2", "ready": true}, {"card": "Goblin Piker", "label": "pk3", "ready": true}, {"card": "Goblin Piker", "label": "pk4", "ready": true}, {"card": "Hill Giant", "label": "untapped", "ready": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Grizzly Bears", "label": "bears", "tapped": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseTaps", "with": ["$pk1", "$pk2", "$pk3", "$pk4"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$aang", "ability": 0, "cost": [{"type": "Generic", "value": 4}]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "$aang", "names": ["Aang and La, Ocean's Fury"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$aang", "power": 5, "toughness": 5}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$aang"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Counters": {"object": "$aang", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Counters": {"object": "$pk1", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Counters": {"object": "$pk4", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Counters": {"object": "$untapped", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}}
+  ]
+}

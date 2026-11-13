@@ -1,0 +1,35 @@
+{
+  "description": "CR 613.4c, 608.2h, 603.10a: Avatar Destiny's creature gets +1/+1 for each creature card in its controller's graveyard and is an Avatar; when it dies its controller mills cards equal to its last power, takes the Aura back and returns a creature card milled",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "BBB",
+        "hand": [{"card": "Murder", "label": "murder"}],
+        "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Avatar Destiny", "label": "destiny", "attached": "bears"}],
+        "graveyard": [{"card": "Goblin Piker"}, {"card": "Goblin Piker"}],
+        "library": [{"card": "Forest"}, {"card": "Hill Giant", "label": "milled"}, {"card": "Wind Drake"}, {"card": "Forest"}, {"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 4, "toughness": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "$bears", "subtypes": ["Avatar", "Bear"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$murder"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Hill Giant"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Forest", "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Wind Drake", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Mountain", "count": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Avatar Destiny", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}}
+  ]
+}

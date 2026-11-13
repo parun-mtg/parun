@@ -1,0 +1,31 @@
+{
+  "description": "CR 700.2b, 603.6a: Appa, Loyal Sky Bison's first mode gives a creature its controller controls flying until end of turn as Appa enters",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "WWWWWW",
+        "hand": [{"card": "Appa, Loyal Sky Bison", "label": "appa"}],
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Goblin Piker", "label": "piker"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$appa"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseModes", "with": [0]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"flier": ["$piker"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"flier": ["$giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "Flying"}, "count": 1}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "Flying"}, "count": 0}}}
+  ]
+}
