@@ -7,6 +7,7 @@ import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Timestamp as Timestamp
@@ -64,6 +65,10 @@ data PendingTrigger = MkPendingTrigger
     -- placement, so a copy effect the rest of the triggering resolution
     -- applies to the source does not change what its arms create. Empty for a
     -- sourceless ability.
-    delayed :: Map.Map AbilityName.AbilityName (TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card))
+    delayed :: Map.Map AbilityName.AbilityName (TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)),
+    -- | CR 603.3: the id the ability takes as an object on the stack, reserved
+    -- by Parun.Engine.Engine.reactions so GameEvent.AbilityTriggered can name it
+    -- before CR 603.3b places it; Nothing until then.
+    stackId :: Maybe ObjectId.ObjectId
   }
   deriving (Eq, Ord, Show)

@@ -1,6 +1,7 @@
 module Parun.Codec.TriggerCondition where
 
 import qualified Parun.Codec.AbilityAddsMana as AbilityAddsMana
+import qualified Parun.Codec.AbilityWatch as AbilityWatch
 import qualified Parun.Codec.ActingPermanent as ActingPermanent
 import qualified Parun.Codec.AttachmentTrigger as AttachmentTrigger
 import qualified Parun.Codec.AttackTrigger as AttackTrigger
@@ -41,7 +42,6 @@ import qualified Parun.Codec.PlaysLand as PlaysLand
 import qualified Parun.Codec.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Codec.RevealedThisWay as RevealedThisWay
 import qualified Parun.Codec.RoomIndex as RoomIndex
-import qualified Parun.Codec.SagaFinalChapter as SagaFinalChapter
 import qualified Parun.Codec.SpellCast as SpellCast
 import qualified Parun.Codec.StepBegins as StepBegins
 import qualified Parun.Codec.TappedForManaTrigger as TappedForManaTrigger
@@ -109,7 +109,7 @@ codec =
           Arm.payload "Exploits" ExploitTrigger.codec TriggerCondition.Exploits (\x -> case x of TriggerCondition.Exploits y -> Just y; _ -> Nothing),
           Arm.payload "Crews" CrewRole.codec TriggerCondition.Crews (\x -> case x of TriggerCondition.Crews y -> Just y; _ -> Nothing),
           Arm.payload "PermanentSacrificed" PlayerActsOn.codec TriggerCondition.PermanentSacrificed (\x -> case x of TriggerCondition.PermanentSacrificed y -> Just y; _ -> Nothing),
-          Arm.payload "SagaFinalChapter" SagaFinalChapter.codec TriggerCondition.SagaFinalChapter (\x -> case x of TriggerCondition.SagaFinalChapter y -> Just y; _ -> Nothing),
+          Arm.payload "AbilityWatch" AbilityWatch.codec TriggerCondition.AbilityWatch (\x -> case x of TriggerCondition.AbilityWatch y -> Just y; _ -> Nothing),
           Arm.payload "PlayerBecomesMonarch" PlayerRelation.codec TriggerCondition.PlayerBecomesMonarch (\x -> case x of TriggerCondition.PlayerBecomesMonarch y -> Just y; _ -> Nothing),
           Arm.payload "LosesControl" LostPermanent.codec TriggerCondition.LosesControl (\x -> case x of TriggerCondition.LosesControl y -> Just y; _ -> Nothing),
           Arm.payload "RoomEntered" RoomIndex.codec TriggerCondition.RoomEntered (\x -> case x of TriggerCondition.RoomEntered y -> Just y; _ -> Nothing),
@@ -182,7 +182,7 @@ tagOf x = case x of
   TriggerCondition.Exploits {} -> "Exploits"
   TriggerCondition.Crews {} -> "Crews"
   TriggerCondition.PermanentSacrificed {} -> "PermanentSacrificed"
-  TriggerCondition.SagaFinalChapter {} -> "SagaFinalChapter"
+  TriggerCondition.AbilityWatch {} -> "AbilityWatch"
   TriggerCondition.PlayerBecomesMonarch {} -> "PlayerBecomesMonarch"
   TriggerCondition.LosesControl {} -> "LosesControl"
   TriggerCondition.RoomEntered {} -> "RoomEntered"

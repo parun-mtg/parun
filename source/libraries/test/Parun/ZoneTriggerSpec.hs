@@ -38,6 +38,7 @@ import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
+import qualified Parun.Types.AbilityWatch as AbilityWatch
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.AttachDirection as AttachDirection
@@ -199,7 +200,6 @@ import qualified Parun.Types.RevealTiming as RevealTiming
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RoomIndex as RoomIndex
-import qualified Parun.Types.SagaFinalChapter as SagaFinalChapter
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellCast as SpellCast
@@ -228,6 +228,7 @@ import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 import qualified Parun.Types.VentureMarkerEntered as VentureMarkerEntered
+import qualified Parun.Types.WatchedAbility as WatchedAbility
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -2282,16 +2283,24 @@ representativeEvents cond =
         -- Sourceless one would pin the empty floor and say nothing.
         -- CR 608.2n's end of the resolution carries the same record, for the
         -- Resolves moment.
-        TriggerCondition.SagaFinalChapter watcher ->
+        -- A watcher of the TRIGGERING reads the id Engine.reactions reserved,
+        -- which every record that function mints carries; CR 608.2n's names
+        -- none. The attacker is the source, the one shape CausedByOwnAttack
+        -- accepts.
+        TriggerCondition.AbilityWatch watcher ->
           let record =
                 AbilityTriggered.MkAbilityTriggered
                   { AbilityTriggered.source = TriggerSource.OfObject departed,
                     AbilityTriggered.controller = S.alice,
-                    AbilityTriggered.ability = bareAbility (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent))
+                    AbilityTriggered.ability = bareAbility (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent)),
+                    AbilityTriggered.stackObject = Nothing,
+                    AbilityTriggered.attacker = Just departed
                   }
-           in one $ case SagaFinalChapter.moment watcher of
-                ChapterMoment.Triggers -> GameEvent.AbilityTriggered record
-                ChapterMoment.Resolves -> GameEvent.TriggeredAbilityFinished record
+              triggering = GameEvent.AbilityTriggered record {AbilityTriggered.stackObject = Just (ObjectId.MkObjectId 9)}
+           in one $ case AbilityWatch.ability watcher of
+                WatchedAbility.SagaFinalChapter ChapterMoment.Triggers -> triggering
+                WatchedAbility.SagaFinalChapter ChapterMoment.Resolves -> GameEvent.TriggeredAbilityFinished record
+                WatchedAbility.CausedByOwnAttack -> triggering
         -- CR 726.1's own event, and the only one this condition admits. CR 726.3
         -- makes it name exactly one player, so there is no second shape of the
         -- event for the floor to differ on. bob rather than the perspective
@@ -2635,8 +2644,9 @@ everyTriggerCondition =
     TriggerCondition.PermanentSacrificed (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.Type.And [])),
     TriggerCondition.PermanentSacrificed (PlayerActsOn.MkPlayerActsOn PlayerRelation.Opponent (Filter.Type.And [])),
     TriggerCondition.PermanentSacrificed (PlayerActsOn.MkPlayerActsOn PlayerRelation.AnyPlayer (Filter.Type.And [])),
-    TriggerCondition.SagaFinalChapter (SagaFinalChapter.MkSagaFinalChapter ChapterMoment.Triggers PlayerRelation.You),
-    TriggerCondition.SagaFinalChapter (SagaFinalChapter.MkSagaFinalChapter ChapterMoment.Resolves PlayerRelation.You),
+    TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch (WatchedAbility.SagaFinalChapter ChapterMoment.Triggers) PlayerRelation.You),
+    TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch (WatchedAbility.SagaFinalChapter ChapterMoment.Resolves) PlayerRelation.You),
+    TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch WatchedAbility.CausedByOwnAttack PlayerRelation.You),
     -- BOTH relations, on the SpellCast pair's reasoning above: an eventBindings
     -- arm that had cased on the relation and stamped nothing under one of them
     -- would go unseen if only one were listed. Custodi Lich prints the You form

@@ -38,6 +38,7 @@ import qualified Parun.Codec.AbilityNameSpec
 import qualified Parun.Codec.AbilityTriggeredSpec
 import qualified Parun.Codec.AbilityViewSpec
 import qualified Parun.Codec.AbilityWasActivatedSpec
+import qualified Parun.Codec.AbilityWatchSpec
 import qualified Parun.Codec.AcquisitionSpec
 import qualified Parun.Codec.ActingPermanentSpec
 import qualified Parun.Codec.ActivateManaAbilitiesSpec
@@ -732,7 +733,6 @@ import qualified Parun.Codec.SacrificeSpec
 import qualified Parun.Codec.SacrificeToEnterSpec
 import qualified Parun.Codec.SacrificerSpec
 import qualified Parun.Codec.SaddlingSpec
-import qualified Parun.Codec.SagaFinalChapterSpec
 import qualified Parun.Codec.ScalingSpec
 import qualified Parun.Codec.ScenarioSpec
 import qualified Parun.Codec.ScopeSpec
@@ -857,6 +857,7 @@ import qualified Parun.Codec.ViewIsSpec
 import qualified Parun.Codec.VoteSpec
 import qualified Parun.Codec.VotedSpec
 import qualified Parun.Codec.WardSpec
+import qualified Parun.Codec.WatchedAbilitySpec
 import qualified Parun.Codec.WhenSpec
 import qualified Parun.Codec.WhenSpentSpec
 import qualified Parun.Codec.WhichCountersSpec
@@ -1886,7 +1887,8 @@ spec s registry corpus = do
   Parun.Codec.TriggerLimitSpec.spec s
   Parun.Codec.SpentOnSpec.spec s
   Parun.Codec.ModeMemorySpec.spec s
-  Parun.Codec.SagaFinalChapterSpec.spec s
+  Parun.Codec.AbilityWatchSpec.spec s
+  Parun.Codec.WatchedAbilitySpec.spec s
   Parun.Codec.TriggerSourceSpec.spec s
   Parun.Codec.TurnedFaceUpSpec.spec s
   Parun.Codec.TurnFaceDownSpec.spec s

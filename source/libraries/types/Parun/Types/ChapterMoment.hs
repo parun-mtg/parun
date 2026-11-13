@@ -1,6 +1,6 @@
 module Parun.Types.ChapterMoment where
 
--- | Which moment of a Saga's final chapter ability a Parun.Types.SagaFinalChapter
+-- | Which moment of a Saga's final chapter ability a Parun.Types.WatchedAbility
 -- watcher fires at.
 data ChapterMoment
   = -- | CR 603.3b: it triggers -- Historian's Boon, against

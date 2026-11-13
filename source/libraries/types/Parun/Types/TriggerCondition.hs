@@ -1,6 +1,7 @@
 module Parun.Types.TriggerCondition where
 
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
+import qualified Parun.Types.AbilityWatch as AbilityWatch
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.AttachmentTrigger as AttachmentTrigger
 import qualified Parun.Types.AttackTrigger as AttackTrigger
@@ -41,7 +42,6 @@ import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RoomIndex as RoomIndex
-import qualified Parun.Types.SagaFinalChapter as SagaFinalChapter
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.TappedForManaTrigger as TappedForManaTrigger
@@ -234,10 +234,10 @@ data TriggerCondition
     -- reads. Mayhem Devil's unrestricted wording is AnyPlayer and the trivial
     -- Filter.
     PermanentSacrificed PlayerActsOn.PlayerActsOn
-  | -- | CR 715.2d: "whenever the final chapter ability of a Saga you control
-    -- triggers" (Historian's Boon, CR 603.3b's second class) or "resolves" (Tom
-    -- Bombadil, CR 608.2n).
-    SagaFinalChapter SagaFinalChapter.SagaFinalChapter
+  | -- | CR 603.3b's second class: a triggered ability triggered (Historian's
+    -- Boon, Firebender Ascension) or finished resolving (Tom Bombadil, CR
+    -- 608.2n), against GameEvent.AbilityTriggered and TriggeredAbilityFinished.
+    AbilityWatch AbilityWatch.AbilityWatch
   | -- | CR 726.1: "whenever [a player] becomes the monarch" (Custodi Lich),
     -- however the crown was won.
     PlayerBecomesMonarch PlayerRelation.PlayerRelation

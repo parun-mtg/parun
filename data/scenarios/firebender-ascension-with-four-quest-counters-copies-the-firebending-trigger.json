@@ -1,0 +1,23 @@
+{
+  "description": "CR 707.10 / 603.3b: with its fourth quest counter Firebender Ascension copies the triggered ability the attack caused, so firebending 1 adds {R} twice",
+  "note": "The Ascension starts at three counters. Its trigger goes on the stack above the Student's firebending (CR 603.3b's second pass), and the copy resolves before the original.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Firebender Ascension", "label": "ascension", "counters": [{"key": {"type": "Named", "value": "quest"}, "value": 3}]}, {"card": "Firebending Student", "label": "student", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$student"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $ascension", "trigger of $student"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$ascension", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$ascension", "kind": {"type": "Named", "value": "quest"}, "count": 4}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $student", "trigger of $student"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "UntilEndOfCombat", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "UntilEndOfCombat", "restriction": null, "rider": null, "sourceChoices": null}]}}}
+  ]
+}

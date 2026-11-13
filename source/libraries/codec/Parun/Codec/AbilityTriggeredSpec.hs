@@ -19,10 +19,12 @@ spec s = Spec.describe s "Parun.Codec.AbilityTriggered" $ do
       ( AbilityTriggered.MkAbilityTriggered
           { AbilityTriggered.source = TriggerSource.OfObject (ObjectId.MkObjectId 1),
             AbilityTriggered.controller = PlayerId.MkPlayerId 0,
-            AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability
+            AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability,
+            AbilityTriggered.stackObject = Just (ObjectId.MkObjectId 4),
+            AbilityTriggered.attacker = Just (ObjectId.MkObjectId 1)
           }
       )
-      " {\"source\":{\"type\":\"OfObject\",\"value\":1},\"controller\":0,\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}} "
+      " {\"source\":{\"type\":\"OfObject\",\"value\":1},\"controller\":0,\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"stackObject\":4,\"attacker\":1} "
   -- CR 726.2 / CR 702.179d: the same record for an inherent ability with no
   -- object behind it, where the controller is what tells two players' instances
   -- of the one ability apart.
@@ -33,7 +35,9 @@ spec s = Spec.describe s "Parun.Codec.AbilityTriggered" $ do
       ( AbilityTriggered.MkAbilityTriggered
           { AbilityTriggered.source = TriggerSource.Sourceless,
             AbilityTriggered.controller = PlayerId.MkPlayerId 1,
-            AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability
+            AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability,
+            AbilityTriggered.stackObject = Nothing,
+            AbilityTriggered.attacker = Nothing
           }
       )
       " {\"source\":{\"type\":\"Sourceless\"},\"controller\":1,\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}} "

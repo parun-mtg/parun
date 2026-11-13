@@ -6,6 +6,7 @@ import qualified Parun.Codec.TriggerCondition as TriggerCondition
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
+import qualified Parun.Types.AbilityWatch as AbilityWatch
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.AttachDirection as AttachDirection
 import qualified Parun.Types.AttachmentEnd as AttachmentEnd
@@ -80,7 +81,6 @@ import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
 import qualified Parun.Types.RoomIndex as RoomIndex
-import qualified Parun.Types.SagaFinalChapter as SagaFinalChapter
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StackObjectKind as StackObjectKind
@@ -95,6 +95,7 @@ import qualified Parun.Types.TransformTrigger as TransformTrigger
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TurnScope as TurnScope
+import qualified Parun.Types.WatchedAbility as WatchedAbility
 import qualified Parun.Types.WhichCounters as WhichCounters
 import qualified Parun.Types.Zone as Zone
 
@@ -614,12 +615,12 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       " {\"type\":\"PermanentSacrificed\",\"value\":{\"player\":\"Opponent\",\"filter\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}}} "
   -- CR 715.2d's watcher: which Saga and which chapter are read off the event
   -- and the source's projection.
-  Spec.it s "SagaFinalChapter round-trips its moment and relation" $
+  Spec.it s "AbilityWatch round-trips its watched ability and relation" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.SagaFinalChapter (SagaFinalChapter.MkSagaFinalChapter ChapterMoment.Triggers PlayerRelation.Opponent))
-      " {\"type\":\"SagaFinalChapter\",\"value\":{\"moment\":\"Triggers\",\"controller\":\"Opponent\"}} "
+      (TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch (WatchedAbility.SagaFinalChapter ChapterMoment.Triggers) PlayerRelation.Opponent))
+      " {\"type\":\"AbilityWatch\",\"value\":{\"ability\":{\"type\":\"SagaFinalChapter\",\"value\":\"Triggers\"},\"controller\":\"Opponent\"}} "
   -- CR 726.1's crowning. Both relations, since the PlayerRelation is the whole
   -- payload and the whole difference between "whenever you become the monarch"
   -- and "whenever an opponent becomes the monarch", so a codec that dropped it

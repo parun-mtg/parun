@@ -1009,7 +1009,9 @@ recordAbilityFinished controller obj = case Object.source obj of
               AbilityTriggered.MkAbilityTriggered
                 { AbilityTriggered.source = TriggerSource.OfObject (TriggeredAbilitySource.source triggered),
                   AbilityTriggered.controller = controller,
-                  AbilityTriggered.ability = TriggeredAbilitySource.ability triggered
+                  AbilityTriggered.ability = TriggeredAbilitySource.ability triggered,
+                  AbilityTriggered.stackObject = Nothing,
+                  AbilityTriggered.attacker = Nothing
                 }
           )
       )

@@ -2079,7 +2079,7 @@ reservedSlots =
       Binding.thisAbility,
       Binding.announcedTargets,
       Binding.targetingObject,
-      Binding.activatedAbility,
+      Binding.thatAbility,
       Binding.blockingCreature,
       Binding.blockedCreature,
       Binding.attackingCreature,
@@ -3704,7 +3704,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.PermanentSacrificed payload -> unframed [PlayerActsOn.filter payload]
   -- CR 715.2d's watcher names a PlayerRelation; the Saga is found through its
   -- final chapter number rather than through a Filter.
-  TriggerCondition.SagaFinalChapter _ -> []
+  TriggerCondition.AbilityWatch _ -> []
   -- A card-zone trigger's Matching card is card text like any other: Planar
   -- Void's "another card", Dutiful Knowledge Seeker's "cards".
   TriggerCondition.LeavesZone t -> actingFilters (LeavesZoneTrigger.card t)

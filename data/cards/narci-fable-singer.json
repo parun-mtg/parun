@@ -83,10 +83,13 @@
         },
         {
           "condition": {
-            "type": "SagaFinalChapter",
+            "type": "AbilityWatch",
             "value": {
-              "controller": "You",
-              "moment": "Resolves"
+              "ability": {
+                "type": "SagaFinalChapter",
+                "value": "Resolves"
+              },
+              "controller": "You"
             }
           },
           "modal": {

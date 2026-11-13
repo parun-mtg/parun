@@ -506,7 +506,9 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
           AbilityTriggered.MkAbilityTriggered
             { AbilityTriggered.source = TriggerSource.OfObject (ObjectId.MkObjectId 7),
               AbilityTriggered.controller = PlayerId.MkPlayerId 1,
-              AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability
+              AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability,
+              AbilityTriggered.stackObject = Nothing,
+              AbilityTriggered.attacker = Nothing
             }
       )
       " {\"type\":\"AbilityTriggered\",\"value\":{\"source\":{\"type\":\"OfObject\",\"value\":7},\"controller\":1,\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}}} "
@@ -841,7 +843,9 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
           AbilityTriggered.MkAbilityTriggered
             { AbilityTriggered.source = TriggerSource.OfObject (ObjectId.MkObjectId 7),
               AbilityTriggered.controller = PlayerId.MkPlayerId 1,
-              AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability
+              AbilityTriggered.ability = TriggeredAbilitySourceSpec.ability,
+              AbilityTriggered.stackObject = Nothing,
+              AbilityTriggered.attacker = Nothing
             }
       )
       " {\"type\":\"TriggeredAbilityFinished\",\"value\":{\"source\":{\"type\":\"OfObject\",\"value\":7},\"controller\":1,\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}}} "

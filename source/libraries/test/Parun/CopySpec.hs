@@ -2017,7 +2017,7 @@ copyAbilityOnStackSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
       _ -> Spec.assertFailure s "Rumor Gatherer's trigger should be on the stack, and Lithoform Engine should declare a {2} ability"
   -- CR 602.2b's trigger rather than Lithoform Engine's targeted copy: Kurkesh,
   -- Onakke Ancient's "copy that ability" names the activated ability through
-  -- Binding.activatedAbility, and the copy goes above it, so bob's Stifle
+  -- Binding.thatAbility, and the copy goes above it, so bob's Stifle
   -- counters the original out from under the copy (Rings of Brighthearth's
   -- ruling: they resolve even if that ability is countered). Bob at 19 is the
   -- copy resolving; 20 is no copy, 18 an uncountered original.

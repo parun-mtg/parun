@@ -1081,7 +1081,7 @@ looksBack condition = case condition of
   -- families cannot reach it. Its bearer is a permanent standing on the
   -- battlefield watching a Saga, and CR 603.10's first sentence is what reads
   -- it.
-  TriggerCondition.SagaFinalChapter _ -> False
+  TriggerCondition.AbilityWatch _ -> False
   -- CR 726.1's crowning names no zone change either -- it moves a DESIGNATION,
   -- not an object -- so none of CR 603.10a's four families reaches it.
   TriggerCondition.PlayerBecomesMonarch _ -> False
@@ -1320,7 +1320,7 @@ batchScoped condition = case condition of
   TriggerCondition.BecomesTargeted c -> BecomesTargetedTrigger.batching c == Batching.OneOrMore
   TriggerCondition.SelfHalfUnlocked _ -> False
   TriggerCondition.RoomFullyUnlocked _ -> False
-  TriggerCondition.SagaFinalChapter _ -> False
+  TriggerCondition.AbilityWatch _ -> False
   TriggerCondition.PlayerBecomesMonarch _ -> False
   TriggerCondition.LosesControl _ -> False
   TriggerCondition.Reflexive -> False
@@ -2350,7 +2350,7 @@ eventTriggersGiven scope standing events gs =
             -- CR 400.7d: an ability of a permanent may read what costs were
             -- paid for the spell it was, so the bearer's record rides on every
             -- ability it triggers (Binding.paidCostRecord).
-            pend (cond, ab) = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) (controllerFor cond) ab (Map.union (Binding.paidCostRecord bindings) (eventBindingsOver board gs (Map.lookup oid becameInGraveyard) becameInPublicZone oid (controllerFor cond) cond event)) Nothing (Just logged) (copiesIn (fmap snd abilities) ab) (delayedAsTriggered board oid gs)
+            pend (cond, ab) = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) (controllerFor cond) ab (Map.union (Binding.paidCostRecord bindings) (eventBindingsOver board gs (Map.lookup oid becameInGraveyard) becameInPublicZone oid (controllerFor cond) cond event)) Nothing (Just logged) (copiesIn (fmap snd abilities) ab) (delayedAsTriggered board oid gs) Nothing
             -- CR 603.2d: a permanent entering may make an ability of a
             -- permanent trigger additional times (Yarok, the Desecrated),
             -- whichever side of the move its condition names (docs/decisions.md,
@@ -2529,7 +2529,7 @@ inherentTriggers held events gs =
             frozen = case source of
               TriggerSource.OfObject oid -> delayedAsTriggered board oid gs
               TriggerSource.Sourceless -> Map.empty
-            pend logged = PendingTrigger.MkPendingTrigger source you ability (eventBindingsOver board gs Nothing Map.empty bearer you cond (LoggedEvent.event logged)) Nothing (Just logged) 1 frozen
+            pend logged = PendingTrigger.MkPendingTrigger source you ability (eventBindingsOver board gs Nothing Map.empty bearer you cond (LoggedEvent.event logged)) Nothing (Just logged) 1 frozen Nothing
             key trigger = if batchScoped cond then Just (batchPartition cond (PendingTrigger.bindings trigger)) else Nothing
          in oncePerBatch id [(key trigger, trigger) | logged <- NonEmpty.toList block, let event = LoggedEvent.event logged, fires event, trigger <- stepCopies gs bearer you cond event ability (pend logged)]
    in concatMap (filter (interveningHolds gs) . forHeld) held
@@ -3094,7 +3094,7 @@ zonesTriggeredFrom cond =
         TriggerCondition.BecomesTargeted {} -> battlefield
         -- CR 113.6's default a last time: Historian's Boon is an enchantment watching
         -- the battlefield's Sagas, and a card in a graveyard sees no chapter fire.
-        TriggerCondition.SagaFinalChapter _ -> battlefield
+        TriggerCondition.AbilityWatch _ -> battlefield
         -- CR 113.6's default once more: Custodi Lich is a creature and watches the
         -- crown from the battlefield, so the card sees no crowning from a graveyard.
         TriggerCondition.PlayerBecomesMonarch _ -> battlefield
@@ -3256,7 +3256,7 @@ stateTriggersOn gs
             -- CR 715.2d's watcher is an EVENT trigger too, and the event is
             -- another ability triggering or finishing its resolution: nothing
             -- about it is a state a settle could re-read.
-            TriggerCondition.SagaFinalChapter _ -> False
+            TriggerCondition.AbilityWatch _ -> False
             -- CR 603.2 event trigger, not a CR 603.8 state: this fires on a
             -- player BECOMING the monarch, and a settle re-reading "is the
             -- monarch" would fire it again every time until the crown moved.
@@ -3362,7 +3362,7 @@ stateTriggersOn gs
           armed (before, ab) = 1 + length (filter (ab ==) before) > instancesOnStack oid ab
           -- CR 400.7d, the event scan's stamp above on this road too. A
           -- fence: no state trigger in data/cards/ reads the record.
-          pend ab = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) ctrl ab (maybe Map.empty (Binding.paidCostRecord . Object.bindings) (Game.lookupObject oid gs)) Nothing Nothing (copiesIn abilities ab) (Projection.delayedSnapshotOf oid gs)
+          pend ab = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) ctrl ab (maybe Map.empty (Binding.paidCostRecord . Object.bindings) (Game.lookupObject oid gs)) Nothing Nothing (copiesIn abilities ab) (Projection.delayedSnapshotOf oid gs) Nothing
           -- CR 603.2d: a state trigger triggers additional times like any other,
           -- on a permanent; CR 603.8 holds each back while any is on the stack.
           instances = if Set.member oid (GameState.battlefield gs) then 1 + PlayerEffect.additionalTriggers ctrl oid gs else 1
@@ -3454,6 +3454,7 @@ reflexiveFiring gs entry =
     1
     -- It triggers as this gather finds it, so the source's text now.
     (Projection.delayedSnapshotOf (DelayedTrigger.source entry) gs)
+    Nothing
 
 -- CR 113.2c: how many instances of `ability` a bearer's list holds, which is
 -- PendingTrigger.copies. Two Well Rested grant one creature two.
@@ -3560,6 +3561,7 @@ delayedMatches grouped gs =
           1
           -- CR 113.7a, read off the board as it stood after the firing event.
           (delayedAsTriggered (battlefieldAt (LoggedEvent.group logged) gs) (DelayedTrigger.source entry) gs)
+          Nothing
    in (occurrences, pend)
 
 -- CR 603.7: delayed abilities whose trigger event is among these events. An entry

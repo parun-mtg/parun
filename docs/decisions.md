@@ -1761,7 +1761,7 @@ Entries are ordered by the first rule each cites.
   an ability's characteristics and the decisions made for it, and CR 608.2h's
   last known information is of an object that existed, which this never was.
 - **Site**: `Parun.Engine.Event.Binding.eventBindingsOver`' AbilityActivated arm,
-  leaving `Binding.activatedAbility` unbound. Proved by the scenario
+  leaving `Binding.thatAbility` unbound. Proved by the scenario
   `rings-of-brighthearth-copies-nothing-of-a-goblin-bookie-reflip`.
 - **Issue**: #5733.
 
@@ -1945,3 +1945,29 @@ Entries are ordered by the first rule each cites.
   `spider-climb-cast-under-vedalken-orrery-is-kept` and
   `spider-climb-cast-under-its-own-permission-beside-vedalken-orrery-is-sacrificed`.
 - **Issue**: #6190.
+
+## Which abilities a creature attacking causes to trigger
+
+- **Question**: Firebender Ascension counts "a creature you control attacking
+  causes a triggered ability of that creature to trigger". A creature's own
+  "whenever you attack" ability triggers when it attacks alone, and its
+  "attacks and isn't blocked" ability triggers because it attacked. Do those
+  count?
+- **Rules**: CR 508.3a, 508.3d, 508.3f, 603.2, 113.7; CR of 2026-11-06.
+- **Decision**: Only an ability whose trigger event is its own source being
+  declared as an attacker (CR 508.3a). So "whenever this creature attacks" and
+  the firing of "whenever a creature you control attacks" that the bearer's own
+  attack caused count; a firing another creature's attack caused does not, nor
+  does "whenever you attack" (CR 508.3d, the player attacking) or "attacks and
+  isn't blocked" (CR 508.3f, which triggers in the declare blockers step).
+- **Rejected**: Counting "whenever you attack" when the bearer is among the
+  attackers: with two attackers no one creature's attack is the cause, and
+  the single ability would be counted for whichever creature is asked.
+  Counting "attacks and isn't blocked": its event is the declaration of
+  blockers.
+- **Site**: `Parun.Engine.Event.Match.matchesTriggerGiven`'s `AbilityWatch`
+  arm. Proved by the scenarios
+  `firebender-ascension-counts-only-an-ability-its-own-creatures-attack-caused`,
+  `firebender-ascension-does-not-count-a-whenever-you-attack-ability` and
+  `firebender-ascension-does-not-count-an-attacks-and-isnt-blocked-ability`.
+- **Issue**: #7226.

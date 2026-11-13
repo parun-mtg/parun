@@ -28,6 +28,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
+import qualified Parun.Types.AbilityWatch as AbilityWatch
 import qualified Parun.Types.ActingPermanent as ActingPermanent
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.AttachDirection as AttachDirection
@@ -157,7 +158,6 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.Revealed as Revealed
 import qualified Parun.Types.RevealedThisWay as RevealedThisWay
-import qualified Parun.Types.SagaFinalChapter as SagaFinalChapter
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellCast as SpellCast
@@ -184,6 +184,7 @@ import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
 import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 import qualified Parun.Types.VentureMarkerEntered as VentureMarkerEntered
+import qualified Parun.Types.WatchedAbility as WatchedAbility
 import qualified Parun.Types.WhichCounters as WhichCounters
 import Parun.Types.Zone (Zone)
 import qualified Parun.Types.Zone as Zone
@@ -2013,8 +2014,21 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- a copy, not the printed card's. Proved by Parun.TriggerSpec's "CR 608.2h the
   -- watcher reads the dead Saga's last known information" and, for the copy, its
   -- "CR 707.2 a COPY of the Saga answers with the copy's chapters".
-  TriggerCondition.SagaFinalChapter (SagaFinalChapter.MkSagaFinalChapter moment relation) ->
-    let finalChapter record = case AbilityTriggered.source record of
+  --
+  -- CR 508.3a for WatchedAbility.CausedByOwnAttack: the ability's source is the
+  -- creature whose declaration as an attacker was its trigger event, so
+  -- "whenever a creature you control attacks" counts only the firing its own
+  -- bearer's attack caused, and CR 508.3d's "whenever you attack" never does
+  -- (docs/decisions.md, "Which abilities a creature attacking causes to
+  -- trigger"). Proved by
+  -- data/scenarios/firebender-ascension-counts-only-an-ability-its-own-creatures-attack-caused.json.
+  TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch watched relation) ->
+    let ownAttack record = case AbilityTriggered.source record of
+          TriggerSource.Sourceless -> False
+          TriggerSource.OfObject srcId ->
+            PlayerRelation.holds (Game.teams gs) relation you (AbilityTriggered.controller record)
+              && AbilityTriggered.attacker record == Just srcId
+        finalChapter record = case AbilityTriggered.source record of
           -- A SOURCELESS inherent ability (CR 726.2, CR 702.179d) is never a
           -- chapter ability of a Saga, there being no Saga behind it to read lore
           -- counters off.
@@ -2024,9 +2038,10 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
               && ( let pc = Projection.projectWithLastKnown srcId gs
                     in Saga.tracksLore pc && Saga.chapterOf (AbilityTriggered.ability record) == Just (Saga.finalChapterOf pc)
                  )
-     in case (moment, event) of
-          (ChapterMoment.Triggers, GameEvent.AbilityTriggered record) -> finalChapter record
-          (ChapterMoment.Resolves, GameEvent.TriggeredAbilityFinished record) -> finalChapter record
+     in case (watched, event) of
+          (WatchedAbility.SagaFinalChapter ChapterMoment.Triggers, GameEvent.AbilityTriggered record) -> finalChapter record
+          (WatchedAbility.SagaFinalChapter ChapterMoment.Resolves, GameEvent.TriggeredAbilityFinished record) -> finalChapter record
+          (WatchedAbility.CausedByOwnAttack, GameEvent.AbilityTriggered record) -> ownAttack record
           _ -> False
   -- CR 603.7: a Bound subject is "when you lose control of the creature" -- Ray
   -- of Command's third sentence. The slot is read out of CR 603.7c's captured environment, so the
