@@ -4,7 +4,8 @@
 -- 'Spec.Spec' registers, shuffles them, runs them on a pool of one worker per
 -- capability, prints each failure as it lands, and ends with one summary line.
 -- At a terminal it also keeps a line counting the cases run, redrawn in place
--- beneath the failures.
+-- beneath the failures, and under GitHub Actions it also writes each failure as
+-- an error annotation.
 module Parun.Test.Runner where
 
 import qualified Control.Concurrent as Concurrent
@@ -27,6 +28,7 @@ import qualified GHC.Clock as Clock
 import qualified GHC.Stack as Stack
 import Numeric.Natural (Natural)
 import qualified Parun.Exceptions.AssertionFailed as AssertionFailed
+import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Extra.Word64 as Word64
 import qualified Parun.JsonCodec.Codec as Codec
@@ -49,10 +51,18 @@ data Case = MkCase
     action :: IO ()
   }
 
--- | What a case came to; a failure carries its message.
+-- | What a case came to; a failure carries its message and, for an assertion,
+-- where it was made.
 data Outcome
   = Passed
-  | Failed Text.Text
+  | Failed Text.Text (Maybe Site)
+  deriving (Eq, Show)
+
+-- | Where an assertion was made: its file, as the build names it, and line.
+data Site = MkSite
+  { sourceFile :: Text.Text,
+    sourceLine :: Natural
+  }
   deriving (Eq, Show)
 
 -- | The command line: the substrings selecting cases (any of them; every case
@@ -66,11 +76,12 @@ data Options = MkOptions
   }
   deriving (Eq, Show)
 
--- | One case as it ran: its dotted path, why it failed if it did, and how long
--- it took.
+-- | One case as it ran: its dotted path, why it failed if it did and where,
+-- and how long it took.
 data Result = MkResult
   { title :: Text.Text,
     failure :: Maybe Text.Text,
+    site :: Maybe Site,
     nanoseconds :: Natural
   }
   deriving (Eq, Show)
@@ -83,12 +94,19 @@ data Report = MkReport
   }
   deriving (Eq, Show)
 
+siteCodec :: Codec.Codec Site
+siteCodec = Fields.object $ do
+  f <- Fields.required "file" Common.text sourceFile
+  l <- Fields.required "line" Common.natural sourceLine
+  pure MkSite {sourceFile = f, sourceLine = l}
+
 resultCodec :: Codec.Codec Result
 resultCodec = Fields.object $ do
   t <- Fields.required "name" Common.text title
   f <- Fields.defaulted "failure" Nothing (Common.maybe Common.text) failure
+  w <- Fields.defaulted "site" Nothing (Common.maybe siteCodec) site
   n <- Fields.required "nanoseconds" Common.natural nanoseconds
-  pure MkResult {title = t, failure = f, nanoseconds = n}
+  pure MkResult {title = t, failure = f, site = w, nanoseconds = n}
 
 reportCodec :: Codec.Codec Report
 reportCodec = Fields.object $ do
@@ -100,6 +118,15 @@ reportCodec = Fields.object $ do
 data Summary = MkSummary
   { total :: Natural,
     failures :: Natural
+  }
+  deriving (Eq, Show)
+
+-- | How failures and progress are shown: whether standard output is a
+-- terminal, to keep a progress line on, and whether the run is under GitHub
+-- Actions, to annotate.
+data Display = MkDisplay
+  { live :: Bool,
+    annotated :: Bool
   }
   deriving (Eq, Show)
 
@@ -134,7 +161,9 @@ main collect = do
       Exit.exitFailure
     Right o -> pure o
   IO.hSetBuffering IO.stdout IO.LineBuffering
-  live <- IO.hIsTerminalDevice IO.stdout
+  terminal <- IO.hIsTerminalDevice IO.stdout
+  actions <- Environment.lookupEnv "GITHUB_ACTIONS"
+  let display = MkDisplay {live = terminal, annotated = actions == Just "true"}
   s <- maybe Key.fresh pure $ seed options
   cases <- collect
   let todo = ordered options s cases
@@ -142,8 +171,8 @@ main collect = do
   screen <- IORef.newIORef MkScreen {counted = MkSummary {total = 0, failures = 0}, drawnAt = 0, width = 0}
   lock <- Concurrent.newMVar ()
   let write t = TextIO.putStr t >> IO.hFlush IO.stdout
-  ran <- run (Concurrent.withMVar lock . const . shown write live (Natural.length todo) started screen) (timeout options) todo
-  Monad.when live $ IORef.readIORef screen >>= write . erased . width
+  ran <- run (Concurrent.withMVar lock . const . shown write display (Natural.length todo) started screen) (timeout options) todo
+  Monad.when (live display) $ IORef.readIORef screen >>= write . erased . width
   Foldable.for_ (json options) $ \file ->
     ByteString.writeFile file . Encoding.encodeUtf8 . Common.render $ Codec.encode reportCodec MkReport {shuffled = Key.toHex s, results = ran}
   let summary = summarize ran
@@ -155,7 +184,7 @@ flags =
   [ GetOpt.Option "p" ["pattern"] (GetOpt.ReqArg (\s o -> Right o {patterns = patterns o <> [Text.pack s]}) "SUBSTRING") "run the cases whose path holds this; repeated, those matching any",
     GetOpt.Option [] ["timeout"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a duration: " <> s) (\n -> Right o {timeout = Just n}) $ duration s) "DURATION") "fail a case still running after this long: seconds, or a number ending in ms, s, m or h",
     GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a seed: " <> s) (\k -> Right o {seed = Just k}) . Key.fromHex $ Text.pack s) "KEY") "the shuffle's key, 64 hexadecimal digits; drawn from the operating system when absent",
-    GetOpt.Option [] ["json"] (GetOpt.ReqArg (\file o -> Right o {json = Just file}) "FILE") "write every case's name, failure and nanoseconds to this file as JSON"
+    GetOpt.Option [] ["json"] (GetOpt.ReqArg (\file o -> Right o {json = Just file}) "FILE") "write every case's name, failure, its site and nanoseconds to this file as JSON"
   ]
 
 parseOptions :: [String] -> Either String Options
@@ -202,7 +231,8 @@ run report limit cases = do
             before <- Clock.getMonotonicTimeNSec
             outcome <- runCase limit c
             after <- Clock.getMonotonicTimeNSec
-            let result = MkResult {title = name c, failure = failed outcome, nanoseconds = Word64.toNatural after - Word64.toNatural before}
+            let (f, w) = failed outcome
+                result = MkResult {title = name c, failure = f, site = w, nanoseconds = Word64.toNatural after - Word64.toNatural before}
             IORef.atomicModifyIORef' finished $ \rs -> (result : rs, ())
             report result
             worker
@@ -214,11 +244,11 @@ run report limit cases = do
   Foldable.traverse_ Concurrent.takeMVar dones
   fmap reverse $ IORef.readIORef finished
 
--- | A failure's message.
-failed :: Outcome -> Maybe Text.Text
+-- | A failure's message and site.
+failed :: Outcome -> (Maybe Text.Text, Maybe Site)
 failed outcome = case outcome of
-  Passed -> Nothing
-  Failed m -> Just m
+  Passed -> (Nothing, Nothing)
+  Failed m w -> (Just m, w)
 
 summarize :: [Result] -> Summary
 summarize ran = MkSummary {total = Natural.length ran, failures = Natural.length $ Maybe.mapMaybe failure ran}
@@ -229,7 +259,8 @@ ordered options s cases = State.evalState (Generator.shuffle . filter (selected 
 
 -- | Runs one case under the budget, if there is one. Any exception fails it
 -- with its own message, not the context GHC wraps it in, and so does a message
--- that throws while it is rendered.
+-- that throws while it is rendered; a failed assertion also says where it was
+-- made.
 runCase :: Maybe Natural -> Case -> IO Outcome
 runCase limit c = do
   result <- Exception.try $ case limit of
@@ -237,12 +268,17 @@ runCase limit c = do
     Just us -> Timeout.timeout (Natural.toIntSaturating us) $ action c
   case result of
     Right (Just ()) -> pure Passed
-    Right Nothing -> pure . Failed $ Text.pack "timed out"
-    Left (Exception.SomeException e) -> do
+    Right Nothing -> pure $ Failed (Text.pack "timed out") Nothing
+    Left problem@(Exception.SomeException e) -> do
       rendered <- Exception.try . Exception.evaluate . Text.pack $ Exception.displayException e
-      pure . Failed $ case rendered of
-        Right m -> m
-        Left problem -> unrendered problem
+      pure $ Failed (either unrendered id rendered) (siteOf =<< Exception.fromException problem)
+
+-- | Where an assertion was made: the outermost frame of its call stack, which
+-- is the case's own line unless a helper without a call stack stands between.
+siteOf :: AssertionFailed.AssertionFailed -> Maybe Site
+siteOf a = case reverse $ AssertionFailed.frames a of
+  [] -> Nothing
+  (_, loc) : _ -> Just MkSite {sourceFile = Text.replace (Text.pack "\\") (Text.pack "/") . Text.pack $ Stack.srcLocFile loc, sourceLine = Int.toNaturalSaturating $ Stack.srcLocStartLine loc}
 
 unrendered :: Exception.SomeException -> Text.Text
 unrendered _ = Text.pack "threw an exception whose message also threw"
@@ -252,24 +288,36 @@ failureLine :: Text.Text -> Text.Text -> Text.Text
 failureLine t m = Text.intercalate (Text.pack "\n  ") $ Text.lines (Text.pack "FAIL " <> t <> Text.pack ": " <> m)
 
 -- | Shows a finished case, one of @count@, through @write@: its failure in
--- full, and when @live@ the progress line beneath, redrawn in place with a
+-- full, as an annotation too when 'annotated', and when 'live' the progress
+-- line beneath, redrawn in place with a
 -- carriage return after a failure, at the last case, and otherwise at most
 -- every tenth of a second. The caller holds the lock.
-shown :: (Text.Text -> IO ()) -> Bool -> Natural -> Word.Word64 -> IORef.IORef Screen -> Result -> IO ()
-shown write live count started screen result = do
+shown :: (Text.Text -> IO ()) -> Display -> Natural -> Word.Word64 -> IORef.IORef Screen -> Result -> IO ()
+shown write display count started screen result = do
   now <- Clock.getMonotonicTimeNSec
   before <- IORef.readIORef screen
   let tally = MkSummary {total = total (counted before) + 1, failures = failures (counted before) + maybe 0 (const 1) (failure result)}
       due = Maybe.isJust (failure result) || now - drawnAt before >= 100000000 || total tally == count
   Foldable.for_ (failure result) $ \m -> do
-    Monad.when live . write . erased $ width before
+    Monad.when (live display) . write . erased $ width before
     write $ failureLine (title result) m <> Text.pack "\n"
-  if live && due
+    Monad.when (annotated display) . write $ annotation (title result) (site result) m <> Text.pack "\n"
+  if live display && due
     then do
       let line = progressLine count tally . Word64.toNatural $ now - started
       write $ Text.pack "\r" <> Text.justifyLeft (width before) ' ' line
       IORef.writeIORef screen MkScreen {counted = tally, drawnAt = now, width = Text.length line}
     else IORef.writeIORef screen before {counted = tally}
+
+-- | A failure as a GitHub Actions workflow command, which the run's page
+-- shows as an error annotation, on its file and line when it has a site.
+annotation :: Text.Text -> Maybe Site -> Text.Text -> Text.Text
+annotation t w m =
+  let located = foldMap (\x -> [Text.pack "file=" <> property (sourceFile x), Text.pack ("line=" <> show (sourceLine x))]) w
+   in Text.pack "::error " <> Text.intercalate (Text.pack ",") (located <> [Text.pack "title=" <> property t]) <> Text.pack "::" <> escaped m
+  where
+    escaped = Text.replace (Text.pack "\n") (Text.pack "%0A") . Text.replace (Text.pack "\r") (Text.pack "%0D") . Text.replace (Text.pack "%") (Text.pack "%25")
+    property = Text.replace (Text.pack ",") (Text.pack "%2C") . Text.replace (Text.pack ":") (Text.pack "%3A") . escaped
 
 -- | Blanks a progress line this wide, leaving the cursor at its start.
 erased :: Int -> Text.Text

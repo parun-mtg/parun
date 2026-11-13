@@ -97,6 +97,16 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
           Spec.assertBool s (Text.isPrefixOf (Text.pack "FAIL asserts: boom\n  CallStack") l) $ "unexpected line: " <> Text.unpack l
           Spec.assertBool s (Text.isInfixOf (Text.pack "Parun/Test/RunnerSpec.hs") $ Text.replace (Text.pack "\\") (Text.pack "/") l) $ "no call site: " <> Text.unpack l
         _ -> Spec.assertFailure s $ "expected one line, got " <> show reported
+    Spec.it s "sites an assertion at the case's own line, and an exception nowhere" $ do
+      cases <- collect $ do
+        Spec.it r "asserts" $ Spec.assertEq r 'a' 'b'
+        Spec.it r "throws" $ ioError (userError "bang")
+      ran <- Runner.run (const $ pure ()) Nothing (Foldable.toList cases)
+      let siteOf n = fmap Runner.site $ filter ((== Text.pack n) . Runner.title) ran
+      case siteOf "asserts" of
+        [Just w] -> Spec.assertBool s (Text.isSuffixOf (Text.pack "Parun/Test/RunnerSpec.hs") (Runner.sourceFile w) && Runner.sourceLine w > 0) $ "not this file: " <> show w
+        other -> Spec.assertFailure s $ "expected one site, got " <> show other
+      Spec.assertEq s (siteOf "throws") [Nothing]
     Spec.it s "answers each case with its path, its failure and how long it ran" $ do
       cases <- collect . Spec.describe r "g" $ do
         Spec.it r "quick" $ pure ()
@@ -108,34 +118,43 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
       Spec.assertBool s (all ((>= 50000000) . Runner.nanoseconds) $ named "g.slow") $ "too quick: " <> show ran
 
   Spec.describe s "shown" $ do
-    let passed = Runner.MkResult (Text.pack "g.a") Nothing 5
-        failed = Runner.MkResult (Text.pack "g.b") (Just $ Text.pack "boom") 5
-        written live results = do
+    let passed = Runner.MkResult (Text.pack "g.a") Nothing Nothing 5
+        failed = Runner.MkResult (Text.pack "g.b") (Just $ Text.pack "boom") Nothing 5
+        plain = Runner.MkDisplay {Runner.live = False, Runner.annotated = False}
+        terminal = plain {Runner.live = True}
+        written display results = do
           sink <- IORef.newIORef []
           started <- Clock.getMonotonicTimeNSec
           screen <- IORef.newIORef Runner.MkScreen {Runner.counted = Runner.MkSummary 0 0, Runner.drawnAt = 0, Runner.width = 0}
-          Foldable.traverse_ (Runner.shown (\t -> IORef.modifyIORef' sink (t :)) live (Natural.length results) started screen) results
+          Foldable.traverse_ (Runner.shown (\t -> IORef.modifyIORef' sink (t :)) display (Natural.length results) started screen) results
           reverse <$> IORef.readIORef sink
     Spec.it s "prints only failures when not at a terminal" $ do
-      writes <- written False [passed, failed, passed]
+      writes <- written plain [passed, failed, passed]
       Spec.assertEq s writes [Text.pack "FAIL g.b: boom\n"]
     Spec.it s "at a terminal, blanks the progress line for a failure and redraws it beneath" $ do
-      writes <- written True [passed, failed]
+      writes <- written terminal [passed, failed]
       Spec.assertEq s writes $ fmap Text.pack ["\r1/2 run, 0 failed, 0:00", "\r" <> fmap (const ' ') "1/2 run, 0 failed, 0:00" <> "\r", "FAIL g.b: boom\n", "\r2/2 run, 1 failed, 0:00"]
     Spec.it s "at a terminal, draws the last case however soon it lands" $ do
-      writes <- written True [passed, passed, passed]
+      writes <- written terminal [passed, passed, passed]
       Spec.assertEq s (last writes) (Text.pack "\r3/3 run, 0 failed, 0:00")
+    Spec.it s "under GitHub Actions, annotates a failure after its line" $ do
+      writes <- written plain {Runner.annotated = True} [passed, failed]
+      Spec.assertEq s writes $ fmap Text.pack ["FAIL g.b: boom\n", "::error title=g.b::boom\n"]
+
+  Spec.describe s "annotation" $ do
+    Spec.it s "names the file and line, escaping the title's and message's specials" $
+      Spec.assertEq s (Runner.annotation (Text.pack "g.a: 1, 2") (Just Runner.MkSite {Runner.sourceFile = Text.pack "source/A.hs", Runner.sourceLine = 7}) (Text.pack "50%\r\nCallStack")) (Text.pack "::error file=source/A.hs,line=7,title=g.a%3A 1%2C 2::50%25%0D%0ACallStack")
 
   Spec.describe s "progressLine" $ do
     Spec.it s "counts the cases and failures and pads the seconds" $
       Spec.assertEq s (Runner.progressLine 30898 Runner.MkSummary {Runner.total = 12034, Runner.failures = 1} 125000000000) (Text.pack "12034/30898 run, 1 failed, 2:05")
 
   Spec.describe s "reportCodec" $ do
-    Spec.it s "writes the seed and each case, a failure only where there is one" $
+    Spec.it s "writes the seed and each case, a failure and its site only where there is one" $
       Spec.assertEq
         s
-        (Common.render $ Codec.encode Runner.reportCodec Runner.MkReport {Runner.shuffled = Text.pack "07", Runner.results = [Runner.MkResult (Text.pack "g.a") Nothing 5, Runner.MkResult (Text.pack "g.b") (Just $ Text.pack "boom") 900]})
-        (Text.pack "{\"seed\":\"07\",\"cases\":[{\"name\":\"g.a\",\"nanoseconds\":5},{\"name\":\"g.b\",\"failure\":\"boom\",\"nanoseconds\":900}]}")
+        (Common.render $ Codec.encode Runner.reportCodec Runner.MkReport {Runner.shuffled = Text.pack "07", Runner.results = [Runner.MkResult (Text.pack "g.a") Nothing Nothing 5, Runner.MkResult (Text.pack "g.b") (Just $ Text.pack "boom") (Just Runner.MkSite {Runner.sourceFile = Text.pack "source/A.hs", Runner.sourceLine = 7}) 900]})
+        (Text.pack "{\"seed\":\"07\",\"cases\":[{\"name\":\"g.a\",\"nanoseconds\":5},{\"name\":\"g.b\",\"failure\":\"boom\",\"site\":{\"file\":\"source/A.hs\",\"line\":7},\"nanoseconds\":900}]}")
 
   Spec.describe s "summaryLine" $ do
     Spec.it s "names the seed in a pass" $
