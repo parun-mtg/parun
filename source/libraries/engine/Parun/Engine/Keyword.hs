@@ -5642,7 +5642,8 @@ firebending n =
               ManaAddition.retention = ManaRetention.UntilEndOfCombat,
               ManaAddition.restriction = Nothing,
               ManaAddition.rider = Nothing,
-              ManaAddition.whenSpent = Nothing
+              ManaAddition.whenSpent = Nothing,
+              ManaAddition.choosesColor = False
             }
    in Mint.trigger (TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue)) (Seq.singleton added)
 
@@ -7177,7 +7178,8 @@ treasureToken =
           ManaAddition.retention = ManaRetention.Ordinary,
           ManaAddition.restriction = Nothing,
           ManaAddition.rider = Nothing,
-          ManaAddition.whenSpent = Nothing
+          ManaAddition.whenSpent = Nothing,
+          ManaAddition.choosesColor = False
         }
 
 -- CR 111.10's shape for the two predefined tokens rule 702.174 promises: a

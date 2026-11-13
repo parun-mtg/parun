@@ -47,7 +47,8 @@ defaultPlayer = PlayerRef.Relative PlayerRelation.You
 -- Nothing: almost every printing says neither, and the two are independent --
 -- Mishra's Workshop writes only the first key, Boseiju, Who Shelters All only
 -- the second, Delighted Halfling both. @whenSpent@, the third shape, defaults the
--- same way; Pyromancer's Goggles writes it.
+-- same way; Pyromancer's Goggles writes it. @choosesColor@ defaults to False;
+-- Foraging Wickermaw writes it.
 codec :: Codec.Codec ManaAddition.ManaAddition
 codec = Fields.object $ do
   player <- Fields.defaulted "player" defaultPlayer PlayerRef.codec ManaAddition.player
@@ -57,6 +58,7 @@ codec = Fields.object $ do
   restriction <- Fields.defaulted "restriction" Nothing (Common.maybe ManaRestriction.codec) ManaAddition.restriction
   rider <- Fields.defaulted "rider" Nothing (Common.maybe ManaRider.codec) ManaAddition.rider
   whenSpent <- Fields.defaulted "whenSpent" Nothing (Common.maybe WhenSpent.codec) ManaAddition.whenSpent
+  choosesColor <- Fields.defaulted "choosesColor" False Common.boolean ManaAddition.choosesColor
   pure
     ManaAddition.MkManaAddition
       { ManaAddition.player = player,
@@ -65,5 +67,6 @@ codec = Fields.object $ do
         ManaAddition.retention = retention,
         ManaAddition.restriction = restriction,
         ManaAddition.rider = rider,
-        ManaAddition.whenSpent = whenSpent
+        ManaAddition.whenSpent = whenSpent,
+        ManaAddition.choosesColor = choosesColor
       }

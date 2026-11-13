@@ -355,6 +355,10 @@ producedVisiting bound visited oid gs poolBoard production = case production of
       first : second : more -> Offers ColorSpread.OneColor (first NonEmpty.:| (second : more))
       settled -> Settles settled
 
+-- CR 105.1 / 106.1b: the colours among some mana's types, colourless having none.
+colorsAmong :: [ManaType] -> Set.Set Color.Color
+colorsAmong manaTypes = Set.fromList [color | ManaType.Colored color <- manaTypes]
+
 -- CR 106.12a: the types of mana a permanent's latest tap for mana produced.
 latestTapProduced :: ObjectId -> GameState -> Set.Set ManaType
 latestTapProduced oid = Foldable.foldl' newest Set.empty . (TurnRegisters.events . GameState.turn)
@@ -524,7 +528,8 @@ intrinsicManaAddition manaType =
       ManaAddition.retention = ManaRetention.Ordinary,
       ManaAddition.restriction = Nothing,
       ManaAddition.rider = Nothing,
-      ManaAddition.whenSpent = Nothing
+      ManaAddition.whenSpent = Nothing,
+      ManaAddition.choosesColor = False
     }
 
 -- What tapping this object for mana could actually put in a pool: every route

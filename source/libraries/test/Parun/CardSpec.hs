@@ -849,9 +849,9 @@ playerRefPositions =
   let one = Quantity.Type.Literal 1
       playerQuantity stem = PlayerQuantity.MkPlayerQuantity (plantedPlayer stem) one
       affecting effect = Effect.AffectPlayers (AffectPlayers.MkAffectPlayers Duration.UntilEndOfTurn (AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)) effect)
-   in [ ("add-mana", Effect.AddMana (ManaAddition.MkManaAddition (plantedPlayer "am") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing), [plantedPlayer "am"]),
-        ("add-mana-pooled", Effect.AddMana (ManaAddition.MkManaAddition (plantedPlayer "amp") (ManaProduction.Pooled (ManaCount.MkManaCount (plantedPlayer "amp-pool") ManaFilter.Any)) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing), [plantedPlayer "amp", plantedPlayer "amp-pool"]),
-        ("firebend", Effect.Firebend (ManaAddition.MkManaAddition (plantedPlayer "fb") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing), [plantedPlayer "fb"]),
+   in [ ("add-mana", Effect.AddMana (ManaAddition.MkManaAddition (plantedPlayer "am") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False), [plantedPlayer "am"]),
+        ("add-mana-pooled", Effect.AddMana (ManaAddition.MkManaAddition (plantedPlayer "amp") (ManaProduction.Pooled (ManaCount.MkManaCount (plantedPlayer "amp-pool") ManaFilter.Any)) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False), [plantedPlayer "amp", plantedPlayer "amp-pool"]),
+        ("firebend", Effect.Firebend (ManaAddition.MkManaAddition (plantedPlayer "fb") (ManaProduction.AnyColor ColorSpread.OneColor) (Quantity.Type.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False), [plantedPlayer "fb"]),
         ("search", Effect.Search (Search.MkSearch (plantedPlayer "se-searcher") (plantedPlayer "se-owner") Set.empty False Nothing (Filter.Type.And []) Seq.empty False SearchDestination.Battlefield Map.empty Nothing Nothing Nothing Nothing Set.empty False False), [plantedPlayer "se-searcher", plantedPlayer "se-owner"]),
         ("draw", Effect.Draw (Draw.MkDraw (plantedPlayer "dr") one Nothing), [plantedPlayer "dr"]),
         ("mill", Effect.Mill (Mill.MkMill (plantedPlayer "mi") one Nothing Nothing), [plantedPlayer "mi"]),
@@ -1851,6 +1851,16 @@ modeDivisionDangles mode =
 -- derivation and untouched by this lint.
 cardCostBasisStatesMana :: Face.Face Card.Type.Card -> Bool
 cardCostBasisStatesMana = any (any modeGateStatesMana . Modal.modes) . faceModals
+
+-- A clause's mana additions, in printed order.
+clauseAdditions :: Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> [ManaAddition.ManaAddition]
+clauseAdditions = Maybe.mapMaybe ManaAbility.manaProduced . Foldable.toList . Clause.effects
+
+-- Does a clause hold an addition choosing its source's colour beside another addition?
+cardChoosingAdditionShares :: Face.Face Card.Type.Card -> Bool
+cardChoosingAdditionShares =
+  let shares additions = any ManaAddition.choosesColor additions && length additions > 1
+   in any (any (any (shares . clauseAdditions) . Mode.clauses) . Modal.modes) . faceModals
 
 -- One mode's half of that lint.
 modeGateStatesMana :: Mode.Mode Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
@@ -6256,6 +6266,21 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardCostBasisStatesMana face)) "Flash, whose gate states no mana of its own, is accepted"
     Spec.assertBool s (cardCostBasisStatesMana (overGate stated)) "a described cost stating a mana part of its own is rejected"
     Spec.assertBool s (not (cardCostBasisStatesMana (overGate (stated . undescribed)))) "and a gate stating mana and describing nothing is what every other card writes"
+  -- Parun.Engine.Cost.tapForManaWith adds a clause's shares as one, so an
+  -- addition whose colour is chosen is its clause's only one: the corpus half.
+  Spec.it s "CR 608.2c an addition choosing its source's colour is its clause's only addition" $ do
+    ps <- S.allPrintings s corpus
+    let chooses = any (any (any (any ManaAddition.choosesColor . clauseAdditions) . Mode.clauses) . Modal.modes) . faceModals
+    Spec.assertBool s (any (anyFace chooses . Printing.card) ps) "the pool has an addition choosing its source's colour"
+    Spec.assertEqWith s "no such addition shares its clause" (fmap (S.nameOf . Printing.card) (filter (anyFace cardChoosingAdditionShares . Printing.card) ps)) []
+  -- And the rejecting direction, against Foraging Wickermaw misauthored on purpose.
+  Spec.it s "the lint itself catches a choosing addition beside another" $ do
+    maw <- S.printingOf s registry "Foraging Wickermaw"
+    let face = S.combinedFace maw
+        doubled clause = clause {Clause.effects = Clause.effects clause <> Seq.filter (Maybe.isJust . ManaAbility.manaProduced) (Clause.effects clause)}
+        overClauses f ability = ability {ActivatedAbility.modal = (ActivatedAbility.modal ability) {Modal.modes = fmap (\mode -> mode {Mode.clauses = fmap f (Mode.clauses mode)}) (Modal.modes (ActivatedAbility.modal ability))}}
+    Spec.assertBool s (not (cardChoosingAdditionShares face)) "Foraging Wickermaw, whose clause adds once, is accepted"
+    Spec.assertBool s (cardChoosingAdditionShares face {Face.activatedAbilities = fmap (overClauses doubled) (Face.activatedAbilities face)}) "the same clause adding twice is rejected"
   -- CR 122.5's move onto a group: the corpus half. Synthetic Ancient
   -- Redistributor's group moves are the arms distributePair does ask about.
   Spec.it s "no card moves counters onto a group under a kinds arm the distribution cannot ask" $ do

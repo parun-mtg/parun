@@ -788,8 +788,8 @@ effectPlayerRefs effect = case effect of
   Effect.Fight {} -> []
   Effect.ModifyTarget x -> durationPlayerRefs (ModifyTarget.duration x)
   Effect.ChangeText x -> durationPlayerRefs (ChangeText.duration x)
-  Effect.AddMana (ManaAddition.MkManaAddition ref production _ _ _ _ _) -> ref : productionPlayerRefs production
-  Effect.Firebend (ManaAddition.MkManaAddition ref production _ _ _ _ _) -> ref : productionPlayerRefs production
+  Effect.AddMana (ManaAddition.MkManaAddition ref production _ _ _ _ _ _) -> ref : productionPlayerRefs production
+  Effect.Firebend (ManaAddition.MkManaAddition ref production _ _ _ _ _ _) -> ref : productionPlayerRefs production
   Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities ref _) -> [ref]
   Effect.MoveMana (MoveMana.MkMoveMana from to) -> from : Maybe.maybeToList to
   Effect.Search (Search.MkSearch searcher owner _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) -> [searcher, owner]
@@ -1100,8 +1100,8 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.ModifyTarget (ModifyTarget.MkModifyTarget duration modification _ each) ->
     joinTwo (maybe id Map.delete each (joinSlots (fmap quantitySlots (Projection.quantitiesOf modification)))) (durationSlots duration)
   Effect.ChangeText (ChangeText.MkChangeText _ _ slot duration) -> joinTwo (oneSlot slot) (durationSlots duration)
-  Effect.AddMana (ManaAddition.MkManaAddition _ production _ _ _ _ _) -> productionSlots production
-  Effect.Firebend (ManaAddition.MkManaAddition _ production _ _ _ _ _) -> productionSlots production
+  Effect.AddMana (ManaAddition.MkManaAddition _ production _ _ _ _ _ _) -> productionSlots production
+  Effect.Firebend (ManaAddition.MkManaAddition _ production _ _ _ _ _ _) -> productionSlots production
   -- The actor is effectPlayerRefs' half, joined at the head; the FILTER is a
   -- read like Search's, a card naming a slot in it being read here.
   Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities _ filter_) -> filterSlotsOf filter_

@@ -507,7 +507,7 @@ manaSpec s registry = Spec.describe s "Mana" $ do
           ActivatedAbility.MkActivatedAbility
             { ActivatedAbility.costChoices = [],
               ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
-              ActivatedAbility.modal = Mint.oneMode (Seq.singleton (Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored Color.Green)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing))),
+              ActivatedAbility.modal = Mint.oneMode (Seq.singleton (Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored Color.Green)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False))),
               ActivatedAbility.maximumX = [],
               ActivatedAbility.minimumX = 0,
               ActivatedAbility.definedX = Nothing,
@@ -528,7 +528,7 @@ manaSpec s registry = Spec.describe s "Mana" $ do
               ActivatedAbility.modal =
                 Mint.oneModeTargeting
                   (Map.singleton (SlotName.MkSlotName (Text.pack "x")) (TargetSlot.required Pool.AnyTarget Nothing))
-                  (Seq.singleton (Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored Color.Green)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing))),
+                  (Seq.singleton (Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored Color.Green)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False))),
               ActivatedAbility.maximumX = [],
               ActivatedAbility.minimumX = 0,
               ActivatedAbility.definedX = Nothing,
@@ -4750,7 +4750,7 @@ manaFlareSpec s registry = Spec.describe s "Mana Flare" $ do
     Spec.assertEqWith
       s
       "the read"
-      (Resolve.slotsOf (Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) ManaProduction.ProducedByTapped (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing)))
+      (Resolve.slotsOf (Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) ManaProduction.ProducedByTapped (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False)))
       (Map.singleton Binding.manaSource SlotArity.One)
   -- The land produced two types across the turn, and the event read is the tap
   -- that fired the ability: an earlier one would answer {W} both times.

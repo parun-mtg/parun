@@ -59,6 +59,7 @@ import qualified Parun.Types.ChooseGroup as ChooseGroup
 import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChoosePlayer as ChoosePlayer
 import qualified Parun.Types.ChoosePlayerAtRandom as ChoosePlayerAtRandom
+import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.CoinReading as CoinReading
@@ -460,7 +461,7 @@ changeText resolving source controller legal (ChangeText.MkChangeText families f
 -- is a fence for the same reason: Ice Cauldron, its one producer, is a mana
 -- ability too. So is the spend trigger's: Pyromancer's Goggles is one.
 addMana :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ManaAddition.ManaAddition -> Game ()
-addMana resolving source controller legal (ManaAddition.MkManaAddition ref production count retention restriction rider whenSpent) = do
+addMana resolving source controller legal (ManaAddition.MkManaAddition ref production count retention restriction rider whenSpent choosesColor) = do
   gs0 <- State.get
   -- CR 106.3: how many units this ONE instruction adds, read off the board at
   -- RESOLUTION rather than off the card -- Cabal Coffers' "for each Swamp you
@@ -496,6 +497,17 @@ addMana resolving source controller legal (ManaAddition.MkManaAddition ref produ
                     )
                 )
             )
+      -- CR 608.2c: the "that color" a later instruction reads is the colour of
+      -- the mana added, written where Counters.chooseQuality writes a choice.
+      -- With several recipients the last one's stands; no printing has both.
+      --
+      -- A regression fence, the rider's above: Foraging Wickermaw, the one
+      -- printing (Scryfall o:"that color" o:"mana of any color", 2026-11-13), is
+      -- a mana ability and takes Parun.Engine.Cost.tapForManaWith's road. A
+      -- triggered or loyalty ability printing the sentence would observe it.
+      choose manaTypes =
+        Monad.when choosesColor $
+          State.modify' (Game.recordChoice Chosen.Colors (Game.readingAcquisition resolving source gs0 source) (const (Just (Mana.colorsAmong manaTypes))) source)
   case Mana.produced legal source gs0 production of
     -- A settled run needs no question; the COUNT is how many times this one
     -- instruction adds it, and a clause adding mana of two DIFFERENT types
@@ -510,6 +522,7 @@ addMana resolving source controller legal (ManaAddition.MkManaAddition ref produ
        in Monad.unless (null run) $ do
             State.modify' (\gs -> foldr (\pid -> Mana.addMana pid units) gs recipients)
             Monad.mapM_ (\pid -> recordAdded pid (Set.fromList run)) recipients
+            Monad.unless (null recipients) (choose (concat (replicate howMany run)))
     -- Several types is CR 105.4's choice, and it is the RECIPIENT's: CR 106.3
     -- has the effect instruct a player to add the mana, and CR 106.4 puts it in
     -- that player's pool. CR 101.4: several recipients are asked in APNAP
@@ -535,6 +548,7 @@ addMana resolving source controller legal (ManaAddition.MkManaAddition ref produ
               ColorSpread.AnyCombination -> Monad.replicateM howMany pick
             State.modify' (Mana.addMana pid (fmap unitOf manaTypes))
             recordAdded pid (Set.fromList manaTypes)
+            choose manaTypes
 
 -- CR 608.2c's instruction, carried out by somebody other than this spell's
 -- controller: Drain Power's first sentence has the TARGETED player activate a

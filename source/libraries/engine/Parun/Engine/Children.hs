@@ -3594,7 +3594,7 @@ manaLeaves =
 
 -- | A mana addition's children (CR 106.1). Its retention is left as it is.
 manaAdditionChildren :: (Applicative f) => ManaChildren f -> ManaAddition.ManaAddition -> f ManaAddition.ManaAddition
-manaAdditionChildren c (ManaAddition.MkManaAddition adder production count retention restriction rider whenSpent) =
+manaAdditionChildren c (ManaAddition.MkManaAddition adder production count retention restriction rider whenSpent choosesColor) =
   ManaAddition.MkManaAddition
     <$> manaPlayer c adder
     <*> manaProductionChildren c production
@@ -3603,6 +3603,7 @@ manaAdditionChildren c (ManaAddition.MkManaAddition adder production count reten
     <*> traverse (manaRestrictionChildren c) restriction
     <*> traverse (manaRiderChildren c) rider
     <*> traverse (\(WhenSpent.MkWhenSpent casts ability) -> WhenSpent.MkWhenSpent <$> manaCriterion c casts <*> pure ability) whenSpent
+    <*> pure choosesColor
 
 -- | A mana production's children. The types a permanent could produce (CR
 -- 106.7) and the counted pool's types (CR 701.10f) are left as they are.
