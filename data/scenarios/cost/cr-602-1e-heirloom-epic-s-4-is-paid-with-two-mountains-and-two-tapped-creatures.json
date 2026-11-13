@@ -1,0 +1,146 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Heirloom Epic",
+            "label": "epic",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-2",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-1",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-2",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-3",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 602.1e Heirloom Epic's {4} is paid with two Mountains and two tapped creatures",
+  "final": [
+    {
+      "Count": {
+        "card": "Mountain",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Mountain",
+        "count": 1,
+        "player": "alice",
+        "zone": "Library"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$epic",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$mountain",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$mountain-2",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-1",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-2",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-3",
+        "tapped": false
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTaps",
+          "with": [
+            "$piker-1",
+            "$piker-2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "cost": [
+            {
+              "type": "Generic",
+              "value": 2
+            }
+          ],
+          "mana": [
+            "$mountain",
+            "$mountain-2"
+          ],
+          "object": "$epic"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

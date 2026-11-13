@@ -475,7 +475,7 @@ payableCostAt aimable x stamp named spendable pid srcId gs =
 -- gs`'s own answer, which a per-ability loop takes once.
 payableCostAtGiven :: [(RowSource, PlayerEffect.Type.PlayerEffect)] -> [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))] -> Mana.Sources -> Snapshot.Snapshot -> Natural -> Maybe Keyword -> Maybe AbilityName.AbilityName -> Maybe (Set.Set ManaType.ManaType) -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
 payableCostAtGiven effects aimable sources board x stamp named spendable pid srcId gs cost =
-  aimingSomewhere effects (\adjustments -> Cost.plusComponents adjustments (Cost.substituteX x cost)) aimable stamp named (Loyalty.loyaltyKindOf cost) pid srcId gs (\slots adjustments -> let totalled = Cost.plusComponents adjustments (Cost.substituteX x cost) in Cost.canPaySomeCompletionGiven slots (PaymentSubject.Activating srcId stamp spendable) ManaSpending.AsProduced sources board pid srcId (Cost.totalManas adjustments) (Cost.waterbendSubstitutions (Cost.Type.components totalled) slots pid srcId gs) totalled gs)
+  aimingSomewhere effects (\adjustments -> Cost.plusComponents adjustments (Cost.substituteX x cost)) aimable stamp named (Loyalty.loyaltyKindOf cost) pid srcId gs (\slots adjustments -> let totalled = Cost.plusComponents adjustments (Cost.substituteX x cost) in Cost.canPaySomeCompletionGiven slots (PaymentSubject.Activating srcId stamp spendable) ManaSpending.AsProduced sources board pid srcId (Cost.totalManas adjustments) (Cost.statedSubstitutions (Cost.Type.components totalled) slots pid srcId gs) totalled gs)
 
 -- CR 601.2f's totalling asked where CR 601.2c's targets do not exist yet: the
 -- predicate holds if SOME aiming this activation could still take leaves the

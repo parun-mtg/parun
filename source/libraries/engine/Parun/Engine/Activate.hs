@@ -395,7 +395,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
           -- (Cost.substitutedManas): a half this offer makes payable is a half
           -- CR 601.2b leaves to the payer rather than to the fallback.
           let totalledCost = Cost.plusComponents gathered announcedAtX
-          (announcedCost, _) <- Cost.announce (PaymentSubject.Activating srcId stamp spendable) ManaSpending.AsProduced pid srcId (Cost.substitutedManas (Cost.waterbendSubstitutions (Cost.Type.components totalledCost) Map.empty pid srcId gs) (Cost.totalManas gathered)) totalledCost
+          (announcedCost, _) <- Cost.announce (PaymentSubject.Activating srcId stamp spendable) ManaSpending.AsProduced pid srcId (Cost.substitutedManas (Cost.statedSubstitutions (Cost.Type.components totalledCost) Map.empty pid srcId gs) (Cost.totalManas gathered)) totalledCost
           (chosen, drawn) <- Target.chooseTargets (ActivatedAbility.name ability) pid abilId srcId seed (Maybe.fromMaybe 0 mAmount) slots sets
           if not (Target.selectionLegal StackObjectKind.ActivatedAbility (ActivatedAbility.name ability) (Just pid) seed srcId (Maybe.fromMaybe 0 mAmount) slots sets chosen gs)
             then reject -- the whole activation is a no-op
@@ -494,7 +494,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
               -- (Cost.paySubstituting). The bindings the substitution makes are
               -- dropped -- no printing reads back which permanents a waterbend
               -- cost tapped, where CR 702.51c's convoke does.
-              (payment, _) <- Cost.paySubstituting (refused . completedBy) (Resolve.performManaAbility runSubgame) before [] PaymentMoment.OutsideResolution (PaymentSubject.Activating srcId stamp spendable) (Just abilId) ManaSpending.AsProduced pid srcId (Cost.announceSubstitutions Cost.waterbendSubstitutions pid srcId) paidCost
+              (payment, _) <- Cost.paySubstituting (refused . completedBy) (Resolve.performManaAbility runSubgame) before [] PaymentMoment.OutsideResolution (PaymentSubject.Activating srcId stamp spendable) (Just abilId) ManaSpending.AsProduced pid srcId (Cost.announceSubstitutions Cost.statedSubstitutions pid srcId) paidCost
               completed <- State.gets completedBy
               case payment of
                 -- CR 602.2b / 601.2i: record that the ability has become

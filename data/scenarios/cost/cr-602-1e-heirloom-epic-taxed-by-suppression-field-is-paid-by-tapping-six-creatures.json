@@ -1,0 +1,170 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Heirloom Epic",
+            "label": "epic",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-1",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-2",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-3",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-4",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-5",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-6",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker-7",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Suppression Field",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 602.1e Heirloom Epic taxed by Suppression Field is paid by tapping six creatures",
+  "final": [
+    {
+      "Count": {
+        "card": "Mountain",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Mountain",
+        "count": 1,
+        "player": "alice",
+        "zone": "Library"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$epic",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-1",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-2",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-3",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-4",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-5",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-6",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$piker-7",
+        "tapped": false
+      }
+    }
+  ],
+  "note": "The offer is measured on CR 601.2f's total, {6}, not the printed {4}: no land, so a ceiling of four leaves {2} unpayable.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTaps",
+          "with": [
+            "$piker-1",
+            "$piker-2",
+            "$piker-3",
+            "$piker-4",
+            "$piker-5",
+            "$piker-6"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "cost": [],
+          "object": "$epic"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
