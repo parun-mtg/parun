@@ -215,7 +215,8 @@ data CostComponent keyword
     -- BINDS the beheld objects under Parun.Engine.Binding.beheldObject, which is
     -- what CR 701.4b's "if a [quality] was beheld" is read off through
     -- Quantity.WasBound; CR 118.8b's optional "you may behold" is an option of a
-    -- Parun.Types.CostChoice whose other option is empty.
+    -- Parun.Types.CostChoice whose other option is empty. "Choose a creature
+    -- type and behold two creatures of that type" is Behold.chosenType.
     Behold (Behold.Behold keyword)
   | -- | CR 701.4a then CR 406.2 / Champion of the Weird: the paying player
     -- beholds one object matching the Filter and exiles it, linking the card to

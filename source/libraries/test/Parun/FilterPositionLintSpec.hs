@@ -50,6 +50,7 @@ import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCostScope as AttackCostScope
+import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
@@ -783,6 +784,11 @@ hasChosenCardTypeTag = Text.pack "HasChosenCardType"
 -- order written") read it, though its target slots, chosen before it resolves
 -- (CR 601.2c), still cannot, nor can a filter ahead of it or in another mode.
 --
+-- So is a spell whose additional cost makes the choice (Behold.chosenType,
+-- Celestial Reunion): the cost's own criterion reads it, and so does every
+-- filter of the resolution, though no target slot, announced before the cost is
+-- paid (CR 601.2c).
+--
 -- A printed triggered or activated ability whose own resolution makes such a
 -- choice is admitted after it in EVERY position, unframed ones included:
 -- Parun.Engine.Resolve.Slots.effectContext frames the resolution's reads by the
@@ -792,14 +798,27 @@ chosenValueCounts :: (Framing -> Bool) -> (ChosenQuality.ChosenQuality -> Bool) 
 chosenValueCounts admitted answers tag card =
   let total keep pairs = sum (fmap (\(_, f) -> filterAtoms tag f) (filter (keep . fst) pairs))
       spellPairs = modalFilters (Face.spell (surveyedFace card))
-      answered = afterChoice answers (Face.spell (surveyedFace card))
-      inSpell = total admitted spellPairs - total admitted answered
+      paying = filter (any (\family -> answers (ChosenQuality.Subtype family Nothing)) . Behold.chosenType) (castBeholds (surveyedFace card))
+      untargeted modal = modal {Modal.modes = fmap (\mode -> Mode.MkMode (Mode.clauses mode) Map.empty) (Modal.modes modal)}
+      answered =
+        if null paying
+          then afterChoice answers (Face.spell (surveyedFace card))
+          else modalFilters (untargeted (Face.spell (surveyedFace card)))
+      inCost = sum (fmap (filterAtoms tag . Behold.whichObjects) paying)
+      inSpell = total admitted spellPairs - total admitted answered - inCost
       abilityModals = fmap TriggeredAbility.modal (Face.triggeredAbilities (surveyedFace card)) <> fmap ActivatedAbility.modal (Face.activatedAbilities (surveyedFace card))
       -- A keyword's own filter is read off the keyword long after the
       -- resolution, so the choice answers it only where it is baked
       -- (grantedChosenColors).
       inAbility = total (\framing -> not (admitted framing) && framing /= KeywordFramed) (concatMap (afterChoice answers) abilityModals)
    in (total admitted (surveyedFilters card) - inSpell + inAbility, total (not . admitted) (surveyedFilters card) + inSpell - inAbility)
+
+-- The Behold components of a face's additional costs, mandatory and optional.
+castBeholds :: Face.Face Card.Type.Card -> [Behold.Behold Keyword.Keyword]
+castBeholds face =
+  [ behold
+  | CostComponent.Behold behold <- Face.additionalCosts face <> concatMap (concatMap Cost.Type.components . NonEmpty.toList . CostChoice.unwrap) (Face.additionalCostChoices face)
+  ]
 
 -- The filters a spell's mode reads after its first `Effect.ChooseQuality q`
 -- whose `q` answers the atom:
@@ -3627,12 +3646,22 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Brass Herald", hasChosenSubtypeCounts, "an affected set and a resolution's own filter", (2, 0)),
         ("Orcrist, Goblin-cleaver", hasChosenSubtypeCounts, "a triggered ability's Create quantity after its own choice", (1, 0)),
         ("Persecute", hasChosenColorCounts, "a spell's own hand sweep after its own choice", (1, 0)),
+        ("Celestial Reunion", hasChosenSubtypeCounts, "a spell's behold cost and its resolution after the cost's own choice", (3, 0)),
         ("Story Circle", hasChosenColorCounts, "an activated ability's chosen damage source", (1, 0)),
         ("Avacyn, Guardian Angel", hasChosenColorCounts, "two activated abilities' damage shields", (2, 0))
       ]
       $ \(name, counts, position, expected) -> do
         printing <- S.printingOf s registry name
         Spec.assertEqWith s (name <> "'s atoms are framed by " <> position) (counts (survey (S.combinedFace printing))) expected
+    -- The cost answers only where it asks for a type: the same card, its
+    -- behold choosing none, has all three atoms unanswered.
+    reunion <- S.printingOf s registry "Celestial Reunion"
+    let untyped component = case component of
+          CostComponent.Behold behold -> CostComponent.Behold behold {Behold.chosenType = Nothing}
+          other -> other
+        untypedCost cost = cost {Cost.Type.components = fmap untyped (Cost.Type.components cost)}
+        stripped = (S.combinedFace reunion) {Face.additionalCostChoices = fmap (CostChoice.MkCostChoice . fmap untypedCost . CostChoice.unwrap) (Face.additionalCostChoices (S.combinedFace reunion))}
+    Spec.assertEqWith s "a behold cost choosing no type answers nothing" (hasChosenSubtypeCounts (survey stripped)) (0, 3)
   -- The rejecting direction, for both atoms: each buried under all three
   -- combinators and planted in a spell's positions, which cannot answer, then
   -- in source-framed ones, which can.

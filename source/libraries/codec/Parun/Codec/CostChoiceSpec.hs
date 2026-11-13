@@ -25,7 +25,7 @@ spec s = Spec.describe s "Parun.Codec.CostChoice" $ do
       s
       CostChoice.codec
       ( CostChoice.MkCostChoice
-          ( Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = [CostComponent.Behold (Behold.MkBehold {Behold.count = 1, Behold.whichObjects = Filter.HasCardType CardType.Creature})]}
+          ( Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = [CostComponent.Behold (Behold.MkBehold {Behold.count = 1, Behold.whichObjects = Filter.HasCardType CardType.Creature, Behold.chosenType = Nothing})]}
               NonEmpty.:| [Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]), Cost.components = []}]
           )
       )

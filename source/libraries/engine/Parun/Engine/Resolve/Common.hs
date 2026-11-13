@@ -3148,6 +3148,10 @@ acquireChoices copiedSpell acquisition mOriginal subject =
           -- subject now has (`acquisition`, CR 607.5), since rule 707.2 hands
           -- them on with the text that reads them.
           Object.chosenPlayers = maybe Map.empty (\o -> Map.filter (not . Map.null) (Map.singleton acquisition (Map.findWithDefault Map.empty (Object.acquisition o) (Object.chosenPlayers o)))) mOriginal,
+          -- The type a Behold cost chose (Behold.chosenType), likewise. The
+          -- scenario "CR 707.2 a spell that becomes a copy of Celestial Reunion
+          -- acquires the chosen type" is the proof.
+          Object.chosenSubtype = maybe Map.empty (\o -> maybe Map.empty (Map.singleton acquisition) (Map.lookup (Object.acquisition o) (Object.chosenSubtype o))) mOriginal,
           Object.boughtBack = any Object.boughtBack mOriginal,
           Object.unannounced = Maybe.isNothing mOriginal,
           Object.castUsing = mOriginal >>= Object.castUsing
