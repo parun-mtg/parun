@@ -108,7 +108,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 707.10 / 400.7d a Double Major copy of Catharsis had no mana spent on it, so only the original triggers",
-  "note": "The original is paid {W}{W}{R}{R}{G}{G}; the copy enters first and neither of its abilities triggers (ruling of 2026-01-23), so two Kithkin are made, not four.",
+  "note": "The original is paid {W}{W}{R}{R}{G}{G}; the copy enters first and neither of its abilities triggers (ruling of 2025-11-17), so two Kithkin are made, not four.",
   "timeline": [
     {
       "do": {

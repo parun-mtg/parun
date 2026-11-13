@@ -1636,8 +1636,9 @@ hasRead wanted quantity = case quantity of
   Quantity.InSlot slot -> wanted == StaticRead.ReadsX && slot == Binding.variableX
   Quantity.ManaSpent part -> case part of
     ManaSpent.Total -> wanted == StaticRead.ReadsManaSpent
-    -- Unobserved: only a spell with {X} reading a type over its whole cost
-    -- would show the payer asked for X's share needlessly; no pool card is one.
+    -- Unobserved: only a card with {X} reading a type over its whole cost
+    -- would show the payer asked for X's share needlessly (data/cards/,
+    -- 2026-11-13, none).
     ManaSpent.OfType _ portion -> portion == CostPortion.OnX && wanted == StaticRead.ReadsManaSpentOnX
     ManaSpent.Colors -> False
   _ -> Monoid.getAny (Const.getConst (Children.quantityChildren (Children.descendingQuantities (Const.Const . Monoid.Any . hasRead wanted)) quantity))
