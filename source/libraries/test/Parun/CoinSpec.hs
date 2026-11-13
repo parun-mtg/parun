@@ -298,8 +298,9 @@ faceReadingSpec s registry = Spec.describe s "FlipCoin read for its face (CR 705
 -- lose, this creature deals 3 damage to that player."; Oracle text via
 -- api.scryfall.com 2026-09-02). Its ruling ties each flip to one opponent
 -- ("deals 3 damage to the appropriate player for each lost flip"), so the card
--- is a ForEach over the opponents with a one-coin flip in the body, reading the
--- flip's wins for the draw and its losses for the damage.
+-- is a ForEach over the opponents with a one-coin flip in the body, then a loop
+-- apiece for the draws and the damage (CR 608.2e), each reading that opponent's
+-- own flip (Parun.Types.Binding's perMember).
 --
 -- THREE SEATS, because the card ranges over opponents and two flips are what
 -- separates the lost tally from the won one: with bob's flip lost and carol's
@@ -372,6 +373,31 @@ missesSpec s registry = Spec.describe s "FlipCoin tallies the flips lost (CR 705
       "CR 705.2: no flip lost, so no damage and two cards drawn"
       (let settled = afterMutalith [CoinFace.Heads, CoinFace.Heads] board in (S.lifeOf S.bob settled, S.lifeOf S.carol settled, S.handSize S.alice settled))
       (Just 20, Just 16, 2)
+  -- CR 608.2e: the flips are one sentence and the draws the next, so every
+  -- coin is flipped before the first draw. Darkblast's dredge is the read:
+  -- CR 702.52a offers it at the draw, and the answerer notes how many coins
+  -- had been flipped by then. Bob's flip is won, so taking the opponents one
+  -- at a time would offer it after one flip.
+  Spec.it s "CR 608.2e every coin is flipped before the first draw" $ do
+    beast <- S.printingOf s registry "Mutalith Vortex Beast"
+    maiden <- S.printingOf s registry "Bird Maiden"
+    darkblast <- S.printingOf s registry "Darkblast"
+    let stocked = foldr (\_ g -> snd (S.addLibraryCard maiden S.alice g)) (snd (S.addGraveyardCard darkblast S.alice S.threePlayerGame)) [1 :: Int .. 4]
+        board = snd (S.entersWithTrigger beast S.alice stocked)
+        answer :: Prompt.Prompt r -> State.State (Int, [Int]) r
+        answer p = case p of
+          Prompt.CallCoin {} -> pure CoinFace.Heads
+          Prompt.FlipCoin -> do
+            State.modify' (\(flipped, seen) -> (flipped + 1, seen))
+            State.gets (\(flipped, _) -> if flipped == 1 then CoinFace.Heads else CoinFace.Tails)
+          Prompt.ChooseDredge {} -> do
+            State.modify' (\(flipped, seen) -> (flipped, seen <> [flipped]))
+            pure (S.identityAnswer p)
+          _ -> pure (S.identityAnswer p)
+        run :: GameState.GameState -> Game.Type.Game a -> State.State (Int, [Int]) GameState.GameState
+        run g game = fmap snd (Engine.runGame answer g game)
+        offers = snd (State.execState (run board (Engine.placePendingTriggers []) >>= \placed -> run placed Stack.resolveTop) (0, []))
+    Spec.assertEqWith s "CR 608.2e the one draw's dredge is offered after both flips" offers [2]
 
 -- CR 608.2c: each branch of Game of Chaos is two instructions in written order,
 -- so two events, and CR 603.4's board for the first does not hold the second.

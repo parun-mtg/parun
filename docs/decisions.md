@@ -705,6 +705,25 @@ Entries are ordered by the first rule each cites.
   `planeswalkerificate-damage-lowers-toughness-and-marks-damage`.
 - **Issue**: #7022.
 
+## One creature per opponent for Nihiloor
+
+- **Question**: Nihiloor says "for each opponent, tap up to one untapped
+  creature you control", and its ruling has every creature chosen before any
+  is tapped. May one creature be chosen for two opponents?
+- **Rules**: CR 608.2e, 608.2d, 603.12; Nihiloor's ruling of 2021-07-23; CR of
+  2026-11-06.
+- **Decision**: No. A creature chosen for one opponent is no choice for a
+  later one. The ruling puts one reflexive ability on the stack "for each
+  creature you tapped", which counts creatures and opponents alike only if
+  they are distinct.
+- **Rejected**: Letting the choices overlap, every creature being untapped
+  while they are made. One tap would then answer two opponents' "when you
+  do", or one of them at no rule's choosing.
+- **Site**: `Parun.Engine.Binding.chosenForOthers`, read by
+  `data/cards/nihiloor.json`. Proved by the scenario
+  `nihiloor-taps-for-every-opponent-at-once`.
+- **Issue**: #3886.
+
 ## Which board an entry inside a batch collects replacement effects from
 
 - **Question**: When an entry is contained in a CR 608.2f batch, does its CR

@@ -1472,7 +1472,9 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- such reads would otherwise be judged inert before the loop has run
   -- (Parun.Engine.Resolve.clauseIsInert, Bruna, Light of Alabaster's "you may
   -- attach to it any number of Auras").
-  Effect.ForEach (ForEach.MkForEach _ _ slot body _ gate _) -> joinTwo (maybe Map.empty payGateSlots gate) (sequenceSlots (Set.singleton slot) (Foldable.toList body))
+  --
+  -- Binding.chosenForOthers is the loop's definition as its member is.
+  Effect.ForEach (ForEach.MkForEach _ _ slot body _ gate _) -> joinTwo (maybe Map.empty payGateSlots gate) (sequenceSlots (Set.fromList [slot, Binding.chosenForOthers]) (Foldable.toList body))
   Effect.ForEachNumber (ForEachNumber.MkForEachNumber upTo slot body) -> joinTwo (quantitySlots upTo) (sequenceSlots (Set.singleton slot) (Foldable.toList body))
   Effect.Repeat (Repeat.MkRepeat _ body gate _ ifAgain) -> joinSlots (maybe Map.empty conditionSlots gate : fmap slotsOf (Foldable.toList (body <> ifAgain)))
   -- What the process and the "if" read, and the condition itself: a read of

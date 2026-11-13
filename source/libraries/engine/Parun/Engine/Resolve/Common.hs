@@ -130,6 +130,7 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Feasibility as Feasibility
 import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.ForEach as ForEach
 import qualified Parun.Types.FromAnywhere as FromAnywhere
 import qualified Parun.Types.GainControl as GainControl
 import Parun.Types.Game (Game)
@@ -367,8 +368,8 @@ targetSlotsOf obj oid gs face =
 -- fold carries the previous instruction's before and after states rather than
 -- a verdict, and a clause with no arm never compares.
 --
--- Effect.ForEach's body (Parun.Engine.Resolve.Arms.Zones) runs its instructions through this SAME fold,
--- reset per member rather than carried across members. Nihiloor's "for each
+-- Effect.ForEach's body (Parun.Engine.Resolve.Arms.Zones) runs its instructions through this fold's
+-- step (`applyClauseStep`), carried per member rather than across members. Nihiloor's "for each
 -- opponent, tap up to one untapped creature you control. When you do, ..." is
 -- the printed shape, but cannot observe it: a reflexive armed off a tap that
 -- tapped nothing has no creature to measure its target by, so it has no legal
@@ -406,15 +407,27 @@ applyClauseEffects ::
   [Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] ->
   Game ()
 applyClauseEffects resolving source applyOne =
-  let step previous effect = do
-        arms <- State.gets (armsReflexive resolving source effect)
-        let skipped = arms && maybe False (not . instructionDone) previous
-        before <- State.get
-        Monad.unless skipped (applyOne effect)
-        after <- State.get
-        let ahead = maybe False (\asked -> aheadOfNext asked && admitsNone asked) previous
-        pure (Just (MkAsked before after (ahead || choosesAnyNumber effect) (choiceAhead effect)))
-   in Monad.foldM_ step Nothing
+  Monad.foldM_ (\previous effect -> fmap Just (applyClauseStep resolving source applyOne previous effect)) Nothing
+
+-- One step of applyClauseEffects' fold: `effect` run after `previous`, the
+-- instruction before it. Apart from the fold for CR 608.2e's loop
+-- (Parun.Engine.Resolve.Arms.Zones's forEach), which runs one action for
+-- every member before the next and so carries a `previous` per member.
+applyClauseStep ::
+  ObjectId ->
+  ObjectId ->
+  (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()) ->
+  Maybe Asked ->
+  Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) ->
+  Game Asked
+applyClauseStep resolving source applyOne previous effect = do
+  arms <- State.gets (armsReflexive resolving source effect)
+  let skipped = arms && maybe False (not . instructionDone) previous
+  before <- State.get
+  Monad.unless skipped (applyOne effect)
+  after <- State.get
+  let ahead = maybe False (\asked -> aheadOfNext asked && admitsNone asked) previous
+  pure (MkAsked before after (ahead || choosesAnyNumber effect) (choiceAhead effect))
 
 -- One instruction of applyClauseEffects' fold, as the next one asks about it:
 -- the states it ran between, whether its choice -- or one written ahead of it
@@ -471,6 +484,23 @@ choiceAhead effect = case effect of
   Effect.ChoosePermanents {} -> True
   Effect.Divide {} -> True
   _ -> False
+
+-- CR 608.2e: a loop body cut into its actions, each the choices written ahead
+-- of it and the instruction that acts on them. A body ending on a choice has
+-- a last action that only chooses.
+loopActions :: [Effect card ability] -> [([Effect card ability], Maybe (Effect card ability))]
+loopActions effects = case span choosesOnly effects of
+  ([], []) -> []
+  (choices, []) -> [(choices, Nothing)]
+  (choices, action : rest) -> (choices, Just action) : loopActions rest
+
+-- CR 608.2d: an instruction that makes a choice and takes no action: a choice
+-- bound for a later instruction (`choiceAhead`), or a loop of them. Tariff's
+-- inner loop is the second, its offer and its pick of what goes unpaid.
+choosesOnly :: Effect card ability -> Bool
+choosesOnly effect = case effect of
+  Effect.ForEach loop -> all choosesOnly (ForEach.body loop)
+  _ -> choiceAhead effect
 
 -- CR 603.12: record that an instruction did fewer than the number it named.
 fallShort :: Game ()

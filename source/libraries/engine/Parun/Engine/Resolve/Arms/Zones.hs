@@ -959,24 +959,39 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
       -- (Effect.ArmDelayedTrigger's arm).
       withMember member defined m = Map.insert slot (Set.singleton member) (Map.union m defined)
       bindingsOf gs = maybe Map.empty Object.bindings (Game.lookupObject resolving gs)
-      -- Whatever those names held BEFORE the loop, to be put back at each
-      -- iteration's start and once at the end.
-      beforeLoop = Map.restrictKeys (bindingsOf gs0) bodyDefined
+      -- What an EARLIER loop of this resolution bound for this member
+      -- (Binding.perMember), back in scope while this loop considers it: "that
+      -- player" a sentence later. Mutalith Vortex Beast's damage reads the flip
+      -- each opponent's own iteration lost. Never a name this body defines.
+      earlier = Map.filter (Maybe.isJust . Binding.Type.perMember) (Map.withoutKeys (bindingsOf gs0) bodyDefined)
+      inherited member = Map.mapMaybe (\binding -> fmap (\n -> binding {Binding.Type.amount = Just n}) (Map.lookup member =<< Binding.Type.perMember binding)) earlier
+      scoped = Set.insert Binding.chosenForOthers (Set.union bodyDefined (Map.keysSet earlier))
+      -- CR 608.2e: one action's choices are all made before it is processed,
+      -- so a member's choice can be told what the loop has bound so far for
+      -- its other members (Binding.chosenForOthers).
+      forOthers member made =
+        let boundBy binding = Foldable.toList (Maybe.fromMaybe Seq.empty (Binding.Type.objects binding)) <> Maybe.mapMaybe Recipient.objectOf (foldMap Set.toList (Binding.Type.targets binding))
+            others = ListUtils.nubOrd (concatMap (concatMap boundBy . Map.elems) (Map.elems (Map.delete member made)))
+         in if null others then Map.empty else Map.singleton Binding.chosenForOthers (Binding.toObjects (Seq.fromList others))
+      -- Whatever the scoped names held BEFORE the loop, to be put back at each
+      -- step's start and once at the end.
+      beforeLoop = Map.restrictKeys (bindingsOf gs0) scoped
       -- The other half of the scoping, not tidiness: an iteration whose
       -- MoveToZone found an empty library binds nothing, and without this its
       -- DealDamage would read the card the PREVIOUS iteration exiled. Restoring
       -- rather than deleting leaves the rest of the resolution its environment
       -- for every name the loop's own accumulation (bindAcross below) does not
-      -- take back over.
-      rescope gs =
+      -- take back over. `mine` is what this member's own steps have bound so
+      -- far, which is all that survives from one member's step to its next.
+      rescope mine gs =
         gs
           { GameState.objects =
               Map.adjust
-                (\o -> o {Object.bindings = Map.union beforeLoop (Map.withoutKeys (Object.bindings o) bodyDefined)})
+                (\o -> o {Object.bindings = Map.unions [mine, beforeLoop, Map.withoutKeys (Object.bindings o) scoped]})
                 resolving
                 (GameState.objects gs)
           }
-      -- What THIS iteration bound, against what the loop started from: a name
+      -- What THIS member has bound, against what the loop started from: a name
       -- rescope restored and the body never touched is the pre-loop
       -- environment rather than this member's product.
       produced gs =
@@ -984,18 +999,22 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
           (\now before -> if now == before then Nothing else Just now)
           (Map.restrictKeys (bindingsOf gs) bodyDefined)
           beforeLoop
-      -- The union across the whole loop, over the two fields a body-defined
-      -- name can hold: bindSlot's ONE object lands in `targets` and
+      -- The union across the whole loop, over the fields a body-defined name
+      -- can hold: bindSlot's ONE object lands in `targets` and
       -- bindObjectsSlot's batch in `objects`, both of them definitions rather
       -- than targets (CR 115.10a), so nothing here is subject to CR 608.2b.
       -- Set union for the one and append for the other, which keeps the mint
-      -- order `objects` is documented to carry. mergeBinding's `<|>` is what
-      -- the remaining fields take, and no body-defined name populates them.
+      -- order `objects` is documented to carry. An `amount` is kept member by
+      -- member in `perMember`, for a later loop's `inherited`. mergeBinding's
+      -- `<|>` is what the remaining fields take, and no body-defined name
+      -- populates them.
       joinAcross a b =
         (Binding.mergeBinding a b)
           { Binding.Type.targets = Binding.Type.targets a <> Binding.Type.targets b,
-            Binding.Type.objects = Binding.Type.objects a <> Binding.Type.objects b
+            Binding.Type.objects = Binding.Type.objects a <> Binding.Type.objects b,
+            Binding.Type.perMember = Binding.Type.perMember a <> Binding.Type.perMember b
           }
+      ofMember member binding = binding {Binding.Type.perMember = fmap (Map.singleton member) (Binding.Type.amount binding)}
       -- CR 608.2c: an instruction AFTER the loop names everything the body
       -- produced, across every member -- Mirror Match's "exile those tokens",
       -- ONE delayed ability over the whole batch rather than one per member.
@@ -1009,54 +1028,73 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
                 resolving
                 (GameState.objects gs)
           }
-  -- CR 608.2f's FIRST sentence: the loop is one action taken on several objects,
-  -- so unless the card says its action cannot be processed simultaneously, every
-  -- event the whole loop records shares one Parun.Types.EventGroup. That is what
-  -- makes CR 603.6a's "all permanents on the battlefield (including the
-  -- newcomers) are checked" reach a token a LATER member minted: each member's
-  -- entry is offered the sample Event.recordEvent took after the last of them,
-  -- rather than the one that existed when that member's own iteration ran.
-  --
-  -- The bracket is over the WHOLE fold and not over each member's token
-  -- creation, because rule 608.2f's unit is the action the loop states, not one
-  -- opcode of it -- and the ForEach.individually flag is the same rule's third
-  -- sentence, which Soulfire Eruption's example states outright.
-  --
-  -- Nothing here reorders the members: the bracket changes which events are one
-  -- event, never when each iteration runs, so rule 608.2f's APNAP ordering and
-  -- CR 603.12's per-member reset are untouched.
-  --
-  -- The same unit is CR 613.7m's: what the one action put onto the battlefield
-  -- entered simultaneously, so Event.together orders every arrival of every
-  -- iteration at once, by the seats that control them -- not the loop's own
-  -- order, whose chooser is the resolving controller. An individually
-  -- processed loop's iterations are separate moments, and each call settles
-  -- its own.
-  accumulated <-
-    (if individually then id else Event.simultaneously . Event.together) $
-      Monad.foldM
-        ( \acc member -> do
-            State.modify' rescope
-            -- CR 608.2c: the body's instructions in written order, per member, through
-            -- the SAME fold a clause's own instructions run through -- CR 603.12's
-            -- "happened" is a question about THIS member's iteration, so it resets at
-            -- each member rather than carrying over from the previous one. Nihiloor's
-            -- "for each opponent, tap up to one untapped creature you control. When you
-            -- do, ..." is the shape: the reflexive is that opponent's own tap, not the
-            -- previous opponent's.
-            Common.applyClauseEffects
-              resolving
-              source
-              ( \eff -> do
-                  defined <- State.gets (\gs -> Map.restrictKeys (Binding.targetsOf (bindingsOf gs)) bodyDefined)
-                  applyEffectWith runSubgame resolving source controller (withMember member defined legal) (withMember member defined chosen) eff
-              )
-              (Foldable.toList body)
-            State.gets (Map.unionWith joinAcross acc . produced)
-        )
-        Map.empty
-        members
-  State.modify' (bindAcross accumulated . rescope)
+      -- An amount is read back off `source` ahead of the resolving object
+      -- (Common.bindAmountSlot), so a member's amounts are put there as well
+      -- for its step, and the inherited ones taken back off as the loop ends.
+      onSource f gs =
+        if source == resolving
+          then gs
+          else gs {GameState.objects = Map.adjust (\o -> o {Object.bindings = f (Object.bindings o)}) source (GameState.objects gs)}
+      sourceBefore = Map.restrictKeys (maybe Map.empty Object.bindings (Game.lookupObject source gs0)) (Map.keysSet earlier)
+      -- CR 608.2c: one instruction for one member, through the SAME step a
+      -- clause's own instructions run through. CR 603.12's "happened" is a
+      -- question about THIS member's instruction before, so the fold's
+      -- `previous` is kept per member. Nihiloor's "for each opponent, tap up to
+      -- one untapped creature you control. When you do, ..." is the shape: the
+      -- reflexive is that opponent's own tap, not the previous opponent's.
+      step member (made, asked) effect = do
+        let mine = Map.unions [Map.findWithDefault Map.empty member made, inherited member, forOthers member made]
+        State.modify' (onSource (Map.union (Map.mapMaybe (fmap Binding.toAmount . Binding.Type.amount) mine)) . rescope mine)
+        answer <-
+          Common.applyClauseStep
+            resolving
+            source
+            ( \eff -> do
+                defined <- State.gets (\gs -> Map.restrictKeys (Binding.targetsOf (bindingsOf gs)) bodyDefined)
+                applyEffectWith runSubgame resolving source controller (withMember member defined legal) (withMember member defined chosen) eff
+            )
+            (Map.lookup member asked)
+            effect
+        bound <- State.gets produced
+        pure (Map.insert member bound made, Map.insert member answer asked)
+      overMembers run state = Monad.foldM (flip run) state members
+      -- CR 608.2f's THIRD sentence: each member considered individually, its
+      -- whole body before the next member's, and no event shared between them.
+      memberMajor = overMembers (\member state -> Monad.foldM (step member) state body)
+      -- CR 608.2e / 608.2f's second sentence: the body's actions in written
+      -- order, each one's choices made for every member and then the action
+      -- processed for every member at once, before the next action's choices.
+      -- So every event ONE action records shares one Parun.Types.EventGroup,
+      -- which is what makes CR 603.6a's "all permanents on the battlefield
+      -- (including the newcomers) are checked" reach a token a LATER member
+      -- minted, and two actions are two events. Nihiloor's ruling (2021-07-23)
+      -- is the order: a creature is chosen for each opponent, then all are
+      -- tapped at the same time. No board in data/scenarios can tell that
+      -- order from each member's whole body in turn inside one group, see #7304.
+      --
+      -- A member makes all of one action's choices before the next member
+      -- makes any (CR 101.4), Liliana, Dreadhorde General's six.
+      --
+      -- Nothing here reorders the members: rule 608.2f's APNAP ordering holds
+      -- within each pass.
+      --
+      -- The same unit is CR 613.7m's: what one action put onto the battlefield
+      -- entered simultaneously, so Event.together orders every arrival of the
+      -- pass at once, by the seats that control them -- not the loop's own
+      -- order, whose chooser is the resolving controller. An individually
+      -- processed loop's iterations are separate moments, and each call
+      -- settles its own.
+      actionMajor state0 =
+        Monad.foldM
+          ( \state (choices, action) -> do
+              chosenFor <- overMembers (\member state' -> Monad.foldM (step member) state' choices) state
+              maybe (pure chosenFor) (\effect -> Event.simultaneously (Event.together (overMembers (\member state' -> step member state' effect) chosenFor))) action
+          )
+          state0
+          (Common.loopActions (Foldable.toList body))
+  (made, _) <- (if individually then memberMajor else actionMajor) (Map.empty, Map.empty)
+  let accumulated = List.foldl' (\acc member -> Map.unionWith joinAcross acc (fmap (ofMember member) (Map.findWithDefault Map.empty member made))) Map.empty members
+  State.modify' (bindAcross accumulated . rescope Map.empty . onSource (\bindings -> Map.union sourceBefore (Map.withoutKeys bindings (Map.keysSet earlier))))
   Monad.when opened (State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.loopPicks = Nothing}}))
 
 -- CR 608.2f over numbers: the bound read once off the pre-loop board, and each

@@ -787,3 +787,4 @@ bindingNames :: ObjectId -> Binding.Binding -> Bool
 bindingNames oid binding =
   any (\recipient -> Recipient.objectOf recipient == Just oid) (Maybe.fromMaybe Set.empty (Binding.targets binding))
     || elem oid (Maybe.fromMaybe Seq.empty (Binding.objects binding))
+    || any (\recipient -> Recipient.objectOf recipient == Just oid) (foldMap Map.keys (Binding.perMember binding))

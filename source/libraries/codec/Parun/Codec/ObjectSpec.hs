@@ -125,7 +125,8 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
                   Binding.objects = Nothing,
                   Binding.sticker = Nothing,
                   Binding.votes = Nothing,
-                  Binding.division = Nothing
+                  Binding.division = Nothing,
+                  Binding.perMember = Nothing
                 },
           Object.counters =
             Map.fromList

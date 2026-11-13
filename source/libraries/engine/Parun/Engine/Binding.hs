@@ -1279,6 +1279,18 @@ blockedCreature = SlotName.MkSlotName (Text.pack "thatAttacker")
 attackingCreature :: SlotName
 attackingCreature = SlotName.MkSlotName (Text.pack "thatAttackingCreature")
 
+-- CR 608.2e: the reserved slot under which a CR 608.2f loop's body reads the
+-- objects the loop has bound for its OTHER members so far -- Nihiloor's "for
+-- each opponent, tap up to one untapped creature you control", where the
+-- creature chosen for one opponent is no choice for the next though none is
+-- tapped yet (docs/decisions.md, "One creature per opponent for Nihiloor").
+-- Stamped by Parun.Engine.Resolve.Arms.Zones's forEach for each member's step
+-- and gone when the loop ends.
+--
+-- A GROUP (Binding.objects): named, never targeted (CR 115.10a).
+chosenForOthers :: SlotName
+chosenForOthers = SlotName.MkSlotName (Text.pack "thoseChosenForOthers")
+
 -- CR 508.3c: the reserved slot under which the attackers a batch attack trigger
 -- counted are bound -- Tyvar the Bellicose's "whenever one or more Elves you
 -- control attack, THEY gain deathtouch". Stamped by
@@ -1935,7 +1947,8 @@ mergeBinding a b =
       Binding.objects = Binding.objects a <|> Binding.objects b,
       Binding.sticker = Binding.sticker a <|> Binding.sticker b,
       Binding.votes = Binding.votes a <|> Binding.votes b,
-      Binding.division = Binding.division a <|> Binding.division b
+      Binding.division = Binding.division a <|> Binding.division b,
+      Binding.perMember = Binding.perMember a <|> Binding.perMember b
     }
 
 -- CR 400.7h: `binding` with every naming of `old` renamed to `new`, each
@@ -1959,5 +1972,6 @@ renameObject old new binding =
           Binding.objects = fmap (fmap rename) (Binding.objects binding),
           Binding.sticker = Binding.sticker binding,
           Binding.votes = Binding.votes binding,
-          Binding.division = fmap (Map.mapKeys renameRecipient) (Binding.division binding)
+          Binding.division = fmap (Map.mapKeys renameRecipient) (Binding.division binding),
+          Binding.perMember = fmap (Map.mapKeys renameRecipient) (Binding.perMember binding)
         }
