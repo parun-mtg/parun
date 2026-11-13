@@ -198,7 +198,10 @@ to agents as written. What it doesn't say:
 - `Filter.HasCardType` matches in every zone, but "a creature" with no zone,
   "card" or "spell" means a permanent (CR 109.2). Where nothing else confines
   a filter to the battlefield (a trigger's object filter, say), conjoin
-  `IsInZone Battlefield`.
+  `IsInZone Battlefield`. Never on a counter-put trigger's holder or a
+  `CountersPut` look-back: the engine confines both (CR 122.6), and a
+  last-known view has no zone, so the clause drops a permanent the counter
+  killed.
 
 - When no printing can reach the rule, write `data/cards/synthetic-*.json`.
   Search first: a real card wins, in the order regular > Arena > playtest >

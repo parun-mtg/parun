@@ -567,10 +567,14 @@ isMainPhase phase = case phase of
 -- CR 122: the object, count before and count after of a counter event moving
 -- the trigger's kind (any kind for WhichCounters.OfAnyKind, CR 122.1) its way,
 -- CR 122.6a's putter read against `you`; Nothing for every other event.
+--
+-- CR 122.6: a placement off the battlefield is not "counters put on" anything,
+-- asked of the event's snapshot so a card's filter need not ask a zone of a
+-- permanent the counter killed (the mikey-and-leo scenarios prove both).
 countersMoved :: GameState -> PlayerId -> CounterTrigger.CounterTrigger -> GameEvent -> Maybe (ObjectId, Natural, Natural)
 countersMoved gs you counterTrigger event = case (CounterTrigger.motion counterTrigger, event) of
-  (CounterMotion.Put relation, GameEvent.CountersPut (CountersPlaced.MkCountersPlaced putter oid kind before after _))
-    | wanted kind && PlayerRelation.holds (Game.teams gs) relation you putter -> Just (oid, before, after)
+  (CounterMotion.Put relation, GameEvent.CountersPut (CountersPlaced.MkCountersPlaced putter oid kind before after snapshot))
+    | wanted kind && ObjectSnapshot.zone snapshot == Zone.Battlefield && PlayerRelation.holds (Game.teams gs) relation you putter -> Just (oid, before, after)
   (CounterMotion.Removed, GameEvent.CountersRemoved (CounterChange.MkCounterChange oid kind before after))
     | wanted kind -> Just (oid, before, after)
   _ -> Nothing

@@ -101,10 +101,6 @@
                           "relation": "You"
                         }
                       }
-                    },
-                    {
-                      "type": "IsInZone",
-                      "value": "Battlefield"
                     }
                   ]
                 }

@@ -76,10 +76,6 @@
                         "holder": "Controller",
                         "relation": "You"
                       }
-                    },
-                    {
-                      "type": "IsInZone",
-                      "value": "Battlefield"
                     }
                   ]
                 }
