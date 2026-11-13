@@ -406,6 +406,7 @@ offerOf gs prompt = case prompt of
   Prompt.ChooseAttachment _ _ source candidates -> choosing prompt "options" (Just source) [] (NonEmpty.toList candidates)
   Prompt.ChooseOfferedCastSpell _ _ offers -> choosing prompt "options" Nothing [] (NonEmpty.toList offers)
   Prompt.ChoosePlayPermission _ _ source permissions -> choosing prompt "options" (Just source) [] (NonEmpty.toList permissions)
+  Prompt.ChooseHeldPermission _ _ source permissions -> choosing prompt "options" (Just source) [] (NonEmpty.toList permissions)
   -- CR 601.2b: the symbol announced for, beside each way to pay it.
   Prompt.AnnouncePhyrexianPayment _ _ source symbol payments -> choosing prompt "options" (Just source) [("symbol", Reply.encode (Reply.viaCodec Codec.ManaSymbol.codec) namer symbol)] (NonEmpty.toList payments)
   Prompt.AnnounceHybridPayment _ _ source mana payments -> choosing prompt "options" (Just source) [("mana", Reply.encode (Reply.viaCodec Codec.ManaType.codec) namer mana)] (NonEmpty.toList payments)

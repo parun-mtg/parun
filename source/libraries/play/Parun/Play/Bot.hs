@@ -249,6 +249,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseNamePosition _ _ _ positions -> Generator.pick positions
   Prompt.ChooseOpponent _ _ _ _ players -> Generator.pick players
   Prompt.ChoosePlayPermission _ _ _ permissions -> Generator.pick permissions
+  Prompt.ChooseHeldPermission _ _ _ permissions -> Generator.pick permissions
   Prompt.ChoosePlayer _ _ _ players -> Generator.pick players
   Prompt.ChooseProtector _ _ _ players -> Generator.pick players
   Prompt.ChooseReducedCost _ _ _ totals -> Generator.pick totals

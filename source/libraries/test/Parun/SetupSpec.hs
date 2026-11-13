@@ -517,9 +517,9 @@ dirtied pid object =
       Object.face = Just (CardName.MkCardName (Text.pack "Mountain")),
       Object.turnedOverAt = Just (Timestamp.MkTimestamp 1),
       Object.worldSince = Just (Timestamp.MkTimestamp 2),
-      -- The origin is inert here: newIncarnation clears playPermission
+      -- The origin is inert here: newIncarnation clears playPermissions
       -- outright, so no value of it makes this fixture more or less honest.
-      Object.playPermission = Just (ExilePlayPermission.MkExilePlayPermission pid S.noSource Expiry.Never ManaSpending.AnyType Nothing Nothing PlayPermissionOrigin.Granted PermissionVerb.Play 0 TapState.Untapped Nothing),
+      Object.playPermissions = [ExilePlayPermission.MkExilePlayPermission pid S.noSource Expiry.Never ManaSpending.AnyType Nothing Nothing PlayPermissionOrigin.Granted PermissionVerb.Play 0 TapState.Untapped Nothing],
       Object.ringBearerFor = Just pid,
       Object.protector = Just pid,
       Object.unlockedHalves = Set.singleton RoomHalf.RightHalf,

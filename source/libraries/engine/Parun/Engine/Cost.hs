@@ -1078,11 +1078,12 @@ candidateCostsGiven permitted pid name oid gs =
                         -- regression fence: its one printing is a land, which is
                         -- played rather than cast (MTGJSON 2026-08-23, text
                         -- "Mayhem (You may play": Oscorp Industries alone).
-                        -- Object.playPermission open to `pid` (Jace, Telepath
-                        -- Unbound's -3) states no cost either, and so does
+                        -- A permission in Object.playPermissions open to
+                        -- `pid` (Jace, Telepath Unbound's -3) states no cost
+                        -- either, and so does
                         -- CastingPermission.PlayFromGraveyard (Kethis, the
                         -- Hidden Hand's granted ability).
-                        <> ( if permitted || PlayerEffect.couldCastFrom pid Zone.Graveyard oid gs || PlayerEffect.mayPlayByMayhem pid oid gs || maybe False (\permission -> Expiry.permissionOpen pid permission gs) (Object.playPermission obj) || elem CastingPermission.PlayFromGraveyard (permissionsOf oid face gs) || payingPermitted
+                        <> ( if permitted || PlayerEffect.couldCastFrom pid Zone.Graveyard oid gs || PlayerEffect.mayPlayByMayhem pid oid gs || not (null (Expiry.openPermissions pid oid gs)) || elem CastingPermission.PlayFromGraveyard (permissionsOf oid face gs) || payingPermitted
                                then ordinary
                                else filter usingPermitted ordinary
                            )
@@ -1129,10 +1130,12 @@ candidateCostsGiven permitted pid name oid gs =
                 -- Scoped to the permission's OWN holder, whom
                 -- Parun.Types.ExilePlayPermission baked in, and to its window
                 -- (Expiry.permissionOpen): a player casting the same card under
-                -- some other permission is priced by the `_` arm below.
+                -- some other permission is priced by the `_` arm below. The
+                -- first open one, the one a cast is made under once
+                -- Parun.Engine.Cast.underHeld has narrowed the card to it; the
+                -- gate asks each permission on a board of its own.
                 Just Zone.Exile
-                  | Just permission <- Object.playPermission obj,
-                    Expiry.permissionOpen pid permission gs,
+                  | permission : _ <- Expiry.openPermissions pid oid gs,
                     Just alternative <- ExilePlayPermission.alternativeCost permission ->
                       [untagged (permissionCost alternative face)]
                 -- CR 702.185a: warp names the hand, `warped`'s note.
@@ -1238,8 +1241,7 @@ permissionIncrease :: PlayerId -> ObjectId -> GameState -> Natural
 permissionIncrease pid oid gs = case Game.lookupObject oid gs of
   Just obj
     | Object.zone obj == Zone.Exile,
-      Just permission <- Object.playPermission obj,
-      Expiry.permissionOpen pid permission gs ->
+      permission : _ <- Expiry.openPermissions pid oid gs ->
         ExilePlayPermission.increase permission
   _ -> 0
 

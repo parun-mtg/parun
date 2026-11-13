@@ -342,11 +342,15 @@ data Object = MkObject
     -- enters world and one granted the supertype later carry comparable clocks.
     -- Per-incarnation: cleared by newIncarnation (CR 400.7).
     worldSince :: Maybe Timestamp.Timestamp,
-    -- | CR 601.3: the standing permission to play this card, as the player who
-    -- holds it, the duration it lasts and how they may spend mana for it (CR
-    -- 118.14). TWO producers: Parun.Engine.Resolve.finishSpell writes CR 716.3d's,
-    -- taking Expiry.Never since its duration is the card staying exiled, which CR
-    -- 400.7 ends, and Effect.GrantPlayFromExile writes the one a card states.
+    -- | CR 601.3: the standing permissions to play this card, oldest first,
+    -- each as the player who holds it, the duration it lasts and how they may
+    -- spend mana for it (CR 118.14). A LIST because each grant is a permission
+    -- of its own (CR 601.3's "a rule or effect"): a second grant joins the
+    -- first rather than replacing it, and a play names the one it is made
+    -- under (Parun.Engine.Cast.chooseHeldPermission). TWO producers:
+    -- Parun.Engine.Resolve.finishSpell writes CR 716.3d's, taking Expiry.Never
+    -- since its duration is the card staying exiled, which CR 400.7 ends, and
+    -- Effect.GrantPlayFromExile writes the one a card states.
     --
     -- STATE, where every other casting permission parun has is a fact about a
     -- CARD: this one is true of one incarnation and names one player, so a
@@ -360,13 +364,13 @@ data Object = MkObject
     -- either zone: Parun.Engine.Action.playableLands for CR 305.1's special
     -- action, Parun.Engine.Cast.permitsCastFromExile or
     -- Parun.Engine.Cast.permitsCastFromGraveyard for a cast.
-    playPermission :: Maybe ExilePlayPermission.ExilePlayPermission,
+    playPermissions :: [ExilePlayPermission.ExilePlayPermission],
     -- | CR 702.170a: this exiled card is a PLOTTED card, stamped with the turn on
     -- which it became one. The TURN NUMBER and not a Bool because CR 702.170d
     -- scopes the permission by it, and TurnRegisters.turnNumber counts extra turns
     -- too (CR 500.7), so a strict comparison is that clause exactly.
     --
-    -- Beside playPermission above rather than inside it: CR 716.3d's
+    -- Beside playPermissions above rather than inside it: CR 716.3d's
     -- permission names a PLAYER and states no cost, where CR 702.170d's names the
     -- owner, makes the cast free and fixes the timing. Per-incarnation: cleared
     -- by newIncarnation (CR 400.7), the permission being about a card in exile.
@@ -1028,7 +1032,7 @@ new o s z t =
       face = Nothing,
       turnedOverAt = Nothing,
       worldSince = Nothing,
-      playPermission = Nothing,
+      playPermissions = [],
       plotted = Nothing,
       foretold = Nothing,
       foretellCostReduction = Nothing,

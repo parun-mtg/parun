@@ -14,7 +14,7 @@ import qualified Parun.Types.TapState as TapState
 
 -- | CR 601.3: "a player can begin to cast a spell only if a rule or effect
 -- allows that player to cast it" -- one such effect's permission, held on the
--- object it is about (Object.playPermission) rather than in a list on the
+-- object it is about (Object.playPermissions) rather than in a list on the
 -- game.
 --
 -- OBJECT-BORNE, and the rules put it there. CR 716.3d says "for as long as THAT
@@ -77,8 +77,8 @@ import qualified Parun.Types.TapState as TapState
 -- ALTHOUGH OTHER EFFECTS that allow a player to cast it may allow a player to
 -- cast it as an Adventure". Without it the Adventure exclusion narrows every
 -- permission this field can hold, where the rule scopes it to 716.3d's own --
--- Parun.Engine.Cast.grantedByAdventureRule -- the helper permitsCastFromExile
--- calls in its Adventure conjunct -- is the only reader, and Parun.CastSpec's
+-- Parun.Engine.Cast.heldAdmits -- the helper permitsCastFromExile calls in
+-- its Adventure conjunct -- is the only reader, and Parun.CastSpec's
 -- "CR 716.3d another effect's permission allows the Adventure half" against
 -- Parun.AdventureSpec's "CR 716.3d from exile the creature is castable and the
 -- Adventure is not" is the pair that proves it.

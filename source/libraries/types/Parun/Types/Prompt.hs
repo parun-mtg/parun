@@ -36,6 +36,7 @@ import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.EntryOption as EntryOption
 import qualified Parun.Types.EntwineDecision as EntwineDecision
+import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.ForageMode as ForageMode
@@ -921,6 +922,9 @@ data Prompt r where
   -- ObjectId it is made under (Nothing = none of them); asked only where two
   -- would differ in the budget spent or the rider given (CR 400.7h, 400.7i).
   ChoosePlayPermission :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty (Maybe (ObjectId.ObjectId, CastFromZone.CastFromZone)) -> Prompt (Maybe (ObjectId.ObjectId, CastFromZone.CastFromZone))
+  -- | CR 601.3 / 305.1: which of the permissions the ObjectId itself holds a
+  -- play of it is made under; asked only where two would differ (#5294).
+  ChooseHeldPermission :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ExilePlayPermission.ExilePlayPermission -> Prompt ExilePlayPermission.ExilePlayPermission
   -- | CR 601.2h: the order the non-mana components of a total cost are paid in,
   -- a permutation of their printed indices, once per pass
   -- (Parun.Engine.Cost.paidInSecondPass); asked only where observable

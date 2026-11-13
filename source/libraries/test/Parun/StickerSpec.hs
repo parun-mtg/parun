@@ -917,7 +917,7 @@ spec s registry = Spec.describe s "Sticker" $ do
         -- CR 601.3: an effect's permission to play it, under which the
         -- Adventure half may be cast from exile (CR 716.3d's own may not).
         grant = ExilePlayPermission.MkExilePlayPermission S.alice S.noSource Expiry.Never ManaSpending.AnyType Nothing Nothing PlayPermissionOrigin.Granted PermissionVerb.Play 0 TapState.Untapped Nothing
-        permitted = exiled {GameState.objects = Map.adjust (\o -> o {Object.playPermission = Just grant}) faeId (GameState.objects exiled)}
+        permitted = exiled {GameState.objects = Map.adjust (\o -> o {Object.playPermissions = [grant]}) faeId (GameState.objects exiled)}
         stickered = Sticker.put S.alice faeId otter (Just 2) permitted
         granted = CardName.MkCardName (Text.pack "Granted")
         casting = S.runPure S.identityAnswer stickered (Cast.castSpell S.manaPerformer S.alice faeId granted Facing.FaceUp)

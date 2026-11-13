@@ -232,6 +232,7 @@ deciderOf prompt = case prompt of
   Prompt.ChooseTurnUpAttachment decider _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseCost decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChoosePlayPermission decider _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.ChooseHeldPermission decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.OrderCostComponents decider _ _ _ -> Just (Decider.unwrap decider)
   Prompt.OrderCombatTolls decider _ _ -> Just (Decider.unwrap decider)
   Prompt.OrderComponentCards decider _ _ _ -> Just (Decider.unwrap decider)

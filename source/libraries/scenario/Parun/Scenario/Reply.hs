@@ -470,6 +470,7 @@ shapeOf prompt = case prompt of
   Prompt.ChooseTurnUpAttachment {} -> viaCodec Codec.OptionalDecision.codec
   Prompt.ChooseCost _ _ _ offered _ -> indexed offered
   Prompt.ChoosePlayPermission {} -> maybeOf (pairOf object (viaCodec Codec.CastFromZone.codec))
+  Prompt.ChooseHeldPermission _ _ _ offered -> indexed (NonEmpty.toList offered)
   Prompt.OrderCostComponents {} -> list natural
   Prompt.OrderCombatTolls {} -> list natural
   Prompt.OrderComponentCards {} -> list natural

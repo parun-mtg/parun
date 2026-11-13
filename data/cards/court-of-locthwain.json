@@ -1,0 +1,180 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Court of Locthwain",
+      "oracleText": "When this enchantment enters, you become the monarch.\nAt the beginning of your upkeep, exile the top card of target opponent's library. You may play that card for as long as it remains exiled, and mana of any type can be spent to cast it. If you're the monarch, until end of turn, you may cast a spell from among cards exiled with this enchantment without paying its mana cost.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "BecomeMonarch",
+                        "value": {
+                          "type": "TheController"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Beginning",
+                "value": "Upkeep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "player": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          },
+                          "slot": "exiled",
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "GrantPlayFromExile",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "exiled"
+                          },
+                          "spending": "AnyType"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "IsMonarch",
+                          "value": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "GrantPlayFromExile",
+                        "value": {
+                          "alternativeCost": {
+                            "type": "InsteadOfManaCost",
+                            "value": []
+                          },
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "ref": {
+                            "type": "EachCardInExiledPile",
+                            "value": {
+                              "filter": {
+                                "type": "And",
+                                "value": []
+                              },
+                              "pile": {
+                                "type": "OwnAbilities"
+                              }
+                            }
+                          },
+                          "upTo": 1,
+                          "verb": "Cast"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "IsPlayer",
+                      "value": "Opponent"
+                    },
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

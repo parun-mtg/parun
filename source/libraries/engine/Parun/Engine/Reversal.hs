@@ -470,7 +470,7 @@ objectWith before entry closed = do
   face <- field Object.face
   turnedOverAt <- field Object.turnedOverAt
   worldSince <- field Object.worldSince
-  playPermission <- field Object.playPermission
+  playPermissions <- field Object.playPermissions
   plotted <- field Object.plotted
   foretold <- field Object.foretold
   foretellCostReduction <- field Object.foretellCostReduction
@@ -542,7 +542,7 @@ objectWith before entry closed = do
         Object.face = face,
         Object.turnedOverAt = turnedOverAt,
         Object.worldSince = worldSince,
-        Object.playPermission = playPermission,
+        Object.playPermissions = playPermissions,
         Object.plotted = plotted,
         Object.foretold = foretold,
         Object.foretellCostReduction = foretellCostReduction,

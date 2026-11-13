@@ -145,9 +145,8 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           Object.face = Just (CardName.MkCardName (Text.pack "Delver of Secrets")),
           Object.turnedOverAt = Just (Timestamp.MkTimestamp 11),
           Object.worldSince = Just (Timestamp.MkTimestamp 12),
-          Object.playPermission =
-            Just
-              ExilePlayPermission.MkExilePlayPermission
+          Object.playPermissions =
+            [ ExilePlayPermission.MkExilePlayPermission
                 { ExilePlayPermission.player = PlayerId.MkPlayerId 13,
                   ExilePlayPermission.source = ObjectId.MkObjectId 14,
                   ExilePlayPermission.expiry = Expiry.AtCleanup,
@@ -158,8 +157,9 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
                   ExilePlayPermission.verb = PermissionVerb.Cast,
                   ExilePlayPermission.increase = 1,
                   ExilePlayPermission.landEnters = TapState.Tapped,
-                  ExilePlayPermission.budget = Just (PlayBudget.MkPlayBudget 2 (Set.fromList [ObjectId.MkObjectId 30, ObjectId.MkObjectId 31]))
-                },
+                  ExilePlayPermission.budget = Just (PlayBudget.MkPlayBudget 2 (Set.fromList [ObjectId.MkObjectId 30, ObjectId.MkObjectId 31]) (Timestamp.MkTimestamp 32))
+                }
+            ],
           Object.plotted = Just 0,
           Object.foretold = Just 15,
           Object.foretellCostReduction = Just (ManaCost.MkManaCost [ManaSymbol.Generic 29]),
@@ -234,8 +234,8 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"chosenNames\":[{\"key\":{\"type\":\"Own\"},\"value\":{\"29\":\"Mountain\"}}],\"chosenPlayers\":[{\"key\":{\"type\":\"Own\"},\"value\":[{\"key\":{\"type\":\"AsEnters\"},\"value\":9},{\"key\":{\"type\":\"Promised\",\"value\":[{\"type\":\"Card\"},{\"type\":\"Granted\",\"value\":[[4,6],2]}]},\"value\":10}]}]"
           <> ",\"timestamp\":10,\"face\":\"Delver of Secrets\",\"turnedOverAt\":11"
           <> ",\"worldSince\":12"
-          <> ",\"playPermission\":{\"player\":13,\"source\":14,\"expiry\":{\"type\":\"AtCleanup\"}"
-          <> ",\"spending\":\"AnyType\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Cast\",\"increase\":1,\"landEnters\":\"Tapped\",\"budget\":{\"remaining\":2,\"covers\":[30,31]}}"
+          <> ",\"playPermissions\":[{\"player\":13,\"source\":14,\"expiry\":{\"type\":\"AtCleanup\"}"
+          <> ",\"spending\":\"AnyType\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Cast\",\"increase\":1,\"landEnters\":\"Tapped\",\"budget\":{\"remaining\":2,\"covers\":[30,31],\"granted\":32}}]"
           <> ",\"plotted\":0,\"foretold\":15"
           <> ",\"foretellCostReduction\":[{\"type\":\"Generic\",\"value\":29}]"
           <> ",\"warped\":28,\"preparedCopyOf\":26"

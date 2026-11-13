@@ -1024,7 +1024,7 @@ countOnLuckSpec s registry =
       -- order, which for a library is top first -- Parun.Engine.Game.zoneMembers
       -- hands the Seq back as stored.
       named = Just . CardName.MkCardName . Text.pack
-      permissionsIn pid gs = fmap Object.playPermission (Maybe.mapMaybe (\oid -> Game.lookupObject oid gs) (Game.zoneMembers Zone.Exile pid gs))
+      permissionsIn pid gs = fmap (Maybe.listToMaybe . Object.playPermissions) (Maybe.mapMaybe (\oid -> Game.lookupObject oid gs) (Game.zoneMembers Zone.Exile pid gs))
    in Spec.describe s "CountOnLuck" $ do
         Spec.it s "CR 401.2 the top card of your library, and only it, is exiled" $ do
           (luckId, after) <- board ["Goblin Piker", "Bird Maiden", "Benalish Hero"]
@@ -1102,7 +1102,7 @@ actOnImpulseSpec s registry =
       -- SORTED, because exile is a holding area with no order of its own (CR
       -- 406.1) -- unlike the library below, whose order CR 401.2 fixes.
       exiledNames pid = List.sort . namesIn Zone.Exile pid
-      permissionsIn pid gs = fmap (Maybe.isJust . Object.playPermission) (Maybe.mapMaybe (\oid -> Game.lookupObject oid gs) (Game.zoneMembers Zone.Exile pid gs))
+      permissionsIn pid gs = fmap (not . null . Object.playPermissions) (Maybe.mapMaybe (\oid -> Game.lookupObject oid gs) (Game.zoneMembers Zone.Exile pid gs))
    in Spec.describe s "ActOnImpulse" $ do
         Spec.it s "CR 401.2 the top three cards of your library are exiled, and the rest stay put" $ do
           after <- board ["Goblin Piker", "Bird Maiden", "Benalish Hero", "Hill Giant", "Sabretooth Tiger"]
@@ -1149,7 +1149,7 @@ actOnImpulseSpec s registry =
 -- Storm is printed and works; with no spell cast before it the trigger makes no
 -- copy, so nothing on the card but those two sentences reaches these assertions.
 --
--- The permission lands on Object.playPermission under Expiry.DuringTurnOf and
+-- The permission lands on Object.playPermissions under Expiry.DuringTurnOf and
 -- Parun.Engine.Cast.permitsPlayUnderPermission is the gate that keeps it inert until
 -- that turn -- the second carrier to ask Parun.Engine.Expiry.begun.
 --
@@ -1183,7 +1183,7 @@ galvanicRelaySpec s registry =
                 }
           }
       offeredTo pid oid gs = any (S.isCastOf oid) (Action.legalActions pid (mainPhase gs))
-      permissionFor oid gs = Game.lookupObject oid gs >>= Object.playPermission
+      permissionFor oid gs = Game.lookupObject oid gs >>= Maybe.listToMaybe . Object.playPermissions
    in Spec.describe s "GalvanicRelay" $ do
         -- THE PROVING TEST: the window has not begun on the turn the Relay
         -- resolved, and the pair's end-only duration is live on that same turn.
@@ -1295,7 +1295,7 @@ communeWithLavaSpec s registry =
       -- SORTED, because exile is a holding area with no order of its own (CR
       -- 406.1) -- actOnImpulseSpec's reason.
       exiledNames pid = List.sort . namesIn Zone.Exile pid
-      permissionsIn pid gs = fmap (Maybe.isJust . Object.playPermission) (Maybe.mapMaybe (\oid -> Game.lookupObject oid gs) (Game.zoneMembers Zone.Exile pid gs))
+      permissionsIn pid gs = fmap (not . null . Object.playPermissions) (Maybe.mapMaybe (\oid -> Game.lookupObject oid gs) (Game.zoneMembers Zone.Exile pid gs))
       fiveCards = ["Goblin Piker", "Bird Maiden", "Benalish Hero", "Hill Giant", "Sabretooth Tiger"]
    in Spec.describe s "CommuneWithLava" $ do
         -- The pair, and the whole proof: one board, two announced values, two

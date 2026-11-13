@@ -748,7 +748,7 @@ finishSpell settle oid face controller = do
     Monad.when (took adventureRow) . State.modify' $ \gs ->
       gs
         { GameState.objects =
-            Map.adjust (\o -> o {Object.playPermission = Just (permission newId)}) newId (GameState.objects gs)
+            Map.adjust (\o -> o {Object.playPermissions = Object.playPermissions o <> [permission newId]}) newId (GameState.objects gs)
         }
   where
     -- Mint one of CR 608.2n's riders when its rule's own condition holds, keeping
