@@ -157,7 +157,7 @@ import qualified Parun.Types.Zone as Zone
 -- it was made, for CR 704.5e to sweep at the next check (Parun.Engine.Sba).
 --
 -- Rod of Absorption's total is the repeat with a budget
--- (Parun.Types.TotalCap, Game.pickCounted's cap): each round offers only a
+-- (Parun.Types.TotalCap, Game.pickCounted's bound): each round offers only a
 -- half whose weight fits what is left (CR 202.3d, read per face beside
 -- CastOffer.restriction, so a split card's half is measured as the spell it
 -- becomes -- unobserved, no board casting a split card this way), and the

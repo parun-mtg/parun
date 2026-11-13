@@ -584,7 +584,7 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- reason; the CHOOSER's are the generic playerRefSlots fold this case is joined
   -- into, which is what makes Intuition's target opponent a read. The Filter
   -- narrowing the candidates is a read like a sweep's.
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total _ _ _ _) -> joinSlots (Map.singleton slot SlotArity.Many : filterSlotsOf filter_ : fmap quantitySlots (Foldable.toList (HowMany.quantity count) <> totalCapQuantities total))
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong slot filter_ count total perColor _ _ _ _) -> joinSlots (Map.singleton slot SlotArity.Many : filterSlotsOf filter_ : foldMap filterSlotsOf perColor : fmap quantitySlots (Foldable.toList (HowMany.quantity count) <> totalCapQuantities total))
   -- The arm above's read, for its reasons: the candidates come from a slot, and
   -- the ref reads every member of the group to match them.
   ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong slot filter_) -> joinTwo (Map.singleton slot SlotArity.Many) (filterSlotsOf filter_)
@@ -657,7 +657,7 @@ objectRefQuantities ref = case ref of
   -- A REGRESSION FENCE rather than proven behaviour: every count in the pool is a
   -- Literal, which reads no slot, so dropping this leaves the suite green. The
   -- total's two Quantities are fenced likewise.
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ count total _ _ _ _) -> Foldable.toList (HowMany.quantity count) <> totalCapQuantities total
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ count total _ _ _ _ _) -> Foldable.toList (HowMany.quantity count) <> totalCapQuantities total
   ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong _ _) -> []
   -- How many cards randomness names out of each hand or library -- Fall's
   -- printed two, the Gates' one. A REGRESSION FENCE for the arm above's reason:
@@ -711,7 +711,7 @@ objectRefPlayerRefs ref = case ref of
   -- mode's own ChoosePlayer DEFINES from both sides of its equality, and that is
   -- the only kind of slot a printed chooser names. Parun.CardSpec's planted
   -- objectRefPlayerRefPositions pins it, and this arm's sibling below.
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ _ _ chooser pileChooser _ _) -> chooser : Foldable.toList pileChooser
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ _ _ _ _ chooser pileChooser _ _) -> chooser : Foldable.toList pileChooser
   ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong _ _) -> []
   -- The one seat whose hand or library is reached.
   ObjectRef.RandomCard (RandomCard.MkRandomCard _ player _ _) -> [player]

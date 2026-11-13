@@ -935,9 +935,9 @@ objectRefPlayerRefPositions =
     ("random-card-in-library", ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Library (plantedPlayer "rl") (Filter.Type.And []) (Quantity.Type.Literal 1)), [plantedPlayer "rl"]),
     -- And the two CHOOSERS, which name a seat without counting per seat --
     -- Animal Magnetism's and Wormfang Crab's opponent.
-    ("chosen-card-from-among", ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong (SlotName.MkSlotName (Text.pack "group")) (Filter.Type.And []) HowMany.one Nothing (plantedPlayer "cfa") Nothing False CardSelection.ByChoice), [plantedPlayer "cfa"]),
+    ("chosen-card-from-among", ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong (SlotName.MkSlotName (Text.pack "group")) (Filter.Type.And []) HowMany.one Nothing Nothing (plantedPlayer "cfa") Nothing False CardSelection.ByChoice), [plantedPlayer "cfa"]),
     -- And Fact or Fiction's pile chooser beside the separating one (CR 700.3).
-    ("chosen-card-from-among-pile", ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong (SlotName.MkSlotName (Text.pack "group")) (Filter.Type.And []) (HowMany.UpTo Nothing) Nothing (plantedPlayer "cfa-split") (Just (plantedPlayer "cfa-pile")) False CardSelection.ByChoice), [plantedPlayer "cfa-split", plantedPlayer "cfa-pile"]),
+    ("chosen-card-from-among-pile", ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong (SlotName.MkSlotName (Text.pack "group")) (Filter.Type.And []) (HowMany.UpTo Nothing) Nothing Nothing (plantedPlayer "cfa-split") (Just (plantedPlayer "cfa-pile")) False CardSelection.ByChoice), [plantedPlayer "cfa-split", plantedPlayer "cfa-pile"]),
     ("chosen-permanents", ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") HowMany.one Zone.Battlefield), [plantedPlayer "cp"])
   ]
 
@@ -3288,8 +3288,10 @@ objectRefFilters ref = case ref of
   -- Commune with the Gods' "a creature or enchantment card from among them"; its
   -- slot names the group and holds no characteristic, so the Filter is what there
   -- is to lint -- the two chosen arms above's answer -- beside the count's and
-  -- the total's Quantities, through refFilters as theirs go.
-  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ f _ _ _ _ _ _) -> unframed [f] <> refFilters ref
+  -- the total's Quantities, through refFilters as theirs go. Sanar, Innovative
+  -- First-Year's perColor is a second Filter, over the permanents whose colors
+  -- bound the picks.
+  ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong _ f _ _ perColor _ _ _ _) -> unframed (f : Foldable.toList perColor) <> refFilters ref
   -- The arm above's plural: the same Filter position, saying which members are
   -- taken rather than which may be picked, and linted the same way.
   ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong _ f) -> unframed [f]

@@ -4447,12 +4447,14 @@ chooseUpTo ceiling_ candidates prompt = again Set.empty
 -- one, where declining is a second answer, through chooseUpTo.
 --
 --
--- UpTo under a `cap` (Parun.Types.TotalCap, each candidate's weight beside the
--- sum the picks may reach): one ask PER PICK, the sequence above, each offering
--- only the candidates the sum still has room for and each declinable, so no
--- answer can pass the cap and every set within it is reachable in any order.
--- A count other than UpTo reads no cap. Proved by the scenario "Michelangelo's
--- Technique offers a second card only within the mana value left".
+-- UpTo under `admits` (the picks so far, and whether a candidate may join
+-- them: Parun.Types.ChosenCardFromAmong's total and perColor): one ask PER
+-- PICK, the sequence above, each offering only the candidates the earlier picks
+-- admit and each declinable, so no answer can break the bound and every set
+-- within it is reachable in any order. A count other than UpTo reads none.
+-- Proved by the scenarios "Michelangelo's Technique offers a second card only
+-- within the mana value left" and "Sanar, Innovative First-Year offers no
+-- second card of a color already answered for".
 --
 -- Beside the picks, the seat that was asked: Nothing where nobody was.
 pickCounted ::
@@ -4462,36 +4464,36 @@ pickCounted ::
   (Decider.Decider -> PlayerId -> [ObjectId] -> Maybe Natural -> Prompt.Prompt (Set.Set ObjectId)) ->
   (Quantity.Quantity -> Natural) ->
   HowMany.HowMany ->
-  Maybe (ObjectId -> Natural, Natural) ->
+  Maybe ([ObjectId] -> ObjectId -> Bool) ->
   [ObjectId] ->
   Game (Maybe PlayerId, [ObjectId])
-pickCounted named chooser one_ several amount count cap candidates = case count of
+pickCounted named chooser one_ several amount count admits candidates = case count of
   HowMany.Exactly q
     | not named -> pure (Nothing, [])
     | Natural.length candidates <= amount q -> pure (Nothing, candidates)
     | otherwise -> asking (\who -> pick who (amount q) candidates)
   HowMany.UpTo q
     | null offer || ceiling_ == Just 0 -> pure (Nothing, [])
-    | otherwise -> asking $ \who -> case cap of
+    | otherwise -> asking $ \who -> case admits of
         Nothing -> upTo who ceiling_ offer
-        Just (weighs, most) -> within who weighs ceiling_ most offer
+        Just admitted -> within who admitted ceiling_ [] offer
     where
       ceiling_ = fmap amount q
-      offer = maybe candidates (\(weighs, most) -> filter ((<= most) . weighs) candidates) cap
+      offer = maybe candidates (\admitted -> filter (admitted []) candidates) admits
   where
     asking body = chooser >>= maybe (pure (Nothing, [])) (\who -> (,) (Just who) <$> body who)
     upTo who ceiling_ available = do
       gs <- State.get
       chooseUpTo ceiling_ available (several (Decide.deciderFor who gs) who available ceiling_)
-    within who weighs left room available
+    within who admitted left taken available
       | null fits || left == Just 0 = pure []
       | otherwise = do
           picked <- upTo who (Just 1) fits
           case picked of
             [] -> pure []
-            taken : _ -> (taken :) <$> within who weighs (fmap (subtract 1) left) (room - weighs taken) (List.delete taken available)
+            next : _ -> (next :) <$> within who admitted (fmap (subtract 1) left) (next : taken) (List.delete next available)
       where
-        fits = filter ((<= room) . weighs) available
+        fits = filter (admitted taken) available
     pick who n available
       | n <= (0 :: Natural) = pure []
       | otherwise = do
