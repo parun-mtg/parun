@@ -1,12 +1,12 @@
 {
   "description": "CR 508.3a: Firebender Ascension counts a triggered ability only where its own creature's attack caused it to trigger",
-  "note": "Brutal Hordechief's ability triggers twice, once for its own attack and once for Goblin Piker's, and bob loses 2. Only the first was caused by the Hordechief attacking, so the Ascension gets one quest counter, not two.",
+  "note": "Brutal Hordechief's ability triggers twice, once for its own attack and once for Goblin Piker's, and bob loses 2. Only the first was caused by the Hordechief attacking, so the Ascension gets one quest counter, not two. Bob's Ascension gets none: the Hordechief is not a creature he controls.",
   "board": {
     "active": "alice",
     "step": "PrecombatMain",
     "seats": [
       {"name": "alice", "battlefield": [{"card": "Firebender Ascension", "label": "ascension"}, {"card": "Brutal Hordechief", "label": "chief", "ready": true}, {"card": "Goblin Piker", "label": "piker", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
-      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+      {"name": "bob", "battlefield": [{"card": "Firebender Ascension", "label": "theirs"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
     ]
   },
   "timeline": [
@@ -17,6 +17,7 @@
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$ascension", "kind": {"type": "Named", "value": "quest"}, "count": 1}}}
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$ascension", "kind": {"type": "Named", "value": "quest"}, "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Counters": {"object": "$theirs", "kind": {"type": "Named", "value": "quest"}, "count": 0}}}
   ]
 }
