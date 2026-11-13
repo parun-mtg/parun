@@ -112,7 +112,7 @@ data Modification ability
     -- stack, and every binding it names -- the tap cost, IsSource, the counter it
     -- puts on "this creature", the "you" that draws -- resolves against the
     -- receiver. The granting permanent supplies only the text, via CR 613.7a the
-    -- timestamp, and its id to a cost or an effect naming it
+    -- timestamp, and its id to a cost, an effect or a condition naming it
     -- (Binding.grantingPermanent).
     --
     -- CR 303.4e says as much outright for the Aura case: "if the Aura grants an
