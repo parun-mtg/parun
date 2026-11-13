@@ -45,6 +45,7 @@ import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.EnteredZone as EnteredZone
+import qualified Parun.Types.EntryWindow as EntryWindow
 import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Expansion as Expansion
@@ -384,6 +385,13 @@ data View = MkView
     -- The same log again, and LAZY for its reason -- nothing forces it unless a
     -- Filter contains EnteredThisTurn.
     arrivalThisTurn :: Maybe MovedBetween.MovedBetween,
+    -- CR 400.7 / 608.2i: the same arrival over every turn since each player's
+    -- own most recent turn ended, keyed by that player
+    -- (Game.arrivalSinceOwnLastTurn); a player it is not within has no key.
+    -- Keyed rather than one answer because EnteredThisTurn's SinceOwnLastTurn
+    -- window turns on the perspective, which the builders that fill this field
+    -- do not hold. LAZY for `arrivalThisTurn`'s reason.
+    arrivalSinceOwnLastTurn :: Map.Map PlayerId.PlayerId MovedBetween.MovedBetween,
     -- CR 702.122c: which objects did this candidate crew earlier this turn? The
     -- same log the three fields above read, and LAZY for their reason -- nothing
     -- forces it unless a Filter contains CrewedSourceThisTurn.
@@ -1017,6 +1025,7 @@ playerView pid =
       -- CR 700.10 asks after a PERMANENT, and a player is not one.
       activatedThisTurn = False,
       arrivalThisTurn = Nothing,
+      arrivalSinceOwnLastTurn = Map.empty,
       -- CR 702.122b crews with a CREATURE, and a player is not one -- CR 506.3
       -- rules the combat fields above out for the same kind of reason.
       crewedThisTurn = Set.empty,
@@ -2573,9 +2582,15 @@ matches context view predicate = case predicate of
   -- that left and came back is a new object whose entry this is; one that phased
   -- in or turned face up made no entry at all (CR 702.26d, CR 708.8). A card that
   -- died, came back and died again is the second death's arrival.
-  Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to from) -> case arrivalThisTurn view of
-    Just arrival -> MovedBetween.to arrival == to && (Set.null from || Set.member (MovedBetween.from arrival) from)
-    Nothing -> False
+  -- SinceOwnLastTurn's "your" is the perspective's, so it is vacuously False for
+  -- a match no perspective frames.
+  Filter.EnteredThisTurn (EnteredZone.MkEnteredZone to from window) ->
+    let arrival = case window of
+          EntryWindow.ThisTurn -> arrivalThisTurn view
+          EntryWindow.SinceOwnLastTurn -> perspective context >>= \you -> Map.lookup you (arrivalSinceOwnLastTurn view)
+     in case arrival of
+          Just moved -> MovedBetween.to moved == to && (Set.null from || Set.member (MovedBetween.from moved) from)
+          Nothing -> False
   -- CR 122.6 / 122.6a: the same look-back over the counter placements, the
   -- putter answered against the perspective as IsAttackingPlayer's seat is. The
   -- field holds the candidate's own id's placements, so CR 400.7's new object

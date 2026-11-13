@@ -113,6 +113,22 @@ Entries are ordered by the first rule each cites.
   scenario `cr-733-3-two-time-vaults-skipping-each-turn-loop-and-alice-breaks-it`.
 - **Issue**: #6204.
 
+## What "since your last turn ended" spans before your first turn
+
+- **Question**: Premature Burial targets a creature "that entered since your
+  last turn ended". Which creatures qualify for a player who has had no turn
+  yet?
+- **Rules**: CR 102.1, 400.7, 608.2i; CR of 2026-11-06. Scryfall lists no
+  rulings for the card.
+- **Decision**: Every creature, whenever it entered: a window whose opening
+  never happened excludes nothing.
+- **Rejected**: No creature, reading a missing last turn as an empty window:
+  it leaves the card without a target on a board where every creature arrived
+  after the player's previous turn would have ended, had there been one.
+- **Site**: `Parun.Engine.Game.arrivalSinceOwnLastTurn`, proved by the
+  scenario `premature-burial-takes-a-creature-that-entered-before-alice-s-first-turn`.
+- **Issue**: #7285.
+
 ## Whether a mulligan-time action can be repeated before declaring
 
 - **Question**: CR 103.5b ends "If the player performs the action, they then

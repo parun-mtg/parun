@@ -832,6 +832,8 @@ library codec
     Parun.Codec.EntrySpec
     Parun.Codec.EntryTriggering
     Parun.Codec.EntryTriggeringSpec
+    Parun.Codec.EntryWindow
+    Parun.Codec.EntryWindowSpec
     Parun.Codec.Equip
     Parun.Codec.EquipSpec
     Parun.Codec.EquipTarget
@@ -3081,6 +3083,7 @@ library types
     Parun.Types.EntryRewrite
     Parun.Types.EntryRiders
     Parun.Types.EntryTriggering
+    Parun.Types.EntryWindow
     Parun.Types.EntwineDecision
     Parun.Types.Equip
     Parun.Types.EquipTarget

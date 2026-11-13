@@ -384,6 +384,7 @@ import qualified Parun.Codec.EntryRewriteSpec
 import qualified Parun.Codec.EntryRidersSpec
 import qualified Parun.Codec.EntrySpec
 import qualified Parun.Codec.EntryTriggeringSpec
+import qualified Parun.Codec.EntryWindowSpec
 import qualified Parun.Codec.EquipSpec
 import qualified Parun.Codec.EventExpirySpec
 import qualified Parun.Codec.EventGroupSpec
@@ -1435,6 +1436,7 @@ spec s reference corpus = do
   Parun.Codec.DuringPhaseSpec.spec s
   Parun.Codec.EachCardFromAmongSpec.spec s
   Parun.Codec.EnteredZoneSpec.spec s
+  Parun.Codec.EntryWindowSpec.spec s
   Parun.Codec.FromAnywhereSpec.spec s
   Parun.Codec.EachCardInGraveyardSpec.spec s
   Parun.Codec.EachCardInExiledPileSpec.spec s

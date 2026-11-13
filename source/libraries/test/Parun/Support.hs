@@ -2005,6 +2005,7 @@ stubView table oid =
                 Filter.dealtDamageThisTurn = False,
                 Filter.activatedThisTurn = False,
                 Filter.arrivalThisTurn = Nothing,
+                Filter.arrivalSinceOwnLastTurn = Map.empty,
                 -- CR 702.122c: the table registers no crewing, and no Count in
                 -- the pool filters by one, so CrewedSourceThisTurn is vacuously
                 -- False against this stub.
