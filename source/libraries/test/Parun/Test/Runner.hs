@@ -14,7 +14,6 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Control.Monad.Trans.Writer as Writer
 import qualified Data.ByteString as ByteString
-import qualified Data.Char as Char
 import qualified Data.Foldable as Foldable
 import qualified Data.IORef as IORef
 import qualified Data.List as List
@@ -28,6 +27,10 @@ import qualified GHC.Clock as Clock
 import qualified GHC.Stack as Stack
 import Numeric.Natural (Natural)
 import qualified Parun.Exceptions.AssertionFailed as AssertionFailed
+import qualified Parun.Exceptions.InvalidOption as InvalidOption
+import qualified Parun.Exceptions.ShowHelp as ShowHelp
+import qualified Parun.Exceptions.UnexpectedArgument as UnexpectedArgument
+import qualified Parun.Exceptions.UnknownOption as UnknownOption
 import qualified Parun.Extra.Int as Int
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Extra.Word64 as Word64
@@ -37,13 +40,15 @@ import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Play.Generator as Generator
 import qualified Parun.Play.Key as Key
 import qualified Parun.Spec as Spec
+import qualified Parun.Test.Config as Config
+import qualified Parun.Test.Context as Context
+import qualified Parun.Test.Display as Display
+import qualified Parun.Test.Flag as Flag
 import qualified Parun.Types.Key as Key.Type
-import qualified System.Console.GetOpt as GetOpt
 import qualified System.Environment as Environment
 import qualified System.Exit as Exit
 import qualified System.IO as IO
 import qualified System.Timeout as Timeout
-import qualified Text.Read as Read
 
 -- | One registered case: its group names, outermost first, then its own.
 data Case = MkCase
@@ -64,24 +69,6 @@ data Site = MkSite
     sourceLine :: Natural
   }
   deriving (Eq, Show)
-
--- | The command line: the substrings selecting cases (any of them; every case
--- when none), the per-case budget in microseconds, the shuffle's seed, where
--- to write the run's 'Report', whether to list the selected cases instead of
--- running them, and whether to stop at the first failure.
-data Options = MkOptions
-  { patterns :: [Text.Text],
-    timeout :: Maybe Natural,
-    seed :: Maybe Key.Type.Key,
-    json :: Maybe FilePath,
-    list :: Bool,
-    failFast :: Bool
-  }
-  deriving (Eq, Show)
-
--- | The options of a command line with no flags.
-defaults :: Options
-defaults = MkOptions {patterns = [], timeout = Nothing, seed = Nothing, json = Nothing, list = False, failFast = False}
 
 -- | One case as it ran: its dotted path, why it failed if it did and where,
 -- and how long it took.
@@ -128,15 +115,6 @@ data Summary = MkSummary
   }
   deriving (Eq, Show)
 
--- | How failures and progress are shown: whether standard output is a
--- terminal, to keep a progress line on, and whether the run is under GitHub
--- Actions, to annotate.
-data Display = MkDisplay
-  { live :: Bool,
-    annotated :: Bool
-  }
-  deriving (Eq, Show)
-
 -- | What the terminal holds beneath the failures so far: the cases counted,
 -- when the progress line was last drawn, and how wide it was.
 data Screen = MkScreen
@@ -162,19 +140,12 @@ runner =
 main :: IO (Seq.Seq Case) -> IO ()
 main collect = do
   arguments <- Environment.getArgs
-  options <- case parseOptions arguments of
-    Left problem -> do
-      IO.hPutStrLn IO.stderr problem
-      IO.hPutStr IO.stderr $ GetOpt.usageInfo "usage: parun test [OPTION...]" flags
-      Exit.exitFailure
-    Right o -> pure o
+  context <- Exception.catches (Flag.fromArguments arguments >>= Config.fromFlags >>= Context.fromConfig) refusals
   IO.hSetBuffering IO.stdout IO.LineBuffering
-  terminal <- IO.hIsTerminalDevice IO.stdout
-  actions <- Environment.lookupEnv "GITHUB_ACTIONS"
-  let display = MkDisplay {live = terminal, annotated = actions == Just "true"}
-  s <- maybe Key.fresh pure $ seed options
+  let options = Context.config context
+      s = Context.key context
   cases <- collect
-  Monad.when (list options) $ do
+  Monad.when (Config.list options) $ do
     Foldable.traverse_ (TextIO.putStrLn . name) . filter (selected options) $ Foldable.toList cases
     Exit.exitSuccess
   let todo = ordered options s cases
@@ -182,56 +153,43 @@ main collect = do
   screen <- IORef.newIORef MkScreen {counted = MkSummary {total = 0, failures = 0}, drawnAt = 0, width = 0}
   lock <- Concurrent.newMVar ()
   let write t = TextIO.putStr t >> IO.hFlush IO.stdout
-  ran <- run (Concurrent.withMVar lock . const . shown write display (Natural.length todo) started screen) options todo
-  Monad.when (live display) $ IORef.readIORef screen >>= write . erased . width
-  Foldable.for_ (json options) $ \file ->
+  ran <- run (Concurrent.withMVar lock . const . shown write (Context.display context) (Natural.length todo) started screen) options todo
+  Monad.when (Display.live $ Context.display context) $ IORef.readIORef screen >>= write . erased . width
+  Foldable.for_ (Config.json options) $ \file ->
     ByteString.writeFile file . Encoding.encodeUtf8 . Common.render $ Codec.encode reportCodec MkReport {shuffled = Key.toHex s, results = ran}
   let summary = summarize ran
   Foldable.for_ (rerunLine ran) TextIO.putStrLn
   TextIO.putStrLn $ summaryLine s summary
   Monad.unless (succeeded summary) Exit.exitFailure
 
-flags :: [GetOpt.OptDescr (Options -> Either String Options)]
-flags =
-  [ GetOpt.Option "p" ["pattern"] (GetOpt.ReqArg (\s o -> Right o {patterns = patterns o <> [Text.pack s]}) "SUBSTRING") "run the cases whose path holds this; repeated, those matching any",
-    GetOpt.Option [] ["timeout"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a duration: " <> s) (\n -> Right o {timeout = Just n}) $ duration s) "DURATION") "fail a case still running after this long: seconds, or a number ending in ms, s, m or h",
-    GetOpt.Option [] ["seed"] (GetOpt.ReqArg (\s o -> maybe (Left $ "not a seed: " <> s) (\k -> Right o {seed = Just k}) . Key.fromHex $ Text.pack s) "KEY") "the shuffle's key, 64 hexadecimal digits; drawn from the operating system when absent",
-    GetOpt.Option [] ["json"] (GetOpt.ReqArg (\file o -> Right o {json = Just file}) "FILE") "write every case's name, failure, its site and nanoseconds to this file as JSON",
-    GetOpt.Option [] ["list"] (GetOpt.NoArg (\o -> Right o {list = True})) "print the names of the cases a run would select, in the order they are registered, without running them",
-    GetOpt.Option [] ["fail-fast"] (GetOpt.NoArg (\o -> Right o {failFast = True})) "start no case after the first failure; those already running finish"
+-- | What a command line that asks for no run comes to: the usage on standard
+-- output for 'ShowHelp.ShowHelp', and otherwise the problem and the usage on
+-- standard error and a failed exit.
+refusals :: [Exception.Handler a]
+refusals =
+  [ Exception.Handler $ \ShowHelp.MkShowHelp -> putStr Flag.usage >> Exit.exitSuccess,
+    Exception.Handler $ \e -> refuse (e :: UnexpectedArgument.UnexpectedArgument),
+    Exception.Handler $ \e -> refuse (e :: UnknownOption.UnknownOption),
+    Exception.Handler $ \e -> refuse (e :: InvalidOption.InvalidOption)
   ]
-
-parseOptions :: [String] -> Either String Options
-parseOptions arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
-  (updates, [], []) -> Monad.foldM (\o f -> f o) defaults updates
-  (_, argument : _, []) -> Left $ "unexpected argument: " <> argument
-  (_, _, problem : _) -> Left $ List.dropWhileEnd Char.isSpace problem
-
--- | A duration in microseconds: a count of seconds, or of the unit it ends in.
-duration :: String -> Maybe Natural
-duration s = do
-  let (digits, unit) = span Char.isDigit s
-  n <- Read.readMaybe digits
-  scale <- case unit of
-    "" -> Just 1000000
-    "ms" -> Just 1000
-    "s" -> Just 1000000
-    "m" -> Just 60000000
-    "h" -> Just 3600000000
-    _ -> Nothing
-  pure $ n * scale
+  where
+    refuse :: (Exception.Exception e) => e -> IO a
+    refuse e = do
+      IO.hPutStrLn IO.stderr $ Exception.displayException e
+      IO.hPutStr IO.stderr Flag.usage
+      Exit.exitFailure
 
 -- | A case's path as a pattern sees it: its names joined by dots.
 name :: Case -> Text.Text
 name c = Text.intercalate (Text.pack ".") $ path c
 
-selected :: Options -> Case -> Bool
-selected options c = null (patterns options) || any (\p -> Text.isInfixOf p $ name c) (patterns options)
+selected :: Config.Config -> Case -> Bool
+selected options c = null (Config.patterns options) || any (\p -> Text.isInfixOf p $ name c) (Config.patterns options)
 
 -- | Runs the cases, each under the budget if there is one, handing each to
 -- @report@ as it finishes, and answers every case as it ran, in the order they
--- finished. Under 'failFast', a failure empties the queue.
-run :: (Result -> IO ()) -> Options -> [Case] -> IO [Result]
+-- finished. Under 'Config.failFast', a failure empties the queue.
+run :: (Result -> IO ()) -> Config.Config -> [Case] -> IO [Result]
 run report options cases = do
   queue <- IORef.newIORef cases
   finished <- IORef.newIORef []
@@ -243,13 +201,13 @@ run report options cases = do
           Nothing -> pure ()
           Just c -> do
             before <- Clock.getMonotonicTimeNSec
-            outcome <- runCase (timeout options) c
+            outcome <- runCase (Config.timeout options) c
             after <- Clock.getMonotonicTimeNSec
             let (f, w) = failed outcome
                 result = MkResult {title = name c, failure = f, site = w, nanoseconds = Word64.toNatural after - Word64.toNatural before}
             IORef.atomicModifyIORef' finished $ \rs -> (result : rs, ())
             report result
-            Monad.when (failFast options && Maybe.isJust f) $ IORef.atomicWriteIORef queue []
+            Monad.when (Config.failFast options && Maybe.isJust f) $ IORef.atomicWriteIORef queue []
             worker
   workers <- Concurrent.getNumCapabilities
   dones <- Monad.replicateM workers $ do
@@ -269,7 +227,7 @@ summarize :: [Result] -> Summary
 summarize ran = MkSummary {total = Natural.length ran, failures = Natural.length $ Maybe.mapMaybe failure ran}
 
 -- | The selected cases, in the order the seed shuffles them into.
-ordered :: Options -> Key.Type.Key -> Seq.Seq Case -> [Case]
+ordered :: Config.Config -> Key.Type.Key -> Seq.Seq Case -> [Case]
 ordered options s cases = State.evalState (Generator.shuffle . filter (selected options) $ Foldable.toList cases) $ Generator.fromKey s
 
 -- | Runs one case under the budget, if there is one. Any exception fails it
@@ -303,21 +261,21 @@ failureLine :: Text.Text -> Text.Text -> Text.Text
 failureLine t m = Text.intercalate (Text.pack "\n  ") $ Text.lines (Text.pack "FAIL " <> t <> Text.pack ": " <> m)
 
 -- | Shows a finished case, one of @count@, through @write@: its failure in
--- full, as an annotation too when 'annotated', and when 'live' the progress
+-- full, as an annotation too when 'Display.annotated', and when 'Display.live' the progress
 -- line beneath, redrawn in place with a
 -- carriage return after a failure, at the last case, and otherwise at most
 -- every tenth of a second. The caller holds the lock.
-shown :: (Text.Text -> IO ()) -> Display -> Natural -> Word.Word64 -> IORef.IORef Screen -> Result -> IO ()
-shown write display count started screen result = do
+shown :: (Text.Text -> IO ()) -> Display.Display -> Natural -> Word.Word64 -> IORef.IORef Screen -> Result -> IO ()
+shown write how count started screen result = do
   now <- Clock.getMonotonicTimeNSec
   before <- IORef.readIORef screen
   let tally = MkSummary {total = total (counted before) + 1, failures = failures (counted before) + maybe 0 (const 1) (failure result)}
       due = Maybe.isJust (failure result) || now - drawnAt before >= 100000000 || total tally == count
   Foldable.for_ (failure result) $ \m -> do
-    Monad.when (live display) . write . erased $ width before
+    Monad.when (Display.live how) . write . erased $ width before
     write $ failureLine (title result) m <> Text.pack "\n"
-    Monad.when (annotated display) . write $ annotation (title result) (site result) m <> Text.pack "\n"
-  if live display && due
+    Monad.when (Display.annotated how) . write $ annotation (title result) (site result) m <> Text.pack "\n"
+  if Display.live how && due
     then do
       let line = progressLine count tally . Word64.toNatural $ now - started
       write $ Text.pack "\r" <> Text.justifyLeft (width before) ' ' line
