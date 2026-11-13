@@ -196,7 +196,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.Vote {} -> Set.empty
   Effect.Bid {} -> Set.empty
   Effect.RestartGame _ -> Set.empty
-  Effect.ControlPlayerNextTurn _ -> Set.empty
+  Effect.ControlPlayerNext _ -> Set.empty
   Effect.ControlPlayerThisResolution _ -> Set.empty
   Effect.Destroy {} -> Set.empty
   Effect.Sacrifice _ -> Set.empty

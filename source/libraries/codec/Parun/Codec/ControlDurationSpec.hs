@@ -14,6 +14,12 @@ spec s = Spec.describe s "Parun.Codec.ControlDuration" $ do
       ControlDuration.codec
       ControlDuration.UntilTurnEnds
       " {\"type\":\"UntilTurnEnds\"} "
+  Spec.it s "UntilCombatEnds" $
+    Common.assertCodec
+      s
+      ControlDuration.codec
+      ControlDuration.UntilCombatEnds
+      " {\"type\":\"UntilCombatEnds\"} "
   Spec.it s "UntilResolutionEnds" $
     Common.assertCodec
       s

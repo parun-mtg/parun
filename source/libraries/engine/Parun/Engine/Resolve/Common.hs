@@ -3346,7 +3346,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.Search {} -> False
   Effect.ExileAllGraveyards {} -> False
   Effect.RestartGame {} -> False
-  Effect.ControlPlayerNextTurn {} -> False
+  Effect.ControlPlayerNext {} -> False
   Effect.ControlPlayerThisResolution {} -> False
   Effect.Destroy {} -> False
   Effect.Sacrifice {} -> False

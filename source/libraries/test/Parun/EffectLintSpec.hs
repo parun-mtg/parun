@@ -1452,7 +1452,7 @@ effectObjectRefs effect =
         -- CR 728.5's exemption, optional: a card saying nothing about it exempts
         -- nothing.
         Effect.RestartGame mRef -> read_ (Maybe.maybeToList mRef)
-        Effect.ControlPlayerNextTurn {} -> []
+        Effect.ControlPlayerNext {} -> []
         Effect.ControlPlayerThisResolution {} -> []
         -- The scenario capricious-efreet-destroys-one-of-its-still-legal-targets-at-random
         -- reaches RandomAmong.
@@ -2268,7 +2268,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- the enumeration is checkable by reading down that file.
         --
         -- One shape of singular reader is deliberately absent:
-        -- Effect.ControlPlayerNextTurn, Effect.ControlPlayerThisResolution,
+        -- Effect.ControlPlayerNext, Effect.ControlPlayerThisResolution,
         -- MonarchTarget's InSlot and ExchangeSides' WithController match
         -- Recipient.ToPlayer, and no binder in boundPlurally mints a player slot.
         --

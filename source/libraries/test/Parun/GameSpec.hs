@@ -555,7 +555,7 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
                 (namedIs (CardName.MkCardName $ Text.pack "Lightning Bolt") bobPlayed)
                 (fmap (\i -> Game.lookupObject i bobPlayed) (Game.zoneMembers Zone.Graveyard S.bob bobPlayed))
             )
-    Spec.assertEqWith s "CR 724.1: control pending for bob after activation" (fmap PlayerControl.decider (Map.lookup S.bob (GameState.pendingControl afterActivation))) (Just (Decider.MkDecider S.alice))
+    Spec.assertEqWith s "CR 724.1: control pending for bob after activation" (fmap (fmap PlayerControl.decider . NonEmpty.toList) (Map.lookup S.bob (GameState.pendingControl afterActivation))) (Just [Decider.MkDecider S.alice])
     Spec.assertEqWith s "CR 724.1: promoted to live control on bob's turn" (S.unstamped (GameState.control bobsTurn)) (S.turnControl S.alice S.bob)
     Spec.assertEqWith s "CR 724.3: bob is still the active player while controlled" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
     Spec.assertEqWith s "CR 724.5: bob's decisions route to alice" (Decide.deciderFor S.bob bobsTurn) (Decider.MkDecider S.alice)
@@ -1619,7 +1619,7 @@ turnOrderSpec s registry = Spec.describe s "TurnOrder (CR 800.4)" $ do
     -- bob Mindslavered carol; bob then left the game. When carol's turn
     -- begins, she is NOT controlled: "If a player would be controlled by a
     -- player who has left the game, they aren't."
-    let armed = S.threePlayerGame {GameState.pendingControl = Map.singleton S.carol (S.turnControlRow S.bob)}
+    let armed = S.threePlayerGame {GameState.pendingControl = Map.singleton S.carol (pure (S.turnControlRow S.bob))}
         gone = S.departs Departure.Type.Conceded S.bob armed
         after = S.runPure S.identityAnswer gone Engine.handoffTurn
     Spec.assertEqWith s "CR 800.4a's second clause already cleared it at bob's departure" (GameState.pendingControl gone) Map.empty
@@ -1636,7 +1636,7 @@ turnOrderSpec s registry = Spec.describe s "TurnOrder (CR 800.4)" $ do
     -- unreachable in play and which therefore only the promotion guard can
     -- answer for.
     let gone = S.departs Departure.Type.Conceded S.bob S.threePlayerGame
-        armed = gone {GameState.pendingControl = Map.singleton S.carol (S.turnControlRow S.bob)}
+        armed = gone {GameState.pendingControl = Map.singleton S.carol (pure (S.turnControlRow S.bob))}
         after = S.runPure S.identityAnswer armed Engine.handoffTurn
     Spec.assertEqWith s "carol's turn began" (TurnRegisters.activePlayer (GameState.turn after)) S.carol
     Spec.assertEqWith s "she is uncontrolled" (GameState.control after) Map.empty
@@ -1645,7 +1645,7 @@ turnOrderSpec s registry = Spec.describe s "TurnOrder (CR 800.4)" $ do
   Spec.it s "CR 724.1b a pending control whose decider is still playing IS promoted" $ do
     -- The control assertion: the same board with bob still in the game. If
     -- this passed either way, the case above would prove nothing.
-    let armed = S.threePlayerGame {GameState.pendingControl = Map.singleton S.bob (S.turnControlRow S.alice)}
+    let armed = S.threePlayerGame {GameState.pendingControl = Map.singleton S.bob (pure (S.turnControlRow S.alice))}
         after = S.runPure S.identityAnswer armed Engine.handoffTurn
     Spec.assertEqWith s "bob's turn began" (TurnRegisters.activePlayer (GameState.turn after)) S.bob
     Spec.assertEqWith s "alice controls him" (GameState.control after) (S.turnControl S.alice S.bob)

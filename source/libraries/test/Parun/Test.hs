@@ -220,9 +220,11 @@ import qualified Parun.Codec.ControlChangedSpec
 import qualified Parun.Codec.ControlClockSpec
 import qualified Parun.Codec.ControlDurationSpec
 import qualified Parun.Codec.ControlMarginSpec
+import qualified Parun.Codec.ControlPlayerNextSpec
 import qualified Parun.Codec.ControlPlayerSpec
 import qualified Parun.Codec.ControlSidesSpec
 import qualified Parun.Codec.ControlSlotsSpec
+import qualified Parun.Codec.ControlSpanSpec
 import qualified Parun.Codec.ControllerRelationSpec
 import qualified Parun.Codec.ConvokingSpec
 import qualified Parun.Codec.CopyClauseSpec
@@ -1278,7 +1280,9 @@ spec s registry corpus = do
   Parun.Codec.ControlMarginSpec.spec s
   Parun.Codec.TargetedSubjectSpec.spec s
   Parun.Codec.ControllerRelationSpec.spec s
+  Parun.Codec.ControlPlayerNextSpec.spec s
   Parun.Codec.ControlPlayerSpec.spec s
+  Parun.Codec.ControlSpanSpec.spec s
   Parun.Codec.ControlSidesSpec.spec s
   Parun.Codec.ControlSlotsSpec.spec s
   Parun.Codec.ConvokingSpec.spec s

@@ -26,8 +26,11 @@
                   {
                     "effects": [
                       {
-                        "type": "ControlPlayerNextTurn",
-                        "value": "target"
+                        "type": "ControlPlayerNext",
+                        "value": {
+                          "during": "NextTurn",
+                          "slot": "target"
+                        }
                       }
                     ]
                   }

@@ -570,7 +570,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.RerollStoredResults payload -> Damage.rerollStoredResults throwDice runSubgame resolving source controller legal payload
   Effect.FlipCoin payload -> Damage.flipCoinArm throwForCoin reflipWindow runSubgame resolving source controller legal payload
   Effect.Guess payload -> Zones.guess resolving source controller legal chosen payload
-  Effect.ControlPlayerNextTurn payload -> Damage.controlPlayerNextTurn controller legal payload
+  Effect.ControlPlayerNext payload -> Damage.controlPlayerNext controller legal payload
   Effect.ControlPlayerThisResolution payload -> Damage.controlPlayerThisResolution controller legal payload
   Effect.Destroy payload -> Damage.destroy (runReplacementEffects runSubgame) resolving source controller legal chosen payload
   Effect.Sacrifice payload -> Damage.sacrifice (runReplacementEffects runSubgame) resolving source controller legal chosen payload

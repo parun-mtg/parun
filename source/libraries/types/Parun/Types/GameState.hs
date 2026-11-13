@@ -157,9 +157,14 @@ data GameState = MkGameState
     -- begins; cleared at turn handoff.
     departedThisTurn :: Set.Set PlayerId.PlayerId,
     -- | CR 724.1: pending player-controlling effects, keyed by the player to be
-    -- controlled; last created wins (CR 724.1a), promoted into `control` at
-    -- that player's turn (CR 724.1b) with the timestamp of its creation.
-    pendingControl :: Map.Map PlayerId.PlayerId PlayerControl.PlayerControl,
+    -- controlled, each promoted into `control` as the turn or combat phase its
+    -- duration names begins (CR 724.1b) with the timestamp of its creation.
+    --
+    -- At most one row per duration, the last created (CR 724.1a), and one per
+    -- duration rather than one per player for `control`'s reason: a combat
+    -- phase's control scheduled after a whole turn's must hand that turn back.
+    -- Never empty.
+    pendingControl :: Map.Map PlayerId.PlayerId (NonEmpty.NonEmpty PlayerControl.PlayerControl),
     -- | CR 724: who is being controlled right now, keyed by the controlled
     -- player. Keyed rather than a single slot for the active player because CR
     -- 724.2's control is not the active player's and does not last a turn

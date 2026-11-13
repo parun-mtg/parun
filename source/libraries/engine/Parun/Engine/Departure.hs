@@ -372,9 +372,9 @@ objectsLeaveWith asOf pid gs =
 --     the case on Modification stays where it belongs.
 --   * GameState.control -- a live Decider, whether it holds for this turn (CR
 --     724.1) or for one resolution (CR 724.2).
---   * GameState.pendingControl -- a Decider scheduled for a later turn
---     (CR 724.1b). CR 800.4b says the same thing one step later, at
---     Engine.beginTurnOf's promotion; neither is the other's spare.
+--   * GameState.pendingControl -- a Decider scheduled for a later turn or
+--     combat phase (CR 724.1b). CR 800.4b says the same thing one step later,
+--     at Engine.promoteControl; neither is the other's spare.
 --   * a floating CR 616.1b control-on-entry replacement (Gather Specimens, the
 --     pool's producer), whose whole content is that objects enter under CR
 --     109.5's "you" -- the PlayerId this row baked when it was installed (see
@@ -452,7 +452,7 @@ controlEffectsEnd pid gs =
           -- playing is untouched (CR 724.1a then makes the topmost survivor the
           -- one that works). A stack with nothing left loses its key.
           GameState.control = Map.mapMaybe (NonEmpty.nonEmpty . NonEmpty.filter (not . heldBy . PlayerControl.decider)) (GameState.control gs),
-          GameState.pendingControl = Map.filter (not . heldBy . PlayerControl.decider) (GameState.pendingControl gs)
+          GameState.pendingControl = Map.mapMaybe (NonEmpty.nonEmpty . NonEmpty.filter (not . heldBy . PlayerControl.decider)) (GameState.pendingControl gs)
         }
 
 -- Is this floating row one of CR 800.4a's "effects which give that player
