@@ -63,7 +63,6 @@ import qualified Parun.Types.GameSettings as GameSettings
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
-import qualified Parun.Types.History as History
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword.Type
@@ -1296,7 +1295,7 @@ dealtDamageTo oid gs =
 -- is damage by this object.
 dealtDamageEarlier :: ObjectId -> GameState -> Set.Set (Recipient.Recipient, DamageKind.DamageKind)
 dealtDamageEarlier oid gs =
-  Set.fromList [(DamageEvent.target ev, DamageEvent.kind ev) | ev <- Foldable.toList (History.damageBeforeThisTurn (GameState.history gs)), DamageEvent.source ev == oid]
+  Set.fromList [(DamageEvent.target ev, DamageEvent.kind ev) | ev <- Foldable.toList (Game.damageBeforeThisTurn gs), DamageEvent.source ev == oid]
 
 -- CR 702.51c: which spells did this object convoke, and which permanents did
 -- those spells become? GameEvent.Convoked is written as the cast's cost is paid

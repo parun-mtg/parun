@@ -1902,6 +1902,35 @@ interchangeableSourcesSpec s registry = Spec.describe s "Interchangeable mana so
     Spec.assertBool s paid "the {G} was paid"
     Spec.assertEqWith s "off exactly one Elf" (tappedCount (NonEmpty.toList elves) after) 1
 
+  -- CR 120.1 / 608.2i: the same pair of boards with the damage dealt on a turn
+  -- since finished, where only History.pastTurns holds it
+  -- (Interchangeable.actedOnBy's Game.damageBeforeThisTurn half).
+  Spec.it s "CR 120.1 Elves damaged by different Bears on an earlier turn are candidates of their own" $ do
+    elf <- S.printingOf s registry "Llanowar Elves"
+    anthem <- S.printingOf s registry "Glorious Anthem"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (elves, plain) = elfBoard elf 3
+        (_, anthemed) = S.addPermanent anthem S.alice plain
+        (first, g1) = S.addPermanent bears S.bob anthemed
+        (second, ready) = S.addPermanent bears S.bob g1
+        (elfA, elfB) = case NonEmpty.toList elves of
+          a : b : _ -> (a, b)
+          _ -> (NonEmpty.head elves, NonEmpty.head elves)
+        hit pairs gs = S.runPure S.identityAnswer gs (Damage.applyDamage (pure ()) [Event.damageEvent gs DamageKind.Combat source (Recipient.ToCreature victim) 1 | (source, victim) <- pairs])
+        apart = Engine.beginTurnOf S.bob (hit [(first, elfA), (second, elfB)] ready)
+        together = Engine.beginTurnOf S.bob (hit [(first, elfA), (first, elfB)] ready)
+        (offers, paid, after) = greenWindow apart
+        (alike, _, _) = greenWindow together
+        damageLogged = length . Game.damageInLog . TurnRegisters.events . GameState.turn
+    Spec.assertEqWith s "asked once, with each damaged Elf a candidate of its own beside the untouched one" (fmap length offers) [3]
+    Spec.assertEqWith s "and damaged by the same Bears, the two are one candidate" (fmap length alike) [2]
+    -- The premises, after the assertions above.
+    Spec.assertEqWith s "the handoff cleared the log of the damage" (fmap damageLogged [apart, together]) [0, 0]
+    Spec.assertEqWith s "and filed it under the finished turn" (fmap (length . Game.damageBeforeThisTurn) [apart, together]) [2, 2]
+    Spec.assertEqWith s "the same damage still marked on each damaged Elf, either board" (fmap (`S.damageOf` apart) [elfA, elfB]) (fmap (`S.damageOf` together) [elfA, elfB])
+    Spec.assertBool s paid "the {G} was paid"
+    Spec.assertEqWith s "off exactly one Elf" (tappedCount (NonEmpty.toList elves) after) 1
+
   -- CR 120.1 from the source's side: Elves that dealt bob damage, one 2 and one
   -- 1, agree on every View field but not on Quantity.DamageDealtThisTurn
   -- DealtBy, which Chandra, Fire of Kaladesh reads.

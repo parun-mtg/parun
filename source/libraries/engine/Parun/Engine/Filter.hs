@@ -420,7 +420,7 @@ data View = MkView
     -- kind the card names.
     dealtDamageTo :: Set.Set (Recipient.Recipient, DamageKind.DamageKind),
     -- CR 120.1 / 400.7: the same answer for every EARLIER turn this candidate
-    -- has been this object, off History.damageBeforeThisTurn, which
+    -- has been this object, off Game.damageBeforeThisTurn, which
     -- Lookback.AsThisObject joins to `dealtDamageTo`. Lazy for its reason.
     dealtDamageEarlier :: Set.Set (Recipient.Recipient, DamageKind.DamageKind),
     -- CR 302.6: has this candidate's CONTROLLER controlled it continuously since
