@@ -464,7 +464,9 @@ counted context n comparison k = case Count.scope n of
     (noun, _) <- Target.andOr (plain, number)
     place <- Target.zoneOf Zone.Graveyard who
     let be = if number == Filter.Singular then Text.pack "is" else Text.pack "are"
-    [Text.pack "there " <> be <> Text.pack " " <> before noun <> Text.pack " " <> noun <> Text.pack " " <> place]
+    -- Free for one card: "there is" or Dragonfly Swarm's "there's".
+    let rest = Text.pack " " <> before noun <> Text.pack " " <> noun <> Text.pack " " <> place
+    [Text.pack "there " <> be <> rest] <> [Text.pack "there's" <> rest | number == Filter.Singular]
   Scope.InZone (InZone.MkInZone Zone.Hand who)
     | Count.filter n == Filter.Type.And [] -> do
         (subject, have) <- holder context who
