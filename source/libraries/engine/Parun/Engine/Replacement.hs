@@ -909,7 +909,13 @@ matchesPrinted viewOf gs event candidate =
         (ReplacementEffect.CounterR (CounterR.MkCounterR pat _), ProposedEvent.WouldPutCounters cause oid kind _) ->
           -- Our own encoding convention, not a rule: `whichKind = Nothing` means
           -- any kind, never no kind.
+          --
+          -- CR 110.1 / 122.6: the pattern's object is a PERMANENT, so a card
+          -- given counters in another zone is none of its business, whatever
+          -- its filter says. Proved by the scenario
+          -- vorinclex-leaves-the-dream-counter-on-a-card-in-exile-alone.
           maybe True (== kind) (CounterPattern.whichKind pat)
+            && Set.member oid (GameState.battlefield gs)
             && matchesPutter gs candidate (CounterPattern.subject pat) cause
             && matchesController gs candidate (CounterPattern.whose pat) oid
             && matchesPermanent viewOf gs Nothing Map.empty Nothing (CounterPattern.onWhat pat) oid

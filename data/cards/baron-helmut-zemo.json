@@ -124,6 +124,13 @@
                         "holder": "Controller",
                         "relation": "You"
                       }
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Owner",
+                        "relation": "You"
+                      }
                     }
                   ]
                 }
