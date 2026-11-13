@@ -148,6 +148,7 @@ import qualified Parun.Types.ChosenCardInHand as ChosenCardInHand
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
+import qualified Parun.Types.Cloak as Cloak
 import qualified Parun.Types.CoinReading as CoinReading
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ColorSpread as ColorSpread
@@ -894,7 +895,7 @@ playerRefPositions =
         ("set-owner", Effect.SetOwner (SetOwner.MkSetOwner (plantedPlayer "sp") (plantedRef "sp")), [plantedPlayer "sp"]),
         ("shuffle", Effect.Shuffle (plantedPlayer "sh"), [plantedPlayer "sh"]),
         ("divide", Effect.Divide (Divide.MkDivide one (plantedRef "dv") (plantedPlayer "dv") (SlotName.MkSlotName (Text.pack "split"))), [plantedPlayer "dv"]),
-        ("cloak", Effect.Cloak (plantedPlayer "ck"), [plantedPlayer "ck"]),
+        ("cloak", Effect.Cloak (Cloak.MkCloak (plantedPlayer "ck") (Just (plantedPlayer "ck-library"))), [plantedPlayer "ck", plantedPlayer "ck-library"]),
         ("manifestDread", Effect.ManifestDread (plantedPlayer "md"), [plantedPlayer "md"]),
         ("choose-permanents", Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") (HowMany.UpTo Nothing) Zone.Battlefield) (SlotName.MkSlotName (Text.pack "cp")) (Just (plantedPlayer "cp-piles")) Nothing), [plantedPlayer "cp", plantedPlayer "cp-piles"]),
         ("discard-counted", Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard (plantedPlayer "dc") one Nothing)), [plantedPlayer "dc"]),

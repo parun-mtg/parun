@@ -128,6 +128,7 @@ import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
+import qualified Parun.Types.Feasibility as Feasibility
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.FromAnywhere as FromAnywhere
 import qualified Parun.Types.GainControl as GainControl
@@ -3277,8 +3278,8 @@ conjuredName card = Face.name (NonEmpty.head (Card.Type.faces card))
 -- you of a slot the reveal defines is dependent on it" proves the first half.
 --
 -- An EMPTY clause is not impossible, for the reason clauseIsInert gives.
-clauseIsImpossible :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> GameState -> Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
-clauseIsImpossible resolving source controller legal gs clause =
+clauseIsImpossible :: Feasibility.Feasibility -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> GameState -> Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+clauseIsImpossible asked resolving source controller legal gs clause =
   let effects = Foldable.toList (Clause.effects clause)
       definedBefore = List.scanl (\defined effect -> Set.union defined (boundSlots effect)) Set.empty effects
       readsOnly defined ref = case ref of
@@ -3291,7 +3292,7 @@ clauseIsImpossible resolving source controller legal gs clause =
          in not (null refs) && all (Map.null . playerRefSlots) (effectPlayerRefs effect) && all (readsOnly defined) refs
       independent = [effect | (defined, effect) <- zip definedBefore effects, not (dependent defined effect)]
    in any (offersForbiddenDraw resolving source controller legal gs) effects
-        || (not (null independent) && all (effectIsImpossible resolving source controller legal gs) independent)
+        || (not (null independent) && all (effectIsImpossible asked resolving source controller legal gs) independent)
 
 -- CR 121.3 and 121.3a: is this instruction a draw by players an effect says
 -- can't draw? The one instruction whose impossibility withholds its whole
@@ -3302,7 +3303,7 @@ clauseIsImpossible resolving source controller legal gs clause =
 -- proves it.
 offersForbiddenDraw :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> GameState -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 offersForbiddenDraw resolving source controller legal gs effect = case effect of
-  Effect.Draw {} -> effectIsImpossible resolving source controller legal gs effect
+  Effect.Draw {} -> effectIsImpossible Feasibility.AsOption resolving source controller legal gs effect
   _ -> False
 
 -- clauseIsImpossible's per-opcode half: the CR 608.2d question one instruction
@@ -3329,8 +3330,8 @@ offersForbiddenDraw resolving source controller legal gs effect = case effect of
 -- An arm answering False is one whose instruction always does something, or
 -- one no printed "may" reaches.
 -- Exhaustive, not over Parun.Engine.Children: a classification, every arm judged by someone reading it.
-effectIsImpossible :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> GameState -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
-effectIsImpossible resolving source controller legal gs effect = case effect of
+effectIsImpossible :: Feasibility.Feasibility -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> GameState -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+effectIsImpossible asked resolving source controller legal gs effect = case effect of
   Effect.DealDamage {} -> False
   Effect.Fight {} -> False
   -- Cloak of Confusion's "you may have it assign no combat damage" and Orcish
@@ -3525,9 +3526,20 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
   -- "may" in data/cards reaching this opcode, Hauntwoods Shrieker's, targets a
   -- face-down permanent, so CR 608.2b drops a face-up one first.
   -- A slot naming nobody is never impossible, the haddock's invariant.
+  --
+  -- CR 701.40g and 701.58g: a permanent that would be revealed and left face
+  -- down can be CHOSEN to turn up (Bustle's "may", which reveals it) but is a
+  -- cost that cannot be paid, Etrata, Deadly Fugitive's ruling of 2024-02-02.
+  -- The scenario etrata-deadly-fugitive-exiles-a-face-down-sorcery-it-cannot-turn-up-and-offers-it-free
+  -- proves it. A face-up permanent is unpayable too: docs/decisions.md,
+  -- "Whether Etrata's ability exiles a creature already turned face up".
   Effect.TurnFaceUp slot ->
     let named = objectRefObjects legal resolving controller source gs (ObjectRef.InSlot slot)
-     in not (null named) && not (any (\target -> Set.member target (GameState.battlefield gs) && maybe False (Facing.isFaceDown . Object.facing) (Game.lookupObject target gs)) named)
+        staysDown target = case asked of
+          Feasibility.AsOption -> False
+          Feasibility.AsCost -> Event.revealsInsteadOfTurningUp target gs
+        turnsUp target = Set.member target (GameState.battlefield gs) && maybe False (Facing.isFaceDown . Object.facing) (Game.lookupObject target gs) && not (staysDown target)
+     in not (null named) && not (any turnsUp named)
   Effect.RemoveFromCombat {} -> False
   Effect.BlockAttacker {} -> False
   Effect.BecomesBlocked {} -> False

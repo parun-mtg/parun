@@ -189,6 +189,7 @@ import qualified Parun.Codec.ClassLevelChangeSpec
 import qualified Parun.Codec.ClassLevelSpec
 import qualified Parun.Codec.ClauseIndexSpec
 import qualified Parun.Codec.ClauseSpec
+import qualified Parun.Codec.CloakSpec
 import qualified Parun.Codec.CoinFaceSpec
 import qualified Parun.Codec.CoinFlipTriggerSpec
 import qualified Parun.Codec.CoinFlippedSpec
@@ -1246,6 +1247,7 @@ spec s registry corpus = do
   Parun.Codec.ClassLevelSpec.spec s
   Parun.Codec.ClauseIndexSpec.spec s
   Parun.Codec.ClauseSpec.spec s
+  Parun.Codec.CloakSpec.spec s
   Parun.Codec.CoinFaceSpec.spec s
   Parun.Codec.CoinFlippedSpec.spec s
   Parun.Codec.CoinReadingSpec.spec s

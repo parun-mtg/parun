@@ -55,6 +55,7 @@ import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Expiry as Expiry.Type
 import qualified Parun.Types.Face as Face
+import qualified Parun.Types.Feasibility as Feasibility
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
@@ -433,7 +434,7 @@ resolveSpellWith runSubgame oid = do
                               Nothing -> pure False
                               Just sibling -> do
                                 held <- gateHolds effectController oid oid (Modal.instanceView modeOwnedSlots mi (Mode.targetSlots mode) (Binding.targetsOf gateBindings)) gateBindings sibling
-                                State.gets (\gsNow -> held && not (Common.clauseIsImpossible oid oid effectController legalNowForMay gsNow sibling))
+                                State.gets (\gsNow -> held && not (Common.clauseIsImpossible Feasibility.AsOption oid oid effectController legalNowForMay gsNow sibling))
                         -- CR 701.55d's exception to rule 608.2e, ahead of the
                         -- ordinary either-or: a villainous pair is chosen AND
                         -- performed for one player before the next player is
@@ -932,7 +933,7 @@ resolveChosenModes runSubgame stackId srcId modes = do
                               Nothing -> pure False
                               Just sibling -> do
                                 held <- gateHolds effectController stackId srcId (instanceView (Binding.targetsOf gateBindings)) gateBindings sibling
-                                State.gets (\gsNow -> held && not (Common.clauseIsImpossible stackId srcId effectController legalNowForMay gsNow sibling))
+                                State.gets (\gsNow -> held && not (Common.clauseIsImpossible Feasibility.AsOption stackId srcId effectController legalNowForMay gsNow sibling))
                         -- CR 701.55d's exception to rule 608.2e, ahead of the
                         -- ordinary either-or and off the same helper the spell
                         -- loop uses: the pair is chosen AND performed one player
@@ -1402,7 +1403,8 @@ villainousPass resolving source controller idx legal orElse limbs performLimb ac
 -- on" proves it.
 exercises :: Bool -> ObjectId -> ObjectId -> PlayerId -> ModeIndex -> ClauseIndex -> Set SlotName -> Map.Map SlotName (Set Recipient) -> Maybe (Set PlayerId) -> Set PlayerId -> Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game Bool
 exercises couldnt resolving source controller idx cIdx bound legal announced committed clause = do
-  impossible <- State.gets (\gs -> Common.clauseIsImpossible resolving source controller legal gs clause)
+  let asked = if couldnt then Feasibility.AsCost else Feasibility.AsOption
+  impossible <- State.gets (\gs -> Common.clauseIsImpossible asked resolving source controller legal gs clause)
   case Clause.optionality clause of
     Optionality.Mandatory -> pure (not (couldnt && impossible))
     Optionality.Optional asker
@@ -1414,7 +1416,7 @@ exercises couldnt resolving source controller idx cIdx bound legal announced com
               -- committed seat has already answered.
               able pid =
                 Set.member pid committed
-                  || not (Common.clauseIsImpossible resolving source controller (Map.insert Binding.mayPlayers (Set.singleton (Recipient.ToPlayer pid)) legal) gs clause)
+                  || not (Common.clauseIsImpossible asked resolving source controller (Map.insert Binding.mayPlayers (Set.singleton (Recipient.ToPlayer pid)) legal) gs clause)
           -- CR 101.4b: each seat is told the answers the seats before it gave.
           answers <-
             Monad.foldM

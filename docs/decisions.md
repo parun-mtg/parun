@@ -1971,3 +1971,21 @@ Entries are ordered by the first rule each cites.
   `firebender-ascension-does-not-count-a-whenever-you-attack-ability` and
   `firebender-ascension-does-not-count-an-attacks-and-isnt-blocked-ability`.
 - **Issue**: #7226.
+
+## Whether Etrata's ability exiles a creature already turned face up
+
+- **Question**: Etrata, Deadly Fugitive grants "Turn this creature face up. If
+  you can't, exile it, then you may cast the exiled card without paying its
+  mana cost." The creature is turned face up in response, by CR 701.58b's
+  special action. Is turning it face up now something its controller can't do?
+- **Rules**: CR 118.12, 118.3, 708.2b; CR of 2026-11-06.
+- **Decision**: Yes. Only a face-down permanent can be turned face up, so the
+  cost can't be paid and the creature is exiled.
+- **Rejected**: Nothing happens, the creature being face up as the ability
+  wanted. CR 118.12 asks whether the action was performed, not whether its
+  result already holds, and CR 708.2b says the same of turning a face-down
+  permanent face down.
+- **Site**: `Parun.Engine.Resolve.Common.effectIsImpossible`'s
+  `Effect.TurnFaceUp` arm, proved by the scenario
+  `etrata-deadly-fugitive-exiles-a-creature-turned-face-up-in-response`.
+- **Issue**: #3855.

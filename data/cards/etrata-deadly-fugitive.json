@@ -1,0 +1,220 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Deathtouch"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Etrata, Deadly Fugitive",
+      "oracleText": "Deathtouch\nFace-down creatures you control have \"{2}{U}{B}: Turn this creature face up. If you can't, exile it, then you may cast the exiled card without paying its mana cost.\"\nWhenever an Assassin you control deals combat damage to an opponent, cloak the top card of that player's library.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "IsFaceDown"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Activated",
+                "value": {
+                  "cost": {
+                    "mana": [
+                      {
+                        "type": "Generic",
+                        "value": 2
+                      },
+                      {
+                        "type": "OfType",
+                        "value": {
+                          "type": "Colored",
+                          "value": "Blue"
+                        }
+                      },
+                      {
+                        "type": "OfType",
+                        "value": {
+                          "type": "Colored",
+                          "value": "Black"
+                        }
+                      }
+                    ]
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "TurnFaceUp",
+                                "value": "self"
+                              }
+                            ]
+                          },
+                          {
+                            "effects": [
+                              {
+                                "type": "MoveToZone",
+                                "value": {
+                                  "ref": {
+                                    "type": "InSlot",
+                                    "value": "self"
+                                  },
+                                  "slot": "exiled",
+                                  "zone": "Exile"
+                                }
+                              },
+                              {
+                                "type": "OfferCast",
+                                "value": {
+                                  "offer": {
+                                    "withoutPayingManaCost": true
+                                  },
+                                  "ref": {
+                                    "type": "InSlot",
+                                    "value": "exiled"
+                                  }
+                                }
+                              }
+                            ],
+                            "ifTaken": {
+                              "type": "Couldnt",
+                              "value": [
+                                0
+                              ]
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "DealsDamage",
+            "value": {
+              "actor": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasSubtype",
+                      "value": "Assassin"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              },
+              "kind": "Combat",
+              "recipients": [
+                {
+                  "type": "Player",
+                  "value": "Opponent"
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Cloak",
+                        "value": {
+                          "library": {
+                            "type": "InSlot",
+                            "value": "thatPlayer"
+                          },
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Assassin",
+          "Vampire"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

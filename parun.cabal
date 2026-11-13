@@ -437,6 +437,8 @@ library codec
     Parun.Codec.ClauseIndex
     Parun.Codec.ClauseIndexSpec
     Parun.Codec.ClauseSpec
+    Parun.Codec.Cloak
+    Parun.Codec.CloakSpec
     Parun.Codec.CoinFace
     Parun.Codec.CoinFaceSpec
     Parun.Codec.CoinFlipped
@@ -2843,6 +2845,7 @@ library types
     Parun.Types.ClassLevelChange
     Parun.Types.Clause
     Parun.Types.ClauseIndex
+    Parun.Types.Cloak
     Parun.Types.CoinFace
     Parun.Types.CoinFlipped
     Parun.Types.CoinFlipTrigger
@@ -3097,6 +3100,7 @@ library types
     Parun.Types.FaceDownReason
     Parun.Types.FaceDownState
     Parun.Types.Facing
+    Parun.Types.Feasibility
     Parun.Types.Fight
     Parun.Types.Filter
     Parun.Types.FlipCoin
