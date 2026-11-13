@@ -789,6 +789,8 @@ hasChosenCardTypeTag = Text.pack "HasChosenCardType"
 -- Persecute): the filters its mode reads AFTER the choice (CR 608.2c's "in the
 -- order written") read it, though its target slots, chosen before it resolves
 -- (CR 601.2c), still cannot, nor can a filter ahead of it or in another mode.
+-- An Unframed position after the choice reads it too, as an ability's does
+-- below: a Draw quantity's Count (Harmonized Crescendo's scenario).
 --
 -- So is a spell whose additional cost makes the choice (Behold.chosenType,
 -- Celestial Reunion): the cost's own criterion reads it, and so does every
@@ -817,7 +819,11 @@ chosenValueCounts admitted answers tag card =
       -- resolution, so the choice answers it only where it is baked
       -- (grantedChosenColors).
       inAbility = total (\framing -> not (admitted framing) && framing /= KeywordFramed) (concatMap (afterChoice answers) abilityModals)
-   in (total admitted (surveyedFilters card) - inSpell + inAbility, total (not . admitted) (surveyedFilters card) + inSpell - inAbility)
+      -- Unframed alone, where an ability admits more: a spell that has
+      -- resolved leaves no source for a stored position to read later.
+      unframedInSpell = total (\framing -> not (admitted framing) && framing == Unframed) (afterChoice answers (Face.spell (surveyedFace card)))
+      answerable = inAbility + unframedInSpell
+   in (total admitted (surveyedFilters card) - inSpell + answerable, total (not . admitted) (surveyedFilters card) + inSpell - answerable)
 
 -- The Behold components of a face's additional costs, mandatory and optional.
 castBeholds :: Face.Face Card.Type.Card -> [Behold.Behold Keyword.Keyword]
@@ -2187,6 +2193,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Enchanted River's Grasp", 2), -- its entering tap and counter removal
         ("Super Speed", 1), -- a pump in the entering trigger, as Abduction's untap
         ("Uneasy Alliance", 1), -- an activated exile of it, the Aura sacrificed as Carapace's is
+        ("Spiral into Solitude", 1), -- Uneasy Alliance's wording
         ("Gilt-Leaf's Embrace", 2), -- two keywords in the entering trigger, as Super Speed's pump
         ("Aquitect's Defenses", 1) -- hexproof in the entering trigger, as Super Speed's first strike
       ]
@@ -3668,6 +3675,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Brass Herald", hasChosenSubtypeCounts, "an affected set and a resolution's own filter", (2, 0)),
         ("Orcrist, Goblin-cleaver", hasChosenSubtypeCounts, "a triggered ability's Create quantity after its own choice", (1, 0)),
         ("Persecute", hasChosenColorCounts, "a spell's own hand sweep after its own choice", (1, 0)),
+        ("Harmonized Crescendo", hasChosenSubtypeCounts, "a spell's Draw quantity after its own choice", (1, 0)),
         ("Celestial Reunion", hasChosenSubtypeCounts, "a spell's behold cost and its resolution after the cost's own choice", (3, 0)),
         ("Story Circle", hasChosenColorCounts, "an activated ability's chosen damage source", (1, 0)),
         ("Avacyn, Guardian Angel", hasChosenColorCounts, "two activated abilities' damage shields", (2, 0))
@@ -3713,6 +3721,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
           [ ("a spell's target slot", base {Face.spell = spellOf [] (aimed f)}),
             ("a spell's own filter", base {Face.spell = spellOf [destroying f] Map.empty}),
             ("a spell's own filter before its own choice", base {Face.spell = spellOf [destroying f, Effect.ChooseQuality quality] Map.empty}),
+            ("a spell's draw count with no choice", base {Face.spell = spellOf [drawing f] Map.empty}),
+            ("a spell's draw count before its own choice", base {Face.spell = spellOf [drawing f, Effect.ChooseQuality quality] Map.empty}),
             ( "a spell's own filter in another mode than its choice",
               base {Face.spell = (spellOf [Effect.ChooseQuality quality] Map.empty) {Modal.modes = Modal.modes (spellOf [Effect.ChooseQuality quality] Map.empty) <> Modal.modes (spellOf [destroying f] Map.empty)}}
             )
@@ -3720,6 +3730,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         accepted quality f =
           [ ("a static ability's affected set", affecting f),
             ("a spell's own filter after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality quality, destroying f] Map.empty}),
+            ("a spell's draw count after its own choice", base {Face.spell = spellOf [Effect.ChooseQuality quality, drawing f] Map.empty}),
             ("an activated ability's target slot", withAbility (\a -> a {ActivatedAbility.modal = spellOf [] (aimed f)})),
             ("an activated ability's sacrifice cost", withAbility (\a -> a {ActivatedAbility.cost = (ActivatedAbility.cost a) {Cost.Type.components = [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) f)]}})),
             ("CR 603.6a's trigger condition", base {Face.triggeredAbilities = [oneEffectTrigger (TriggerCondition.Enters (EntersTrigger.matching f)) draw]}),
@@ -3729,6 +3740,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             )
           ]
         draw = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing)
+        drawing f = Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Count (Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) f Aggregation.Members)) Nothing)
     Monad.forM_
       [ (Filter.Type.HasChosenColor, ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1), hasChosenColorCounts, hasChosenColorTag),
         (Filter.Type.HasChosenSubtype, ChosenQuality.Subtype SubtypeFamily.BasicLandType Nothing, hasChosenSubtypeCounts, hasChosenSubtypeTag),
