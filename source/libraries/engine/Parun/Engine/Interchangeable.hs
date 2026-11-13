@@ -167,7 +167,7 @@ objects pcs gs a b =
       -- land played this turn cycle is the older one's twin. A new reader owes a
       -- line here. Compared where the projection is missing, which cannot make
       -- a player's choice.
-      sameClock = maybe True (any ((== Just KeywordFamily.Echo) . Keyword.Engine.familyOf) . Map.keys . PC.keywords) (Map.lookup a pcs)
+      sameClock = maybe True (any ((== Just KeywordFamily.Echo) . Keyword.Engine.familyOf) . Keyword.Engine.heldBy) (Map.lookup a pcs)
       withoutSerials obj = obj {Object.identity = fmap unserial (Object.identity obj), Object.source = unserialSource (Object.source obj)}
       grants = Projection.View.controlGrants gs
       viewOf oid = Projection.viewOfObjectGiven pcs grants oid gs

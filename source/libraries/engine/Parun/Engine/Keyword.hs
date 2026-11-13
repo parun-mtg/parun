@@ -163,6 +163,7 @@ import qualified Parun.Types.KeywordTally as KeywordTally
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
+import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeLoss as LifeLoss
@@ -2559,6 +2560,44 @@ encoreSacrifice = atNextEndStep (Effect.Sacrifice SacrificeEffect.MkSacrificeEff
 -- triggeredAbilitiesOf's reason.
 battlefieldAbilitiesOf :: Map Keyword Natural -> [ActivatedAbility Card (GrantedAbility.GrantedAbility Card)]
 battlefieldAbilitiesOf counts = concatMap (uncurry battlefieldAbilitiesFor) (Map.toAscList counts)
+
+-- | CR 702.1d: the keywords an object has, whole (PC.keywords) or through a
+-- lending card's abilities alone (PC.lentKeywords). The membership a Filter
+-- asks; a keyword's own static ability reads PC.keywords, which a lent one is
+-- not in. data/scenarios/koh-the-face-stealer-with-borrowed-flanking-is-a-creature-with-flanking.json
+-- proves the second half.
+heldBy :: PC.ProjectedCharacteristics -> Set Keyword
+heldBy pc = Map.keysSet (PC.keywords pc) <> Set.fromList (fmap LentKeyword.keyword (PC.lentKeywords pc))
+
+-- | CR 702.1: whether a card lending its activated abilities, and its
+-- triggered ones where `triggered`, lends an ability of this keyword. One
+-- that functions only in a hand or a graveyard counts (CR 113.6), though
+-- nothing is minted for it. Unproven: no Filter in data/cards/ names such a
+-- keyword (`jq` over HasKeyword and HasKeywordFamily, 2026-11-13); "creature
+-- with cycling" would.
+lends :: Bool -> Keyword -> Natural -> Bool
+lends triggered keyword count =
+  let expansion = expansionOf keyword
+   in not (null (KeywordExpansion.onBattlefield expansion count))
+        || not (null (KeywordExpansion.fromHand expansion))
+        || not (null (KeywordExpansion.fromGraveyard expansion))
+        || triggered && not (null (KeywordExpansion.triggered expansion count))
+
+-- | CR 702.1 / 607.5: the triggered abilities of the keywords a card lends,
+-- each named for that card as its printed ones are (Binding.acquiredFrom).
+lentTriggeredAbilitiesOf :: [LentKeyword.LentKeyword] -> [TriggeredAbility Card (GrantedAbility.GrantedAbility Card)]
+lentTriggeredAbilitiesOf = concatMap $ \lent ->
+  if LentKeyword.triggered lent
+    then fmap (\t -> t {TriggeredAbility.name = Just (maybe (LentKeyword.lender lent) (Binding.qualified (LentKeyword.lender lent)) (TriggeredAbility.name t))}) (abilitiesFor (LentKeyword.keyword lent) (LentKeyword.instances lent))
+    else []
+
+-- | CR 702.1 / 602.5c: the battlefield activated abilities of the keywords a
+-- card lends, named likewise and under the lending effect's restrictions.
+lentBattlefieldAbilitiesOf :: [LentKeyword.LentKeyword] -> [ActivatedAbility Card (GrantedAbility.GrantedAbility Card)]
+lentBattlefieldAbilitiesOf = concatMap $ \lent ->
+  fmap
+    (\a -> a {ActivatedAbility.name = Just (maybe (LentKeyword.lender lent) (Binding.qualified (LentKeyword.lender lent)) (ActivatedAbility.name a)), ActivatedAbility.restrictions = ActivatedAbility.restrictions a <> LentKeyword.restrictions lent})
+    (battlefieldAbilitiesFor (LentKeyword.keyword lent) (LentKeyword.instances lent))
 
 -- CR 602.1: every activated ability an object HAS, the one roster every view
 -- builder reads. `abilities` is its own list beside rule 702's battlefield mint,
