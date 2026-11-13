@@ -2,6 +2,7 @@ module Parun.Test where
 
 import qualified Control.Monad.IO.Class as MonadIO
 import qualified Control.Monad.Trans.Writer as Writer
+import qualified Data.Functor.Identity as Identity
 import qualified Data.Text as Text
 import qualified Parun.AbilitySlotLintSpec
 import qualified Parun.ActivateSpec
@@ -1061,17 +1062,20 @@ import qualified Parun.ZoneTriggerSpec
 main :: IO ()
 main = Runner.main $ do
   root <- Registry.defaultRoot
-  registry <- Registry.defaultRegistry
   corpus <- Registry.loadRoot root
-  Writer.execWriterT $ spec Runner.runner registry corpus
+  reference <- Registry.defaultRegistry corpus
+  Writer.execWriterT $ spec Runner.runner reference corpus
 
 -- Specs that reach for card data take a registry over the same monad they
 -- assert in, and lints of the corpus parun ships take it loaded: every file's
 -- path and parse, read once and parsed only as a lint reaches it, so a run
 -- whose pattern skips the lints pays for the reads alone. The rest need none at
--- all.
-spec :: (MonadIO.MonadIO n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Card)] -> n ()
-spec s registry corpus = do
+-- all. One registry serves both monads, so every spec shares its index of the
+-- whole corpus.
+spec :: (MonadIO.MonadIO n) => Spec.Spec IO n -> Registry.Registry Identity.Identity -> [(FilePath, Either Text.Text Card.Card)] -> n ()
+spec s reference corpus = do
+  let registry :: Registry.Registry IO
+      registry = Registry.hoist (pure . Identity.runIdentity) reference
   Parun.AbilitySlotLintSpec.spec s registry corpus
   Parun.ActivateSpec.spec s registry
   Parun.ActivationProhibitionSpec.spec s registry
@@ -2110,7 +2114,7 @@ spec s registry corpus = do
   Parun.RecordSpec.spec s registry
   Parun.MatchSpec.spec s registry
   Parun.DecksSpec.spec s registry
-  Parun.LegalitySpec.spec s registry
+  Parun.LegalitySpec.spec s registry reference
   Parun.ReplySpec.spec s registry
   Parun.ScenarioSpec.corpusSpec s registry
   Parun.ScenarioSpec.loadSpec s

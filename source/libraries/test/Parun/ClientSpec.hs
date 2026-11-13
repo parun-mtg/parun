@@ -177,7 +177,8 @@ spec s registry = Spec.describe s "Client" $ do
 
   Spec.it s "a change of seat waits for the seat leaving to finish reading, clears the screen, and waits before showing the next seat" $ do
     matchup <- BotSpec.bears s registry
-    let people = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) (screen 300 plays) (const (Right Nothing))), (S.bob, Game.human (S.fixtureRegistry []) (screen 300 plays) (const (Right Nothing)))]
+    -- Sixty lines a seat reach turn 2, each seat handing off as the active player.
+    let people = Map.fromList [(S.alice, Game.human (S.fixtureRegistry []) (screen 60 plays) (const (Right Nothing))), (S.bob, Game.human (S.fixtureRegistry []) (screen 60 plays) (const (Right Nothing)))]
         shown = reverse (written (State.execState (Game.run (S.fixtureRegistry []) Nothing [] people (const (pure ())) Hotseat.fresh (S.seeded 1) Map.empty matchup) blank))
         handOffs = [i | (i, l) <- zip [0 :: Int ..] shown, Text.isPrefixOf (Text.pack "Pass to ") l]
         at i = Maybe.listToMaybe (drop i shown)

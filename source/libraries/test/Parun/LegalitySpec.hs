@@ -4,6 +4,7 @@
 module Parun.LegalitySpec where
 
 import qualified Data.ByteString as ByteString
+import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -129,8 +130,8 @@ otherTen = fmap (\name -> (name, 1)) ["Inys Haen", "Prime Minister's Cabinet Roo
 copies :: String -> Natural.Natural -> Violation.Violation
 copies name count = Violation.TooManyCopies Nothing (CardName.MkCardName (Text.pack name)) count 4
 
-spec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> n ()
-spec s registry = Spec.describe s "Parun.Legality" $ do
+spec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> Registry.Registry Identity.Identity -> n ()
+spec s registry reference = Spec.describe s "Parun.Legality" $ do
   Spec.it s "CR 100.2a: five Grizzly Bears in a constructed deck are one too many" $ do
     found <- violations s registry RuleFamily.Constructed [("Grizzly Bears", 5), ("Mountain", 55)] []
     Spec.assertEqWith s "violations" found [copies "Grizzly Bears" 5]
@@ -622,31 +623,31 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   Spec.it s "parun play --format refuses a name with no format file"
     . S.withCorpusDir "legality-play-nonesuch" [("legal.txt", Text.pack "4 Grizzly Bears\n56 Mountain\n")]
     $ \dir -> do
-      result <- started (Just (Text.pack "nonesuch")) [dir <> "/legal.txt", dir <> "/legal.txt"]
+      result <- started reference (Just (Text.pack "nonesuch")) [dir <> "/legal.txt", dir <> "/legal.txt"]
       Spec.assertEqWith s "refused" result (Left (fmap Text.pack [dir <> "/legal.txt: not a format: nonesuch", dir <> "/legal.txt: not a format: nonesuch"]))
 
   Spec.it s "parun play --format constructed refuses five Grizzly Bears before the game starts"
     . S.withCorpusDir "legality-play" [("bears.txt", Text.pack "5 Grizzly Bears\n55 Mountain\n"), ("legal.txt", Text.pack "4 Grizzly Bears\n56 Mountain\n")]
     $ \dir -> do
-      result <- started (Just (Text.pack "constructed")) [dir <> "/bears.txt", dir <> "/legal.txt"]
+      result <- started reference (Just (Text.pack "constructed")) [dir <> "/bears.txt", dir <> "/legal.txt"]
       Spec.assertEqWith s "refused" result (Left (fmap Text.pack [dir <> "/bears.txt: 5 copies of Grizzly Bears, more than 4"]))
 
   Spec.it s "parun play --format vintage refuses two Black Lotus before the game starts"
     . S.withCorpusDir "legality-play-vintage" [("lotus.txt", Text.pack "1 Black Lotus\n59 Mountain\nSideboard\n1 Black Lotus\n"), ("legal.txt", Text.pack "1 Black Lotus\n59 Mountain\n")]
     $ \dir -> do
-      result <- started (Just (Text.pack "vintage")) [dir <> "/lotus.txt", dir <> "/legal.txt"]
+      result <- started reference (Just (Text.pack "vintage")) [dir <> "/lotus.txt", dir <> "/legal.txt"]
       Spec.assertEqWith s "refused" result (Left (fmap Text.pack [dir <> "/lotus.txt: 2 copies of Black Lotus, more than 1"]))
 
   Spec.it s "parun play with no --format refuses a Format: limited list of 39 cards"
     . S.withCorpusDir "legality-play-header" [("small.txt", Text.pack "Format: limited\n4 Grizzly Bears\n35 Mountain\n"), ("legal.txt", Text.pack "4 Grizzly Bears\n56 Mountain\n")]
     $ \dir -> do
-      result <- started Nothing [dir <> "/small.txt", dir <> "/legal.txt"]
+      result <- started reference Nothing [dir <> "/small.txt", dir <> "/legal.txt"]
       Spec.assertEqWith s "refused" result (Left (fmap Text.pack [dir <> "/small.txt: 39 cards in the deck, fewer than 40"]))
 
   Spec.it s "parun play --format vintage refuses a Format: modern list"
     . S.withCorpusDir "legality-play-disagrees" [("modern.txt", Text.pack "Format: modern\n60 Mountain\n"), ("legal.txt", Text.pack "60 Mountain\n")]
     $ \dir -> do
-      result <- started (Just (Text.pack "vintage")) [dir <> "/modern.txt", dir <> "/legal.txt"]
+      result <- started reference (Just (Text.pack "vintage")) [dir <> "/modern.txt", dir <> "/legal.txt"]
       Spec.assertEqWith s "refused" result (Left (fmap Text.pack [dir <> "/modern.txt: line 1: the list names the format modern, not vintage"]))
 
   -- The format a game starts under when no --format names one. Neither
@@ -655,25 +656,25 @@ spec s registry = Spec.describe s "Parun.Legality" $ do
   Spec.it s "CR 100.2a parun play with no --format settles on the format both headers name"
     . S.withCorpusDir "legality-play-header-game" [("one.txt", yorionList (Just "constructed")), ("two.txt", yorionList (Just "constructed"))]
     $ \dir -> do
-      format <- started Nothing [dir <> "/one.txt", dir <> "/two.txt"]
+      format <- started reference Nothing [dir <> "/one.txt", dir <> "/two.txt"]
       Spec.assertEqWith s "the headers' format" format (Right (Just (Format.MkFormat RuleFamily.Constructed Nothing Set.empty)))
 
   Spec.it s "CR 100.2a parun match settles on the format one header names"
     . S.withCorpusDir "legality-match-header-game" [("one.txt", yorionList Nothing), ("two.txt", yorionList (Just "constructed"))]
     $ \dir -> do
-      format <- started Nothing [dir <> "/one.txt", dir <> "/two.txt"]
+      format <- started reference Nothing [dir <> "/one.txt", dir <> "/two.txt"]
       Spec.assertEqWith s "the header's format" format (Right (Just (Format.MkFormat RuleFamily.Constructed Nothing Set.empty)))
 
   Spec.it s "parun play refuses lists whose headers name different formats"
     . S.withCorpusDir "legality-play-headers-disagree" [("constructed.txt", Text.pack "Format: constructed\n60 Mountain\n"), ("limited.txt", Text.pack "Format: limited\n60 Mountain\n")]
     $ \dir -> do
-      result <- started Nothing [dir <> "/constructed.txt", dir <> "/limited.txt"]
+      result <- started reference Nothing [dir <> "/constructed.txt", dir <> "/limited.txt"]
       Spec.assertEqWith s "refused" result (Left (fmap Text.pack [dir <> "/constructed.txt names constructed, " <> dir <> "/limited.txt names limited; name one with --format"]))
 
   Spec.it s "CR 100.2b parun play checks a list with no header against the format the other names"
     . S.withCorpusDir "legality-play-unheaded" [("small.txt", Text.pack "4 Grizzly Bears\n35 Mountain\n"), ("limited.txt", Text.pack "Format: limited\n4 Grizzly Bears\n36 Mountain\n")]
     $ \dir -> do
-      result <- started Nothing [dir <> "/small.txt", dir <> "/limited.txt"]
+      result <- started reference Nothing [dir <> "/small.txt", dir <> "/limited.txt"]
       Spec.assertEqWith s "refused" result (Left (fmap Text.pack [dir <> "/small.txt: 39 cards in the deck, fewer than 40"]))
 
 -- Eighty cards, twenty over constructed's sixty, with Yorion, Sky Nomad as
@@ -683,9 +684,8 @@ yorionList format = Text.pack (foldMap (\name -> "Format: " <> name <> "\n") for
 
 -- The format `parun play` and `parun match` start a game between these lists
 -- under, the one `asked` for if any, or why they refuse to (Command.load,
--- Command.settle).
-started :: Maybe Text.Text -> [FilePath] -> IO (Either [Text.Text] (Maybe Format.Format))
-started asked paths = do
-  registry <- Registry.defaultRegistry
-  lists <- traverse (Command.load registry) paths
+-- Command.settle), the cards named looked up in `reference`.
+started :: Registry.Registry Identity.Identity -> Maybe Text.Text -> [FilePath] -> IO (Either [Text.Text] (Maybe Format.Format))
+started reference asked paths = do
+  lists <- traverse (Command.load reference) paths
   either (pure . Left) (Command.settle asked . zip paths) (sequence lists)

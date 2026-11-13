@@ -90,7 +90,7 @@ main = do
 -- reported too.
 deck :: Maybe Text.Text -> Maybe FilePath -> FilePath -> IO ()
 deck format poolPath path = do
-  registry <- Registry.defaultRegistry
+  registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
   listed <- readDeckList registry path
   pool <- traverse (readDeckList registry) poolPath
   let poolProblems = [Text.pack (file <> ": ") <> DeckList.explain problem | (file, held) <- Maybe.maybeToList ((,) <$> poolPath <*> pool), problem <- DeckList.problems held]
@@ -367,7 +367,7 @@ scenarioSchema =
 -- Exits 1 if any did not decode or did not run clean.
 scenario :: [FilePath] -> IO ()
 scenario paths = do
-  registry <- Registry.defaultRegistry
+  registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
   outcomes <- mapM (runOne registry) paths
   Monad.unless (and outcomes) Exit.exitFailure
 

@@ -68,4 +68,9 @@ checkFile s root schema path = do
               -- pretty-printed (`jq -S .`) while Common.render emits compact output, so
               -- this can never quietly regress into a byte comparison: every file would
               -- fail at once.
-              Spec.assertEqWith s path (Common.sortKeys (Codec.encode Printing.codec p)) (Common.sortKeys value)
+              let encoded = Codec.encode Printing.codec p
+              Spec.assertEqWith s path (Common.sortKeys encoded) (Common.sortKeys value)
+              -- And the other way: the printing's encoding decodes back to it,
+              -- straight and through the text it renders to.
+              Spec.assertEqWith s (path <> ": round trip") (Codec.decode Printing.codec encoded) (Right p)
+              Spec.assertEqWith s (path <> ": round trip through text") (Common.parse (Common.render encoded) >>= Codec.decode Printing.codec) (Right p)
