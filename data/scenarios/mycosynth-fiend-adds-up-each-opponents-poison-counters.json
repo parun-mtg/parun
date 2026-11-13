@@ -1,0 +1,47 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mycosynth Fiend",
+            "label": "fiend"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 1
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 2
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Mycosynth Fiend adds up each opponent's poison counters",
+  "final": [
+    {
+      "PowerToughness": {
+        "object": "$fiend",
+        "power": 5,
+        "toughness": 5
+      }
+    }
+  ],
+  "note": "A three-player free-for-all. Bob has one poison counter and carol two, so alice's Mycosynth Fiend gets +3/+3 and is a 5/5: the count is a sum over her opponents, not the most any one has.",
+  "timeline": []
+}

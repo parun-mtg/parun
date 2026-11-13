@@ -1902,6 +1902,7 @@ countOf viewOf context gs =
     -- noSource, which names nothing and so binds nothing.
     (\mOid view -> Quantity.evaluateAgainst viewOf context gs (Maybe.fromMaybe noSource mOid) mOid (Just view))
     Quantity.talliesWhatHappened
+    Quantity.candidateCounters
     context
     gs
 

@@ -83,6 +83,7 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PastActivation as PastActivation
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.ProjectedCharacteristics as PC
@@ -122,14 +123,20 @@ type QuantityOf quantity = Maybe ObjectId -> Filter.View -> quantity -> Maybe In
 -- for its reason; Parun.Engine.Quantity.talliesWhatHappened is the classifier.
 type TalliesWhatHappened quantity = quantity -> Bool
 
+-- CR 810.10a: the kind of player counter a per-member quantity reads off the
+-- fold's candidate and nothing else, so that a sum over players can count a
+-- team's shared counters once. Injected beside QuantityOf, for its reason;
+-- Parun.Engine.Quantity.candidateCounters is the classifier.
+type CandidateCounters quantity = quantity -> Maybe PlayerCounterKind.PlayerCounterKind
+
 -- Nothing when the count cannot be determined -- an unresolvable PlayerRef, a
 -- maximum over a set that is empty or holds a member with no value
 -- (Aggregation.Greatest), or a sum over a set holding one (Aggregation.Total).
 -- It propagates, which is what every caller but one wants: CR 208.2a's substituted 0 is a different rule, scoped to a
 -- characteristic-defining ability and applied by
 -- Parun.Engine.Quantity.determine.
-evaluate :: ViewOf -> QuantityOf quantity -> TalliesWhatHappened quantity -> Filter.Context -> GameState -> Count.Type.Count quantity -> Maybe Integer
-evaluate viewOf quantityOf talliesWhatHappened context gs count =
+evaluate :: ViewOf -> QuantityOf quantity -> TalliesWhatHappened quantity -> CandidateCounters quantity -> Filter.Context -> GameState -> Count.Type.Count quantity -> Maybe Integer
+evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs count =
   let predicate = Count.Type.filter count
       aggregation = Count.Type.aggregation count
    in case Count.Type.scope count of
@@ -212,8 +219,25 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
           -- count over players -- Quantity.PlayersDealtDamage is how a card asks
           -- that (#1577). The target road, which Parun.DamageSpec's Needle Drop case
           -- covers, is what pays for the builder.
-          let kept = fmap ((,) Nothing) (Maybe.mapMaybe (\pid -> keep (bakePerspective viewOf context gs pid predicate) context (Just (playerView gs pid))) pids)
-          pure (aggregate quantityOf aggregation kept)
+          let matching = Maybe.mapMaybe (\pid -> fmap ((,) pid) (keep (bakePerspective viewOf context gs pid predicate) context (Just (playerView gs pid)))) pids
+              -- CR 810.10a: a sum of the counters "your opponents have" counts what
+              -- opposing TEAMS have, and every member holds the team's count
+              -- (Game.counterSharers), so one member per sharing team is summed.
+              -- After the predicate, since a filter may keep one teammate only.
+              -- A maximum is the same either way.
+              -- data/scenarios/team/cr-810-10a-mycosynth-fiend-counts-the-opposing-team-s-poison-once.json
+              -- proves it.
+              shared = case aggregation of
+                Aggregation.Total quantity -> candidateCounters quantity
+                Aggregation.Greatest _ -> Nothing
+                Aggregation.Members -> Nothing
+                Aggregation.Distinct _ -> Nothing
+                Aggregation.MostSharing _ -> Nothing
+                Aggregation.DistinctNames -> Nothing
+              summed = case shared of
+                Nothing -> matching
+                Just kind -> List.foldl' (\chosen member -> if any (\earlier -> List.elem (fst member) (Game.counterSharers kind (fst earlier) gs)) chosen then chosen else chosen <> [member]) [] matching
+          pure (aggregate quantityOf aggregation (fmap ((,) Nothing . snd) summed))
         -- CR 400.7j: the objects one of the surrounding announcement's slots names,
         -- wherever they wound up. The one scope whose candidates come from the
         -- resolution's bindings rather than from the board, which is what lets it

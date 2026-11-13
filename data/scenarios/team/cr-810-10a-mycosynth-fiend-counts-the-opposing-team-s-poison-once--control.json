@@ -1,0 +1,54 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mycosynth Fiend",
+            "label": "fiend"
+          }
+        ],
+        "name": "alice",
+        "team": 1
+      },
+      {
+        "name": "bob",
+        "team": 1
+      },
+      {
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 3
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      },
+      {
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 3
+          }
+        ],
+        "name": "dave",
+        "team": 2
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 810.10a control: without Two-Headed Giant Mycosynth Fiend counts each opponent's poison",
+  "final": [
+    {
+      "PowerToughness": {
+        "object": "$fiend",
+        "power": 8,
+        "toughness": 8
+      }
+    }
+  ],
+  "note": "The same teams without the Two-Headed Giant variant: poison is not shared, so carol's three counters and dave's three are six and alice's Mycosynth Fiend is an 8/8.",
+  "timeline": []
+}
