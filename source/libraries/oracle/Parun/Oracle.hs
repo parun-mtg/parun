@@ -136,7 +136,9 @@ faceAbilities face =
       host = do
         word <- Maybe.maybeToList attached
         slot' <- Face.enchant face <> [TargetSlot.required Pool.Creatures Nothing | null (Face.enchant face)]
-        (one, _) <- Target.described context slot'
+        -- Free: a later reference leaves out what the enchant ability asks of
+        -- the creature's controller (Aquitect's Defenses).
+        (one, _) <- Target.described context slot' <> Target.described context slot' {TargetSlot.filter = Nothing}
         -- Free: a later reference may be "that creature" (Unstable Mutation).
         [word <> Text.pack " " <> one, Text.pack "that " <> one]
       context = contextOf self host

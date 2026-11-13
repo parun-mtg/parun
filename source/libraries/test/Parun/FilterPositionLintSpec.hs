@@ -2152,7 +2152,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Enchanted River's Grasp", 2), -- its entering tap and counter removal
         ("Super Speed", 1), -- a pump in the entering trigger, as Abduction's untap
         ("Uneasy Alliance", 1), -- an activated exile of it, the Aura sacrificed as Carapace's is
-        ("Gilt-Leaf's Embrace", 2) -- two keywords in the entering trigger, as Super Speed's pump
+        ("Gilt-Leaf's Embrace", 2), -- two keywords in the entering trigger, as Super Speed's pump
+        ("Aquitect's Defenses", 1) -- hexproof in the entering trigger, as Super Speed's first strike
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the same atom planted in a SPELL's target slot -- the position a
