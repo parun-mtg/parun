@@ -1,0 +1,131 @@
+{
+  "description": "Crescent Island Temple makes a Monk with prowess for each Shrine you control as it enters",
+  "note": "Alice controls Northern Air Temple, so with the Temple itself she controls two Shrines and gets two 1/1 Monks with prowess; bob's Northern Air Temple does not count.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "CCCR",
+        "battlefield": [
+          {
+            "card": "Northern Air Temple",
+            "label": "air",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Crescent Island Temple",
+            "label": "temple"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Northern Air Temple",
+            "label": "bair",
+            "ready": true
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$temple"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "OrderTriggers": [
+          "$air",
+          "Crescent Island Temple"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Monk Token",
+          "count": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "Monk Token",
+          "power": 1,
+          "toughness": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "Monk Token",
+          "keyword": {
+            "type": "Prowess"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Colors",
+          "object": "Monk Token",
+          "is": [
+            "Red"
+          ]
+        }
+      }
+    }
+  ]
+}

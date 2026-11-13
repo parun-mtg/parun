@@ -1,0 +1,74 @@
+{
+  "description": "Combustion Technique exiles the creature it damaged when it dies this turn",
+  "note": "With no Lesson in a graveyard Combustion Technique deals 2 to bob's Grizzly Bears, which is exiled in place of dying.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "CR",
+        "hand": [
+          {
+            "card": "Combustion Technique",
+            "label": "technique"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$technique"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Exile",
+          "card": "Grizzly Bears",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Graveyard",
+          "card": "Grizzly Bears",
+          "count": 0
+        }
+      }
+    }
+  ]
+}

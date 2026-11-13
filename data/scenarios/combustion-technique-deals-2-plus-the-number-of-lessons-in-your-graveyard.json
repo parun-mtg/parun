@@ -1,0 +1,75 @@
+{
+  "description": "Combustion Technique deals 2 plus the number of Lessons in your graveyard",
+  "note": "One Lesson card (and one non-Lesson) is in alice's graveyard while Combustion Technique is on the stack, so it deals 3 damage to bob's Craw Wurm (6/4), which survives with 3 marked. Bob's graveyard holds two Lessons that do not count.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "CR",
+        "hand": [
+          {
+            "card": "Combustion Technique",
+            "label": "technique"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Earthbending Lesson"
+          },
+          {
+            "card": "Hill Giant"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Boomerang Basics"
+          },
+          {
+            "card": "Earthbending Lesson"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$technique"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$wurm",
+          "damage": 3
+        }
+      }
+    }
+  ]
+}

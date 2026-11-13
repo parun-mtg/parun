@@ -1,0 +1,124 @@
+{
+  "description": "Bumi Bash destroys a nonbasic land but not a basic land",
+  "note": "Bob's basic Island is refused as the second mode's target, and of his two nonbasic lands the Strip Mine named is destroyed.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "CCCR",
+        "hand": [
+          {
+            "card": "Bumi Bash",
+            "label": "bash"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island",
+            "tapped": true
+          },
+          {
+            "card": "Strip Mine",
+            "label": "mine",
+            "tapped": true
+          },
+          {
+            "card": "Mishra's Factory",
+            "label": "factory",
+            "tapped": true
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$bash",
+          "modes": [
+            1
+          ],
+          "targets": [
+            "$island"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$bash",
+          "modes": [
+            1
+          ],
+          "targets": [
+            "$mine"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Graveyard",
+          "card": "Strip Mine",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Battlefield",
+          "card": "Island",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Battlefield",
+          "card": "Mishra's Factory",
+          "count": 1
+        }
+      }
+    }
+  ]
+}
