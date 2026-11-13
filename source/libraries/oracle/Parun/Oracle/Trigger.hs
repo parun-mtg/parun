@@ -3,6 +3,7 @@
 module Parun.Oracle.Trigger where
 
 import qualified Control.Monad as Monad
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -491,7 +492,9 @@ counted context n comparison k = case Count.scope n of
               Filter.Type.HeldByBound Holder.Controller _ -> True
               _ -> False
             (controllers, rest) = (filter controls conjuncts, filter (not . controls) conjuncts)
-        p <- Filter.phrase (Filter.Type.And rest) (Target.keyword context)
+        -- Free: a count over several nouns joins them with "and/or" (Tend the
+        -- Sprigs' "seven or more lands and/or Treefolk").
+        p <- ListUtils.nubOrd (Filter.phrase (Filter.Type.And rest) (Target.keyword context) <> Filter.phraseJoining Filter.Inclusive (Filter.Type.And rest) (Target.keyword context))
         -- Also "at least five" of what a player controls (Roiling Canopy).
         (before, number) <- quantifier comparison k <> [(const (Text.pack "at least " <> Prose.cardinal k), Filter.Plural) | comparison == Comparison.AtLeast, k > 1]
         noun <- Filter.describe number Target.permanent p
