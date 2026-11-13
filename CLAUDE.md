@@ -81,7 +81,8 @@ to agents as written. What it doesn't say:
   or anything that closes the pipe early (it deadlocks holding a lock slot);
   redirect to a file and read the file. While `script/mutate.sh` runs, run no
   other build in that checkout and edit no source: both read the mutated tree.
-  A `-p` pattern is a case-sensitive substring of the test's dotted path;
+  A `-p` pattern is a case-sensitive substring of the test's dotted path
+  (`--list` prints what it selects without running it);
   repeat `-p` to run the tests matching any.
 
 - Derive against `origin/main`, not the working checkout: `git fetch`, then
