@@ -9,6 +9,7 @@ import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 
 -- | Instantiated at 'Keyword.Keyword', the only concrete instantiation anywhere
 -- in the pool.
@@ -22,6 +23,13 @@ spec s = Spec.describe s "Parun.Codec.Behold" $ do
     Common.assertCodec
       s
       codec
-      (Behold.MkBehold {Behold.count = 3, Behold.whichObjects = Filter.HasSubtype Subtype.Elemental})
+      (Behold.MkBehold {Behold.count = 3, Behold.whichObjects = Filter.HasSubtype Subtype.Elemental, Behold.chosenType = Nothing})
       " {\"count\":3,\"whichObjects\":{\"type\":\"HasSubtype\",\"value\":\"Elemental\"}} "
+  -- Celestial Reunion's two creatures of a type the payer chooses.
+  Spec.it s "MkBehold choosing a type" $
+    Common.assertCodec
+      s
+      codec
+      (Behold.MkBehold {Behold.count = 2, Behold.whichObjects = Filter.HasChosenSubtype, Behold.chosenType = Just SubtypeFamily.CreatureType})
+      " {\"chosenType\":\"CreatureType\",\"count\":2,\"whichObjects\":{\"type\":\"HasChosenSubtype\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec

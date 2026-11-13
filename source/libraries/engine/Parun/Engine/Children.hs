@@ -1998,7 +1998,7 @@ costComponentChildren c component = case component of
   CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold tally criterion) -> fmap CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold <$> cardTallyChildren c tally <*> costFilter c criterion)
   CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand n criterion) -> fmap CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand <$> costAmountChildren c n <*> costFilter c criterion)
   CostComponent.RevealCardFromHand criterion -> CostComponent.RevealCardFromHand <$> costFilter c criterion
-  CostComponent.Behold (Behold.MkBehold n criterion) -> fmap CostComponent.Behold (Behold.MkBehold n <$> costFilter c criterion)
+  CostComponent.Behold (Behold.MkBehold n criterion chosen) -> fmap CostComponent.Behold (flip (Behold.MkBehold n) chosen <$> costFilter c criterion)
   CostComponent.BeholdAndExile criterion -> CostComponent.BeholdAndExile <$> costFilter c criterion
   CostComponent.MillCards _ -> pure component
   CostComponent.RevealTopOfLibrary _ -> pure component

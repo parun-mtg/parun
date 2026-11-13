@@ -4,6 +4,7 @@ module Parun.Codec.Behold where
 
 import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.Filter as Filter
+import qualified Parun.Codec.SubtypeFamily as SubtypeFamily
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -15,4 +16,5 @@ codec :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec
 codec keywordCodec = Fields.object $ do
   count <- Fields.required "count" Common.natural Behold.count
   whichObjects <- Fields.required "whichObjects" (Filter.codec keywordCodec) Behold.whichObjects
-  pure Behold.MkBehold {Behold.count = count, Behold.whichObjects = whichObjects}
+  chosenType <- Fields.defaulted "chosenType" Nothing (Common.maybe SubtypeFamily.codec) Behold.chosenType
+  pure Behold.MkBehold {Behold.count = count, Behold.whichObjects = whichObjects, Behold.chosenType = chosenType}

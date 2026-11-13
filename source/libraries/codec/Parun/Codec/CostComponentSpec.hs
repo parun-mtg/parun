@@ -331,7 +331,7 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.Behold (Behold.MkBehold {Behold.count = 1, Behold.whichObjects = Filter.HasCardType CardType.Creature}))
+      (CostComponent.Behold (Behold.MkBehold {Behold.count = 1, Behold.whichObjects = Filter.HasCardType CardType.Creature, Behold.chosenType = Nothing}))
       " {\"type\":\"Behold\",\"value\":{\"count\":1,\"whichObjects\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- CR 701.4a then CR 406.2: a bare criterion, one object.
   Spec.it s "BeholdAndExile" $

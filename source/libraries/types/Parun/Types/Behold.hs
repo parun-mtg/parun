@@ -2,6 +2,7 @@ module Parun.Types.Behold where
 
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 
 -- | The payload of Parun.Types.CostComponent's Behold arm: CR 701.4a as a cost,
 -- beholding exactly this many DISTINCT objects the Filter admits -- Caustic
@@ -12,6 +13,12 @@ import qualified Parun.Types.Filter as Filter
 -- pool spanning two zones there as here.
 data Behold keyword = MkBehold
   { count :: Natural.Natural,
-    whichObjects :: Filter.Filter keyword
+    whichObjects :: Filter.Filter keyword,
+    -- | CR 601.2h: a subtype of this family the payer chooses before beholding,
+    -- written to Object.chosenSubtype for whichObjects' Filter.HasChosenSubtype
+    -- and the spell's own to read (Celestial Reunion's "choose a creature type").
+    -- A cast cost's alone: on an activation it would overwrite the source's own
+    -- choice.
+    chosenType :: Maybe SubtypeFamily.SubtypeFamily
   }
   deriving (Eq, Ord, Show)

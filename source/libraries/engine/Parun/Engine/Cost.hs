@@ -192,6 +192,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpendTrigger as SpendTrigger
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype.Type
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TapState as TapState
@@ -2497,13 +2498,39 @@ revealFromHandCandidates = discardCandidates
 -- Matched through the same CR 613 projection on both sides, `discardCandidates`'
 -- reading, and against a context built the same way on both, so the hand half and
 -- the battlefield half cannot read the criterion differently.
-beholdCandidates :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
-beholdCandidates slots pid oid criterion gs =
-  let context = Projection.framedBy oid gs (Projection.contextWithSlots gs (Just pid) (Just oid) slots)
+--
+-- `supposed` is a subtype read as the one `oid` chose (Filter.HasChosenSubtype)
+-- in place of whatever it has recorded, for `beholdableTypes` to ask about a
+-- choice not yet made; Nothing reads the record.
+beholdCandidates :: Maybe Subtype.Type.Subtype -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
+beholdCandidates supposed slots pid oid criterion gs =
+  let framed = Projection.framedBy oid gs (Projection.contextWithSlots gs (Just pid) (Just oid) slots)
+      context = maybe framed (\subtype -> framed {Filter.sourceChosenSubtype = Just subtype}) supposed
       viewOf = Projection.viewsOf gs
       matches candidate = Filter.matches context (viewOf candidate) criterion
-   in revealFromHandCandidates slots pid oid criterion gs
-        <> filter matches (List.sort (Projection.controls pid gs))
+   in filter matches (beholdPool pid oid gs)
+
+-- CR 701.4a's two pools before any criterion: `revealFromHandCandidates`' hand,
+-- less `oid` and any card being cast (CR 601.2a), ahead of the permanents this
+-- player controls.
+beholdPool :: PlayerId -> ObjectId -> GameState -> [ObjectId]
+beholdPool pid oid gs =
+  filter (\candidate -> candidate /= oid && not (Game.beingCast gs candidate)) (Game.cardsIn Zone.Hand pid gs)
+    <> List.sort (Projection.controls pid gs)
+
+-- CR 118.3: the subtypes of `family` this player may choose for a
+-- Behold whose Behold.chosenType asks for one: those under which the pool holds
+-- at least `n` objects the criterion admits. Choosing any other leaves the cost
+-- unpayable and the cast illegal (CR 601.2h), so it is no option.
+--
+-- Asked only of the subtypes an object in the pool has: under any other,
+-- Filter.HasChosenSubtype admits nothing.
+beholdableTypes :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Behold.Behold Keyword.Type.Keyword -> SubtypeFamily.SubtypeFamily -> GameState -> [Subtype.Type.Subtype]
+beholdableTypes slots pid oid behold family gs =
+  let viewOf = Projection.viewsOf gs
+      worn = Set.filter (Subtype.inFamily family) (foldMap (Filter.subtypes . viewOf) (beholdPool pid oid gs))
+      enough subtype = Natural.length (beholdCandidates (Just subtype) slots pid oid (Behold.whichObjects behold) gs) >= Behold.count behold
+   in filter enough (Set.toAscList worn)
 
 -- CR 701.4a `n` times over `beholdCandidates`' one pool: the objects this player
 -- beholds to pay a Behold or BeholdAndExile component on `oid`, or Nothing where
@@ -2521,7 +2548,7 @@ beholdCandidates slots pid oid criterion gs =
 beholdObjects :: Maybe ObjectId -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Natural -> Filter.Type.Filter Keyword.Type.Keyword -> Game (Maybe [ObjectId])
 beholdObjects paidFor slots pid oid n criterion = do
   gs <- State.get
-  let pool = beholdCandidates slots pid oid criterion gs
+  let pool = beholdCandidates Nothing slots pid oid criterion gs
       pick chosen owed
         | owed == 0 = pure (Just (reverse chosen))
         | otherwise = do
@@ -4336,12 +4363,16 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- CR 701.4a's two zones at once. What it decides is the OFFER;
   -- `payComponent` answers Unpaid on too small a pool either way. Parun.CostSpec's
   -- "CR 118.3 two Elementals cannot behold three" is the proof.
-  CostComponent.Behold (Behold.MkBehold n criterion) ->
-    Natural.length (beholdCandidates slots pid oid criterion gs) >= n
+  --
+  -- Where the payer first chooses a type (Behold.chosenType), payable while
+  -- some type leaves that many: `beholdableTypes`.
+  CostComponent.Behold behold -> case Behold.chosenType behold of
+    Nothing -> Natural.length (beholdCandidates Nothing slots pid oid (Behold.whichObjects behold) gs) >= Behold.count behold
+    Just family -> not (null (beholdableTypes slots pid oid behold family gs))
   -- The arm above at a count of one: CR 118.3 asks the same pool, the exile
   -- spending what it beheld.
   CostComponent.BeholdAndExile criterion ->
-    not (null (beholdCandidates slots pid oid criterion gs))
+    not (null (beholdCandidates Nothing slots pid oid criterion gs))
   -- CR 702.29a: payable only while the card is in the paying player's hand.
   -- Asked of the zone and the owner rather than of control, CR 108.4 giving a
   -- card in a hand no controller and CR 400.3 putting it in its OWNER's.
@@ -7387,7 +7418,19 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- whether the slot is bound and never goes back to the board for the quality.
   -- Osseous Exhale is the card, and Parun.CostSpec's "CR 701.4b the quality is
   -- the one the object had when it was beheld" is the proof.
-  CostComponent.Behold (Behold.MkBehold n criterion) -> do
+  --
+  -- Where Behold.chosenType asks, the payer first chooses a type among
+  -- `beholdableTypes`, as part of paying (CR 601.2h), written to `oid` as
+  -- Event.chooseQuality writes a resolution's, so the criterion's
+  -- Filter.HasChosenSubtype and the spell's own read it. The scenarios under
+  -- data/scenarios/cost named for Celestial Reunion are the proof.
+  CostComponent.Behold behold -> do
+    let n = Behold.count behold
+        criterion = Behold.whichObjects behold
+    Foldable.for_ (Behold.chosenType behold) $ \family -> do
+      gs <- State.get
+      picked <- Game.chooseAmong (\decider who offered -> Prompt.ChooseSubtype decider who oid family (Just offered)) pid (beholdableTypes slots pid oid behold family gs)
+      Foldable.for_ picked $ \subtype -> State.modify' (\g -> Game.recordChoice Chosen.Subtype (Game.acquisitionOf oid g) (const (Just subtype)) oid g)
     beheld <- beholdObjects paidFor slots pid oid n criterion
     pure (maybe Payment.Unpaid (Payment.Paid . Binding.paidObjects Binding.beheldObject . Set.fromList . fmap Recipient.ToObject) beheld)
   -- CR 701.4a's behold of ONE object, `beholdObjects` as the arm above, then CR
