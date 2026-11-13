@@ -84,6 +84,7 @@ codec abilityCodec =
           Arm.payload "LoseNamedAbility" AbilityName.codec Modification.LoseNamedAbility (\x -> case x of Modification.LoseNamedAbility y -> Just y; _ -> Nothing),
           Arm.payload "LoseKeyword" Keyword.codec Modification.LoseKeyword (\x -> case x of Modification.LoseKeyword y -> Just y; _ -> Nothing),
           Arm.payload "LoseKeywordFamily" KeywordFamily.codec Modification.LoseKeywordFamily (\x -> case x of Modification.LoseKeywordFamily y -> Just y; _ -> Nothing),
+          Arm.payload "CantHaveKeyword" (KeywordDesignator.codec Keyword.codec) Modification.CantHaveKeyword (\x -> case x of Modification.CantHaveKeyword y -> Just y; _ -> Nothing),
           Arm.payload "SetBasePowerToughness" SetBasePowerToughness.codec Modification.SetBasePowerToughness (\x -> case x of Modification.SetBasePowerToughness y -> Just y; _ -> Nothing),
           Arm.payload "ModifyPowerToughness" ModifyPowerToughness.codec Modification.ModifyPowerToughness (\x -> case x of Modification.ModifyPowerToughness y -> Just y; _ -> Nothing),
           Arm.payload "LandSubtype" subtype (uncurry Modification.LandSubtype) (\x -> case x of Modification.LandSubtype mode y -> Just (mode, y); _ -> Nothing),
@@ -132,6 +133,7 @@ tagOf x = case x of
   Modification.LoseNamedAbility {} -> "LoseNamedAbility"
   Modification.LoseKeyword {} -> "LoseKeyword"
   Modification.LoseKeywordFamily {} -> "LoseKeywordFamily"
+  Modification.CantHaveKeyword {} -> "CantHaveKeyword"
   Modification.SetBasePowerToughness {} -> "SetBasePowerToughness"
   Modification.ModifyPowerToughness {} -> "ModifyPowerToughness"
   Modification.LandSubtype {} -> "LandSubtype"

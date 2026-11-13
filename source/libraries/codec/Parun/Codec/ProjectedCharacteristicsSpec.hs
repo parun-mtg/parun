@@ -32,6 +32,7 @@ import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.Face as Face.Type
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -103,6 +104,7 @@ testCharacteristics =
       -- True rather than the default, so an arm that dropped the field would not
       -- round trip to the same JSON.
       PC.lostAllAbilities = True,
+      PC.barredKeywords = Set.singleton (KeywordDesignator.OfKeyword Keyword.Shroud),
       PC.hasFullText = True,
       PC.wordChanges = [ChangeWord.MkChangeWord (TextWord.SubtypeWord Subtype.Spirit) (TextWord.SubtypeWord Subtype.Elf)],
       -- A different keyword from `keywords` above, so a codec arm reading the
@@ -175,6 +177,7 @@ testCharacteristicsJson =
     <> RuleAbilitiesSpec.testRuleAbilitiesJson
     <> ","
     <> "\"lostAllAbilities\":true,"
+    <> "\"barredKeywords\":[{\"type\":\"OfKeyword\",\"value\":{\"type\":\"Shroud\"}}],"
     <> "\"hasFullText\":true,"
     <> "\"wordChanges\":[{\"from\":{\"type\":\"Spirit\"},\"to\":{\"type\":\"Elf\"}}],"
     <> "\"textChangedKeywords\":[{\"key\":{\"type\":\"Trample\"},\"value\":1}],"
@@ -234,6 +237,7 @@ minimalCharacteristics =
       PC.castingPermissions = [],
       PC.ruleAbilities = mempty,
       PC.lostAllAbilities = False,
+      PC.barredKeywords = Set.empty,
       PC.hasFullText = False,
       PC.wordChanges = [],
       PC.textChangedKeywords = Map.empty,

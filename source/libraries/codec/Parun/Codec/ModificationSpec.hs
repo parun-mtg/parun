@@ -134,6 +134,12 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
   -- The payload is a nullary tag rather than the tagged pair above, since
   -- Parun.Types.KeywordFamily is payload-free -- "all landwalk abilities" names
   -- no land type.
+  Spec.it s "CantHaveKeyword carries the keyword" $
+    Common.assertCodec
+      s
+      codec
+      (Modification.CantHaveKeyword (KeywordDesignator.OfKeyword Keyword.FirstStrike))
+      " {\"type\":\"CantHaveKeyword\",\"value\":{\"type\":\"OfKeyword\",\"value\":{\"type\":\"FirstStrike\"}}} "
   Spec.it s "LoseKeywordFamily carries the family" $
     Common.assertCodec
       s

@@ -34,8 +34,8 @@ import qualified Parun.Types.Zone as Zone
 -- constructor -- the same standing Parun.Engine.Resolve has over Effect.
 -- Parun.CardSpec's lints also case on it, legitimately: a test-suite lint that
 -- walks the card pool is not rules core. GainKeyword and LoseKeyword carry a
--- Keyword, LoseKeywordFamily a KeywordFamily and GainKeywordAtManaCost a
--- CostKeyword, closed-half CITATIONS, so
+-- Keyword, LoseKeywordFamily a KeywordFamily, CantHaveKeyword a designator of
+-- either and GainKeywordAtManaCost a CostKeyword, closed-half CITATIONS, so
 -- casing on them is not an invariant violation; and GainAbility carries a whole open-half ability that nothing cases on beyond CR
 -- 113.3's ability KIND -- the projection appends it to one of two lists, and
 -- every reader downstream treats it as any other ability. The P/T arms carry
@@ -240,6 +240,10 @@ data Modification ability
     -- which names no family -- Modular Monstrosity's "loses all keyword
     -- abilities" (gap #2983).
     LoseKeywordFamily KeywordFamily.KeywordFamily
+  | -- | layer 6, CR 613.1f / 113.11: this object loses this keyword and can't
+    -- have it (Archetype of Courage); a family where CR 702.11d makes the
+    -- variants the ability too (Arcane Lighthouse).
+    CantHaveKeyword (KeywordDesignator.KeywordDesignator Keyword.Keyword)
   | SetBasePowerToughness SetBasePowerToughness.SetBasePowerToughness -- layer 7b (Humility 1/1; Opalescence mana value)
   | ModifyPowerToughness ModifyPowerToughness.ModifyPowerToughness -- layer 7c (Giant Growth +3/+3)
   | -- | layer 4, CR 305.7: this object's land subtype becomes this one, or gains

@@ -33,6 +33,7 @@ import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Modification as Modification
@@ -75,7 +76,7 @@ data Origin
 -- keywords are spelled out here.
 modifications :: Origin -> Filter.Number -> Bool -> Target.Context -> [Modification.Modification Ability] -> [(Text.Text, Text.Text)]
 modifications origin number each context ms = do
-  parts <- traverse part (List.groupBy (\a b -> Maybe.isJust (keywordOf a) && fmap fst (keywordOf a) == fmap fst (keywordOf b)) ms)
+  parts <- traverse part (List.groupBy (\a b -> (Maybe.isJust (keywordOf a) && fmap fst (keywordOf a) == fmap fst (keywordOf b)) || (Maybe.isJust (barredOf a) && Maybe.isJust (barredOf b))) ms)
   case parts of
     [(change, MkTrailing following ends)] -> [(change, following <> ends)]
     _ -> [(Prose.listing "and" [change <> following | (change, MkTrailing following _) <- parts], Text.concat [ends | (_, MkTrailing _ ends) <- parts])]
@@ -97,6 +98,19 @@ modifications origin number each context ms = do
               (True, Created) -> verb "gains " "gain "
               (True, Static) -> verb "has " "have "
         [(change <> Prose.listing "and" keywords, MkTrailing Text.empty Text.empty)]
+      -- CR 113.11: a static ability's objects "can't have or gain" the
+      -- keyword (Archetype of Courage), a created effect's "can't have" it
+      -- (Arcane Lighthouse).
+      m : _ | Just _ <- barredOf m -> do
+        keywords <- traverse (foldMap designated . barredOf) group
+        let cant = case origin of
+              Created -> " and can't have "
+              Static -> " and can't have or gain "
+        [(verb "loses " "lose " <> Prose.listing "and" keywords <> Text.pack cant <> Prose.listing "or" keywords, MkTrailing Text.empty Text.empty)]
+      _ -> []
+    designated d = case d of
+      KeywordDesignator.OfKeyword k -> granted k
+      KeywordDesignator.OfFamily f -> Keyword.Oracle.family f
       _ -> []
     -- A granted "bands with other" is quoted, as Oracle text prints it
     -- (Cathedral of Serra).
@@ -200,6 +214,12 @@ keywordOf m = case m of
   Modification.GainKeyword k -> Just (True, Left k)
   Modification.LoseKeyword k -> Just (False, Left k)
   Modification.LoseKeywordFamily f -> Just (False, Right f)
+  _ -> Nothing
+
+-- | The keyword the modification says its object can't have (CR 113.11).
+barredOf :: Modification.Modification ability -> Maybe (KeywordDesignator.KeywordDesignator Keyword.Keyword)
+barredOf m = case m of
+  Modification.CantHaveKeyword d -> Just d
   _ -> Nothing
 
 -- | A change to power or toughness with its sign: "+3", "-2", "+X", and a
