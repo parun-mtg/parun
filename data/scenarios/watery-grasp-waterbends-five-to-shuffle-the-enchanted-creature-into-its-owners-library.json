@@ -1,0 +1,28 @@
+{
+  "description": "CR 400.3 / 704.5m Watery Grasp's waterbend {5} has the enchanted creature's owner shuffle it into their library, and the Aura left behind is put into its owner's graveyard",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "CCCCC",
+        "battlefield": [{"card": "Watery Grasp", "label": "grasp", "attached": "giant"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant", "ready": true}],
+        "library": [{"card": "Swamp", "label": "b1"}, {"card": "Mountain", "label": "b2"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$grasp"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$b1", "Hill Giant", "$b2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "bob", "zone": "Library", "is": ["Swamp", "Hill Giant", "Mountain"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Hill Giant", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Library", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Watery Grasp", "count": 1}}}
+  ]
+}
