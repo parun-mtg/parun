@@ -1644,6 +1644,15 @@ hasRead wanted quantity = case quantity of
     ManaSpent.Colors -> False
   _ -> Monoid.getAny (Const.getConst (Children.quantityChildren (Children.descendingQuantities (Const.Const . Monoid.Any . hasRead wanted)) quantity))
 
+-- CR 607.2a: the linked pile this quantity reads its number off, where that
+-- is all it is, so that an X it defines is undefined while that pile holds no
+-- card (Parun.Engine.Cost.undefinedX). A compound answers Nothing, a
+-- REGRESSION FENCE: no defined X reads a pile beneath anything.
+aimedPile :: Quantity -> Maybe ExiledPile.ExiledPile
+aimedPile quantity = case quantity of
+  Quantity.AgainstExiledPile against -> Just (AgainstExiledPile.pile against)
+  _ -> Nothing
+
 -- CR 810.10a: the kind of player counter this per-player quantity reads off a
 -- fold's candidate, when that is all it is, so that a sum over players
 -- (Count.evaluate's Scope.OverPlayers arm) counts a team's shared counters

@@ -749,6 +749,6 @@ activatableGiven pools sources pid srcId ability gs =
         && riderOk pid srcId ability gs
         && loyaltyOk pid srcId ability gs
         && Modal.selectionPossible fillable (Modal.Type.selection modal)
-        -- CR 107.3c: an X defined by a choice among no cards is undefined.
-        && Cost.definingCandidates pid srcId ability gs /= Just []
+        -- CR 107.3c: an X its text defines off no card is undefined.
+        && not (Cost.undefinedX pid srcId ability gs)
         && any (payableCostAtGiven rows aimable sources (Target.board pools) (leastX pid srcId ability gs) (ActivatedAbility.keyword ability) (ActivatedAbility.name ability) (ActivationRestriction.spendableTypes srcId (ActivatedAbility.restrictions ability) gs) pid srcId gs) (costsFor rows pid ability gs)

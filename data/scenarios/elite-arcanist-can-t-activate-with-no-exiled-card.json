@@ -1,0 +1,119 @@
+{
+  "description": "CR 107.3c: Elite Arcanist's X is the mana value of the card it exiled, so with no exiled card X is undefined and the ability can't be activated",
+  "note": "Elite Arcanist's controller declines its enters trigger. Prototype Portal's ruling of 2011-01-01: with no exiled card the value of X is undefined and can't be paid. Read as an empty pile's sum, X would be 0 and the activation would go through for no mana.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "UUUU",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Elite Arcanist",
+            "label": "arcanist"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$arcanist",
+          "mana": [
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseOptional": "Declines"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Lightning Bolt",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "object": "$arcanist"
+        }
+      }
+    }
+  ]
+}

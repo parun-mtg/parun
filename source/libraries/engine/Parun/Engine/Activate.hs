@@ -293,10 +293,10 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
       let -- CR 107.3c: the X the ability's own text defines, which its activator
           -- does not get to choose -- read here and once, the ceiling's timing.
           defined = Cost.definedX mDefining pid srcId ability gs
-          -- CR 107.3c: no card to choose leaves X undefined, and an answer
+          -- CR 107.3c: no card to define X leaves it undefined, and an answer
           -- outside the offer is rejected. A fence: Activatable's gate and the
           -- offer keep both out of reach, so no test observes it.
-          undefinedX = maybe False (\offered -> maybe True (`notElem` offered) mDefining) definingCandidates
+          undefinedX = Cost.undefinedX pid srcId ability gs || maybe False (\offered -> maybe True (`notElem` offered) mDefining) definingCandidates
       mAmount <-
         if Cost.hasVariable printedCost
           then maybe (fmap Just (Game.choose (Prompt.ChooseX decider pid abilId Binding.variableX floorX (Activatable.affordableX mCeiling aimableUnannounced stamp (ActivatedAbility.name ability) spendable pid srcId gs printedCost)))) (pure . Just) defined
