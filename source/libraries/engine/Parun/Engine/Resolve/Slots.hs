@@ -1108,15 +1108,17 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
           _ -> joinTwo amounts (maybe Map.empty oneSlot dealer)
   -- BOTH fighters: CR 701.14a reads each one's power against the other, so a
   -- slot named by only one half would still look dangling.
-  Effect.Fight (Fight.MkFight first second _) -> joinTwo (oneSlot first) (oneSlot second)
+  Effect.Fight (Fight.MkFight first second _ _) -> joinTwo (oneSlot first) (oneSlot second)
   -- The modification's own quantities read slots too, through
   -- Projection.quantitiesOf. The per-object name is subtracted: the arm itself
   -- binds it while it freezes, and nowhere else.
   Effect.ModifyTarget (ModifyTarget.MkModifyTarget duration modification _ each) ->
     joinTwo (maybe id Map.delete each (joinSlots (fmap quantitySlots (Projection.quantitiesOf modification)))) (durationSlots duration)
   Effect.ChangeText (ChangeText.MkChangeText _ _ slot duration) -> joinTwo (oneSlot slot) (durationSlots duration)
-  Effect.AddMana (ManaAddition.MkManaAddition _ production _ _ _ _ _ _) -> productionSlots production
-  Effect.Firebend (ManaAddition.MkManaAddition _ production _ _ _ _ _ _) -> productionSlots production
+  -- The count is a read too: The Last Agni Kai's "add that much {R}" names
+  -- the slot its fight bound.
+  Effect.AddMana (ManaAddition.MkManaAddition _ production count _ _ _ _ _) -> joinTwo (productionSlots production) (quantitySlots count)
+  Effect.Firebend (ManaAddition.MkManaAddition _ production count _ _ _ _ _) -> joinTwo (productionSlots production) (quantitySlots count)
   -- The actor is effectPlayerRefs' half, joined at the head; the FILTER is a
   -- read like Search's, a card naming a slot in it being read here.
   Effect.ActivateManaAbilities (ActivateManaAbilities.MkActivateManaAbilities _ filter_) -> filterSlotsOf filter_
@@ -2643,7 +2645,9 @@ boundSlots effect = case effect of
   -- objects it reached, for Incinerate's "a creature dealt damage this way", and
   -- CR 120.10's excess, for Goblin Negotiation's "excess damage dealt this way".
   Effect.DealDamage (DealDamage.MkDealDamage _ _ _ mTally mDamaged mExcessTally) -> foldMap Set.singleton mTally <> foldMap Set.singleton mDamaged <> foldMap Set.singleton mExcessTally
-  Effect.Fight {} -> Set.empty
+  -- CR 120.10's excess again, The Last Agni Kai's "is dealt excess damage this
+  -- way".
+  Effect.Fight (Fight.MkFight _ _ _ mExcessTally) -> foldMap Set.singleton mExcessTally
   Effect.ModifyTarget {} -> Set.empty
   Effect.ChangeText {} -> Set.empty
   Effect.AddMana _ -> Set.empty

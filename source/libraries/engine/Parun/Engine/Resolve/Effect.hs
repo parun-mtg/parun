@@ -550,7 +550,7 @@ applyEffectWith runSubgame resolving source controller legal chosen effect = cau
 applyOneEffect :: Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
 applyOneEffect runSubgame resolving source controller legal chosen effect = case effect of
   Effect.DealDamage payload -> Damage.dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source controller legal payload
-  Effect.Fight payload -> Damage.fight runPreventionRiders runReplacementEffects runSubgame legal payload
+  Effect.Fight payload -> Damage.fight runPreventionRiders runReplacementEffects runSubgame resolving source legal payload
   Effect.ModifyTarget payload -> Damage.modifyTarget resolving source controller legal chosen payload
   Effect.ChangeText payload -> Damage.changeText resolving source controller legal payload
   Effect.AddMana payload -> Damage.addMana resolving source controller legal payload
