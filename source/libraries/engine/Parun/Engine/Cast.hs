@@ -3224,7 +3224,7 @@ followIntoSpell permission old new gs = case permission of
 armCastUnder :: PlayerId -> ObjectId -> AbilityName.AbilityName -> GameState -> GameState
 armCastUnder caster sid name gs = case Projection.declaredDelayedAbility sid name gs of
   Nothing -> gs
-  Just ability -> Event.armDelayed ability sid caster (Map.singleton Keyword.becameSlot (Binding.toObject sid)) (Just TurnWindow.AnyTurn) Nothing gs
+  Just ability -> Event.armDelayed ability (Projection.delayedSnapshotOf sid gs) sid caster (Map.singleton Keyword.becameSlot (Binding.toObject sid)) (Just TurnWindow.AnyTurn) Nothing gs
 
 -- CR 611.2a / 611.2c: Savage Summoning's "the next creature spell you cast
 -- this turn ... That spell can't be countered. That creature enters with an

@@ -980,7 +980,7 @@ armDelayedTrigger resolving source controller legal arm@(ArmDelayedTrigger.MkArm
           -- the OUTER Maybe is the card printing no duration; the inner one is
           -- Expiry.arm reporting that a printed duration never STARTED (CR
           -- 611.2b).
-          State.put (Event.armDelayed ability source controller captured (Event.armOnset (Common.oneSeat legal resolving source controller gs) source controller gs onset) (duration >>= \d -> Expiry.arm resolving legal controller source d gs) gs)
+          State.put (Event.armDelayed ability (Projection.delayedReadBy resolving source gs) source controller captured (Event.armOnset (Common.oneSeat legal resolving source controller gs) source controller gs onset) (duration >>= \d -> Expiry.arm resolving legal controller source d gs) gs)
 
 replace :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Replace.Replace Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()
 replace resolving source controller legal (Replace.MkReplace duration uses origin condition re) =

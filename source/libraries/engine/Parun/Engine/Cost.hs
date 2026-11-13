@@ -6383,6 +6383,7 @@ armSpendTriggers sid spent gs =
       arm g trigger =
         Event.armDelayed
           (SpendTrigger.ability trigger)
+          (Projection.delayedSnapshotOf (SpendTrigger.source trigger) g)
           (SpendTrigger.source trigger)
           (SpendTrigger.controller trigger)
           (Map.singleton Binding.castSpell (Binding.toObject sid))

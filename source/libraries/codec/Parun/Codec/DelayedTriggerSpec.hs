@@ -7,6 +7,7 @@ import qualified Parun.Codec.FaceSpec as FaceSpec
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.Expiry as Expiry
@@ -26,6 +27,7 @@ entry =
       DelayedTrigger.source = ObjectId.MkObjectId 4,
       DelayedTrigger.controller = PlayerId.MkPlayerId 0,
       DelayedTrigger.bindings = Map.singleton (SlotName.MkSlotName (Text.pack "token")) (Binding.empty {Binding.amount = Just 9}),
+      DelayedTrigger.delayed = Map.empty,
       DelayedTrigger.window = TurnWindow.AnyTurn,
       DelayedTrigger.expiry = Nothing,
       DelayedTrigger.createdAt = Timestamp.MkTimestamp 7
@@ -52,6 +54,17 @@ spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
           <> "\"bindings\":{\"token\":{\"amount\":9}},"
           <> "\"window\":{\"type\":\"AnyTurn\"},\"expiry\":{\"type\":\"AtCleanup\"},\"createdAt\":7}"
       )
+  -- CR 113.7a: the declarations the entry can arm by name.
+  Spec.it s "MkDelayedTrigger, frozen declarations (CR 113.7a)" $
+    Common.assertCodec
+      s
+      DelayedTrigger.codec
+      entry {DelayedTrigger.delayed = Map.singleton (AbilityName.MkAbilityName (Text.pack "sacrifice it")) FaceSpec.minimalTriggeredAbility}
+      ( "{\"ability\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"source\":4,\"controller\":0,"
+          <> "\"bindings\":{\"token\":{\"amount\":9}},"
+          <> "\"delayed\":{\"sacrifice it\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}},"
+          <> "\"window\":{\"type\":\"AnyTurn\"},\"createdAt\":7}"
+      )
   -- CR 603.7a: an onset gate. Parun.Codec.TurnWindowSpec covers the other arms.
   Spec.it s "MkDelayedTrigger, an onset gate (CR 603.7a)" $
     Common.assertCodec
@@ -74,6 +87,7 @@ spec s = Spec.describe s "Parun.Codec.DelayedTrigger" $ do
           DelayedTrigger.source = ObjectId.MkObjectId 4,
           DelayedTrigger.controller = PlayerId.MkPlayerId 0,
           DelayedTrigger.bindings = Map.empty,
+          DelayedTrigger.delayed = Map.empty,
           DelayedTrigger.window = TurnWindow.AnyTurn,
           DelayedTrigger.expiry = Nothing,
           DelayedTrigger.createdAt = Timestamp.MkTimestamp 7

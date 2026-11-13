@@ -3442,8 +3442,8 @@ isReflexive entry = TriggeredAbility.condition (DelayedTrigger.ability entry) ==
 -- retires the entry immediately after, an expiry-less entry having CR 603.7b's one
 -- shot. Not implemented: that rule's FIRST sentence, once per occurrence
 -- (#2121).
-reflexiveFiring :: GameState -> DelayedTrigger -> PendingTrigger
-reflexiveFiring gs entry =
+reflexiveFiring :: DelayedTrigger -> PendingTrigger
+reflexiveFiring entry =
   PendingTrigger.MkPendingTrigger
     (TriggerSource.OfObject (DelayedTrigger.source entry))
     (DelayedTrigger.controller entry)
@@ -3458,8 +3458,9 @@ reflexiveFiring gs entry =
     -- is no one event this fired from.
     Nothing
     1
-    -- It triggers as this gather finds it, so the source's text now.
-    (Projection.delayedSnapshotOf (DelayedTrigger.source entry) gs)
+    -- CR 113.7a: its own text, frozen as it was created. A regression fence:
+    -- no reflexive ability in data/cards/ arms another by name (2026-11-13).
+    (DelayedTrigger.delayed entry)
     Nothing
 
 -- CR 113.2c: how many instances of `ability` a bearer's list holds, which is
@@ -3565,8 +3566,9 @@ delayedMatches grouped gs =
           (Just logged)
           -- One entry is one instance, CR 603.7's ability created on its own.
           1
-          -- CR 113.7a, read off the board as it stood after the firing event.
-          (delayedAsTriggered (battlefieldAt (LoggedEvent.group logged) gs) (DelayedTrigger.source entry) gs)
+          -- CR 603.7 / 113.7a: its own text, frozen as it was created
+          -- (Projection.delayedReadBy), never its source's as it fires.
+          (DelayedTrigger.delayed entry)
           Nothing
    in (occurrences, pend)
 
@@ -3669,7 +3671,7 @@ delayedPending grouped gs =
       -- occurrences whose "if" holds: CR 603.7b gives the controller every event
       -- that OCCURRED, and CR 603.4 then answers for the one they picked.
       triggered entry
-        | isReflexive entry = pure (filter (interveningHolds gs) (if delayedArmed gs entry then [reflexiveFiring gs entry] else []))
+        | isReflexive entry = pure (filter (interveningHolds gs) (if delayedArmed gs entry then [reflexiveFiring entry] else []))
         | otherwise = fmap (filter (interveningHolds gs) . fmap (pend entry)) (firedBy entry)
       -- Triggering spends the one shot only for a one-shot entry. A reflexive
       -- entry's is spent by the check itself: CR 603.12 has it "checked

@@ -25,6 +25,8 @@ codec = Fields.object $ do
   source <- Fields.required "source" ObjectId.codec DelayedTrigger.source
   controller <- Fields.required "controller" PlayerId.codec DelayedTrigger.controller
   bindings <- Fields.defaulted "bindings" Map.empty Binding.codecMap DelayedTrigger.bindings
+  -- CR 113.7a: absent for an ability that can arm no other by name.
+  delayed <- Fields.defaulted "delayed" Map.empty (TriggeredAbility.codecDelayed Card.codec (GrantedAbility.codec Card.codec)) DelayedTrigger.delayed
   -- CR 603.7a: TurnWindow.AnyTurn for an ability armed with no onset gate.
   -- Always present, unlike the expiry below, because "no restriction" is one of
   -- the windows rather than the absence of one.
@@ -39,6 +41,7 @@ codec = Fields.object $ do
         DelayedTrigger.source = source,
         DelayedTrigger.controller = controller,
         DelayedTrigger.bindings = bindings,
+        DelayedTrigger.delayed = delayed,
         DelayedTrigger.window = window,
         DelayedTrigger.expiry = expiry,
         DelayedTrigger.createdAt = createdAt
