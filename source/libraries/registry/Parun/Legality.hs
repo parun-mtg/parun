@@ -27,6 +27,7 @@ import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.PregameExile as PregameExile.Engine
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.RuleFamily as RuleFamily.Engine
 import qualified Parun.Engine.Subtype as Subtype.Engine
@@ -105,14 +106,14 @@ rules table settings format cardPool =
               <> [\deck -> fromPool (addedCommanders (Format.boosters format) held deck) deck | draft, Just held <- [cardPool]]
               <> [anteCards settings]
               <> (if draft then [] else [conspiracies, stickerSheets])
-              <> [circledColors, supplementary family settings, vanguardCard, exiledBeforeGame draft]
+              <> [circledColors, supplementary family settings, vanguardCard, exiledBeforeGame (RuleFamily.Engine.drafted family)]
    in case Format.rules format of
         -- CR 100.2a / 100.4a.
-        RuleFamily.Constructed -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Constructed) Deck.cards, copiesAtMost Nothing restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies, stickerSheets, circledColors, supplementary RuleFamily.Constructed settings, vanguardCard, exiledBeforeGame False]
+        RuleFamily.Constructed -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Constructed) Deck.cards, copiesAtMost Nothing restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies, stickerSheets, circledColors, supplementary RuleFamily.Constructed settings, vanguardCard, exiledBeforeGame (RuleFamily.Engine.drafted RuleFamily.Constructed)]
         -- CR 100.2b: no copy limit beyond the product's own, but a card's own
         -- "up to N" still caps the deck: Nazgûl's ruling of 2023-06-16 keeps a
         -- tenth in the sideboard.
-        RuleFamily.Limited -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Limited) Deck.cards, copiesAtMost Nothing restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> foldMap (pure . fromPool) cardPool <> [anteCards settings, circledColors, supplementary RuleFamily.Limited settings, vanguardCard, exiledBeforeGame True]
+        RuleFamily.Limited -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Limited) Deck.cards, copiesAtMost Nothing restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> foldMap (pure . fromPool) cardPool <> [anteCards settings, circledColors, supplementary RuleFamily.Limited settings, vanguardCard, exiledBeforeGame (RuleFamily.Engine.drafted RuleFamily.Limited)]
         -- CR 903.5.
         RuleFamily.Commander -> commander RuleFamily.Commander
         -- CR 903.12a: Commander's rules, with CR 903.12c's commander, CR
@@ -377,7 +378,7 @@ exiledBeforeGame drafted deck = foldMap judge (Map.toList (Deck.exiledBeforeGame
           copies = sum (fmap snd revealable)
           exiling = fmap fst (Maybe.listToMaybe revealable)
           total = sum exiled
-          allowed exile = drafted && any (\revealed -> revealed * PregameExile.atLeast exile <= total && all (\most -> total <= revealed * most) (PregameExile.atMost exile)) [1 .. copies]
+          allowed exile = drafted && PregameExile.Engine.admits exile copies total
           matches exile printing = Filter.matches context (Projection.viewOfCard (Card.combined (Printing.card printing))) (PregameExile.filter exile)
        in [Violation.PregameExileCount written total | total > 0, not (any allowed exiling)]
             <> [Violation.PregameExileMismatch (Face.name (Card.combined (Printing.card printing))) written | Just exile <- [exiling], printing <- Map.keys exiled, not (matches exile printing)]
