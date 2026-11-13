@@ -165,8 +165,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Warrior",
-          "Performer"
+          "Performer",
+          "Warrior"
         ],
         "types": [
           "Creature"
