@@ -961,15 +961,15 @@ matchesPrinted viewOf gs event candidate =
         (ReplacementEffect.TokenR (TokenR.MkTokenR pat _ _ _), ProposedEvent.WouldCreateTokens pid lots) ->
           matchesPlayer gs candidate (TokenPattern.whose pat) pid
             -- CR 614.1a's "the first time ... each turn" (Mirrormind Crown): any
-            -- earlier creation of the player's spends it, one the row declined or
-            -- was not there for included (Esix, Fractal Bloom's rulings, the
-            -- same wording). Read off the log, so the tokens of the event being
-            -- replaced are not yet in it, but for a lot of the same CR 608.2f
-            -- action a redirect took, logged as it went (Event.placeDiverted):
-            -- a row already applied to that action is still in its event. The
-            -- scenario mirrormind-crown-under-hallowed-moonlight-reaches-every-token-of-multiversal-incursion
+            -- earlier creation of the player's spends it, one the row declined,
+            -- was not there for or that created nothing included (Esix, Fractal
+            -- Bloom's rulings, the same wording). An earlier ACTION's: the
+            -- register is written as a CR 608.2f action ends
+            -- (Event.noteWouldCreate), so every lot of the event being replaced
+            -- is still its first time. The scenario
+            -- mirrormind-crown-under-hallowed-moonlight-reaches-every-token-of-multiversal-incursion
             -- proves it.
-            && not (TokenPattern.firstEachTurn pat && Game.createdTokenThisTurn pid gs && notElem (ReplacementCandidate.identity candidate) (creationOrder pid gs))
+            && not (TokenPattern.firstEachTurn pat && Game.wouldCreateTokensThisTurn pid gs)
             && any (\lot -> reachesLot pat lot && matchesTokenLot gs (candidateContext gs candidate) (TokenPattern.whatToken pat) pid lot) lots
         -- CR 614.1b / 500.11: a skip intercepts a step, phase or turn
         -- BEGINNING, and names exactly which one -- and, for a player-scoped

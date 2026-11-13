@@ -2292,7 +2292,7 @@ replacementEffectChildren c replacement = case replacement of
   ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern kind subject whose onWhat onWho) scaling) ->
     fmap ReplacementEffect.CounterR (CounterR.MkCounterR <$> (CounterPattern.MkCounterPattern <$> traverse (replacementCounterKind c) kind <*> counterSubjectChildren c subject <*> replacementWhose c whose <*> replacementFilter c onWhat <*> traverse (replacementWhose c) onWho) <*> scalingChildren c scaling)
   ReplacementEffect.TokenR (TokenR.MkTokenR (TokenPattern.MkTokenPattern whose whatToken effectsOnly firstEachTurn) scaling plus optional) ->
-    fmap ReplacementEffect.TokenR (TokenR.MkTokenR <$> (TokenPattern.MkTokenPattern <$> replacementWhose c whose <*> replacementFilter c whatToken <*> pure effectsOnly <*> pure firstEachTurn) <*> traverse (scalingChildren c) scaling <*> traverse (tokenPlusChildren c) plus <*> pure optional) <* Monad.when firstEachTurn (replacementLooksBack c HistoryRead.Entries)
+    fmap ReplacementEffect.TokenR (TokenR.MkTokenR <$> (TokenPattern.MkTokenPattern <$> replacementWhose c whose <*> replacementFilter c whatToken <*> pure effectsOnly <*> pure firstEachTurn) <*> traverse (scalingChildren c) scaling <*> traverse (tokenPlusChildren c) plus <*> pure optional)
   ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR matching requiring paying rewrite) ->
     fmap ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR <$> replacementFilter c matching <*> pure requiring <*> traverse (replacementProcedureCost c) paying <*> turnUpRewriteChildren c rewrite)
   ReplacementEffect.AttachR (AttachR.MkAttachR matching rewrite) -> fmap ReplacementEffect.AttachR (AttachR.MkAttachR <$> replacementFilter c matching <*> attachRewriteChildren c rewrite)

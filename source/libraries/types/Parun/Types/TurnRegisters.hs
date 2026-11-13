@@ -89,6 +89,11 @@ data TurnRegisters = MkTurnRegisters
     -- declaration begins (Parun.Engine.Combat.declareAttackers) and cleared at
     -- turn handoff. Filter.CouldAttackThisTurn reads it.
     couldAttackThisTurn :: Set.Set ObjectId.ObjectId,
+    -- | CR 111.1 / 614.1a: the players an effect or cost would have created one
+    -- or more tokens for this turn, whether or not any was created (CR 111.5);
+    -- cleared at turn handoff. Written by Parun.Engine.Event.createTokens as its
+    -- CR 608.2f action ends, read by Parun.Types.TokenPattern.firstEachTurn.
+    wouldCreateTokens :: Set.Set PlayerId.PlayerId,
     -- | CR 602.5b: which abilities of which objects have been activated this
     -- turn, read by ActivationRestriction.TimesEachTurn alone; cleared at turn
     -- handoff, which is the whole of "each turn". Keyed by the SOURCE object and
