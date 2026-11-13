@@ -1,5 +1,6 @@
 module Parun.Types.EntryHost where
 
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.SlotName as SlotName
@@ -9,7 +10,8 @@ import qualified Parun.Types.SlotName as SlotName
 data EntryHost
   = -- | CR 303.4i: the object the slot names (Preston Garvey, Minuteman).
     Specified SlotName.SlotName
-  | -- | CR 303.4f: a host its controller chooses among those this matches as
-    -- well as the Aura's enchant ability (Nomad Mythmaker).
-    Chosen (Filter.Filter Keyword.Keyword)
+  | -- | CR 303.4f: a host among those this matches as well as the Aura's
+    -- enchant ability, picked by its controller (Nomad Mythmaker) or at random
+    -- (Infectious Rage).
+    Chosen CardSelection.CardSelection (Filter.Filter Keyword.Keyword)
   deriving (Eq, Ord, Show)

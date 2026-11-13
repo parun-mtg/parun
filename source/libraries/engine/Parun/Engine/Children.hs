@@ -3853,7 +3853,7 @@ entryRidersChildren c (EntryRiders.MkEntryRiders tapped attacking blocking trans
       EntryController.Owner -> pure u
     host h = case h of
       EntryHost.Specified name -> EntryHost.Specified <$> copySlot c name
-      EntryHost.Chosen filter_ -> EntryHost.Chosen <$> copyFilter c filter_
+      EntryHost.Chosen selection filter_ -> EntryHost.Chosen selection <$> copyFilter c filter_
 
 -- | A face-down state's listing (CR 708.2). Why it is face down and the events
 -- turning it up are left as they are.

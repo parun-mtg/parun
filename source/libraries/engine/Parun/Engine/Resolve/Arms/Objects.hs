@@ -212,7 +212,7 @@ create settle resolving source controller legal chosen (Create.MkCreate quantity
   -- Parun.EffectLintSpec fences, so a Create reads it as naming no host.
   mAttached <- case EntryRiders.attachedTo entry of
     Nothing -> pure Nothing
-    Just (EntryHost.Chosen _) -> pure Nothing
+    Just (EntryHost.Chosen _ _) -> pure Nothing
     Just (EntryHost.Specified slot) -> Just . fmap Recipient.ToObject <$> Common.fromAmongMembers legal resolving chosen slot
   -- CR 508.4's rider, read ONCE ahead of the minting loop for mBlocked's
   -- reason.

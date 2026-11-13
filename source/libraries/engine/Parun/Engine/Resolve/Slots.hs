@@ -439,7 +439,7 @@ riderSlots riders =
         Nothing -> Map.empty
       hosted = case EntryRiders.attachedTo riders of
         Just (EntryHost.Specified slot) -> oneSlot slot
-        Just (EntryHost.Chosen filter_) -> filterSlotsOf filter_
+        Just (EntryHost.Chosen _ filter_) -> filterSlotsOf filter_
         Nothing -> Map.empty
    in joinSlots [attacked, blocked, hosted]
 
