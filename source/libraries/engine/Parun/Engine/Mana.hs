@@ -1362,25 +1362,74 @@ addMana pid units gs =
 -- side (rule 106.13 closes the category at one card), so nothing reaches the
 -- reading where that would mint mana.
 --
--- Pure; moveMana below is the road that also charges for the loss.
-movedMana :: [PlayerId] -> [PlayerId] -> GameState -> GameState
-movedMana losers gainers gs =
-  let moved = concatMap (\pid -> unitsOf (Game.poolOf pid gs)) losers
-      emptied = List.foldl' (\g pid -> setPool pid (Mana.MkMana []) g) gs losers
+--
+-- CR 614.1a: a unit whose loss is replaced (`replacedLoss`) is not lost, so it
+-- stays where it is as what it became and is not among "the mana lost this
+-- way".
+--
+-- Pure; moveMana below is the road that asks CR 616.1's choices and charges for
+-- the loss.
+movedMana :: LossChoices -> [PlayerId] -> [PlayerId] -> GameState -> GameState
+movedMana answers losers gainers gs =
+  let split pid = partitionLoss (replacedLoss answers pid gs) (unitsOf (Game.poolOf pid gs))
+      moved = concatMap (snd . split) losers
+      emptied = List.foldl' (\g pid -> setPool pid (Mana.MkMana (fst (split pid))) g) gs losers
    in List.foldl' (\g pid -> addMana pid moved g) emptied gainers
 
 -- CR 106.13's move whole: the transfer above, and the life a player-axis static
 -- charges for it. The rule and Drain Power's Oracle text both say the targeted
 -- player LOSES that mana, which is the word Yurlok of Scorch Thrash reads, so
--- this is emptyManaPools' charge, of the whole pool, read on the state the move
--- happens in. A self-targeted Drain Power still charges: the mana is lost
+-- this is emptyManaPools' charge, of what the move took, read on the state the
+-- move happens in. A self-targeted Drain Power still charges: the mana is lost
 -- before it is added back.
 moveMana :: Game () -> [PlayerId] -> [PlayerId] -> Game ()
 moveMana settle losers gainers = do
   gs <- State.get
-  let losses = Map.fromList (fmap (\pid -> (pid, Natural.length (Mana.unwrap (Game.poolOf pid gs)))) losers)
-  State.put (movedMana losers gainers gs)
-  chargeForLostMana settle gs losses
+  answers <- chooseLossReplacements (fmap (\pid -> (pid, unitsOf (Game.poolOf pid gs))) losers)
+  let lostBy pid = Natural.length (snd (partitionLoss (replacedLoss answers pid gs) (unitsOf (Game.poolOf pid gs))))
+  State.modify' (movedMana answers losers gainers)
+  chargeForLostMana settle gs (Map.fromList (fmap (\pid -> (pid, lostBy pid)) losers))
+
+-- | CR 616.1: the type each open choice among loss replacements settled on,
+-- keyed by the player and the types on offer. A key absent is no choice made,
+-- read as the first type offered: right wherever one type is on offer.
+type LossChoices = Map.Map (PlayerId, NonEmpty.NonEmpty ManaType) ManaType
+
+-- CR 614.1a / Ozai, the Phoenix King: the unit as it stays in this player's
+-- pool where a replacement effect applies to its loss, Nothing where the loss
+-- stands. Only the TYPE changes: the tags, the restriction and the riders stay
+-- (CR 106.6, and the card's ruling on restrictions and riders).
+replacedLoss :: LossChoices -> PlayerId -> GameState -> ManaUnit -> Maybe ManaUnit
+replacedLoss answers pid gs =
+  let becomes = PlayerEffect.lostManaBecomes pid gs
+      settled offered = Map.findWithDefault (NonEmpty.head offered) (pid, offered) answers
+   in \unit -> fmap (\offered -> unit {ManaUnit.manaType = settled (fmap fst offered)}) (NonEmpty.nonEmpty (becomes unit))
+
+-- The units a loss leaves in the pool, as what they became, and the units it
+-- takes.
+partitionLoss :: (ManaUnit -> Maybe ManaUnit) -> [ManaUnit] -> ([ManaUnit], [ManaUnit])
+partitionLoss replaced = Either.partitionEithers . fmap (\unit -> maybe (Right unit) Left (replaced unit))
+
+-- CR 616.1: each player about to lose these units chooses which replacement
+-- effect applies wherever two would make the mana different types (Ozai, the
+-- Phoenix King beside Horizon Stone), in APNAP order. ONE choice per set of
+-- types on offer and not one per unit, the loss being one event
+-- (docs/decisions.md, "Two "that mana becomes" replacements are chosen between
+-- once for the pool"). Elided at one type, the effects being indistinguishable.
+-- Prompt.ChooseManaType carries it, the type being all that tells the effects
+-- apart, with the object whose effect is offered first as its source. The
+-- APNAP order is a FENCE: no assertion tells two players' choices apart.
+chooseLossReplacements :: [(PlayerId, [ManaUnit])] -> Game LossChoices
+chooseLossReplacements atRisk = do
+  gs <- State.get
+  let order = Game.apnapOrder gs
+      offers (pid, units) = fmap (\offered -> (pid, offered)) (ListUtils.nubOrd (filter ((> 1) . NonEmpty.length) (Maybe.mapMaybe (NonEmpty.nonEmpty . PlayerEffect.lostManaBecomes pid gs) units)))
+  fmap Map.fromList . Monad.forM (concatMap offers (List.sortOn (\row -> List.elemIndex (fst row) order) atRisk)) $ \(pid, offered) -> do
+    let types = fmap fst offered
+    picked <- case Maybe.mapMaybe snd (NonEmpty.toList offered) of
+      [] -> pure Nothing
+      source : _ -> Game.chooseAmong (\decider who -> Prompt.ChooseManaType decider who source) pid (NonEmpty.toList types)
+    pure ((pid, types), Maybe.fromMaybe (NonEmpty.head types) picked)
 
 -- CR 500.5: as a step or phase ends, any unspent mana left in a player's mana
 -- pool empties -- a turn-based action that does not use the stack (CR 703.4q).
@@ -1417,14 +1466,22 @@ moveMana settle losers gainers = do
 --
 -- `gs` is the state as the step ends, so the effect is read at that moment -- an
 -- Upwelling that left the battlefield during the step is simply not there.
-emptiedManaPools :: GameState -> GameState
-emptiedManaPools gs =
-  let keptByUnit unit = ManaUnit.retention unit /= ManaRetention.Ordinary
-      keeps pid unit = PlayerEffect.keepsUnspentMana pid gs unit || keptByUnit unit
-      retain pid pool = case filter (keeps pid) (Mana.unwrap pool) of
+--
+-- CR 614.1a: a unit neither carrier keeps is about to be LOST, and a
+-- replacement of that loss (`replacedLoss`, Ozai, the Phoenix King) leaves it
+-- in the pool as another type. Asked only of such a unit: kept mana is not
+-- lost, so Upwelling's stays the colour it was beside an Ozai.
+emptiedManaPools :: LossChoices -> GameState -> GameState
+emptiedManaPools answers gs =
+  let retain pid pool = case Maybe.mapMaybe (\unit -> if keepsAtStepEnd gs pid unit then Just unit else replacedLoss answers pid gs unit) (Mana.unwrap pool) of
         [] -> Nothing
         kept -> Just (Mana.MkMana kept)
    in gs {GameState.manaPool = Map.mapMaybeWithKey retain (GameState.manaPool gs)}
+
+-- CR 500.5: does either retention carrier keep this unit as a step or phase
+-- ends?
+keepsAtStepEnd :: GameState -> PlayerId -> ManaUnit -> Bool
+keepsAtStepEnd gs pid unit = PlayerEffect.keepsUnspentMana pid gs unit || ManaUnit.retention unit /= ManaRetention.Ordinary
 
 -- CR 703.4q's turn-based action whole: the sweep above, and CR 119.3's life loss
 -- a player-axis static may charge for it (Yurlok of Scorch Thrash, "a player
@@ -1452,10 +1509,11 @@ emptiedManaPools gs =
 emptyManaPools :: Game () -> Game ()
 emptyManaPools settle = do
   gs <- State.get
-  let swept = emptiedManaPools gs
-      sizeOf pool = Natural.length (Mana.unwrap pool)
+  answers <- chooseLossReplacements (Map.toList (Map.mapWithKey (\pid -> filter (not . keepsAtStepEnd gs pid) . Mana.unwrap) (GameState.manaPool gs)))
+  State.modify' (emptiedManaPools answers)
+  swept <- State.get
+  let sizeOf pool = Natural.length (Mana.unwrap pool)
       lostBy pid before = Natural.minusSaturating (sizeOf before) (maybe 0 sizeOf (Map.lookup pid (GameState.manaPool swept)))
-  State.put swept
   chargeForLostMana settle gs (Map.mapWithKey lostBy (GameState.manaPool gs))
 
 -- The charge both roads share: each player who lost a nonzero amount, and on

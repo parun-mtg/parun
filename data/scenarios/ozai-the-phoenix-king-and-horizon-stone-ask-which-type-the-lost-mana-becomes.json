@@ -1,0 +1,177 @@
+{
+  "description": "Ozai, the Phoenix King and Horizon Stone ask which type the lost mana becomes",
+  "note": "CR 616.1. Two replacement effects would each replace the loss of alice's {G}{G}, with red and with colorless; she chooses once for the loss, and takes colorless, the one a first-in-timestamp default would not. The next loss is a new event and a new choice, where she takes red. Bob's Ozai is no part of either.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "GG",
+        "battlefield": [
+          {
+            "card": "Ozai, the Phoenix King"
+          },
+          {
+            "card": "Horizon Stone"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "manaPool": "G",
+        "battlefield": [
+          {
+            "card": "Ozai, the Phoenix King"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaType",
+          "with": {
+            "type": "Colorless"
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "bob",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Red"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaType",
+          "with": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "View": {
+        "of": "ManaPool",
+        "player": "alice",
+        "is": [
+          {
+            "manaType": {
+              "type": "Colored",
+              "value": "Red"
+            },
+            "tags": [],
+            "retention": "Ordinary",
+            "restriction": null,
+            "rider": null,
+            "sourceChoices": null
+          },
+          {
+            "manaType": {
+              "type": "Colored",
+              "value": "Red"
+            },
+            "tags": [],
+            "retention": "Ordinary",
+            "restriction": null,
+            "rider": null,
+            "sourceChoices": null
+          }
+        ]
+      }
+    }
+  ]
+}

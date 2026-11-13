@@ -683,7 +683,8 @@ data Prompt r where
   -- assembled.
   ChooseDesignation :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty Designation.Designation -> Prompt Designation.Designation
   -- | CR 105.4 / 106.3: which mana a resolving object adds when the type it
-  -- names is not settled, from Parun.Engine.Mana.produced.
+  -- names is not settled, from Parun.Engine.Mana.produced. Also CR 616.1: which
+  -- type the mana a player would lose becomes, the object one whose effect it is.
   ChooseManaType :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ManaType.ManaType -> Prompt ManaType.ManaType
   -- | CR 205.2a: which of the offered card types a player chooses (Storage
   -- Matrix's untap step choice, CR 502.3).

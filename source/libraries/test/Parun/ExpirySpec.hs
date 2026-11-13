@@ -1134,7 +1134,7 @@ untilEndOfCombatSpec s registry = Spec.describe s "UntilEndOfCombat" $ do
            in S.addPlayerEffect
                 expiry
                 (AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer))
-                (PlayerEffect.DontLoseUnspentMana ManaFilter.Any)
+                (PlayerEffect.DontLoseUnspentMana ManaFilter.Any Nothing)
                 S.alice
                 floated
                   { GameState.turn =
