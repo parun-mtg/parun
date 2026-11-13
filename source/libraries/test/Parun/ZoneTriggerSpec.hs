@@ -2588,7 +2588,7 @@ everyTriggerCondition =
     -- The empty pair alone would leave the AnyOf arm free to stamp nothing.
     TriggerCondition.AnyOf [TriggerCondition.Enters (EntersTrigger.matching (Filter.Type.And [])), TriggerCondition.TurnedFaceUp (ActingPermanent.Matching (Filter.Type.And []))],
     -- Sacred Ground's narrowing, over the condition whose bindings it keeps.
-    TriggerCondition.CausedBy CausedBy.MkCausedBy {CausedBy.controller = PlayerRelation.Opponent, CausedBy.condition = TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching (Filter.Type.And [])))},
+    TriggerCondition.CausedBy CausedBy.MkCausedBy {CausedBy.controller = PlayerRelation.Opponent, CausedBy.sourceKeyword = Nothing, CausedBy.condition = TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching (Filter.Type.And [])))},
     TriggerCondition.TurnedFaceUp ActingPermanent.Self,
     TriggerCondition.Transforms TransformTrigger.defaultValue {TransformTrigger.into = Just (CardName.MkCardName (Text.pack "Blightsower Thallid"))},
     TriggerCondition.Transforms TransformTrigger.defaultValue {TransformTrigger.permanent = ActingPermanent.Matching (Filter.Type.And [])},

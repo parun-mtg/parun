@@ -1594,7 +1594,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.SelfHalfUnlocked _ -> pure condition
   TriggerCondition.RoomFullyUnlocked _ -> pure condition
   TriggerCondition.AnyOf conditions -> fmap TriggerCondition.AnyOf (traverse (triggerNested c) conditions)
-  TriggerCondition.CausedBy (CausedBy.MkCausedBy controller narrowed) -> fmap (TriggerCondition.CausedBy . CausedBy.MkCausedBy controller) (triggerNested c narrowed)
+  TriggerCondition.CausedBy (CausedBy.MkCausedBy controller sourceKeyword narrowed) -> fmap (TriggerCondition.CausedBy . CausedBy.MkCausedBy controller sourceKeyword) (triggerNested c narrowed)
   TriggerCondition.TurnedFaceUp permanent -> fmap TriggerCondition.TurnedFaceUp (actingChildren c permanent)
   TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger permanent into) -> fmap (\renamed -> TriggerCondition.Transforms (TransformTrigger.MkTransformTrigger renamed into)) (actingChildren c permanent)
   TriggerCondition.FaceDownPermanentLeavesRevealed -> pure condition

@@ -2,6 +2,7 @@
 
 module Parun.Codec.Discarded where
 
+import qualified Parun.Codec.Cause as Cause
 import qualified Parun.Codec.DiscardCause as DiscardCause
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.MadnessCost as MadnessCost
@@ -22,7 +23,7 @@ codec = Fields.object $ do
   cause <- Fields.required "cause" DiscardCause.codec Discarded.cause
   madness <- Fields.required "madness" (Common.maybe (MadnessCost.codec Keyword.codec)) Discarded.madness
   -- Defaulted: only a discard an effect made sets it.
-  causedBy <- Fields.defaulted "causedBy" Nothing (Common.maybe PlayerId.codec) Discarded.causedBy
+  causedBy <- Fields.defaulted "causedBy" Nothing (Common.maybe Cause.codec) Discarded.causedBy
   pure
     Discarded.MkDiscarded
       { Discarded.player = player,

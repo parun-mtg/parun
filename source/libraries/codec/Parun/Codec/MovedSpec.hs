@@ -6,6 +6,8 @@ import qualified Parun.Codec.Moved as Moved
 import qualified Parun.Codec.ProjectedCharacteristicsSpec as ProjectedCharacteristicsSpec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.Cause as Cause
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
@@ -161,13 +163,13 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.duringResolution = False,
             Moved.revealed = False,
             Moved.seenArriving = False,
-            Moved.causedBy = Just (PlayerId.MkPlayerId 1),
+            Moved.causedBy = Just (Cause.MkCause (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 7) (Just KeywordFamily.Champion)),
             Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Battlefield\",\"to\":\"Graveyard\"},\"characteristics\":"
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
-          <> ",\"otherArrivals\":[],\"causedBy\":1}"
+          <> ",\"otherArrivals\":[],\"causedBy\":{\"controller\":1,\"source\":7,\"keyword\":\"Champion\"}}"
       )
   -- CR 608.2i's arrival as it stood once the move finished, under a
   -- controller and owner who differ.

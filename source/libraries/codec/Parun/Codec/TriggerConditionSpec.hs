@@ -53,6 +53,7 @@ import qualified Parun.Types.ExploitTrigger as ExploitTrigger
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FlipOutcome as FlipOutcome
 import qualified Parun.Types.Holder as Holder
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
 import qualified Parun.Types.LifeDirection as LifeDirection
@@ -501,12 +502,12 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
   -- a codec that kept only the first branch, or that dropped the list entirely,
   -- would round-trip a one-element list unchanged and pass.
   -- CR 609.1's narrowing, which holds the condition it narrows.
-  Spec.it s "CausedBy round-trips its relation and its condition" $
+  Spec.it s "CausedBy round-trips its relation, its keyword and its condition" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.CausedBy CausedBy.MkCausedBy {CausedBy.controller = PlayerRelation.Opponent, CausedBy.condition = TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger (DiscardSubject.Discarder (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.And []))) DiscardWay.AnyDiscard Batching.EachOccurrence)})
-      " {\"type\":\"CausedBy\",\"value\":{\"controller\":\"Opponent\",\"condition\":{\"type\":\"Discards\",\"value\":{\"subject\":{\"type\":\"Discarder\",\"value\":{\"player\":\"You\",\"filter\":{\"type\":\"And\",\"value\":[]}}}}}}} "
+      (TriggerCondition.CausedBy CausedBy.MkCausedBy {CausedBy.controller = PlayerRelation.Opponent, CausedBy.sourceKeyword = Just KeywordFamily.Champion, CausedBy.condition = TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger (DiscardSubject.Discarder (PlayerActsOn.MkPlayerActsOn PlayerRelation.You (Filter.And []))) DiscardWay.AnyDiscard Batching.EachOccurrence)})
+      " {\"type\":\"CausedBy\",\"value\":{\"controller\":\"Opponent\",\"sourceKeyword\":\"Champion\",\"condition\":{\"type\":\"Discards\",\"value\":{\"subject\":{\"type\":\"Discarder\",\"value\":{\"player\":\"You\",\"filter\":{\"type\":\"And\",\"value\":[]}}}}}}} "
   Spec.it s "AnyOf round-trips both of its branches" $
     Common.assertCodec
       s

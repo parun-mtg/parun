@@ -62,6 +62,7 @@ import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastWindow as CastWindow
+import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.CausedBy as CausedBy
 import qualified Parun.Types.ChapterMoment as ChapterMoment
 import qualified Parun.Types.Chosen as Chosen
@@ -1971,7 +1972,7 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- event recorded as it happened (Moved.causedBy), so a later change of
   -- control cannot reach back.
   TriggerCondition.CausedBy narrowed ->
-    maybe False (PlayerRelation.holds (Game.teams gs) (CausedBy.controller narrowed) you) (causeOf event)
+    maybe False (causeAdmitted gs bearer you narrowed) (causeOf event)
       && matchesTriggerGiven bindings board atEvent gs bearer you (CausedBy.condition narrowed) event
   -- CR 715.2d's watcher. At ChapterMoment.Triggers it is CR 603.3b's second
   -- class, the one condition in this type whose event is another ability
@@ -2325,12 +2326,22 @@ producedSpecified gs bearer specified produced = case specified of
   -- trigger, only in Crimson Hellkite's activation restriction.
   ManaSpecification.OfColor color -> Set.member (ManaType.Colored color) produced
 
--- CR 609.1: the controller of the spell or ability whose effect made this
+-- CR 609.1: the spell or ability whose effect made this
 -- event, on the two events that record one. Every other event records no
 -- cause, so a CausedBy condition never matches it: a card whose condition
 -- reads a cause off another event would add its field here.
-causeOf :: GameEvent -> Maybe PlayerId
+causeOf :: GameEvent -> Maybe Cause.Cause
 causeOf event = case event of
   GameEvent.Moved moved -> Moved.causedBy moved
   GameEvent.Discarded discarded -> Discarded.causedBy discarded
   _ -> Nothing
+
+-- CR 609.1: whether a CausedBy condition admits `cause` -- its controller
+-- related as stated to CR 109.5's "you", and under a sourceKeyword an ability
+-- of the bearer that a keyword of the family represents (CR 702.72c).
+-- data/scenarios/keyword-trigger's Mistbind Clique scenarios prove the second
+-- half.
+causeAdmitted :: GameState -> ObjectId -> PlayerId -> CausedBy.CausedBy condition -> Cause.Cause -> Bool
+causeAdmitted gs bearer you narrowed cause =
+  PlayerRelation.holds (Game.teams gs) (CausedBy.controller narrowed) you (Cause.controller cause)
+    && all (\family -> Cause.source cause == bearer && Cause.keyword cause == Just family) (CausedBy.sourceKeyword narrowed)

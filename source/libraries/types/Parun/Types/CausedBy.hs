@@ -1,5 +1,6 @@
 module Parun.Types.CausedBy where
 
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 
 -- | CR 603.2 / 609.1: a trigger condition narrowed to the events a spell or
@@ -11,6 +12,10 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 -- Parun.Types.TriggerCondition can hold one without a module cycle.
 data CausedBy condition = MkCausedBy
   { controller :: PlayerRelation.PlayerRelation,
+    -- | CR 702.72c: Just narrows further, to an ability of the BEARER that a
+    -- keyword of this family represents -- Mistbind Clique's "championed with
+    -- this creature". Nothing admits any spell or ability.
+    sourceKeyword :: Maybe KeywordFamily.KeywordFamily,
     condition :: condition
   }
   deriving (Eq, Ord, Show)

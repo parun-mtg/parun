@@ -481,15 +481,23 @@ offerCastOnce runSubgame context fits named caster optionality verb retake offer
         CastObligation.Mandatory -> mayDo oid name cast
         CastObligation.Optional -> mayDo oid name cast
 
+-- CR 609.1: `body` as the effect of the spell or ability resolving as
+-- `resolving`. The cause is read BEFORE the body runs, while the resolving
+-- ability is surely still an object to read.
+caused :: ObjectId -> ObjectId -> PlayerId -> Game a -> Game a
+caused resolving source controller body = do
+  cause <- State.gets (Common.causeOf resolving source controller)
+  Event.causedBy (Just cause) body
+
 -- One effect, applied, wrapped in the window CR 607.2a's link is filed from:
 -- what was in exile before, and what is in it after.
 --
--- CR 609.1: and performed as the effect of a spell or ability `controller`
--- controls (Event.causedBy), the one door every instruction of a spell, an
+-- CR 609.1: and performed as the effect of the spell or ability resolving
+-- (Event.causedBy, Common.causeOf), the one door every instruction of a spell, an
 -- ability, a mana ability and a replacement's own effects goes through, so the
 -- moves it makes record their cause. Sacred Ground's scenarios prove it.
 applyEffectWith :: Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
-applyEffectWith runSubgame resolving source controller legal chosen effect = Event.causedBy (Just controller) $ do
+applyEffectWith runSubgame resolving source controller legal chosen effect = caused resolving source controller $ do
   before <- State.gets GameState.exile
   logged <- State.gets (Seq.length . (TurnRegisters.events . GameState.turn))
   -- Read BEFORE the effect runs, while the resolving ability is surely still an
@@ -1507,7 +1515,7 @@ applyLoopBody runSubgame resolving source controller legal chosen bodyDefined bo
 -- scenario ajanis-last-stand-makes-an-avatar-discarded-to-an-opponents-painful-quandary
 -- proves it.
 payGatePaid :: Game Result -> ObjectId -> ObjectId -> PlayerId -> ModeIndex -> ClauseIndex -> Map.Map SlotName (Set Recipient) -> Maybe (Set PlayerId) -> Set PlayerId -> PayGate.PayGate -> Game (Map.Map PlayerId Bool)
-payGatePaid runSubgame resolving source controller idx cIdx legal announced committed gate = Event.causedBy (Just controller) $ do
+payGatePaid runSubgame resolving source controller idx cIdx legal announced committed gate = caused resolving source controller $ do
   gs <- State.get
   -- A COMMITTED payer (Parun.Engine.Resolve.chosenBranch) already chose to pay
   -- when they announced the branch, so their offer is CR 118.12's mandatory

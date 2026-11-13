@@ -22,6 +22,7 @@ import qualified Parun.Codec.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Codec.Binding as Binding
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.CardName as CardName
+import qualified Parun.Codec.Cause as Cause
 import qualified Parun.Codec.ContinuousEffect as ContinuousEffect
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.CounterLink as CounterLink
@@ -146,7 +147,7 @@ codec resolve = Fields.object $ do
   enteringTogether <- Fields.defaulted "enteringTogether" Nothing (Common.maybe EnteringTogether.codec) (Scratch.enteringTogether . GameState.scratch)
   arrivals <- Fields.defaulted "arrivals" Nothing (Common.maybe (Common.seq Arrival.codec)) (Scratch.arrivals . GameState.scratch)
   payingOnResolution <- Fields.defaulted "payingOnResolution" False Common.boolean (Scratch.payingOnResolution . GameState.scratch)
-  causing <- Fields.defaulted "causing" Nothing (Common.maybe PlayerId.codec) (Scratch.causing . GameState.scratch)
+  causing <- Fields.defaulted "causing" Nothing (Common.maybe Cause.codec) (Scratch.causing . GameState.scratch)
   lastKnown <- Fields.defaulted "lastKnown" Map.empty (Common.naturalMap ObjectId.codec LastKnown.codec) (Snapshots.lastKnown . GameState.snapshots)
   stackArchive <- Fields.defaulted "stackArchive" Map.empty (Common.naturalMap ObjectId.codec Object.codec) (Snapshots.stackArchive . GameState.snapshots)
   battlefieldWhenTriggered <- Fields.defaulted "battlefieldWhenTriggered" Map.empty (Common.naturalMap EventGroup.codec (Common.naturalMap ObjectId.codec (BattlefieldCandidate.codec ProjectedCharacteristics.codec))) (Snapshots.battlefieldWhenTriggered . GameState.snapshots)

@@ -1,5 +1,6 @@
 module Parun.Types.Discarded where
 
+import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.MadnessCost as MadnessCost
@@ -33,8 +34,8 @@ data Discarded = MkDiscarded
     -- discard, and rule 702.35a's trigger asks about the replacement applied to
     -- it, not about a further thing that happened.
     madness :: Maybe (MadnessCost.MadnessCost Keyword.Keyword),
-    -- | CR 609.1: the controller of the spell or ability whose effect made the
+    -- | CR 609.1: the spell or ability whose effect made the
     -- discard, Parun.Types.Moved's `causedBy` for the same act.
-    causedBy :: Maybe PlayerId.PlayerId
+    causedBy :: Maybe Cause.Cause
   }
   deriving (Eq, Ord, Show)

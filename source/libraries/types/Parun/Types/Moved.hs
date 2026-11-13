@@ -1,9 +1,9 @@
 module Parun.Types.Moved where
 
 import qualified Data.Sequence as Seq
+import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
-import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.ZoneChange as ZoneChange
 
@@ -66,14 +66,14 @@ data Moved = MkMoved
     -- a public zone, or shown to everyone. False for a card put onto the
     -- battlefield or into exile face down (CR 406.3, 708.2).
     seenArriving :: Bool,
-    -- | CR 609.1: the controller of the spell or ability whose effect made this
-    -- move, read off Scratch.causing as the move happens. Nothing for a move
+    -- | CR 609.1: the spell or ability whose effect made this move, read off
+    -- Scratch.causing as the move happens. Nothing for a move
     -- no effect made: a cost to cast or activate (CR 601.2h; Guerrilla Tactics'
     -- ruling of 2004-10-04), a state-based action (CR 704.1), a turn-based
     -- action, a cast. A CR 118.12 cost paid on resolution records the
-    -- resolving spell's or ability's controller (Tamiyo, Collector of Tales'
+    -- resolving spell or ability (Tamiyo, Collector of Tales'
     -- ruling of 2019-05-03).
-    causedBy :: Maybe PlayerId.PlayerId,
+    causedBy :: Maybe Cause.Cause,
     -- | CR 608.2i: the leading arrival as it stood once the move finished,
     -- which `characteristics`, the departing object's, is not (CR 707.5's copy
     -- entering). Nothing where it no longer existed, and on a hand-built event.

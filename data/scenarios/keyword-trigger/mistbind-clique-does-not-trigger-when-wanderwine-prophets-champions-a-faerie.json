@@ -1,0 +1,113 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mistbind Clique"
+          },
+          {
+            "card": "Woodland Changeling"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Wanderwine Prophets",
+            "label": "prophets"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UUUUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "first"
+          },
+          {
+            "card": "Island",
+            "label": "second"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.72c: Wanderwine Prophets champions Woodland Changeling, a Merfolk and a Faerie, beside alice's Mistbind Clique; the Faerie was championed with the Prophets, not with the Clique, so no lands are tapped",
+  "final": [
+    {
+      "Count": {
+        "card": "Wanderwine Prophets",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Woodland Changeling",
+        "count": 1,
+        "player": "alice",
+        "zone": "Exile"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$first",
+        "tapped": false
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$second",
+        "tapped": false
+      }
+    }
+  ],
+  "note": "Were the Clique's ability to trigger, its target prompt would go unanswered and fail the run.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$prophets"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

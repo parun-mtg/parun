@@ -3,6 +3,7 @@ module Parun.Codec.DiscardedSpec where
 import qualified Parun.Codec.Discarded as Discarded
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Discarded as Discarded
 import qualified Parun.Types.MadnessCost as MadnessCost
@@ -52,8 +53,8 @@ spec s = Spec.describe s "Parun.Codec.Discarded" $ do
             Discarded.card = ObjectId.MkObjectId 4,
             Discarded.cause = DiscardCause.ByEffect,
             Discarded.madness = Nothing,
-            Discarded.causedBy = Just (PlayerId.MkPlayerId 1)
+            Discarded.causedBy = Just (Cause.MkCause (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 7) Nothing)
           }
       )
-      " {\"player\":0,\"card\":4,\"cause\":\"ByEffect\",\"madness\":null,\"causedBy\":1} "
+      " {\"player\":0,\"card\":4,\"cause\":\"ByEffect\",\"madness\":null,\"causedBy\":{\"controller\":1,\"source\":7}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Discarded.codec

@@ -3,8 +3,10 @@
 module Parun.Codec.CausedBy where
 
 import qualified Data.Typeable as Typeable
+import qualified Parun.Codec.KeywordFamily as KeywordFamily
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.CausedBy as CausedBy
 
@@ -13,5 +15,7 @@ import qualified Parun.Types.CausedBy as CausedBy
 codec :: (Typeable.Typeable condition) => Codec.Codec condition -> Codec.Codec (CausedBy.CausedBy condition)
 codec condition = Fields.object $ do
   controller <- Fields.required "controller" PlayerRelation.codec CausedBy.controller
+  -- Defaulted: only "championed" narrows by the ability.
+  sourceKeyword <- Fields.defaulted "sourceKeyword" Nothing (Common.maybe KeywordFamily.codec) CausedBy.sourceKeyword
   narrowed <- Fields.required "condition" condition CausedBy.condition
-  pure CausedBy.MkCausedBy {CausedBy.controller = controller, CausedBy.condition = narrowed}
+  pure CausedBy.MkCausedBy {CausedBy.controller = controller, CausedBy.sourceKeyword = sourceKeyword, CausedBy.condition = narrowed}

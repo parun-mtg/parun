@@ -379,6 +379,7 @@ library codec
     Parun.Codec.CastRepetitionSpec
     Parun.Codec.CastWindow
     Parun.Codec.CastWindowSpec
+    Parun.Codec.Cause
     Parun.Codec.CausedBy
     Parun.Codec.ChangeMode
     Parun.Codec.ChangeModeSpec
@@ -2805,6 +2806,7 @@ library types
     Parun.Types.CastOffer
     Parun.Types.CastRepetition
     Parun.Types.CastWindow
+    Parun.Types.Cause
     Parun.Types.CausedBy
     Parun.Types.ChangeMode
     Parun.Types.ChangeTargets

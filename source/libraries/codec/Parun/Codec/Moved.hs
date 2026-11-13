@@ -3,9 +3,9 @@
 module Parun.Codec.Moved where
 
 import qualified Data.Sequence as Seq
+import qualified Parun.Codec.Cause as Cause
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.ObjectSnapshot as ObjectSnapshot
-import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Codec.ZoneChange as ZoneChange
 import qualified Parun.JsonCodec.Codec as Codec
@@ -34,7 +34,7 @@ codec = Fields.object $ do
   -- leaves it unset.
   seenArriving <- Fields.defaulted "seenArriving" False Common.boolean Moved.seenArriving
   -- Defaulted for the same reason: only a move an effect made sets it.
-  causedBy <- Fields.defaulted "causedBy" Nothing (Common.maybe PlayerId.codec) Moved.causedBy
+  causedBy <- Fields.defaulted "causedBy" Nothing (Common.maybe Cause.codec) Moved.causedBy
   -- Defaulted for the same reason: a hand-built event leaves it unset.
   arrived <- Fields.defaulted "arrived" Nothing (Common.maybe ObjectSnapshot.codec) Moved.arrived
   pure
