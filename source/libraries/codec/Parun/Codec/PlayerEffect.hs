@@ -12,6 +12,7 @@ import qualified Parun.Codec.DrawReveal as DrawReveal
 import qualified Parun.Codec.EntriesTrigger as EntriesTrigger
 import qualified Parun.Codec.ExtraVotes as ExtraVotes
 import qualified Parun.Codec.Filter as Filter
+import qualified Parun.Codec.ForbiddenAct as ForbiddenAct
 import qualified Parun.Codec.FreeCast as FreeCast
 import qualified Parun.Codec.GameOutcome as GameOutcome
 import qualified Parun.Codec.HexproofExemption as HexproofExemption
@@ -108,7 +109,6 @@ codec =
           Arm.payload "DamageCantBeRedirected" DamagePattern.codec PlayerEffect.DamageCantBeRedirected (\x -> case x of PlayerEffect.DamageCantBeRedirected y -> Just y; _ -> Nothing),
           Arm.payload "CantSearchLibraries" CantSearchLibraries.codec PlayerEffect.CantSearchLibraries (\x -> case x of PlayerEffect.CantSearchLibraries y -> Just y; _ -> Nothing),
           Arm.payload "HasProtectionFrom" filterCodec PlayerEffect.HasProtectionFrom (\x -> case x of PlayerEffect.HasProtectionFrom y -> Just y; _ -> Nothing),
-          Arm.nullary "CantBecomeMonarch" PlayerEffect.CantBecomeMonarch,
           Arm.payload "StateBasedActionDoesntApply" StateBasedAction.codec PlayerEffect.StateBasedActionDoesntApply (\x -> case x of PlayerEffect.StateBasedActionDoesntApply y -> Just y; _ -> Nothing),
           Arm.nullary "CantSetSchemesInMotion" PlayerEffect.CantSetSchemesInMotion,
           Arm.payload "EntriesTrigger" EntriesTrigger.codec PlayerEffect.EntriesTrigger (\x -> case x of PlayerEffect.EntriesTrigger y -> Just y; _ -> Nothing),
@@ -131,8 +131,7 @@ codec =
           Arm.payload "AdditionalVotes" ExtraVotes.codec PlayerEffect.AdditionalVotes (\x -> case x of PlayerEffect.AdditionalVotes y -> Just y; _ -> Nothing),
           Arm.payload "AdditionalSurveilCards" Common.natural PlayerEffect.AdditionalSurveilCards (\x -> case x of PlayerEffect.AdditionalSurveilCards y -> Just y; _ -> Nothing),
           Arm.payload "PutTappedAsYouCascade" filterCodec PlayerEffect.PutTappedAsYouCascade (\x -> case x of PlayerEffect.PutTappedAsYouCascade y -> Just y; _ -> Nothing),
-          Arm.nullary "CantGainLife" PlayerEffect.CantGainLife,
-          Arm.nullary "CantLoseLife" PlayerEffect.CantLoseLife,
+          Arm.payload "Cant" ForbiddenAct.codec PlayerEffect.Cant (\x -> case x of PlayerEffect.Cant y -> Just y; _ -> Nothing),
           Arm.payload "Precluded" GameOutcome.codec PlayerEffect.Precluded (\x -> case x of PlayerEffect.Precluded y -> Just y; _ -> Nothing),
           Arm.payload "Shows" Shows.codec PlayerEffect.Shows (\x -> case x of PlayerEffect.Shows y -> Just y; _ -> Nothing),
           Arm.payload "RevealsDraw" DrawReveal.codec PlayerEffect.RevealsDraw (\x -> case x of PlayerEffect.RevealsDraw y -> Just y; _ -> Nothing)
@@ -169,7 +168,6 @@ tagOf x = case x of
   PlayerEffect.DamageCantBeRedirected {} -> "DamageCantBeRedirected"
   PlayerEffect.CantSearchLibraries {} -> "CantSearchLibraries"
   PlayerEffect.HasProtectionFrom {} -> "HasProtectionFrom"
-  PlayerEffect.CantBecomeMonarch {} -> "CantBecomeMonarch"
   PlayerEffect.StateBasedActionDoesntApply {} -> "StateBasedActionDoesntApply"
   PlayerEffect.CantSetSchemesInMotion {} -> "CantSetSchemesInMotion"
   PlayerEffect.EntriesTrigger {} -> "EntriesTrigger"
@@ -192,8 +190,7 @@ tagOf x = case x of
   PlayerEffect.ModifyDieRoll {} -> "ModifyDieRoll"
   PlayerEffect.AdditionalVotes {} -> "AdditionalVotes"
   PlayerEffect.AdditionalSurveilCards {} -> "AdditionalSurveilCards"
-  PlayerEffect.CantGainLife {} -> "CantGainLife"
-  PlayerEffect.CantLoseLife {} -> "CantLoseLife"
+  PlayerEffect.Cant {} -> "Cant"
   PlayerEffect.Precluded {} -> "Precluded"
   PlayerEffect.Shows {} -> "Shows"
   PlayerEffect.RevealsDraw {} -> "RevealsDraw"

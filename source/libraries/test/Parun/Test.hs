@@ -423,6 +423,7 @@ import qualified Parun.Codec.ForEachNumberSpec
 import qualified Parun.Codec.ForEachSpec
 import qualified Parun.Codec.ForbidAttackSpec
 import qualified Parun.Codec.ForbidBeingBlockedSpec
+import qualified Parun.Codec.ForbiddenActSpec
 import qualified Parun.Codec.ForetellCostSpec
 import qualified Parun.Codec.FormatSpec
 import qualified Parun.Codec.FreeCastSpec
@@ -1491,6 +1492,7 @@ spec s registry corpus = do
   Parun.Codec.GainControlSpec.spec s
   Parun.Codec.GameEventSpec.spec s
   Parun.Codec.GameLossRSpec.spec s
+  Parun.Codec.ForbiddenActSpec.spec s
   Parun.Codec.GameOutcomeSpec.spec s
   Parun.Codec.GameSettingsSpec.spec s
   Parun.Codec.GiftSpec.spec s

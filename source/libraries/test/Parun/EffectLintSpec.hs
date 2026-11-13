@@ -1052,7 +1052,6 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.DamageCantBeRedirected _ -> scope /= AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer)
   PlayerEffect.CantSearchLibraries _ -> False
   PlayerEffect.HasProtectionFrom _ -> False
-  PlayerEffect.CantBecomeMonarch -> False
   PlayerEffect.StateBasedActionDoesntApply _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
   PlayerEffect.EntriesTrigger _ -> False
@@ -1104,8 +1103,7 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   PlayerEffect.ModifyDieRoll _ -> False
   PlayerEffect.AdditionalVotes _ -> False
   PlayerEffect.AdditionalSurveilCards _ -> False
-  PlayerEffect.CantGainLife -> False
-  PlayerEffect.CantLoseLife -> False
+  PlayerEffect.Cant _ -> False
   PlayerEffect.RevealsDraw _ -> False
   PlayerEffect.Precluded _ -> False
   PlayerEffect.Shows _ -> False
@@ -1139,7 +1137,6 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.DamageCantBeRedirected pattern_ -> Maybe.isJust (DamagePattern.whichRecipient pattern_) || Maybe.isJust (DamagePattern.whichSource pattern_)
   PlayerEffect.CantSearchLibraries _ -> False
   PlayerEffect.HasProtectionFrom _ -> False
-  PlayerEffect.CantBecomeMonarch -> False
   PlayerEffect.StateBasedActionDoesntApply _ -> False
   PlayerEffect.CantSetSchemesInMotion -> False
   PlayerEffect.EntriesTrigger _ -> False
@@ -1187,8 +1184,7 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.ModifyDieRoll _ -> False
   PlayerEffect.AdditionalVotes _ -> False
   PlayerEffect.AdditionalSurveilCards _ -> False
-  PlayerEffect.CantGainLife -> False
-  PlayerEffect.CantLoseLife -> False
+  PlayerEffect.Cant _ -> False
   PlayerEffect.RevealsDraw _ -> False
   PlayerEffect.Precluded _ -> False
   PlayerEffect.Shows _ -> False

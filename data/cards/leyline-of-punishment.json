@@ -42,7 +42,8 @@
       "playerAbilities": [
         {
           "effect": {
-            "type": "CantGainLife"
+            "type": "Cant",
+            "value": "GainLife"
           },
           "scope": {
             "type": "AnyPlayer"

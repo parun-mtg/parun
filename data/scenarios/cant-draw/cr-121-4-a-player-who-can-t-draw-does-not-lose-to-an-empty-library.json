@@ -1,0 +1,14 @@
+{
+  "description": "CR 121.4 a player who can't draw has not attempted to draw from an empty library, and does not lose",
+  "note": "Bob's library is empty through his draw step. Without Maralen of the Mornsong CR 704.5b ends the game before his main phase; with it nothing was attempted (its 2008-04-01 ruling), the trigger costs him 3 life and finds nothing, and the game goes on.",
+  "board": {"active": "bob", "turn": 2, "step": "Upkeep", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Maralen of the Mornsong"}], "library": [{"card": "Island"}]},
+    {"name": "bob"}
+  ]},
+  "timeline": [
+    {"turn": 2, "step": "DrawStep", "player": "bob", "do": {"Answer": {"prompt": "Search", "with": []}}},
+    {"turn": 2, "step": "DrawStep", "player": "bob", "do": {"Answer": {"prompt": "Shuffle", "with": []}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "Result", "is": null}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Life": {"player": "bob", "life": 17}}}
+  ]
+}

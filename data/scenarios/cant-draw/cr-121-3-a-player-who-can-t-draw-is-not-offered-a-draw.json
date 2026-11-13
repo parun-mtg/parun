@@ -1,0 +1,16 @@
+{
+  "description": "CR 121.3 a player who can't draw is not offered a draw: Aven Fisher's \"you may draw a card\" asks nothing",
+  "note": "Alice bolts her own Aven Fisher under Maralen of the Mornsong. Its trigger resolves with no ChooseOptional, which the timeline does not answer and an unscheduled prompt would fail on; the Forest stays on her library.",
+  "board": {"active": "alice", "turn": 1, "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Maralen of the Mornsong"}, {"card": "Aven Fisher", "label": "fisher"}, {"card": "Mountain", "label": "mountain", "ready": true}], "hand": [{"card": "Lightning Bolt", "label": "bolt"}], "library": [{"card": "Forest"}, {"card": "Forest"}]},
+    {"name": "bob", "library": [{"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt", "mana": ["$mountain"], "targets": ["$fisher"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Aven Fisher", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Forest", "count": 0}}}
+  ]
+}

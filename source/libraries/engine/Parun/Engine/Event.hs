@@ -11584,17 +11584,29 @@ spentWith candidate = Set.insert (ReplacementCandidate.identity candidate)
 -- the card is drawn, but as a result of the replacement, so the instruction's
 -- "reveal it" does not reach it. A rewrite keeping the drawer is Plagiarize
 -- aimed at its own controller, which its ruling calls no useful effect.
+--
+-- Nothing as well for a player an effect says can't draw (CR 101.2), asked
+-- AHEAD of the proposal: CR 614.17c lets no replacement effect modify an event
+-- that can't happen, and no draw is attempted, so an empty library is not CR
+-- 121.4's (Maralen of the Mornsong's 2008-04-01 rulings say both). The ONE gate
+-- every draw passes -- the draw step's, an opening hand's, an effect's, one
+-- made in another's place -- since each is CR 121.2's individual draws.
+-- data/scenarios/cant-draw proves each.
 drawCardSpentReturning :: DrawKind.DrawKind -> Game () -> Set CandidateId -> PlayerId -> Game (Maybe ObjectId)
 drawCardSpentReturning kind settle spent pid = do
-  outcome <- applyReplacementsIn settle Nothing Set.empty spent (ProposedEvent.WouldDraw pid kind)
-  case outcome >>= Replacement.asDraw of
-    -- CR 614.6: a replacement took the draw, so it never happens. The row has
-    -- already done its own work; nothing is left to do here and nothing is
-    -- recorded.
-    Nothing -> pure Nothing
-    Just drawer -> do
-      drawn <- performDraw settle drawer
-      pure (if drawer == pid then drawn else Nothing)
+  forbidden <- State.gets (PlayerEffect.prohibitsDrawing pid)
+  if forbidden
+    then pure Nothing
+    else do
+      outcome <- applyReplacementsIn settle Nothing Set.empty spent (ProposedEvent.WouldDraw pid kind)
+      case outcome >>= Replacement.asDraw of
+        -- CR 614.6: a replacement took the draw, so it never happens. The row has
+        -- already done its own work; nothing is left to do here and nothing is
+        -- recorded.
+        Nothing -> pure Nothing
+        Just drawer -> do
+          drawn <- performDraw settle drawer
+          pure (if drawer == pid then drawn else Nothing)
 
 -- The draw itself, once CR 616.1's loop has left it standing. Split out so that
 -- rule 614.11's ordering is visible: the proposal above runs BEFORE the library

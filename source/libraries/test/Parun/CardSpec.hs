@@ -3957,7 +3957,6 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.HasProtectionFrom f -> [f]
   -- CR 726 names no quality either: the designation has no parts (Jared
   -- Carthalion, True Heir).
-  PlayerEffect.CantBecomeMonarch -> []
   PlayerEffect.StateBasedActionDoesntApply _ -> []
   PlayerEffect.CantSetSchemesInMotion -> []
   PlayerEffect.EntriesTrigger e -> [EntriesTrigger.entrants e]
@@ -4013,8 +4012,7 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.ModifyDieRoll modified -> foldMap costFilters (ModifiedRoll.cost modified)
   PlayerEffect.AdditionalVotes _ -> []
   PlayerEffect.AdditionalSurveilCards _ -> []
-  PlayerEffect.CantGainLife -> []
-  PlayerEffect.CantLoseLife -> []
+  PlayerEffect.Cant _ -> []
   PlayerEffect.RevealsDraw _ -> []
   PlayerEffect.Precluded _ -> []
   PlayerEffect.Shows _ -> []
