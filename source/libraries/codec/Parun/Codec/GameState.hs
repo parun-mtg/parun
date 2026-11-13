@@ -26,7 +26,6 @@ import qualified Parun.Codec.Cause as Cause
 import qualified Parun.Codec.ContinuousEffect as ContinuousEffect
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.CounterLink as CounterLink
-import qualified Parun.Codec.DamageEvent as DamageEvent
 import qualified Parun.Codec.Daytime as Daytime
 import qualified Parun.Codec.DelayedTrigger as DelayedTrigger
 import qualified Parun.Codec.EnteringTogether as EnteringTogether
@@ -217,7 +216,6 @@ codec resolve = Fields.object $ do
   initiative <- Fields.defaulted "initiative" Nothing (Common.maybe PlayerId.codec) GameState.initiative
   daytime <- Fields.defaulted "daytime" Nothing (Common.maybe Daytime.codec) GameState.daytime
   spellsCastLastTurn <- Fields.defaulted "spellsCastLastTurn" 0 Common.natural (History.spellsCastLastTurn . GameState.history)
-  damageBeforeThisTurn <- Fields.defaulted "damageBeforeThisTurn" Seq.empty (Common.seq DamageEvent.codec) (History.damageBeforeThisTurn . GameState.history)
   pastTurns <- Fields.defaulted "pastTurns" Seq.empty (Common.seq PastTurn.codec) (History.pastTurns . GameState.history)
   damagePreventedBy <- Fields.defaulted "damagePreventedBy" Map.empty (Common.naturalMap ObjectId.codec Common.natural) GameState.damagePreventedBy
   attacksInOwnLastTurn <- Fields.defaulted "attacksInOwnLastTurn" Map.empty (Common.naturalMap PlayerId.codec (Common.seq AttackerDeclared.codec)) (History.attacksInOwnLastTurn . GameState.history)
@@ -353,7 +351,6 @@ codec resolve = Fields.object $ do
           History.MkHistory
             { History.triggeredThisGame = triggeredThisGame,
               History.spellsCastLastTurn = spellsCastLastTurn,
-              History.damageBeforeThisTurn = damageBeforeThisTurn,
               History.pastTurns = pastTurns,
               History.attacksInOwnLastTurn = attacksInOwnLastTurn,
               History.resolvedNames = resolvedNames

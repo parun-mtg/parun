@@ -172,7 +172,7 @@ objects pcs gs a b =
       grants = Projection.View.controlGrants gs
       viewOf oid = Projection.viewOfObjectGiven pcs grants oid gs
       -- Every View field Parun.Engine.Projection.View fills from the turn's log
-      -- (CR 608.2i), History.damageBeforeThisTurn (CR 120.1) or
+      -- (CR 608.2i), Game.damageBeforeThisTurn (CR 120.1) or
       -- TurnRegisters.couldAttackThisTurn (CR 508.1).
       -- Hand-kept: a new look-back field owes a line here.
       lookBack view =
@@ -229,7 +229,7 @@ objects pcs gs a b =
            )
 
 -- CR 608.2i from the other end: which objects the turn's log, or an earlier
--- turn's (History.damageBeforeThisTurn), says dealt this one damage (CR
+-- turn's (Game.damageBeforeThisTurn), says dealt this one damage (CR
 -- 120.1), crewed it (CR 702.122c), convoked it or the spell it was (CR
 -- 702.51c, 400.7d), and saddled it (CR 702.171c). Each is a relation atom's
 -- answer read off ANOTHER object's view with this one as the source --
@@ -244,7 +244,7 @@ actedOnBy oid gs =
   let events = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs) <> foldMap TurnRegisters.events (GameState.parkedTurns gs)))
       damagers =
         Set.fromList [DamageEvent.source dealt | event@(GameEvent.DamageDealt dealt) <- events, (Game.damageRecipient event >>= Recipient.objectOf) == Just oid]
-          <> Set.fromList [DamageEvent.source dealt | dealt <- Foldable.toList (History.damageBeforeThisTurn (GameState.history gs)), Recipient.objectOf (DamageEvent.target dealt) == Just oid]
+          <> Set.fromList [DamageEvent.source dealt | dealt <- Foldable.toList (Game.damageBeforeThisTurn gs), Recipient.objectOf (DamageEvent.target dealt) == Just oid]
       crewers = Set.unions [Crewing.crewedBy crewed | GameEvent.Crewed crewed <- events, Crewing.vehicle crewed == oid]
       convokers = Set.unions [Convoking.convokedBy convoked | GameEvent.Convoked convoked <- events, let spell = Convoking.spell convoked, spell == oid || elem oid (Count.becamePermanents spell events)]
       saddlers = Set.unions [Saddling.saddledBy saddled | GameEvent.Saddled saddled <- events, Saddling.mount saddled == oid]
@@ -299,8 +299,7 @@ representatives pcs gs candidates =
 --     Its rider triggerings are read by namedByRelation too, for the granter
 --     their ability is named for (Binding.acquiredFrom), as are the counted
 --     activations of TurnRegisters.activatedThisTurn and Object.activatedOnce.
---     TurnRegisters.couldAttackThisTurn and History.damageBeforeThisTurn are
---     read through the same two views, and the latter through actedOnBy too.
+--     TurnRegisters.couldAttackThisTurn is read through the same two views.
 --     Snapshots.controlSample (CR 603.2's control diff),
 --     Snapshots.battlefieldWhenTriggered (CR 603.10's look-back) and
 --     GameState.cardsPlayed (CR 305.1, every permanent a play made) are keyed
@@ -316,10 +315,12 @@ representatives pcs gs candidates =
 --     by the per-seat view and by the "last turn" tallies (Quantity's
 --     SpellsCast and LifeChanged), which count per PLAYER and name no object,
 --     so no choice between objects can turn on it. The older ones are read
---     for their casts alone (Game.castsThisGame), and those are about
---     objects that have LEFT: their spells were cast on an earlier turn, and
---     CR 500.2 ends no step while the stack holds one. Nothing else reads
---     them yet (gap #6034); a reader owes a line here.
+--     for their casts (Game.castsThisGame), which are about objects that have
+--     LEFT: their spells were cast on an earlier turn, and CR 500.2 ends no
+--     step while the stack holds one. They are read for their damage too
+--     (Game.damageBeforeThisTurn), through the two views objects compares
+--     and through actedOnBy. Nothing else reads them yet (gap #6034); a
+--     reader owes a line here.
 --   * TurnRegisters.permanentsAsTurnBegan is keyed by every permanent, but no
 --     choice this turn can change it and it is read only by a Count over the
 --     whole record, so what two candidates' entries say cannot separate them.

@@ -523,7 +523,6 @@ blankHistory :: History.History
 blankHistory =
   History.MkHistory
     { History.spellsCastLastTurn = 0,
-      History.damageBeforeThisTurn = Seq.empty,
       History.pastTurns = Seq.empty,
       History.attacksInOwnLastTurn = Map.empty,
       History.triggeredThisGame = Seq.empty,
@@ -3537,14 +3536,23 @@ castsThisGame gs =
   foldMap (castsInLog . PastTurn.events) (History.pastTurns (GameState.history gs))
     <> castsInLog (TurnRegisters.events (GameState.turn gs))
 
--- CR 120.1: every damage event in the turn's log, oldest first, behind
--- damageRecipient's CR 120.8 fence, for History.damageBeforeThisTurn.
-damageInLog :: GameState -> Seq.Seq DamageEvent.DamageEvent
-damageInLog gs =
+-- CR 120.1: the damage events a log holds, oldest first, behind
+-- damageRecipient's CR 120.8 fence.
+damageInLog :: Seq.Seq LoggedEvent.LoggedEvent -> Seq.Seq DamageEvent.DamageEvent
+damageInLog =
   let dealt event = case event of
         GameEvent.DamageDealt ev | Maybe.isJust (damageRecipient event) -> Just ev
         _ -> Nothing
-   in Seq.fromList (Maybe.mapMaybe (dealt . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+   in Seq.fromList . Maybe.mapMaybe (dealt . LoggedEvent.event) . Foldable.toList
+
+-- CR 120.1 / 608.2i: every damage event dealt this game BEFORE the turn in
+-- progress, oldest first: each finished turn's (History.pastTurns). The live
+-- log's is the caller's to join, since Filter.DealtDamageTo's
+-- Lookback.ThisTurn reads that half alone.
+-- palladia-mors-loses-hexproof-for-good-once-it-deals-damage proves the past
+-- turns are read.
+damageBeforeThisTurn :: GameState -> Seq.Seq DamageEvent.DamageEvent
+damageBeforeThisTurn gs = foldMap (damageInLog . PastTurn.events) (History.pastTurns (GameState.history gs))
 
 -- CR 608.2n: the ABILITY an event describes RESOLVING, if it describes one, as
 -- the Source its object on the stack carried -- the source object and the
@@ -3928,7 +3936,7 @@ movedChange event = case event of
 -- import-graph reason: the callers are Parun.Engine.Quantity's
 -- PlayersDealtDamage arm, Parun.Engine.Projection's fold for
 -- Filter.DealtDamageThisTurn, Parun.Engine.Count.dealtDamageTo's for
--- Filter.DealtDamageTo, and damageInLog's for the turn handoff.
+-- Filter.DealtDamageTo, and damageInLog's for the finished turns.
 --
 -- The `amount > 0` test below is CR 120.8 -- "if a source would deal 0 damage, it does
 -- not deal damage at all" -- and a FENCE rather than a reachable filter on the

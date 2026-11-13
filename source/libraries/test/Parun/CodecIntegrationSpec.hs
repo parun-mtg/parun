@@ -391,14 +391,14 @@ gameStateRoundTripSpec s registry corpus = do
     Spec.assertEqWith s "the handoff kept alice's cast" (fmap SpellWasCast.player (Foldable.toList (Game.castsThisGame handed))) [S.alice]
     roundTrips "a cast on an earlier turn" handed
 
-  -- History.damageBeforeThisTurn, CR 120.1's damage of earlier turns, kept
-  -- at the same handoff and built the same way.
+  -- Game.damageBeforeThisTurn, CR 120.1's damage of earlier turns, read off
+  -- the same finished turn and built the same way.
   Spec.it s "damage on an earlier turn round trips" $ do
     hillGiant <- S.printingOf s registry "Hill Giant"
     let (giant, gs) = S.addPermanent hillGiant S.alice (Setup.emptyGame S.bothPlayers)
         dealt = Event.damageEvent gs DamageKind.Combat giant (Recipient.ToPlayer S.bob) 3
         handed = Engine.beginTurnOf S.bob (S.withEvents [GameEvent.DamageDealt dealt] gs)
-    Spec.assertEqWith s "the handoff kept the Giant's 3" (fmap DamageEvent.amount (Foldable.toList (History.damageBeforeThisTurn (GameState.history handed)))) [3]
+    Spec.assertEqWith s "the handoff kept the Giant's 3" (fmap DamageEvent.amount (Foldable.toList (Game.damageBeforeThisTurn handed))) [3]
     roundTrips "damage on an earlier turn" handed
 
   -- History.pastTurns, CR 608.2i's finished turns, filed whole at the same
