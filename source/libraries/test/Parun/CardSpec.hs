@@ -2512,7 +2512,7 @@ riderFilters riders =
   where
     hostFilters host = case host of
       EntryHost.Specified _ -> []
-      EntryHost.Chosen f -> [(Unframed, f)]
+      EntryHost.Chosen _ f -> [(Unframed, f)]
 
 -- Both Filter positions a CR 614.1c counter row has: the KINDS it is keyed by
 -- (CR 122.1b's keyword counter carries a whole Keyword) and the COUNTS it holds
