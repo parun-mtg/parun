@@ -241,55 +241,38 @@
                         "type": "MoveToZone",
                         "value": {
                           "ref": {
-                            "type": "ChosenCardInGraveyard",
+                            "type": "ChosenCardFromAmong",
                             "value": {
-                              "chooser": {
-                                "type": "TheController"
-                              },
                               "filter": {
-                                "type": "And",
+                                "type": "Or",
                                 "value": [
                                   {
-                                    "type": "IsBound",
-                                    "value": "milled"
+                                    "type": "HasCardType",
+                                    "value": "Artifact"
                                   },
                                   {
-                                    "type": "Or",
-                                    "value": [
-                                      {
-                                        "type": "HasCardType",
-                                        "value": "Artifact"
-                                      },
-                                      {
-                                        "type": "HasCardType",
-                                        "value": "Battle"
-                                      },
-                                      {
-                                        "type": "HasCardType",
-                                        "value": "Creature"
-                                      },
-                                      {
-                                        "type": "HasCardType",
-                                        "value": "Enchantment"
-                                      },
-                                      {
-                                        "type": "HasCardType",
-                                        "value": "Land"
-                                      },
-                                      {
-                                        "type": "HasCardType",
-                                        "value": "Planeswalker"
-                                      }
-                                    ]
+                                    "type": "HasCardType",
+                                    "value": "Battle"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Enchantment"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Land"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Planeswalker"
                                   }
                                 ]
                               },
-                              "players": {
-                                "type": "Scoped",
-                                "value": {
-                                  "type": "You"
-                                }
-                              }
+                              "slot": "milled"
                             }
                           },
                           "zone": "Hand"

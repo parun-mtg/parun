@@ -120,7 +120,7 @@
       "player": "alice",
       "refuse": {
         "Answer": {
-          "prompt": "ChooseCardInGraveyard",
+          "prompt": "ChooseCardFromAmong",
           "with": "Grizzly Bears"
         }
       },
@@ -130,7 +130,7 @@
     {
       "do": {
         "Answer": {
-          "prompt": "ChooseCardInGraveyard",
+          "prompt": "ChooseCardFromAmong",
           "with": "Pacifism"
         }
       },
@@ -224,7 +224,7 @@
       "player": "alice",
       "refuse": {
         "Answer": {
-          "prompt": "ChooseCardInGraveyard",
+          "prompt": "ChooseCardFromAmong",
           "with": "Hill Giant"
         }
       },
@@ -235,7 +235,7 @@
       "player": "alice",
       "refuse": {
         "Answer": {
-          "prompt": "ChooseCardInGraveyard",
+          "prompt": "ChooseCardFromAmong",
           "with": "Agent of Atlas"
         }
       },
@@ -245,7 +245,7 @@
     {
       "do": {
         "Answer": {
-          "prompt": "ChooseCardInGraveyard",
+          "prompt": "ChooseCardFromAmong",
           "with": "Agents of S.H.I.E.L.D."
         }
       },

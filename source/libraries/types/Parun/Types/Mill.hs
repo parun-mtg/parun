@@ -12,13 +12,14 @@ import qualified Parun.Types.SlotName as SlotName
 -- nonland card milled this way". Absent for a mill nothing looks back at.
 --
 -- The `slot` is the OTHER kind of looking back, CR 701.17c's: an effect naming
--- the milled cards themselves finds them in the graveyard they moved to, which
+-- the milled cards themselves finds them in the public zone they moved to, which
 -- is Midnight Tilling's "then you may return a permanent card from among them to
 -- your hand". The tally remembers HOW MANY matched and this remembers WHICH
 -- cards, so a card wanting both writes both.
 --
 -- The ids bound are the ones the move ARRIVED at (CR 400.7), since rule 701.17c
--- names the card in the zone it moved to; the tally counts the pre-move ids
+-- names the card in the zone it moved to, and only those that arrived in a
+-- public zone, since it finds no other; the tally counts the pre-move ids
 -- instead, because it asks after characteristics the library card had. Absent for
 -- every mill nothing looks back at.
 data Mill = MkMill

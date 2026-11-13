@@ -197,7 +197,7 @@
       "player": "alice",
       "refuse": {
         "Answer": {
-          "prompt": "ChooseCardInGraveyard",
+          "prompt": "ChooseCardFromAmong",
           "with": "Craw Wurm"
         }
       },
@@ -207,7 +207,7 @@
     {
       "do": {
         "Answer": {
-          "prompt": "ChooseCardInGraveyard",
+          "prompt": "ChooseCardFromAmong",
           "with": "Hill Giant"
         }
       },

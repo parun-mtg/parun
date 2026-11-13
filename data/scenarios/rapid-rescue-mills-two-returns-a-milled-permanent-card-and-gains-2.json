@@ -85,7 +85,7 @@
       "player": "alice",
       "refuse": {
         "Answer": {
-          "prompt": "ChooseCardInGraveyard",
+          "prompt": "ChooseCardFromAmong",
           "with": "$oldbears"
         }
       },
@@ -95,7 +95,7 @@
     {
       "do": {
         "Answer": {
-          "prompt": "ChooseCardInGraveyard",
+          "prompt": "ChooseCardFromAmong",
           "with": "Hill Giant"
         }
       },

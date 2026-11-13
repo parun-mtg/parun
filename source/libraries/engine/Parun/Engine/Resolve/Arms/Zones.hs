@@ -1277,16 +1277,18 @@ mill settle resolving source controller legal (Mill.MkMill ref quantity mTally m
   -- CR 701.17c: a later clause naming the milled cards -- Midnight Tilling's
   -- "from among them" -- finds them in the graveyard they moved to, so the
   -- binding holds the ids the funnel ANSWERED rather than the library ids the
-  -- tally counts (CR 400.7). A card a replacement diverted elsewhere is bound
-  -- too, and rule 701.17c is then what decides whether a reader can find it:
-  -- an exile is public and a hand is not, which is a question about the READER
-  -- rather than about this binding.
+  -- tally counts (CR 400.7). A card a replacement diverted to another PUBLIC
+  -- zone is bound too, so no reader of the slot is zone-scoped: proven by
+  -- oko-shadowmoor-scion-takes-a-milled-card-rest-in-peace-exiled. One diverted
+  -- to a hidden zone is not, since no effect can find it there: proven by
+  -- oko-shadowmoor-scion-cannot-take-a-milled-darksteel-colossus.
   --
   -- ACROSS millers, since the slot is one name and no reader is per-player --
   -- the tally's own posture. The one/many split is every other group binder's:
   -- one milled card takes the SINGLE binding, which slotOne and every singular
   -- reader can see, and several take the group.
-  Common.bindObjects resolving mSlot arrivals
+  found <- State.gets (\after -> filter (maybe False (not . Game.isHiddenZone) . flip Game.zoneOf after) arrivals)
+  Common.bindObjects resolving mSlot found
   -- The tally, read from the pre-move state because CR 400.7 has since minted
   -- new ids. Each milled card is judged by its own CR 613 projection: rule
   -- 613.1 starts from the actual object and names no zone, so a library card is

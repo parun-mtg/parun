@@ -3255,9 +3255,9 @@ libraryCards = Game.cardsIn Zone.Library
 -- The cards in ONE player's graveyard matching the filter, in ascending
 -- ObjectId. The filter is matched in THIS EFFECT's context -- the caller's, so
 -- CR 109.5's "you" is the resolving controller rather than whoever is choosing,
--- and the resolution's own slots ride along: Midnight Tilling's "from among
--- them" is `IsBound` over the slot its own mill defined, which a bare contextFor
--- would answer False for on every candidate.
+-- and the resolution's own slots ride along: Deadly Brew's "another permanent
+-- card" reads `IsBound` over the slot its own sacrifice defined, which a bare
+-- contextFor would answer False for on every candidate.
 graveyardCardsOf :: Filter.Context -> GameState -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> [ObjectId]
 graveyardCardsOf context gs pid filter_ =
   let viewOf = Projection.viewsOf gs
