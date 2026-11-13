@@ -436,7 +436,7 @@ slotContext reader perspective unannounced bindings acquisition source amount gs
             -- chooses one defending player: any of them while the targets are
             -- being chosen, and at CR 608.2b the one the announcement chose
             -- (stampDefendingPlayers).
-            Filter.defendingPlayers = case Defender.defendingPlayerOf Projection.controllerWithLastKnown source gs of
+            Filter.defendingPlayers = case Defender.defendingPlayerOf Projection.viewWithLastKnownAnywhere source gs of
               Just defending -> [defending]
               Nothing -> maybe (Defender.designatedPlayers gs) Set.toList (Map.lookup Binding.chosenDefendingPlayers (Binding.slotPlayers bindings)),
             -- Nothing: a target slot is judged before the effect names anyone, so
@@ -2658,7 +2658,7 @@ narrowedAsCast slot = case TargetSlot.asCast slot of
 -- Not implemented: a choice the targets do not settle -- targets of several
 -- defending players are all recorded, and a negated atom names nobody (#4804).
 stampDefendingPlayers :: ObjectId -> Map SlotName (Set Recipient) -> GameState -> Map SlotName Binding.Type.Binding -> Map SlotName Binding.Type.Binding
-stampDefendingPlayers source chosen gs bindings = case Defender.defendingPlayerOf Projection.controllerWithLastKnown source gs of
+stampDefendingPlayers source chosen gs bindings = case Defender.defendingPlayerOf Projection.viewWithLastKnownAnywhere source gs of
   Just _ -> bindings
   Nothing ->
     let designated = Defender.designatedPlayers gs

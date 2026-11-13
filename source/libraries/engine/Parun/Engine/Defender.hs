@@ -13,8 +13,11 @@ import qualified Control.Applicative as Applicative
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Parun.Engine.Battle as Battle
+import qualified Parun.Engine.Count as Count
+import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Combat as Combat
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
@@ -67,10 +70,11 @@ designatedPlayers = Turn.roleHolders TurnRole.Defending
 -- rather than off the combat record is what makes that true of a battle whose
 -- controller is the attacking player -- the case CR 310.9b's "notably" creates.
 --
--- The controller lookup is a PARAMETER because this module sits below
+-- The view lookup is a PARAMETER because this module sits below
 -- Parun.Engine.Projection -- Projection reads the designation from here -- and CR
--- 508.5's planeswalker arm is a layer-2 question. Every caller above Projection
--- passes Projection.controllerWithLastKnown, which is what CR 608.2h's last known
+-- 508.5's planeswalker arm is a layer-2 question, and defenderOfAttack's
+-- onlyBattle a layer-4 one. Every caller above Projection passes
+-- Projection.viewWithLastKnownAnywhere, which is what CR 608.2h's last known
 -- information asks for once CR 704.5i has buried the planeswalker: reading the
 -- object itself would answer nobody, and reading its owner the wrong seat.
 -- Parun.Engine.SourceContext.framedWith, below Projection, passes no lookup and
@@ -86,10 +90,10 @@ designatedPlayers = Turn.roleHolders TurnRole.Defending
 --
 -- Nothing means the target names no player: no defending player at all (outside
 -- combat), or a battle mid-repair with no designation (CR 310.11).
-playerOf :: (ObjectId -> GameState -> Maybe PlayerId) -> AttackTarget.AttackTarget -> GameState -> Maybe PlayerId
-playerOf controllerOf target gs = case target of
+playerOf :: (GameState -> Count.ViewOf) -> AttackTarget.AttackTarget -> GameState -> Maybe PlayerId
+playerOf viewOf target gs = case target of
   AttackTarget.OfPlayer pid -> Just pid
-  AttackTarget.OfPlaneswalker pw -> controllerOf pw gs
+  AttackTarget.OfPlaneswalker pw -> Filter.controller =<< viewOf gs pw
   -- CR 310.9d while the battle is there: the protector is the defending player
   -- relative to it, including CR 310.11's mid-repair battle whose designation
   -- names nobody. Once it has left, CR 506.4c keeps the creature attacking,
@@ -112,6 +116,17 @@ playerOf controllerOf target gs = case target of
   AttackTarget.OfBattle oid
     | Set.member oid (GameState.battlefield gs) -> Battle.protectorOf oid gs
     | otherwise -> Battle.lastKnownProtectorOf oid gs
+
+-- CR 506.4e's third sentence: a permanent attacked as a planeswalker that is
+-- now a battle and no planeswalker is a battle being attacked, so CR 310.9d
+-- makes its protector the defending player relative to it. Proved by
+-- data/scenarios/planeswalker-combat's "only-a-battle-is-blocked-by-its-protector".
+onlyBattle :: (GameState -> Count.ViewOf) -> ObjectId -> GameState -> Bool
+onlyBattle viewOf pw gs =
+  maybe
+    False
+    (\view -> Set.member CardType.Battle (Filter.cardTypes view) && Set.notMember CardType.Planeswalker (Filter.cardTypes view))
+    (viewOf gs pw)
 
 -- The same rule, asked of the attacking CREATURE rather than of what it attacks
 -- -- which is the shape every caller but the declaration's own event wants, rule
@@ -138,9 +153,9 @@ playerOf controllerOf target gs = case target of
 -- playerOf's own live arms answer for an attacker with no recorded seat: a combat
 -- record built by hand rather than declared. In a running game both writers of
 -- Combat.attackers record one.
-playerOfAttacker :: (ObjectId -> GameState -> Maybe PlayerId) -> ObjectId -> GameState -> Maybe PlayerId
-playerOfAttacker controllerOf attacker gs =
-  (\target -> defenderOfAttack controllerOf attacker target gs)
+playerOfAttacker :: (GameState -> Count.ViewOf) -> ObjectId -> GameState -> Maybe PlayerId
+playerOfAttacker viewOf attacker gs =
+  (\target -> defenderOfAttack viewOf attacker target gs)
     =<< Map.lookup attacker (Combat.attackers (TurnRegisters.combat (GameState.turn gs)))
 
 -- CR 508.5 whole: playerOfAttacker while the creature is attacking, and once it
@@ -149,16 +164,25 @@ playerOfAttacker controllerOf attacker gs =
 -- creature, which can outlive the attack (Sensational Spider-Man's trigger,
 -- provoke). The combat callers keep playerOfAttacker: each asks about a
 -- creature still attacking.
-defendingPlayerOf :: (ObjectId -> GameState -> Maybe PlayerId) -> ObjectId -> GameState -> Maybe PlayerId
-defendingPlayerOf controllerOf attacker gs =
-  playerOfAttacker controllerOf attacker gs
+defendingPlayerOf :: (GameState -> Count.ViewOf) -> ObjectId -> GameState -> Maybe PlayerId
+defendingPlayerOf viewOf attacker gs =
+  playerOfAttacker viewOf attacker gs
     Applicative.<|> Map.lookup attacker (Combat.removedDefending (TurnRegisters.combat (GameState.turn gs)))
 
 -- playerOfAttacker with the target already in hand, for a caller walking
 -- Combat.attackers' own entries (Parun.Engine.Damage).
-defenderOfAttack :: (ObjectId -> GameState -> Maybe PlayerId) -> ObjectId -> AttackTarget.AttackTarget -> GameState -> Maybe PlayerId
-defenderOfAttack controllerOf attacker target gs = case target of
-  AttackTarget.OfPlayer {} -> playerOf controllerOf target gs
+defenderOfAttack :: (GameState -> Count.ViewOf) -> ObjectId -> AttackTarget.AttackTarget -> GameState -> Maybe PlayerId
+defenderOfAttack viewOf attacker target gs = case target of
+  AttackTarget.OfPlayer {} -> playerOf viewOf target gs
+  -- CR 506.4e: a battle being attacked, so its protector rather than the seat
+  -- recorded for the planeswalker it was: the one recorded for it
+  -- (Combat.attackedProtectedBy), which CR 508.5's second sentence still names
+  -- once a protector change has removed it, else the battle's own. The
+  -- fallback is a regression fence: no test makes it a battle after the attack.
+  AttackTarget.OfPlaneswalker pw
+    | onlyBattle viewOf pw gs ->
+        Map.lookup attacker (Combat.attackedProtectedBy (TurnRegisters.combat (GameState.turn gs)))
+          Applicative.<|> playerOf viewOf (AttackTarget.OfBattle pw) gs
   _ ->
     Map.lookup attacker (Combat.attackedUnder (TurnRegisters.combat (GameState.turn gs)))
-      Applicative.<|> playerOf controllerOf target gs
+      Applicative.<|> playerOf viewOf target gs

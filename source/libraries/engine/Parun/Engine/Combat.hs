@@ -356,7 +356,7 @@ attackTargetKind target = case target of
 attackersOn :: PlayerId -> GameState -> [ObjectId]
 attackersOn pid gs =
   let recorded = Combat.attackers (TurnRegisters.combat (GameState.turn gs))
-      mine oid = Defender.playerOfAttacker Projection.controllerWithLastKnown oid gs == Just pid
+      mine oid = Defender.playerOfAttacker Projection.viewWithLastKnownAnywhere oid gs == Just pid
    in filter mine (Map.keys recorded)
 
 -- CR 506.4: is this planeswalker still one that is being attacked -- or has it
@@ -1353,7 +1353,7 @@ landwalkAllowsGiven (Snapshot.MkSnapshot {Snapshot.projected = pcs, Snapshot.gra
       -- apart once a battle is attacked. Nothing means the object is not attacking
       -- at all; an attacker whose battle has left still reads CR 506.2's defending
       -- player, which Parun.BattleSpec's departed-Siege trio proves.
-      defendingPlayer = Defender.playerOfAttacker Projection.controllerWithLastKnown attacker gs
+      defendingPlayer = Defender.playerOfAttacker Projection.viewWithLastKnownAnywhere attacker gs
       -- CR 702.14c's lands of the defending player. Lazy, and load-bearing: this
       -- walks the whole battlefield, and `any` below never forces it for an
       -- attacker without landwalk.
@@ -1851,7 +1851,7 @@ becomeBlockedAlone oid gs =
            in -- The status is conferred either way: with no defending player
               -- there is nobody for a CR 509.3c trigger to bind, and CR 509.1h
               -- still says the creature is blocked.
-              case Defender.playerOfAttacker Projection.controllerWithLastKnown oid gs Applicative.<|> Maybe.listToMaybe (Defender.defendingPlayers gs) of
+              case Defender.playerOfAttacker Projection.viewWithLastKnownAnywhere oid gs Applicative.<|> Maybe.listToMaybe (Defender.defendingPlayers gs) of
                 Nothing -> blocked
                 -- Blocked by NO creature, which is this road's whole point:
                 -- CR 509.3e's count triggers ask how many creatures block it,
@@ -1905,7 +1905,7 @@ switchBlockers first second gs =
           (<>)
           [ CombatRestriction.blockedLimits (Just defending) [attacker] gs
           | attacker <- [first, second],
-            Just defending <- [Defender.playerOfAttacker Projection.controllerWithLastKnown attacker gs]
+            Just defending <- [Defender.playerOfAttacker Projection.viewWithLastKnownAnywhere attacker gs]
           ]
       -- blocker -> attackers over the two targets after the switch, the shape
       -- blockerCountsAllowedGiven counts.
@@ -1959,7 +1959,7 @@ switchBlockers first second gs =
               -- so on every board the pool can build both of the pair are
               -- already blocked and this records nothing.
               becameBlocked = filter (\oid -> not (isBlocked oid gs)) (ListUtils.nubOrd (fmap snd arrivals))
-              blocked h oid = case Defender.playerOfAttacker Projection.controllerWithLastKnown oid gs of
+              blocked h oid = case Defender.playerOfAttacker Projection.viewWithLastKnownAnywhere oid gs of
                 Nothing -> h
                 Just defending -> Event.recordEvent (GameEvent.AttackerBlocked (AttackerBlocked.MkAttackerBlocked oid defending (Map.findWithDefault Set.empty oid moved))) h
            in -- CR 608.2f: one action, so every arrival reads the board as it
@@ -2102,7 +2102,7 @@ blockAttacker chooser oid = do
          in blockerCountsAllowedGiven most (Snapshot.projected board) joined gs
       blockable controller most attacker =
         not (Set.member oid (blockersOf attacker gs))
-          && Defender.playerOfAttacker Projection.controllerWithLastKnown attacker gs == Just controller
+          && Defender.playerOfAttacker Projection.viewWithLastKnownAnywhere attacker gs == Just controller
           && pairAllowed [oid] attacking oid attacker gs
           && countsAllowed most attacker
   case Projection.controllerOf oid gs of
@@ -2133,7 +2133,7 @@ blockAttacker chooser oid = do
                 becameBlocked h a =
                   if isBlocked a gs
                     then h
-                    else case Defender.playerOfAttacker Projection.controllerWithLastKnown a gs of
+                    else case Defender.playerOfAttacker Projection.viewWithLastKnownAnywhere a gs of
                       Nothing -> h
                       Just defending -> Event.recordEvent (GameEvent.AttackerBlocked (AttackerBlocked.MkAttackerBlocked a defending (Map.findWithDefault Set.empty a moved))) h
             State.put (List.foldl' becameBlocked (declared (recordEffectBlocks gs moved pairs blocked)) targets)
@@ -2734,7 +2734,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
                               -- this and the reader cannot answer differently.
                               Combat.attackedUnder =
                                 Map.union
-                                  (Map.mapMaybe (\target -> Defender.playerOf Projection.controllerWithLastKnown target g) kept)
+                                  (Map.mapMaybe (\target -> Defender.playerOf Projection.viewWithLastKnownAnywhere target g) kept)
                                   (Combat.attackedUnder (TurnRegisters.combat (GameState.turn g))),
                               -- CR 506.4's controller clause for a battle, taken at the
                               -- same moment and off the battle itself: the seat above is
@@ -2990,7 +2990,7 @@ attemptAttackDeclaration perform pid asked forced rejected = do
                     let declared = Natural.length survivors
                         record h oid = Maybe.fromMaybe h $ do
                           t <- Map.lookup oid kept
-                          d <- Defender.playerOf Projection.controllerWithLastKnown t g
+                          d <- Defender.playerOf Projection.viewWithLastKnownAnywhere t g
                           snapshot <- Projection.objectSnapshot oid g
                           pure (Event.recordEvent (GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared oid d t declared (attackerOf oid) snapshot)) h)
                      in List.foldl' record g survivors
@@ -3288,7 +3288,7 @@ putOntoBattlefieldAttacking choice oid = do
                                 Maybe.maybe
                                   (Combat.attackedUnder c)
                                   (\seat -> Map.insert oid seat (Combat.attackedUnder c))
-                                  (Defender.playerOf Projection.controllerWithLastKnown target gs),
+                                  (Defender.playerOf Projection.viewWithLastKnownAnywhere target gs),
                               -- CR 506.4's controller clause for a battle, on the CR
                               -- 508.4 road: THIS creature joins combat now, so the seat
                               -- it compares against is who controls the battle now --
@@ -3386,7 +3386,7 @@ putOntoBattlefieldBlocking choice oid = do
         -- CR 509.4a's first clause
         Map.member attacker (Combat.attackers (TurnRegisters.combat (GameState.turn start)))
           -- CR 506.3e / CR 509.4a's second clause
-          && Defender.playerOfAttacker Projection.controllerWithLastKnown attacker start == Just controller
+          && Defender.playerOfAttacker Projection.viewWithLastKnownAnywhere attacker start == Just controller
   case Projection.controllerOf oid start of
     Just controller
       | Set.member oid (GameState.battlefield start),
@@ -3550,7 +3550,7 @@ declareBlockers perform = do
     State.modify' $ \g ->
       let c = TurnRegisters.combat (GameState.turn g)
           unblocked = filter (\oid -> not (Map.member oid (Combat.blockers c))) (Map.keys (Combat.attackers c))
-          defendingFor oid = Defender.playerOfAttacker Projection.controllerWithLastKnown oid g Applicative.<|> Maybe.listToMaybe (Defender.defendingPlayers g)
+          defendingFor oid = Defender.playerOfAttacker Projection.viewWithLastKnownAnywhere oid g Applicative.<|> Maybe.listToMaybe (Defender.defendingPlayers g)
           record h oid = case defendingFor oid of
             Nothing -> h
             Just defending -> Event.recordEvent (GameEvent.AttackerUnblocked (AttackerUnblocked.MkAttackerUnblocked oid defending)) h
@@ -3872,6 +3872,6 @@ attemptBlockDeclaration perform pid asked attacking rejected = do
               let becameBlocked = Set.difference (Set.fromList (fmap snd pairs)) wasBlocked
               State.modify'
                 ( \g ->
-                    let defendingFor oid = Maybe.fromMaybe pid (Defender.playerOfAttacker Projection.controllerWithLastKnown oid g)
+                    let defendingFor oid = Maybe.fromMaybe pid (Defender.playerOfAttacker Projection.viewWithLastKnownAnywhere oid g)
                      in List.foldl' (\h attacker -> Event.recordEvent (GameEvent.AttackerBlocked (AttackerBlocked.MkAttackerBlocked attacker (defendingFor attacker) (Map.findWithDefault Set.empty attacker merged))) h) g (Set.toList becameBlocked)
                 )

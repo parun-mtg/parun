@@ -64,6 +64,9 @@ framedWith choices source gs context =
       -- CR 508.5, for a source that is attacking or was removed from combat
       -- (Gaea's Liege). No control read: a declared attack records its seat
       -- (Combat.attackedUnder), so `playerOf`'s live arm is never reached.
+      --
+      -- Not implemented: CR 506.4e's protector for a planeswalker that became
+      -- only a battle, which needs the projected card types (#7352).
       Filter.defendingPlayers = Maybe.maybeToList (Defender.defendingPlayerOf (\_ _ -> Nothing) source gs)
     }
 
