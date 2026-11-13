@@ -2343,6 +2343,9 @@ namedTokens =
       -- Mole Man, Moloid Master's "a 1/1 green Minion creature token named
       -- Moloid".
       CardName.MkCardName (Text.pack "Moloid"),
+      -- Mutable Explorer's "a tapped Mutavault token", the card Mutavault's
+      -- characteristics under its name.
+      CardName.MkCardName (Text.pack "Mutavault"),
       CardName.MkCardName (Text.pack "Nalaar Aetherjet"),
       -- Yotia Declares War's "a 0/2 colorless Thopter artifact creature token
       -- with flying named Ornithopter".
@@ -2392,7 +2395,7 @@ tokenNameOffends token
 -- cards printing it, hand-kept for namedTokens' reason. Each must name every
 -- quality of the domain.
 protectionFromEach :: Set.Set CardName.CardName
-protectionFromEach = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Iridescent Angel", "Spectra Ward"])
+protectionFromEach = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Iridescent Angel", "Spectra Ward", "Sygg, Wanderbrine Shield"])
 
 -- CR 702.16g's "protection from [A] and from [B]": the cards printing a list,
 -- which any subset of the domain satisfies. Council Guardian's per-colour
@@ -6968,6 +6971,22 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         Spec.assertBool s (not (tokenNameOffends token)) "the legendary token passes"
         Spec.assertBool s (tokenNameOffends mundane) "and the same face without Legendary does not"
       other -> Spec.assertFailure s ("expected exactly one Create, got " <> show (length other))
+  -- No Create shape names a pool card, so this is what keeps the token and the
+  -- card from drifting apart.
+  Spec.it s "Mutable Explorer's token has the card Mutavault's characteristics" $ do
+    explorer <- S.printingOf s registry "Mutable Explorer"
+    vault <- S.printingOf s registry "Mutavault"
+    Spec.assertEqWith
+      s
+      "the token is the card's face, less its Oracle text"
+      ( concatMap
+          (NonEmpty.toList . Card.Type.faces)
+          ( Maybe.mapMaybe
+              (\effect -> case effect of Effect.Create (Create.MkCreate _ token _ _ _ _) -> Just token; _ -> Nothing)
+              (cardResolutionEffects (S.combinedFace explorer))
+          )
+      )
+      [(S.combinedFace vault) {Face.oracleText = Nothing}]
   Spec.it s "CR 702.16h every protection from each domain names the whole domain" $ do
     ps <- S.allPrintings s corpus
     let faces = concatMap (overFaces withMinted . Printing.card) ps
@@ -6976,8 +6995,9 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "no card is classified both ways" (Set.intersection protectionFromEach protectionListed) Set.empty
     Spec.assertEqWith s "every classified card prints such a group" (Set.difference (Set.union protectionFromEach protectionListed) grouped) Set.empty
   -- The rejecting direction, one limb of protectionGroups each: Iridescent
-  -- Angel's face keywords, Spectra Ward's static grants, and Paladin en-Vec's
-  -- listed pair once it is no longer listed.
+  -- Angel's face keywords, Spectra Ward's static grants, Sygg, Wanderbrine
+  -- Shield's resolution grants, and Paladin en-Vec's listed pair once it is no
+  -- longer listed.
   Spec.it s "CR 702.16h the lint catches a missing colour and an unclassified list" $ do
     angel <- S.combinedFace <$> S.printingOf s registry "Iridescent Angel"
     ward <- S.combinedFace <$> S.printingOf s registry "Spectra Ward"
@@ -6997,7 +7017,20 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (null (protectionOffences ward {Face.staticAbilities = fmap withoutGreen (Face.staticAbilities ward)}))) "and granting no green does not"
     Spec.assertEqWith s "Paladin en-Vec passes" (protectionOffences paladin) []
     Spec.assertBool s (not (null (protectionOffences paladin {Face.name = CardName.MkCardName (Text.pack "Unlisted Paladin")}))) "and unlisted does not"
-  -- The third limb, and the card-type domain: no pool card grants either, so a
+    sygg <- S.printingOf s registry "Sygg, Wanderwine Wisdom"
+    let keepEffect effect = case effect of
+          Effect.ModifyTarget modifyTarget -> keepModification (ModifyTarget.modification modifyTarget)
+          _ -> True
+        withoutGreenGrant ability =
+          let modal = TriggeredAbility.modal ability
+              shorn clause = clause {Clause.effects = Seq.filter keepEffect (Clause.effects clause)}
+           in ability {TriggeredAbility.modal = modal {Modal.modes = fmap (\mode -> mode {Mode.clauses = fmap shorn (Mode.clauses mode)}) (Modal.modes modal)}}
+    case Card.faceNamed (CardName.MkCardName (Text.pack "Sygg, Wanderbrine Shield")) (Printing.card sygg) of
+      Nothing -> Spec.assertFailure s "Sygg, Wanderwine Wisdom has no Wanderbrine Shield face"
+      Just shield -> do
+        Spec.assertEqWith s "Sygg, Wanderbrine Shield passes" (protectionOffences shield) []
+        Spec.assertBool s (not (null (protectionOffences shield {Face.triggeredAbilities = fmap withoutGreenGrant (Face.triggeredAbilities shield)}))) "and granting no green does not"
+  -- The card-type domain, in the third limb: no pool card grants it, so a
   -- hand-built instant granting two card-type protections until end of turn.
   Spec.it s "CR 702.16h the lint reads a resolution effect's grants of card-type protection" $ do
     let grant cardType = Effect.ModifyTarget (ModifyTarget.MkModifyTarget Duration.UntilEndOfTurn (Modification.GainKeyword (Keyword.Protection (Protection.MkProtection (Filter.Type.HasCardType cardType) Nothing))) (plantedRef "mt") Nothing)

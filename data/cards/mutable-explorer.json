@@ -1,0 +1,202 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Changeling"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Mutable Explorer",
+      "oracleText": "Changeling (This card is every creature type.)\nWhen this creature enters, create a tapped Mutavault token. (It's a land with \"{T}: Add {C}\" and \"{1}: This token becomes a 2/2 creature with all creature types until end of turn. It's still a land.\")",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "TapThis"
+                                        }
+                                      ],
+                                      "mana": []
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "AddMana",
+                                                  "value": {
+                                                    "production": {
+                                                      "type": "OfType",
+                                                      "value": {
+                                                        "type": "Colorless"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  {
+                                    "cost": {
+                                      "mana": [
+                                        {
+                                          "type": "Generic",
+                                          "value": 1
+                                        }
+                                      ]
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "ModifyTarget",
+                                                  "value": {
+                                                    "duration": {
+                                                      "type": "UntilEndOfTurn"
+                                                    },
+                                                    "modification": {
+                                                      "type": "CardType",
+                                                      "value": {
+                                                        "cardType": "Creature",
+                                                        "mode": "InAddition"
+                                                      }
+                                                    },
+                                                    "ref": {
+                                                      "type": "InSlot",
+                                                      "value": "self"
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "type": "ModifyTarget",
+                                                  "value": {
+                                                    "duration": {
+                                                      "type": "UntilEndOfTurn"
+                                                    },
+                                                    "modification": {
+                                                      "type": "AddEveryCreatureSubtype"
+                                                    },
+                                                    "ref": {
+                                                      "type": "InSlot",
+                                                      "value": "self"
+                                                    }
+                                                  }
+                                                },
+                                                {
+                                                  "type": "ModifyTarget",
+                                                  "value": {
+                                                    "duration": {
+                                                      "type": "UntilEndOfTurn"
+                                                    },
+                                                    "modification": {
+                                                      "type": "SetBasePowerToughness",
+                                                      "value": {
+                                                        "power": {
+                                                          "type": "Literal",
+                                                          "value": 2
+                                                        },
+                                                        "toughness": {
+                                                          "type": "Literal",
+                                                          "value": 2
+                                                        }
+                                                      }
+                                                    },
+                                                    "ref": {
+                                                      "type": "InSlot",
+                                                      "value": "self"
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "name": "Mutavault",
+                                "typeLine": {
+                                  "types": [
+                                    "Land"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "riders": {
+                            "tapped": "Tapped"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Shapeshifter"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
