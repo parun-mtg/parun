@@ -47,6 +47,7 @@ import qualified Parun.Engine.Resolve.Common as Common
 import Parun.Engine.Resolve.Slots (boundSlots, resolvingAbilityName, slotBindings)
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Types.AbilityKind as AbilityKind
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction.Type
@@ -1307,9 +1308,17 @@ performTriggeredManaAbility runSubgame pending = case PendingTrigger.source pend
                   (Binding.you, Set.singleton (Recipient.ToPlayer controller))
                 ]
             )
+    gs <- State.get
+    -- CR 113.7a / 613.1f: the arms carry what their names mean to this
+    -- ability, as performManaAbilityEffects' do. A regression fence: `jq`
+    -- over data/cards/ for a triggered ability holding both AddMana and
+    -- ArmDelayedTrigger, 2026-11-13, finds only Kari Zev, Crew of Two's
+    -- attack trigger, no mana ability; a Mana Flare that drew at the next
+    -- upkeep would refute it.
+    let carrying = Projection.carryingDelayed (TriggeredAbility.name (PendingTrigger.ability pending)) source gs
     case Modal.forcedSelection every (Modal.Type.selection modal) of
       Nothing -> pure ()
-      Just selection -> Monad.void (runCarrying runSubgame source controller bound Map.empty (Modal.modesEffects selection modal))
+      Just selection -> Monad.void (runCarrying runSubgame source controller bound Map.empty (fmap carrying (Modal.modesEffects selection modal)))
 
 -- CR 405.6c: run some non-mana effects of a mana ability, as
 -- Parun.Engine.Cost.tapForManaWith reaches them in printed order.
@@ -1331,18 +1340,31 @@ performTriggeredManaAbility runSubgame pending = case PendingTrigger.source pend
 -- have bound; the other slots Parun.AbilitySlotLintSpec's activatedAbilityOffends
 -- admits a read of are the ones its cost's payment binds, which reach the yield
 -- (Cost.tapForManaWith) and not these effects (#4850).
-performManaAbilityEffects :: Game Result -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> [Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> Game (Map.Map SlotName (Set Recipient))
-performManaAbilityEffects runSubgame source controller =
+--
+-- CR 113.7a / 613.1f: nor has it an object to freeze its source's delayed
+-- abilities on, so each arm carries the one its name means to the ability
+-- named `reader` (Projection.carryingDelayed). The scenario
+-- myr-welder-s-acquired-mana-ability-arms-the-delayed-trigger-of-its-card
+-- proves it.
+performManaAbilityEffects :: Game Result -> ObjectId -> Maybe AbilityName.AbilityName -> PlayerId -> Map.Map SlotName (Set Recipient) -> [Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)] -> Game (Map.Map SlotName (Set Recipient))
+performManaAbilityEffects runSubgame source reader controller bound effects = do
+  gs <- State.get
   -- CR 109.5's "you" is the player who activated the ability, and the reserved
   -- self slot is CR 113.7's source. Both are bound here rather than read off an
   -- object, because there is no ability object carrying them:
   -- Parun.Engine.Activate.activateAbility stamps them for every ability that does
   -- go on the stack.
-  runCarrying runSubgame source controller $
-    Map.fromList
-      [ (Binding.triggerSource, Set.singleton (Recipient.ToObject source)),
-        (Binding.you, Set.singleton (Recipient.ToPlayer controller))
-      ]
+  runCarrying
+    runSubgame
+    source
+    controller
+    ( Map.fromList
+        [ (Binding.triggerSource, Set.singleton (Recipient.ToObject source)),
+          (Binding.you, Set.singleton (Recipient.ToPlayer controller))
+        ]
+    )
+    bound
+    (fmap (Projection.carryingDelayed reader source gs) effects)
 
 -- CR 608.2c: run instructions that have no stack object in printed order, with
 -- `holder` both resolving and source (CR 113.7), carrying what each one binds
