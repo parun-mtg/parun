@@ -652,7 +652,7 @@ moveMana settle resolving source controller legal (MoveMana.MkMoveMana fromRef t
   Mana.moveMana settle (Common.apnapPlayersOf fromRef legal resolving source controller gs) (foldMap (\ref -> Common.apnapPlayersOf ref legal resolving source controller gs) toRef)
 
 search :: Game () -> (Game Result -> ManaAbilityPerformer.ManaAbilityPerformer) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Search.Search -> Game ()
-search settle performManaAbility runSubgame resolving source controller legal (Search.MkSearch searcherRef ownerRef zones outside quantity filter_ descriptions upTo destination counters subject foundSlot handSlot librarySlot differentIn exactly andOr) =
+search settle performManaAbility runSubgame resolving source controller legal (Search.MkSearch searcherRef ownerRef zones outside quantity filter_ descriptions upTo destination counters subject foundSlot handSlot librarySlot differentIn exactly andOr top) =
   -- CR 701.23a: match each candidate through its own CR 613 projection --
   -- rule 613.1 names no zone, so a card in any of the searched zones is folded
   -- exactly as a permanent is, and CR 208.2a's characteristic-defining power
@@ -772,6 +772,12 @@ search settle performManaAbility runSubgame resolving source controller legal (S
             -- by what the searched zones hold, which is CR 701.23a's "all cards
             -- in that zone".
             cap = fmap evaluateCap quantity
+            -- Search.top: how many of the library's top cards the card itself
+            -- names (Assemble the Team), read once on the same board (CR
+            -- 608.2h). It narrows the look and nothing else: docs/decisions.md,
+            -- "Whether a search printed over a portion of a library searches
+            -- that library". The scenarios assemble-the-team-* are the proof.
+            printedTop = fmap evaluateCap top
             -- CR 608.2h: what a found card enters with (Search.counters, CR
             -- 122.6) is determined once, on the board the cap reads.
             entering = Common.freezeCounters (effectViewOf resolving source legal gs0) (effectContext gs0 resolving controller source legal (slotBindings resolving gs0)) gs0 resolving source counters
@@ -801,7 +807,14 @@ search settle performManaAbility runSubgame resolving source controller legal (S
           -- other (the card's 2021-03-19 ruling). Only the library is
           -- narrowed, and the shuffle below is still of all of it. The
           -- scenarios aven-mindcensor-* are the proof.
-          portion <- State.gets (\g -> Set.fromList . (`List.genericTake` Game.zoneMembers Zone.Library owner g) <$> PlayerEffect.searchPortion searcher g)
+          --
+          -- A printed portion (Search.top) is a second source for the same
+          -- cards, and the lesser of the two is searched: docs/decisions.md,
+          -- "What a replaced search leaves of a search printed over a
+          -- portion".
+          portion <- State.gets $ \g ->
+            let counts = Maybe.maybeToList printedTop <> Maybe.maybeToList (PlayerEffect.searchPortion searcher g)
+             in if null counts then Nothing else Just (Set.fromList (List.genericTake (minimum counts) (Game.zoneMembers Zone.Library owner g)))
           let inPortion zone oid = zone /= Zone.Library || maybe True (Set.member oid) portion
           -- The printed "and/or": the searcher picks which of the zones the
           -- card names to look through -- Delivery Moogle's "your library

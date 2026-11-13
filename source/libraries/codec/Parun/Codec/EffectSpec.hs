@@ -384,7 +384,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
               Search.librarySlot = Nothing,
               Search.differentIn = Set.empty,
               Search.exactly = False,
-              Search.andOr = False
+              Search.andOr = False,
+              Search.top = Nothing
             }
       )
       " {\"type\":\"Search\",\"value\":{\"searcher\":{\"type\":\"Relative\",\"value\":\"You\"},\"owner\":{\"type\":\"InSlot\",\"value\":\"target\"},\"quantity\":{\"type\":\"Literal\",\"value\":2},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"destination\":\"BattlefieldTapped\"}} "

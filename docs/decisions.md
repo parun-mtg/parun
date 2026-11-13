@@ -442,6 +442,42 @@ Entries are ordered by the first rule each cites.
   `aven-mindcensor-keeps-panglacial-wurm-below-the-top-four-from-being-cast`.
 - **Issue**: #4342.
 
+## Whether a search printed over a portion of a library searches that library
+
+- **Question**: Assemble the Team says "search the top third of your library".
+  Is that a search of the library, for an ability that triggers on one, a
+  prohibition of one, or a replacement of one?
+- **Rules**: CR 701.23a, 701.23f; CR of 2026-11-06. The card is digital-only
+  and has no ruling.
+- **Decision**: Yes. Ob Nixilis, Unshackled triggers, Leonin Arbiter stops it,
+  Aven Mindcensor replaces it, and Panglacial Wurm may be cast from the
+  portion.
+- **Rejected**: No, the portion being no zone: CR 701.23f keeps a search
+  replaced with one of a portion a search of the library, and a printed
+  portion is the same look at the same cards.
+- **Site**: `Parun.Engine.Resolve.Arms.Damage.search`'s `printedTop`, which
+  narrows `portion` and nothing else. Proved by the scenario
+  `assemble-the-team-s-search-of-a-top-third-is-a-search-of-the-library`.
+- **Issue**: #7326.
+
+## What a replaced search leaves of a search printed over a portion
+
+- **Question**: Aven Mindcensor replaces an opponent's search of a library
+  with one of its top four cards. What does that opponent's Assemble the Team
+  search, when the top third is more than four cards, or fewer?
+- **Rules**: CR 614.1a, 614.6, 701.23f; CR of 2026-11-06.
+- **Decision**: The lesser of the two: the top four where the third is more,
+  the top third where it is fewer.
+- **Rejected**: Always the top four, on the replacement's own words: fewer
+  than four in the top third would have Aven Mindcensor show its opponent
+  more of the library. Always the top third, the search being of no whole
+  library: the entry above.
+- **Site**: `Parun.Engine.Resolve.Arms.Damage.search`'s `portion`. Proved by
+  the scenarios
+  `aven-mindcensor-narrows-assemble-the-team-s-top-third-to-the-top-four` and
+  `aven-mindcensor-leaves-assemble-the-team-s-top-third-of-three-at-three`.
+- **Issue**: #7326.
+
 ## Who on a winning team takes the ante
 
 - **Question**: CR 407.2 gives the ante to "the winner", but a team win (CR
