@@ -9,6 +9,7 @@ import qualified Control.Applicative as Applicative
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Identity as Identity
 import qualified Data.Graph as Graph
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
@@ -23,6 +24,7 @@ import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.AbilityZone as AbilityZone
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Count as Count
@@ -113,6 +115,7 @@ import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
+import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.NameInsertion as NameInsertion
@@ -371,18 +374,19 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- in data/scenarios prove it.
         Modification.GainAbility g -> case g of
           -- The cost names its granter by id (Binding.grantingPermanent);
-          -- data/scenarios' Fishing Pole files prove each names its own.
+          -- data/scenarios' Fishing Pole files prove each names its own. The
+          -- effect does too (bakeGranter).
           GrantedAbility.Activated a ->
             let named
                   | Keyword.countsActivations a = a {ActivatedAbility.name = Just (Binding.acquiredFrom src (ActivatedAbility.name a))}
                   | otherwise = a
-             in pc {PC.activatedAbilities = PC.activatedAbilities pc <> [named {ActivatedAbility.cost = Filter.bakeCost Binding.grantingPermanent src (ActivatedAbility.cost a), ActivatedAbility.costChoices = fmap (CostChoice.MkCostChoice . fmap (Filter.bakeCost Binding.grantingPermanent src) . CostChoice.unwrap) (ActivatedAbility.costChoices a)}]}
+             in pc {PC.activatedAbilities = PC.activatedAbilities pc <> [named {ActivatedAbility.cost = Filter.bakeCost Binding.grantingPermanent src (ActivatedAbility.cost a), ActivatedAbility.costChoices = fmap (CostChoice.MkCostChoice . fmap (Filter.bakeCost Binding.grantingPermanent src) . CostChoice.unwrap) (ActivatedAbility.costChoices a), ActivatedAbility.modal = bakeGranter src (ActivatedAbility.modal a)}]}
           GrantedAbility.Triggered t ->
             let named = case TriggeredAbility.limit t of
                   TriggerLimit.Unlimited -> t
                   TriggerLimit.OncePerTurn _ -> t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
                   TriggerLimit.OncePerGame -> t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
-             in pc {PC.triggeredAbilities = PC.triggeredAbilities pc <> [named]}
+             in pc {PC.triggeredAbilities = PC.triggeredAbilities pc <> [named {TriggeredAbility.modal = bakeGranter src (TriggeredAbility.modal named)}]}
           GrantedAbility.Static sa -> case affected of
             Affected.TheseObjects _ -> pc
             _ -> pc {PC.grantedStaticAbilities = PC.grantedStaticAbilities pc <> [(stamp, sa)]}
@@ -896,6 +900,23 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- nothing.
         Modification.LoyaltyIsToughness ->
           pc {PC.loyaltyIsToughness = True}
+
+-- CR 201.5a: the granter's id (Binding.grantingPermanent) baked into the
+-- effects of an ability it grants, as Filter.bakeCost bakes it into the cost:
+-- every Filter an effect holds outright or through an ObjectRef, however deep
+-- the effect is nested. Named by id, so a granter that has since changed zones
+-- is a different object and is not found (CR 400.7).
+-- data/scenarios' Trusty Boomerang files prove it. The triggered arm shares the
+-- bake and has no producer in data/cards; Spare Dagger would be one.
+--
+-- Not implemented: the name in any other position of the granted ability -- a
+-- Quantity, a Condition, a target slot, a quoted ability (#7329).
+bakeGranter :: ObjectId -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
+bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . effect}
+  where
+    effect = Identity.runIdentity . Children.effectChildren Children.effectLeaves {Children.onEffect = Identity.Identity . effect, Children.onObjectRef = Identity.Identity . ref, Children.onFilter = Identity.Identity . bake}
+    ref = Identity.runIdentity . Children.objectRefChildren Children.objectRefLeaves {Children.refFilter = Identity.Identity . bake, Children.refNested = Identity.Identity . ref}
+    bake = Filter.bakeBound Map.empty (Map.singleton Binding.grantingPermanent (Set.singleton granter)) Map.empty
 
 -- One grant, dropped when CR 205.3d refuses it. The refusal is proved at the
 -- land-type direction (Parun.ProjectionSpec's Synthetic Marsh Song case) and is a

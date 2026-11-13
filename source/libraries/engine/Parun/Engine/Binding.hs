@@ -736,11 +736,12 @@ discardedCard = SlotName.MkSlotName (Text.pack "thatDiscardedCard")
 tappedPermanent :: SlotName
 tappedPermanent = SlotName.MkSlotName (Text.pack "thatTappedPermanent")
 
--- CR 113.7 / 602.2: in the cost of an ability a static ability grants, the
--- permanent granting it, where IsSource is the receiver -- Fishing Pole's "Tap
--- Fishing Pole". Parun.Engine.Projection's GainAbility arm bakes it into the
+-- CR 113.7 / 602.2 / 201.5a: in the cost or an effect of an ability a static
+-- ability grants, the permanent granting it, where IsSource is the receiver --
+-- Fishing Pole's "Tap Fishing Pole", Trusty Boomerang's "Return Trusty
+-- Boomerang". Parun.Engine.Projection's GainAbility arm bakes it into the
 -- granter's id, so two Poles grant two abilities, each naming its own. Never
--- bound at runtime, and unpayable anywhere else.
+-- bound at runtime, so it matches nothing where that arm does not bake it.
 grantingPermanent :: SlotName
 grantingPermanent = SlotName.MkSlotName (Text.pack "thatGrantingPermanent")
 
