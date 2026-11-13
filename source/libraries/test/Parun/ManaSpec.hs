@@ -2142,26 +2142,25 @@ foodChainSpec s registry = Spec.describe s "Food Chain" $ do
 
   -- The wide board again, with a second claimant on the creatures: each makes
   -- Food Chain's group CONTESTED, so it may take fewer of them, yet the walk
-  -- stays small.
-  Spec.it s "CR 118.3 Food Chain beside forty-five creatures and a rival for them still answers at once" $ do
+  -- stays small. A case per rival, so the three run in parallel.
+  Foldable.for_ ["Food Chain", "Blood Pet", "Ashnod's Altar"] $ \rivalName -> Spec.it s ("CR 118.3 Food Chain beside forty-five creatures and a rival for them, " <> rivalName <> ", still answers at once") $ do
     chain <- S.printingOf s registry "Food Chain"
     creatures <- traverse (S.printingOf s registry) ["Crimson Kobolds", "Aegis Turtle", "Alpha Myr", "Alaborn Trooper", "Axebane Beast", "Ancient Carp", "Alpha Tyrranax", "Axebane Stag", "Ancient Brontodon"]
-    rivals <- traverse (S.printingOf s registry) ["Food Chain", "Blood Pet", "Ashnod's Altar"]
+    rival <- S.printingOf s registry rivalName
     progenitus <- S.printingOf s registry "Progenitus"
-    Foldable.for_ rivals $ \rival -> do
-      let (held, oid) =
-            S.handOne
-              progenitus
-              ( Game.overTurn
-                  ( \registers ->
-                      registers
-                        { TurnRegisters.phase = Phase.PrecombatMain,
-                          TurnRegisters.remaining = Seq.empty
-                        }
-                  )
-                  (alicePermanents (chain : rival : concatMap (replicate 5) creatures))
-              )
-      Spec.assertBool s (S.castable S.alice oid held) "Progenitus is offered"
+    let (held, oid) =
+          S.handOne
+            progenitus
+            ( Game.overTurn
+                ( \registers ->
+                    registers
+                      { TurnRegisters.phase = Phase.PrecombatMain,
+                        TurnRegisters.remaining = Seq.empty
+                      }
+                )
+                (alicePermanents (chain : rival : concatMap (replicate 5) creatures))
+            )
+    Spec.assertBool s (S.castable S.alice oid held) "Progenitus is offered"
 
   -- A CONTESTED creature Food Chain must still take: Blood Pet's mana value
   -- is 1, so exiling it adds two of a colour where sacrificing it adds one
