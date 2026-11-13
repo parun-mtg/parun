@@ -502,8 +502,10 @@ Entries are ordered by the first rule each cites.
   nothing, and one that left a moment earlier would read as attacking the new
   controller, on the second board a player it never attacked.
 - **Site**: `Parun.Engine.Count.lastKnownView`, reading
-  `Combat.removedDefending`. Proved by turns 12 and 17 of the scenario
-  mangara-draws-when-two-attack-you-or-your-planeswalkers-and-for-an-opponents-second-spell.
+  `Combat.removedDefending`. Proved by the scenarios
+  mangara-draws-though-your-planeswalker-is-taken-after-both-of-its-attackers-died
+  and
+  mangara-counts-a-departed-attackers-planeswalker-under-whoever-controlled-it-as-the-attacker-left.
 - **Issue**: #5890.
 
 ## What Jin Sakai's "no other creatures are attacking that player" asks
