@@ -11,6 +11,10 @@
                   "type": "Announced",
                   "value": "X"
                 }
+              },
+              {
+                "type": "VariableAtLeast",
+                "value": 1
               }
             ],
             "mana": [
@@ -19,7 +23,6 @@
               }
             ]
           },
-          "minimumX": 1,
           "modal": {
             "modes": [
               {

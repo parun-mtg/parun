@@ -1825,7 +1825,6 @@ cycling cost searchFor =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           ActivatedAbility.restrictions = [],
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -1870,7 +1869,6 @@ reinforce n cost =
           -- CR 702.77a states no timing restriction, which leaves CR 117.1b's
           -- default, and gives the ability outright with no "as long as".
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           ActivatedAbility.restrictions = [],
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -1948,7 +1946,6 @@ craft spec =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton returned),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           -- CR 602.5d, rule 702.167a's "Activate only as a sorcery" -- scavenge's
           -- restriction.
@@ -2018,7 +2015,6 @@ searchForSameManaValue cost filter_ destination =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           ActivatedAbility.restrictions = [ActivationRestriction.SorcerySpeed],
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -2113,7 +2109,6 @@ ninjutsu (Ninjutsu.MkNinjutsu cost variant) =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           -- Rule 702.49a states no timing restriction, which leaves CR 117.1b's
           -- default: a ninja may arrive after blockers are declared.
@@ -2246,7 +2241,6 @@ unearth cost =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.fromList [returned, hasted, armed, redirected]),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           -- CR 602.5d, rule 702.84a's "Activate only as a sorcery" -- levelUp's
           -- restriction.
@@ -2361,7 +2355,6 @@ graveyardTokenCopy exceptions cost =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton copied),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           -- CR 602.5d, the rules' "Activate only as a sorcery".
           ActivatedAbility.restrictions = [ActivationRestriction.SorcerySpeed],
@@ -2407,7 +2400,6 @@ scavenge cost =
           ActivatedAbility.modal =
             Mint.oneModeTargeting (Map.singleton scavengeTarget slot) (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           -- CR 602.5d, rule 702.97a's "Activate only as a sorcery".
           ActivatedAbility.restrictions = [ActivationRestriction.SorcerySpeed],
@@ -2516,7 +2508,6 @@ encore cost =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.fromList [loop, hasted, armed]),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           -- CR 602.5d, rule 702.141a's "Activate only as a sorcery".
           ActivatedAbility.restrictions = [ActivationRestriction.SorcerySpeed],
@@ -2680,7 +2671,6 @@ crew n =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.fromList [becomes CardType.Artifact, becomes CardType.Creature]),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           ActivatedAbility.restrictions = [],
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -2737,7 +2727,6 @@ saddle n =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton (Effect.Designate (Designate.MkDesignate Designation.Saddled Binding.triggerSource Nothing))),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           ActivatedAbility.restrictions = [ActivationRestriction.SorcerySpeed],
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -2810,7 +2799,6 @@ station =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton load),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           ActivatedAbility.restrictions = [ActivationRestriction.SorcerySpeed],
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -2857,7 +2845,6 @@ levelUp cost =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton gain),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           ActivatedAbility.restrictions = [ActivationRestriction.SorcerySpeed],
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -2889,7 +2876,6 @@ outlast cost =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton grow),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           ActivatedAbility.restrictions = [ActivationRestriction.SorcerySpeed],
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -2953,7 +2939,6 @@ equip payload =
             Mint.oneModeTargeting (Map.singleton equipTarget slot) (Seq.singleton effect),
           -- CR 702.6a's "Activate only as a sorcery", which CR 307.5 spells out.
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           -- CR 602.5b: the rider the card prints after the keyword joins the rule's.
           ActivatedAbility.restrictions = ActivationRestriction.SorcerySpeed : fmap ActivationRestriction.TimesEachTurn (Maybe.maybeToList (Equip.timesEachTurn payload)),
@@ -3004,7 +2989,6 @@ fortify cost =
             Mint.oneModeTargeting (Map.singleton fortifyTarget slot) (Seq.singleton effect),
           -- CR 702.67a's "Activate only as a sorcery", which CR 307.5 spells out.
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           ActivatedAbility.restrictions = [ActivationRestriction.SorcerySpeed],
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -3051,7 +3035,6 @@ reconfigure cost =
             Mint.oneModeTargeting (Map.singleton reconfigureTarget slot) (Seq.singleton effect),
           -- CR 702.151a's "Activate only as a sorcery", which CR 307.5 spells out.
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           ActivatedAbility.restrictions = [ActivationRestriction.SorcerySpeed],
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -3083,7 +3066,6 @@ reconfigureOff cost =
       ActivatedAbility.modal =
         Mint.oneMode (Seq.singleton (Effect.Unattach (ObjectRef.EachMatching Filter.IsSource))),
       ActivatedAbility.maximumX = [],
-      ActivatedAbility.minimumX = 0,
       ActivatedAbility.definedX = Nothing,
       ActivatedAbility.restrictions =
         [ ActivationRestriction.OnlyIf
@@ -3125,7 +3107,6 @@ auraSwap cost =
           ActivatedAbility.modal =
             Mint.oneModeOf Map.empty (Seq.singleton (Mint.youMay (Seq.singleton effect))),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           ActivatedAbility.restrictions = [],
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -7265,7 +7246,6 @@ predefinedArtifactToken name subtype mana effect =
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           ActivatedAbility.restrictions = [],
           ActivatedAbility.activator = Activator.Related PlayerRelation.You,

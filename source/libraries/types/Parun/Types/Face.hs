@@ -446,7 +446,8 @@ data Face card = MkFace
     maximumX :: [Quantity.Quantity],
     -- | CR 101.1: the floor this face's own words put on that X -- Mind Grind's
     -- "X can't be 0". 0 for a face that states none. A SPELL's X alone, as
-    -- above; an ability's is Parun.Types.ActivatedAbility.minimumX.
+    -- above; an ability's, or one alternative cost's, rides that cost
+    -- (Parun.Types.CostComponent's VariableAtLeast).
     minimumX :: Natural.Natural,
     -- | CR 118.9: this face's printed alternative costs, which its controller MAY
     -- pay rather than the spell's mana cost (Fireblast). CR 118.9c: this does not

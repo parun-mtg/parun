@@ -1,6 +1,5 @@
 module Parun.Types.ActivatedAbility where
 
-import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.Activator as Activator
@@ -40,10 +39,6 @@ data ActivatedAbility card ability = MkActivatedAbility
     -- rather than Naturals, read once at the announcement -- holds here unchanged,
     -- and Parun.Engine.Cost.ceilingOf is the evaluator both share.
     maximumX :: [Quantity.Quantity],
-    -- | CR 101.1: the least X this ability's own words let its activator announce
-    -- -- Katara, Water Tribe's Hope's "X can't be 0" is 1. Zero for every ability
-    -- that states none.
-    minimumX :: Natural.Natural,
     -- | CR 107.3c: the value of X this ability's own text defines -- Soul
     -- Foundry's "X is the mana value of that card" -- so its activator announces
     -- none (CR 107.3a), or Nothing for an X the activator chooses. Evaluated once

@@ -81,7 +81,6 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) [])
           []
           []
-          0
           Nothing
           ( Modal.MkModal
               ( Seq.singleton
@@ -113,7 +112,6 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 3])) [CostComponent.TapThis])
           [CostChoice.MkCostChoice (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.PayLife (CostAmount.Fixed 2)] NonEmpty.:| [Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) []])]
           []
-          0
           Nothing
           (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
           []
@@ -134,7 +132,6 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           (Cost.MkCost (Just (ManaCost.MkManaCost [])) [CostComponent.TapThis])
           []
           []
-          0
           Nothing
           (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
           []
@@ -156,7 +153,6 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           (Cost.MkCost Nothing [CostComponent.TapThis])
           []
           []
-          0
           Nothing
           (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
           [ ActivationRestriction.DuringPhase (DuringPhase.MkDuringPhase (PhaseSelector.Step (Phase.Combat CombatStep.DeclareAttackers)) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))),
@@ -182,7 +178,6 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) [])
           []
           []
-          0
           Nothing
           (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
           [ActivationRestriction.SorcerySpeed]
@@ -204,7 +199,6 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           (Cost.MkCost Nothing [])
           []
           []
-          0
           Nothing
           (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
           []
@@ -215,28 +209,6 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Copyability.Copyable
       )
       " {\"cost\":{\"mana\":null},\"modal\":{\"modes\":[{}]}} "
-  -- CR 101.1: Katara, Water Tribe's Hope's "X can't be 0" is the key's one
-  -- producer; the default 0 stays out of the JSON, as above.
-  Spec.it s "an ability's floor on X round-trips" $
-    Common.assertJsonCodec
-      s
-      toJson
-      fromJson
-      ( ActivatedAbility.MkActivatedAbility
-          (Cost.MkCost Nothing [])
-          []
-          []
-          1
-          Nothing
-          (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
-          []
-          (Activator.Related PlayerRelation.You)
-          Nothing
-          Nothing
-          Nothing
-          Copyability.Copyable
-      )
-      " {\"cost\":{\"mana\":null},\"minimumX\":1,\"modal\":{\"modes\":[{}]}} "
   -- CR 107.3c: Soul Foundry's "X is the mana value of that card" is the key's
   -- producer; Nothing stays out of the JSON, as above.
   Spec.it s "an ability's defined X round-trips" $
@@ -248,7 +220,6 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           (Cost.MkCost Nothing [])
           []
           []
-          0
           (Just (DefinedX.MkDefinedX (Quantity.Literal 2) Nothing))
           (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
           []

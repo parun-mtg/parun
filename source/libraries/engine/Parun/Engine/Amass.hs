@@ -199,7 +199,6 @@ loyaltyAbility n effect =
           },
       ActivatedAbility.modal = Mint.oneMode (Seq.singleton effect),
       ActivatedAbility.maximumX = [],
-      ActivatedAbility.minimumX = 0,
       ActivatedAbility.definedX = Nothing,
       ActivatedAbility.restrictions = [],
       ActivatedAbility.activator = Activator.Related PlayerRelation.You,
