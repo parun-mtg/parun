@@ -1,0 +1,98 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "land-1"
+          },
+          {
+            "card": "Swamp",
+            "label": "land-2"
+          },
+          {
+            "card": "Forest",
+            "label": "land-3"
+          },
+          {
+            "card": "Forest",
+            "label": "land-4"
+          },
+          {
+            "card": "Forest",
+            "label": "land-5"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Vishgraz, the Doomhive",
+            "label": "vishgraz"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 2
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Vishgraz, the Doomhive enters with three Phyrexian Mites and grows with its opponent's poison",
+  "final": [
+    {
+      "Count": {
+        "card": "Phyrexian Mite Token",
+        "count": 3,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "Vishgraz, the Doomhive",
+        "power": 5,
+        "toughness": 5
+      }
+    }
+  ],
+  "note": "Bob has two poison counters. Alice casts Vishgraz, the Doomhive; its enters trigger creates three Phyrexian Mite tokens, and the 3/3 gets +1/+1 for each of bob's poison counters, a 5/5.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$land-1",
+            "$land-2",
+            "$land-3",
+            "$land-4",
+            "$land-5"
+          ],
+          "object": "$vishgraz"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

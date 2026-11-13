@@ -79,6 +79,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PastActivation as PastActivation
 import qualified Parun.Types.Player as Player
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
 import qualified Parun.Types.PlayerDesignationTally as PlayerDesignationTally
 import qualified Parun.Types.PlayerId as PlayerId
@@ -469,7 +470,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- PlayerRef.Candidate does there: Jace's Archivist's "the greatest number
         -- of cards a player discarded this way" (data/scenarios'
         -- jaces-archivist-draws-the-most-any-player-discarded-this-way).
-        Quantity.Count c -> Count.evaluate viewOf (\mOid2 view -> evaluateAgainst viewOf context gs announcedOn mOid2 (Just view)) talliesWhatHappened context {Filter.evaluated = mOid, Filter.evaluatedCreatureTypes = fmap (Set.filter Subtype.Engine.isCreatureType . Filter.subtypes) mView, Filter.recipient = (mView >>= Filter.playerIdentity) <|> Filter.recipient context} gs c
+        Quantity.Count c -> Count.evaluate viewOf (\mOid2 view -> evaluateAgainst viewOf context gs announcedOn mOid2 (Just view)) talliesWhatHappened candidateCounters context {Filter.evaluated = mOid, Filter.evaluatedCreatureTypes = fmap (Set.filter Subtype.Engine.isCreatureType . Filter.subtypes) mView, Filter.recipient = (mView >>= Filter.playerIdentity) <|> Filter.recipient context} gs c
         -- CR 106.4: the mana-pool fold (Parun.Engine.ManaCount). Takes the ViewOf but
         -- not the second injection the Count arm above does: a mana unit has no
         -- characteristics for a projection to describe, so the view is there only to
@@ -1642,6 +1643,19 @@ hasRead wanted quantity = case quantity of
     ManaSpent.OfType _ portion -> portion == CostPortion.OnX && wanted == StaticRead.ReadsManaSpentOnX
     ManaSpent.Colors -> False
   _ -> Monoid.getAny (Const.getConst (Children.quantityChildren (Children.descendingQuantities (Const.Const . Monoid.Any . hasRead wanted)) quantity))
+
+-- CR 810.10a: the kind of player counter this per-player quantity reads off a
+-- fold's candidate, when that is all it is, so that a sum over players
+-- (Count.evaluate's Scope.OverPlayers arm) counts a team's shared counters
+-- once. data/scenarios/team/cr-810-10a-mycosynth-fiend-counts-the-opposing-team-s-poison-once.json
+-- proves it.
+--
+-- A compound answers Nothing, a REGRESSION FENCE: no card sums one over
+-- players.
+candidateCounters :: Quantity -> Maybe PlayerCounterKind.PlayerCounterKind
+candidateCounters quantity = case quantity of
+  Quantity.PlayerCounters (PlayerCounterTally.MkPlayerCounterTally PlayerRef.Candidate kind) -> Just kind
+  _ -> Nothing
 
 -- CR 800.4i: does this per-player quantity tally actions players took, so that a
 -- fold over players (Count.evaluate's Scope.OverPlayers arm) still finds a player

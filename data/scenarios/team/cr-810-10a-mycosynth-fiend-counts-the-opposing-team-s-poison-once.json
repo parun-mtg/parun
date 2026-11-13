@@ -1,0 +1,56 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mycosynth Fiend",
+            "label": "fiend"
+          }
+        ],
+        "name": "alice",
+        "team": 1
+      },
+      {
+        "name": "bob",
+        "team": 1
+      },
+      {
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 3
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      },
+      {
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 3
+          }
+        ],
+        "name": "dave",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "twoHeadedGiant": true
+  },
+  "description": "CR 810.10a Mycosynth Fiend counts the opposing team's poison once",
+  "final": [
+    {
+      "PowerToughness": {
+        "object": "$fiend",
+        "power": 5,
+        "toughness": 5
+      }
+    }
+  ],
+  "note": "A Two-Headed Giant game with carol and dave's team on three poison counters, which each member holds (CR 810.10). Alice's Mycosynth Fiend gets +1/+1 for each poison counter her opponents have, and that is the number opposing teams have (CR 810.10a): three, not three per member, so the 2/2 is a 5/5. The control is the same team game without the variant, where carol's three and dave's three are their own and the Fiend is an 8/8.",
+  "timeline": []
+}
