@@ -632,7 +632,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
         slot = SlotName.MkSlotName (Text.pack "each")
         legal = Map.singleton slot (Set.fromList [Recipient.ToObject pikerA, Recipient.ToObject giantA])
         context = Slots.effectContextNaming slot pikerA gs S.noSource S.alice S.noSource legal Map.empty
-        sharesName oid = Filter.matches context (Projection.viewOfObject oid gs) (Filter.Type.Shares Trait.Name (Anchor.Bound slot))
+        sharesName oid = Filter.matches context (Projection.viewOfObject oid gs) (Filter.Type.Shares Trait.Name (Anchor.Bound Nothing slot))
     Spec.assertEqWith
       s
       "bob's Piker shares the narrowed Piker's name and bob's Giant does not"

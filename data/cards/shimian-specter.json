@@ -91,7 +91,9 @@
                                   "value": {
                                     "anchor": {
                                       "type": "Bound",
-                                      "value": "chosen"
+                                      "value": {
+                                        "slot": "chosen"
+                                      }
                                     },
                                     "trait": {
                                       "type": "Name"

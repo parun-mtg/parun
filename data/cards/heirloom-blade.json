@@ -105,7 +105,9 @@
                                     "value": {
                                       "anchor": {
                                         "type": "Bound",
-                                        "value": "thatDepartedPermanent"
+                                        "value": {
+                                          "slot": "thatDepartedPermanent"
+                                        }
                                       },
                                       "trait": {
                                         "type": "CreatureType"
@@ -148,7 +150,9 @@
                                     "value": {
                                       "anchor": {
                                         "type": "Bound",
-                                        "value": "thatDepartedPermanent"
+                                        "value": {
+                                          "slot": "thatDepartedPermanent"
+                                        }
                                       },
                                       "trait": {
                                         "type": "CreatureType"

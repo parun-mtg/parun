@@ -70,7 +70,9 @@
                         "value": {
                           "anchor": {
                             "type": "Bound",
-                            "value": "exiled"
+                            "value": {
+                              "slot": "exiled"
+                            }
                           },
                           "trait": {
                             "type": "Name"

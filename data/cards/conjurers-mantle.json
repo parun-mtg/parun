@@ -131,7 +131,9 @@
                                 "value": {
                                   "anchor": {
                                     "type": "Bound",
-                                    "value": "thatAttackingCreature"
+                                    "value": {
+                                      "slot": "thatAttackingCreature"
+                                    }
                                   },
                                   "trait": {
                                     "type": "CreatureType"

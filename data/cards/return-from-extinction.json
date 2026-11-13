@@ -93,7 +93,9 @@
                       "value": {
                         "anchor": {
                           "type": "Bound",
-                          "value": "second"
+                          "value": {
+                            "slot": "second"
+                          }
                         },
                         "trait": {
                           "type": "CreatureType"
@@ -132,7 +134,9 @@
                       "value": {
                         "anchor": {
                           "type": "Bound",
-                          "value": "first"
+                          "value": {
+                            "slot": "first"
+                          }
                         },
                         "trait": {
                           "type": "CreatureType"

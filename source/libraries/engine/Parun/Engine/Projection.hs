@@ -1393,7 +1393,7 @@ framedBySlots gs recipients context =
           Filter.slotPlayers = Binding.playersBySlot recipients,
           Filter.slotNames = over Filter.names,
           Filter.slotControllers = over (maybe Set.empty Set.singleton . Filter.controller),
-          Filter.slotCreatureTypes = over (Set.filter Subtype.isCreatureType . Filter.subtypes),
+          Filter.slotCreatureTypes = fmap (Map.unionsWith Set.union . fmap (\view -> Map.singleton (Filter.controller view) (Set.filter Subtype.isCreatureType (Filter.subtypes view))) . Maybe.mapMaybe lastKnown . Set.toList . objectsOf) recipients,
           Filter.slotCardTypes = over Filter.cardTypes,
           Filter.slotMeasures = measures,
           Filter.slotHostControllers = fmap (foldMap hostController . objectsOf) recipients,
@@ -4403,7 +4403,7 @@ filterReadsPeers f = case f of
   Filter.Type.Shares _ anchor -> case anchor of
     Anchor.AnyPermanent _ -> True
     Anchor.Host -> True
-    Anchor.Bound _ -> False
+    Anchor.Bound _ _ -> False
     Anchor.Evaluated -> False
     Anchor.Source -> False
     Anchor.YourCommander -> False

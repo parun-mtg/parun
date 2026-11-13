@@ -10,6 +10,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.SlotName as SlotName
 
@@ -19,8 +20,14 @@ spec s = Spec.describe s "Parun.Codec.Anchor" $ do
     Common.assertCodec
       s
       codec
-      (Anchor.Bound (SlotName.MkSlotName (Text.pack "thatDepartedPermanent")))
-      " {\"type\":\"Bound\",\"value\":\"thatDepartedPermanent\"} "
+      (Anchor.Bound Nothing (SlotName.MkSlotName (Text.pack "thatDepartedPermanent")))
+      " {\"type\":\"Bound\",\"value\":{\"slot\":\"thatDepartedPermanent\"}} "
+  Spec.it s "Bound narrowed to the candidate's controller" $
+    Common.assertCodec
+      s
+      codec
+      (Anchor.Bound (Just Holder.Controller) (SlotName.MkSlotName (Text.pack "creature")))
+      " {\"type\":\"Bound\",\"value\":{\"heldAlike\":\"Controller\",\"slot\":\"creature\"}} "
   Spec.it s "Evaluated" $
     Common.assertCodec
       s

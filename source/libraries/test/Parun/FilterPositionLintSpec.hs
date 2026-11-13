@@ -989,7 +989,7 @@ decodedAtoms tag wanted value =
 -- encoding: Filter.Shares Name at a Bound anchor (Filter.Context.slotNames) or
 -- Name or Controller at AnyPermanent (Filter.Context.battlefieldViews).
 framedNameAtoms :: Value.Value -> Int
-framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.Name (Anchor.Bound _) -> True; Filter.Type.Shares Trait.Name (Anchor.AnyPermanent _) -> True; Filter.Type.Shares Trait.Controller (Anchor.AnyPermanent _) -> True; _ -> False)
+framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.Name (Anchor.Bound _ _) -> True; Filter.Type.Shares Trait.Name (Anchor.AnyPermanent _) -> True; Filter.Type.Shares Trait.Controller (Anchor.AnyPermanent _) -> True; _ -> False)
 
 -- How many CR 709.4a atoms this card carries in one of the ADMITTED positions
 -- -- a MODE's target slot filter (Harness the Storm), a CR 701.23 search filter
@@ -1060,7 +1060,7 @@ framedNameOffends card =
 -- Filter.Shares CreatureType or CardType at a Bound anchor, which share a posture.
 -- evaluatedOffends polices the Evaluated one.
 boundCreatureTypeAtoms :: Value.Value -> Int
-boundCreatureTypeAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.CreatureType (Anchor.Bound _) -> True; Filter.Type.Shares (Trait.CardType _) (Anchor.Bound _) -> True; _ -> False)
+boundCreatureTypeAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.CreatureType (Anchor.Bound _ _) -> True; Filter.Type.Shares (Trait.CardType _) (Anchor.Bound _ _) -> True; _ -> False)
 
 -- The CR 903.3e atoms in an encoding: Filter.Shares at YourCommander.
 yourCommanderAtoms :: Value.Value -> Int
@@ -1159,7 +1159,7 @@ attachedToBoundCounts card =
    in (total True, total False)
 
 attachedToBoundAtoms :: Value.Value -> Int
-attachedToBoundAtoms = decodedAtoms "IsAttachedTo" (\atom -> case atom of Filter.Type.IsAttachedTo (Anchor.Bound _) -> True; _ -> False)
+attachedToBoundAtoms = decodedAtoms "IsAttachedTo" (\atom -> case atom of Filter.Type.IsAttachedTo (Anchor.Bound _ _) -> True; _ -> False)
 
 -- Two offences, controllerRelatesToBoundOffends' two.
 attachedToBoundOffends :: Surveyed -> Bool
@@ -1724,13 +1724,15 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "Heirloom Blade's two atoms are in its ObjectRefs" (boundCreatureTypeCounts (survey (S.combinedFace blade))) (2, 0)
     clanger <- S.printingOf s registry "Mudbutton Clanger"
     let face = S.combinedFace clanger
-        atom = Filter.Type.Shares Trait.CreatureType (Anchor.Bound (SlotName.MkSlotName (Text.pack "self")))
+        atom = Filter.Type.Shares Trait.CreatureType (Anchor.Bound Nothing (SlotName.MkSlotName (Text.pack "self")))
         restricted = face {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching atom) Nothing]}
     Spec.assertEqWith s "Mudbutton Clanger's one atom is in its clause's gate" (boundCreatureTypeCounts (survey face)) (1, 0)
     unbury <- S.printingOf s registry "Unbury"
     Spec.assertEqWith s "Unbury's two atoms are in its target slots, one naming each sibling" (boundCreatureTypeCounts (survey (S.combinedFace unbury))) (2, 0)
     gauntlets <- S.printingOf s registry "Gauntlets of Chaos"
     Spec.assertEqWith s "Gauntlets of Chaos's CR 205.2a atom is in its second target slot" (boundCreatureTypeCounts (survey (S.combinedFace gauntlets))) (1, 0)
+    winnowing <- S.printingOf s registry "Winnowing"
+    Spec.assertEqWith s "Winnowing's atom, narrowed to the candidate's controller, is in its sacrifice's ObjectRef" (boundCreatureTypeCounts (survey (S.combinedFace winnowing))) (1, 0)
     confusion <- S.printingOf s registry "Confusion in the Ranks"
     Spec.assertEqWith s "Confusion in the Ranks's CR 205.2a atom is in its target slot" (boundCreatureTypeCounts (survey (S.combinedFace confusion))) (1, 0)
     -- The lint's own proof, the pair differing in one position: the same atom in
@@ -1871,7 +1873,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       [ ("Fiery Annihilation", 1) -- its second target slot
       ]
     piker <- S.printingOf s registry "Goblin Piker"
-    let atom = Filter.Type.IsAttachedTo (Anchor.Bound (SlotName.MkSlotName (Text.pack "from")))
+    let atom = Filter.Type.IsAttachedTo (Anchor.Bound Nothing (SlotName.MkSlotName (Text.pack "from")))
         buried = Filter.Type.And [Filter.Type.Or [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not atom]]
         planted =
           (S.combinedFace piker)
@@ -2215,10 +2217,14 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             { Face.spell =
                 Mint.oneModeTargeting (Map.singleton slot (TargetSlot.required Pool.Creatures (Just (Filter.Type.And [Filter.Type.Not atom])))) Seq.empty
             }
-    Spec.assertEqWith s "a planted Shares Color Bound is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Color (Anchor.Bound slot))))) (1, 1)
+    Spec.assertEqWith s "a planted Shares Color Bound is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Color (Anchor.Bound Nothing slot))))) (1, 1)
     Spec.assertEqWith s "a planted IsAttachedTo AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.AnyPermanent (Filter.Type.And [])))))) (1, 1)
-    Spec.assertEqWith s "a planted IsAttachedTo Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.Bound slot))))) (0, 1)
-    Spec.assertEqWith s "a planted Shares Name Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Name (Anchor.Bound slot))))) (0, 1)
+    Spec.assertEqWith s "a planted IsAttachedTo Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.Bound Nothing slot))))) (0, 1)
+    Spec.assertEqWith s "a planted Shares Name Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Name (Anchor.Bound Nothing slot))))) (0, 1)
+    Spec.assertEqWith s "a planted Shares CreatureType at a Bound narrowed to the candidate's controller is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.CreatureType (Anchor.Bound (Just Holder.Controller) slot))))) (0, 1)
+    Spec.assertEqWith s "a planted Shares Name at one is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Name (Anchor.Bound (Just Holder.Controller) slot))))) (1, 1)
+    Spec.assertEqWith s "a planted Shares CreatureType at a Bound narrowed to the candidate's owner is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.CreatureType (Anchor.Bound (Just Holder.Owner) slot))))) (1, 1)
+    Spec.assertEqWith s "a planted IsAttachedTo at a narrowed Bound is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.Bound (Just Holder.Controller) slot))))) (1, 1)
   -- CR 702.33d: a kicker tally names one of the face's OWN kicker keywords,
   -- joined to Parun.Engine.Cast's per-keyword map by structural equality. See
   -- timesPaidOffends for why this is read off the encoding.
@@ -2422,7 +2428,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         bury atom = Filter.Type.And [Filter.Type.Or [creatures, Filter.Type.Not atom]]
         boundAtom = bury (Filter.Type.IsBound slot)
         hostAtom = bury Filter.Type.IsHostOfSource
-        nameAtom = bury (Filter.Type.Shares Trait.Name (Anchor.Bound slot))
+        nameAtom = bury (Filter.Type.Shares Trait.Name (Anchor.Bound Nothing slot))
         groupAtom = bury (Filter.Type.Shares Trait.Name (Anchor.AnyPermanent creatures))
         keywordOf f = Keyword.Hexproof (Just f)
         kindOf f = CounterKind.Keyword (keywordOf f)
@@ -3283,7 +3289,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     harness <- S.printingOf s registry "Harness the Storm"
     let base = S.combinedFace piker
         slot = SlotName.MkSlotName (Text.pack "target")
-        atom = Filter.Type.Shares Trait.Name (Anchor.Bound (SlotName.MkSlotName (Text.pack "thatSpell")))
+        atom = Filter.Type.Shares Trait.Name (Anchor.Bound Nothing (SlotName.MkSlotName (Text.pack "thatSpell")))
         buried = Filter.Type.And [Filter.Type.Or [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not atom]]
         spellOf effects slots =
           Mint.oneModeTargeting slots (Seq.fromList effects)

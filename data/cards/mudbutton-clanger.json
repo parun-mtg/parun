@@ -91,7 +91,9 @@
                                   "value": {
                                     "anchor": {
                                       "type": "Bound",
-                                      "value": "self"
+                                      "value": {
+                                        "slot": "self"
+                                      }
                                     },
                                     "trait": {
                                       "type": "CreatureType"
