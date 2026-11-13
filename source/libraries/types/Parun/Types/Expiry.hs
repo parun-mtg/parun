@@ -1,5 +1,6 @@
 module Parun.Types.Expiry where
 
+import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AfterObjectTurn as AfterObjectTurn
 import qualified Parun.Types.AfterTurn as AfterTurn
 import qualified Parun.Types.EventExpiry as EventExpiry
@@ -67,7 +68,8 @@ data Expiry
     -- ends: the effect does nothing until that turn is under way.
     --
     -- One of the arms whose stored row is inert for part of its life (the
-    -- others are DuringUntapStepOf and DuringExtraTurn below), which is why
+    -- others are DuringUntapStepOf, DuringExtraTurn and DuringAddedCombatPhase
+    -- below), which is why
     -- Parun.Engine.Expiry.begun exists beside the sweeps -- a reader that asks
     -- only "has this ended" sees this row from the moment it is stored and
     -- applies it a turn early.
@@ -99,6 +101,12 @@ data Expiry
     -- meaningful only on a carrier that asks `begun`: StoredEffects.playerEffects
     -- is where both producers (Alchemist's Gambit, All in Good Time) store it.
     DuringExtraTurn Timestamp.Timestamp
+  | -- | CR 611.2a / 500.8: Duration.DuringThatCombatPhase, stored as the number
+    -- of combat phases the turn's schedule holds BEHIND the one it names --
+    -- Parun.Engine.Turn.addedCombatPhase says why that names it. Inert
+    -- (Parun.Engine.Expiry.begun) until Parun.Engine.Expiry.reachCombatPhase
+    -- pins it to AtEndOf as that phase begins.
+    DuringAddedCombatPhase Natural.Natural
   | -- | CR 500.5: effects lasting until the end of a step or phase expire as it
     -- ends. A Parun.Types.PhaseSelector because CR 500.5 names both grains and
     -- that type spans both.

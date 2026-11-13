@@ -527,6 +527,16 @@ extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
           "not inside the current phase"
           (Turn.splicePhases (Phase.Combat CombatStep.DeclareAttackers) [ExtraPhase.ExtraCombat] remaining)
           expected
+  Spec.it s "CR 500.8 splicePhases adds directly after a combat phase in its last step, ahead of one already added" $
+    -- Resolving in the end of combat step, with an added combat phase next:
+    -- that phase's own end of combat step is not this phase's.
+    let added = Turn.expandExtraPhase ExtraPhase.ExtraCombat
+        remaining = added <> Seq.fromList [Phase.PostcombatMain]
+     in Spec.assertEqWith
+          s
+          "ahead of the phase already scheduled"
+          (Turn.splicePhases (Phase.Combat CombatStep.EndOfCombat) [ExtraPhase.ExtraMain] remaining)
+          (Seq.fromList [Phase.PostcombatMain] <> remaining)
   Spec.it s "CR 500.8 splicePhases inserts a multi-phase list in written order" $
     -- Full Throttle's "there are two additional combat phases": two whole
     -- combat phases, back to back, and no main phase between them.

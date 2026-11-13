@@ -2575,6 +2575,7 @@ durationChildren c duration = case duration of
   Duration.DuringNextUntapStepOf whose -> Duration.DuringNextUntapStepOf <$> durationPlayer c whose
   Duration.DuringYourNextTurn -> pure duration
   Duration.DuringThatExtraTurn -> pure duration
+  Duration.DuringThatCombatPhase -> pure duration
   Duration.ForAsLongAs condition -> Duration.ForAsLongAs <$> durationCondition c condition
   Duration.UntilEndOfCombat -> pure duration
   Duration.UntilEndOfCombatOnYourNextTurn -> pure duration
@@ -3161,6 +3162,7 @@ expiryChildren c expiry = case expiry of
   Expiry.DuringUntapStepOf _whose -> pure expiry
   Expiry.DuringTurnOfControllerOf (AfterObjectTurn.MkAfterObjectTurn whose turn) -> fmap Expiry.DuringTurnOfControllerOf (AfterObjectTurn.MkAfterObjectTurn <$> storedObject c whose <*> pure turn)
   Expiry.DuringExtraTurn _timestamp -> pure expiry
+  Expiry.DuringAddedCombatPhase _behind -> pure expiry
   Expiry.AtEndOf _phaseSelector -> pure expiry
   Expiry.AtEndOfCombatOn _afterTurn -> pure expiry
   Expiry.WhenPaid (PaidExpiry.MkPaidExpiry payer cost resolution) -> fmap Expiry.WhenPaid (PaidExpiry.MkPaidExpiry payer <$> storedCost c cost <*> storedObject c resolution)

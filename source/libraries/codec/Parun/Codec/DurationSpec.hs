@@ -116,6 +116,14 @@ spec s = Spec.describe s "Parun.Codec.Duration" $ do
       Duration.codec
       Duration.DuringThatExtraTurn
       " {\"type\":\"DuringThatExtraTurn\"} "
+  -- CR 611.2a / 500.8: the combat phase the same resolution added (Bumi,
+  -- Unleashed).
+  Spec.it s "DuringThatCombatPhase" $
+    Common.assertCodec
+      s
+      Duration.codec
+      Duration.DuringThatCombatPhase
+      " {\"type\":\"DuringThatCombatPhase\"} "
   -- CR 611.2b, carrying its Condition.
   Spec.it s "ForAsLongAs carries its condition" $
     Common.assertCodec

@@ -40,10 +40,12 @@ import qualified Parun.Types.Timestamp as Timestamp
 -- Expiry.AtTurnOf and "during its controller's next turn" (Wall of Dust) arms
 -- Expiry.DuringTurnOf.
 --
--- That last one is the only arm a sweep does not settle on its own: its window
+-- That last one is an arm a sweep does not settle on its own: its window
 -- BEGINS on a later turn, so both readers above go through
 -- Parun.Engine.CombatRestriction.liveAttackProhibitions, which drops a row whose
--- turn has not come. Parun.Types.Expiry names the carriers that ask.
+-- turn has not come. Parun.Types.Expiry names the carriers that ask. "During
+-- that combat phase" (Bumi, Unleashed) arms Expiry.DuringAddedCombatPhase, held
+-- back the same way until its phase begins.
 --
 -- `timestamp` is stored for ActiveObjectProhibition's reason: CR 613.11 orders by
 -- CR 613.7 timestamp, and nothing observes this one because two prohibitions

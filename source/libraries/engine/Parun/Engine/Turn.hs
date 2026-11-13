@@ -280,15 +280,18 @@ lastStepOf phase = case phase of
 -- same kind", because CR 500.8 permits a combat phase directly after a combat
 -- phase (Aurelia, the Warleader) and the run would swallow both.
 --
--- An absent final step yields an EMPTY prefix, not the whole schedule: the
--- phase is then already over as far as `remaining` shows, and "directly after
--- this phase" (CR 500.8) is the head. Unreachable from every caller, so no game
--- can observe the choice; dropping nothing is the safer failure than dropping
--- everything.
+-- A final step found BEHIND the first step of a phase is that later phase's:
+-- this phase is in its own last step (an added combat phase follows the end of
+-- combat step, CR 500.8), so nothing of it remains. An extra cleanup step (CR
+-- 514.3a) has no such step before it and stays in the ending phase.
+--
+-- An absent final step yields an EMPTY prefix likewise, not the whole schedule:
+-- the phase is then already over as far as `remaining` shows, and "directly
+-- after this phase" (CR 500.8) is the head.
 thisPhase :: Phase -> Seq Phase -> (Seq Phase, Seq Phase)
 thisPhase phase remaining = case lastStepOf phase >>= \step -> Seq.elemIndexL step remaining of
-  Nothing -> (Seq.empty, remaining)
-  Just i -> Seq.splitAt (i + 1) remaining
+  Just i | not (any (Maybe.isJust . phaseBeginningAt) (Seq.take i remaining)) -> Seq.splitAt (i + 1) remaining
+  _ -> (Seq.empty, remaining)
 
 -- CR 500.11 / CR 725.2d: everything left of the turn AFTER this phase. The other
 -- half of `thisPhase`'s split, and the shape both a SKIPPED phase
@@ -432,6 +435,26 @@ expandExtraPhase extra = case extra of
         Phase.Combat CombatStep.EndOfCombat
       ]
   ExtraPhase.ExtraMain -> Seq.singleton Phase.PostcombatMain
+
+-- | CR 500.8: how many combat phases this schedule still holds, each counted
+-- at CR 506.1's first step.
+combatPhasesIn :: Seq Phase -> Natural
+combatPhasesIn = Natural.length . Seq.filter (== Phase.Combat CombatStep.BeginningOfCombat)
+
+-- | CR 500.8: "that combat phase", the one an effect resolving now added: the
+-- first combat phase after the phase under way, where splicePhases put it.
+-- Named by how many combat phases the schedule holds BEHIND it, since a
+-- schedule entry has no identity of its own. That count holds for as long as
+-- the phase is ahead: every later addition goes directly after the phase then
+-- under way, in front of this one, and every drop (dropRestOfPhase,
+-- jumpToCleanup) takes from the front. Nothing when no combat phase follows.
+addedCombatPhase :: GameState -> Maybe Natural
+addedCombatPhase gs =
+  let registers = GameState.turn gs
+      (_, later) = thisPhase (TurnRegisters.phase registers) (TurnRegisters.remaining registers)
+   in case combatPhasesIn later of
+        0 -> Nothing
+        phases -> Just (phases - 1)
 
 -- CR 500.8: add phases directly after the specified phase, which is always the
 -- one the effect resolves in.

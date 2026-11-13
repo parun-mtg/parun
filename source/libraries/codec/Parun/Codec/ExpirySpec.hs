@@ -150,6 +150,13 @@ spec s = Spec.describe s "Parun.Codec.Expiry" $ do
       Expiry.codec
       (Expiry.DuringExtraTurn (Timestamp.MkTimestamp 12))
       " {\"type\":\"DuringExtraTurn\",\"value\":12} "
+  -- CR 500.8: how many combat phases the schedule holds behind the one named.
+  Spec.it s "DuringAddedCombatPhase carries the count of combat phases behind it" $
+    Common.assertCodec
+      s
+      Expiry.codec
+      (Expiry.DuringAddedCombatPhase 2)
+      " {\"type\":\"DuringAddedCombatPhase\",\"value\":2} "
   -- CR 500.5, carrying the PhaseSelector window. Both grains -- a stepless
   -- phase and a step -- because Parun.Engine.Expiry.dropAtEndOf tells them apart
   -- by EQUALITY, so a codec that collapsed them would let the end of a combat

@@ -13,6 +13,7 @@ import qualified Parun.Codec.Timestamp as Timestamp
 import qualified Parun.Codec.While as While
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Types.Expiry as Expiry
 
 -- | CR 611.2: the STORED duration, which never appears in card JSON -- a card
@@ -35,6 +36,7 @@ codec =
       Arm.payload "DuringUntapStepOf" PlayerId.codec Expiry.DuringUntapStepOf (\x -> case x of Expiry.DuringUntapStepOf y -> Just y; _ -> Nothing),
       Arm.payload "DuringTurnOfControllerOf" AfterObjectTurn.codec Expiry.DuringTurnOfControllerOf (\x -> case x of Expiry.DuringTurnOfControllerOf y -> Just y; _ -> Nothing),
       Arm.payload "DuringExtraTurn" Timestamp.codec Expiry.DuringExtraTurn (\x -> case x of Expiry.DuringExtraTurn y -> Just y; _ -> Nothing),
+      Arm.payload "DuringAddedCombatPhase" Common.natural Expiry.DuringAddedCombatPhase (\x -> case x of Expiry.DuringAddedCombatPhase y -> Just y; _ -> Nothing),
       Arm.payload "AtEndOf" PhaseSelector.codec Expiry.AtEndOf (\x -> case x of Expiry.AtEndOf y -> Just y; _ -> Nothing),
       Arm.payload "AtEndOfCombatOn" AfterTurn.codec Expiry.AtEndOfCombatOn (\x -> case x of Expiry.AtEndOfCombatOn y -> Just y; _ -> Nothing),
       Arm.payload "WhenPaid" PaidExpiry.codec Expiry.WhenPaid (\x -> case x of Expiry.WhenPaid y -> Just y; _ -> Nothing),
@@ -56,6 +58,7 @@ tagOf x = case x of
   Expiry.AtStepOfControllerOf {} -> "AtStepOfControllerOf"
   Expiry.DuringTurnOfControllerOf {} -> "DuringTurnOfControllerOf"
   Expiry.DuringExtraTurn {} -> "DuringExtraTurn"
+  Expiry.DuringAddedCombatPhase {} -> "DuringAddedCombatPhase"
   Expiry.AtEndOf {} -> "AtEndOf"
   Expiry.AtEndOfCombatOn {} -> "AtEndOfCombatOn"
   Expiry.WhenPaid {} -> "WhenPaid"
