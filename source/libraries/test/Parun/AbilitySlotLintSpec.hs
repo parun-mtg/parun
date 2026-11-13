@@ -42,6 +42,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword.Engine
 import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Modal as Modal
+import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Resolve as Resolve
 import qualified Parun.Engine.Resolve.Slots as Resolve
 import qualified Parun.Engine.RuleAbilities as RuleAbilities.Engine
@@ -121,6 +122,7 @@ import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Optionality as Optionality
@@ -1310,10 +1312,14 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- Activate.activateAbility started stamping it (#569).
   --
   -- A GRANTED ability is read too (CardSpec.grantedActivatedAbilities): the
-  -- permanent it lands on activates it through the same Activate road.
+  -- permanent it lands on activates it through the same Activate road. It is
+  -- read as the projection hands it over, its granter baked in
+  -- (Projection.bakeGranter), so Trusty Boomerang's name for its granter is no
+  -- slot read; any id serves.
   Spec.it s "every slot an activated ability reads is bound for its activation, and every slot it declares is read" $ do
     ps <- S.allPrintings s corpus
-    let faceAbilities face = Face.activatedAbilities face <> grantedActivatedAbilities face
+    let baked ability = ability {ActivatedAbility.modal = Projection.bakeGranter (ObjectId.MkObjectId 0) (ActivatedAbility.modal ability)}
+        faceAbilities face = Face.activatedAbilities face <> fmap baked (grantedActivatedAbilities face)
         -- Over withMinted, each ability against what its own activation binds:
         -- the Clue a card creates is activated as the Clue's.
         cardAbilities card = concatMap faceAbilities (withMinted (Card.combined card))
