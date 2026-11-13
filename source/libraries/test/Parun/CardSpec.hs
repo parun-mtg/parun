@@ -464,6 +464,7 @@ import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TargetedSubject as TargetedSubject
 import qualified Parun.Types.TheseDiscard as TheseDiscard
 import qualified Parun.Types.TokenPattern as TokenPattern
+import qualified Parun.Types.TokenPlus as TokenPlus
 import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
@@ -4224,7 +4225,7 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   -- CR 111.1: what the token being created is (Queen Allenal of Ruadach's
   -- "creature tokens"). The appended token's own Filters are the MINTED
   -- object's, and reach the sweep through replacementMintedCards instead.
-  ReplacementEffect.TokenR (TokenR.MkTokenR tokenPattern scaling _) -> unframed [TokenPattern.whatToken tokenPattern] <> foldMap scalingFilters scaling
+  ReplacementEffect.TokenR (TokenR.MkTokenR tokenPattern scaling plus _) -> unframed (TokenPattern.whatToken tokenPattern : foldMap tokenPlusFilters plus) <> foldMap scalingFilters scaling
   ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR turnUpPattern _ _ turnUpRewrite) -> unframed [turnUpPattern] <> turnUpRewriteFilters turnUpRewrite
   ReplacementEffect.AttachR (AttachR.MkAttachR attachPattern (AttachRewrite.AsCopy asCopy)) -> unframed [attachPattern] <> asCopyFilters asCopy
   ReplacementEffect.AttachR (AttachR.MkAttachR attachPattern (AttachRewrite.ChooseQuality _)) -> unframed [attachPattern]
@@ -4292,6 +4293,15 @@ damageRewriteFilters rewrite = case rewrite of
   DamageRewrite.HealSourceFirst -> []
 
 -- A computed AddMore's Quantity, the one Filter a scaling can hold.
+-- CR 707.2: the permanent a copying token row names (Mirrormind Crown's
+-- "equipped creature"); a written token's own Filters are the minted object's.
+tokenPlusFilters :: TokenPlus.TokenPlus card -> [Filter.Type.Filter Keyword.Keyword]
+tokenPlusFilters plus = case plus of
+  TokenPlus.One _ -> []
+  TokenPlus.ThatMany _ -> []
+  TokenPlus.Instead _ -> []
+  TokenPlus.InsteadCopies copied -> [copied]
+
 scalingFilters :: Scaling.Scaling -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 scalingFilters scaling = case scaling of
   Scaling.AddMore quantity -> quantityFilters quantity

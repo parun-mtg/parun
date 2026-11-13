@@ -34,9 +34,10 @@ spec s = Spec.describe s "Parun.Codec.TokenR" $ do
       s
       codec
       ( TokenR.MkTokenR
-          { TokenR.matching = TokenPattern.MkTokenPattern {TokenPattern.whose = ControllerRelation.Related PlayerRelation.You, TokenPattern.whatToken = Filter.And [], TokenPattern.effectsOnly = False},
+          { TokenR.matching = TokenPattern.MkTokenPattern {TokenPattern.whose = ControllerRelation.Related PlayerRelation.You, TokenPattern.whatToken = Filter.And [], TokenPattern.effectsOnly = False, TokenPattern.firstEachTurn = False},
             TokenR.scaling = Just (Scaling.Multiply 2),
-            TokenR.plus = Nothing
+            TokenR.plus = Nothing,
+            TokenR.optional = False
           }
       )
       " {\"matching\":{\"whose\":{\"type\":\"You\"}},\"scaling\":{\"type\":\"Multiply\",\"value\":2}} "
@@ -46,9 +47,10 @@ spec s = Spec.describe s "Parun.Codec.TokenR" $ do
       s
       codec
       ( TokenR.MkTokenR
-          { TokenR.matching = TokenPattern.MkTokenPattern {TokenPattern.whose = ControllerRelation.Related PlayerRelation.You, TokenPattern.whatToken = Filter.HasCardType CardType.Creature, TokenPattern.effectsOnly = False},
+          { TokenR.matching = TokenPattern.MkTokenPattern {TokenPattern.whose = ControllerRelation.Related PlayerRelation.You, TokenPattern.whatToken = Filter.HasCardType CardType.Creature, TokenPattern.effectsOnly = False, TokenPattern.firstEachTurn = False},
             TokenR.scaling = Nothing,
-            TokenR.plus = Just (TokenPlus.One soldier)
+            TokenR.plus = Just (TokenPlus.One soldier),
+            TokenR.optional = False
           }
       )
       " {\"matching\":{\"whose\":{\"type\":\"You\"},\"whatToken\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"plus\":{\"type\":\"One\",\"value\":{\"faces\":[{\"name\":\"Soldier Token\",\"typeLine\":{\"types\":[\"Creature\"]}}]}}} "
@@ -58,9 +60,10 @@ spec s = Spec.describe s "Parun.Codec.TokenR" $ do
       s
       codec
       ( TokenR.MkTokenR
-          { TokenR.matching = TokenPattern.MkTokenPattern {TokenPattern.whose = ControllerRelation.Related PlayerRelation.You, TokenPattern.whatToken = Filter.And [], TokenPattern.effectsOnly = False},
+          { TokenR.matching = TokenPattern.MkTokenPattern {TokenPattern.whose = ControllerRelation.Related PlayerRelation.You, TokenPattern.whatToken = Filter.And [], TokenPattern.effectsOnly = False, TokenPattern.firstEachTurn = False},
             TokenR.scaling = Nothing,
-            TokenR.plus = Just (TokenPlus.ThatMany soldier)
+            TokenR.plus = Just (TokenPlus.ThatMany soldier),
+            TokenR.optional = False
           }
       )
       " {\"matching\":{\"whose\":{\"type\":\"You\"}},\"plus\":{\"type\":\"ThatMany\",\"value\":{\"faces\":[{\"name\":\"Soldier Token\",\"typeLine\":{\"types\":[\"Creature\"]}}]}}} "
@@ -70,12 +73,26 @@ spec s = Spec.describe s "Parun.Codec.TokenR" $ do
       s
       codec
       ( TokenR.MkTokenR
-          { TokenR.matching = TokenPattern.MkTokenPattern {TokenPattern.whose = ControllerRelation.Related PlayerRelation.You, TokenPattern.whatToken = Filter.HasCardType CardType.Artifact, TokenPattern.effectsOnly = False},
+          { TokenR.matching = TokenPattern.MkTokenPattern {TokenPattern.whose = ControllerRelation.Related PlayerRelation.You, TokenPattern.whatToken = Filter.HasCardType CardType.Artifact, TokenPattern.effectsOnly = False, TokenPattern.firstEachTurn = False},
             TokenR.scaling = Nothing,
-            TokenR.plus = Just (TokenPlus.Instead soldier)
+            TokenR.plus = Just (TokenPlus.Instead soldier),
+            TokenR.optional = False
           }
       )
       " {\"matching\":{\"whose\":{\"type\":\"You\"},\"whatToken\":{\"type\":\"HasCardType\",\"value\":\"Artifact\"}},\"plus\":{\"type\":\"Instead\",\"value\":{\"faces\":[{\"name\":\"Soldier Token\",\"typeLine\":{\"types\":[\"Creature\"]}}]}}} "
+  -- CR 614.1a / 707.2: Mirrormind Crown's optional, once-a-turn copies.
+  Spec.it s "an optional first-each-turn substitute of copies" $
+    Common.assertCodec
+      s
+      codec
+      ( TokenR.MkTokenR
+          { TokenR.matching = TokenPattern.MkTokenPattern {TokenPattern.whose = ControllerRelation.Related PlayerRelation.You, TokenPattern.whatToken = Filter.And [], TokenPattern.effectsOnly = False, TokenPattern.firstEachTurn = True},
+            TokenR.scaling = Nothing,
+            TokenR.plus = Just (TokenPlus.InsteadCopies (Filter.HasCardType CardType.Creature)),
+            TokenR.optional = True
+          }
+      )
+      " {\"matching\":{\"whose\":{\"type\":\"You\"},\"firstEachTurn\":true},\"plus\":{\"type\":\"InsteadCopies\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"optional\":true} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec
 
 -- A one-face creature token with every other field at the value

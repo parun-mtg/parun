@@ -5425,27 +5425,79 @@ apply settle batch applied batchPrevented candidate event =
     -- so the riders still reach it (its ruling) and a later row scales it. An
     -- unmatched lot stays. The data/scenarios/draconic-visitor-* files are the
     -- proof, the Chatterfang race for the unmatched lot.
-    (ReplacementEffect.TokenR (TokenR.MkTokenR pat scaling plus), ProposedEvent.WouldCreateTokens pid lots) -> do
-      Replacement.consume (ReplacementCandidate.identity candidate)
-      gs <- State.get
-      let scaleLot factor lot
-            | Replacement.reachesLot pat lot = lot {TokenLot.count = Replacement.scale gs candidate factor (TokenLot.count lot)}
-            | otherwise = lot
-          scaled = maybe lots (\factor -> fmap (scaleLot factor) lots) scaling
-          lotOf card n = TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = Nothing, TokenLot.count = n, TokenLot.byEffect = True}
-          appended = case plus of
-            Nothing -> scaled
-            Just (TokenPlus.One card) -> scaled Seq.|> lotOf card 1
-            -- Chatterfang's "that many": every token the event would create as
-            -- this row applies, its own scaling included.
-            Just (TokenPlus.ThatMany card) -> scaled Seq.|> lotOf card (sum (fmap TokenLot.count scaled))
-            Just (TokenPlus.Instead card) ->
-              let swap lot
-                    | Replacement.reachesLot pat lot && Replacement.matchesTokenLot gs (Replacement.candidateContext gs candidate) (TokenPattern.whatToken pat) pid lot =
-                        lot {TokenLot.card = card, TokenLot.copy = Nothing}
-                    | otherwise = lot
-               in fmap swap scaled
-      pure (Just (ProposedEvent.WouldCreateTokens pid appended))
+    --
+    -- CR 614.1a / 707.2: Mirrormind Crown's "you may instead create that many
+    -- tokens that are copies of equipped creature" swaps every matched lot for
+    -- a copy of the permanent its Filter names, read in the row's own context
+    -- as it applies, CreateCopy's snapshot. Its controller is asked as it
+    -- applies, ZoneChangeR's posture, and declining leaves the event standing
+    -- with the row recorded under CR 614.5. Nothing to copy leaves it standing
+    -- unasked. The data/scenarios/mirrormind-crown-* files are the proof.
+    --
+    -- One CR 608.2f action creating through several createTokens calls is one
+    -- event to the row (Event.together), so its first answer stands for the
+    -- rest: EnteringTogether.substitutions.
+    (ReplacementEffect.TokenR (TokenR.MkTokenR pat scaling plus optional), ProposedEvent.WouldCreateTokens pid lots) -> do
+      asked <- State.get
+      let identity_ = ReplacementCandidate.identity candidate
+          who = Maybe.fromMaybe pid (ReplacementCandidate.controller candidate)
+          context = Replacement.candidateContext asked candidate
+          viewOf = Projection.viewsOf asked
+          copyable = case plus of
+            -- CR 801.5a: only within the chooser's range, legalCopyTargets'
+            -- cut; no scenario limits a range here.
+            Just (TokenPlus.InsteadCopies copied) -> Just (filter (\oid -> Filter.matches context (viewOf oid) copied && Projection.objectInRangeGiven (Projection.controlGrants asked) who oid asked) (Set.toAscList (GameState.battlefield asked)))
+            Just (TokenPlus.One _) -> Nothing
+            Just (TokenPlus.ThatMany _) -> Nothing
+            Just (TokenPlus.Instead _) -> Nothing
+            Nothing -> Nothing
+          answered = Scratch.enteringTogether (GameState.scratch asked) >>= Map.lookup identity_ . EnteringTogether.substitutions
+          ask = do
+            decision <-
+              if copyable == Just []
+                then pure OptionalDecision.Declines
+                else
+                  if optional
+                    then Game.choose (Prompt.ChooseSubstitute (Decide.deciderFor who asked) who (ReplacementCandidate.source candidate))
+                    else pure OptionalDecision.Exercises
+            -- Choose, not target: elided at one candidate (Game.chooseAmong).
+            picked <- case (decision, copyable) of
+              (OptionalDecision.Exercises, Just offered) -> Game.chooseAmong (\chooser chooses pool -> Prompt.ChoosePermanent chooser chooses (ReplacementCandidate.source candidate) pool Seq.empty) who offered
+              _ -> pure Nothing
+            let remember open = open {EnteringTogether.substitutions = Map.insert identity_ (decision, picked) (EnteringTogether.substitutions open)}
+            State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringTogether = fmap remember (Scratch.enteringTogether (GameState.scratch g))}})
+            pure (decision, picked)
+      (decision, picked) <- maybe ask pure answered
+      case decision of
+        OptionalDecision.Declines -> pure (Just event)
+        OptionalDecision.Exercises -> do
+          Replacement.consume identity_
+          gs <- State.get
+          let scaleLot factor lot
+                | Replacement.reachesLot pat lot = lot {TokenLot.count = Replacement.scale gs candidate factor (TokenLot.count lot)}
+                | otherwise = lot
+              scaled = maybe lots (\factor -> fmap (scaleLot factor) lots) scaling
+              lotOf card n = TokenLot.MkTokenLot {TokenLot.card = card, TokenLot.copy = Nothing, TokenLot.count = n, TokenLot.byEffect = True}
+              swapFor card copy lot
+                | Replacement.reachesLot pat lot && Replacement.matchesTokenLot gs (Replacement.candidateContext gs candidate) (TokenPattern.whatToken pat) pid lot =
+                    lot {TokenLot.card = card, TokenLot.copy = copy}
+                | otherwise = lot
+              appended = case plus of
+                Nothing -> scaled
+                Just (TokenPlus.One card) -> scaled Seq.|> lotOf card 1
+                -- Chatterfang's "that many": every token the event would create as
+                -- this row applies, its own scaling included.
+                Just (TokenPlus.ThatMany card) -> scaled Seq.|> lotOf card (sum (fmap TokenLot.count scaled))
+                Just (TokenPlus.Instead card) -> fmap (swapFor card Nothing) scaled
+                -- The token's own card is the copied permanent's, CreateCopy's
+                -- pairing. No pick, or a pick with no card behind it, swaps
+                -- nothing. The swap drops a replaced copy effect's exceptions:
+                -- docs/decisions.md, "Whether a replaced copy effect's
+                -- exceptions reach Mirrormind Crown's copies".
+                Just (TokenPlus.InsteadCopies _) -> case picked >>= \src -> (,) src <$> Game.cardOfWithLastKnown src gs of
+                  Just (src, card) -> fmap (swapFor card (Just (copiedSnapshot src gs))) scaled
+                  Nothing -> scaled
+          pure (Just (ProposedEvent.WouldCreateTokens pid appended))
     -- Unreachable: `applies` admits TokenR only against WouldCreateTokens.
     (ReplacementEffect.TokenR {}, _) -> pure (Just event)
     -- CR 614.1b / 614.10: a skip is "instead of doing X, do nothing", so the

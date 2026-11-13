@@ -266,6 +266,7 @@ import qualified Parun.Types.Tap as Tap
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TheseDiscard as TheseDiscard
 import qualified Parun.Types.TokenPattern as TokenPattern
+import qualified Parun.Types.TokenPlus as TokenPlus
 import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
@@ -1597,7 +1598,8 @@ replacementRowReads re = case re of
   ReplacementEffect.CounterR (CounterR.MkCounterR pat _) -> ([CounterPattern.onWhat pat], [])
   -- The pattern's Filter over what the token is; the scaling is a number and
   -- the appended token is card data of its own, so neither reads a slot.
-  ReplacementEffect.TokenR (TokenR.MkTokenR pat _ _) -> ([TokenPattern.whatToken pat], [])
+  -- CR 707.2: so does the permanent a copying row names.
+  ReplacementEffect.TokenR (TokenR.MkTokenR pat _ plus _) -> (TokenPattern.whatToken pat : foldMap tokenPlusReads plus, [])
   ReplacementEffect.TurnUpR (TurnUpR.MkTurnUpR pat _ _ rewrite) -> addFilter pat (turnUpRewriteReads rewrite)
   ReplacementEffect.AttachR (AttachR.MkAttachR pat (AttachRewrite.AsCopy asCopy)) -> addFilter pat (asCopyReads asCopy)
   ReplacementEffect.AttachR (AttachR.MkAttachR pat (AttachRewrite.ChooseQuality _)) -> ([pat], [])
@@ -1943,6 +1945,13 @@ damageRewriteEffects rewrite = case rewrite of
 -- row's Context as each event applies (Parun.Engine.Event's PreventUpTo arm).
 -- No wildcard, replacementRowSlots' discipline: a later rewrite describing
 -- something must answer here rather than have its slot reads go undeclared.
+tokenPlusReads :: TokenPlus.TokenPlus card -> [Filter.Type.Filter Keyword.Type.Keyword]
+tokenPlusReads plus = case plus of
+  TokenPlus.One _ -> []
+  TokenPlus.ThatMany _ -> []
+  TokenPlus.Instead _ -> []
+  TokenPlus.InsteadCopies copied -> [copied]
+
 damageRewriteReads :: DamageRewrite.DamageRewrite (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> ([Filter.Type.Filter Keyword.Type.Keyword], [Quantity.Type.Quantity])
 damageRewriteReads rewrite = case rewrite of
   DamageRewrite.RedirectMatching f -> ([f], [])

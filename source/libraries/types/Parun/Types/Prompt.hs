@@ -775,8 +775,9 @@ data Prompt r where
   -- | CR 614.1a: whether an optional substitution whose source the ObjectId
   -- names replaces the player's coin flip or die roll ("you may instead roll a
   -- d20", Pokey, the Scallywagg), draw ("instead you may skip that draw",
-  -- Island Sanctuary) or step or turn (CR 614.10b, Fasting, Time Vault). Never
-  -- elided, ChooseDredge's reason.
+  -- Island Sanctuary), step or turn (CR 614.10b, Fasting, Time Vault) or token
+  -- creation ("you may instead create", Mirrormind Crown). Never elided,
+  -- ChooseDredge's reason.
   ChooseSubstitute :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Prompt OptionalDecision.OptionalDecision
   -- | CR 701.21a: which of the payer's matching permanents are sacrificed to
   -- pay a cost, the Natural how many; asked only with more candidates than the

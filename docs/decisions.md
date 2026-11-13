@@ -1780,3 +1780,23 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Cast.installPermissionEntry`, proved by the scenario
   `cr-614-1d-leonardo-s-finality-counter-reaches-a-creature-that-resolves-after-leonardo-died`.
 - **Issue**: #7058.
+
+## Whether a replaced copy effect's exceptions reach Mirrormind Crown's copies
+
+- **Question**: Multiversal Incursion would create copies that "aren't
+  legendary". Mirrormind Crown replaces that creation with "that many tokens
+  that are copies of equipped creature". Equipped to a legendary creature, are
+  the Crown's copies legendary?
+- **Rules**: CR 614.6, 707.2, 707.9b (CR of 2026-11-06); the Crown's rulings
+  say its tokens copy what is printed on the equipped creature and nothing
+  else, and say nothing of the replaced effect's exceptions.
+- **Decision**: Yes. An exception is part of the copiable values of the tokens
+  the replaced event would have made (CR 707.9b), and that event never happens
+  (CR 614.6); the Crown's own instruction states none.
+- **Rejected**: Carrying the exception over the way "tapped and attacking"
+  still reaches a substituted token (Draconic Visitor's ruling): that ruling
+  is about what the creating effect does with its tokens, not what they are.
+- **Site**: `Parun.Engine.Event.apply`, the TokenR arm's InsteadCopies case.
+  Proved by the scenario
+  `mirrormind-crown-s-copies-of-a-legendary-creature-stay-legendary-under-multiversal-incursion`.
+- **Issue**: #7109.

@@ -3685,6 +3685,18 @@ enteredBattlefield = fmap ZoneChange.object . enteredBattlefieldChange
 enteredThisTurn :: ObjectId -> GameState -> Bool
 enteredThisTurn oid gs = fmap MovedBetween.to (arrivalThisTurn oid gs) == Just Zone.Battlefield
 
+-- CR 111.2 / 608.2i: has this player created a token this turn? A token's
+-- creation is the one arrival nothing departed for
+-- (Parun.Engine.Event.recordMintedArrival), and its creator is its owner. A
+-- token already gone answers from its last known information (CR 111.7).
+createdTokenThisTurn :: PlayerId -> GameState -> Bool
+createdTokenThisTurn pid gs =
+  let minted event = do
+        change <- enteredBattlefieldChange event
+        if ZoneChange.from change == Zone.Battlefield then Just (ZoneChange.object change) else Nothing
+      mine oid = liveOrLastKnown (\obj -> sourceIsToken (Object.source obj) && Object.owner obj == pid) (\known -> sourceIsToken (LastKnown.source known) && LastKnown.owner known == pid) oid gs == Just True
+   in any (any mine . minted . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
+
 -- CR 110.2 / 608.2i: this turn's control changes of this permanent, oldest
 -- first. The first one's `before` is the player it entered under, if it
 -- entered this turn: an entry mints none (Parun.Engine.Event.sampleControl).

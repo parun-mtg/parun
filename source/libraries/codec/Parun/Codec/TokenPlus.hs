@@ -1,6 +1,8 @@
 module Parun.Codec.TokenPlus where
 
 import qualified Data.Typeable as Typeable
+import qualified Parun.Codec.Filter as Filter
+import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Types.TokenPlus as TokenPlus
@@ -12,7 +14,8 @@ codec cardCodec =
     tagOf
     [ Arm.payload "One" cardCodec TokenPlus.One (\x -> case x of TokenPlus.One y -> Just y; _ -> Nothing),
       Arm.payload "ThatMany" cardCodec TokenPlus.ThatMany (\x -> case x of TokenPlus.ThatMany y -> Just y; _ -> Nothing),
-      Arm.payload "Instead" cardCodec TokenPlus.Instead (\x -> case x of TokenPlus.Instead y -> Just y; _ -> Nothing)
+      Arm.payload "Instead" cardCodec TokenPlus.Instead (\x -> case x of TokenPlus.Instead y -> Just y; _ -> Nothing),
+      Arm.payload "InsteadCopies" (Filter.codec Keyword.codec) TokenPlus.InsteadCopies (\x -> case x of TokenPlus.InsteadCopies y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: TokenPlus.TokenPlus card -> String
@@ -20,3 +23,4 @@ tagOf x = case x of
   TokenPlus.One {} -> "One"
   TokenPlus.ThatMany {} -> "ThatMany"
   TokenPlus.Instead {} -> "Instead"
+  TokenPlus.InsteadCopies {} -> "InsteadCopies"
