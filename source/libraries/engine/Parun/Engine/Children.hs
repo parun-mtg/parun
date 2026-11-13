@@ -2966,7 +2966,7 @@ faceLeaves =
 
 -- | A face's children. A delayed ability's name and a mode cost's index are keys, left as they are.
 faceChildren :: (Applicative f) => FaceChildren card f -> Face.Face card -> f (Face.Face card)
-faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer anteOnly circlesTwo deckLimit commanderDeckRules pregameExile keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
+faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer additionalHand anteOnly circlesTwo deckLimit commanderDeckRules pregameExile keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
   Face.MkFace name oracleText manaCost typeLine
     <$> traverse (facePower c) power
     <*> traverse (faceToughness c) toughness
@@ -2976,6 +2976,7 @@ faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness lo
     <*> pure vanguard
     <*> pure canBeYourCommander
     <*> pure claimsStartingPlayer
+    <*> pure additionalHand
     <*> pure anteOnly
     <*> pure circlesTwo
     <*> pure deckLimit

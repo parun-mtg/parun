@@ -1446,6 +1446,7 @@ spec s registry = Spec.describe s "Client" $ do
         (modifier, modifiers) = asking facing ["2"] gs (Prompt.ChooseRollModifier alice S.alice (Just f NonEmpty.:| [Nothing]))
         (_, keepers) = asking facing ["1"] gs (Prompt.ChooseStickerKeeper alice S.alice (printing NonEmpty.:| [printing]))
         (result, results) = asking facing ["2"] gs (Prompt.ChooseDieResult alice S.alice Nothing (4 NonEmpty.:| [2]))
+        (kept, hands) = asking facing ["2"] gs (Prompt.KeepHand alice S.alice ([f] NonEmpty.:| [[g, f]]))
     Spec.assertEqWith s "CR 616.1 a replacement by its source and Oracle text" (upTo (Text.pack "Choose replacement") replacement) (fmap Text.pack ["Choose replacement:", "  1. Forest: Forest enters tapped.", "  2. Hill Giant: Hill Giant enters prepared."])
     Spec.assertEqWith s "the first picked" picked (Right 0)
     Spec.assertEqWith s "CR 603.7b an event as the log tells it" (upTo (Text.pack "Choose delayed trigger event") delayed) (fmap Text.pack ["Choose delayed trigger event for Forest:", "  1. Forest deals 2 damage to Player 2.", "  2. Forest deals 3 damage to Player 2."])
@@ -1453,6 +1454,8 @@ spec s registry = Spec.describe s "Client" $ do
     Spec.assertEqWith s "CR 706.2b a modifier by the object stating it" (upTo (Text.pack "Choose roll modifier") modifiers) (fmap Text.pack ["Choose roll modifier:", "  1. Forest", "  2. A rule"])
     Spec.assertEqWith s "the second modifier picked" modifier (Right 1)
     Spec.assertEqWith s "CR 123.5c an object by its card's name" (upTo (Text.pack "Choose sticker keeper") keepers) (fmap Text.pack ["Choose sticker keeper:", "  1. Hill Giant", "  2. Hill Giant"])
+    Spec.assertEqWith s "CR 315.5a a hand by its cards' names" (upTo (Text.pack "Keep hand") hands) (fmap Text.pack ["Keep hand:", "  1. Your Forest", "  2. Player 2's Hill Giant 3/3, Your Forest"])
+    Spec.assertEqWith s "the second hand kept" kept (Right 1)
     Spec.assertEqWith s "CR 706.4 a result as its number" (upTo (Text.pack "Choose die result") results) (fmap Text.pack ["Choose die result:", "  1. 4", "  2. 2"])
     Spec.assertEqWith s "the second result picked" result (Right 1)
 

@@ -525,6 +525,7 @@ vanillaFace name typeLine =
       Face.vanguard = Nothing,
       Face.canBeYourCommander = False,
       Face.claimsStartingPlayer = False,
+      Face.additionalHand = Nothing,
       Face.anteOnly = False,
       Face.circlesTwo = False,
       Face.deckLimit = Nothing,
@@ -5688,7 +5689,7 @@ activatedAbilityFilters ability =
 --
 -- The remaining fields hold none: `name`, `manaCost`, `typeLine`, `loyalty`,
 -- `defense`, `vanguard`, `canBeYourCommander`, `claimsStartingPlayer`,
--- `anteOnly` and `colorIndicator`.
+-- `additionalHand`, `anteOnly` and `colorIndicator`.
 -- That is checkable rather than asserted: none of the
 -- types those fields reach imports Parun.Types.Filter, which
 -- `grep -rl 'import qualified Parun.Types.Filter' source/libraries/types/` over

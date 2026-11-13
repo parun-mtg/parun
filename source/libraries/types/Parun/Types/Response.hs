@@ -729,6 +729,9 @@ data Response
   | -- | CR 601.3 / 305.1: the permission a player made a play under (Nothing =
     -- none of the offered ones).
     ChosePlayPermission (Maybe (ObjectId.ObjectId, CastFromZone.CastFromZone))
+  | -- | CR 315.5a: the index of the hand a player kept of those they drew as
+    -- the game began.
+    KeptHand Natural.Natural
   | -- | CR 103.5: a player's mulligan declaration.
     DeclaredMulligan MulliganDecision.MulliganDecision
   | -- | CR 103.5: the cards a player put on the bottom of their library after a

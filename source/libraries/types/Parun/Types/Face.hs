@@ -146,6 +146,11 @@ data Face card = MkFace
     -- apply in. Read off the face of a card in its owner's command zone, where
     -- CR 315.3 keeps a conspiracy.
     claimsStartingPlayer :: Bool,
+    -- | CR 315.5a: how many cards this card's additional opening hand holds,
+    -- where it prints "draw an additional hand", or Nothing. A printed field
+    -- for claimsStartingPlayer's reason; its reader is
+    -- Parun.Engine.Mulligan.additionalHandSizes.
+    additionalHand :: Maybe Natural.Natural,
     -- | CR 407.3: whether this card prints "Remove this card from your deck
     -- before playing if you're not playing for ante". A printed flag for
     -- claimsStartingPlayer's reason: its reader (Parun.Engine.Ante.barred) runs

@@ -965,6 +965,11 @@ data Prompt r where
   -- Parun.Engine.Resolve.Arms.Damage's ActivateManaAbilities arm, per seat in
   -- APNAP order (CR 101.4), for two or more permanents.
   OrderManaActivations :: Decider.Decider -> PlayerId.PlayerId -> [ObjectId.ObjectId] -> Prompt [Natural.Natural]
+  -- | CR 315.5a: which of the hands a player drew as the game began they keep,
+  -- by index, the rest being shuffled into their library; asked by
+  -- Parun.Engine.Mulligan.additionalHands before any mulligan, of a player
+  -- who drew more than one.
+  KeepHand :: Decider.Decider -> PlayerId.PlayerId -> NonEmpty.NonEmpty [ObjectId.ObjectId] -> Prompt Natural.Natural
   -- | CR 103.5: whether the player takes a mulligan, once per round in turn
   -- order until they keep; the offer carries what a player at a table sees.
   DeclareMulligan :: Decider.Decider -> PlayerId.PlayerId -> MulliganOffer.MulliganOffer -> Prompt MulliganDecision.MulliganDecision

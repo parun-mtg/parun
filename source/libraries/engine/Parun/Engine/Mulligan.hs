@@ -4,7 +4,9 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Numeric.Natural
 import qualified Parun.Engine.Binding as Binding
@@ -84,6 +86,7 @@ openingHands perform seated = do
         n <- State.gets (startingHandSize pid)
         Monad.replicateM_ (Natural.toIntSaturating n) (Event.drawCard (pure ()) pid)
     )
+  additionalHands owners
   mulliganRounds perform Map.empty owners
   -- CR 103.6: the opening-hand window, after the WHOLE CR 103.5 process.
   openingHandActions perform owners
@@ -101,6 +104,52 @@ openingHands perform seated = do
                 }
           }
     )
+
+-- CR 315.5a: the size of each additional opening hand this player draws, one
+-- per card in their command zone printing one -- cumulative, by Backup Plan's
+-- 2014-05-29 ruling. A CLASSIFICATION, not an identity test: this asks whether
+-- a card prints an additional hand, never which card it is.
+--
+-- CR 315.6: a conspiracy's controller is its owner, so the owner-indexed
+-- command zone is the controller's. The face the card shows (Game.faceOf), so
+-- a face-down conspiracy grants nothing (CR 315.5, 315.5b).
+additionalHandSizes :: PlayerId -> GameState.GameState -> [Numeric.Natural.Natural]
+additionalHandSizes pid gs = Maybe.mapMaybe (\oid -> Game.faceOf oid gs >>= Face.additionalHand) (Game.zoneMembers Zone.Command pid gs)
+
+-- CR 315.5a: each player draws their additional hands as the game begins, then
+-- each who drew one keeps one hand and shuffles the rest into their library,
+-- before any mulligan (CR 103.5). The printed size and not startingHandSize:
+-- the card states its own number. The hand zone does not record which draw a
+-- card came from, so the hands are kept apart here.
+--
+-- CR 701.24c: the library is shuffled even where the hands shuffled in were
+-- empty. A draw from a short library sets drewFromEmpty as openingHands' own
+-- draws do (CR 704.5b, Backup Plan's 2014-05-29 ruling).
+--
+-- Parun.ConspiracySpec's Backup Plan group proves it.
+additionalHands :: [PlayerId] -> Game ()
+additionalHands owners = do
+  drawn <- Monad.forM owners $ \pid -> do
+    first <- State.gets (Game.zoneMembers Zone.Hand pid)
+    sizes <- State.gets (additionalHandSizes pid)
+    extras <- Monad.forM sizes (drawHand pid)
+    pure (pid, first NonEmpty.:| extras)
+  Monad.forM_ drawn $ \(pid, hands) ->
+    Monad.unless (null (NonEmpty.tail hands)) $ do
+      decider <- State.gets (Decide.deciderFor pid)
+      answer <- Game.choose (Prompt.KeepHand decider pid hands)
+      -- An index naming no hand keeps the last, so exactly one is always kept.
+      let (before, after) = List.genericSplitAt (min answer (Natural.length (NonEmpty.tail hands))) (NonEmpty.toList hands)
+      Monad.forM_ (concat (before <> drop 1 after)) (\oid -> Event.changeZone (pure ()) oid Zone.Library)
+      Event.shuffleLibrary pid
+
+-- One additional hand: draw `size` cards and answer the cards that reached
+-- the hand, in hand order.
+drawHand :: PlayerId -> Numeric.Natural.Natural -> Game [ObjectId]
+drawHand pid size = do
+  before <- State.gets (Game.zoneMembers Zone.Hand pid)
+  Monad.replicateM_ (Natural.toIntSaturating size) (Event.drawCard (pure ()) pid)
+  State.gets (filter (`notElem` before) . Game.zoneMembers Zone.Hand pid)
 
 -- CR 103.5b / CR 103.6: every action the cards in this player's hand grant from
 -- the window `field` names, keyed by the granting card AND which of that card's
