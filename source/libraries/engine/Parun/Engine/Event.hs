@@ -2874,7 +2874,8 @@ exiledByAfter candidate before after exiledBy =
 -- it. A row that moved the destination replaces the tally with its own, so
 -- counters stated for one destination never follow the object to another; a row
 -- that left the destination alone (a declined CR 614.1a "may" included) leaves
--- the tally alone. data/scenarios/goliath-daydreamer proves the first arm.
+-- the tally alone. data/scenarios' goliath-daydreamer-exiles-an-instant pair of
+-- casts proves the first arm; no board reaches a second redirect.
 --
 -- CR 608.2h: the amounts are evaluated once, as the row applies, in the row's
 -- Context (CR 109.5). The putter is the row's controller, else the owner.
