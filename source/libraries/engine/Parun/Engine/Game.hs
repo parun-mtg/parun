@@ -3530,7 +3530,8 @@ castsInLog = Seq.fromList . Maybe.mapMaybe (castOf . LoggedEvent.event) . Foldab
 -- CR 601.2i / 608.2i: every spell cast this game, oldest first: each finished
 -- turn's casts (History.pastTurns), then the live log's.
 -- cr-104-2b-the-second-cast-from-hand-on-a-later-turn-wins proves the past
--- turns are read.
+-- turns are read, and cr-104-2b-the-second-cast-from-hand-the-same-turn-wins
+-- that the live log's earlier casts are.
 castsThisGame :: GameState -> Seq.Seq SpellWasCast.SpellWasCast
 castsThisGame gs =
   foldMap (castsInLog . PastTurn.events) (History.pastTurns (GameState.history gs))
