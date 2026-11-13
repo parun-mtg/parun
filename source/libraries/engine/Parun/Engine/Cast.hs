@@ -3762,9 +3762,19 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           -- the instruction its announcement settles an unsettled one to
           -- (Modal.settle), so Widow's Bite naming both modes without teamwork,
           -- or one with it, has no candidate and rewinds below.
+          --
+          -- CR 601.2b: the candidate's own additional costs are announced with
+          -- it, so "if this spell's additional cost was paid" is read off the
+          -- records its payment WILL bind (Cost.announcedRecords), CR 601.2h's
+          -- payment being later than the modes it decides. Presence alone, which
+          -- is all Quantity.WasBound asks, so the amount is a stand-in.
+          -- The scenario
+          -- pyrrhic-strike-chooses-both-modes-when-its-blight-was-paid is the
+          -- proof.
           settledFor candidate =
             let proposed = stampPaidCosts paid sid (proposedFor pid sid (CandidateCost.keyword candidate) gs)
-                context = Projection.sourceContext proposed (Just pid) sid
+                sourced = Projection.sourceContext proposed (Just pid) sid
+                context = sourced {Filter.boundAmounts = Map.union (Filter.boundAmounts sourced) (Map.fromSet (const 0) (Cost.announcedRecords (CandidateCost.cost candidate)))}
                 counting = Integer.toNaturalSaturating . Maybe.fromMaybe 0 . Quantity.evaluate (Projection.fullView proposed) context proposed sid
              in Modal.selectionSatisfiedBy legal (Modal.settle (Condition.holds (Projection.fullView proposed) context proposed sid) counting selection) chosenModes
           -- CR 702.27a's cost is additional too, so it rides the same fold.

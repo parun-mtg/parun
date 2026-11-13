@@ -113,6 +113,11 @@ data CostComponent keyword
     -- player puts N -1\/-1 counters on a creature they control, and can't pay at
     -- all where they control none (CR 701.68b). Soul Immolation's "blight X"
     -- announces N; its printed ceiling rides Parun.Types.Face.maximumX (CR 101.1).
+    --
+    -- BINDS N under Parun.Engine.Binding.blightCost, which is what "if this
+    -- spell's additional cost was paid" is read off through Quantity.WasBound
+    -- (Cinder Strike); CR 118.8b's optional "you may blight" is an option of a
+    -- Parun.Types.CostChoice whose other option is empty.
     Blight CostAmount.CostAmount
   | -- | CR 701.61a as a cost / Thornvault Forager, Camellia, the Seedmiser: the
     -- paying player forages, and can't pay at all where neither half of rule

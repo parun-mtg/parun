@@ -91,8 +91,8 @@ canBlight pid gs = not (null (payable pid gs))
 -- effect and Parun.Engine.Cost turns into an unpaid cost.
 --
 -- The caller binds the answer under the effect's slot for a later clause of the
--- same resolution to read (Grub, Notorious Auntie). The COST callers bind
--- nothing: no printing pays a blight and then names what it blighted.
+-- same resolution to read (Grub, Notorious Auntie). The COST callers bind no
+-- creature: no printing pays a blight and then names what it blighted.
 --
 -- The pool is `instructed` for a mandatory blight and `payable` for a cost.
 --

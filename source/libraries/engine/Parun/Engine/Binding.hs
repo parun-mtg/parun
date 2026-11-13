@@ -840,6 +840,17 @@ collectedEvidence = SlotName.MkSlotName (Text.pack "thatCollectedEvidence")
 waterbendCost :: SlotName
 waterbendCost = SlotName.MkSlotName (Text.pack "thatWaterbendCost")
 
+-- CR 701.68a: the reserved slot under which a CostComponent.Blight payment
+-- binds the N it blighted -- what "if this spell's additional cost was paid"
+-- asks after through Quantity.WasBound (Cinder Strike), waterbendCost's shape.
+-- An AMOUNT and not the blighted creature: the phrase asks whether the cost was
+-- paid, and a creature the counter killed is still a cost paid.
+--
+-- Not a target (CR 115.10a), so the same CR 608.2b posture and the same "no
+-- card's targetSlots may name it" sweep as the slots above.
+blightCost :: SlotName
+blightCost = SlotName.MkSlotName (Text.pack "thatBlightCost")
+
 -- CR 118.1 / 601.2h: the reserved slot under which a
 -- CostComponent.RemoveCounters payment binds HOW MANY counters it took
 -- off -- Ooze Flux's "the number of +1\/+1 counters removed this way", which

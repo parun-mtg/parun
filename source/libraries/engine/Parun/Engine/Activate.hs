@@ -302,6 +302,9 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
           -- data/scenarios/synthetic-tiered-relay-chooses-up-to-the-x-its-activation-announced.json
           -- proves. The modes were checked above against no ceiling, CR 601.2b
           -- choosing them before X.
+          --
+          -- Not implemented: a condition reading the record the announced cost's
+          -- payment will bind, Parun.Engine.Cast's `settledFor` read (#7157).
           settledSelection =
             Modal.settle
               (Condition.holds (Projection.fullView gs) (Target.slotContext (ActivatedAbility.name ability) (Just pid) False seed (Game.acquisitionFor (ActivatedAbility.name ability) srcId gs) srcId Nothing gs) gs srcId)
