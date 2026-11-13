@@ -42,7 +42,9 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
 - **References.** `"$name"` is a seat or a labelled card; the sigil is not `@`,
   so a label quoted in a PR or issue mentions no GitHub user. `"Goblin Piker"`
   is the first live object with that name, `"Goblin Piker#2"` the second, in
-  creation order across every zone. `"trigger of $x"` and `"ability of $x"`
+  creation order across every zone; `"departed Goblin Piker#2"` is the second
+  whose id no longer names one, counted the same way --- a card that has moved
+  zones among them, since CR 400.7 left its old self behind. `"trigger of $x"` and `"ability of $x"`
   name the topmost triggered or activated ability on the stack from that
   source, which may have left the game (CR 113.7a).
 - **Timeline.** Each entry is keyed by `turn`, `step` and the `player` who

@@ -60,6 +60,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.EntwineDecision as EntwineDecision
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter
@@ -4567,7 +4568,7 @@ mayhemSpec s registry = Spec.describe s "Mayhem" $ do
     bolt <- S.printingOf s registry "Electro's Bolt"
     reunion <- S.printingOf s registry "Cathartic Reunion"
     let (discarded, notDiscarded) = mayhemBoards mountain piker bolt reunion
-        boltIn gs = case Scenario.namedObjects (S.printingName bolt) gs of
+        boltIn gs = case Scenario.namedObjects Existence.Live (S.printingName bolt) gs of
           oid : _ -> Just oid
           [] -> Nothing
         cast oid gs = S.runPure S.identityAnswer gs (S.cast S.alice oid)
@@ -4584,7 +4585,7 @@ mayhemSpec s registry = Spec.describe s "Mayhem" $ do
     bolt <- S.printingOf s registry "Electro's Bolt"
     reunion <- S.printingOf s registry "Cathartic Reunion"
     let (discarded, notDiscarded) = mayhemBoards mountain piker bolt reunion
-        costsOf gs = case Scenario.namedObjects (S.printingName bolt) gs of
+        costsOf gs = case Scenario.namedObjects Existence.Live (S.printingName bolt) gs of
           oid : _ -> fmap (\c -> (Cost.Type.mana c, Cost.Type.components c)) (Cost.costsFor S.alice (S.printingName bolt) oid gs)
           [] -> []
     Spec.assertEqWith
@@ -4604,7 +4605,7 @@ mayhemSpec s registry = Spec.describe s "Mayhem" $ do
     oscorp <- S.printingOf s registry "Oscorp Industries"
     reunion <- S.printingOf s registry "Cathartic Reunion"
     let (discarded, notDiscarded) = mayhemBoards mountain piker oscorp reunion
-        oscorpIn gs = case Scenario.namedObjects (S.printingName oscorp) gs of
+        oscorpIn gs = case Scenario.namedObjects Existence.Live (S.printingName oscorp) gs of
           oid : _ -> Just oid
           [] -> Nothing
         plays gs = [oid | A.Play oid _ <- Action.legalActions S.alice gs, Game.zoneOf oid gs == Just Zone.Graveyard]
@@ -4633,7 +4634,7 @@ mayhemSpec s registry = Spec.describe s "Mayhem" $ do
     paragon <- S.printingOf s registry "Serra Paragon"
     let (discarded, _) = mayhemBoards mountain piker oscorp reunion
         withParagon = snd (S.addPermanent paragon S.alice discarded)
-        played = case Scenario.namedObjects (S.printingName oscorp) withParagon of
+        played = case Scenario.namedObjects Existence.Live (S.printingName oscorp) withParagon of
           oid : _ -> S.runPure S.identityAnswer withParagon (Cast.playLand (pure ()) False S.alice oid Nothing)
           [] -> withParagon
     Spec.assertEqWith s "Oscorp arrived" (S.countOnBattlefieldByName (S.printingName oscorp) S.alice played) 1

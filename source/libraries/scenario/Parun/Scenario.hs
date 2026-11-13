@@ -103,6 +103,7 @@ import qualified Parun.Types.Discrepancy as Discrepancy
 import qualified Parun.Types.Emperors as Emperors
 import qualified Parun.Types.Entrant as Entrant
 import qualified Parun.Types.Entry as Entry
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.FaceDownReason as FaceDownReason
@@ -1734,16 +1735,24 @@ referenced name = do
 
 -- References -------------------------------------------------------------------
 
--- | Every live object whose card answers to `name`, in creation order and in
--- every zone -- the numbering Reference.Printed counts in. The printed card,
--- since a reference names a card rather than asking a rules question about it.
-namedObjects :: CardName.CardName -> GameState.GameState -> [ObjectId.ObjectId]
-namedObjects name gs =
+-- | Every live object whose card answers to `name`, or every departed one off
+-- CR 608.2h's record, in creation order and in every zone -- the
+-- numbering Reference.Printed counts in. The printed card, since a reference
+-- names a card rather than asking a rules question about it.
+namedObjects :: Existence.Existence -> CardName.CardName -> GameState.GameState -> [ObjectId.ObjectId]
+namedObjects existence name gs =
   let wanted = Registry.slugFor name
-      matches oid = case Game.cardOf oid gs of
+      matches oid = case Game.cardOfWithLastKnown oid gs of
         Nothing -> False
         Just card -> any ((== wanted) . Registry.slugFor . Face.name) (NonEmpty.toList (Card.faces card))
-   in filter matches (Map.keys (GameState.objects gs))
+   in filter matches (existing existence gs)
+
+-- | The ids of one existence, in creation order: CR 400.7's new object, or the
+-- id its predecessor had, which names no object any more.
+existing :: Existence.Existence -> GameState.GameState -> [ObjectId.ObjectId]
+existing existence gs = case existence of
+  Existence.Live -> Map.keys (GameState.objects gs)
+  Existence.Departed -> filter (`Map.notMember` GameState.objects gs) (Map.keys (Snapshots.lastKnown (GameState.snapshots gs)))
 
 labelOf :: PlayerId.PlayerId -> Run Label.Label
 labelOf pid = State.gets (flip seatLabel pid . Staged.seats . staged)
@@ -1771,9 +1780,9 @@ resolveObject ref gs = case ref of
       Nothing
         | Map.member label (Staged.seats board) -> failWith (Failure.MkNotAnObject ref)
         | otherwise -> failWith (Failure.MkUnknownObject ref False)
-  Reference.Printed name occurrence -> case occurrence of
+  Reference.Printed existence name occurrence -> case occurrence of
     0 -> failWith (Failure.MkUnknownObject ref False)
-    _ -> case List.genericDrop (occurrence - 1) (namedObjects name gs) of
+    _ -> case List.genericDrop (occurrence - 1) (namedObjects existence name gs) of
       oid : _ -> pure oid
       [] -> failWith (Failure.MkUnknownObject ref False)
   Reference.TriggerOf source -> onStack source $ \obj -> case Object.source obj of
@@ -2027,8 +2036,9 @@ describeObject gs oid = do
   pure (Codec.Reference.toText (referenceTo labels gs oid))
 
 -- | An object as a scenario names it: by its label, its card's name and
--- occurrence, or the spell or ability a labelled card became or made; one
--- none of those reach as @object@ and its id, which no reference reads back.
+-- occurrence, live or departed, or the spell or ability a labelled card became
+-- or made; one none of those reach as @object@ and its id, which no reference
+-- reads back.
 referenceTo :: Map.Map Label.Label ObjectId.ObjectId -> GameState.GameState -> ObjectId.ObjectId -> Reference.Reference
 referenceTo labels gs oid = case List.find ((== oid) . snd) (Map.toAscList labels) of
   Just (label, _) -> Reference.Labelled label
@@ -2038,17 +2048,21 @@ referenceTo labels gs oid = case List.find ((== oid) . snd) (Map.toAscList label
       Just (Source.OfAbility ability) -> Reference.AbilityOf (sourceOf (ActivatedAbilitySource.source ability))
       _ -> case [label | (label, card) <- Map.toAscList labels, elem oid (castsOf card gs)] of
         label : _ -> Reference.SpellOf (Reference.Labelled label)
-        [] -> unreached oid
-    Just card ->
-      let name = Face.name (NonEmpty.head (Card.faces card))
-       in Reference.Printed name (Natural.length (takeWhile (/= oid) (namedObjects name gs)) + 1)
+        [] -> maybe (unreached oid) (printed Existence.Departed) (Game.cardOfWithLastKnown oid gs)
+    Just card -> printed Existence.Live card
   where
+    -- A source is named as the first live object of its name, which is how a
+    -- scenario writes "trigger of Ravenous Rats" (Parun.ScenarioSpec's life
+    -- triggers), and not by the occurrence a departed one would carry.
     sourceOf source = case List.find ((== source) . snd) (Map.toAscList labels) of
       Just (label, _) -> Reference.Labelled label
       Nothing -> case Game.cardOfWithLastKnown source gs of
-        Just card -> Reference.Printed (Face.name (NonEmpty.head (Card.faces card))) 1
+        Just card -> Reference.Printed Existence.Live (Face.name (NonEmpty.head (Card.faces card))) 1
         Nothing -> unreached source
-    unreached o = Reference.Printed (CardName.MkCardName (Text.pack ("object " <> show (ObjectId.unwrap o)))) 1
+    printed existence card =
+      let name = Face.name (NonEmpty.head (Card.faces card))
+       in Reference.Printed existence name (Natural.length (takeWhile (/= oid) (namedObjects existence name gs)) + 1)
+    unreached o = Reference.Printed Existence.Live (CardName.MkCardName (Text.pack ("object " <> show (ObjectId.unwrap o)))) 1
 
 -- | Each action's line among `actions`, in their order, as a scenario's Take
 -- and Offered view name it (Parun.Scenario.Offer).

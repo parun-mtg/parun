@@ -95,7 +95,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 608.2h Twilight Diviner copies a returned creature destroyed in response",
-  "note": "One creature returns, so nothing is asked: the scenario language cannot name an object that has left. The token is the only Grizzly Bears on the battlefield.",
+  "note": "One creature returns, so nothing is asked. The token is the only Grizzly Bears on the battlefield.",
   "timeline": [
     {
       "do": {

@@ -81,6 +81,7 @@ import qualified Parun.Types.Departure as Departure
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.EventShape as EventShape
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.Facing as Facing
@@ -6028,7 +6029,7 @@ benevolentRiverSpiritSpec s registry = Spec.describe s "Benevolent River Spirit"
         answer :: Prompt.Prompt r -> r
         answer = waterbending (ManaCost.MkManaCost [blue, blue]) (take 5 tappable)
         resolved = S.runPure answer (S.runPure answer gs (S.cast S.alice spell)) Stack.resolveTop
-        entered = filter (\oid -> Game.zoneOf oid resolved == Just Zone.Battlefield) (Scenario.namedObjects (CardName.MkCardName (Text.pack "Benevolent River Spirit")) resolved)
+        entered = filter (\oid -> Game.zoneOf oid resolved == Just Zone.Battlefield) (Scenario.namedObjects Existence.Live (CardName.MkCardName (Text.pack "Benevolent River Spirit")) resolved)
     Spec.assertEqWith s "CR 118.8d the Spirit on the battlefield has its printed mana value 2, not the 7 alice paid" (fmap (\oid -> Filter.manaValue (Projection.viewOfObject oid resolved)) entered) [Just 2]
     -- The taps, which the assertion above does not see: a Spirit whose {5} went
     -- unpaid would also have entered with mana value 2.
@@ -6100,7 +6101,7 @@ kataraSeekingRevengeSpec s registry = Spec.describe s "Katara, Seeking Revenge" 
               answer = optionalWaterbending paid
               entered = S.runPure answer (S.runPure answer gs (S.cast S.alice spell)) (Stack.resolveTop >> Engine.settleForPriority)
            in S.runPure answer entered Stack.resolveTop
-        katara after = filter (\oid -> Game.zoneOf oid after == Just Zone.Battlefield) (Scenario.namedObjects (CardName.MkCardName (Text.pack "Katara, Seeking Revenge")) after)
+        katara after = filter (\oid -> Game.zoneOf oid after == Just Zone.Battlefield) (Scenario.namedObjects Existence.Live (CardName.MkCardName (Text.pack "Katara, Seeking Revenge")) after)
     Spec.assertEqWith s "CR 400.7d paid: she drew and kept the card" (S.handSize S.alice (resolved True)) 1
     Spec.assertEqWith s "unpaid: she drew and discarded it" (S.handSize S.alice (resolved False)) 0
     Spec.assertEqWith s "CR 701.67a paid, six permanents are tapped -- two for the waterbend cost and all four Islands" (S.tappedCount S.alice (resolved True)) 6

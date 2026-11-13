@@ -2224,10 +2224,9 @@ chooseCardFromAmong offered resolving source controller legal chosen (ChosenCard
       amount = maybe 0 Integer.toNaturalSaturating . Quantity.evaluateFor viewOf context gs resolving source
       -- A departed member is matched off CR 608.2h's record, matchingFromAmong's
       -- read. Proved by the scenario "CR 608.2h Twilight Diviner copies a
-      -- returned creature destroyed in response".
-      --
-      -- Not implemented: a name for a departed candidate, which the prompt
-      -- carries by an id no view or scenario reference reaches (#7173).
+      -- returned creature destroyed in response", and beside a live candidate
+      -- by "CR 608.2h Twilight Diviner copies the chosen one of two returned
+      -- creatures, destroyed in response".
       candidates = case offered of
         Present -> stillPresent gs members
         LastKnown -> members

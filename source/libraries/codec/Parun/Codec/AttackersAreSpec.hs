@@ -7,6 +7,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AttackersAre as AttackersAre.Type
 import qualified Parun.Types.CardName as CardName.Type
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Label as Label.Type
 import qualified Parun.Types.Reference as Reference.Type
 
@@ -19,7 +20,7 @@ spec s = Spec.describe s "Parun.Codec.AttackersAre" $ do
       ( AttackersAre.Type.MkAttackersAre
           ( Map.fromList
               [ (labelled "bear", labelled "bob"),
-                (Reference.Type.Printed (CardName.Type.MkCardName (Text.pack "Goblin Piker")) 2, Reference.Type.Printed (CardName.Type.MkCardName (Text.pack "Jace Beleren")) 1)
+                (Reference.Type.Printed Existence.Live (CardName.Type.MkCardName (Text.pack "Goblin Piker")) 2, Reference.Type.Printed Existence.Live (CardName.Type.MkCardName (Text.pack "Jace Beleren")) 1)
               ]
           )
       )

@@ -7,6 +7,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.Reference as Reference
 import qualified Text.Read as Read
@@ -15,7 +16,9 @@ import qualified Text.Read as Read
 -- with that name, @"Grizzly Bears#2"@ for the second, @"trigger of $bear"@ and
 -- @"ability of $bear"@ for the bear's newest ability on the stack,
 -- @"spell of $bolt"@ for the spell the bolt became when it was cast, and
--- @"stack 2"@ for the object second from the top of the stack. A string rather
+-- @"stack 2"@ for the object second from the top of the stack, and
+-- @"departed Grizzly Bears#2"@ for the second object with that name whose id
+-- no longer names one (CR 400.7). A string rather
 -- than a tagged object because a scenario is mostly references, and because a
 -- reference is also a map key ('Parun.Codec.Move'\'s blocks and assignments).
 codec :: Codec.Codec Reference.Reference
@@ -32,9 +35,13 @@ toText reference = case reference of
   Reference.AbilityOf source -> Text.pack "ability of " <> toText source
   Reference.SpellOf source -> Text.pack "spell of " <> toText source
   Reference.OnStack position -> Text.pack ("stack " <> show position)
-  Reference.Printed name occurrence -> case occurrence of
-    1 -> CardName.unwrap name
-    _ -> CardName.unwrap name <> Text.pack ("#" <> show occurrence)
+  Reference.Printed existence name occurrence ->
+    let prefix = case existence of
+          Existence.Live -> Text.empty
+          Existence.Departed -> Text.pack "departed "
+     in prefix <> case occurrence of
+          1 -> CardName.unwrap name
+          _ -> CardName.unwrap name <> Text.pack ("#" <> show occurrence)
 
 fromText :: Text.Text -> Either Text.Text Reference.Reference
 fromText text
@@ -44,15 +51,19 @@ fromText text
   | Just digits <- Text.stripPrefix (Text.pack "stack ") text = case Read.readMaybe (Text.unpack digits) of
       Just position | Text.all Char.isDigit digits -> Right (Reference.OnStack position)
       _ -> Left (Text.pack "expected a number after stack but got " <> digits)
+  | Just name <- Text.stripPrefix (Text.pack "departed ") text = printed Existence.Departed name
   | otherwise = case Text.uncons text of
       Nothing -> Left (Text.pack "expected a reference but got an empty string")
       Just ('$', rest)
         | Text.null rest -> Left (Text.pack "expected a label after $")
         | otherwise -> Right (Reference.Labelled (Label.MkLabel rest))
-      Just _ -> case Text.breakOnEnd (Text.pack "#") text of
-        (before, after)
-          | Text.null before -> Right (Reference.Printed (CardName.MkCardName text) 1)
-          | Text.null after || not (Text.all Char.isDigit after) -> Left (Text.pack "expected a number after # but got " <> after)
-          | otherwise -> case Read.readMaybe (Text.unpack after) :: Maybe Natural of
-              Nothing -> Left (Text.pack "expected a number after # but got " <> after)
-              Just occurrence -> Right (Reference.Printed (CardName.MkCardName (Text.dropEnd 1 before)) occurrence)
+      Just _ -> printed Existence.Live text
+  where
+    printed existence named = case Text.breakOnEnd (Text.pack "#") named of
+      (before, after)
+        | Text.null named -> Left (Text.pack "expected a card name but got an empty string")
+        | Text.null before -> Right (Reference.Printed existence (CardName.MkCardName named) 1)
+        | Text.null after || not (Text.all Char.isDigit after) -> Left (Text.pack "expected a number after # but got " <> after)
+        | otherwise -> case Read.readMaybe (Text.unpack after) :: Maybe Natural of
+            Nothing -> Left (Text.pack "expected a number after # but got " <> after)
+            Just occurrence -> Right (Reference.Printed existence (CardName.MkCardName (Text.dropEnd 1 before)) occurrence)

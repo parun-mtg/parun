@@ -58,6 +58,7 @@ import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.EndingStep as EndingStep
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Game as Game.Type
@@ -425,7 +426,7 @@ littjaraKinseekersSpec s registry =
                     }
                 onStack = S.runPure S.identityAnswer ready (S.cast S.alice kid)
              in S.runPure S.identityAnswer onStack Engine.priorityLoop
-          counters after = fmap (\oid -> S.counterOf CounterKind.PlusOnePlusOne oid after) (filter (`S.onBattlefield` after) (Scenario.namedObjects (S.printingName kinseekers) after))
+          counters after = fmap (\oid -> S.counterOf CounterKind.PlusOnePlusOne oid after) (filter (`S.onBattlefield` after) (Scenario.namedObjects Existence.Live (S.printingName kinseekers) after))
       Spec.assertEqWith s "with two Giants, three Giants: the trigger put a +1/+1 counter" (counters (cast giant)) [1]
       Spec.assertEqWith s "with a Giant and a Goblin, no type is held three ways: the Kinseekers entered without one" (counters (cast piker)) [0]
 

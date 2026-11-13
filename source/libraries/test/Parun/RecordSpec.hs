@@ -18,19 +18,24 @@ import qualified Parun.BotSpec as BotSpec
 import qualified Parun.ClientSpec as ClientSpec
 import qualified Parun.Codec.Scenario as Codec.Scenario
 import qualified Parun.CompanionSpec as CompanionSpec
+import qualified Parun.Engine.Event as Event
+import qualified Parun.Engine.Setup as Setup
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.Play.Client as Client
 import qualified Parun.Play.Game as Game
 import qualified Parun.Play.Record as Record
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
+import qualified Parun.Scenario.Reply as ScenarioReply
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Answer as Answer
 import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.Asked as Asked
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Entry as Entry
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
@@ -40,6 +45,8 @@ import qualified Parun.Types.Move as Move
 import qualified Parun.Types.Observer as Observer
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintingTable as PrintingTable
+import qualified Parun.Types.Reference as Reference
+import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Reply as Reply
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RuleFamily as RuleFamily
@@ -88,6 +95,18 @@ spec s registry = Spec.describe s "Record" $ do
   -- `parun play --format` names and its saved game carries. CR 100.2b: sixty
   -- cards are twenty over limited's forty. CR 103.2b offers the companion
   -- before the game begins, so its first turn is all either game needs.
+  Spec.it s "CR 400.7 an object that has left the game is recorded, and described, among the departed of its name" $ do
+    piker <- S.printingOf s registry "Goblin Piker"
+    let (first, g1) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
+        (second, g2) = S.addPermanent piker S.alice g1
+        (live, g3) = S.addPermanent piker S.alice g2
+        gs = S.runPure S.identityAnswer g3 (Event.destroy (pure ()) Regenerability.Regenerable [first, second])
+        departed = Reference.Printed Existence.Departed (CardName.MkCardName (Text.pack "Goblin Piker"))
+        -- Each destroyed Piker's card is a live object in the graveyard, so
+        -- the live permanent is the third of its name.
+        expected = [departed 1, departed 2, Reference.Printed Existence.Live (CardName.MkCardName (Text.pack "Goblin Piker")) 1]
+    Spec.assertEqWith s "recorded" (fmap (ScenarioReply.nameObject (Record.namer Map.empty gs)) [first, second, live]) expected
+    Spec.assertEqWith s "described" (fmap (Scenario.referenceTo Map.empty gs) [first, second, live]) expected
   Spec.it s "CR 100.2 a game played under a format offers Yorion, and replays under it" $ do
     matchup <- yorions s registry
     let limited = Just (Format.MkFormat RuleFamily.Limited Nothing Set.empty)

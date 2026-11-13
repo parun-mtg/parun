@@ -3068,6 +3068,7 @@ library types
     Parun.Types.ExileMaterials
     Parun.Types.ExilePermanents
     Parun.Types.ExilePlayPermission
+    Parun.Types.Existence
     Parun.Types.Expansion
     Parun.Types.Expended
     Parun.Types.Expiry

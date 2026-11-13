@@ -92,6 +92,7 @@ import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DestructionRewrite as DestructionRewrite
 import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.EventGroup as EventGroup
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
@@ -306,7 +307,7 @@ aliasRef :: String -> Reference.Reference
 aliasRef = Reference.Labelled . Label.MkLabel . Text.pack
 
 namedRef :: String -> Natural -> Reference.Reference
-namedRef name = Reference.Printed (CardName.MkCardName (Text.pack name))
+namedRef name = Reference.Printed Existence.Live (CardName.MkCardName (Text.pack name))
 
 attack :: [Reference.Reference] -> Move.Move
 attack = Move.Attack . Seq.fromList

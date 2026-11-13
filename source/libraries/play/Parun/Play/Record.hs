@@ -24,6 +24,7 @@ import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Entrant as Entrant
 import qualified Parun.Types.Entry as Entry
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameState as GameState
@@ -71,18 +72,23 @@ entryFor seats asked answer = case prompt of
     at pid move = Timed.MkTimed (When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) (labelOf seats pid)) Nothing (Entry.Do move)
 
 -- | Objects by card name and creation order, as the runner reads them back
--- on the same state, and an object with no card, an ability on the stack (CR
--- 405.1), by its place from the top; players by their seat's label.
+-- on the same state, a departed one (CR 400.7) among the departed, and an
+-- object with no card, an ability on the stack (CR 405.1), by its place from
+-- the top; players by their seat's label.
 namer :: Map.Map PlayerId.PlayerId Label.Label -> GameState.GameState -> Reply.Namer
 namer seats gs =
   Reply.MkNamer
-    { Reply.nameObject = \oid -> case Game.cardOf oid gs of
-        Just card ->
-          let name = Face.name (NonEmpty.head (Card.faces card))
-           in Reference.Printed name (maybe 0 ((+ 1) . Int.toNaturalSaturating) (List.elemIndex oid (Scenario.namedObjects name gs)))
-        Nothing -> case List.elemIndex oid (TurnRegisters.stack (GameState.turn gs)) of
-          Just index -> Reference.OnStack (Int.toNaturalSaturating index + 1)
-          Nothing -> Reference.Labelled (Label.MkLabel (Text.pack ("object " <> show (ObjectId.unwrap oid)))),
+    { Reply.nameObject = \oid ->
+        let printed existence card =
+              let name = Face.name (NonEmpty.head (Card.faces card))
+               in Reference.Printed existence name (maybe 0 ((+ 1) . Int.toNaturalSaturating) (List.elemIndex oid (Scenario.namedObjects existence name gs)))
+         in case Game.cardOf oid gs of
+              Just card -> printed Existence.Live card
+              Nothing -> case List.elemIndex oid (TurnRegisters.stack (GameState.turn gs)) of
+                Just index -> Reference.OnStack (Int.toNaturalSaturating index + 1)
+                Nothing -> case Game.cardOfWithLastKnown oid gs of
+                  Just card -> printed Existence.Departed card
+                  Nothing -> Reference.Labelled (Label.MkLabel (Text.pack ("object " <> show (ObjectId.unwrap oid)))),
       Reply.namePlayer = labelOf seats
     }
 
