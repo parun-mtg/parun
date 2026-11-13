@@ -26,41 +26,48 @@ spec s = Spec.describe s "Parun.Codec.CopyStackObject" $ do
     Common.assertCodec
       s
       (CopyStackObject.codec Common.text)
-      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) CopyTargets.Copied CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [])
+      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) CopyTargets.Copied CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"spell\"}} "
   -- CR 707.10c, Twincast's second sentence.
   Spec.it s "MkCopyStackObject, new targets offered: it is written" $
     Common.assertCodec
       s
       (CopyStackObject.codec Common.text)
-      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) CopyTargets.ChosenByController CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [])
+      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) CopyTargets.ChosenByController CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"targets\":{\"type\":\"ChosenByController\"}} "
   -- CR 707.10d, Zada, Hedron Grinder's second sentence.
   Spec.it s "MkCopyStackObject, one copy per candidate: the candidates' ref rides in the payload" $
     Common.assertCodec
       s
       (CopyStackObject.codec Common.text)
-      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) (CopyTargets.ForEach (ObjectRef.EachMatching (Filter.HeldBy Holder.Controller PlayerRelation.You))) CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [])
+      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) (CopyTargets.ForEach (ObjectRef.EachMatching (Filter.HeldBy Holder.Controller PlayerRelation.You))) CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"targets\":{\"type\":\"ForEach\",\"value\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}}} "
   -- CR 702.40a, storm's "copy it for each": a count other than one is written.
   Spec.it s "MkCopyStackObject, a count: it is written" $
     Common.assertCodec
       s
       (CopyStackObject.codec Common.text)
-      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) CopyTargets.ChosenByController Quantity.PermanentsDiedThisTurn CopyStackObject.defaultCopier [])
+      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) CopyTargets.ChosenByController Quantity.PermanentsDiedThisTurn CopyStackObject.defaultCopier [] Nothing)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"targets\":{\"type\":\"ChosenByController\"},\"quantity\":{\"type\":\"PermanentsDiedThisTurn\"}} "
   -- CR 707.10, Meletis Charlatan's "the controller of target ... spell copies it".
   Spec.it s "MkCopyStackObject, another player copies it: the copier is written" $
     Common.assertCodec
       s
       (CopyStackObject.codec Common.text)
-      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) CopyTargets.ChosenByController CopyStackObject.defaultQuantity (PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "spell"))) [])
+      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) CopyTargets.ChosenByController CopyStackObject.defaultQuantity (PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "spell"))) [] Nothing)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"targets\":{\"type\":\"ChosenByController\"},\"copier\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"spell\"}}} "
   -- CR 707.9b, Double Major's "except it isn't legendary".
   Spec.it s "MkCopyStackObject, an exception: it is written" $
     Common.assertCodec
       s
       (CopyStackObject.codec Common.text)
-      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) CopyTargets.Copied CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [CopyException.RemoveSupertypes (Set.singleton Supertype.Legendary)])
+      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) CopyTargets.Copied CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [CopyException.RemoveSupertypes (Set.singleton Supertype.Legendary)] Nothing)
       " {\"ref\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"exceptions\":[{\"type\":\"RemoveSupertypes\",\"value\":[\"Legendary\"]}]} "
+  -- Spinerock Tyrant's "those spells": the copies are bound for a later instruction.
+  Spec.it s "MkCopyStackObject, a bound slot: it is written" $
+    Common.assertCodec
+      s
+      (CopyStackObject.codec Common.text)
+      (CopyStackObject.MkCopyStackObject (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) CopyTargets.Copied CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] (Just (SlotName.MkSlotName (Text.pack "copy"))))
+      " {\"ref\":{\"type\":\"InSlot\",\"value\":\"spell\"},\"slot\":\"copy\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (CopyStackObject.codec Common.text)

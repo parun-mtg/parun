@@ -3371,7 +3371,7 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
   -- the spell could not be countered. A sweep stays vacuously carried out.
   -- data/scenarios/psychic-rebuttal-copies-nothing-when-the-spell-is-not-countered
   -- proves it.
-  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref _ _ _ _) -> case ref of
+  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref _ _ _ _ _) -> case ref of
     ObjectRef.InSlot _ -> null (copyStackSubjects legal resolving controller source gs ref)
     _ -> False
   Effect.ChooseNewTargets {} -> False

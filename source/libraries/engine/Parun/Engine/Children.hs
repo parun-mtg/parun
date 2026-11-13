@@ -1062,8 +1062,8 @@ effectChildren c effect = case effect of
     fmap Effect.CreateCopy (CreateCopy.MkCreateCopy <$> onQuantity c quantity <*> onObjectRef c ref <*> onEntryRiders c riders <*> traverse (onSlot c) named <*> traverse (onCopyException c) exceptions <*> onPlayer c creator <*> pure linked)
   Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject duration exceptions newTargets) ->
     fmap Effect.BecomeCopy (BecomeCopy.MkBecomeCopy <$> copyOriginalChildren c original <*> onObjectRef c subject <*> traverse (onDuration c) duration <*> traverse (onCopyException c) exceptions <*> pure newTargets)
-  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets quantity copier exceptions) ->
-    fmap Effect.CopyStackObject (CopyStackObject.MkCopyStackObject <$> onObjectRef c ref <*> copyTargetsChildren c targets <*> onQuantity c quantity <*> onPlayer c copier <*> traverse (onCopyException c) exceptions)
+  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets quantity copier exceptions named) ->
+    fmap Effect.CopyStackObject (CopyStackObject.MkCopyStackObject <$> onObjectRef c ref <*> copyTargetsChildren c targets <*> onQuantity c quantity <*> onPlayer c copier <*> traverse (onCopyException c) exceptions <*> traverse (onSlot c) named)
   Effect.Replace (Replace.MkReplace duration uses origin condition replacement) ->
     fmap Effect.Replace (Replace.MkReplace <$> onDuration c duration <*> pure uses <*> pure origin <*> traverse (onCondition c) condition <*> onReplacement c replacement)
   Effect.SkipPhase (SkipPhase.MkSkipPhase who selector uses duration count) ->

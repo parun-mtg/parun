@@ -777,11 +777,11 @@ objectRefPositions =
         ("discard-these", Effect.Discard (Discard.These (TheseDiscard.MkTheseDiscard (plantedRef "di") Nothing)), [plantedRef "di"]),
         ("create-copy", Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) (plantedRef "cc") plainRiders Nothing [] (PlayerRef.Relative PlayerRelation.You) False), [plantedRef "cc"]),
         ("become-copy", Effect.BecomeCopy (BecomeCopy.MkBecomeCopy (CopyOriginal.OfObject (plantedRef "bc-original")) (plantedRef "bc-subject") Nothing [] False), [plantedRef "bc-original", plantedRef "bc-subject"]),
-        ("copy-spell", Effect.CopyStackObject (CopyStackObject.MkCopyStackObject (plantedRef "cs") CopyTargets.Copied CopyStackObject.defaultQuantity CopyStackObject.defaultCopier []), [plantedRef "cs"]),
+        ("copy-spell", Effect.CopyStackObject (CopyStackObject.MkCopyStackObject (plantedRef "cs") CopyTargets.Copied CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing), [plantedRef "cs"]),
         -- CR 707.10d names a SECOND ref, the candidates', which the sweep must
         -- reach: a copy effect whose candidate description reads a slot no clause
         -- binds is a dangling read like any other.
-        ("copy-spell-for-each", Effect.CopyStackObject (CopyStackObject.MkCopyStackObject (plantedRef "cs-ref") (CopyTargets.ForEach (plantedRef "cs-each")) CopyStackObject.defaultQuantity CopyStackObject.defaultCopier []), [plantedRef "cs-ref", plantedRef "cs-each"]),
+        ("copy-spell-for-each", Effect.CopyStackObject (CopyStackObject.MkCopyStackObject (plantedRef "cs-ref") (CopyTargets.ForEach (plantedRef "cs-each")) CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing), [plantedRef "cs-ref", plantedRef "cs-each"]),
         ("later-payment", Effect.LaterPayment (LaterPayment.MkLaterPayment Duration.UntilEndOfTurn (Cost.Type.MkCost Nothing []) (Seq.singleton (Effect.PreventNextDamage (PreventNextDamage.MkPreventNextDamage Duration.UntilEndOfTurn Nothing (Just (plantedRef "lp")) Nothing Nothing Nothing (Quantity.Type.Literal 1) Seq.empty)))), [plantedRef "lp"]),
         ("prevent-next-damage", Effect.PreventNextDamage (PreventNextDamage.MkPreventNextDamage Duration.UntilEndOfTurn Nothing (Just (plantedRef "pn")) Nothing Nothing Nothing (Quantity.Type.Literal 1) Seq.empty), [plantedRef "pn"]),
         ("prevent-all-damage", Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage Duration.UntilEndOfTurn Nothing (Just (plantedRef "pa")) Nothing Nothing DamageDirection.DealtTo Nothing (Filter.Type.And []) Seq.empty), [plantedRef "pa"]),
@@ -5105,7 +5105,7 @@ effectFilters effect = case effect of
   Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject duration exceptions _) -> frame SourceHostFramed (copyOriginalFilters original <> objectRefFilters subject) <> frame Unframed (foldMap durationFilters duration) <> concatMap copyExceptionFilters exceptions
   -- BOTH refs, CreateCopy's arm above: an EachMatching Filter is card text, and
   -- CR 707.10d's candidates are named by one.
-  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets quantity _ exceptions) -> frame Unframed (quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref <> copyTargetsFilters targets) <> concatMap copyExceptionFilters exceptions
+  Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets quantity _ exceptions _) -> frame Unframed (quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref <> copyTargetsFilters targets) <> concatMap copyExceptionFilters exceptions
   Effect.SetX (SetX.MkSetX value ref) -> frame Unframed (concatMap quantityFilters (NewX.quantities value)) <> frame SourceHostFramed (objectRefFilters ref)
   -- The ROW's own Filters are framed for printedReplacementFilters' reason: a
   -- stored row is read through the same
