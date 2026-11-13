@@ -690,7 +690,9 @@ effectNames asking onCard onAbility =
           Children.onOnset = Const.Const . onsetNames asking,
           Children.onMoveDuration = Const.Const . moveDurationNames asking,
           Children.onAimedAt = Const.Const . aimedAtNames asking,
-          Children.onChosenPermanents = Const.Const . chosenPermanentsNames asking
+          Children.onChosenPermanents = Const.Const . chosenPermanentsNames asking,
+          -- A subtype names no object and reads no history.
+          Children.onSubtype = const (Const.Const mempty)
         }
 
 entryRestrictionNames :: (Monoid r) => Asking r -> EntryRestriction.EntryRestriction -> r
