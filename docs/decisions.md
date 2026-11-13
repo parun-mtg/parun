@@ -1950,27 +1950,28 @@ Entries are ordered by the first rule each cites.
 
 - **Question**: Firebender Ascension counts "a creature you control attacking
   causes a triggered ability of that creature to trigger". A creature's own
-  "whenever you attack" ability triggers when it attacks alone, and its
-  "attacks and isn't blocked" ability triggers because it attacked. Do those
-  count?
-- **Rules**: CR 508.3a, 508.3d, 508.3f, 603.2, 113.7; CR of 2026-11-06.
-- **Decision**: Only an ability whose trigger event is its own source being
-  declared as an attacker (CR 508.3a). So "whenever this creature attacks" and
-  the firing of "whenever a creature you control attacks" that the bearer's own
-  attack caused count; a firing another creature's attack caused does not, nor
-  does "whenever you attack" (CR 508.3d, the player attacking) or "attacks and
-  isn't blocked" (CR 508.3f, which triggers in the declare blockers step).
-- **Rejected**: Counting "whenever you attack" when the bearer is among the
-  attackers: with two attackers no one creature's attack is the cause, and
-  the single ability would be counted for whichever creature is asked.
-  Counting "attacks and isn't blocked": its event is the declaration of
-  blockers.
-- **Site**: `Parun.Engine.Event.Match.matchesTriggerGiven`'s `AbilityWatch`
-  arm. Proved by the scenarios
-  `firebender-ascension-counts-only-an-ability-its-own-creatures-attack-caused`,
-  `firebender-ascension-does-not-count-a-whenever-you-attack-ability` and
-  `firebender-ascension-does-not-count-an-attacks-and-isnt-blocked-ability`.
-- **Issue**: #7226.
+  "whenever you attack with one or more Birds" ability triggers when it
+  attacks beside a Bird without being one, and its "attacks and isn't blocked"
+  ability triggers because it attacked. Do those count?
+- **Rules**: CR 508.3a, 508.3c, 508.3d, 508.3e, 508.3f, 603.2, 113.7; CR of
+  2026-11-06. Isshin, Two Heavens as One's ruling of 2022-02-18 settles the
+  uncounted "whenever you attack" and is cited at the site, not decided here.
+- **Decision**: Neither. An attack trigger that counts creatures is caused by
+  the creatures its count admits, and one that fires per attacked player by
+  the creatures attacking that player, so the bearer has to be one of them.
+  "Attacks and isn't blocked" (CR 508.3f) triggers in the declare blockers
+  step and is caused by no creature attacking.
+- **Rejected**: Counting every attack trigger of a creature among the declared
+  attackers: Hermes, Overseer of Elpis' ability would count though it triggers
+  the same whether or not Hermes attacks. Counting "attacks and isn't
+  blocked": its event is the declaration of blockers.
+- **Site**: `Parun.Engine.Event.Binding.attackCausers`, read by
+  `Parun.Engine.Event.Match.matchesTriggerGiven`'s `AbilityWatch` arm. Proved
+  by the scenarios
+  `firebender-ascension-does-not-count-a-counted-attack-ability-of-an-attacker-the-count-leaves-out`,
+  `firebender-ascension-counts-a-whenever-you-attack-a-player-ability-only-for-the-player-its-creature-attacked`
+  and `firebender-ascension-does-not-count-an-attacks-and-isnt-blocked-ability`.
+- **Issue**: #7226, #7288.
 
 ## Whether Etrata's ability exiles a creature already turned face up
 

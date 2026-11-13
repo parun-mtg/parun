@@ -7,7 +7,7 @@ data WatchedAbility
   = -- | CR 715.2d: the final chapter ability of a Saga, as it triggers
     -- (Historian's Boon) or resolves (Tom Bombadil).
     SagaFinalChapter ChapterMoment.ChapterMoment
-  | -- | CR 508.3a: an ability of a creature, triggering because that creature
-    -- was declared as an attacker (Firebender Ascension).
+  | -- | CR 508.3: an ability of a creature, triggering because that creature
+    -- attacked (Firebender Ascension).
     CausedByOwnAttack
   deriving (Eq, Ord, Show)

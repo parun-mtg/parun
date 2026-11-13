@@ -2015,19 +2015,24 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- watcher reads the dead Saga's last known information" and, for the copy, its
   -- "CR 707.2 a COPY of the Saga answers with the copy's chapters".
   --
-  -- CR 508.3a for WatchedAbility.CausedByOwnAttack: the ability's source is the
-  -- creature whose declaration as an attacker was its trigger event, so
-  -- "whenever a creature you control attacks" counts only the firing its own
-  -- bearer's attack caused, and CR 508.3d's "whenever you attack" never does
-  -- (docs/decisions.md, "Which abilities a creature attacking causes to
-  -- trigger"). Proved by
+  -- CR 508.3 for WatchedAbility.CausedByOwnAttack: the ability's source is
+  -- among the creatures whose attacking was its trigger event
+  -- (Binding.attackCausers), so "whenever a creature you control attacks"
+  -- counts only the firing its own bearer's attack caused -- proved by
   -- data/scenarios/firebender-ascension-counts-only-an-ability-its-own-creatures-attack-caused.json.
+  -- CR 508.3d's "whenever you attack" is such an event too, by Isshin, Two
+  -- Heavens as One's ruling of 2022-02-18 on the same construction, and counts
+  -- where its bearer attacked: proved by
+  -- data/scenarios/firebender-ascension-counts-a-whenever-you-attack-ability-of-an-attacker.json.
+  -- Which creatures a count or CR 508.3f's event leaves out is
+  -- docs/decisions.md, "Which abilities a creature attacking causes to
+  -- trigger".
   TriggerCondition.AbilityWatch (AbilityWatch.MkAbilityWatch watched relation) ->
     let ownAttack record = case AbilityTriggered.source record of
           TriggerSource.Sourceless -> False
           TriggerSource.OfObject srcId ->
             PlayerRelation.holds (Game.teams gs) relation you (AbilityTriggered.controller record)
-              && AbilityTriggered.attacker record == Just srcId
+              && Set.member srcId (AbilityTriggered.attackers record)
         finalChapter record = case AbilityTriggered.source record of
           -- A SOURCELESS inherent ability (CR 726.2, CR 702.179d) is never a
           -- chapter ability of a Saga, there being no Saga behind it to read lore

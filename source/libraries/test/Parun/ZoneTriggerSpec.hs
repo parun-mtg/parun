@@ -2285,8 +2285,8 @@ representativeEvents cond =
         -- Resolves moment.
         -- A watcher of the TRIGGERING reads the id Engine.reactions reserved,
         -- which every record that function mints carries; CR 608.2n's names
-        -- none. The attacker is the source, the one shape CausedByOwnAttack
-        -- accepts.
+        -- none. The source is among the attackers, the one shape
+        -- CausedByOwnAttack accepts.
         TriggerCondition.AbilityWatch watcher ->
           let record =
                 AbilityTriggered.MkAbilityTriggered
@@ -2294,7 +2294,7 @@ representativeEvents cond =
                     AbilityTriggered.controller = S.alice,
                     AbilityTriggered.ability = bareAbility (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent)),
                     AbilityTriggered.stackObject = Nothing,
-                    AbilityTriggered.attacker = Just departed
+                    AbilityTriggered.attackers = Set.singleton departed
                   }
               triggering = GameEvent.AbilityTriggered record {AbilityTriggered.stackObject = Just (ObjectId.MkObjectId 9)}
            in one $ case AbilityWatch.ability watcher of
