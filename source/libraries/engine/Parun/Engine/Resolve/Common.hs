@@ -528,7 +528,8 @@ happenedBetween before after =
         gs
           { GameState.turn =
               (GameState.turn gs)
-                { TurnRegisters.events = Seq.empty
+                { TurnRegisters.events = Seq.empty,
+                  TurnRegisters.wouldCreateTokens = Set.empty
                 },
             GameState.bookkeeping = GameState.bookkeeping before,
             GameState.snapshots = GameState.snapshots before,

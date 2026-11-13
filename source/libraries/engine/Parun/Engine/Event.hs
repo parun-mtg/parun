@@ -697,6 +697,7 @@ together body = do
       State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringTogether = Nothing}})
       Restamp.settle (Bookkeeping.nextTimestamp (GameState.bookkeeping before)) (Foldable.toList (EnteringTogether.arrivals batch))
       Monad.mapM_ (recordMintedArrival Zone.Battlefield) (EnteringTogether.minted batch)
+      State.modify' (wouldHaveCreated (Map.keysSet (EnteringTogether.creationOrder batch)))
       pure result
 
 -- `simultaneously` for a body that is a pure function of the board rather than a
@@ -9354,10 +9355,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                         Moved.revealed = revealedLeaving,
                         Moved.seenArriving = seenArriving,
                         Moved.causedBy = causer,
-                        Moved.arrived = arrivedAs,
-                        -- CR 111.13: a copy of a permanent spell becoming a
-                        -- token is not created, and nothing else moving is.
-                        Moved.created = Nothing
+                        Moved.arrived = arrivedAs
                       }
                   -- CR 713.8's second clause: "two cards are put into the
                   -- appropriate zone". One event per card AFTER the leading one,
@@ -10539,7 +10537,7 @@ createTokens settle controller card copy n tapped entering attached marks = do
       refused <- State.gets (\g -> not (null (barredIn g judged)))
       State.put unjudged
       resolved <- if refused then pure Nothing else resolveTokens controller (Seq.singleton original)
-      case resolved of
+      made <- case resolved of
         Nothing -> pure []
         Just (owner, lots) -> do
           -- CR 303.4i's rollback point below, captured AFTER resolveTokens, so a
@@ -10637,6 +10635,29 @@ createTokens settle controller card copy n tapped entering attached marks = do
               Monad.mapM_ unmake [oid | (oid, Just refusal) <- refusals, not (isDiverted refusal)]
               settleMinted (Bookkeeping.nextTimestamp (GameState.bookkeeping unminted)) entered
               pure entered
+      -- After every rollback above, and after resolveTokens, whose rows ask
+      -- about the creations BEFORE this one. CR 614.1a's "one or more": no
+      -- caller passes zero, so the guard is a fence.
+      Monad.when (n > 0) (noteWouldCreate controller)
+      pure made
+
+-- CR 614.1a: this player would have created one or more tokens, whatever came
+-- of it: CR 111.5, 303.4g and 303.4i each leave uncreated a token an effect
+-- would still have created, the one a replacement substituted included.
+-- docs/decisions.md, "Whether a token creation that creates nothing
+-- spends Mirrormind Crown's first time". Inside a CR 608.2f action
+-- (`together`) the fact is held until the action ends, as its entries are:
+-- the action's later calls are the same creation. Proved by the scenarios
+-- mirrormind-crown-stays-spent-once-its-land-copies-cannot-be-created and
+-- mirrormind-crown-is-spent-by-a-land-token-that-cannot-be-created.
+noteWouldCreate :: PlayerId -> Game ()
+noteWouldCreate pid = State.modify' $ \g -> case Scratch.enteringTogether (GameState.scratch g) of
+  Just open -> g {GameState.scratch = (GameState.scratch g) {Scratch.enteringTogether = Just open {EnteringTogether.creationOrder = Map.insertWith (\_ ordered -> ordered) pid Seq.empty (EnteringTogether.creationOrder open)}}}
+  Nothing -> wouldHaveCreated (Set.singleton pid) g
+
+-- TurnRegisters.wouldCreateTokens' one writer.
+wouldHaveCreated :: Set PlayerId -> GameState -> GameState
+wouldHaveCreated pids g = g {GameState.turn = (GameState.turn g) {TurnRegisters.wouldCreateTokens = Set.union pids (TurnRegisters.wouldCreateTokens (GameState.turn g))}}
 
 -- CR 614.1a / 614.12: offer an object's arrival on the battlefield from `from`
 -- to the zone-change redirects bound there (Hallowed Moonlight's "exile it
@@ -10759,18 +10780,14 @@ settleMinted start ids = do
 -- `lastKnown` entry to find -- a token has no prior incarnation (CR 111.2), and a
 -- conjured card was in no zone. `zone` is the battlefield but for placeDiverted's
 -- redirect.
---
--- CR 111.2: a token's entry names its creator, its owner, so a later reader
--- need not ask what the object has become since (Game.createdTokenThisTurn).
 recordMintedArrival :: Zone -> ObjectId -> Game ()
 recordMintedArrival zone newId = do
   placed <- State.get
   let snapshot = Projection.project newId placed
-      creator = if Game.isToken newId placed then fmap Object.owner (Game.lookupObject newId placed) else Nothing
   -- Moved.revealed is read by no look-back here: none reaches a battlefield
   -- destination (Event.Trigger.looksBack), and every battlefield-bound redirect
   -- in data/cards/ exiles, a public zone, so the public origin answers.
-  State.modify' (recordEvent (GameEvent.Moved ((Moved.moved (ZoneChange.MkZoneChange newId newId zone zone) snapshot) {Moved.revealed = True, Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = Scratch.causing (GameState.scratch placed), Moved.arrived = Projection.objectSnapshot newId placed, Moved.created = creator})))
+  State.modify' (recordEvent (GameEvent.Moved ((Moved.moved (ZoneChange.MkZoneChange newId newId zone zone) snapshot) {Moved.revealed = True, Moved.seenArriving = Visibility.seenByEveryone newId placed, Moved.causedBy = Scratch.causing (GameState.scratch placed), Moved.arrived = Projection.objectSnapshot newId placed})))
 
 -- CR 701.42a: meld these cards -- "put them onto the battlefield with their back
 -- faces up and combined. The resulting permanent is a single object represented by

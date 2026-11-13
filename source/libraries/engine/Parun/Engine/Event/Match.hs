@@ -647,7 +647,7 @@ enters context board gs bearer you t event = case Game.enteredBattlefieldChange 
 -- Parun.Types.EventGroup is what fires it once (CR 603.2c).
 leaves :: Map.Map SlotName.SlotName Binding -> Filter.Context -> GameState -> ObjectId -> PlayerId -> LeavesTrigger.LeavesTrigger -> GameEvent -> Bool
 leaves bindings context gs bearer you t event = case event of
-  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _ _) ->
+  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _) ->
     ZoneChange.from zc == Zone.Battlefield
       && ZoneChange.to zc /= Zone.Battlefield
       && (Set.null destinations || any (reaches (ZoneChange.to zc) (ZoneChange.departed zc)) destinations)

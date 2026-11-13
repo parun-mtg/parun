@@ -22,7 +22,9 @@ data EnteringTogether = MkEnteringTogether
     substitutions :: Map.Map CandidateId.CandidateId (OptionalDecision.OptionalDecision, Maybe ObjectId.ObjectId),
     -- | CR 616.1: the replacements each player has applied to this action's
     -- token creations, first applied first, so the one event keeps one order
-    -- (Parun.Engine.Event.inCreationOrder).
+    -- (Parun.Engine.Event.inCreationOrder). Keyed by every player the action
+    -- would create a token for, a row applied or not
+    -- (Parun.Engine.Event.noteWouldCreate).
     creationOrder :: Map.Map PlayerId.PlayerId (Seq.Seq CandidateId.CandidateId)
   }
   deriving (Eq, Ord, Show)
