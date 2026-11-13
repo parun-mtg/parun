@@ -98,6 +98,7 @@ import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PendingEntryEffect as PendingEntryEffect
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.PendingTrigger as PendingTrigger
+import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
@@ -1542,6 +1543,10 @@ payGatePaid runSubgame resolving source controller idx cIdx legal announced comm
         _ -> pure replayed
       pure (payer, asked)
   State.modify' (Common.foldPaid resolving (foldr Binding.mergePaid Map.empty (Maybe.mapMaybe snd (Foldable.toList answered))))
+  -- PayGate.marks: the source performs the act once anybody has paid (CR
+  -- 702.30a's echo cost, Shah of Naar Isle).
+  Foldable.for_ (PayGate.marks gate) $ \action ->
+    Monad.when (any (Maybe.isJust . snd) answered) (State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed action source))))
   pure (Map.fromList [(payer, Maybe.isJust paid) | (payer, paid) <- Foldable.toList answered])
 
 -- CR 118.12a over CR 608.2f's loop: the members whose ForEach.payGate branch

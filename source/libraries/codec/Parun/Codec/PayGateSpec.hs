@@ -21,6 +21,7 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
@@ -36,7 +37,8 @@ manaLeak =
       PayGate.obligation = PayObligation.Optional,
       PayGate.perEach = Nothing,
       PayGate.x = Nothing,
-      PayGate.offeredAt = Nothing
+      PayGate.offeredAt = Nothing,
+      PayGate.marks = Nothing
     }
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -113,6 +115,13 @@ spec s = Spec.describe s "Parun.Codec.PayGate" $ do
       PayGate.codec
       manaLeak {PayGate.branch = PayBranch.IfPaid, PayGate.offeredAt = Just (ClauseIndex.MkClauseIndex 0)}
       " {\"payer\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"spell\"}},\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":3}]},\"branch\":\"IfPaid\",\"offeredAt\":0} "
+  -- CR 702.30a's mint: the act the source performs when the offer is paid.
+  Spec.it s "MkPayGate, an offer whose payment the source performs an act by" $
+    Common.assertCodec
+      s
+      PayGate.codec
+      manaLeak {PayGate.marks = Just PermanentAction.PayEcho}
+      " {\"payer\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"spell\"}},\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":3}]},\"branch\":\"IfNotPaid\",\"marks\":\"PayEcho\"} "
   -- The first three keys are required: none has a default an absent key could
   -- mean.
   Spec.it s "an omitted payer field is a decode error" $

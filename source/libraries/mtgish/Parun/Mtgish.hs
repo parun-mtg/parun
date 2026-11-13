@@ -1139,7 +1139,8 @@ payGate payer branch options =
       PayGate.obligation = PayObligation.Optional,
       PayGate.perEach = Nothing,
       PayGate.x = Nothing,
-      PayGate.offeredAt = Nothing
+      PayGate.offeredAt = Nothing,
+      PayGate.marks = Nothing
     }
 
 clause :: Optionality.Optionality -> [Effect] -> Clause

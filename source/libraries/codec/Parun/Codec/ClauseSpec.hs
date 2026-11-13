@@ -130,7 +130,8 @@ spec s = Spec.describe s "Parun.Codec.Clause" $ do
                   PayGate.obligation = PayObligation.Optional,
                   PayGate.perEach = Nothing,
                   PayGate.x = Nothing,
-                  PayGate.offeredAt = Nothing
+                  PayGate.offeredAt = Nothing,
+                  PayGate.marks = Nothing
                 }
           )
           (Seq.singleton (Effect.Counter (Counter.MkCounter (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "spell"))) Nothing Nothing Nothing)))

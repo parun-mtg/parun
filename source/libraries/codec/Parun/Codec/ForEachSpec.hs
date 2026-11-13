@@ -111,7 +111,8 @@ spec s = Spec.describe s "Parun.Codec.ForEach" $ do
                     PayGate.obligation = PayObligation.Optional,
                     PayGate.perEach = Nothing,
                     PayGate.x = Nothing,
-                    PayGate.offeredAt = Nothing
+                    PayGate.offeredAt = Nothing,
+                    PayGate.marks = Nothing
                   },
             ForEach.startingWith = Nothing
           }

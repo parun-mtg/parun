@@ -1,0 +1,112 @@
+{
+  "board": {
+    "active": "carol",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Shah of Naar Isle",
+            "label": "shah"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Llanowar Elves"
+          },
+          {
+            "card": "Llanowar Elves"
+          },
+          {
+            "card": "Llanowar Elves"
+          },
+          {
+            "card": "Llanowar Elves"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "EndStep"
+  },
+  "description": "CR 702.30a Shah of Naar Isle is sacrificed and nobody draws when its echo cost is not paid",
+  "note": "The paid scenario's board with one answer changed: alice declines the {0}. The Shah is sacrificed and its last ability never triggers, so bob and carol are asked nothing: a ChooseNumber put to either would fail the run.",
+  "timeline": [
+    {
+      "do": {
+        "ChooseToPay": {
+          "decision": "Declines"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Shah of Naar Isle",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Llanowar Elves",
+          "count": 0,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Goblin Piker",
+          "count": 0,
+          "player": "carol",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}

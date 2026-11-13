@@ -1248,7 +1248,8 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
                             PayGate.obligation = PayObligation.Optional,
                             PayGate.perEach = Just quantity,
                             PayGate.x = Nothing,
-                            PayGate.offeredAt = Nothing
+                            PayGate.offeredAt = Nothing,
+                            PayGate.marks = Nothing
                           }
                     )
                     (Seq.singleton (Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Literal 1) Nothing)))

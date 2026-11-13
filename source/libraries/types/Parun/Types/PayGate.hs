@@ -5,6 +5,7 @@ import qualified Parun.Types.CostBasis as CostBasis
 import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayObligation as PayObligation
+import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.Quantity as Quantity
 
@@ -165,6 +166,12 @@ data PayGate = MkPayGate
     -- this gate when there is not -- which is the case where the named clause
     -- never reached its own gate, because its CR 701.46a "if" or its CR 603.5
     -- "may" said no.
-    offeredAt :: Maybe ClauseIndex.ClauseIndex
+    offeredAt :: Maybe ClauseIndex.ClauseIndex,
+    -- | The act CR 113.7a's source performs when anybody pays this offer,
+    -- recorded as Parun.Types.GameEvent's PermanentActed -- CR 702.30a's echo
+    -- cost being paid, which Shah of Naar Isle watches. Nothing is the case
+    -- every printed gate writes. Recorded once, by the clause that makes the
+    -- offer, and not read on a loop's per-member offer (Parun.Types.ForEach).
+    marks :: Maybe PermanentAction.PermanentAction
   }
   deriving (Eq, Ord, Show)

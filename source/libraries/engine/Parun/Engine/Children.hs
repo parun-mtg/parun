@@ -4007,10 +4007,10 @@ countLeaves =
       countBasis = pure
     }
 
--- | A pay gate's children (CR 118.12). Its branch, its obligation and the
--- clause it is offered at are left as they are.
+-- | A pay gate's children (CR 118.12). Its branch, its obligation, the clause
+-- it is offered at and the act it marks are left as they are.
 payGateChildren :: (Applicative f) => CountChildren f -> PayGate.PayGate -> f PayGate.PayGate
-payGateChildren c (PayGate.MkPayGate payer (CostChoice.MkCostChoice costs) basis branch obligation perEach x offeredAt) =
+payGateChildren c (PayGate.MkPayGate payer (CostChoice.MkCostChoice costs) basis branch obligation perEach x offeredAt marks) =
   PayGate.MkPayGate
     <$> countPlayer c payer
     <*> fmap CostChoice.MkCostChoice (traverse (countCost c) costs)
@@ -4020,6 +4020,7 @@ payGateChildren c (PayGate.MkPayGate payer (CostChoice.MkCostChoice costs) basis
     <*> traverse (countQuantity c) perEach
     <*> traverse (countQuantity c) x
     <*> pure offeredAt
+    <*> pure marks
 
 -- | The children of the counters a move carries (CR 122.5).
 movedKindsChildren :: (Applicative f) => CountChildren f -> MovedKinds.MovedKinds -> f MovedKinds.MovedKinds
