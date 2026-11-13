@@ -1013,6 +1013,7 @@ productionPlayerRefs production = case production of
   ManaProduction.InCommanderIdentity -> []
   ManaProduction.Circled -> []
   ManaProduction.DraftNoted _ -> []
+  ManaProduction.EachColorAmong _ -> []
 
 -- The slot a production reads: only the tapped permanent's types name one.
 productionSlots :: ManaProduction.ManaProduction -> Map.Map SlotName SlotArity
@@ -1028,6 +1029,7 @@ productionSlots production = case production of
   ManaProduction.InCommanderIdentity -> Map.empty
   ManaProduction.Circled -> Map.empty
   ManaProduction.DraftNoted _ -> Map.empty
+  ManaProduction.EachColorAmong _ -> Map.empty
 
 -- The slots a MonarchTarget reads: only the targeted arm names one.
 monarchTargetSlots :: MonarchTarget.MonarchTarget -> Map.Map SlotName SlotArity
