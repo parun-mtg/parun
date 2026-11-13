@@ -161,3 +161,29 @@ Entries take `docs/decisions.md`'s format and order.
   and starting intensity siblings, prove the `firstJust` boxes on the other
   Synthetic Rival pairs.
 - **Issue**: #658, #2019.
+
+## Which creatures Twilight Diviner's "they" are in a batch only partly from a graveyard
+
+- **Question**: "Whenever one or more other creatures you control enter, if they
+  entered or were cast from a graveyard, create a token that's a copy of one of
+  them." When one event puts a creature onto the battlefield from a graveyard
+  beside one from elsewhere, does the ability trigger, and which is "one of
+  them"?
+- **Rules**: CR 603.2c, 603.4, 603.6a; CR of 2026-11-06. No ruling on the card
+  picks one (Scryfall, 2026-11-13).
+- **Decision**: It triggers, and "they" are the graveyard creatures alone: the
+  other entrant is no candidate for the copy.
+- **Rejected**: Not triggering unless every entrant qualifies, the stricter
+  reading of "they", which Celes, Rune Knight's "if one or more of them"
+  supports by contrast; it lost because the condition would then be a fact
+  about the event, where "one of them" reads it as saying which creatures.
+  Triggering with every entrant a candidate, which copies a creature the
+  condition does not describe.
+- **Site**: the trigger's filter in `data/cards/twilight-diviner.json`, proved on
+  Synthetic Mixed Return by the scenario
+  `twilight-diviner-copies-the-creature-returned-from-a-graveyard-beside-one-put-from-hand`.
+  No printed card builds the batch: MTGJSON `AtomicCards` of 2026-11-13, a
+  sentence naming a graveyard, another zone and the battlefield over more than
+  one creature or permanent card, no hit. A card returning creature cards "from
+  your hand and/or graveyard" would refute it.
+- **Issue**: #7151.

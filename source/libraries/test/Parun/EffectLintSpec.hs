@@ -1509,7 +1509,9 @@ effectObjectRefs effect =
           ConjureCards.Duplicate ref -> read_ [ref]
           -- A reference pick names no object at all.
           ConjureCards.Reference {} -> []
-        Effect.CreateCopy (CreateCopy.MkCreateCopy _ ref _ _ _ _ _) -> read_ [ref]
+        -- Twilight Diviner's "a copy of one of them", asked by
+        -- Resolve.Common.askingObjects.
+        Effect.CreateCopy (CreateCopy.MkCreateCopy _ ref _ _ _ _ _) -> [([CardFromAmong], ref)]
         Effect.BecomeCopy (BecomeCopy.MkBecomeCopy original subject _ _ _) -> read_ (case original of CopyOriginal.OfObject ref -> [ref, subject]; CopyOriginal.Named _ -> [subject])
         Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets _ _ _ _) -> read_ (ref : copyTargetsRefs targets)
         Effect.SetX (SetX.MkSetX _ ref) -> read_ [ref]
@@ -2754,6 +2756,9 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- "Any number from among them" is tested under a reveal and a move.
     let anyFromAmong = ObjectRef.ChosenCardFromAmong (ChosenCardFromAmong.MkChosenCardFromAmong group anyCard (HowMany.UpTo Nothing) Nothing Nothing (PlayerRef.Relative PlayerRelation.You) Nothing False CardSelection.ByChoice)
     Spec.assertEqWith s "any number from among them is allowed by a reveal and a move alone" (inert [reveals anyFromAmong, moves anyFromAmong, discardsThese anyFromAmong]) [False, False, True]
+    -- Twilight Diviner's "a copy of one of them" is the one question a copy asks.
+    let tokenCopies ref = Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) ref EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False)
+    Spec.assertEqWith s "a copy allows one card from among them and no other chosen arm" (inert (fmap tokenCopies [inGraveyard, inHand, fromAmong, atRandom, anyFromAmong])) [True, True, False, True, True]
     -- An exact count other than one has no gameplay test, so no site allows it.
     let exactlyTwo = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Type.Literal 2)) Zone.Battlefield)
     Spec.assertEqWith s "two exactly chosen permanents are allowed nowhere" (inert [moves exactlyTwo, Effect.Transform exactlyTwo, Effect.Untap exactlyTwo]) [True, True, True]

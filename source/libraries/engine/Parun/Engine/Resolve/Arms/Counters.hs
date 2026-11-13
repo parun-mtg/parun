@@ -240,7 +240,7 @@ putCounters resolving source controller legal chosen (PutCounters.MkPutCounters 
   -- illegal slot (CR 608.2b) or a player recipient answers with nobody. A
   -- CR 608.2d choice is asked through askingObjects, ModifyTarget's reason:
   -- Phylactery Lich's "put a phylactery counter on an artifact you control".
-  targets <- Common.askingObjects resolving source controller legal chosen ref
+  targets <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
@@ -1306,7 +1306,7 @@ airbend applyEffectWith runSubgame resolving source controller legal chosen ref 
 -- writes its own (Parun.Engine.Assimilate.cardInstruction).
 assimilate :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
 assimilate applyEffectWith runSubgame resolving source controller legal chosen ref = do
-  named <- Common.askingObjects resolving source controller legal chosen ref
+  named <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   onBattlefield <- State.gets (\g oid -> Set.member oid (GameState.battlefield g))
   let (permanents, cards) = List.partition onBattlefield named
       bound slot oids = Map.insert slot (Set.fromList (fmap Recipient.ToObject oids))
@@ -1632,7 +1632,7 @@ tap resolving source controller legal (Tap.MkTap ref mTapped) = do
 -- Hero of Dominaria) is asked rather than read.
 untap :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
 untap resolving source controller legal chosen ref = do
-  victims <- Common.askingObjects resolving source controller legal chosen ref
+  victims <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   Monad.forM_ victims Event.untap
 
 detain :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
@@ -1667,7 +1667,7 @@ pair resolving source controller legal chosen ref = do
   --
   -- The CHOSEN ref goes through askingObjects and not the pure sweep: CR
   -- 608.2d's choice is an ask, which objectRefObjects cannot make.
-  partners <- Common.askingObjects resolving source controller legal chosen ref
+  partners <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   State.modify' $ \gs -> case partners of
     [partner] -> Soulbond.pair controller source partner gs
     _ -> gs

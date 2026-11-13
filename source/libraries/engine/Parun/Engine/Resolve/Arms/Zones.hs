@@ -369,7 +369,7 @@ moveToZone settle resolving source controller legal chosen (MoveToZone.MkMoveToZ
                 -- names no object. askingObjects' match is exhaustive, so a new arm
                 -- is classified there; only a slot read needing fromAmongMembers'
                 -- single binding, as the two arms above do, belongs here.
-                _ -> Common.askingObjects resolving source controller legal chosen r
+                _ -> Common.askingObjects Common.Present resolving source controller legal chosen r
           -- A move stating its origin finds only what is in that zone: Tinybones,
           -- Bauble Burglar's "from their graveyard" with a discarded card madness
           -- exiled.
@@ -551,11 +551,11 @@ exchangeZones settle resolving source controller legal (ExchangeZones.MkExchange
 -- LibraryPosition cannot name, sends the other card to the bottom (#4974).
 exchangeCardZones :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ExchangeCardZones.ExchangeCardZones -> Game ()
 exchangeCardZones settle resolving source controller legal chosen (ExchangeCardZones.MkExchangeCardZones one other) = do
-  ones <- Common.askingObjects resolving source controller legal chosen one
+  ones <- Common.askingObjects Common.Present resolving source controller legal chosen one
   current <- State.get
   case ListUtils.nubOrd ones of
     [a] | Common.exchangeable a current -> do
-      others <- Common.askingObjects resolving source controller legal chosen other
+      others <- Common.askingObjects Common.Present resolving source controller legal chosen other
       before <- State.get
       let -- What `card` enters with in place of `left`: Nothing when it
           -- cannot enter, else its attachment seed.
@@ -686,7 +686,7 @@ ante settle resolving source controller legal (Ante.MkAnte player ref mSlot) = d
 -- so happenedBetween reads it as not having happened.
 putSticker :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> PutSticker.PutSticker -> Game ()
 putSticker resolving source controller legal chosen (PutSticker.MkPutSticker player ref kinds cap free bound) = do
-  named <- Common.askingObjects resolving source controller legal chosen ref
+  named <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   placers <- State.gets (\gs -> playerRefPlayers legal resolving source controller gs player)
   Monad.forM_ placers $ \placer -> Monad.forM_ (ListUtils.nubOrd named) $ \oid -> do
     gs <- State.get
@@ -716,7 +716,7 @@ offerCastArm offerCast runSubgame resolving source controller legal chosen (Offe
   -- Last Kappa) and over one target (Tinybones, the Pickpocket) are then the
   -- same call. Asked, since CR 608.2d's choice may name the card: Word of
   -- Command's "choose a card from it" out of the hand its look bound.
-  named <- Common.askingObjects resolving source controller legal chosen ref
+  named <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   gs <- State.get
   let -- The SAME context the reference above was gathered through, so an offer
       -- whose restriction reads the source (CR 702.85a) answers what the walk
@@ -1355,7 +1355,7 @@ reveal resolving source controller legal chosen (Reveal.MkReveal ref mSlot revea
   -- Every card named across every seat is bound as one group, which Fall reads
   -- back with an EachCardFromAmong. Parun.MassEffectSpec's UncoveredClues group
   -- proves the binding.
-  named <- Common.askingObjects resolving source controller legal chosen ref
+  named <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   let -- A named revealer shows every card: Prophecy's "reveal the top card of
       -- target opponent's library" is its controller's reveal (CR 608.2c).
       -- Unnamed, a card in a hand or a library is shown by its owner, the seat
@@ -1386,7 +1386,7 @@ lookAt resolving source controller legal chosen (LookAt.MkLookAt ref slot looker
   -- instruction's, Word of Command's "choose a card from it" reading this slot
   -- from its OfferCast. Named through askingObjects as Reveal's are, for Urza's
   -- Bauble's "a card at random", which objectRefObjects answers with nothing.
-  named <- Common.askingObjects resolving source controller legal chosen ref
+  named <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   gs <- State.get
   Monad.forM_ named $ \oid ->
     Monad.forM_ (playerRefPlayers legal resolving source controller gs looker) $ \pid -> Event.look pid oid
@@ -1406,7 +1406,7 @@ lookAt resolving source controller legal chosen (LookAt.MkLookAt ref slot looker
 -- board in the pool observes the clear.
 guess :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Guess.Guess -> Game ()
 guess resolving source controller legal chosen (Guess.MkGuess subject slot guesser proposition right) = do
-  named <- Common.askingObjects resolving source controller legal chosen subject
+  named <- Common.askingObjects Common.Present resolving source controller legal chosen subject
   Common.bindObjects resolving (Just slot) named
   case named of
     [card] -> do
@@ -1614,7 +1614,7 @@ connive settle resolving source controller legal (Connive.Type.MkConnive quantit
 -- filed under the controller.
 discard :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Discard.Discard -> Game ()
 discard settle resolving source controller legal chosen (Discard.These (TheseDiscard.MkTheseDiscard ref mDiscarded)) = do
-  named <- Common.askingObjects resolving source controller legal chosen ref
+  named <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   gs <- State.get
   let owned oid = fmap (\obj -> (Object.owner obj, [oid])) (Game.lookupObject oid gs)
   -- One event group, CR 608.2f, through the other arms' burial, so what

@@ -316,7 +316,7 @@ modifyTarget resolving source controller legal chosen (ModifyTarget.MkModifyTarg
   -- reason: CR 608.2d's choice is an ask, which the pure sweep cannot make.
   -- Mirkwood Trapper's "that player chooses an attacking creature. It gets
   -- +2/+0" is the reader.
-  affected <- Common.askingObjects resolving source controller legal chosen ref
+  affected <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   -- CR 611.2c's third sentence: an effect modifying no characteristic and no
   -- controller (CR 613.11's layer, a classification) keeps a described group
   -- live, so a creature matching only later is in it, and the effect is stored
@@ -1674,7 +1674,7 @@ destroy settle resolving source controller legal chosen (Destroy.MkDestroy ref r
   -- victim (CR 608.2f). An illegal slot (CR 608.2b), a non-object recipient, or
   -- a set that matched nothing all arrive here as the empty list. Through
   -- askingObjects, so Capricious Efreet's "one of them at random" is drawn.
-  victims <- Common.askingObjects resolving source controller legal chosen ref
+  victims <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   destroyed <- Event.destroyReturning settle regenerability victims
   -- CR 701.8b: "destroyed this way" is what the funnel DESTROYED, never what
   -- the sweep named. Bound onto this effect's SOURCE so a later effect of the
@@ -1762,7 +1762,7 @@ sacrifice settle resolving source controller legal chosen (SacrificeEffect.MkSac
   -- member's CR 616.1 loop reads the board the batch began on -- All Is Dust
   -- sacrificing Rest in Peace beside another coloured permanent exiles both.
   -- Parun.EventSpec's All Is Dust case is the proof.
-  victims <- Common.askingObjects resolving source controller legal chosen ref
+  victims <- Common.askingObjects Common.Present resolving source controller legal chosen ref
   gs <- State.get
   Event.sacrificeAll settle (Maybe.mapMaybe (Common.sacrificerFor sacrificer controller gs) victims)
   -- "That many" is what the funnel SACRIFICED, never what the sweep named
