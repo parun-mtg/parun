@@ -916,7 +916,9 @@ removeFromCombat oid gs =
             -- reason, and is cleanliness on the same terms: its one reader
             -- (Parun.Engine.Combat.noteAttackingNothing) folds over
             -- Combat.attackers, which this call has just emptied of the entry.
-            Combat.attackedControlledBy = Map.delete oid (Combat.attackedControlledBy c)
+            Combat.attackedControlledBy = Map.delete oid (Combat.attackedControlledBy c),
+            -- Its protector twin, on the same terms.
+            Combat.attackedProtectedBy = Map.delete oid (Combat.attackedProtectedBy c)
           }
    in gs
         { GameState.turn =
@@ -941,7 +943,7 @@ removeFromCombat oid gs =
 -- Parun.Engine.Departure.objectsLeaveWith leaves it for CR 800.4a.
 --
 -- The companion records keyed by the attacker (joinedUnder, attackedUnder,
--- attackedControlledBy, attackingNothing) are left alone on removeFromCombat's
+-- attackedControlledBy, attackedProtectedBy, attackingNothing) are left alone on removeFromCombat's
 -- own terms: every reader of them looks the attacker up in Combat.attackers
 -- first, and an object id is never reused. CR 508.8's history (Combat.attacked)
 -- is a different question and survives -- the declaration happened.
