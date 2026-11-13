@@ -1891,6 +1891,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.Gift Gift.Card -> pure keyword_
   Keyword.Gift Gift.Food -> pure keyword_
   Keyword.Gift Gift.Treasure -> pure keyword_
+  Keyword.Gift Gift.ExtraTurn -> pure keyword_
   Keyword.Freerunning cost -> keywordLooksBack c HistoryRead.Damage *> fmap Keyword.Freerunning (keywordCost c cost)
   Keyword.Impending (Impending.MkImpending counters cost) -> fmap (Keyword.Impending . Impending.MkImpending counters) (keywordCost c cost)
   Keyword.Exhaust -> pure keyword_

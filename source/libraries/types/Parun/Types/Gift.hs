@@ -8,8 +8,6 @@ import qualified Parun.Types.Subtype as Subtype
 -- A type of its own rather than a bare Parun.Types.Effect on the keyword: rule
 -- 702.174b writes the effect out in the rulebook from this word alone, so the
 -- card prints the word and Parun.Engine.Keyword mints the effect.
---
--- Not implemented: CR 702.174g's extra turn (#3833).
 data Gift
   = -- | CR 702.174e: "Gift a card" -- the chosen player draws a card.
     Card
@@ -26,4 +24,7 @@ data Gift
   | -- | CR 702.174h: "Gift a Treasure" -- the chosen player creates a Treasure
     -- token.
     Treasure
+  | -- | CR 702.174g: "Gift an extra turn" -- the chosen player takes an extra
+    -- turn after this one.
+    ExtraTurn
   deriving (Eq, Ord, Show)

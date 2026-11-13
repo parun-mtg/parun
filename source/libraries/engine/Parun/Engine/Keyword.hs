@@ -252,6 +252,7 @@ import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Suspend as Suspend
+import qualified Parun.Types.TakeExtraTurn as TakeExtraTurn
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.TapState as TapState
@@ -6681,6 +6682,7 @@ giftEffect something instance_ =
         Gift.Octopus subtype -> giftToken chosen TapState.Untapped (blueCreatureToken subtype 8 8)
         Gift.Food -> giftToken chosen TapState.Untapped foodToken
         Gift.Treasure -> giftToken chosen TapState.Untapped treasureToken
+        Gift.ExtraTurn -> Effect.TakeExtraTurn TakeExtraTurn.MkTakeExtraTurn {TakeExtraTurn.player = chosen, TakeExtraTurn.skips = Set.empty, TakeExtraTurn.count = TakeExtraTurn.defaultCount}
 
 -- CR 702.174d's, 702.174f's, 702.174h's and 702.174i's effect: "the chosen
 -- player creates a [token]".
@@ -6721,6 +6723,7 @@ printedGift something = case something of
   Gift.Card -> something
   Gift.Food -> something
   Gift.Treasure -> something
+  Gift.ExtraTurn -> something
 
 -- | The key a keyword's CR 601.2b payment is filed under in Object.paidCosts:
 -- the keyword with any word a CR 612 text change can swap put back as printed,
