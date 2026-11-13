@@ -175,16 +175,23 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.DontLoseUnspentMana ManaFilter.Any)
-      " {\"type\":\"DontLoseUnspentMana\",\"value\":{\"type\":\"Any\"}} "
+      (PlayerEffect.DontLoseUnspentMana ManaFilter.Any Nothing)
+      " {\"type\":\"DontLoseUnspentMana\",\"value\":{\"mana\":{\"type\":\"Any\"}}} "
   -- CR 106.1a: the OTHER filter, so a codec that dropped the payload would
   -- round-trip one of these and not both.
   Spec.it s "DontLoseUnspentMana, Omnath's green only" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.DontLoseUnspentMana (ManaFilter.OfType (ManaType.Colored Color.Green)))
-      " {\"type\":\"DontLoseUnspentMana\",\"value\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Green\"}}} "
+      (PlayerEffect.DontLoseUnspentMana (ManaFilter.OfType (ManaType.Colored Color.Green)) Nothing)
+      " {\"type\":\"DontLoseUnspentMana\",\"value\":{\"mana\":{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Green\"}}}} "
+  -- CR 614.1a / Ozai, the Phoenix King: the type the lost mana becomes.
+  Spec.it s "DontLoseUnspentMana, Ozai's lost mana becoming red" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.DontLoseUnspentMana ManaFilter.Any (Just (ManaType.Colored Color.Red)))
+      " {\"type\":\"DontLoseUnspentMana\",\"value\":{\"mana\":{\"type\":\"Any\"},\"becomes\":{\"type\":\"Colored\",\"value\":\"Red\"}}} "
   Spec.it s "MayPayLifeForMana, Channel's life for mana" $
     Common.assertCodec
       s

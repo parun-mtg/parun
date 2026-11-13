@@ -9,6 +9,7 @@ module Parun.ManaSymbolSpec where
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -1758,7 +1759,7 @@ spendChoiceSpec s registry = Spec.describe s "Choosing which mana to spend" $ do
           Prompt.ChooseManaToSpend {} -> unit
           _ -> S.identityAnswer p
         payGreen unit = S.runPureWith (spends unit) floated (Cost.payMana S.manaPerformer PaymentSubject.ForNeither ManaSpending.AsProduced S.alice greenOnly)
-        thenGreen gs = fst (S.runPureWith S.identityAnswer (Mana.emptiedManaPools gs) (Cost.payMana S.manaPerformer PaymentSubject.ForNeither ManaSpending.AsProduced S.alice greenOnly))
+        thenGreen gs = fst (S.runPureWith S.identityAnswer (Mana.emptiedManaPools Map.empty gs) (Cost.payMana S.manaPerformer PaymentSubject.ForNeither ManaSpending.AsProduced S.alice greenOnly))
         (sparedPaid, spared) = payGreen plainGreen
         (spentPaid, spent) = payGreen retainedGreen
     Spec.assertBool s (thenGreen spared) "sparing the retained green, a second {G} is paid after the pool empties"

@@ -14,6 +14,8 @@ data Measure
     ManaValue
   | -- | CR 105.2: how many of the five colours the object is.
     ColorCount
+  | -- | CR 205.3m: how many creature types the object has.
+    CreatureTypeCount
   | -- | CR 306.5c: a planeswalker's loyalty, its loyalty counters.
     Loyalty
   deriving (Bounded, Enum, Eq, Ord, Show)

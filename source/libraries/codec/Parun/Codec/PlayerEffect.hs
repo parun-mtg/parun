@@ -55,6 +55,12 @@ codec =
             <$> Fields.defaulted "designator" Nothing (Common.maybe (KeywordDesignator.codec Keyword.codec)) (\(x, _, _) -> x)
             <*> Fields.defaulted "sources" (Filter.Type.And []) filterCodec (\(_, x, _) -> x)
             <*> Fields.defaulted "kind" Nothing (Common.maybe AbilityKind.codec) (\(_, _, x) -> x)
+      -- The type absent is mana kept as it is (Upwelling).
+      unspentMana =
+        Fields.object $
+          (,)
+            <$> Fields.required "mana" ManaFilter.codec fst
+            <*> Fields.defaulted "becomes" Nothing (Common.maybe ManaType.codec) snd
       lifeForMana =
         Fields.object $
           (,)
@@ -91,7 +97,7 @@ codec =
           Arm.payload "IncreaseMaximumHandSize" Common.natural PlayerEffect.IncreaseMaximumHandSize (\x -> case x of PlayerEffect.IncreaseMaximumHandSize y -> Just y; _ -> Nothing),
           Arm.payload "ReduceMaximumHandSize" Common.natural PlayerEffect.ReduceMaximumHandSize (\x -> case x of PlayerEffect.ReduceMaximumHandSize y -> Just y; _ -> Nothing),
           Arm.payload "IncreaseDevotion" Common.natural PlayerEffect.IncreaseDevotion (\x -> case x of PlayerEffect.IncreaseDevotion y -> Just y; _ -> Nothing),
-          Arm.payload "DontLoseUnspentMana" ManaFilter.codec PlayerEffect.DontLoseUnspentMana (\x -> case x of PlayerEffect.DontLoseUnspentMana y -> Just y; _ -> Nothing),
+          Arm.payload "DontLoseUnspentMana" unspentMana (uncurry PlayerEffect.DontLoseUnspentMana) (\x -> case x of PlayerEffect.DontLoseUnspentMana y z -> Just (y, z); _ -> Nothing),
           Arm.nullary "LoseLifeForUnspentMana" PlayerEffect.LoseLifeForUnspentMana,
           Arm.payload "MayPayLifeForMana" lifeForMana (uncurry PlayerEffect.MayPayLifeForMana) (\x -> case x of PlayerEffect.MayPayLifeForMana life mana -> Just (life, mana); _ -> Nothing),
           Arm.payload "SpendManaAsThough" SpendManaAsThough.codec PlayerEffect.SpendManaAsThough (\x -> case x of PlayerEffect.SpendManaAsThough y -> Just y; _ -> Nothing),

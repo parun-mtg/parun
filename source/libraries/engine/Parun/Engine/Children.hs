@@ -2122,7 +2122,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.IncreaseMaximumHandSize _ -> pure effect
   PlayerEffect.IncreaseDevotion _ -> pure effect
   PlayerEffect.ReduceMaximumHandSize _ -> pure effect
-  PlayerEffect.DontLoseUnspentMana which -> PlayerEffect.DontLoseUnspentMana <$> playerManaFilter c which
+  PlayerEffect.DontLoseUnspentMana which becomes -> (\named -> PlayerEffect.DontLoseUnspentMana named becomes) <$> playerManaFilter c which
   PlayerEffect.LoseLifeForUnspentMana -> pure effect
   PlayerEffect.MayPayLifeForMana _ _ -> pure effect
   PlayerEffect.SpendManaAsThough clause -> PlayerEffect.SpendManaAsThough <$> playerSpending c clause
