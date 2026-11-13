@@ -4,7 +4,6 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Types.AbilityTriggered as AbilityTriggered
-import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.PastTurn as PastTurn
 import qualified Parun.Types.PlayerId as PlayerId
@@ -21,11 +20,10 @@ data History = MkHistory
     -- (Game.spellsCastLastTurn); all of them hold the game's casts
     -- (Game.castsThisGame) and its earlier damage (Game.damageBeforeThisTurn).
     pastTurns :: !(Seq.Seq PastTurn.PastTurn),
-    -- | CR 508.1a / 608.2i: the attackers declared during each player's OWN
-    -- most recent turn, keyed by that player and replaced as their next turn
-    -- ends (Engine.beginTurn). A departed player's row stands until their next
-    -- turn would have begun (CR 800.4i), where Engine's seat walk removes it.
-    attacksInOwnLastTurn :: !(Map.Map PlayerId.PlayerId (Seq.Seq AttackerDeclared.AttackerDeclared)),
+    -- | CR 800.4i: the departed players whose own last turn
+    -- (Game.ownLastTurn) no longer answers "during their last turn", because
+    -- their next turn would have begun (Engine.expireLastTurn).
+    expiredLastTurns :: !(Set.Set PlayerId.PlayerId),
     -- | The printed rider "This ability triggers only once"
     -- (Parun.Types.TriggerLimit's OncePerGame), spent here: every triggering
     -- of an ability carrying that rider, as the same record CR 603.3b's log
