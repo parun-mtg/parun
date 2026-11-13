@@ -4,6 +4,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.TotalCap as TotalCap
 import qualified Parun.Types.Zone as Zone
 
 -- | CR 608.2d's choice in a shared zone: what may be picked, WHO picks, how
@@ -35,6 +36,9 @@ data ChosenPermanents = MkChosenPermanents
   { filter :: Filter.Filter Keyword.Keyword,
     chooser :: PlayerRef.PlayerRef,
     count :: HowMany.HowMany,
+    -- | CR 608.2d: the most the picks may sum to -- Destined Confrontation's
+    -- "with total power 4 or less". Read only beside a count of UpTo.
+    total :: Maybe TotalCap.TotalCap,
     -- | CR 400.1: the shared zone the candidates are in -- the battlefield, or
     -- Mirror of Fate's exile. Parun.Codec.ChosenPermanents refuses any other.
     zone :: Zone.Zone

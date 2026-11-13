@@ -2137,7 +2137,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let choosing zone =
           (S.combinedFace piker)
             { Face.spell =
-                Mint.oneMode (Seq.singleton (Effect.Destroy (Destroy.MkDestroy (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents atom (PlayerRef.InSlot Binding.you) HowMany.one zone)) Regenerability.Regenerable Nothing Nothing Nothing)))
+                Mint.oneMode (Seq.singleton (Effect.Destroy (Destroy.MkDestroy (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents atom (PlayerRef.InSlot Binding.you) HowMany.one Nothing zone)) Regenerability.Regenerable Nothing Nothing Nothing)))
             }
     Spec.assertEqWith s "the atom in a battlefield choice's filter is accepted" (otherCandidateCounts (choosing Zone.Battlefield)) (1, 0)
     Spec.assertEqWith s "and in an exile choice's filter is an offence" (otherCandidateCounts (choosing Zone.Exile)) (0, 1)

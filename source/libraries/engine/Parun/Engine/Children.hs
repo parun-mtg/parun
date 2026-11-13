@@ -3265,13 +3265,14 @@ objectRefChildren c ref = case ref of
   ObjectRef.AllOf refs -> ObjectRef.AllOf <$> traverse (refNested c) refs
 
 -- | A battlefield choice's children (CR 608.2d): what it picks among, who
--- picks and how many.
+-- picks, how many and within what total.
 chosenPermanentsChildren :: (Applicative f) => ObjectRefChildren f -> ChosenPermanents.ChosenPermanents -> f ChosenPermanents.ChosenPermanents
-chosenPermanentsChildren c (ChosenPermanents.MkChosenPermanents filter_ chooser count zone) =
+chosenPermanentsChildren c (ChosenPermanents.MkChosenPermanents filter_ chooser count total zone) =
   ChosenPermanents.MkChosenPermanents
     <$> refFilter c filter_
     <*> refPlayer c chooser
     <*> howManyChildren (refQuantity c) count
+    <*> traverse (\(TotalCap.MkTotalCap weight most) -> TotalCap.MkTotalCap <$> refQuantity c weight <*> refQuantity c most) total
     <*> pure zone
 
 -- | One visitor per kind of child a rule-affecting row holds (CR 613.11): a

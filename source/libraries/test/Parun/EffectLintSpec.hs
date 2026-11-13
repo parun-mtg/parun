@@ -74,6 +74,7 @@ import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ChangeTargets as ChangeTargets
 import qualified Parun.Types.ChangeText as ChangeText
 import qualified Parun.Types.ChooseGroup as ChooseGroup
+import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.ChosenCardFromAmong as ChosenCardFromAmong
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
@@ -299,7 +300,7 @@ ownQuantities =
               ),
           Children.onMovedKinds = Const.Const . Maybe.maybeToList . MovedKinds.quantityOf,
           Children.onRemovalCount = Const.Const . Maybe.maybeToList . RemovalCount.quantityOf,
-          Children.onChosenPermanents = Const.Const . Foldable.toList . HowMany.quantity . ChosenPermanents.count
+          Children.onChosenPermanents = Const.Const . Resolve.chosenPermanentsQuantities
         }
 
 -- The shapes CR 208.1 and CR 208.2 allow in a printed power or toughness box:
@@ -2114,7 +2115,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           -- TRUE for one permanent however many match, and for a printed ceiling
           -- of one, TopOfLibrary's answer; FALSE, EachCardFromAmong's answer
           -- over the battlefield, where "any number" states no bound.
-          ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents _ _ count _) -> atMostOne count
+          ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents _ _ count _ _) -> atMostOne count
           -- FALSE: every attachment to a host moves, however many there are.
           ObjectRef.AttachedToBound _ -> False
           -- TRUE, InSlot's answer: what the slot's creature attacks.
@@ -2724,8 +2725,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         atRandom = ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (PlayerRef.Relative PlayerRelation.You) anyCard (Quantity.Type.Literal 1))
         atRandomInGraveyard = ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) anyCard (Quantity.Type.Literal 1))
         sought = ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Library (PlayerRef.Relative PlayerRelation.You) anyCard (Quantity.Type.Literal 1))
-        anyNumber = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) Zone.Battlefield)
-        onePermanent = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) HowMany.one Zone.Battlefield)
+        anyNumber = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) Nothing Zone.Battlefield)
+        onePermanent = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield)
         sourceAndOne = ObjectRef.AllOf (onePermanent NonEmpty.:| [ObjectRef.EachMatching Filter.Type.IsSource])
         moves ref = Effect.MoveToZone (MoveToZone.MkMoveToZone ref Zone.Battlefield EntryRiders.defaultValue Nothing Nothing LibraryPlacement.defaultValue Nothing)
         reveals ref = Effect.Reveal (Reveal.MkReveal ref Nothing Nothing)
@@ -2779,11 +2780,11 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let tokenCopies ref = Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) ref EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False)
     Spec.assertEqWith s "a copy allows one card from among them and no other chosen arm" (inert (fmap tokenCopies [inGraveyard, inHand, fromAmong, atRandom, anyFromAmong])) [True, True, False, True, True]
     -- An exact count other than one has no gameplay test, so no site allows it.
-    let exactlyTwo = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Type.Literal 2)) Zone.Battlefield)
+    let exactlyTwo = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Type.Literal 2)) Nothing Zone.Battlefield)
     Spec.assertEqWith s "two exactly chosen permanents are allowed nowhere" (inert [moves exactlyTwo, Effect.Transform exactlyTwo, Effect.Untap exactlyTwo]) [True, True, True]
     -- A choice out of exile is not a battlefield question at any count, so the
     -- permanent opcodes refuse it and a move alone allows it.
-    let exiled count = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) count Zone.Exile)
+    let exiled count = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) count Nothing Zone.Exile)
     Spec.assertEqWith
       s
       "an exile choice is allowed by a move alone"
@@ -2941,9 +2942,21 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 case count of
                   HowMany.UpTo _ -> Maybe.isJust pileChooser || selection /= CardSelection.ByChoice
                   HowMany.Exactly _ -> True
+          ObjectRef.ChosenPermanents chosen -> misreads chosen
           _ -> False
+        -- Parun.Types.ChosenPermanents' total, read the same way; Destined
+        -- Confrontation keeps this half from being vacuous.
+        misreads chosen =
+          Maybe.isJust (ChosenPermanents.total chosen) && case ChosenPermanents.count chosen of
+            HowMany.UpTo _ -> False
+            HowMany.Exactly _ -> True
+        choosing effect = case effect of
+          Effect.ChoosePermanents choice -> Just (ChoosePermanents.permanents choice)
+          _ -> Nothing
         refs = concatMap (fmap snd . effectObjectRefs) . cardAuthoredEffects
-        offenders = filter (anyFace (any offends . refs) . Printing.card) ps
+        choices = Maybe.mapMaybe choosing . cardAuthoredEffects
+        offenders = filter (anyFace (\face -> any offends (refs face) || any misreads (choices face)) . Printing.card) ps
+    Spec.assertBool s (any (anyFace (any (Maybe.isJust . ChosenPermanents.total) . choices) . Printing.card) ps) "the pool has a card capping a choice of permanents' total"
     Spec.assertBool s (any (anyFace (any capped . refs) . Printing.card) ps) "the pool has a card capping a choice's total"
     Spec.assertBool s (any (anyFace (any perColored . refs) . Printing.card) ps) "the pool has a card bounding a choice by color"
     Spec.assertEqWith s "a total beside a count that cannot read it" (fmap (S.nameOf . Printing.card) offenders) []
