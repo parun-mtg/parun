@@ -106,6 +106,7 @@ spec s =
                     False
                     LibraryPosition.defaultValue
                     False
+                    Nothing
                     Seq.empty
                 )
             )
@@ -131,6 +132,7 @@ spec s =
                     False
                     LibraryPosition.defaultValue
                     False
+                    Nothing
                     Seq.empty
                 )
             )

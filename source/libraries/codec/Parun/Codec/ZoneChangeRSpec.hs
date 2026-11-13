@@ -6,10 +6,14 @@ import qualified Parun.Codec.ZoneChangeR as ZoneChangeR
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.ControllerRelation as ControllerRelation
+import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
 import qualified Parun.Types.ZoneChangeR as ZoneChangeR
@@ -36,6 +40,7 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.shuffling = False,
             ZoneChangeR.position = LibraryPosition.defaultValue,
             ZoneChangeR.optional = False,
+            ZoneChangeR.counters = Nothing,
             ZoneChangeR.whenYouDo = Seq.empty
           }
       )
@@ -61,6 +66,7 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.shuffling = True,
             ZoneChangeR.position = LibraryPosition.defaultValue,
             ZoneChangeR.optional = False,
+            ZoneChangeR.counters = Nothing,
             ZoneChangeR.whenYouDo = Seq.empty
           }
       )
@@ -86,6 +92,7 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.shuffling = False,
             ZoneChangeR.position = LibraryPosition.Top,
             ZoneChangeR.optional = True,
+            ZoneChangeR.counters = Nothing,
             ZoneChangeR.whenYouDo = Seq.empty
           }
       )
@@ -111,8 +118,34 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.shuffling = False,
             ZoneChangeR.position = LibraryPosition.defaultValue,
             ZoneChangeR.optional = False,
+            ZoneChangeR.counters = Nothing,
             ZoneChangeR.whenYouDo = Seq.singleton (Text.pack "wolf")
           }
       )
       " {\"matching\":{\"whenDestination\":\"Graveyard\"},\"destination\":\"Exile\",\"whenYouDo\":[\"wolf\"]} "
+  -- CR 122.1: Goliath Daydreamer's "exile that card with a dream counter on it".
+  Spec.it s "MkZoneChangeR with arrival counters (Goliath Daydreamer)" $
+    Common.assertCodec
+      s
+      (ZoneChangeR.codec Common.text)
+      ( ZoneChangeR.MkZoneChangeR
+          { ZoneChangeR.matching =
+              ZoneChangePattern.MkZoneChangePattern
+                { ZoneChangePattern.whenDestination = Just Zone.Graveyard,
+                  ZoneChangePattern.whatObject = Filter.And [],
+                  ZoneChangePattern.whoseObject = ControllerRelation.Related PlayerRelation.AnyPlayer,
+                  ZoneChangePattern.whenDiscarded = Nothing,
+                  ZoneChangePattern.causedBy = Nothing,
+                  ZoneChangePattern.duringResolution = True
+                },
+            ZoneChangeR.destination = Zone.Exile,
+            ZoneChangeR.revealing = False,
+            ZoneChangeR.shuffling = False,
+            ZoneChangeR.position = LibraryPosition.defaultValue,
+            ZoneChangeR.optional = False,
+            ZoneChangeR.counters = Just (WithCounters.one (CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "dream"))) (Quantity.Literal 1)),
+            ZoneChangeR.whenYouDo = Seq.empty
+          }
+      )
+      " {\"matching\":{\"whenDestination\":\"Graveyard\",\"duringResolution\":true},\"destination\":\"Exile\",\"counters\":[{\"kind\":{\"type\":\"Named\",\"value\":\"dream\"},\"count\":{\"type\":\"Literal\",\"value\":1}}]} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (ZoneChangeR.codec Common.text)

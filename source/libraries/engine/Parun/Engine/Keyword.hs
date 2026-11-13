@@ -2234,6 +2234,7 @@ unearth cost =
                       False
                       LibraryPosition.defaultValue
                       False
+                      Nothing
                       Seq.empty
                   )
             }
@@ -4289,6 +4290,7 @@ castFromGraveyardExile =
         False
         LibraryPosition.defaultValue
         False
+        Nothing
         Seq.empty
     )
 
@@ -4385,6 +4387,7 @@ madnessDiscardExile =
         False
         LibraryPosition.defaultValue
         False
+        Nothing
         Seq.empty
     )
 

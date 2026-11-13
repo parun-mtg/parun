@@ -1584,9 +1584,9 @@ conditionSlots condition = case condition of
 replacementRowReads :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> ([Filter.Type.Filter Keyword.Type.Keyword], [Quantity.Type.Quantity])
 replacementRowReads re = case re of
   -- The rewrite is a Zone, a LibraryPosition and Bools (Parun.Types.ZoneChangeR),
-  -- plus a linked trigger's effects replacementRowEffects answers for: nothing
-  -- that can name a slot, so the pattern is the whole of it.
-  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ _) -> ([ZoneChangePattern.whatObject pat], [])
+  -- plus a linked trigger's effects replacementRowEffects answers for; only
+  -- the arrival counters' amounts can name a slot beside the pattern.
+  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ counters _) -> ([ZoneChangePattern.whatObject pat], foldMap (Map.elems . WithCounters.counters) counters)
   ReplacementEffect.EntryR (EntryR.MkEntryR pat rewrite) -> addFilter pat (entryRewriteReads rewrite)
   ReplacementEffect.DamageR (DamageR.MkDamageR pat rewrite _) ->
     let (filters, quantities) = damageRewriteReads rewrite
