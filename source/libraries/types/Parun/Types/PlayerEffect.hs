@@ -176,6 +176,9 @@ data PlayerEffect
     DamageCantBeRedirected DamagePattern.DamagePattern
   | -- | CR 701.23 / 613.11 / Leonin Arbiter: this player can't search libraries.
     CantSearchLibraries CantSearchLibraries.CantSearchLibraries
+  | -- | CR 614.1a / 701.23f / Aven Mindcensor: this player searches only that
+    -- many of a library's top cards instead of the library.
+    SearchesTopOfLibraries Natural.Natural
   | -- | CR 704.5i / 704.5j / Hall of Echoes, Sanctum Lurker: the state-based
     -- action doesn't apply to permanents this player controls.
     StateBasedActionDoesntApply StateBasedAction.StateBasedAction

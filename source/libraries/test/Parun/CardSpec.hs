@@ -4014,6 +4014,7 @@ playerEffectFilters playerEffect = case playerEffect of
   -- CR 701.23's prohibition narrows by WHOSE library and WHOSE spell or
   -- ability, both PlayerScopes, and by no quality a Filter could state.
   PlayerEffect.CantSearchLibraries _ -> []
+  PlayerEffect.SearchesTopOfLibraries _ -> []
   -- CR 702.16a's quality IS a Filter the card writes (The Stasis Coffin's
   -- rule 702.16j "everything"), so it is linted like every other written one.
   PlayerEffect.HasProtectionFrom f -> [f]

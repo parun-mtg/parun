@@ -226,8 +226,8 @@ castSpec s registry =
       let (_, base) = S.addLibraryCard panglacialWurm S.alice (S.landsInPlay forest 7)
           (_, bolted) = S.spellOnStack lightningBolt S.alice base
           (_, shocked) = S.spellOnStack suddenShock S.alice base
-      Spec.assertEqWith s "control: with an ordinary spell on the stack the Wurm is offered" (length (Cast.castableWhileSearching S.alice bolted)) 1
-      Spec.assertEqWith s "split second takes the offer away" (Cast.castableWhileSearching S.alice shocked) []
+      Spec.assertEqWith s "control: with an ordinary spell on the stack the Wurm is offered" (length (Cast.castableWhileSearching Nothing S.alice bolted)) 1
+      Spec.assertEqWith s "split second takes the offer away" (Cast.castableWhileSearching Nothing S.alice shocked) []
 
 activateSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 activateSpec s registry =

@@ -794,6 +794,15 @@ search settle performManaAbility runSubgame resolving source controller legal (S
           -- causing the look (Ashiok, Dream Render). `controller` is CR
           -- 405.4's controller of the object whose instructions these are.
           prohibited <- State.gets (PlayerEffect.prohibitsSearching searcher owner controller)
+          -- CR 614.1a, 701.23f (Aven Mindcensor): the cards of the library
+          -- this searcher looks through in place of the whole, or Nothing
+          -- where nothing replaces the search. Fixed ONCE, as the pass
+          -- begins, so a card CR 601.3's cast takes out of it exposes no
+          -- other (the card's 2021-03-19 ruling). Only the library is
+          -- narrowed, and the shuffle below is still of all of it. The
+          -- scenarios aven-mindcensor-* are the proof.
+          portion <- State.gets (\g -> Set.fromList . (`List.genericTake` Game.zoneMembers Zone.Library owner g) <$> PlayerEffect.searchPortion searcher g)
+          let inPortion zone oid = zone /= Zone.Library || maybe True (Set.member oid) portion
           -- The printed "and/or": the searcher picks which of the zones the
           -- card names to look through -- Delivery Moogle's "your library
           -- and/or graveyard" -- and the rest of the instruction, the shuffle
@@ -888,9 +897,9 @@ search settle performManaAbility runSubgame resolving source controller legal (S
             -- Nixilis, Unshackled), recorded before the find, so a search that
             -- finds nothing is still one.
             Monad.when ownLibrary (State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.SearchLibrary searcher))))
-            Monad.when (searcher == owner && Set.member Zone.Library searchedZones) (Cast.castWhileSearching (performManaAbility runSubgame) searcher)
+            Monad.when (searcher == owner && Set.member Zone.Library searchedZones) (Cast.castWhileSearching portion (performManaAbility runSubgame) searcher)
             looking <- State.get
-            Monad.forM_ (Set.toAscList searchedZones) $ \zone -> Monad.mapM_ (Event.look searcher) (Game.zoneMembers zone owner looking)
+            Monad.forM_ (Set.toAscList searchedZones) $ \zone -> Monad.mapM_ (Event.look searcher) (filter (inPortion zone) (Game.zoneMembers zone owner looking))
           -- A cap of zero asks nothing and finds nothing: one legal answer is
           -- no choice to put to a player. An unbounded search has no such
           -- shortcut -- its cap is not known until the zones are read.
@@ -903,7 +912,7 @@ search settle performManaAbility runSubgame resolving source controller legal (S
                 -- one instruction with one count, and asking per zone would cap
                 -- per zone. The zone is kept alongside its candidates because
                 -- CR 701.23b's permission is a property of the ZONE.
-                let byZone = fmap (\zone -> (zone, filter (matches1 searcher gs) (Game.cardsIn zone owner gs))) (Set.toAscList searchedZones)
+                let byZone = fmap (\zone -> (zone, filter (\oid -> inPortion zone oid && matches1 searcher gs oid) (Game.cardsIn zone owner gs))) (Set.toAscList searchedZones)
                     matches = concatMap snd byZone
                     outsideCopies = sum (Map.elems outsideAvailable)
                     -- CR 701.23a bounds an unbounded search by the places: every

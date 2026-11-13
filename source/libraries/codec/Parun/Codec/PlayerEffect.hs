@@ -114,6 +114,7 @@ codec =
           Arm.payload "DamageCantBePrevented" DamagePattern.codec PlayerEffect.DamageCantBePrevented (\x -> case x of PlayerEffect.DamageCantBePrevented y -> Just y; _ -> Nothing),
           Arm.payload "DamageCantBeRedirected" DamagePattern.codec PlayerEffect.DamageCantBeRedirected (\x -> case x of PlayerEffect.DamageCantBeRedirected y -> Just y; _ -> Nothing),
           Arm.payload "CantSearchLibraries" CantSearchLibraries.codec PlayerEffect.CantSearchLibraries (\x -> case x of PlayerEffect.CantSearchLibraries y -> Just y; _ -> Nothing),
+          Arm.payload "SearchesTopOfLibraries" Common.natural PlayerEffect.SearchesTopOfLibraries (\x -> case x of PlayerEffect.SearchesTopOfLibraries y -> Just y; _ -> Nothing),
           Arm.payload "HasProtectionFrom" filterCodec PlayerEffect.HasProtectionFrom (\x -> case x of PlayerEffect.HasProtectionFrom y -> Just y; _ -> Nothing),
           Arm.payload "StateBasedActionDoesntApply" StateBasedAction.codec PlayerEffect.StateBasedActionDoesntApply (\x -> case x of PlayerEffect.StateBasedActionDoesntApply y -> Just y; _ -> Nothing),
           Arm.nullary "CantSetSchemesInMotion" PlayerEffect.CantSetSchemesInMotion,
@@ -173,6 +174,7 @@ tagOf x = case x of
   PlayerEffect.DamageCantBePrevented {} -> "DamageCantBePrevented"
   PlayerEffect.DamageCantBeRedirected {} -> "DamageCantBeRedirected"
   PlayerEffect.CantSearchLibraries {} -> "CantSearchLibraries"
+  PlayerEffect.SearchesTopOfLibraries {} -> "SearchesTopOfLibraries"
   PlayerEffect.HasProtectionFrom {} -> "HasProtectionFrom"
   PlayerEffect.StateBasedActionDoesntApply {} -> "StateBasedActionDoesntApply"
   PlayerEffect.CantSetSchemesInMotion {} -> "CantSetSchemesInMotion"

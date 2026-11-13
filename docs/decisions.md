@@ -427,6 +427,21 @@ Entries are ordered by the first rule each cites.
   `before`. No test names it.
 - **Issue**: none.
 
+## Whether a card outside a narrowed search can be cast while searching
+
+- **Question**: Aven Mindcensor has an opponent search only the top four cards
+  of their library. May that player cast a Panglacial Wurm lying below them?
+- **Rules**: CR 601.3, 400.2, 701.23a, 701.23f; Aven Mindcensor's ruling of
+  2021-03-19, the other cards can't be looked at; CR of 2026-11-06.
+- **Decision**: No. The Wurm is offered only among the cards being searched.
+- **Rejected**: Anywhere in the library, on the Wurm's unqualified "from your
+  library": the player would cast a card of a hidden zone they are not looking
+  at, so nothing shows the card they move is the Wurm.
+- **Site**: `Parun.Engine.Cast.castableWhileSearching`'s `portion`. Proved by
+  the scenario
+  `aven-mindcensor-keeps-panglacial-wurm-below-the-top-four-from-being-cast`.
+- **Issue**: #4342.
+
 ## Who on a winning team takes the ante
 
 - **Question**: CR 407.2 gives the ante to "the winner", but a team win (CR

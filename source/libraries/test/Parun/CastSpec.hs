@@ -373,19 +373,19 @@ castSpec s registry = Spec.describe s "Cast" $ do
     panglacialWurm <- S.printingOf s registry "Panglacial Wurm"
     let base = S.landsInPlay forest 7
         (_, gs) = S.addLibraryCard panglacialWurm S.alice base
-    Spec.assertEqWith s "one castable-while-searching option" (length (Cast.castableWhileSearching S.alice gs)) 1
+    Spec.assertEqWith s "one castable-while-searching option" (length (Cast.castableWhileSearching Nothing S.alice gs)) 1
   Spec.it s "with too little mana, Panglacial is not castable-while-searching" $ do
     forest <- S.printingOf s registry "Forest"
     panglacialWurm <- S.printingOf s registry "Panglacial Wurm"
     let base = S.landsInPlay forest 3
         (_, gs) = S.addLibraryCard panglacialWurm S.alice base
-    Spec.assertEqWith s "unaffordable, so no options" (length (Cast.castableWhileSearching S.alice gs)) 0
+    Spec.assertEqWith s "unaffordable, so no options" (length (Cast.castableWhileSearching Nothing S.alice gs)) 0
   Spec.it s "castWhileSearching casts Panglacial from the library onto the stack" $ do
     forest <- S.printingOf s registry "Forest"
     panglacialWurm <- S.printingOf s registry "Panglacial Wurm"
     let base = S.landsInPlay forest 7
         (_, gs) = S.addLibraryCard panglacialWurm S.alice base
-        after = snd (Engine.runGamePure castFirstOption gs (Cast.castWhileSearching S.manaPerformer S.alice))
+        after = snd (Engine.runGamePure castFirstOption gs (Cast.castWhileSearching Nothing S.manaPerformer S.alice))
         onStack = length (filter (nameOnStack (CardName.MkCardName $ Text.pack "Panglacial Wurm") after) (TurnRegisters.stack (GameState.turn after)))
     Spec.assertEqWith s "Panglacial is on the stack" onStack 1
     Spec.assertEqWith s "Panglacial left the library" (S.countByName (CardName.MkCardName $ Text.pack "Panglacial Wurm") S.alice after) 0
@@ -409,7 +409,7 @@ castSpec s registry = Spec.describe s "Cast" $ do
             pure (if offered then Nothing else Maybe.listToMaybe options)
           Prompt.ChooseManaSource {} -> pure Nothing
           _ -> pure (S.identityAnswer p)
-        after = snd (State.evalState (Engine.runGame refuse gs (Cast.castWhileSearching S.manaPerformer S.alice)) False)
+        after = snd (State.evalState (Engine.runGame refuse gs (Cast.castWhileSearching Nothing S.manaPerformer S.alice)) False)
     Spec.assertEqWith s "CR 734.1 Panglacial is back in the library" (Game.zoneMembers Zone.Library S.alice after) [wurmId]
     Spec.assertEqWith s "nothing on the stack" (length (TurnRegisters.stack (GameState.turn after))) 0
     Spec.assertEqWith s "no Forest tapped" (S.tappedCount S.alice after) 0
@@ -425,7 +425,7 @@ castSpec s registry = Spec.describe s "Cast" $ do
     split <- S.printingOf s registry "Synthetic Glacial Half"
     let (_, withMountain) = S.addPermanent mountain S.alice (S.landsInPlay forest 1)
         (_, gs) = S.addLibraryCard split S.alice withMountain
-    Spec.assertEqWith s "both halves offered, by name" (fmap (\(_, name, _) -> name) (Cast.castableWhileSearching S.alice gs)) [glacialHalf, volcanicHalf]
+    Spec.assertEqWith s "both halves offered, by name" (fmap (\(_, name, _) -> name) (Cast.castableWhileSearching Nothing S.alice gs)) [glacialHalf, volcanicHalf]
   -- The control, one Mountain apart from the pair above: CR 709.3a's "Only the
   -- chosen half is evaluated to see if it can be cast" gates each half on its
   -- OWN cost, so a lone Forest reaches {G} and not {R}. Without this, "both
@@ -435,7 +435,7 @@ castSpec s registry = Spec.describe s "Cast" $ do
     forest <- S.printingOf s registry "Forest"
     split <- S.printingOf s registry "Synthetic Glacial Half"
     let (_, gs) = S.addLibraryCard split S.alice (S.landsInPlay forest 1)
-    Spec.assertEqWith s "only the affordable half" (fmap (\(_, name, _) -> name) (Cast.castableWhileSearching S.alice gs)) [glacialHalf]
+    Spec.assertEqWith s "only the affordable half" (fmap (\(_, name, _) -> name) (Cast.castableWhileSearching Nothing S.alice gs)) [glacialHalf]
 
   Spec.it s "CR 601.2i casting a spell records a SpellCast event for the caster" $ do
     mountain <- S.printingOf s registry "Mountain"
