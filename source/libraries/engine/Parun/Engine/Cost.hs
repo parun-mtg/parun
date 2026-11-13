@@ -127,6 +127,7 @@ import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
+import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
@@ -2134,13 +2135,27 @@ definedX chosen pid oid ability gs =
 
 -- | CR 601.2b / 607.3: the cards the choice defining this ability's X is among
 -- (DefinedX.choice), the pile as the ability reads it, or Nothing for an X no
--- choice defines. An empty pile leaves X undefined, so the ability can't be
--- activated (Prototype Portal's ruling of 2011-01-01).
+-- choice defines.
 definingCandidates :: PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility card ability -> GameState -> Maybe [ObjectId]
-definingCandidates pid oid ability gs = do
-  pile <- DefinedX.choice =<< ActivatedAbility.definedX ability
+definingCandidates pid oid ability gs = abilityPile pid oid ability gs <$> (DefinedX.choice =<< ActivatedAbility.definedX ability)
+
+-- | CR 107.3c: is the X this ability's own text defines undefined, so the
+-- ability can't be activated? So where its defining choice (definingCandidates)
+-- or the pile its value is read off (Quantity.aimedPile) holds no card
+-- (Prototype Portal's ruling of 2011-01-01).
+-- data/scenarios/soul-foundry-is-not-offered-with-no-exiled-card.json proves
+-- the read pile.
+undefinedX :: PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility card ability -> GameState -> Bool
+undefinedX pid oid ability gs = case ActivatedAbility.definedX ability of
+  Nothing -> False
+  Just defined -> any (null . abilityPile pid oid ability gs) (Maybe.maybeToList (DefinedX.choice defined) <> Maybe.maybeToList (Quantity.aimedPile (DefinedX.quantity defined)))
+
+-- A linked pile of `oid`'s (CR 607.2a) as this ability, activated by `pid`,
+-- reads it.
+abilityPile :: PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility card ability -> GameState -> ExiledPile.ExiledPile -> [ObjectId]
+abilityPile pid oid ability gs pile =
   let reader = ActivatedAbility.name ability
-  pure (Game.linkedPile (Just pid) reader (Game.acquisitionFor reader oid gs) pile oid gs)
+   in Game.linkedPile (Just pid) reader (Game.acquisitionFor reader oid gs) pile oid gs
 
 -- One quantity bounding or defining an X, off `oid` as the ability named
 -- `reader` reads it. Unreadable or negative is 0.

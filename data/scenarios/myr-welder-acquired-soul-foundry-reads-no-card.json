@@ -1,12 +1,18 @@
 {
-  "description": "CR 607.5: the Soul Foundry ability Myr Welder acquired is linked to no exiling ability of the Welder's, so its X is the mana value of no card, not the summed mana values of the Soul Foundry and Bronze Sable the Welder's own ability exiled",
-  "note": "The Welder imprints Soul Foundry, then Bronze Sable (mana value 2). The acquired ability's \"the exiled card\" means a card its Imprint trigger exiled, which the Welder never acquired (CR 607.2a), so X is 0: with no mana at all the ability is still offered, and it makes no token. Read as the Welder's own, X would be 6, the Foundry's 4 and the Sable's 2 summed (CR 607.3), and the ability unaffordable.",
+  "description": "CR 607.5: the Soul Foundry ability Myr Welder acquired is linked to no exiling ability of the Welder's, so its X is undefined, not the summed mana values of the Soul Foundry and Bronze Sable the Welder's own ability exiled",
+  "note": "The Welder imprints Soul Foundry, then Bronze Sable (mana value 2). The acquired ability's \"the exiled card\" means a card its Imprint trigger exiled, which the Welder never acquired (CR 607.2a), so X is undefined (CR 107.3c, Prototype Portal's ruling of 2011-01-01) and the ability is not offered with six Plains untapped. Read as the Welder's own, X would be 6, the Foundry's 4 and the Sable's 2 summed (CR 607.3), and the six Plains would pay it.",
   "board": {
     "seats": [
       {
         "name": "alice",
         "battlefield": [
-          { "card": "Myr Welder", "label": "welder", "ready": true }
+          { "card": "Myr Welder", "label": "welder", "ready": true },
+          { "card": "Plains", "label": "p1", "ready": true },
+          { "card": "Plains", "label": "p2", "ready": true },
+          { "card": "Plains", "label": "p3", "ready": true },
+          { "card": "Plains", "label": "p4", "ready": true },
+          { "card": "Plains", "label": "p5", "ready": true },
+          { "card": "Plains", "label": "p6", "ready": true }
         ],
         "graveyard": [
           { "card": "Soul Foundry", "label": "foundry" },
@@ -41,10 +47,6 @@
     { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$welder", "ability": 0 } } },
     { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
     { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Bronze Sable", "count": 1 } } },
-    { "turn": 5, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "Activate $welder"] } } },
-    { "turn": 5, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$welder", "ability": 1 } } },
-    { "turn": 5, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
-    { "turn": 5, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Bronze Sable", "count": 0 } } },
-    { "turn": 5, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$welder", "tapped": true } } }
+    { "turn": 5, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "ActivateManaAbility $p1", "ActivateManaAbility $p2", "ActivateManaAbility $p3", "ActivateManaAbility $p4", "ActivateManaAbility $p5", "ActivateManaAbility $p6"] } } }
   ]
 }
