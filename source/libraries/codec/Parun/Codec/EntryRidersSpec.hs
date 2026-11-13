@@ -118,8 +118,8 @@ spec s = Spec.describe s "Parun.Codec.EntryRiders" $ do
     Common.assertCodec
       s
       (EntryRiders.codec Common.text)
-      EntryRiders.defaultValue {EntryRiders.characteristics = Seq.fromList [Modification.CardType ChangeMode.Replace CardType.Enchantment, Modification.AddSubtype Subtype.Aura]}
-      " {\"characteristics\":[{\"type\":\"CardType\",\"value\":{\"mode\":\"Replace\",\"cardType\":\"Enchantment\"}},{\"type\":\"AddSubtype\",\"value\":\"Aura\"}]} "
+      EntryRiders.defaultValue {EntryRiders.characteristics = Seq.fromList [Modification.CardType ChangeMode.Replace CardType.Enchantment, Modification.Subtype ChangeMode.InAddition Subtype.Aura]}
+      " {\"characteristics\":[{\"type\":\"CardType\",\"value\":{\"mode\":\"Replace\",\"cardType\":\"Enchantment\"}},{\"type\":\"Subtype\",\"value\":{\"mode\":\"InAddition\",\"subtype\":\"Aura\"}}]} "
   -- CR 406.3's rider, which is the one rider about a zone that is not the
   -- battlefield: Ignorant Bliss exiles face down and says nothing else.
   Spec.it s "MkEntryRiders, exiledFaceDown alone" $

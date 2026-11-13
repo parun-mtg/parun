@@ -62,8 +62,11 @@
           },
           "modifications": [
             {
-              "type": "AddSubtype",
-              "value": "Equipment"
+              "type": "Subtype",
+              "value": {
+                "mode": "InAddition",
+                "subtype": "Equipment"
+              }
             },
             {
               "type": "GainAbility",

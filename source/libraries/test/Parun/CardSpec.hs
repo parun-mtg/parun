@@ -3589,7 +3589,7 @@ modificationFilters modification = case modification of
   Modification.LoseEverySubtype _ -> []
   -- Its Filter picks the card it reads, which is card text like any other.
   Modification.SetCreatureSubtypesOfLastCardExiledWith f -> unframed [f]
-  Modification.AddSubtype _ -> []
+  Modification.Subtype {} -> []
   Modification.RemoveSubtype _ -> []
   Modification.CardType {} -> []
   Modification.LoseCardType _ -> []

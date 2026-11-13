@@ -72,7 +72,7 @@ import qualified Parun.Types.Zone as Zone
 -- enchant ability answers Nothing here rather than admitting everything: printed
 -- Auras cannot be in that shape (the CardSpec lint holds the biconditional), but a
 -- permanent that gained the Aura subtype without gaining enchant can be
--- (Modification.AddSubtype without Modification.GainEnchant), and CR 303.4c gives
+-- (Modification.Subtype without Modification.GainEnchant), and CR 303.4c gives
 -- such a permanent nothing it may legally enchant.
 --
 -- Read off the PROJECTION rather than the printed face, which is what lets an

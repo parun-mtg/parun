@@ -8713,7 +8713,7 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
           -- The Aura test is the PROJECTION's subtypes (CR 205.3 -- CR 303.4 speaks
           -- about characteristics) rather than the printed type line
           -- Parun.Engine.Card.isAura reads, and the two now differ: Cloudform GRANTS
-          -- itself the Aura subtype (Modification.AddSubtype) and the enchant
+          -- itself the Aura subtype (Modification.Subtype) and the enchant
           -- ability that goes with it (Modification.GainEnchant). Unobserved here
           -- all the same: Cloudform grants both while already on the battlefield,
           -- and an Aura made by CR 611.2e's entry rider (Bronzehide Lion) is not

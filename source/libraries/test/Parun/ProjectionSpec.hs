@@ -8,7 +8,7 @@
 -- Also Parun.Engine.Subtype: the CR 205.3i land-type and CR 205.3m creature-type
 -- classifications the layer-4 LandSubtype, CreatureSubtype and
 -- AddEveryCreatureSubtype arms fold with, the correlatedCardTypes map
--- (CR 205.1a) the LoseEverySubtype arm folds with, and the untagged AddSubtype
+-- (CR 205.1a) the LoseEverySubtype arm folds with, and the untagged Subtype
 -- beside them.
 module Parun.ProjectionSpec where
 
@@ -2768,7 +2768,7 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     Spec.assertEqWith s "CR 205.1b: the granted Forest joins the printed Saproling" (Projection.subtypesOf shroofusId with) (Set.fromList [Subtype.Type.Forest, Subtype.Type.Saproling])
     Spec.assertBool s (Set.member CardType.Land (Projection.cardTypesOf shroofusId with)) "on the Land card type the same effect gives it"
 
-  -- The card-level proof of the layer-4 AddSubtype arm, the add for the families
+  -- The card-level proof of the layer-4 Subtype arm, the add for the families
   -- the two family-tagged arms above cannot reach (CR 205.3g's artifact types
   -- here, CR 205.3h's enchantment types the other half). Ygra, Eater of All
   -- ({3}{B}{G} Legendary Creature -- Elemental Cat 6/6, "Other creatures are Food
@@ -2791,7 +2791,7 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     -- arm that SET the subtypes passes the assertion above and fails this one.
     Spec.assertEqWith s "and still its printed Goblin Warrior" (Set.difference (Projection.subtypesOf pikerId gs) (Set.singleton Subtype.Type.Food)) (Set.fromList [Subtype.Type.Goblin, Subtype.Type.Warrior])
     -- The card-type half of the same sentence, and CR 205.3d's precondition for
-    -- the Food: Ygra prints "Food artifacts", so the AddSubtype comes FIRST and
+    -- the Food: Ygra prints "Food artifacts", so the Subtype comes FIRST and
     -- the correspondence is settled against what the whole effect gives (CR 613.7,
     -- correspondsTo).
     Spec.assertBool s (Set.member CardType.Artifact (Projection.cardTypesOf pikerId gs)) "and an artifact in addition to being a creature"

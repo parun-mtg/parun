@@ -214,12 +214,19 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
   -- layer 4, CR 205.1b add outside the land and creature families (Ygra, Eater
   -- of All). A different subtype from every arm above, so a codec that crossed
   -- this arm with one of them cannot pass both.
-  Spec.it s "AddSubtype" $
+  Spec.it s "Subtype InAddition" $
     Common.assertCodec
       s
       codec
-      (Modification.AddSubtype Subtype.Food)
-      " {\"type\":\"AddSubtype\",\"value\":\"Food\"} "
+      (Modification.Subtype ChangeMode.InAddition Subtype.Food)
+      " {\"type\":\"Subtype\",\"value\":{\"mode\":\"InAddition\",\"subtype\":\"Food\"}} "
+  -- layer 4, CR 205.1a set outside the land and creature families.
+  Spec.it s "Subtype Replace" $
+    Common.assertCodec
+      s
+      codec
+      (Modification.Subtype ChangeMode.Replace Subtype.Gideon)
+      " {\"type\":\"Subtype\",\"value\":{\"mode\":\"Replace\",\"subtype\":\"Gideon\"}} "
   -- layer 4, CR 205.1a removal (Haunted Plate Mail). A different subtype from
   -- the add above, so a codec that crossed the two cannot pass both.
   Spec.it s "RemoveSubtype" $

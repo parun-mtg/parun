@@ -2488,7 +2488,7 @@ equipmentTokenSpec s registry = Spec.describe s "EquipmentToken" $ do
     fist <- S.printingOf s registry "Monk's Fist"
     let (equipmentId, minted, settled) = enterAndTrigger (Setup.emptyGame S.bothPlayers) fist
     Spec.assertEqWith s "CR 702.182a: the 1/1 Hero wearing the Fist's +1/+0 is a 2/1" (fmap (\oid -> S.powerToughnessOf oid settled) minted) [Just (2, 1)]
-    -- The Monk is the FIST's own AddSubtype, so it is visible only while the
+    -- The Monk is the FIST's own Subtype, so it is visible only while the
     -- attach held; the Hero is the rule's.
     Spec.assertEqWith s "CR 702.182a: a Hero, and a Monk because it is the equipped creature" (fmap (\oid -> Projection.subtypesOf oid settled) minted) [Set.fromList [Subtype.Hero, Subtype.Monk]]
     Spec.assertEqWith s "CR 702.182a: colorless, which is the ABSENCE of a colour rather than a colour" (fmap (\oid -> Projection.colorsOf oid settled) minted) [Set.empty]
