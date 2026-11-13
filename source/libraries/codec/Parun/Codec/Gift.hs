@@ -13,7 +13,8 @@ codec =
       Arm.nullary "Food" Gift.Food,
       Arm.payload "TappedFish" Subtype.codec Gift.TappedFish (\x -> case x of Gift.TappedFish y -> Just y; _ -> Nothing),
       Arm.payload "Octopus" Subtype.codec Gift.Octopus (\x -> case x of Gift.Octopus y -> Just y; _ -> Nothing),
-      Arm.nullary "Treasure" Gift.Treasure
+      Arm.nullary "Treasure" Gift.Treasure,
+      Arm.nullary "ExtraTurn" Gift.ExtraTurn
     ]
 
 tagOf :: Gift.Gift -> String
@@ -23,3 +24,4 @@ tagOf x = case x of
   Gift.TappedFish {} -> "TappedFish"
   Gift.Octopus {} -> "Octopus"
   Gift.Treasure -> "Treasure"
+  Gift.ExtraTurn -> "ExtraTurn"

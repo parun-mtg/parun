@@ -40,5 +40,11 @@ spec s = Spec.describe s "Parun.Codec.Gift" $ do
       Gift.codec
       Gift.Treasure
       " {\"type\":\"Treasure\"} "
+  Spec.it s "ExtraTurn" $
+    Common.assertCodec
+      s
+      Gift.codec
+      Gift.ExtraTurn
+      " {\"type\":\"ExtraTurn\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s Gift.codec
