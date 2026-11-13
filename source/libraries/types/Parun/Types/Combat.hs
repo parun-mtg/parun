@@ -105,6 +105,23 @@ data Combat = MkCombat
     -- Parun.Engine.Projection.View.attackedControllerHeld, as attackedUnder is;
     -- noteAttackingNothing also writes the late planeswalker entry.
     attackedControlledBy :: Map.Map ObjectId.ObjectId PlayerId.PlayerId,
+    -- | CR 506.4 for a battle attacked AS A PLANESWALKER: who protected it
+    -- when it was first seen attacked as a battle -- the comparand for "if its
+    -- ... protector changes".
+    --
+    -- SEPARATE from attackedUnder for attackedControlledBy's reason, mirrored: a
+    -- battle announcement's seat already IS the protector (CR 310.9d), while a
+    -- planeswalker announcement's is the controller (CR 508.5), which a
+    -- protector change leaves where it was (CR 310.9f). Holds an entry only for
+    -- a planeswalker announcement whose permanent is a battle with a protector,
+    -- from the first CR 117.5 moment it is one (docs/synthetic-readings.md,
+    -- "Whether an attacked battle's first protector is a changed one").
+    --
+    -- Keyed by the ATTACKER for attackedControlledBy's reason. Written and
+    -- read by Parun.Engine.Combat.noteAttackingNothing, pruned by
+    -- Parun.Engine.Game.removeFromCombat, and read live by
+    -- Parun.Engine.Projection.View.attackedProtectorHeld.
+    attackedProtectedBy :: Map.Map ObjectId.ObjectId PlayerId.PlayerId,
     -- | WHAT has been attacked this combat phase: the CR 508.1b target announced
     -- for each creature declared as an attacker or put onto the battlefield
     -- attacking (CR 508.8). Written by Parun.Engine.Combat.declareAttackers and

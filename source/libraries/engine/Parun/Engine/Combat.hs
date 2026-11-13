@@ -93,6 +93,7 @@ emptyCombat =
       Combat.joinedUnder = Map.empty,
       Combat.attackedUnder = Map.empty,
       Combat.attackedControlledBy = Map.empty,
+      Combat.attackedProtectedBy = Map.empty,
       Combat.attacked = Set.empty,
       Combat.declaredAttacked = Set.empty,
       Combat.declaredAttackedBy = Map.empty,
@@ -2233,8 +2234,12 @@ noteAttackingNothing gs =
       -- CR 506.4's PROTECTOR clause, read against the protector recorded as this
       -- creature joined combat (attackedUnder, CR 310.9d's seat). The candidate
       -- lists stillAttackedBattle asks cannot see it whenever the new protector is
-      -- a defending player too, which CR 802.2 makes the usual case.
-      protectorMoved attacker battle = case Map.lookup attacker (Combat.attackedUnder c) of
+      -- a defending player too, which CR 802.2 makes the usual case. A
+      -- planeswalker announcement of a battle reads attackedProtectedBy instead,
+      -- its attackedUnder seat being the controller; proved by
+      -- data/scenarios/planeswalker-combat's "a Siege whose protector changes"
+      -- pair.
+      protectorMoved record attacker battle = case Map.lookup attacker (record c) of
         Nothing -> False
         Just seat -> Battle.protectorOf battle gs /= Just seat
       -- CR 506.4e's second sentence for a PLANESWALKER announcement: one that
@@ -2252,8 +2257,8 @@ noteAttackingNothing gs =
         -- CR 800.4e, not CR 506.4: a departed player is still being attacked, and
         -- Damage.combatRecipient is where the damage goes missing.
         AttackTarget.OfPlayer _ -> False
-        AttackTarget.OfPlaneswalker pw -> not (targetStillAttacked target gs) || seatMoved attacker pw || walkerUnprotected attacker pw
-        AttackTarget.OfBattle battle -> not (targetStillAttacked target gs) || battleSeatMoved attacker battle || protectorMoved attacker battle
+        AttackTarget.OfPlaneswalker pw -> not (targetStillAttacked target gs) || seatMoved attacker pw || protectorMoved Combat.attackedProtectedBy attacker pw || walkerUnprotected attacker pw
+        AttackTarget.OfBattle battle -> not (targetStillAttacked target gs) || battleSeatMoved attacker battle || protectorMoved Combat.attackedUnder attacker battle
       gone = Set.union (Map.keysSet (Map.filterWithKey removed (Combat.attackers c))) (Combat.attackingNothing c)
       -- CR 506.4e's second sentence asks whether the planeswalker was a battle
       -- at any time while attacked, so one that became a battle after its
@@ -2263,6 +2268,13 @@ noteAttackingNothing gs =
       becameBattle attacker target = case target of
         AttackTarget.OfPlaneswalker _ | Set.notMember attacker gone -> attackedBattleController target gs
         _ -> Nothing
+      -- protectorMoved's entry for a planeswalker announcement, the first time
+      -- its permanent is seen as a battle with a protector, and written nowhere
+      -- else: CR 117.5 samples before anything can move a protector.
+      becameProtected attacker target = case target of
+        AttackTarget.OfPlaneswalker pw
+          | Set.notMember attacker gone, Battle.isBattle (Projection.project pw gs) -> Battle.protectorOf pw gs
+        _ -> Nothing
    in gs
         { GameState.turn =
             (GameState.turn gs)
@@ -2270,7 +2282,9 @@ noteAttackingNothing gs =
                   c
                     { Combat.attackingNothing = gone,
                       Combat.attackedControlledBy =
-                        Map.union (Combat.attackedControlledBy c) (Map.mapMaybeWithKey becameBattle (Combat.attackers c))
+                        Map.union (Combat.attackedControlledBy c) (Map.mapMaybeWithKey becameBattle (Combat.attackers c)),
+                      Combat.attackedProtectedBy =
+                        Map.union (Combat.attackedProtectedBy c) (Map.mapMaybeWithKey becameProtected (Combat.attackers c))
                     }
               }
         }

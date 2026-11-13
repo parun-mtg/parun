@@ -76,6 +76,23 @@ Entries take `docs/decisions.md`'s format and order.
   `cr-506-4e-704-5x-whole-cards-becoming-a-battle-mid-combat-then-no-battle-he-is-removed`.
 - **Issue**: #7021.
 
+## Whether an attacked battle's first protector is a changed one
+
+- **Question**: CR 506.4 removes a permanent from combat "if its ...
+  protector changes". A planeswalker that became a battle while attacked has no
+  protector (CR 704.5x), and an effect then gives it one. Did its protector
+  change?
+- **Rules**: CR 506.4, 310.9f, 704.5x; CR of 2026-11-06.
+- **Decision**: No. CR 310.9f's change is another player taking a protector's
+  place, and nobody was replaced. It stays attacked.
+- **Rejected**: Removed, reading any difference in the designation as a
+  change.
+- **Site**: `Parun.Engine.Combat.noteAttackingNothing`'s `becameProtected`,
+  proved on Synthetic Besiege the Front and Synthetic Shifting Allegiance by
+  the scenario
+  `cr-506-4-310-9f-whole-cards-becoming-a-battle-mid-combat-his-first-protector-is-no-changed-one`.
+- **Issue**: #7020.
+
 ## Whether a cast redirected off the stack is still a cast
 
 - **Question**: A CR 614 replacement sends a card being cast somewhere other

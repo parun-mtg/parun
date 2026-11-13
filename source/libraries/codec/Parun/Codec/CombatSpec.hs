@@ -22,6 +22,7 @@ empty =
       Combat.joinedUnder = Map.empty,
       Combat.attackedUnder = Map.empty,
       Combat.attackedControlledBy = Map.empty,
+      Combat.attackedProtectedBy = Map.empty,
       Combat.attacked = Set.empty,
       Combat.declaredAttacked = Set.empty,
       Combat.declaredAttackedBy = Map.empty,
@@ -71,6 +72,9 @@ spec s = Spec.describe s "Parun.Codec.Combat" $ do
           -- above and holding a DIFFERENT seat -- the battle's controller, not
           -- its protector -- so distinct ids on both sides again.
           Combat.attackedControlledBy = Map.singleton (ObjectId.MkObjectId 16) (PlayerId.MkPlayerId 17),
+          -- CR 506.4's protector for a planeswalker announcement, a third seat
+          -- keyed by the attacker, so distinct ids once more.
+          Combat.attackedProtectedBy = Map.singleton (ObjectId.MkObjectId 31) (PlayerId.MkPlayerId 32),
           Combat.attacked = Set.singleton (AttackTarget.OfPlayer (PlayerId.MkPlayerId 2)),
           Combat.declaredAttacked = Set.singleton (AttackTarget.OfPlaneswalker (ObjectId.MkObjectId 8)),
           -- CR 805.10a: keyed by the attacking PLAYER, a seat no other field
@@ -105,6 +109,7 @@ spec s = Spec.describe s "Parun.Codec.Combat" $ do
           <> ",\"joinedUnder\":{\"6\":7}"
           <> ",\"attackedUnder\":{\"14\":15}"
           <> ",\"attackedControlledBy\":{\"16\":17}"
+          <> ",\"attackedProtectedBy\":{\"31\":32}"
           <> ",\"attacked\":[{\"type\":\"OfPlayer\",\"value\":2}]"
           <> ",\"declaredAttacked\":[{\"type\":\"OfPlaneswalker\",\"value\":8}]"
           <> ",\"declaredAttackedBy\":{\"18\":[{\"type\":\"OfPlaneswalker\",\"value\":8}]}"

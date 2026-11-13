@@ -926,6 +926,7 @@ combatLegalitySpec s registry = Spec.describe s "CombatLegality" $ do
                             -- declaration would have recorded.
                             Combat.Type.attackedUnder = Map.singleton oid S.bob,
                             Combat.Type.attackedControlledBy = Map.empty,
+                            Combat.Type.attackedProtectedBy = Map.empty,
                             Combat.Type.joinedUnder = Map.singleton oid S.alice,
                             Combat.Type.attacked = Set.singleton (AttackTarget.OfPlayer S.bob),
                             Combat.Type.declaredAttacked = Set.singleton (AttackTarget.OfPlayer S.bob),
