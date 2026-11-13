@@ -76,7 +76,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 701.17a, 608.2d: Ostrich-Horse gets a +1/+1 counter when the milled cards hold no land card to take",
+  "description": "CR 701.17a: Ostrich-Horse gets a +1/+1 counter when the milled cards hold no land card to take",
   "timeline": [
     {
       "do": {

@@ -91,7 +91,7 @@
     "step": "DrawStep",
     "turn": 3
   },
-  "description": "CR 714.2b: Leaves from the Vine's chapter III draws nothing while no creature or Lesson card is in your graveyard",
+  "description": "CR 715.2b: Leaves from the Vine's chapter III draws nothing while no creature or Lesson card is in your graveyard",
   "note": "Bob's graveyard holds a creature card and alice's a land and a sorcery, so only the 'your graveyard' and 'creature or Lesson' halves keep the draw away. The one Island in hand is the draw step's.",
   "timeline": [
     {

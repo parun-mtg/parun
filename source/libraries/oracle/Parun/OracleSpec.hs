@@ -439,8 +439,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s [[Text.pack "Whenever another creature you control enters, you gain 1 life.", Text.pack "Alliance \8212 Whenever another creature you control enters, you gain 1 life."]] (Oracle.abilities (on [CardType.Creature] (TriggerCondition.Enters (EntersTrigger.matching (Filter.And [Filter.Not Filter.IsSource, Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]))) [gainLife 1]))
     Spec.assertEq s [[Text.pack "Whenever a creature you control dies, you gain 1 life.", Text.pack "Whenever Spark or another creature you control dies, you gain 1 life."]] (Oracle.abilities (on [CardType.Creature] (TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching mine))) [gainLife 1]))
     Spec.assertEq s [[Text.pack "Whenever a creature you control dies, you gain 1 life."]] (Oracle.abilities (on [CardType.Artifact] (TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching mine))) [gainLife 1]))
-    -- CR 700.4: a land does not die, and a disjunction describing one kind
-    -- further names each in full (Long Feng, Grand Secretariat).
+    -- CR 700.4 spelled out, Oracle text having no land "die", for a
+    -- disjunction that names each kind in full (Long Feng, Grand Secretariat).
     Spec.assertEq s (Just (Text.pack "Whenever another creature you control or a land you control is put into a graveyard from the battlefield, you gain 1 life.")) (Oracle.render (on [CardType.Creature] (TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching (Filter.And [Filter.Or [others, Filter.HasCardType CardType.Land], Filter.HeldBy Holder.Controller PlayerRelation.You])))) [gainLife 1]))
     -- CR 509.3c read by a bystander (Somberwald Alpha).
     Spec.assertEq s [[Text.pack "Whenever a creature you control becomes blocked, you gain 1 life."]] (Oracle.abilities (on [CardType.Artifact] (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Attacker mine BlockCount.Once)) [gainLife 1]))
