@@ -84,7 +84,9 @@
                       "value": {
                         "anchor": {
                           "type": "Bound",
-                          "value": "thatSpell"
+                          "value": {
+                            "slot": "thatSpell"
+                          }
                         },
                         "trait": {
                           "type": "Name"

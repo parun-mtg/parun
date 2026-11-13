@@ -98,7 +98,9 @@
                           "value": {
                             "anchor": {
                               "type": "Bound",
-                              "value": "became"
+                              "value": {
+                                "slot": "became"
+                              }
                             },
                             "trait": {
                               "type": "CardType"

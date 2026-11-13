@@ -1445,8 +1445,10 @@ data Context = MkContext
     -- Parun.Engine.Projection.framedBySlots; empty elsewhere, where the atom
     -- widens, and Parun.FilterPositionLintSpec's "CR 205.3m no card asks a
     -- slot-anchored Shares CreatureType outside a resolution's own positions
-    -- or a target slot" keeps a card out of those.
-    slotCreatureTypes :: Map.Map SlotName.SlotName (Set.Set Subtype.Subtype),
+    -- or a target slot" keeps a card out of those. Each member's types under its
+    -- controller (CR 110.2), Nothing for one with none, so a narrowed Bound reads
+    -- one player's members and a plain one the union.
+    slotCreatureTypes :: Map.Map SlotName.SlotName (Map.Map (Maybe PlayerId.PlayerId) (Set.Set Subtype.Subtype)),
     -- CR 205.2a: the CARD TYPES of the objects the slots hold, for Shares
     -- CardType Bound -- Confusion in the Ranks' "shares a card type with it", a
     -- sibling target slot's (Gauntlets of Chaos). `slotCreatureTypes` above in
@@ -1967,7 +1969,21 @@ sharesAnchored trait anchor = case anchor of
     Trait.Sector -> Just (\context view -> meets (Sector.sectorsIn (designations view)) (sourceSectors context))
     Trait.CreatureType -> Nothing
     Trait.CardType _ -> Nothing
-  Anchor.Bound slot -> case trait of
+  -- The slot narrowed to the members the candidate's controller controls
+  -- (Winnowing's "the chosen creature they control"), so a group's other
+  -- members lend the candidate nothing. Bound's posture below for an unbound
+  -- slot; a candidate with no controller shares with no member. The scenarios
+  -- named for Winnowing prove the pairing.
+  Anchor.Bound (Just Holder.Controller) slot -> case trait of
+    Trait.CreatureType -> Just (\context view -> maybe True (\members -> meets (subtypes view) (foldMap (\player -> Map.findWithDefault Set.empty (Just player) members) (controller view))) (Map.lookup slot (slotCreatureTypes context)))
+    Trait.Name -> Nothing
+    Trait.Color -> Nothing
+    Trait.Owner -> Nothing
+    Trait.Controller -> Nothing
+    Trait.Sector -> Nothing
+    Trait.CardType _ -> Nothing
+  Anchor.Bound (Just Holder.Owner) _ -> Nothing
+  Anchor.Bound Nothing slot -> case trait of
     -- A slot naming nothing leaves the bound side empty.
     Trait.Name -> Just (\context view -> meets (names view) (Map.findWithDefault Set.empty slot (slotNames context)))
     -- The context holds only the bound objects' creature types, so a shared land
@@ -1976,7 +1992,7 @@ sharesAnchored trait anchor = case anchor of
     -- offer is made before the sibling target is chosen, and
     -- Parun.Engine.Target.selectionLegal's joint check narrows it (Unbury's "two
     -- target creature cards that share a creature type").
-    Trait.CreatureType -> Just (\context view -> maybe True (meets (subtypes view)) (Map.lookup slot (slotCreatureTypes context)))
+    Trait.CreatureType -> Just (\context view -> maybe True (meets (subtypes view) . Foldable.fold) (Map.lookup slot (slotCreatureTypes context)))
     Trait.Color -> Nothing
     Trait.Owner -> Nothing
     Trait.Controller -> Nothing
@@ -2045,12 +2061,15 @@ attachedAnchored :: Anchor.Anchor nested -> Maybe (Context -> ObjectId.ObjectId 
 attachedAnchored anchor = case anchor of
   Anchor.Source -> Just (\context host -> source context == Just host)
   Anchor.Evaluated -> Just (\context host -> evaluated context == Just host)
-  Anchor.Bound slot ->
+  Anchor.Bound Nothing slot ->
     Just
       ( \context host ->
           Map.notMember slot (slotControllers context)
             || Set.member host (Map.findWithDefault Set.empty slot (slotObjects context))
       )
+  -- Not implemented: a slot narrowed to the members the candidate's holder
+  -- holds (#5636).
+  Anchor.Bound (Just _) _ -> Nothing
   -- A group names no one host: Filter.AttachedTo is that reading.
   Anchor.AnyPermanent _ -> Nothing
   Anchor.YourCommander -> Nothing
@@ -3421,7 +3440,7 @@ readsSourceValues predicate = case predicate of
       Trait.Sector -> False
       Trait.CreatureType -> False
       Trait.CardType _ -> False
-    Anchor.Bound _ -> False
+    Anchor.Bound _ _ -> False
     Anchor.Evaluated -> False
     Anchor.AnyPermanent group -> readsSourceValues group
     Anchor.YourCommander -> False
@@ -3571,7 +3590,7 @@ overBoundSlotsWith f predicate = case predicate of
 anchorFilter :: Anchor.Anchor nested -> Maybe nested
 anchorFilter anchor = case anchor of
   Anchor.AnyPermanent group -> Just group
-  Anchor.Bound _ -> Nothing
+  Anchor.Bound _ _ -> Nothing
   Anchor.Evaluated -> Nothing
   Anchor.Source -> Nothing
   Anchor.YourCommander -> Nothing

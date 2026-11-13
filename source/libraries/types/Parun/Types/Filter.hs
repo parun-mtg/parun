@@ -62,7 +62,9 @@ data Filter keyword
     -- 205.3m / 709.4a), as Parun.Engine.Filter.sharesAnchored reads each pair.
     --
     -- Not implemented: a pair the Context carries no anchored values for (Color,
-    -- Owner, Controller or Sector at Bound, anything but CreatureType at Evaluated,
+    -- Owner, Controller or Sector at Bound, anything but CreatureType at a Bound
+    -- narrowed to the candidate's controller, anything at one narrowed to its
+    -- owner, anything but CreatureType at Evaluated,
     -- CreatureType or Controller at Source, anything but Name or Controller at
     -- AnyPermanent, anything but Controller at Host), which answers False and
     -- Parun.FilterPositionLintSpec keeps out of card data (#5636).

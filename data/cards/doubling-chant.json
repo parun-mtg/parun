@@ -42,7 +42,9 @@
                                   "value": {
                                     "anchor": {
                                       "type": "Bound",
-                                      "value": "creature"
+                                      "value": {
+                                        "slot": "creature"
+                                      }
                                     },
                                     "trait": {
                                       "type": "Name"

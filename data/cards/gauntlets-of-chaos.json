@@ -93,7 +93,9 @@
                           "value": {
                             "anchor": {
                               "type": "Bound",
-                              "value": "yours"
+                              "value": {
+                                "slot": "yours"
+                              }
                             },
                             "trait": {
                               "type": "CardType",

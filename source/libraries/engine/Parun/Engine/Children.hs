@@ -662,7 +662,7 @@ filterChildren children predicate = case predicate of
 -- the Filter it nests.
 anchorChildren :: (Applicative f) => Children keyword f -> Anchor.Anchor (Filter.Filter keyword) -> f (Anchor.Anchor (Filter.Filter keyword))
 anchorChildren children anchor = case anchor of
-  Anchor.Bound name -> fmap Anchor.Bound (slot children SlotArity.Many name)
+  Anchor.Bound held name -> fmap (Anchor.Bound held) (slot children SlotArity.Many name)
   Anchor.Evaluated -> pure anchor
   Anchor.Source -> pure anchor
   Anchor.AnyPermanent group -> fmap Anchor.AnyPermanent (nest children group)

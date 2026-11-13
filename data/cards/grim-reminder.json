@@ -143,7 +143,9 @@
                                 "value": {
                                   "anchor": {
                                     "type": "Bound",
-                                    "value": "revealed"
+                                    "value": {
+                                      "slot": "revealed"
+                                    }
                                   },
                                   "trait": {
                                     "type": "Name"

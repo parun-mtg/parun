@@ -280,8 +280,8 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      (Filter.Shares Trait.Name (Anchor.Bound (SlotName.MkSlotName (Text.pack "castSpell"))))
-      " {\"type\":\"Shares\",\"value\":{\"trait\":{\"type\":\"Name\"},\"anchor\":{\"type\":\"Bound\",\"value\":\"castSpell\"}}} "
+      (Filter.Shares Trait.Name (Anchor.Bound Nothing (SlotName.MkSlotName (Text.pack "castSpell"))))
+      " {\"type\":\"Shares\",\"value\":{\"trait\":{\"type\":\"Name\"},\"anchor\":{\"type\":\"Bound\",\"value\":{\"slot\":\"castSpell\"}}}} "
   Spec.it s "ControllerRelatesToBound" $
     Common.assertCodec
       s
@@ -299,8 +299,8 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      (Filter.Shares Trait.CreatureType (Anchor.Bound (SlotName.MkSlotName (Text.pack "thatDepartedPermanent"))))
-      " {\"type\":\"Shares\",\"value\":{\"trait\":{\"type\":\"CreatureType\"},\"anchor\":{\"type\":\"Bound\",\"value\":\"thatDepartedPermanent\"}}} "
+      (Filter.Shares Trait.CreatureType (Anchor.Bound Nothing (SlotName.MkSlotName (Text.pack "thatDepartedPermanent"))))
+      " {\"type\":\"Shares\",\"value\":{\"trait\":{\"type\":\"CreatureType\"},\"anchor\":{\"type\":\"Bound\",\"value\":{\"slot\":\"thatDepartedPermanent\"}}}} "
   Spec.it s "Measures" $
     Common.assertCodec
       s

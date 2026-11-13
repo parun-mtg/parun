@@ -87,7 +87,9 @@
                             "value": {
                               "anchor": {
                                 "type": "Bound",
-                                "value": "target"
+                                "value": {
+                                  "slot": "target"
+                                }
                               },
                               "trait": {
                                 "type": "Name"

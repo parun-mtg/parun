@@ -63,7 +63,9 @@
                             "value": {
                               "anchor": {
                                 "type": "Bound",
-                                "value": "twin"
+                                "value": {
+                                  "slot": "twin"
+                                }
                               },
                               "trait": {
                                 "type": "Name"
