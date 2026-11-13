@@ -13,7 +13,9 @@
         {
           "effect": {
             "type": "Cant",
-            "value": "GainLife"
+            "value": {
+              "type": "GainLife"
+            }
           },
           "scope": {
             "type": "You"
@@ -22,7 +24,9 @@
         {
           "effect": {
             "type": "Cant",
-            "value": "LoseLife"
+            "value": {
+              "type": "LoseLife"
+            }
           },
           "scope": {
             "type": "You"

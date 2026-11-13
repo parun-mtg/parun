@@ -108,6 +108,15 @@
                             "type": "InSlot",
                             "value": "revealed"
                           },
+                          "riders": {
+                            "under": {
+                              "type": "Instructed",
+                              "value": {
+                                "type": "InSlot",
+                                "value": "thatPlayer"
+                              }
+                            }
+                          },
                           "zone": "Battlefield"
                         }
                       }

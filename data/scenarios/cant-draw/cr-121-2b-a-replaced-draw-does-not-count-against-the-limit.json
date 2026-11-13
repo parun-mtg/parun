@@ -1,0 +1,18 @@
+{
+  "description": "CR 121.2b / 614.6 a replaced draw does not count against the limit: under Spirit of the Labyrinth, Words of Worship takes Divination's first draw and the second still happens",
+  "note": "Spirit of the Labyrinth's 2014-02-01 ruling. The first draw becomes 5 life and no card is drawn, so the second draw is alice's first of the turn: the Forest, still on top, is in her hand, where a count of the replaced draw would leave it on her library.",
+  "board": {"active": "alice", "turn": 1, "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Spirit of the Labyrinth"}, {"card": "Words of Worship", "label": "words"}, {"card": "Plains", "label": "plains", "ready": true}, {"card": "Island", "label": "i1", "ready": true}, {"card": "Island", "label": "i2", "ready": true}, {"card": "Island", "label": "i3", "ready": true}], "hand": [{"card": "Divination", "label": "div"}], "library": [{"card": "Forest"}, {"card": "Mountain"}, {"card": "Swamp"}]},
+    {"name": "bob", "library": [{"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$words", "mana": ["$plains", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$div", "mana": ["$i1", "$i2", "$i3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Divination", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 25}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Forest", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Mountain", "count": 0}}}
+  ]
+}

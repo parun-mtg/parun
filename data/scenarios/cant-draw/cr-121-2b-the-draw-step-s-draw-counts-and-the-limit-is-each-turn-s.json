@@ -1,0 +1,18 @@
+{
+  "description": "CR 121.2b / 504.1 the draw step's draw is the one card a turn: under Spirit of the Labyrinth, Think Twice then draws nothing, and its flashback on the next turn draws",
+  "note": "Bob draws the Forest for his draw step, so Think Twice's draw in his main phase can't happen and the Mountain stays on his library. On alice's turn 3 he has drawn nothing, and the flashback draws it.",
+  "board": {"active": "bob", "turn": 2, "step": "Upkeep", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Spirit of the Labyrinth"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Island", "label": "i1", "ready": true}, {"card": "Island", "label": "i2", "ready": true}, {"card": "Island", "label": "i3", "ready": true}, {"card": "Island", "label": "i4", "ready": true}, {"card": "Island", "label": "i5", "ready": true}], "hand": [{"card": "Think Twice", "label": "tt"}], "library": [{"card": "Forest"}, {"card": "Mountain"}, {"card": "Swamp"}, {"card": "Plains"}]}
+  ]},
+  "timeline": [
+    {"turn": 2, "step": "DrawStep", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Swamp", "count": 0}}},
+    {"turn": 2, "step": "DrawStep", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Forest", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$tt", "mana": ["$i1", "$i2", null]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PostcombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Think Twice", "count": 1}}},
+    {"turn": 2, "step": "PostcombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Mountain", "count": 0}}},
+    {"turn": 3, "step": "Upkeep", "player": "bob", "do": {"Cast": {"object": "Think Twice", "mana": ["$i3", "$i4", "$i5"]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Mountain", "count": 1}}}
+  ]
+}

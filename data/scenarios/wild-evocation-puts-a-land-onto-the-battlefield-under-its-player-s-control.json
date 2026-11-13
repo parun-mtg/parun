@@ -1,0 +1,12 @@
+{
+  "description": "CR 110.2a Wild Evocation's revealed land enters under the control of the player whose upkeep it is, not the enchantment's controller",
+  "note": "Alice controls Wild Evocation and bob is \"that player\"; a Count on the battlefield is the controller's.",
+  "board": {"active": "bob", "turn": 2, "step": "Untap", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Wild Evocation"}], "library": [{"card": "Island"}]},
+    {"name": "bob", "hand": [{"card": "Forest"}], "library": [{"card": "Mountain"}, {"card": "Mountain"}]}
+  ]},
+  "timeline": [
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Forest", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Forest", "count": 0}}}
+  ]
+}

@@ -27,7 +27,10 @@
         {
           "effect": {
             "type": "Cant",
-            "value": "DrawCards"
+            "value": {
+              "type": "DrawMoreThan",
+              "value": 0
+            }
           },
           "scope": {
             "type": "AnyPlayer"

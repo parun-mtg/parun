@@ -3293,9 +3293,10 @@ offersForbiddenDraw resolving source controller legal gs effect = case effect of
 -- still unbound. The one exception is a copy of an earlier clause's slot
 -- naming nothing (Effect.CopyStackObject's arm): "copy the spell" names one
 -- object, and with none there is nothing to choose. Drawing from an empty
--- library is not impossible either (CR 121.3), nor is searching (CR 701.23b's fail to find). Three arms ask more than "nothing at
+-- library is not impossible either (CR 121.3), nor is searching (CR 701.23b's fail to find). Four arms ask more than "nothing at
 -- all happens": Effect.Mill, because rule 701.17b states the whole comparison
--- itself, and a counted discard or sacrifice, where an instruction to give up N
+-- itself, Effect.Draw under a limit, because rule 121.2b does, and a counted
+-- discard or sacrifice, where an instruction to give up N
 -- things is not an option for a player holding fewer (The Mimeoplasm's
 -- 2011-09-22 ruling, "You can't choose to exile just one creature card").
 --
@@ -3339,13 +3340,14 @@ effectIsImpossible resolving source controller legal gs effect = case effect of
     let named = objectRefObjects legal resolving controller source gs ref
      in not (null named) && all ((== Just Nothing) . fmap Object.attachedTo . flip Game.lookupObject gs) named
   Effect.MoveToZone (MoveToZone.MkMoveToZone ref _ _ _ _ _ _) -> choosesFromNothing ref
-  -- CR 121.3's second sentence: a player an effect says can't draw can't
-  -- choose an offered draw. The drawers are the executing arm's own read.
-  -- data/scenarios/cant-draw/cr-121-3-a-player-who-can-t-draw-is-not-offered-a-draw.json
-  -- proves it.
-  Effect.Draw (Draw.MkDraw ref _ _) ->
+  -- CR 121.3's second sentence and CR 121.2b: a player an effect says can't
+  -- draw can't choose an offered draw, nor one of more cards than a limit
+  -- leaves. The drawers are the executing arm's own read.
+  -- data/scenarios/cant-draw's "is not offered" scenarios prove both.
+  Effect.Draw (Draw.MkDraw ref quantity _) ->
     let drawers = playerRefPlayers legal resolving source controller gs ref
-     in not (null drawers) && all (`PlayerEffect.prohibitsDrawing` gs) drawers
+        offered = maybe 1 (max 1 . Integer.toNaturalSaturating) (Quantity.evaluateFor viewOf context gs resolving source quantity)
+     in not (null drawers) && all (\drawer -> PlayerEffect.prohibitsDrawingCards offered drawer gs) drawers
   -- CR 701.17b: "a player can't mill a number of cards greater than the number
   -- of cards in their library. If given the choice to do so, they can't choose
   -- to take that action." The rule states the whole comparison and not merely

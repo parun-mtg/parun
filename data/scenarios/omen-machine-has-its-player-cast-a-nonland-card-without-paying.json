@@ -1,0 +1,12 @@
+{
+  "description": "CR 608.2g Omen Machine has its player cast the nonland card they exiled without paying its mana cost",
+  "note": "Bob has no mana and casts the Grizzly Bears from exile as the trigger resolves; the Mountain under it is not drawn.",
+  "board": {"active": "bob", "turn": 2, "step": "Upkeep", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Omen Machine"}], "library": [{"card": "Island"}]},
+    {"name": "bob", "library": [{"card": "Grizzly Bears"}, {"card": "Mountain"}]}
+  ]},
+  "timeline": [
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Mountain", "count": 0}}}
+  ]
+}

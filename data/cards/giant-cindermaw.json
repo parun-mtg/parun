@@ -25,7 +25,9 @@
         {
           "effect": {
             "type": "Cant",
-            "value": "GainLife"
+            "value": {
+              "type": "GainLife"
+            }
           },
           "scope": {
             "type": "AnyPlayer"

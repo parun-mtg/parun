@@ -62,7 +62,9 @@
         {
           "effect": {
             "type": "Cant",
-            "value": "GainLife"
+            "value": {
+              "type": "GainLife"
+            }
           },
           "name": "hush",
           "scope": {

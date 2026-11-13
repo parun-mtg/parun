@@ -1,0 +1,21 @@
+{
+  "description": "CR 121.2b Narset, Parter of Veils limits each opponent to one draw a turn and not her controller: bob's Think Twice draws nothing after his draw step, and alice's two draw two",
+  "note": "Bob draws the Forest for his draw step. Alice answers his Think Twice with her own and then its flashback, drawing the Plains and the Island; his then resolves and the Mountain stays on his library.",
+  "board": {"active": "bob", "turn": 2, "step": "Upkeep", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Narset, Parter of Veils", "counters": [{"key": {"type": "Loyalty"}, "value": 5}]}, {"card": "Island", "label": "a1", "ready": true}, {"card": "Island", "label": "a2", "ready": true}, {"card": "Island", "label": "a3", "ready": true}, {"card": "Island", "label": "a4", "ready": true}, {"card": "Island", "label": "a5", "ready": true}], "hand": [{"card": "Think Twice", "label": "att"}], "library": [{"card": "Plains"}, {"card": "Island"}, {"card": "Swamp"}]},
+    {"name": "bob", "battlefield": [{"card": "Island", "label": "b1", "ready": true}, {"card": "Island", "label": "b2", "ready": true}], "hand": [{"card": "Think Twice", "label": "btt"}], "library": [{"card": "Forest"}, {"card": "Mountain"}, {"card": "Swamp"}]}
+  ]},
+  "timeline": [
+    {"turn": 2, "step": "DrawStep", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Forest", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$btt", "mana": ["$b1", "$b2"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$att", "mana": ["$a1", "$a2", null]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "Think Twice#2", "mana": ["$a3", "$a4", "$a5"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "PostcombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Think Twice", "count": 1}}},
+    {"turn": 2, "step": "PostcombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Mountain", "count": 0}}},
+    {"turn": 2, "step": "PostcombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Plains", "count": 1}}},
+    {"turn": 2, "step": "PostcombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 1}}}
+  ]
+}

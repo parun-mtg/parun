@@ -7,12 +7,13 @@ import qualified Parun.Types.ForbiddenAct as ForbiddenAct
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ForbiddenAct" $ do
-  Spec.it s "DrawCards" $
-    Common.assertCodec
-      s
-      ForbiddenAct.codec
-      ForbiddenAct.DrawCards
-      " \"DrawCards\" "
-  Spec.it s "round trips every constructor" $ Common.assertEnumCodec s ForbiddenAct.codec
+  Spec.it s "GainLife" $
+    Common.assertCodec s ForbiddenAct.codec ForbiddenAct.GainLife " {\"type\":\"GainLife\"} "
+  Spec.it s "LoseLife" $
+    Common.assertCodec s ForbiddenAct.codec ForbiddenAct.LoseLife " {\"type\":\"LoseLife\"} "
+  Spec.it s "DrawMoreThan" $
+    Common.assertCodec s ForbiddenAct.codec (ForbiddenAct.DrawMoreThan 1) " {\"type\":\"DrawMoreThan\",\"value\":1} "
+  Spec.it s "BecomeMonarch" $
+    Common.assertCodec s ForbiddenAct.codec ForbiddenAct.BecomeMonarch " {\"type\":\"BecomeMonarch\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s ForbiddenAct.codec

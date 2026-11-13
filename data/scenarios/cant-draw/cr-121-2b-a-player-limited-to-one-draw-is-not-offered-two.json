@@ -1,0 +1,16 @@
+{
+  "description": "CR 121.2b a player limited to one draw a turn is not offered a draw of two: under Spirit of the Labyrinth, Warden of the Woods's \"you may draw two cards\" asks nothing",
+  "note": "Bob has drawn nothing this turn, so one draw is open to him and two are not. Alice shocks his Warden of the Woods; its trigger resolves with no ChooseOptional, which the timeline does not answer and an unscheduled prompt would fail on, and the Forest stays on his library.",
+  "board": {"active": "alice", "turn": 1, "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Mountain", "label": "mountain", "ready": true}], "hand": [{"card": "Shock", "label": "shock"}], "library": [{"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Spirit of the Labyrinth"}, {"card": "Warden of the Woods", "label": "warden"}], "library": [{"card": "Forest"}, {"card": "Mountain"}, {"card": "Swamp"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$shock", "mana": ["$mountain"], "targets": ["$warden"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$warden", "damage": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Forest", "count": 0}}}
+  ]
+}

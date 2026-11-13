@@ -1,0 +1,19 @@
+{
+  "description": "CR 121.3 a player who has drawn the turn's one card is not offered a draw: under Spirit of the Labyrinth, Aven Fisher's \"you may draw a card\" asks nothing after Think Twice",
+  "note": "Alice draws the Forest with Think Twice, then bolts her own Aven Fisher. Its trigger resolves with no ChooseOptional, which the timeline does not answer and an unscheduled prompt would fail on; the Mountain stays on her library.",
+  "board": {"active": "alice", "turn": 1, "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Spirit of the Labyrinth"}, {"card": "Aven Fisher", "label": "fisher"}, {"card": "Mountain", "label": "mountain", "ready": true}, {"card": "Island", "label": "i1", "ready": true}, {"card": "Island", "label": "i2", "ready": true}], "hand": [{"card": "Lightning Bolt", "label": "bolt"}, {"card": "Think Twice", "label": "tt"}], "library": [{"card": "Forest"}, {"card": "Mountain"}, {"card": "Swamp"}]},
+    {"name": "bob", "library": [{"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$tt", "mana": ["$i1", "$i2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Forest", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt", "mana": ["$mountain"], "targets": ["$fisher"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Aven Fisher", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Mountain", "count": 0}}}
+  ]
+}

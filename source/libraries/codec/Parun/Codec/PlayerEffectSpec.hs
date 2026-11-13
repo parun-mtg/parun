@@ -655,7 +655,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       s
       PlayerEffect.codec
       (PlayerEffect.Cant ForbiddenAct.GainLife)
-      " {\"type\":\"Cant\",\"value\":\"GainLife\"} "
+      " {\"type\":\"Cant\",\"value\":{\"type\":\"GainLife\"}} "
   -- CR 101.2 over CR 104.2b, Abyssal Persecutor's "you can't win the game"
   -- (data/cards/abyssal-persecutor.json).
   Spec.it s "Precluded, Abyssal Persecutor's restriction" $

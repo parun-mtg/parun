@@ -1,0 +1,20 @@
+{
+  "description": "CR 121.2b / 101.2 a draw made in another player's place is the taker's: alice's Plagiarize takes bob's draw, and under his Narset, Parter of Veils she has already drawn her one card",
+  "note": "Bob controls Narset, so only alice is limited. She draws the Forest with Think Twice, then Plagiarizes bob; his Think Twice's draw is skipped and hers in its place can't happen, so her Mountain and his Swamp stay on their libraries.",
+  "board": {"active": "alice", "turn": 1, "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Island", "label": "a1", "ready": true}, {"card": "Island", "label": "a2", "ready": true}, {"card": "Island", "label": "a3", "ready": true}, {"card": "Island", "label": "a4", "ready": true}, {"card": "Island", "label": "a5", "ready": true}, {"card": "Island", "label": "a6", "ready": true}], "hand": [{"card": "Think Twice", "label": "att"}, {"card": "Plagiarize", "label": "plag"}], "library": [{"card": "Forest"}, {"card": "Mountain"}, {"card": "Plains"}]},
+    {"name": "bob", "battlefield": [{"card": "Narset, Parter of Veils", "counters": [{"key": {"type": "Loyalty"}, "value": 5}]}, {"card": "Island", "label": "b1", "ready": true}, {"card": "Island", "label": "b2", "ready": true}], "hand": [{"card": "Think Twice", "label": "btt"}], "library": [{"card": "Swamp"}, {"card": "Swamp"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$att", "mana": ["$a1", "$a2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Forest", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$plag", "mana": ["$a3", "$a4", "$a5", "$a6"], "targets": ["$bob"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Plagiarize", "count": 1}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "do": {"Cast": {"object": "$btt", "mana": ["$b1", "$b2"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Think Twice", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Mountain", "count": 0}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Swamp", "count": 0}}}
+  ]
+}

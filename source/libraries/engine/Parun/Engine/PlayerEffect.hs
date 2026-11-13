@@ -57,6 +57,7 @@ import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Integer as Integer
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
@@ -1107,7 +1108,7 @@ prohibitsCounters pid kind gs =
 -- a name: the restriction Jared Carthalion prints is on the PLAYER, and rule 726
 -- gives the designation no parts for a narrowing to name.
 prohibitsBecomingMonarch :: PlayerId -> GameState -> Bool
-prohibitsBecomingMonarch = forbids ForbiddenAct.BecomeMonarch
+prohibitsBecomingMonarch = forbids (== ForbiddenAct.BecomeMonarch)
 
 -- CR 704.5i / 704.5j: does the state-based action not apply to the permanents
 -- `pid` controls (Sanctum Lurker, Hall of Echoes)? A DISJUNCTION: one applicable
@@ -3937,19 +3938,20 @@ losesLifeForUnspentMana pid gs =
 -- CR 810.9g: asked of every player sharing this one's life total
 -- (Game.lifeSharers), since a teammate who can't gain life stops the team.
 prohibitsGainingLife :: PlayerId -> GameState -> Bool
-prohibitsGainingLife pid gs = any (\member -> forbids ForbiddenAct.GainLife member gs) (Game.lifeSharers pid gs)
+prohibitsGainingLife pid gs = any (\member -> forbids (== ForbiddenAct.GainLife) member gs) (Game.lifeSharers pid gs)
 
--- CR 101.2 / 614.17: does an effect say `pid` can't perform `act`? The one
--- reading of PlayerEffect.Cant, behind prohibitsGainingLife, prohibitsLosingLife,
--- prohibitsDrawing and prohibitsBecomingMonarch, which say who else is asked.
+-- CR 101.2 / 614.17: does an effect say `pid` can't perform an act `reaches`
+-- names? The one reading of PlayerEffect.Cant, behind prohibitsGainingLife,
+-- prohibitsLosingLife, prohibitsDrawingCards and prohibitsBecomingMonarch, which
+-- say who else is asked.
 --
 -- A DISJUNCTION, CR 101.2's posture: one applicable "can't" outranks every
 -- permission, so a second changes no answer and CR 613.11's timestamp order has
 -- nothing to order. Read LIVE through `applying` (CR 604.2).
-forbids :: ForbiddenAct.ForbiddenAct -> PlayerId -> GameState -> Bool
-forbids act pid gs =
+forbids :: (ForbiddenAct.ForbiddenAct -> Bool) -> PlayerId -> GameState -> Bool
+forbids reaches pid gs =
   let prohibits effect = case effect of
-        PlayerEffect.Cant forbidden -> forbidden == act
+        PlayerEffect.Cant forbidden -> reaches forbidden
         -- Every other arm is about casting, playing, targeting, countering,
         -- searching, paying, keeping mana, rule 702 protection or how a coin
         -- flip came out, and forbids no act of CR 119.7's, 119.8's, 121.3's or
@@ -4024,16 +4026,34 @@ forbids act pid gs =
 -- CR 810.9h: asked of every player sharing this one's life total, the
 -- prohibitsGainingLife reading; data/scenarios/team/cr-810-9h-* prove it.
 prohibitsLosingLife :: PlayerId -> GameState -> Bool
-prohibitsLosingLife pid gs = any (\member -> forbids ForbiddenAct.LoseLife member gs) (Game.lifeSharers pid gs)
+prohibitsLosingLife pid gs = any (\member -> forbids (== ForbiddenAct.LoseLife) member gs) (Game.lifeSharers pid gs)
 
--- CR 121.3 / 614.17: does an effect say this player can't draw cards? Read by
--- Parun.Engine.Event.drawCardSpentReturning AHEAD of its proposal, since CR 614.17c
--- lets no replacement effect modify an event that can't happen, and by
--- Parun.Engine.Resolve.Common.effectIsImpossible for rule 121.3's offered draw.
--- Per player: CR 810 shares life totals and poison, not draws.
+-- CR 121.3 / 614.17: does an effect say this player can't draw another card?
+-- Read by Parun.Engine.Event.drawCardSpentReturning AHEAD of its proposal, since
+-- CR 614.17c lets no replacement effect modify an event that can't happen.
 -- data/scenarios/cant-draw proves each.
 prohibitsDrawing :: PlayerId -> GameState -> Bool
-prohibitsDrawing = forbids ForbiddenAct.DrawCards
+prohibitsDrawing = prohibitsDrawingCards 1
+
+-- CR 121.2b / 121.3: does an effect say this player can't draw this many more
+-- cards? Read at 1 by prohibitsDrawing, rule 121.2b's individual draw, and at
+-- the number offered by Parun.Engine.Resolve.Common.effectIsImpossible, the
+-- choice the same rule withholds. Per player: CR 810 shares life totals and
+-- poison, not draws.
+--
+-- A limit counts TurnRegisters.drawsThisTurn, the cards this player has DRAWN
+-- this turn: one drawn before the effect began counts (Narset, Parter of
+-- Veils's 2019-05-03 ruling) and a draw a replacement took does not (Spirit of
+-- the Labyrinth's 2014-02-01 ruling).
+prohibitsDrawingCards :: Natural -> PlayerId -> GameState -> Bool
+prohibitsDrawingCards count pid gs =
+  let drawn = maybe 0 Natural.length (Map.lookup pid (TurnRegisters.drawsThisTurn (GameState.turn gs)))
+      reaches act = case act of
+        ForbiddenAct.DrawMoreThan limit -> drawn + count > limit
+        ForbiddenAct.GainLife -> False
+        ForbiddenAct.LoseLife -> False
+        ForbiddenAct.BecomeMonarch -> False
+   in forbids reaches pid gs
 
 -- CR 104.2b / 104.3: does an effect say this player can't win, or can't lose,
 -- the game? Read by Parun.Engine.Sba's CR 704.5 losses and Parun.Engine.Resolve.Effect's

@@ -1,0 +1,15 @@
+{
+  "description": "CR 121.2b an instruction to draw two is partially carried out: under Spirit of the Labyrinth, Divination draws one card",
+  "note": "Alice has drawn nothing this turn, so the first of Divination's two individual draws (CR 121.2) happens and the second can't: the Forest is in her hand and the Mountain stays on her library.",
+  "board": {"active": "alice", "turn": 1, "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Spirit of the Labyrinth"}, {"card": "Island", "label": "i1", "ready": true}, {"card": "Island", "label": "i2", "ready": true}, {"card": "Island", "label": "i3", "ready": true}], "hand": [{"card": "Divination", "label": "div"}], "library": [{"card": "Forest"}, {"card": "Mountain"}, {"card": "Swamp"}]},
+    {"name": "bob", "library": [{"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$div", "mana": ["$i1", "$i2", "$i3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Divination", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Forest", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Mountain", "count": 0}}}
+  ]
+}
