@@ -1,0 +1,129 @@
+{
+  "description": "CR 105.2 / 605.3b: Bloom Tender beside a Wind Drake pays {G}{U} by itself, and no {G}{W} for the white card in hand",
+  "note": "The Tender is alice's only mana source. Watchwolf's white is in her hand, not among her permanents, so its cast is refused; Gaea's Skyfolk's {G}{U} is the Tender's green and the Drake's blue, one tap.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Bloom Tender",
+            "label": "tender",
+            "ready": true
+          },
+          {
+            "card": "Wind Drake"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Watchwolf",
+            "label": "wolf"
+          },
+          {
+            "card": "Gaea's Skyfolk",
+            "label": "skyfolk"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$wolf",
+          "mana": [
+            "$tender"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$skyfolk",
+          "mana": [
+            "$tender"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Gaea's Skyfolk",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Watchwolf",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$tender",
+          "tapped": true
+        }
+      }
+    }
+  ]
+}

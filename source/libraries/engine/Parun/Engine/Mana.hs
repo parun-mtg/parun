@@ -310,6 +310,11 @@ noActivations = Activations.MkActivations {Activations.times = 0, Activations.cl
 -- Cryptic Spires' circled colours are the SOURCE's projected ones (CR 207.5,
 -- 613.1): a copy has the original's (CR 707.2), and an object that only gained
 -- the ability has none, so CR 106.5 adds nothing.
+--
+-- Bloom Tender's "for each color among" SETTLES one mana of every colour the
+-- matched permanents have between them (CR 105.2), read off the board as the
+-- ability resolves (CR 608.2h): the colours are determined, so nothing is
+-- asked, and a colourless board adds none (CR 105.2c).
 produced :: Map.Map SlotName (Set.Set Recipient.Recipient) -> ObjectId -> GameState -> ManaProduction -> Produced
 produced bound oid gs = producedVisiting bound Set.empty oid gs gs
 
@@ -341,6 +346,10 @@ producedVisiting bound visited oid gs poolBoard production = case production of
   ManaProduction.DraftNoted card ->
     let noted = maybe Seq.empty (Map.findWithDefault Seq.empty card . Player.draftNotes) (Projection.controllerOf oid gs >>= (`Map.lookup` GameState.players gs))
      in among (fmap ManaType.Colored (Set.toList (Set.fromList [color | DraftNote.Color color <- Foldable.toList noted])))
+  ManaProduction.EachColorAmong matching ->
+    let context = Projection.sourceContext gs (Projection.controllerOf oid gs) oid
+        colorsOf other = maybe Set.empty (\view -> if Filter.matches context view matching then Filter.colors view else Set.empty) (Projection.fullView gs other)
+     in Settles (fmap ManaType.Colored (Set.toList (foldMap colorsOf (Set.toList (GameState.battlefield gs)))))
   where
     among types = case types of
       first : second : more -> Offers ColorSpread.OneColor (first NonEmpty.:| (second : more))
@@ -930,6 +939,7 @@ readsPool (clause, _) = any (poolProduction . ManaAddition.production) (Maybe.ma
       ManaProduction.InCommanderIdentity -> False
       ManaProduction.Circled -> False
       ManaProduction.DraftNoted _ -> False
+      ManaProduction.EachColorAmong _ -> False
 
 -- CR 603.7a / 106.6a: the delayed ability a Parun.Types.WhenSpent creates as
 -- one mana is produced, its text read off the source's rules text now.

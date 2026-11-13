@@ -4889,7 +4889,7 @@ restrictionFilters restriction =
 manaRiderFilters :: ManaRider.ManaRider -> [Filter.Type.Filter Keyword.Keyword]
 manaRiderFilters rider = [ManaRider.condition rider]
 
--- The predicate CR 106.7's "could produce" carries.
+-- The predicate CR 106.7's "could produce" carries, or "each color among".
 manaProductionFilters :: ManaProduction.ManaProduction -> [Filter.Type.Filter Keyword.Keyword]
 manaProductionFilters production = case production of
   ManaProduction.OfType _ -> []
@@ -4903,6 +4903,7 @@ manaProductionFilters production = case production of
   ManaProduction.InCommanderIdentity -> []
   ManaProduction.Circled -> []
   ManaProduction.DraftNoted _ -> []
+  ManaProduction.EachColorAmong among -> [among]
 
 -- AddMana's and Firebend's shared payload: CR 106.7's group, CR 106.6's
 -- restriction, rider and spend trigger.

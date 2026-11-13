@@ -4,6 +4,8 @@ import qualified Data.Maybe as Maybe
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.ColorSpread as ColorSpread
 import qualified Parun.Codec.CouldProduce as CouldProduce
+import qualified Parun.Codec.Filter as Filter
+import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.ManaCount as ManaCount
 import qualified Parun.Codec.ManaType as ManaType
 import qualified Parun.JsonCodec.Arm as Arm
@@ -27,7 +29,8 @@ codec =
       Arm.nullary "ProducedByTapped" ManaProduction.ProducedByTapped,
       Arm.nullary "InCommanderIdentity" ManaProduction.InCommanderIdentity,
       Arm.nullary "Circled" ManaProduction.Circled,
-      Arm.payload "DraftNoted" CardName.codec ManaProduction.DraftNoted (\x -> case x of ManaProduction.DraftNoted y -> Just y; _ -> Nothing)
+      Arm.payload "DraftNoted" CardName.codec ManaProduction.DraftNoted (\x -> case x of ManaProduction.DraftNoted y -> Just y; _ -> Nothing),
+      Arm.payload "EachColorAmong" (Filter.codec Keyword.codec) ManaProduction.EachColorAmong (\x -> case x of ManaProduction.EachColorAmong y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: ManaProduction.ManaProduction -> String
@@ -43,3 +46,4 @@ tagOf x = case x of
   ManaProduction.InCommanderIdentity {} -> "InCommanderIdentity"
   ManaProduction.Circled {} -> "Circled"
   ManaProduction.DraftNoted {} -> "DraftNoted"
+  ManaProduction.EachColorAmong {} -> "EachColorAmong"
