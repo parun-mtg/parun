@@ -1335,7 +1335,7 @@ becamePermanents spell events =
 
 -- CR 602.1: every activated ability a set of characteristics gives,
 -- Keyword.activatedAbilitiesOf over the projection's own list and rule 702's
--- battlefield mint, which no CR 612 text change reaches (Projection's
+-- battlefield mint, a lending card's keywords (PC.lentKeywords) after its own, which no CR 612 text change reaches (Projection's
 -- mintedTriggeredAbilitiesOf says why). CR
 -- 804.2's where `deploys`, which the caller decides: Deploy.grants over the
 -- characteristics, and only for a permanent (CR 109.2).
@@ -1346,7 +1346,7 @@ abilitiesOf deploys pc =
   Keyword.activatedAbilitiesOf
     deploys
     (Map.keysSet (PC.keywords pc))
-    (PC.activatedAbilities pc <> Keyword.battlefieldAbilitiesOf (PC.keywords pc))
+    (PC.activatedAbilities pc <> Keyword.battlefieldAbilitiesOf (PC.keywords pc) <> Keyword.lentBattlefieldAbilitiesOf (PC.lentKeywords pc))
 
 -- CR 602.2 / 608.2i: an object one of the turn's past activations recorded
 -- (Parun.Types.PastActivation), seen as it was when the activation began rather
@@ -1425,7 +1425,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.supertypes = PC.supertypes snapshot,
       Filter.colors = PC.colors snapshot,
       Filter.subtypes = PC.subtypes snapshot,
-      Filter.keywords = Map.keysSet (PC.keywords snapshot),
+      Filter.keywords = Keyword.heldBy snapshot,
       Filter.power = PC.power snapshot,
       Filter.toughness = PC.toughness snapshot,
       Filter.intensity = PC.intensity snapshot,

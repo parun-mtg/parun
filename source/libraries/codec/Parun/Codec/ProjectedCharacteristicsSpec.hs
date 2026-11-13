@@ -33,6 +33,7 @@ import qualified Parun.Types.Face as Face.Type
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
+import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -106,6 +107,7 @@ testCharacteristics =
       -- round trip to the same JSON.
       PC.lostAllAbilities = True,
       PC.barredKeywords = Set.singleton (KeywordDesignator.OfKeyword Keyword.Shroud),
+      PC.lentKeywords = [LentKeyword.MkLentKeyword {LentKeyword.keyword = Keyword.Flanking, LentKeyword.instances = 2, LentKeyword.lender = AbilityName.MkAbilityName (Text.pack "acquiredFrom7"), LentKeyword.triggered = True, LentKeyword.restrictions = []}],
       PC.hasFullText = True,
       PC.wordChanges = [ChangeWord.MkChangeWord (TextWord.SubtypeWord Subtype.Spirit) (TextWord.SubtypeWord Subtype.Elf)],
       -- A different keyword from `keywords` above, so a codec arm reading the
@@ -179,6 +181,7 @@ testCharacteristicsJson =
     <> ","
     <> "\"lostAllAbilities\":true,"
     <> "\"barredKeywords\":[{\"type\":\"OfKeyword\",\"value\":{\"type\":\"Shroud\"}}],"
+    <> "\"lentKeywords\":[{\"keyword\":{\"type\":\"Flanking\"},\"instances\":2,\"lender\":\"acquiredFrom7\",\"triggered\":true}],"
     <> "\"hasFullText\":true,"
     <> "\"wordChanges\":[{\"from\":{\"type\":\"Spirit\"},\"to\":{\"type\":\"Elf\"}}],"
     <> "\"textChangedKeywords\":[{\"key\":{\"type\":\"Trample\"},\"value\":1}],"
@@ -239,6 +242,7 @@ minimalCharacteristics =
       PC.ruleAbilities = mempty,
       PC.lostAllAbilities = False,
       PC.barredKeywords = Set.empty,
+      PC.lentKeywords = [],
       PC.hasFullText = False,
       PC.wordChanges = [],
       PC.textChangedKeywords = Map.empty,

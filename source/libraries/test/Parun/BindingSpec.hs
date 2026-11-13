@@ -53,6 +53,7 @@ sampleSnapshot =
       PC.ruleAbilities = mempty,
       PC.lostAllAbilities = False,
       PC.barredKeywords = Set.empty,
+      PC.lentKeywords = [],
       PC.hasFullText = False,
       PC.wordChanges = [],
       PC.textChangedKeywords = Map.empty,

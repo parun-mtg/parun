@@ -1044,6 +1044,8 @@ library codec
     Parun.Codec.LegalityTable
     Parun.Codec.LegalityTableSpec
     Parun.Codec.LentCards
+    Parun.Codec.LentKeyword
+    Parun.Codec.LentKeywordSpec
     Parun.Codec.LibraryDeparture
     Parun.Codec.LibraryDepartureSpec
     Parun.Codec.LibraryDepth
@@ -3209,6 +3211,7 @@ library types
     Parun.Types.Legality
     Parun.Types.LegalityTable
     Parun.Types.LentCards
+    Parun.Types.LentKeyword
     Parun.Types.LibraryDeparture
     Parun.Types.LibraryDepth
     Parun.Types.LibraryPlacement
