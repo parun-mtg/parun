@@ -1321,6 +1321,54 @@ aimingsBy referent signature ranges slots =
          in List.foldl' place Map.empty (concatMap dealt classes)
    in concatMap realise (traverse (\name -> fmap ((,) name) (draws name)) (Map.keys slots))
 
+-- CR 601.2c: the legal sets once per answer the slots a POOL names could take,
+-- and which slots those are. Each answer narrows the slot it names to itself
+-- and the slots whose pool reads it to what it reaches, so a walk over one
+-- narrowed map needs no joint check for the pool's sake: Drafna's Restoration
+-- is walked once per player, over that player's graveyard.
+--
+-- Only a named slot taking at most one target, whose own pool names none, is
+-- split, and only a dependent whose pool is its one read of a sibling is
+-- narrowed: `legalUnder` is asked with the named slots alone bound, which would
+-- misjudge a filter or bound reading another. `ranges` is aimingRanges over
+-- `sets`. A map with nothing to split comes back whole.
+poolSplits :: (Map SlotName Binding.Type.Binding -> TargetSlot -> Set Recipient) -> Map SlotName (Natural, Natural) -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> (Set SlotName, [Map SlotName (Set Recipient)])
+poolSplits legalUnder ranges slots sets =
+  let declared = Map.keysSet slots
+      namedBy = scopeSlot . TargetSlot.pool
+      splittable name =
+        maybe False ((<= 1) . snd) (Map.lookup name ranges)
+          && maybe False (not . dependsOnSlot . TargetSlot.pool) (Map.lookup name slots)
+      split = Set.filter splittable (Set.fromList (Maybe.mapMaybe namedBy (Map.elems slots)))
+      answers name =
+        [Set.empty | maybe False ((== 0) . fst) (Map.lookup name ranges)]
+          <> fmap Set.singleton (Set.toList (Map.findWithDefault Set.empty name sets))
+      poolOnly = Set.null . siblingReads declared
+      narrowed chosen =
+        let bindings = fmap Binding.toRecipients (Map.filter (not . Set.null) chosen)
+            narrow name legal = case Map.lookup name slots of
+              Just slot | maybe False (`Set.member` split) (namedBy slot), poolOnly slot -> Set.intersection legal (legalUnder bindings slot)
+              _ -> legal
+         in Map.union chosen (Map.mapWithKey narrow sets)
+   in (split, fmap (narrowed . Map.fromList) (traverse (\name -> fmap ((,) name) (answers name)) (Set.toList split)))
+
+-- CR 601.2c: the slots whose targets the joint check may tell apart one from
+-- another -- a slot whose filter or computed bound reads a sibling, or whose
+-- pool names one poolSplits did not split (`split`), and every slot so read.
+-- jointlyJudged's fourth way, `together`, reads only the zone holding each
+-- target (togetherRefused) and is not here.
+entangledSlots :: Set SlotName -> Map SlotName TargetSlot -> Set SlotName
+entangledSlots split slots =
+  let declared = Map.keysSet slots
+      reads_ slot =
+        Set.union
+          (siblingReads declared slot)
+          (Set.difference (Set.intersection declared (foldMap Set.singleton (scopeSlot (TargetSlot.pool slot)))) split)
+      tangle name slot =
+        let read_ = reads_ slot
+         in if Set.null read_ then Set.empty else Set.insert name read_
+   in Map.foldMapWithKey tangle slots
+
 -- CR 601.2c: the counts each slot may be answered with, narrowed by its legal set
 -- exactly as chooseTargets narrows the offer (announcedRange, slotCapacities) --
 -- what `aimings` above enumerates.
@@ -1505,7 +1553,8 @@ boundValueUnder reader perspective unannounced source gs slot bindings =
 -- before leaving the bound open ("up to three" over seventeen candidates is 834,
 -- and "up to two" over forty-four is 991), and how many announcements
 -- jointlyFillableGiven visits before answering fillable ("any number" over ten
--- candidates is 1024).
+-- candidates is 1024), and how many aimings Parun.Engine.Cast.castAimable walks
+-- before its gate answers payable.
 subsetBudget :: Natural
 subsetBudget = 1024
 
@@ -1557,6 +1606,15 @@ boundNamesSibling declared = not . Set.null . boundSiblings declared
 boundSiblings :: Set SlotName -> TargetSlot -> Set SlotName
 boundSiblings declared slot =
   Set.intersection declared (foldMap QuantitySlot.allSlots (Maybe.maybeToList (TargetSlot.amount slot) <> Maybe.maybeToList (SlotCount.quantity (TargetSlot.count slot)) <> Maybe.maybeToList (TargetSlot.divided slot)))
+
+-- WHICH of the announcement's slots this slot's FILTER or bound reads: the two
+-- reads of a sibling legalSetsGiven's second pass cannot narrow
+-- (jointlyFillableGiven).
+siblingReads :: Set SlotName -> TargetSlot -> Set SlotName
+siblingReads declared slot =
+  Set.union
+    (Set.intersection declared (foldMap Filter.boundSlots (TargetSlot.filter slot)))
+    (boundSiblings declared slot)
 
 -- Must this slot's answer be judged against what its SIBLING slots were answered
 -- with (CR 601.2c)? Three ways one slot depends on another, and they are the
@@ -2316,10 +2374,7 @@ zoneHolding gs recipient = do
 jointlyFillableGiven :: StackObjectKind.StackObjectKind -> Maybe AbilityName.AbilityName -> Pools -> Maybe PlayerId -> Map SlotName Binding.Type.Binding -> ObjectId -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> GameState -> Bool
 jointlyFillableGiven kind reader pools perspective seed source slots sets gs =
   let declared = Map.keysSet slots
-      reads_ slot =
-        Set.union
-          (Set.intersection declared (foldMap Filter.boundSlots (TargetSlot.filter slot)))
-          (boundSiblings declared slot)
+      reads_ = siblingReads declared
       readers = Map.filter (not . Set.null . reads_) slots
       -- The slots being ENUMERATED: the ones a reader names, a reader that is
       -- itself named included.

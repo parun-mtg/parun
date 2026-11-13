@@ -2553,6 +2553,148 @@ cleverConcealmentSpec s registry =
     Spec.assertBool s (not (S.castable S.alice shortId short)) "CR 601.2f no aiming pays {W}{W} without a Plains, and the search ends"
     Spec.assertBool s (S.castable S.alice paidId paid) "and two Plains pay it with nothing targeted"
 
+-- Drafna's Restoration {U} Sorcery: "Put any number of target artifact cards
+-- from target player's graveyard on top of their library in any order." bob
+-- controls Hinata, Dawn-Crowned, so each target costs alice {1} more; twenty
+-- Ornithopters lie in each player's graveyard and she controls `islands`
+-- Islands.
+--
+-- The card slot's pool names the player slot, so the gate's walk is judged
+-- jointly. It is split per player (Target.poolSplits) and each graveyard's
+-- Ornithopters stay one class: twenty-one target counts a player, where every
+-- subset of forty cards does not finish. No Island is the board that walks the
+-- whole search, and the player alone is a target, so one Island is short too.
+drafnasRestorationSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+drafnasRestorationSpec s registry = Spec.describe s "Drafna's Restoration" $ do
+  Spec.it s "CR 601.2f under Hinata the gate tries each player's target counts, not each subset" $ do
+    island <- S.printingOf s registry "Island"
+    thopter <- S.printingOf s registry "Ornithopter"
+    hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
+    restoration <- S.printingOf s registry "Drafna's Restoration"
+    let board lands =
+          let withLands = S.landsFor island S.alice lands (Setup.emptyGame S.bothPlayers)
+              (_, withHinata) = S.addPermanent hinata S.bob withLands
+              withThopters = List.foldl' (\g pid -> snd (S.addGraveyardCard thopter pid g)) withHinata (concat (replicate 20 [S.alice, S.bob]))
+           in inMainPhase (S.addHandCard restoration S.alice withThopters)
+        (noneId, none) = board 0
+        (shortId, short) = board 1
+        (paidId, paid) = board 2
+    Spec.assertBool s (not (S.castable S.alice noneId none)) "CR 601.2f no aiming pays {U} without an Island, and the search ends"
+    Spec.assertBool s (not (S.castable S.alice shortId short)) "CR 601.2c the player is a target, so one Island is {1} short of the cheapest aiming"
+    Spec.assertBool s (S.castable S.alice paidId paid) "and two Islands pay for the player alone"
+  -- alice's own Hinata under her three Vryn Wingmares ("Noncreature spells cost
+  -- {1} more to cast"): {3}{U} less {1} a target, over one Island, so only a
+  -- player and two cards from that player's graveyard pay. Her graveyard holds
+  -- one Ornithopter and bob's `his`.
+  Spec.it s "CR 601.2c under Hinata each player's aimings hold that player's cards alone" $ do
+    island <- S.printingOf s registry "Island"
+    thopter <- S.printingOf s registry "Ornithopter"
+    hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
+    wingmare <- S.printingOf s registry "Vryn Wingmare"
+    restoration <- S.printingOf s registry "Drafna's Restoration"
+    let board his =
+          let withLands = S.landsFor island S.alice 1 (Setup.emptyGame S.bothPlayers)
+              (_, withHinata) = S.addPermanent hinata S.alice withLands
+              withWingmares = List.foldl' (\g _ -> snd (S.addPermanent wingmare S.alice g)) withHinata [1 .. 3 :: Int]
+              withThopters = List.foldl' (\g pid -> snd (S.addGraveyardCard thopter pid g)) withWingmares (S.alice : replicate his S.bob)
+           in inMainPhase (S.addHandCard restoration S.alice withThopters)
+        (pairId, pair) = board 2
+        (loneId, lone) = board 1
+    Spec.assertBool s (S.castable S.alice pairId pair) "CR 601.2f bob and the two cards in his graveyard pay {3}{U} down to {U}"
+    Spec.assertBool s (not (S.castable S.alice loneId lone)) "and with one card in each graveyard no player brings two"
+
+-- A (card in hand, board) pair in alice's precombat main phase, with priority.
+inMainPhase :: (ObjectId.ObjectId, GameState.GameState) -> (ObjectId.ObjectId, GameState.GameState)
+inMainPhase (heldId, gs) =
+  ( heldId,
+    gs
+      { GameState.turn =
+          (GameState.turn gs)
+            { TurnRegisters.phase = Phase.PrecombatMain,
+              TurnRegisters.activePlayer = S.alice,
+              TurnRegisters.priority = Just S.alice
+            }
+      }
+  )
+
+-- Shred Memory {1}{B} Instant: "Exile up to four target cards from a single
+-- graveyard." alice controls Hinata, Dawn-Crowned, two Vryn Wingmares and one
+-- Swamp: {3}{B} less {1} a target, so only three cards pay. Her graveyard
+-- holds one Ornithopter and bob's `his`.
+--
+-- The gate's aimings class the cards by the graveyard holding them, so three
+-- drawn from one class are three CR 601.2c lets the slot hold together.
+shredMemorySpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+shredMemorySpec s registry =
+  Spec.describe s "Shred Memory" . Spec.it s "CR 601.2c under Hinata the gate's aimings draw from one graveyard" $ do
+    swamp <- S.printingOf s registry "Swamp"
+    thopter <- S.printingOf s registry "Ornithopter"
+    hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
+    wingmare <- S.printingOf s registry "Vryn Wingmare"
+    shred <- S.printingOf s registry "Shred Memory"
+    let board his =
+          let withLands = S.landsFor swamp S.alice 1 (Setup.emptyGame S.bothPlayers)
+              (_, withHinata) = S.addPermanent hinata S.alice withLands
+              withWingmares = List.foldl' (\g _ -> snd (S.addPermanent wingmare S.alice g)) withHinata [1 .. 2 :: Int]
+              withThopters = List.foldl' (\g pid -> snd (S.addGraveyardCard thopter pid g)) withWingmares (S.alice : replicate his S.bob)
+           in inMainPhase (S.addHandCard shred S.alice withThopters)
+        (threeId, three) = board 3
+        (twoId, two) = board 2
+    Spec.assertBool s (S.castable S.alice threeId three) "CR 601.2f the three cards in bob's graveyard pay {3}{B} down to {B}"
+    Spec.assertBool s (not (S.castable S.alice twoId two)) "and three cards across two graveyards do not"
+
+-- Synthetic Wide Verdict {3}{B} Sorcery (data/cards/synthetic-wide-verdict.json):
+-- "Tap any number of target creatures you control, then destroy target creature
+-- an opponent controls with mana value equal to the number of those creatures
+-- that are black." bob controls Hinata, Dawn-Crowned and an Ornithopter; alice
+-- controls `pikers` Goblin Pikers and no land, so no aiming pays.
+--
+-- The victim's bound names the gauge slot, so the gauges are told apart one by
+-- one and the gate walks every subset. Three Pikers are eight, each priced, and
+-- the cast is refused. Sixteen are 65,536: the walk stops at
+-- Target.subsetBudget and the cast is OFFERED, a false offer CR 601.2h's
+-- payment takes back with nothing changed (CR 734.1).
+wideVerdictSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+wideVerdictSpec s registry = Spec.describe s "Synthetic Wide Verdict" $ do
+  Spec.it s "CR 601.2f under Hinata the gate's every-subset walk stops at the budget" $ do
+    piker <- S.printingOf s registry "Goblin Piker"
+    thopter <- S.printingOf s registry "Ornithopter"
+    hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
+    verdict <- S.printingOf s registry "Synthetic Wide Verdict"
+    let board pikers =
+          let (_, withHinata) = S.addPermanent hinata S.bob (Setup.emptyGame S.bothPlayers)
+              (_, withThopter) = S.addPermanent thopter S.bob withHinata
+              withPikers = List.foldl' (\g _ -> snd (S.addPermanent piker S.alice g)) withThopter [1 .. pikers :: Int]
+           in inMainPhase (S.addHandCard verdict S.alice withPikers)
+        (narrowId, narrow) = board 3
+        (wideId, wide) = board 16
+        attempted = S.runPure S.identityAnswer wide (S.cast S.alice wideId)
+    Spec.assertBool s (not (S.castable S.alice narrowId narrow)) "CR 601.2f within the budget every aiming is priced, and none pays with no land"
+    Spec.assertBool s (S.castable S.alice wideId wide) "past the budget the cast is offered, and the search ends"
+    Spec.assertBool s (elem wideId (Game.zoneMembers Zone.Hand S.alice attempted)) "CR 734.1 the attempt is reversed: the Verdict is back in alice's hand"
+    Spec.assertEqWith s "and nothing is on the stack" (length (TurnRegisters.stack (GameState.turn attempted))) 0
+  -- alice's Goblin Piker and Typhoid Rats, alike to the cost and not to the
+  -- bound, against bob's Typhoid Rats (mana value 1) under his Hinata: the one
+  -- legal announcement at two targets taps her Rats, and it costs {5}{B}. A
+  -- gate that let the Piker stand for the Rats would find no victim.
+  Spec.it s "CR 601.2c under Hinata a gauge the bound tells apart is its own aiming" $ do
+    swamp <- S.printingOf s registry "Swamp"
+    piker <- S.printingOf s registry "Goblin Piker"
+    rats <- S.printingOf s registry "Typhoid Rats"
+    hinata <- S.printingOf s registry "Hinata, Dawn-Crowned"
+    verdict <- S.printingOf s registry "Synthetic Wide Verdict"
+    let board lands =
+          let withLands = S.landsFor swamp S.alice lands (Setup.emptyGame S.bothPlayers)
+              (_, withHinata) = S.addPermanent hinata S.bob withLands
+              (_, withVictim) = S.addPermanent rats S.bob withHinata
+              (_, withPiker) = S.addPermanent piker S.alice withVictim
+              (_, withRats) = S.addPermanent rats S.alice withPiker
+           in inMainPhase (S.addHandCard verdict S.alice withRats)
+        (paidId, paid) = board 6
+        (shortId, short) = board 5
+    Spec.assertBool s (S.castable S.alice paidId paid) "CR 601.2f tapping her Rats to destroy his costs {5}{B}, which six Swamps pay"
+    Spec.assertBool s (not (S.castable S.alice shortId short)) "and five do not"
+
 -- alice's Urgent Necropsy over three Forests and a Swamp, `soils` Acidic Soils
 -- in her graveyard, and bob's `victim`, in her precombat main phase with
 -- priority. Returns the state, the Necropsy and bob's permanent.
@@ -2815,6 +2957,9 @@ spec s registry = Spec.describe s "Parun.Engine.Cost" $ do
   evidenceSpec s registry
   urgentNecropsySpec s registry
   cleverConcealmentSpec s registry
+  drafnasRestorationSpec s registry
+  shredMemorySpec s registry
+  wideVerdictSpec s registry
   frailExhumationSpec s registry
   everbarkShamanSpec s registry
   putridRaptorSpec s registry
