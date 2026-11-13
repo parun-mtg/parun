@@ -136,7 +136,6 @@ dealDamage :: (Game Result -> Game ()) -> (Game Result -> Game ()) -> Game Resul
 dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source controller legal (DealDamage.MkDealDamage parts dealer excess mTally mDamaged mExcessTally) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
-      context = effectContext gs resolving controller source legal (slotBindings resolving gs)
       -- CR 120.1a: damage only to a battle, creature, or planeswalker, so every
       -- object an ObjectRef names goes through Damage.damageRecipient and none
       -- is trusted. A player recipient survives untouched (CR 115.4, CR 120.3a).
@@ -145,75 +144,86 @@ dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source
       -- slot is CR 120.2b's exception. Resolved here and carried on the
       -- DamageEvent, so every later reader of "what dealt this" sees the
       -- redirected source. CR 608.2b applies to a dealer as to a recipient: a
-      -- dealer whose target went illegal names no object and nothing is dealt.
-      dealerId = case dealer of
-        Nothing -> Just source
-        Just slot -> Maybe.listToMaybe (objectRefObjects legal resolving controller source gs (ObjectRef.InSlot slot))
-  (dealtEvents, excessDealt) <- case dealerId of
-    -- No source, no damage: CR 608.2b's illegal dealer, above.
-    Nothing -> pure ([], 0)
-    Just dealt -> do
-      -- HOW MUCH, read ONCE PER RECIPIENT off the clause that named it: Acidic
-      -- Soil's "damage to each player equal to the number of lands they
-      -- control" is one amount per seat, and Char's "4 damage to any target and
-      -- 2 damage to you" is one amount per clause. Still one action under CR
-      -- 608.2f, since every read is against the same pre-effect state. Both
-      -- kinds of recipient get it, keyed to recipientSeat. An unevaluable
-      -- amount drops that recipient, and so does a zero (CR 120.8).
+      -- dealer whose target went illegal names no object and deals nothing.
       --
-      -- CR 601.2d's division is read the same way, each recipient handed its
-      -- own part (Quantity.Share). A target CR 608.2b found illegal is never
-      -- reached, so its part is dealt to nobody rather than reassigned:
-      -- data/scenarios/divide's Forked Lightning case proves it.
-      let amountFor quantity recipient =
-            let sharing = context {Filter.shares = Binding.sharesOf recipient (slotBindings resolving gs)}
-             in case Common.recipientSeat gs recipient of
-                  Nothing -> Quantity.evaluateFor viewOf sharing gs resolving source quantity
-                  Just pid -> Common.evaluateForRecipient viewOf sharing gs resolving source pid quantity
-          -- ONE event list from EVERY clause the instruction names, so a
-          -- sentence naming objects and players at once -- Molten Disaster's
-          -- "each creature without flying and each player" -- reaches
-          -- applyDamage as a single CR 608.2f batch rather than one per clause.
-          --
-          -- And one EVENT per recipient within that batch (docs/decisions.md,
-          -- "Whether one instruction naming a recipient twice deals one damage
-          -- event"), which is
-          -- Replacement.oneEventPerRecipient's business: two clauses can name the
-          -- same recipient -- Char aimed at its own caster -- and one source
-          -- dealing damage to one recipient at one moment deals one event.
-          aimed =
-            concatMap
-              ( \part ->
-                  Maybe.mapMaybe
-                    ( \recipient -> do
-                        n <- amountFor (DamagePart.quantity part) recipient
-                        Monad.guard (n > 0)
-                        pure (Event.damageEvent gs DamageKind.Noncombat dealt recipient (Integer.toNaturalSaturating n))
-                    )
-                    (recipientsOf (DamagePart.ref part))
-              )
-              parts
-          events = Replacement.oneEventPerRecipient aimed
-          -- CR 120.4a, and BEFORE applyDamage's CR 120.4b, against the same
-          -- pre-effect state every amount was read against.
-          rewritten = Damage.redirectExcess gs excess events
-      if null rewritten
-        then pure ([], 0)
-        else do
-          -- ONE batch, not one call per recipient: CR 608.2f's "each such
-          -- action is processed simultaneously".
-          settled <- Damage.applyDamage (runReplacementEffects runSubgame) rewritten
-          -- CR 614.1a: what a run-effects rewrite put in a replaced event's
-          -- place runs inside this resolution too, and before the riders below.
-          runReplacementEffects runSubgame
-          -- CR 615.5's "immediately afterward": a shield this damage spent runs
-          -- its additional effect inside this resolution.
-          runPreventionRiders runSubgame
-          -- "This way" is what this instruction's dealer dealt (CR 120.1): a
-          -- redirect keeps the dealer, and Eye for an Eye's added damage is its
-          -- own, the scenario eye-for-an-eye-damage-back-is-not-damage-dealt-this-way.
-          let own = filter ((== dealt) . DamageEvent.source) settled
-          pure (own, Damage.excessDealt gs dealt (fmap DamageEvent.target events) own)
+      -- EVERY object the slot names deals (Allies at Last), each paired with
+      -- the context its amount is read in: the slot naming that dealer alone,
+      -- so "equal to their power" is each one's own.
+      bindings = slotBindings resolving gs
+      dealers = case dealer of
+        Nothing -> [(source, effectContext gs resolving controller source legal bindings)]
+        Just slot ->
+          [ (oid, effectContextNaming slot oid gs resolving controller source legal bindings)
+          | oid <- ListUtils.nubOrd (objectRefObjects legal resolving controller source gs (ObjectRef.InSlot slot))
+          ]
+  (dealtEvents, excessDealt) <- do
+    -- HOW MUCH, read ONCE PER RECIPIENT off the clause that named it: Acidic
+    -- Soil's "damage to each player equal to the number of lands they
+    -- control" is one amount per seat, and Char's "4 damage to any target and
+    -- 2 damage to you" is one amount per clause. Still one action under CR
+    -- 608.2f, since every read is against the same pre-effect state. Both
+    -- kinds of recipient get it, keyed to recipientSeat. An unevaluable
+    -- amount drops that recipient, and so does a zero (CR 120.8).
+    --
+    -- CR 601.2d's division is read the same way, each recipient handed its
+    -- own part (Quantity.Share). A target CR 608.2b found illegal is never
+    -- reached, so its part is dealt to nobody rather than reassigned:
+    -- data/scenarios/divide's Forked Lightning case proves it.
+    let amountFor context quantity recipient =
+          let sharing = context {Filter.shares = Binding.sharesOf recipient (slotBindings resolving gs)}
+           in case Common.recipientSeat gs recipient of
+                Nothing -> Quantity.evaluateFor viewOf sharing gs resolving source quantity
+                Just pid -> Common.evaluateForRecipient viewOf sharing gs resolving source pid quantity
+        -- ONE event list from EVERY clause the instruction names, so a
+        -- sentence naming objects and players at once -- Molten Disaster's
+        -- "each creature without flying and each player" -- reaches
+        -- applyDamage as a single CR 608.2f batch rather than one per clause.
+        --
+        -- And one EVENT per recipient within that batch (docs/decisions.md,
+        -- "Whether one instruction naming a recipient twice deals one damage
+        -- event"), which is
+        -- Replacement.oneEventPerRecipient's business: two clauses can name the
+        -- same recipient -- Char aimed at its own caster -- and one source
+        -- dealing damage to one recipient at one moment deals one event.
+        --
+        -- And from every DEALER: several objects dealing under one
+        -- instruction deal at once (CR 608.2f), each its own event's source
+        -- (CR 120.1).
+        -- data/scenarios/allies-at-last-a-shield-is-divided-between-its-two-dealers.json
+        -- proves the batch.
+        aimed =
+          [ Event.damageEvent gs DamageKind.Noncombat dealt recipient (Integer.toNaturalSaturating n)
+          | (dealt, context) <- dealers,
+            part <- Foldable.toList parts,
+            recipient <- recipientsOf (DamagePart.ref part),
+            Just n <- [amountFor context (DamagePart.quantity part) recipient],
+            n > 0
+          ]
+        events = Replacement.oneEventPerRecipient aimed
+        -- CR 120.4a, and BEFORE applyDamage's CR 120.4b, against the same
+        -- pre-effect state every amount was read against.
+        rewritten = Damage.redirectExcess gs excess events
+    if null rewritten
+      then pure ([], 0)
+      else do
+        -- ONE batch, not one call per recipient: CR 608.2f's "each such
+        -- action is processed simultaneously".
+        settled <- Damage.applyDamage (runReplacementEffects runSubgame) rewritten
+        -- CR 614.1a: what a run-effects rewrite put in a replaced event's
+        -- place runs inside this resolution too, and before the riders below.
+        runReplacementEffects runSubgame
+        -- CR 615.5's "immediately afterward": a shield this damage spent runs
+        -- its additional effect inside this resolution.
+        runPreventionRiders runSubgame
+        -- "This way" is what this instruction's dealer dealt (CR 120.1): a
+        -- redirect keeps the dealer, and Eye for an Eye's added damage is its
+        -- own, the scenario eye-for-an-eye-damage-back-is-not-damage-dealt-this-way.
+        --
+        -- Not implemented: the excess several dealers deal one recipient
+        -- together (CR 120.10); each dealer's is counted against its own bar
+        -- (#7272).
+        let dealtBy dealt = filter ((== dealt) . DamageEvent.source) settled
+        pure (filter ((`elem` fmap fst dealers) . DamageEvent.source) settled, sum [Damage.excessDealt gs dealt (fmap DamageEvent.target events) (dealtBy dealt) | (dealt, _) <- dealers])
   -- Syphon Soul's "the damage dealt this way": the SETTLED total, after CR
   -- 615's prevention had its say, so a shielded player contributes only what
   -- got through. Bound even at 0, LoseLife's tally's posture.
@@ -271,8 +281,7 @@ fight runPreventionRiders runReplacementEffects runSubgame legal (Fight.MkFight 
       -- CR 701.14d: "the damage dealt when a creature fights ISN'T COMBAT
       -- DAMAGE", so DamageKind.Noncombat and never the combat damage path.
       -- Each creature is its own blow's source (CR 120.2b), which is what makes
-      -- an ordinary fight two dealers where an Effect.DealDamage has one -- and
-      -- a self-fight one dealer again.
+      -- an ordinary fight two dealers and a self-fight one.
       --
       -- Zero is dropped rather than dealt (CR 120.8), the same guard the
       -- DealDamage arm above writes.

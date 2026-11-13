@@ -924,10 +924,9 @@ damageRecipient gs recipient = case recipient of
 -- Nothing means no rewrite, which is the do-as-much-as-you-can reading -- the
 -- damage is dealt as the effect otherwise says.
 --
--- "Damage from other sources that would be dealt at the same time" is not read.
--- Every event in one of these batches comes from the SAME source, since
--- Parun.Engine.Resolve's DealDamage arm resolves one dealer for the whole
--- instruction, and parun deals no two effects' damage simultaneously.
+-- Not implemented: "damage from other sources that would be dealt at the same
+-- time". An instruction stating excess has one dealer, so every event in one
+-- of these batches comes from the same source (#7272).
 excessThreshold :: GameState -> ObjectId -> Recipient.Recipient -> Maybe Natural
 excessThreshold gs source recipient = do
   oid <- Recipient.objectOf recipient

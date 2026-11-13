@@ -3483,10 +3483,11 @@ splitDamage covered event = case event of
 --
 -- TWO callers. A CR 510.2 batch holds several dealers, and the key's source
 -- component is what keeps them apart: two blockers striking one creature stay
--- two events and fire enrage twice (Parun.LifeTriggerSpec).
+-- two events.
 --
 --   * Parun.Engine.Resolve's DealDamage arm, over ONE instruction, which has
---     exactly one dealer (CR 120.1) and one moment (CR 608.2f). Combat must NOT
+--     one moment (CR 608.2f) and whose several dealers (Allies at Last) the
+--     key's source keeps apart the same way. Combat must NOT
 --     come through there -- two attacking creatures hitting one player are two
 --     sources, so CR 615.10's floor applies to each -- and neither must a fight,
 --     whose two blows have different dealers (CR 701.14a).
