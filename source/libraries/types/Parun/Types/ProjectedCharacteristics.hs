@@ -26,6 +26,7 @@ import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordDesignator as KeywordDesignator
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Modal as Modal
@@ -309,6 +310,9 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- gideon-blackblade/cr-613-1f-cast-under-humility-on-his-turn-enters-with-no-loyalty
     -- the entry rows.
     lostAllAbilities :: Bool,
+    -- | CR 113.11: the keywords this object can't have. Written by the layer-6
+    -- fold, so not copiable (CR 707.2).
+    barredKeywords :: Set.Set (KeywordDesignator.KeywordDesignator Keyword.Keyword),
     -- | CR 612.6 layer 3: did a full-text effect replace this object's text? When
     -- it did, the four lists no layer otherwise writes (staticAbilities,
     -- playerAbilities, specialActions, ruleAbilities) are the card's it read,

@@ -195,6 +195,7 @@ layer m = case m of
   -- CR 613.1f a fourth time: what a removal NAMES -- an instance, a family or
   -- nothing at all -- changes its scope and never its layer.
   Modification.LoseKeywordFamily _ -> Layer.Ability
+  Modification.CantHaveKeyword _ -> Layer.Ability
   Modification.SetBasePowerToughness {} -> Layer.SetPT
   Modification.ModifyPowerToughness {} -> Layer.ModifyPT
   Modification.LandSubtype {} -> Layer.Type
@@ -246,6 +247,18 @@ layer m = case m of
   Modification.Intensify _ -> Layer.Rules
   Modification.LoyaltyIsToughness -> Layer.Rules
 
+-- | CR 113.11: is `keyword` one an object barred from these can't have?
+barred :: Set (KeywordDesignator.KeywordDesignator Keyword) -> Keyword -> Bool
+barred designators keyword = any (`Keyword.designates` keyword) designators
+
+-- | CR 113.11: the objects among `oids` a continuous effect a resolving spell
+-- or ability creates applies this part to. A keyword grant skips each object
+-- that can't have the keyword now, for good.
+admitting :: GameState -> Modification.Modification ability -> [ObjectId] -> [ObjectId]
+admitting gs m oids = case m of
+  Modification.GainKeyword k -> filter (\oid -> not (barred (PC.barredKeywords (project oid gs)) k)) oids
+  _ -> oids
+
 -- Apply one modification to characteristics-in-progress. P/T quantities are
 -- evaluated against the CURRENT state (CR 611.3a); Resolve freezes a
 -- resolution's effects to literals (CR 608.2h / 611.2d), so this is the
@@ -275,7 +288,14 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
             chosen = Maybe.fromMaybe Set.empty (Game.currentChoice Chosen.Colors src gs)
             stampedBy limit attacher = maybe False ((<= limit) . Object.timestamp) (Game.lookupObject attacher gs)
             already = foldMap (\g -> filter (stampedBy (Object.timestamp g)) (Set.toList (Game.attachments oid gs))) granter
-         in receiver {PC.keywords = Map.insertWith (+) (Keyword.grantedBy src chosen (controllerOf src gs) already k) 1 (PC.keywords receiver)}
+            baked = Keyword.grantedBy src chosen (controllerOf src gs) already k
+         in -- CR 113.11: no effect or keyword counter adds a keyword the
+            -- object can't have, whichever came first. The scenarios under
+            -- data/scenarios/archetype-of-courage prove the static grant, the
+            -- counter and the resolution.
+            if barred (PC.barredKeywords receiver) baked
+              then receiver
+              else receiver {PC.keywords = Map.insertWith (+) baked 1 (PC.keywords receiver)}
    in case m of
         -- CR 613.1f layer 6: a grant adds an ability, so two grants of the same
         -- keyword count twice. Keyword.grantedBy bakes the granter into CR
@@ -565,6 +585,13 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- here keeps out: flying has no family, so no family removal reaches it.
         Modification.LoseKeywordFamily f ->
           pc {PC.keywords = Map.filterWithKey (\k _ -> Keyword.familyOf k /= Just f) (PC.keywords pc)}
+        -- CR 113.11: the object loses the keyword, as the two arms above take
+        -- it, and `granting` adds it no more for as long as this applies.
+        Modification.CantHaveKeyword d ->
+          pc
+            { PC.keywords = Map.filterWithKey (\k _ -> not (Keyword.designates d k)) (PC.keywords pc),
+              PC.barredKeywords = Set.insert d (PC.barredKeywords pc)
+            }
         -- An absent half is not set at all (CR 613.4b's "and/or").
         Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness p t) ->
           pc
@@ -876,6 +903,7 @@ cardTypesAfter m types = case m of
   Modification.LoseNamedAbility _ -> types
   Modification.LoseKeyword _ -> types
   Modification.LoseKeywordFamily _ -> types
+  Modification.CantHaveKeyword _ -> types
   Modification.SetBasePowerToughness {} -> types
   Modification.ModifyPowerToughness {} -> types
   Modification.SwitchPowerToughness -> types
@@ -1758,6 +1786,7 @@ freezeQuantities viewOf gs announcedOn source context m =
         Modification.LoseNamedAbility _ -> Just m
         Modification.LoseKeyword _ -> Just m
         Modification.LoseKeywordFamily _ -> Just m
+        Modification.CantHaveKeyword _ -> Just m
         Modification.LandSubtype {} -> Just m
         -- CR 608.2h: the type the source holds as this resolves is locked in, so
         -- the source's next choice (Effect.ChooseQuality) reaches no
@@ -1832,6 +1861,7 @@ quantitiesOf m = case m of
   Modification.LoseKeyword _ -> []
   -- Carries a KeywordFamily, which is payload-free and nests nothing at all.
   Modification.LoseKeywordFamily _ -> []
+  Modification.CantHaveKeyword _ -> []
   Modification.LandSubtype {} -> []
   Modification.ChosenSubtype {} -> []
   Modification.CreatureSubtype {} -> []
@@ -1887,6 +1917,7 @@ referenceQuery m = case m of
   Modification.LoseNamedAbility _ -> Nothing
   Modification.LoseKeyword _ -> Nothing
   Modification.LoseKeywordFamily _ -> Nothing
+  Modification.CantHaveKeyword _ -> Nothing
   Modification.LandSubtype {} -> Nothing
   Modification.ChosenSubtype {} -> Nothing
   Modification.CreatureSubtype {} -> Nothing
@@ -1983,6 +2014,7 @@ setsLandSubtype m = case m of
   Modification.LoseNamedAbility _ -> False
   Modification.LoseKeyword _ -> False
   Modification.LoseKeywordFamily _ -> False
+  Modification.CantHaveKeyword _ -> False
   Modification.SetBasePowerToughness {} -> False
   Modification.ModifyPowerToughness {} -> False
   Modification.SwitchPowerToughness -> False
@@ -3253,6 +3285,7 @@ removesAbilities m = case m of
   -- keywords out of the projected map and leaves every other ability the object
   -- has, so nothing gatherStatic generates is gated.
   Modification.LoseKeywordFamily _ -> False
+  Modification.CantHaveKeyword _ -> False
   Modification.GainKeyword _ -> False
   Modification.GainKeywordAtManaCost _ -> False
   -- A grant, the other direction of CR 613.1f, exactly as GainKeyword above and
@@ -4603,6 +4636,7 @@ modificationWrites m = case m of
   -- REGRESSION FENCE rather than a proved behaviour: no board in the pool makes
   -- another effect's affected set depend on a keyword this arm took away.
   Modification.LoseKeywordFamily _ -> Set.singleton Keywords
+  Modification.CantHaveKeyword _ -> Set.singleton Keywords
   Modification.SetBasePowerToughness {} -> Set.singleton PowerA
   Modification.ModifyPowerToughness {} -> Set.singleton PowerA
   Modification.SwitchPowerToughness -> Set.singleton PowerA
@@ -4710,6 +4744,7 @@ modificationReads m = case m of
   Modification.LoseKeyword _ -> Set.empty
   -- Carries a payload-free family, so there is no Filter here to read anything.
   Modification.LoseKeywordFamily _ -> Set.empty
+  Modification.CantHaveKeyword _ -> Set.empty
   Modification.SwitchPowerToughness -> Set.empty
   -- Carries no Quantity, but it reads a text box, which layer 3 writes -- the
   -- keywords and ability lists exchangeTextBoxFrom moves, which Aspect has no
@@ -6690,6 +6725,7 @@ grantsKeywordWhere p m = case m of
   -- Take keywords AWAY, which is the opposite of what this asks.
   Modification.LoseKeyword _ -> False
   Modification.LoseKeywordFamily _ -> False
+  Modification.CantHaveKeyword _ -> False
   Modification.SetBasePowerToughness {} -> False
   Modification.ModifyPowerToughness {} -> False
   Modification.LandSubtype {} -> False
@@ -6776,6 +6812,7 @@ grantsMintingType m = case m of
   Modification.LoseNamedAbility _ -> False
   Modification.LoseKeyword _ -> False
   Modification.LoseKeywordFamily _ -> False
+  Modification.CantHaveKeyword _ -> False
   Modification.SetBasePowerToughness {} -> False
   Modification.ModifyPowerToughness {} -> False
   Modification.LandSubtype {} -> False
@@ -6876,6 +6913,7 @@ grantsAbilityWhere p m = case m of
   Modification.LoseNamedAbility _ -> False
   Modification.LoseKeyword _ -> False
   Modification.LoseKeywordFamily _ -> False
+  Modification.CantHaveKeyword _ -> False
   Modification.SetBasePowerToughness {} -> False
   Modification.ModifyPowerToughness {} -> False
   Modification.LandSubtype {} -> False

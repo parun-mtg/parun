@@ -2576,6 +2576,13 @@ counterKindFilters kind = case kind of
 -- fallthrough decides only a FRAMING and answers KeywordFramed for it. A new
 -- rule-702 keyword that transplanted its payload into a minted slot the way
 -- equip does would owe an arm here, and nothing but this comment says so.
+designatorFilters :: KeywordDesignator.KeywordDesignator Keyword.Keyword -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+designatorFilters designator = case designator of
+  KeywordDesignator.OfKeyword keyword -> keywordFilters keyword
+  KeywordDesignator.OfInstance keyword _ -> keywordFilters keyword
+  KeywordDesignator.OfFamily _ -> []
+  KeywordDesignator.Printed _ -> []
+
 keywordFilters :: Keyword.Keyword -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
 keywordFilters keyword = case keyword of
   Keyword.Equip (Equip.MkEquip cost mQuality _ _) -> keywordFramed (costFilters cost) <> mintedTargetSlot (Maybe.maybeToList mQuality)
@@ -3564,11 +3571,7 @@ modificationFilters modification = case modification of
   Modification.GainAbilitiesOfSource _ -> []
   -- The permanents swept for the keywords, and a written keyword's own Filter.
   Modification.GainKeywordsAmong designator _ among ->
-    (Unframed, among) : case designator of
-      KeywordDesignator.OfKeyword keyword -> keywordFilters keyword
-      KeywordDesignator.OfInstance keyword _ -> keywordFilters keyword
-      KeywordDesignator.OfFamily _ -> []
-      KeywordDesignator.Printed _ -> []
+    (Unframed, among) : designatorFilters designator
   -- The rider's CR 602.5 conditions, as a printed ability's are swept, and the
   -- Filter naming the exiled cards.
   Modification.GainCardAbilities (CardAbilities.MkCardAbilities _ cards extra) -> (Unframed, cards) : frame Unframed (concatMap conditionFilters (concatMap restrictionConditions extra))
@@ -3585,6 +3588,7 @@ modificationFilters modification = case modification of
   -- carries no Filter at all -- Hammerheim's "all landwalk abilities" names no
   -- land type for this sweep to reach.
   Modification.LoseKeywordFamily _ -> []
+  Modification.CantHaveKeyword designator -> designatorFilters designator
   Modification.LandSubtype {} -> []
   Modification.ChosenSubtype {} -> []
   Modification.CreatureSubtype {} -> []

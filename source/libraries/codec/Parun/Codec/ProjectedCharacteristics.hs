@@ -26,6 +26,7 @@ import qualified Parun.Codec.Effect as Effect
 import qualified Parun.Codec.Face as Face
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.Keyword as Keyword
+import qualified Parun.Codec.KeywordDesignator as KeywordDesignator
 import qualified Parun.Codec.Loyalty as Loyalty
 import qualified Parun.Codec.ManaCost as ManaCost
 import qualified Parun.Codec.Modal as Modal
@@ -82,6 +83,7 @@ codec = Fields.object $ do
   castingPermissions <- Fields.defaulted "castingPermissions" [] (Common.list CastingPermission.codec) PC.castingPermissions
   ruleAbilities <- Fields.defaulted "ruleAbilities" mempty RuleAbilities.codec PC.ruleAbilities
   lostAllAbilities <- Fields.defaulted "lostAllAbilities" False Common.boolean PC.lostAllAbilities
+  barredKeywords <- Fields.defaulted "barredKeywords" Set.empty (Common.set (KeywordDesignator.codec Keyword.codec)) PC.barredKeywords
   hasFullText <- Fields.defaulted "hasFullText" False Common.boolean PC.hasFullText
   wordChanges <- Fields.defaulted "wordChanges" [] (Common.list ChangeWord.codec) PC.wordChanges
   textChangedKeywords <- Fields.defaulted "textChangedKeywords" Map.empty (Common.multiset Keyword.codec) PC.textChangedKeywords
@@ -138,6 +140,7 @@ codec = Fields.object $ do
         PC.castingPermissions = castingPermissions,
         PC.ruleAbilities = ruleAbilities,
         PC.lostAllAbilities = lostAllAbilities,
+        PC.barredKeywords = barredKeywords,
         PC.hasFullText = hasFullText,
         PC.wordChanges = wordChanges,
         PC.textChangedKeywords = textChangedKeywords,

@@ -240,6 +240,10 @@ data Modification ability
     -- which names no family -- Modular Monstrosity's "loses all keyword
     -- abilities" (gap #2983).
     LoseKeywordFamily KeywordFamily.KeywordFamily
+  | -- | layer 6, CR 613.1f / 113.11: this object loses this keyword and can't
+    -- have it (Archetype of Courage); a family where CR 702.11d makes the
+    -- variants the ability too (Arcane Lighthouse).
+    CantHaveKeyword (KeywordDesignator.KeywordDesignator Keyword.Keyword)
   | SetBasePowerToughness SetBasePowerToughness.SetBasePowerToughness -- layer 7b (Humility 1/1; Opalescence mana value)
   | ModifyPowerToughness ModifyPowerToughness.ModifyPowerToughness -- layer 7c (Giant Growth +3/+3)
   | -- | layer 4, CR 305.7: this object's land subtype becomes this one, or gains

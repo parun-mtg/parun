@@ -3454,6 +3454,14 @@ modificationLeaves =
       modificationColors = pure
     }
 
+-- | A designator's written keyword, as modificationKeyword walks it.
+modificationDesignator :: (Applicative f) => ModificationChildren ability f -> KeywordDesignator.KeywordDesignator Keyword.Keyword -> f (KeywordDesignator.KeywordDesignator Keyword.Keyword)
+modificationDesignator c designator = case designator of
+  KeywordDesignator.OfKeyword k -> KeywordDesignator.OfKeyword <$> modificationKeyword c k
+  KeywordDesignator.OfInstance k n -> (`KeywordDesignator.OfInstance` n) <$> modificationKeyword c k
+  KeywordDesignator.OfFamily _ -> pure designator
+  KeywordDesignator.Printed _ -> pure designator
+
 -- | A Modification's children (CR 613.1). Its change modes, card types,
 -- supertypes, unfamilied subtypes, stored word change, names, controllers,
 -- keyword families and combat damage markers are left as they are; a cost
@@ -3476,14 +3484,7 @@ modificationChildren c modification = case modification of
   Modification.GainAbility ability -> Modification.GainAbility <$> modificationAbility c ability
   Modification.GainAbilitiesOfSource keywords -> Modification.GainAbilitiesOfSource . Set.fromList <$> traverse (modificationStampedKeyword c) (Set.toList keywords)
   Modification.GainKeywordsAmong designator zone among ->
-    (\d -> Modification.GainKeywordsAmong d zone)
-      <$> ( case designator of
-              KeywordDesignator.OfKeyword k -> KeywordDesignator.OfKeyword <$> modificationKeyword c k
-              KeywordDesignator.OfInstance k n -> (`KeywordDesignator.OfInstance` n) <$> modificationKeyword c k
-              KeywordDesignator.OfFamily _ -> pure designator
-              KeywordDesignator.Printed _ -> pure designator
-          )
-      <*> modificationFilter c among
+    (\d -> Modification.GainKeywordsAmong d zone) <$> modificationDesignator c designator <*> modificationFilter c among
   Modification.GainCardAbilities (CardAbilities.MkCardAbilities from cards restrictions) ->
     fmap Modification.GainCardAbilities (CardAbilities.MkCardAbilities from <$> modificationFilter c cards <*> traverse (modificationRestriction c) restrictions)
   Modification.GainAbilitiesOfStickers -> pure modification
@@ -3491,6 +3492,7 @@ modificationChildren c modification = case modification of
   Modification.LoseNamedAbility name -> Modification.LoseNamedAbility <$> modificationAbilityName c name
   Modification.LoseKeyword lost -> Modification.LoseKeyword <$> modificationKeyword c lost
   Modification.LoseKeywordFamily _ -> pure modification
+  Modification.CantHaveKeyword designator -> Modification.CantHaveKeyword <$> modificationDesignator c designator
   Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness power toughness) ->
     fmap Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness <$> traverse (modificationQuantity c) power <*> traverse (modificationQuantity c) toughness)
   Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness power toughness) ->
