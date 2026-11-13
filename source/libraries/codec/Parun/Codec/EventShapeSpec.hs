@@ -50,4 +50,11 @@ spec s = Spec.describe s "Parun.Codec.EventShape" $ do
       EventShape.codec
       EventShape.AttackerDeclared
       " {\"type\":\"AttackerDeclared\"} "
+  -- CR 122.6: payloadless too.
+  Spec.it s "CountersPut" $
+    Common.assertCodec
+      s
+      EventShape.codec
+      EventShape.CountersPut
+      " {\"type\":\"CountersPut\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s EventShape.codec

@@ -5,6 +5,7 @@ module Parun.Codec.CountersPlaced where
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.ObjectId as ObjectId
+import qualified Parun.Codec.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -20,11 +21,13 @@ codec = Fields.object $ do
   kind <- Fields.required "kind" (CounterKind.codec Keyword.codec) CountersPlaced.kind
   before <- Fields.required "before" Common.natural CountersPlaced.before
   after <- Fields.required "after" Common.natural CountersPlaced.after
+  snapshot <- Fields.required "snapshot" ObjectSnapshot.codec CountersPlaced.snapshot
   pure
     CountersPlaced.MkCountersPlaced
       { CountersPlaced.putter = putter,
         CountersPlaced.object = object,
         CountersPlaced.kind = kind,
         CountersPlaced.before = before,
-        CountersPlaced.after = after
+        CountersPlaced.after = after,
+        CountersPlaced.snapshot = snapshot
       }

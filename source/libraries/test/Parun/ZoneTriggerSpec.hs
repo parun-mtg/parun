@@ -2026,7 +2026,7 @@ representativeEvents cond =
           -- own controller: eventBindings binds this field under `thatPlayer`,
           -- so an arm that bound the attacking side instead would still agree
           -- with eventBindingSlots here if the two coincided.
-          AttackTrigger.Attacker _ -> one (GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared departed S.carol (AttackTarget.OfPlayer S.carol) 1 S.alice (S.attackerSnapshot departed S.alice 0)))
+          AttackTrigger.Attacker _ -> one (GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared departed S.carol (AttackTarget.OfPlayer S.carol) 1 S.alice (S.permanentSnapshot departed S.alice 0)))
           -- CR 508.3e's ATTACKED player is bob here and not the carol who
           -- declared, so an arm that bound the attacking side under `thatPlayer`
           -- would disagree with eventBindingSlots on this event. A Source
@@ -2136,8 +2136,8 @@ representativeEvents cond =
                 WhichCounters.OfKind k -> k
                 WhichCounters.OfAnyKind -> CounterKind.PlusOnePlusOne
            in one $ case (motion, threshold) of
-                (CounterMotion.Put _, Just n) -> GameEvent.CountersPut (CountersPlaced.MkCountersPlaced S.alice departed kind 0 n)
-                (CounterMotion.Put _, Nothing) -> GameEvent.CountersPut (CountersPlaced.MkCountersPlaced S.alice departed kind 0 1)
+                (CounterMotion.Put _, Just n) -> GameEvent.CountersPut (CountersPlaced.MkCountersPlaced S.alice departed kind 0 n (S.permanentSnapshot departed S.alice 0))
+                (CounterMotion.Put _, Nothing) -> GameEvent.CountersPut (CountersPlaced.MkCountersPlaced S.alice departed kind 0 1 (S.permanentSnapshot departed S.alice 0))
                 (CounterMotion.Removed, Just n) -> GameEvent.CountersRemoved (CounterChange.MkCounterChange departed kind (n + 2) n)
                 (CounterMotion.Removed, Nothing) -> GameEvent.CountersRemoved (CounterChange.MkCounterChange departed kind 3 1)
         -- CR 717.2a's own event, on `departed` and not the bearer, the arm above's

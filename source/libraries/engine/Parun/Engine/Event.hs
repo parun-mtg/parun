@@ -6765,7 +6765,12 @@ settleCounters putter target settledKind settledCount
           -- Guarded by the same `settledCount > 0` the write is: an event
           -- recorded for a placement that did not happen would fire a chapter
           -- ability off nothing.
-          State.modify' (recordEvent (GameEvent.CountersPut (CountersPlaced.MkCountersPlaced putter target settledKind before (before + settledCount))) . bumped)
+          --
+          -- CR 608.2i: and beside it the object as the counters landed, which
+          -- exists because `obj` does.
+          State.modify' $ \g ->
+            let placed = bumped g
+             in maybe placed (\snapshot -> recordEvent (GameEvent.CountersPut (CountersPlaced.MkCountersPlaced putter target settledKind before (before + settledCount) snapshot)) placed) (Projection.objectSnapshot target placed)
           pure settledCount
 
 -- CR 122.6a: putCounters with the rule's DEFAULT putter -- "if the effect doesn't

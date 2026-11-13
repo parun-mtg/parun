@@ -907,7 +907,7 @@ spec s registry = Spec.describe s "Client" $ do
           [ GameEvent.BecameAttached (BecameAttached.MkBecameAttached aura (Recipient.ToObject bear)),
             GameEvent.BecameUnattached (BecameUnattached.MkBecameUnattached aura (Recipient.ToObject bear)),
             GameEvent.Convoked (Convoking.MkConvoking wurmId (Set.fromList [bear, totemId])),
-            GameEvent.CountersPut (CountersPlaced.MkCountersPlaced S.alice wurmId CounterKind.PlusOnePlusOne 0 1),
+            GameEvent.CountersPut (CountersPlaced.MkCountersPlaced S.alice wurmId CounterKind.PlusOnePlusOne 0 1 (S.permanentSnapshot wurmId S.alice 0)),
             moved Zone.Battlefield Zone.Battlefield,
             moved Zone.Hand Zone.Stack
           ]

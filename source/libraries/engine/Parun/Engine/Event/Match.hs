@@ -569,7 +569,7 @@ isMainPhase phase = case phase of
 -- CR 122.6a's putter read against `you`; Nothing for every other event.
 countersMoved :: GameState -> PlayerId -> CounterTrigger.CounterTrigger -> GameEvent -> Maybe (ObjectId, Natural, Natural)
 countersMoved gs you counterTrigger event = case (CounterTrigger.motion counterTrigger, event) of
-  (CounterMotion.Put relation, GameEvent.CountersPut (CountersPlaced.MkCountersPlaced putter oid kind before after))
+  (CounterMotion.Put relation, GameEvent.CountersPut (CountersPlaced.MkCountersPlaced putter oid kind before after _))
     | wanted kind && PlayerRelation.holds (Game.teams gs) relation you putter -> Just (oid, before, after)
   (CounterMotion.Removed, GameEvent.CountersRemoved (CounterChange.MkCounterChange oid kind before after))
     | wanted kind -> Just (oid, before, after)
