@@ -1,0 +1,99 @@
+{
+  "description": "Dai Li Indoctrination earthbends 2 with its second mode",
+  "note": "The second mode makes one of alice's two Forests a 2/2 with two counters.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "CB",
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f1",
+            "tapped": true
+          },
+          {
+            "card": "Forest",
+            "label": "f2",
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Dai Li Indoctrination",
+            "label": "doctrine"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$doctrine",
+          "modes": [
+            1
+          ],
+          "targets": [
+            "$f2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$f2",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$f1",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$f2",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    }
+  ]
+}

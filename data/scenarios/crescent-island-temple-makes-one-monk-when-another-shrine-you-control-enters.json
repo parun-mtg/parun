@@ -1,0 +1,84 @@
+{
+  "description": "Crescent Island Temple makes one Monk when another Shrine you control enters",
+  "note": "With the Temple already on the battlefield, alice's Northern Air Temple entering makes exactly one Monk, though she then controls two Shrines.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "B",
+        "battlefield": [
+          {
+            "card": "Crescent Island Temple",
+            "label": "temple",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Northern Air Temple",
+            "label": "air"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$air"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "OrderTriggers": [
+          "Northern Air Temple",
+          "$temple"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Monk Token",
+          "count": 1
+        }
+      }
+    }
+  ]
+}
