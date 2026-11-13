@@ -1656,13 +1656,28 @@ armedDelayedAbility :: ObjectId -> ObjectId -> ArmDelayedTrigger.ArmDelayedTrigg
 armedDelayedAbility resolving source arm gs =
   let name = ArmDelayedTrigger.name arm
       -- CR 613.1f: an ability acquired from a lending card means that card's
-      -- declaration of the name (Binding.delayedAsRead).
-      --
-      -- Not implemented: that reading for a mana ability, which has no object
-      -- to name it (CR 605.3b) and so reads the source's own declarations
-      -- (#7307).
+      -- declaration of the name (Binding.delayedAsRead). A mana ability has
+      -- no object to name it (CR 605.3b), so its arms carry theirs
+      -- (carryingDelayed).
       frozen = frozenDelayed resolving gs >>= \(reader, delayed) -> Map.lookup name (Binding.delayedAsRead reader delayed)
    in Game.carriedDelayedAbility arm Applicative.<|> frozen Applicative.<|> declaredDelayedAbility source name gs
+
+-- CR 113.7a / 613.1f: `effect` with each delayed ability it arms by name
+-- carried instead (Game.carriedDelayedAbility): the one the name means to
+-- the ability named `reader` of `source` (Binding.delayedAsRead). For an
+-- ability CR 605.3b gives no object to freeze its declarations on
+-- (frozenDelayed). A name the source's declarations miss is left to
+-- armedDelayedAbility's fallbacks.
+carryingDelayed :: Maybe AbilityName.AbilityName -> ObjectId -> GameState -> Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
+carryingDelayed reader source gs =
+  let declared = Binding.delayedAsRead reader (delayedSnapshotOf source gs)
+      carry effect = case effect of
+        Effect.ArmDelayedTrigger arm
+          | Maybe.isNothing (ArmDelayedTrigger.ability arm),
+            Just ability <- Map.lookup (ArmDelayedTrigger.name arm) declared ->
+              Effect.ArmDelayedTrigger arm {ArmDelayedTrigger.ability = Just (GrantedAbility.Triggered ability)}
+        _ -> Identity.runIdentity (Children.effectChildren Children.effectLeaves {Children.onEffect = Identity.Identity . carry} effect)
+   in carry
 
 -- CR 113.7a: the name of an ability object and the declarations it froze as it
 -- was activated or triggered; Nothing for a spell, which froze none.

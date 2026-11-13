@@ -3,6 +3,7 @@ module Parun.Types.ManaAbilityPerformer where
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CoinFace as CoinFace
@@ -42,10 +43,11 @@ import qualified Parun.Types.Throw as Throw
 -- Parun.Engine.Resolve, so a parameter of each own would have to be threaded
 -- through every caller of Parun.Engine.Cost.pay for no gain.
 data ManaAbilityPerformer = MkManaAbilityPerformer
-  { -- | CR 405.6c / 608.2c: the ability's source, its controller, the slots
-    -- its earlier clauses bound, and the non-mana effects to run; answers those
-    -- slots with the ones these effects bound added.
-    effects :: ObjectId.ObjectId -> PlayerId.PlayerId -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> [Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)] -> Game.Game (Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)),
+  { -- | CR 405.6c / 608.2c: the ability's source, its name (CR 613.1f), its
+    -- controller, the slots its earlier clauses bound, and the non-mana
+    -- effects to run; answers those slots with the ones these effects bound
+    -- added.
+    effects :: ObjectId.ObjectId -> Maybe AbilityName.AbilityName -> PlayerId.PlayerId -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> [Effect.Effect Card.Card (GrantedAbility.GrantedAbility Card.Card)] -> Game.Game (Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)),
     -- | CR 605.4a: apply one triggered mana ability where it stands, without
     -- putting it on the stack. Parun.Engine.Cost.tapForManaWith gathers and
     -- classifies (Parun.Engine.ManaAbility.isTriggeredManaAbility); this runs the
