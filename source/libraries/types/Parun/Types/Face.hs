@@ -62,6 +62,7 @@ import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.Power as Power
+import qualified Parun.Types.PregameExile as PregameExile
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RulePermission as RulePermission
@@ -162,6 +163,10 @@ data Face card = MkFace
     -- it is the commander of. A printed field for anteOnly's reason: its reader
     -- (Parun.Legality) checks a deck before any game.
     commanderDeckRules :: Set.Set CommanderDeckRule.CommanderDeckRule,
+    -- | CR 607.2n: the exile this card allows before its owner shuffles to
+    -- start the game, where it prints one. A printed field for anteOnly's
+    -- reason: its reader (Parun.Legality) checks a deck before any game.
+    pregameExile :: Maybe PregameExile.PregameExile,
     -- | CR 702, counted. A card can print the same keyword twice -- Apex
     -- Devastator's "Cascade, cascade, cascade, cascade" -- and CR 702.85c makes
     -- each instance trigger separately, so the count is printed text rather than

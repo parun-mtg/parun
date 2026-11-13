@@ -564,6 +564,7 @@ placeAll registry zone deck owner placements board = case placements of
       Right Nothing -> pure (Left (Failure.MkUnknownCard (Placement.card placement)))
       Right (Just _) | Placement.token placement && zone /= Zone.Battlefield -> pure (Left (Failure.MkTokenOffBattlefield (Placement.card placement)))
       Right (Just card) | Just name <- Placement.face placement, Maybe.isNothing (Engine.Card.faceNamed name card) -> pure (Left (Failure.MkUnknownFace (Placement.card placement) name))
+      Right (Just _) | Maybe.isJust (Placement.exiledWith placement) && zone /= Zone.Exile -> pure (Left (Failure.MkExiledWithOutsideExile (Placement.card placement)))
       Right (Just card) -> do
         let (printingId, interned) = Game.intern ((Printing.ofCard card) {Printing.lights = Placement.lights placement, Printing.circled = Placement.circled placement}) (Staged.state board)
             (oid, inZone) = Setup.placeCard zone owner printingId interned
@@ -595,7 +596,12 @@ placeAll registry zone deck owner placements board = case placements of
                 }
             next =
               board
-                { Staged.state = placed {GameState.objects = Map.adjust adjust oid (GameState.objects placed)},
+                { Staged.state =
+                    placed
+                      { GameState.objects = Map.adjust adjust oid (GameState.objects placed),
+                        -- CR 607.2n, as Setup.createDeck records it.
+                        GameState.exiledBeforeGame = maybe id (Map.insert oid) (Placement.exiledWith placement) (GameState.exiledBeforeGame placed)
+                      },
                   Staged.objects = foldr (\label -> Map.insert label oid) (Staged.objects board) (Placement.label placement)
                 }
         placeAll registry zone deck owner rest next
@@ -2208,6 +2214,7 @@ render failure = case failure of
   Failure.MkUnsharedLife label -> Label.unwrap label <> Text.pack "'s life differs from a teammate's, but the team shares one total"
   Failure.MkMisseated label -> Label.unwrap label <> Text.pack " sits where the board's teams and emperors don't allow"
   Failure.MkTokenOffBattlefield name -> Text.pack "a token " <> CardName.unwrap name <> Text.pack " placed off the battlefield"
+  Failure.MkExiledWithOutsideExile name -> CardName.unwrap name <> Text.pack " exiled with cards of a name, placed outside exile"
   Failure.MkUnknownMonarch label -> Label.unwrap label <> Text.pack " is the monarch but has no seat"
   Failure.MkUnknownObject ref known ->
     Codec.Reference.toText ref

@@ -59,6 +59,7 @@ import qualified Parun.Codec.ModeIndex as ModeIndex
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Codec.Power as Power
+import qualified Parun.Codec.PregameExile as PregameExile
 import qualified Parun.Codec.PrintedReplacement as PrintedReplacement
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.RulePermission as RulePermission
@@ -213,6 +214,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   deckLimit <- Fields.defaulted "deckLimit" Nothing (Common.maybe DeckLimit.codec) Face.deckLimit
   -- CR 903.5e: empty is the absence of a commander's deck-construction rule.
   commanderDeckRules <- Fields.defaulted "commanderDeckRules" Set.empty (Common.set CommanderDeckRule.codec) Face.commanderDeckRules
+  pregameExile <- Fields.defaulted "pregameExile" Nothing (Common.maybe PregameExile.codec) Face.pregameExile
   pure
     Face.MkFace
       { Face.name = name,
@@ -275,5 +277,6 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.anteOnly = anteOnly,
         Face.circlesTwo = circlesTwo,
         Face.deckLimit = deckLimit,
-        Face.commanderDeckRules = commanderDeckRules
+        Face.commanderDeckRules = commanderDeckRules,
+        Face.pregameExile = pregameExile
       }

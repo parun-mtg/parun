@@ -111,6 +111,7 @@ bare n t c i l p x k =
       Face.circlesTwo = False,
       Face.deckLimit = Nothing,
       Face.commanderDeckRules = Set.empty,
+      Face.pregameExile = Nothing,
       Face.keywords = k,
       Face.colorIndicator = i,
       Face.characteristicPT = Nothing,

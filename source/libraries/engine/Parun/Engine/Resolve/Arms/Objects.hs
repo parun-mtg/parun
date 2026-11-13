@@ -514,20 +514,27 @@ createCopy settle resolving source controller legal chosen (CreateCopy.MkCreateC
   Monad.when linked (State.modify' (\g -> foldr (Common.linkEntrant resolving source) g minted))
   Common.bindObjects resolving mSlot minted
 
-becomeCopy :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> BecomeCopy.BecomeCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
-becomeCopy resolving source controller legal (BecomeCopy.MkBecomeCopy original subjectRef duration exceptions newTargets) = do
+becomeCopy :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> BecomeCopy.BecomeCopy (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
+becomeCopy resolving source controller legal chosen (BecomeCopy.MkBecomeCopy original subjectRef duration exceptions newTargets) = do
   -- CR 108.1: a NAMED original is the card the Oracle reference gives the
   -- name, looked up before the board below is read.
   named <- case original of
     CopyOriginal.Named name -> Game.lookUpCard name
     CopyOriginal.OfObject _ -> pure Nothing
+  -- Asked before the board is read (CR 608.2d), createCopy's reason: Volatile
+  -- Chimera's "choose a card at random". The scenario
+  -- volatile-chimera-becomes-a-random-card-its-controller-exiled-before-the-game
+  -- proves it.
+  originals <- case original of
+    CopyOriginal.OfObject ref -> Common.askingObjects Common.LastKnown resolving source controller legal chosen ref
+    CopyOriginal.Named _ -> pure []
   let onStackIn g oid = List.find ((== Zone.Stack) . Object.zone) (Game.lookupObject oid g)
       -- The copiable values, and the original's stack incarnation whose
       -- choices CR 707.2 hands on. A named card's are read off a
       -- counterfactual board holding it (Event.mintOutside), which is
       -- thrown away with the read; it is on no stack, so it hands on none.
       copiedOriginal gs = case original of
-        CopyOriginal.OfObject ref -> case objectRefObjects legal resolving controller source gs ref of
+        CopyOriginal.OfObject _ -> case originals of
           [oid] -> Just (Event.copiedSnapshotWithLastKnown oid gs, onStackIn gs oid)
           _ -> Nothing
         CopyOriginal.Named _ -> fmap (\printingId -> let (oid, board) = Event.mintOutside controller printingId gs in (Event.copiedSnapshot oid board, Nothing)) named

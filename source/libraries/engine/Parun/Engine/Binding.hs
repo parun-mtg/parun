@@ -632,6 +632,9 @@ isLinkedExile reader acquisition pile src link =
     ExiledPile.OfAbility name -> ExileLink.ability link == Just (nameAsRead reader name)
     ExiledPile.AsItEntered -> ExileLink.ability link == Just entryExileLink
     ExiledPile.CraftMaterials -> ExileLink.ability link == Just craftLink
+    -- CR 607.2n links by name, not by object: Game.linkedPile reads that pile
+    -- off GameState.exiledBeforeGame, and no ExileLink is filed for it.
+    ExiledPile.WithCardsNamed _ -> False
 
 -- The lending card a link's or a reader's ability name was acquired from, as
 -- acquiredFrom names an unnamed ability of it; Nothing for the holder's

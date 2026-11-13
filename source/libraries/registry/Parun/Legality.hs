@@ -50,6 +50,7 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Legality as Legality
 import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.PregameExile as PregameExile
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.SideDeck as SideDeck
@@ -104,14 +105,14 @@ rules table settings format cardPool =
               <> [\deck -> fromPool (addedCommanders (Format.boosters format) held deck) deck | draft, Just held <- [cardPool]]
               <> [anteCards settings]
               <> (if draft then [] else [conspiracies, stickerSheets])
-              <> [circledColors, supplementary family settings, vanguardCard]
+              <> [circledColors, supplementary family settings, vanguardCard, exiledBeforeGame draft]
    in case Format.rules format of
         -- CR 100.2a / 100.4a.
-        RuleFamily.Constructed -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Constructed) Deck.cards, copiesAtMost Nothing restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies, stickerSheets, circledColors, supplementary RuleFamily.Constructed settings, vanguardCard]
+        RuleFamily.Constructed -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Constructed) Deck.cards, copiesAtMost Nothing restricted (Just 4) bothSections, sideboardAtMost 15] <> foldMap (pure . inPool) standing <> [anteCards settings, conspiracies, stickerSheets, circledColors, supplementary RuleFamily.Constructed settings, vanguardCard, exiledBeforeGame False]
         -- CR 100.2b: no copy limit beyond the product's own, but a card's own
         -- "up to N" still caps the deck: Nazgûl's ruling of 2023-06-16 keeps a
         -- tenth in the sideboard.
-        RuleFamily.Limited -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Limited) Deck.cards, copiesAtMost Nothing restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> foldMap (pure . fromPool) cardPool <> [anteCards settings, circledColors, supplementary RuleFamily.Limited settings, vanguardCard]
+        RuleFamily.Limited -> [atLeast Nothing (RuleFamily.Engine.minimumDeckSize RuleFamily.Limited) Deck.cards, copiesAtMost Nothing restricted Nothing Deck.cards] <> foldMap (pure . inPool) standing <> foldMap (pure . fromPool) cardPool <> [anteCards settings, circledColors, supplementary RuleFamily.Limited settings, vanguardCard, exiledBeforeGame True]
         -- CR 903.5.
         RuleFamily.Commander -> commander RuleFamily.Commander
         -- CR 903.12a: Commander's rules, with CR 903.12c's commander, CR
@@ -214,10 +215,10 @@ everySection deck = Map.unionWith (+) (bothSections deck) (Deck.commander deck)
 
 -- CR 100.2b / 100.4b: the cards a limited deck draws from its card pool: deck,
 -- sideboard and commanders (CR 903.13f(2)), the conspiracies taken from the
--- sideboard (CR 315.2), and the Attraction (CR 718.2b) and Contraption (the
--- Unstable FAQ) decks.
+-- sideboard (CR 315.2), the cards exiled before the game (CR 607.2n), and the
+-- Attraction (CR 718.2b) and Contraption (the Unstable FAQ) decks.
 fromPoolCards :: Deck.Deck -> Map.Map Printing.Printing Natural.Natural
-fromPoolCards deck = Map.unionsWith (+) ([everySection deck, Deck.conspiracies deck] <> [Map.findWithDefault Map.empty pile (Deck.sideDecks deck) | pile <- [SideDeck.Attraction, SideDeck.Contraption]])
+fromPoolCards deck = Map.unionsWith (+) ([everySection deck, Deck.conspiracies deck] <> Map.elems (Deck.exiledBeforeGame deck) <> [Map.findWithDefault Map.empty pile (Deck.sideDecks deck) | pile <- [SideDeck.Attraction, SideDeck.Contraption]])
 
 -- CR 100.2b: each card 'fromPoolCards' counts but a basic land card is one
 -- the card pool holds, and no more of a name than the pool holds. Names are
@@ -358,6 +359,29 @@ inPool standing = foldMap judge . cardsIn
       Just (Just Legality.Restricted) -> []
       Just (Just Legality.Legal) -> []
 
+-- CR 607.2n: the cards exiled before the game with cards of each name are
+-- ones an ability of that name exiles, and as many as some number of the
+-- deck's cards of that name, each revealed, exile between them (Arcane
+-- Savant's and Volatile Chimera's rulings of 2016-08-23). Whether a card was
+-- drafted is the deck's own statement in limited play and false in
+-- constructed (docs/decisions.md, "Which cards a player drafted that aren't in
+-- their deck").
+exiledBeforeGame :: Bool -> Deck.Deck -> [Violation.Violation]
+exiledBeforeGame drafted deck = foldMap judge (Map.toList (Deck.exiledBeforeGame deck))
+  where
+    context = Filter.contextFor Teams.none Nothing Nothing
+    judge (written, exiled) =
+      let revealable = [(exile, count) | (printing, count) <- Map.toList (Deck.cards deck), let face = Card.combined (Printing.card printing), Face.name face == written, Just exile <- [Face.pregameExile face]]
+          -- How many of them the deck could reveal; two printings of one name
+          -- print one ability, so which one is read does not matter.
+          copies = sum (fmap snd revealable)
+          exiling = fmap fst (Maybe.listToMaybe revealable)
+          total = sum exiled
+          allowed exile = drafted && any (\revealed -> revealed * PregameExile.atLeast exile <= total && all (\most -> total <= revealed * most) (PregameExile.atMost exile)) [1 .. copies]
+          matches exile printing = Filter.matches context (Projection.viewOfCard (Card.combined (Printing.card printing))) (PregameExile.filter exile)
+       in [Violation.PregameExileCount written total | total > 0, not (any allowed exiling)]
+            <> [Violation.PregameExileMismatch (Face.name (Card.combined (Printing.card printing))) written | Just exile <- [exiling], printing <- Map.keys exiled, not (matches exile printing)]
+
 -- CR 407.3: no ante card in deck or sideboard of a game not played for ante,
 -- with a pool or without one.
 anteCards :: GameSettings.GameSettings -> Deck.Deck -> [Violation.Violation]
@@ -443,6 +467,8 @@ explain violation = Text.pack $ case violation of
   Violation.NotInCardPool written -> spelled written <> " is not in the card pool"
   Violation.NotVanguardCard written -> spelled written <> " is not a vanguard card"
   Violation.MissingVanguard missing players -> show missing <> " of " <> show players <> " players without a vanguard card"
+  Violation.PregameExileCount written count -> show count <> " cards exiled with cards named " <> spelled written <> ", which the deck's do not allow"
+  Violation.PregameExileMismatch exiled written -> spelled exiled <> " is not a card that cards named " <> spelled written <> " exile"
   where
     spelled = Text.unpack . CardName.unwrap
     pileName pile = case pile of

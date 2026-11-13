@@ -181,25 +181,34 @@ data Section
     Stickers
   | -- | CR 905.2b: Deck.draftNotes.
     DraftNotes
+  | -- | CR 607.2n: Deck.exiledBeforeGame's cards exiled with cards of the name,
+    -- headed "Exiled with Arcane Savant".
+    ExiledWith CardName.CardName
   deriving (Eq, Ord, Show)
 
--- | Every section, in the order `render` writes them.
+-- | Every section but CR 607.2n's, one per name, in the order `render` writes
+-- them.
 sections :: [Section]
 sections = [Main, Side, Companion, Commander] <> fmap Supplementary [minBound .. maxBound] <> [Conspiracies, Dungeons, Vanguard, Stickers, DraftNotes]
 
 -- | The header a section is written under.
 heading :: Section -> Text.Text
-heading section = Text.pack $ case section of
-  Main -> "Deck"
-  Side -> "Sideboard"
-  Companion -> "Companion"
-  Commander -> "Commander"
-  Supplementary sideDeck -> show sideDeck <> " Deck"
-  Conspiracies -> "Conspiracies"
-  Dungeons -> "Dungeons"
-  Vanguard -> "Vanguard"
-  Stickers -> "Stickers"
-  DraftNotes -> "Draft Notes"
+heading section = case section of
+  Main -> Text.pack "Deck"
+  Side -> Text.pack "Sideboard"
+  Companion -> Text.pack "Companion"
+  Commander -> Text.pack "Commander"
+  Supplementary sideDeck -> Text.pack (show sideDeck <> " Deck")
+  Conspiracies -> Text.pack "Conspiracies"
+  Dungeons -> Text.pack "Dungeons"
+  Vanguard -> Text.pack "Vanguard"
+  Stickers -> Text.pack "Stickers"
+  DraftNotes -> Text.pack "Draft Notes"
+  ExiledWith name -> exiledWith <> CardName.unwrap name
+
+-- What CR 607.2n's header says before its name.
+exiledWith :: Text.Text
+exiledWith = Text.pack "Exiled with "
 
 -- | What a deck list says: the deck its good lines describe, the format its
 -- header names, and every line that did not become part of either. A list with
@@ -278,7 +287,8 @@ assemble results =
                 Deck.dungeons = once Dungeons,
                 Deck.vanguard = Set.lookupMin (once Vanguard),
                 Deck.stickerSheets = brought,
-                Deck.draftNotes = noted
+                Deck.draftNotes = noted,
+                Deck.exiledBeforeGame = Map.fromListWith (Map.unionWith (+)) [(name, Map.singleton printing count) | (ExiledWith name, printing, count) <- found]
               },
           format = header,
           problems = List.reverse reported
@@ -391,7 +401,11 @@ formatNamed text =
 sectionNamed :: Text.Text -> Maybe Section
 sectionNamed text =
   let spelled = Text.toLower (Text.strip (Text.filter (/= ':') text))
-   in lookup spelled ([(Text.toLower (heading section), section) | section <- sections] <> [(Text.pack "maindeck", Main), (Text.pack "main deck", Main)])
+      -- CR 607.2n: the name as written, which no lookup spells for it.
+      exiled = case Text.splitAt (Text.length exiledWith) (Text.strip text) of
+        (before, name) | Text.toLower before == Text.toLower exiledWith, not (Text.null (Text.strip name)) -> Just (ExiledWith (CardName.MkCardName (Text.strip name)))
+        _ -> Nothing
+   in Maybe.listToMaybe (Maybe.maybeToList (lookup spelled ([(Text.toLower (heading section), section) | section <- sections] <> [(Text.pack "maindeck", Main), (Text.pack "main deck", Main)])) <> Maybe.maybeToList exiled)
 
 -- A line's count, the name it precedes, the printing it names, if any, and
 -- the inside of each annotation after it. A bare name is one copy, which is
@@ -598,11 +612,12 @@ render table header listed =
         Vanguard -> entries (once (Set.fromList (Maybe.maybeToList (Deck.vanguard listed))))
         Stickers -> fmap (\run -> line (Natural.length run, StickerSheet.name (NonEmpty.head run))) (NonEmpty.group (Deck.stickerSheets listed))
         DraftNotes -> [noteLine (CardName.unwrap name) noted | (name, notes) <- Map.toAscList (Deck.draftNotes listed), noted <- Foldable.toList notes]
+        ExiledWith name -> entries (Map.findWithDefault Map.empty name (Deck.exiledBeforeGame listed))
       block section = case contents section of
         [] -> []
         written' -> Text.empty : heading section : written'
       top = foldMap (\named -> [Text.pack "Format: " <> named, Text.empty]) header
-      body = top <> contents Main <> foldMap block (filter (/= Main) sections)
+      body = top <> contents Main <> foldMap block (filter (/= Main) sections <> fmap ExiledWith (Map.keys (Deck.exiledBeforeGame listed)))
    in Text.unlines body
 
 -- A card's name as a deck list writes it: the names of the faces it shows off

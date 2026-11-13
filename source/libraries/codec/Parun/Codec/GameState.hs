@@ -230,6 +230,7 @@ codec resolve = Fields.object $ do
   enteredWith <- Fields.defaulted "enteredWith" Map.empty (Common.naturalMap ObjectId.codec (Common.set EntryLink.codec)) GameState.enteredWith
   counteredWith <- Fields.defaulted "counteredWith" Map.empty (Common.naturalMap ObjectId.codec (Common.set CounterLink.codec)) GameState.counteredWith
   exilePiles <- Fields.defaulted "exilePiles" Map.empty (Common.naturalMap ObjectId.codec Timestamp.codec) GameState.exilePiles
+  exiledBeforeGame <- Fields.defaulted "exiledBeforeGame" Map.empty (Common.naturalMap ObjectId.codec CardName.codec) GameState.exiledBeforeGame
   extraTurns <- Fields.defaulted "extraTurns" [] (Common.list ExtraTurn.codec) GameState.extraTurns
   turnMarkers <- Fields.defaulted "turnMarkers" [] (Common.list TurnMarker.codec) GameState.turnMarkers
   parkedTurns <- Fields.defaulted "parkedTurns" Map.empty (Common.naturalMap Common.natural TurnRegisters.codec) GameState.parkedTurns
@@ -372,6 +373,7 @@ codec resolve = Fields.object $ do
         GameState.enteredWith = enteredWith,
         GameState.counteredWith = counteredWith,
         GameState.exilePiles = exilePiles,
+        GameState.exiledBeforeGame = exiledBeforeGame,
         GameState.extraTurns = extraTurns,
         GameState.turnMarkers = turnMarkers,
         GameState.parkedTurns = parkedTurns

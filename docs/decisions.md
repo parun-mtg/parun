@@ -1880,3 +1880,27 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Event.noteWouldCreate`. Proved by the scenario
   `mirrormind-crown-is-spent-by-a-land-token-that-cannot-be-created`.
 - **Issue**: #7171.
+
+## Which cards a player drafted that aren't in their deck
+
+- **Question**: Arcane Savant exiles "an instant or sorcery card you drafted
+  that isn't in your deck". Parun plays no draft (#4006), so which cards
+  outside a deck count as drafted?
+- **Rules**: CR 100.4b, 100.4c, 400.11a, 607.2n, 905.1d (CR of 2026-11-06);
+  the card's rulings of 2016-08-23 speak only of how many Savants are
+  revealed.
+- **Decision**: In limited play, the cards the deck list states were exiled,
+  which are drawn from the card pool and checked against it like any other
+  section: CR 100.4b makes every pool card outside the deck the sideboard, so
+  "drafted but not in your deck" and "in your sideboard" name the same cards.
+  In constructed play nothing was drafted, so no such exile is legal.
+- **Rejected**: Reading the sideboard in constructed play too, since CR 100.4
+  gives every format a sideboard: CR 905.1d builds a Conspiracy Draft pool by
+  drafting, and a constructed sideboard was bought, not drafted. Also rejected
+  asking before the first game from `Player.outsideTheGame`, which would make
+  the choice the engine's rather than the deck's and cannot be checked for
+  legality.
+- **Site**: `Parun.Legality.exiledBeforeGame`, whose `drafted` is false for
+  `RuleFamily.Constructed` alone. Proved by `Parun.LegalitySpec`'s "CR 607.2n:
+  a deck exiles before the game only what its cards of the name exile".
+- **Issue**: #6205.

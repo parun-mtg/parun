@@ -191,9 +191,18 @@ lookupObject oid gs = Map.lookup oid (GameState.objects gs)
 -- sweep, so a card a second copy of the same printing exiled is not in it; and
 -- in exile NOW (CR 400.7), since a card that left is a new object the stale
 -- link no longer names.
-linkedPile :: Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> ExiledPile.ExiledPile -> ObjectId -> GameState -> [ObjectId]
-linkedPile reader acquisition pile src gs =
-  filter (\o -> maybe False (Binding.isLinkedExile reader acquisition pile src) (Map.lookup o (GameState.exiledWith gs))) (Set.toAscList (GameState.exile gs))
+--
+-- CR 607.2n's pile is the exception, read off GameState.exiledBeforeGame for
+-- the player `you`, the reading ability's controller, whatever `src` is: the
+-- cards that player exiled (and so owns, CR 108.3) with cards of the name.
+-- data/scenarios/arcane-savant-copies-a-card-its-controller-exiled-before-the-game.json
+-- proves it.
+linkedPile :: Maybe PlayerId -> Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> ExiledPile.ExiledPile -> ObjectId -> GameState -> [ObjectId]
+linkedPile you reader acquisition pile src gs =
+  let linked o = case pile of
+        ExiledPile.WithCardsNamed name -> Maybe.isJust you && Map.lookup o (GameState.exiledBeforeGame gs) == Just name && fmap Object.owner (lookupObject o gs) == you
+        _ -> maybe False (Binding.isLinkedExile reader acquisition pile src) (Map.lookup o (GameState.exiledWith gs))
+   in filter linked (Set.toAscList (GameState.exile gs))
 
 -- | CR 607.2a / 613.7d: the LAST of these cards to have been exiled, the one
 -- with the latest timestamp -- Duplicant's "the last creature card exiled with

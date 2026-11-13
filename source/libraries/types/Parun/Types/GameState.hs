@@ -230,6 +230,11 @@ data GameState = MkGameState
     -- nextTimestamp and shared by every card one execution of one instruction
     -- exiled (Parun.Engine.Resolve.Common.recordExilePile). Cleaned up by key only.
     exilePiles :: Map.Map ObjectId.ObjectId Timestamp.Timestamp,
+    -- | CR 607.2n: the name of the cards each card exiled before the game was
+    -- exiled with, keyed by the exiled incarnation and written by
+    -- Parun.Engine.Setup.createDeck; its owner is the player who exiled it (CR
+    -- 108.3). Cleaned up by key only.
+    exiledBeforeGame :: Map.Map ObjectId.ObjectId CardName.CardName,
     -- | CR 500.7: the extra turns created and not yet taken, most recently
     -- created first, each carrying the steps that turn skips (CR 500.11).
     extraTurns :: [ExtraTurn.ExtraTurn],

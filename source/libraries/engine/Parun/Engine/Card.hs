@@ -130,6 +130,7 @@ faceDownFace listed =
       Face.circlesTwo = False,
       Face.deckLimit = Nothing,
       Face.commanderDeckRules = Set.empty,
+      Face.pregameExile = Nothing,
       Face.keywords = Map.fromSet (const 1) (FaceDownCharacteristics.keywords listed),
       Face.colorIndicator = Set.empty,
       Face.characteristicPT = Nothing,

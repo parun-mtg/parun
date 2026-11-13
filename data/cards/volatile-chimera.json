@@ -1,0 +1,108 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Red"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "BecomeCopy",
+                        "value": {
+                          "exceptions": [
+                            {
+                              "type": "GainThisAbility"
+                            }
+                          ],
+                          "original": {
+                            "type": "OfObject",
+                            "value": {
+                              "type": "AtRandom",
+                              "value": {
+                                "type": "EachCardInExiledPile",
+                                "value": {
+                                  "pile": {
+                                    "type": "WithCardsNamed",
+                                    "value": "Volatile Chimera"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "subject": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "IsSource"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Volatile Chimera",
+      "oracleText": "Before you shuffle your deck to start the game, you may reveal this card from your deck and exile three or more creature cards you drafted that aren't in your deck.\n{1}{R}: Choose a card at random you exiled with cards named Volatile Chimera. This creature becomes a copy of that card, except it has this ability.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "pregameExile": {
+        "atLeast": 3,
+        "atMost": null,
+        "filter": {
+          "type": "HasCardType",
+          "value": "Creature"
+        }
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Chimera",
+          "Elemental"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -97,5 +97,6 @@ card name =
       Placement.Type.faceDown = Nothing,
       Placement.Type.protector = Nothing,
       Placement.Type.lights = Set.empty,
-      Placement.Type.circled = Set.empty
+      Placement.Type.circled = Set.empty,
+      Placement.Type.exiledWith = Nothing
     }

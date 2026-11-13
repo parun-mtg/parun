@@ -1403,6 +1403,8 @@ library codec
     Parun.Codec.PowerToughnessIs
     Parun.Codec.PowerToughnessIsSpec
     Parun.Codec.PowerToughnessSticker
+    Parun.Codec.PregameExile
+    Parun.Codec.PregameExileSpec
     Parun.Codec.PreventAllDamage
     Parun.Codec.PreventAllDamageSpec
     Parun.Codec.Prevention
@@ -3388,6 +3390,7 @@ library types
     Parun.Types.Power
     Parun.Types.PowerToughnessIs
     Parun.Types.PowerToughnessSticker
+    Parun.Types.PregameExile
     Parun.Types.PreventAllDamage
     Parun.Types.Prevention
     Parun.Types.PreventionRider

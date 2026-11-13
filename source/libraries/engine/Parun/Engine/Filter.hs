@@ -45,6 +45,7 @@ import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.DraftNote as DraftNote
 import qualified Parun.Types.EnteredZone as EnteredZone
 import qualified Parun.Types.ExileLink as ExileLink
+import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Expansion as Expansion
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GameSettings as GameSettings
@@ -1720,6 +1721,9 @@ data Context = MkContext
     -- for Noted, which asks the perspective player's. Filled by contextIn;
     -- empty in contextFor, so the atom is vacuously False off a game.
     draftNotes :: Map.Map PlayerId.PlayerId (Map.Map CardName.CardName (Seq.Seq DraftNote.DraftNote)),
+    -- CR 607.2n: GameState.exiledBeforeGame, for IsExiledWithSource's
+    -- WithCardsNamed pile. Filled by contextIn; empty in contextFor.
+    exiledBeforeGame :: Map.Map ObjectId.ObjectId CardName.CardName,
     -- CR 205.3: the subtype the SOURCE chose as it entered (CR 614.1c), for the
     -- one atom that asks whether a candidate wears it (HasChosenSubtype). Filled
     -- where sourceChosenColors above is, and read the same way (Obelisk of Urd,
@@ -1854,13 +1858,13 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
--- 805.4a) and its draft notes (CR 905.2b) filled from the state, the facts
--- about the table a match may ask.
+-- 805.4a), its draft notes (CR 905.2b) and what was exiled before it (CR
+-- 607.2n) filled from the state, the facts about the table a match may ask.
 contextIn :: GameState -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextIn gs p s = (contextFor (GameSettings.teams (MatchScope.settings (GameState.match gs))) p s) {activePlayers = Turn.activePlayers gs, draftNotes = fmap Player.draftNotes (GameState.players gs)}
+contextIn gs p s = (contextFor (GameSettings.teams (MatchScope.settings (GameState.match gs))) p s) {activePlayers = Turn.activePlayers gs, draftNotes = fmap Player.draftNotes (GameState.players gs), exiledBeforeGame = GameState.exiledBeforeGame gs}
 
 -- The ONE object a slot names, for the readers that can take no more than one --
 -- Quantity.AgainstSlot's evaluation, Count's IsControllerOfBound. Nothing where
@@ -2371,6 +2375,9 @@ matches context view predicate = case predicate of
   Filter.HasChosenSubtype -> maybe False (`Set.member` subtypes view) (sourceChosenSubtype context)
   -- CR 205.2a, HasChosenSubtype's arm one characteristic over.
   Filter.HasChosenCardType -> maybe False (`Set.member` cardTypes view) (sourceChosenCardType context)
+  -- CR 607.2n's pile is the candidate's own row and no link to the source:
+  -- the perspective player's cards (CR 108.3) exiled with cards of the name.
+  Filter.IsExiledWithSource (ExiledPile.WithCardsNamed name) -> Maybe.isJust (perspective context) && owner view == perspective context && (identity view >>= (`Map.lookup` exiledBeforeGame context)) == Just name
   -- CR 607.2a off the Context: the candidate's link to the source, judged as
   -- the reading ability reads it (Binding.isLinkedExile). A candidate outside
   -- that pile matches nothing. The reader is a REGRESSION FENCE: the one

@@ -1,0 +1,26 @@
+{
+  "description": "CR 607.2n / 707.12: Arcane Savant's enters trigger copies a card its controller exiled before the game with cards named Arcane Savant, their choice among several as it resolves, and offers the copy's cast without paying its mana cost",
+  "note": "alice exiled Lightning Bolt and Shock with her Savants. Her Giant Growth in exile was not exiled that way, and bob's Lightning Strike was exiled with his own. She copies the Bolt at bob; the card stays exiled.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "manaPool": "UUUUU", "hand": [{"card": "Arcane Savant", "label": "savant"}], "exile": [{"card": "Lightning Bolt", "label": "bolt", "exiledWith": "Arcane Savant"}, {"card": "Shock", "label": "shock", "exiledWith": "Arcane Savant"}, {"card": "Giant Growth", "label": "growth"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "exile": [{"card": "Lightning Strike", "label": "strike", "exiledWith": "Arcane Savant"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$savant"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChoosePermanent", "with": "$growth"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChoosePermanent", "with": "$strike"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChoosePermanent", "with": "$bolt"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "OfferedCast", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bob"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Lightning Bolt", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Shock", "count": 1}}}
+  ]
+}

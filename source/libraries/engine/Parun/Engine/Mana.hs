@@ -1251,7 +1251,7 @@ sourceChoicesOf oid gs = case Game.lookupObject oid gs of
 -- exile. Mana made while that card is already being cast (CR 601.2g) therefore
 -- names whatever was exiled before it.
 lastExiledWith :: Maybe AbilityName.AbilityName -> Acquisition.Acquisition -> ObjectId -> GameState -> Maybe ObjectId
-lastExiledWith reader acquisition oid gs = Game.lastExiled (Game.linkedPile reader acquisition ExiledPile.OwnAbilities oid gs) gs
+lastExiledWith reader acquisition oid gs = Game.lastExiled (Game.linkedPile Nothing reader acquisition ExiledPile.OwnAbilities oid gs) gs
 
 -- The production-time tags (Parun.Types.ProductionTag) every mana this object
 -- adds will carry. THE one place they are decided; manaOptionsOfGiven just above

@@ -131,6 +131,13 @@ spec s registry = Spec.describe s "Scenario" $ do
     result <- Scenario.stage registry setup
     Spec.assertEqWith s "token in hand" result (Left (ScenarioFailure.MkTokenOffBattlefield (CardName.MkCardName (Text.pack "Goblin Piker"))))
 
+  Spec.it s "CR 607.2n a placement exiled with cards of a name outside exile is rejected" $ do
+    let exiled = (S.permanent "Goblin Piker") {Placement.exiledWith = Just (CardName.MkCardName (Text.pack "Arcane Savant"))}
+        alice = (S.playerSetup S.alice) {Seat.hand = Seq.singleton exiled}
+        setup = S.board (alice NonEmpty.:| [S.playerSetup S.bob]) S.alice S.precombatMain
+    result <- Scenario.stage registry setup
+    Spec.assertEqWith s "exiled with, in hand" result (Left (ScenarioFailure.MkExiledWithOutsideExile (CardName.MkCardName (Text.pack "Goblin Piker"))))
+
   Spec.it s "CR 712.6 a placement showing a face its card lacks is rejected" $ do
     let shown = (S.permanent "Goblin Piker") {Placement.face = Just (CardName.MkCardName (Text.pack "Nightfall Predator"))}
         alice = (S.playerSetup S.alice) {Seat.battlefield = Seq.singleton shown}

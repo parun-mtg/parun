@@ -426,7 +426,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         Quantity.AgainstExiledPile (AgainstExiledPile.MkAgainstExiledPile pile inner) ->
           case Filter.source context of
             Nothing -> Nothing
-            Just src -> fmap sum (traverse (\o -> evaluateAgainst viewOf context gs announcedOn (Just o) (viewOf o) inner) (Game.linkedPile (Filter.reader context) (readerAcquisition context src gs) pile src gs))
+            Just src -> fmap sum (traverse (\o -> evaluateAgainst viewOf context gs announcedOn (Just o) (viewOf o) inner) (Game.linkedPile (Filter.perspective context) (Filter.reader context) (readerAcquisition context src gs) pile src gs))
         -- The arm above narrowed to ONE card, lastCardExiledWith's, so there is
         -- nothing to sum. Nothing when no linked card matches: "the last creature
         -- card exiled with it" is then no card at all.
@@ -1910,7 +1910,7 @@ lastCardExiledWith :: Count.ViewOf -> Filter.Context -> GameState -> Filter.Type
 lastCardExiledWith viewOf context gs criterion = do
   src <- Filter.source context
   let matching o = maybe False (\view -> Filter.matches context view criterion) (viewOf o)
-  Game.lastExiled (filter matching (Game.linkedPile (Filter.reader context) (readerAcquisition context src gs) ExiledPile.OwnAbilities src gs)) gs
+  Game.lastExiled (filter matching (Game.linkedPile Nothing (Filter.reader context) (readerAcquisition context src gs) ExiledPile.OwnAbilities src gs)) gs
 
 -- CR 607.5: the acquisition the context's reader came with
 -- (Filter.sourceAcquisition), else the one its source `src` has now.

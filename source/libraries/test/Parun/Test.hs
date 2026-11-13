@@ -657,6 +657,7 @@ import qualified Parun.Codec.PlusSpec
 import qualified Parun.Codec.PoolSpec
 import qualified Parun.Codec.PowerSpec
 import qualified Parun.Codec.PowerToughnessIsSpec
+import qualified Parun.Codec.PregameExileSpec
 import qualified Parun.Codec.PreventAllDamageSpec
 import qualified Parun.Codec.PreventNextDamageSpec
 import qualified Parun.Codec.PreventionRiderSpec
@@ -1252,6 +1253,7 @@ spec s registry corpus = do
   Parun.Codec.CombatSpec.spec s
   Parun.Codec.CombatStepSpec.spec s
   Parun.Codec.CommanderDeckRuleSpec.spec s
+  Parun.Codec.PregameExileSpec.spec s
   Parun.Codec.CompanionConditionSpec.spec s
   Parun.Codec.ComparesSpec.spec s
   Parun.Codec.CompanyCountSpec.spec s

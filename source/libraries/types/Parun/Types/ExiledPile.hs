@@ -1,6 +1,7 @@
 module Parun.Types.ExiledPile where
 
 import qualified Parun.Types.AbilityName as AbilityName
+import qualified Parun.Types.CardName as CardName
 
 -- | CR 607.2a: which of the cards in exile linked to a source a reader means,
 -- as Parun.Engine.Binding.isLinkedExile answers it.
@@ -17,4 +18,7 @@ data ExiledPile
   | -- | CR 702.167c: the cards exiled to craft the source (Locus of
     -- Enlightenment).
     CraftMaterials
+  | -- | CR 607.2n: every card the reading player exiled before the game with
+    -- cards of that name (Arcane Savant), whatever the source.
+    WithCardsNamed CardName.CardName
   deriving (Eq, Ord, Show)

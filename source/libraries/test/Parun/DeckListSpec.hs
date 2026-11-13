@@ -370,6 +370,21 @@ spec s = Spec.describe s "Parun.DeckList" $ do
       again <- deckOf s "draft-notes-again" registry (Text.unpack text)
       Spec.assertEqWith s "the same deck" again deck
 
+  -- CR 607.2n: the cards exiled before the game are a section per name of
+  -- the cards they were exiled with, and a rendered list writes it back.
+  Spec.it s "CR 607.2n an Exiled with section exiles its cards with cards of the name, and a rendered list writes it back"
+    . withPool "exiled-with"
+    $ \registry -> do
+      deck <- deckOf s "exiled-with" registry "4 Goblin Piker\n\nExiled with Goblin Piker\n2 Wax // Wane\n\nSideboard\n1 Goblin Piker\n"
+      let named = CardName.MkCardName . Text.pack
+      Spec.assertEqWith s "the exiled cards, by name" (fmap entriesOf (Deck.exiledBeforeGame deck)) (Map.singleton (named "Goblin Piker") [(Text.pack "Wax//Wane", 2)])
+      Spec.assertEqWith s "and the deck" (entriesOf (Deck.cards deck)) [(Text.pack "Goblin Piker", 4)]
+      Spec.assertEqWith s "and the sideboard after it" (entriesOf (Deck.sideboard deck)) [(Text.pack "Goblin Piker", 1)]
+      let text = DeckList.render (Registry.printings registry) Nothing deck
+      Spec.assertBool s (Text.isInfixOf (Text.pack "\nExiled with Goblin Piker\n2 Wax // Wane\n") text) ("its own section: " <> show text)
+      again <- deckOf s "exiled-with-again" registry (Text.unpack text)
+      Spec.assertEqWith s "the same deck" again deck
+
   -- CR 905.2b: a note that is no number is braced after the card's name, one
   -- kind each, a noted name resolved as a card's is; a rendered list writes
   -- one note a line, in order, and reads back the same.

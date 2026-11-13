@@ -584,6 +584,8 @@ affectedNames oid source gs affected = case affected of
 --     naming the object CR 607.2a's or CR 607.2b's link names.
 --   * GameState.exilePiles (CR 406.4), keyed by the card in exile face down, its
 --     value the stamp of the pile it is in.
+--   * GameState.exiledBeforeGame (CR 607.2n), keyed by the card in exile, its
+--     value a card name. A fence, as exilePiles' arm is.
 --   * GameState.enteredWith (CR 400.7), keyed by the permanent, its values
 --     naming the sources whose effects put it onto the battlefield or
 --     assimilated it.
@@ -642,6 +644,7 @@ namedByRelation oid gs =
         || relates Set.singleton (GameState.encoded gs)
         || relates (Set.singleton . ExileLink.source) (GameState.exiledWith gs)
         || relates pileNames (GameState.exilePiles gs)
+        || keyed (GameState.exiledBeforeGame gs)
         || relates (Set.map EntryLink.source) (GameState.enteredWith gs)
         || relates (Set.map CounterLink.source) (GameState.counteredWith gs)
         || keyed (TurnRegisters.activatedThisTurn (GameState.turn gs))

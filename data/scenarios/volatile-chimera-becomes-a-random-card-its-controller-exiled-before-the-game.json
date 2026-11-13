@@ -1,0 +1,26 @@
+{
+  "description": "CR 607.2n / 707.9a: Volatile Chimera's ability chooses at random among the cards its controller exiled before the game with cards named Volatile Chimera, and the Chimera becomes a copy of that card that keeps the ability",
+  "note": "alice exiled Grizzly Bears, Hill Giant and Serra Angel with her Chimera; bob's Craw Wurm was exiled with his own and randomness cannot name it. The Chimera becomes Hill Giant, then, by the ability it kept, Serra Angel; the cards stay exiled.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "manaPool": "RRRR", "battlefield": [{"card": "Volatile Chimera", "label": "chimera"}], "exile": [{"card": "Grizzly Bears", "label": "bears", "exiledWith": "Volatile Chimera"}, {"card": "Hill Giant", "label": "giant", "exiledWith": "Volatile Chimera"}, {"card": "Serra Angel", "label": "angel", "exiledWith": "Volatile Chimera"}], "library": [{"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}]},
+      {"name": "bob", "exile": [{"card": "Craw Wurm", "label": "wurm", "exiledWith": "Volatile Chimera"}], "library": [{"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$chimera"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "RandomObject", "with": "$wurm"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "RandomObject", "with": "$giant"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$chimera", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$chimera"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "RandomObject", "with": "$angel"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$chimera", "power": 4, "toughness": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Serra Angel", "count": 1}}}
+  ]
+}
