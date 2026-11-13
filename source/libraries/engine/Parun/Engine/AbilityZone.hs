@@ -207,6 +207,7 @@ zoneOfComponent component = case component of
   CostComponent.Waterbend _ -> Nothing
   CostComponent.WaterbendInstead _ -> Nothing
   CostComponent.TapInsteadOfMana _ -> Nothing
+  CostComponent.VariableAtLeast _ -> Nothing
 
 -- CR 113.6 / 604.2 / 702.178b: does the "as long as" grant that gives an object
 -- this ability function where the object is? A grant is a static ability, so

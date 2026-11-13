@@ -56,7 +56,6 @@ ability =
           ActivatedAbility.modal =
             Mint.oneModeTargeting (Map.singleton teammate slot) (Seq.singleton effect),
           ActivatedAbility.maximumX = [],
-          ActivatedAbility.minimumX = 0,
           ActivatedAbility.definedX = Nothing,
           -- CR 307.5's sorcery timing.
           ActivatedAbility.restrictions = [ActivationRestriction.SorcerySpeed],

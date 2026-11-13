@@ -271,4 +271,6 @@ data CostComponent keyword
     WaterbendInstead Natural.Natural
   | -- | CR 602.1e / Heirloom Epic: the payer may tap a permanent the Filter admits rather than pay each mana of the total cost.
     TapInsteadOfMana (Filter.Filter keyword)
+  | -- | CR 101.1 / Katara, Water Tribe's Hope, Light Up the Night: the X announced for this cost can't be less than this; a limit and not a payment.
+    VariableAtLeast Natural.Natural
   deriving (Eq, Ord, Show)

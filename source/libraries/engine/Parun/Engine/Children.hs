@@ -2019,6 +2019,7 @@ costComponentChildren c component = case component of
   CostComponent.Waterbend amount -> CostComponent.Waterbend <$> costAmountChildren c amount
   CostComponent.WaterbendInstead _ -> pure component
   CostComponent.TapInsteadOfMana criterion -> CostComponent.TapInsteadOfMana <$> costFilter c criterion
+  CostComponent.VariableAtLeast _ -> pure component
 
 -- | An amount a cost component names: only an announced one holds a slot.
 costAmountChildren :: (Applicative f) => CostChildren keyword f -> CostAmount.CostAmount -> f CostAmount.CostAmount
@@ -2660,12 +2661,11 @@ abilityLeaves =
 
 -- | An activated ability's children. Each choice's costs go to abilityCost.
 activatedAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> ActivatedAbility.ActivatedAbility card ability -> f (ActivatedAbility.ActivatedAbility card ability)
-activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices maximumX minimumX definedX modal restrictions activator condition name stamp copyability) =
+activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices maximumX definedX modal restrictions activator condition name stamp copyability) =
   ActivatedAbility.MkActivatedAbility
     <$> abilityCost c cost
     <*> traverse (fmap CostChoice.MkCostChoice . traverse (abilityCost c) . CostChoice.unwrap) costChoices
     <*> traverse (abilityQuantity c) maximumX
-    <*> pure minimumX
     -- CR 607.2a's pile is a relation on the board, named by no slot.
     <*> traverse (\(DefinedX.MkDefinedX quantity choice) -> fmap (`DefinedX.MkDefinedX` choice) (abilityQuantity c quantity)) definedX
     <*> abilityModal c modal

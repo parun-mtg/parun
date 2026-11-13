@@ -435,7 +435,7 @@ graceUsed pid srcId gs =
 -- CR 602.2b's routing of an activation cost through CR 601.2b, at X=0. An
 -- ability is affordable when its activation cost is payable at the least X its
 -- activator may announce -- 0, or CR 101.1's printed floor
--- (ActivatedAbility.minimumX) -- which is this predicate at that value;
+-- (Cost.variableFloor) -- which is this predicate at that value;
 -- `activatable` conjoins it and `affordableX` climbs it, so what activatability
 -- measures and what the bound reports cannot drift apart.
 --
@@ -604,7 +604,7 @@ candidateSlotsGiven reader pools pid srcId modal fillable gs =
    in fmap (aimableOf . slotsOf) (Modal.selections fillable (Modal.Type.selection modal))
 
 -- | CR 101.1 / 107.3c: the least X this ability's activator may announce --
--- its printed floor (ActivatedAbility.minimumX) -- or, for an X its own text
+-- its cost's printed floor (Cost.variableFloor) -- or, for an X its own text
 -- defines (Cost.definedX), that X, which is then the only one. Where a choice
 -- defines it (Cost.definingCandidates), the least any candidate gives: CR
 -- 601.2b makes the choice as X is announced, so the gate asks whether SOME
@@ -612,7 +612,7 @@ candidateSlotsGiven reader pools pid srcId modal fillable gs =
 leastX :: PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility card ability -> GameState -> Natural
 leastX pid srcId ability gs = case Cost.definingCandidates pid srcId ability gs of
   Just candidates@(_ : _) -> minimum (Maybe.mapMaybe (\chosen -> Cost.definedX (Just chosen) pid srcId ability gs) candidates)
-  _ -> Maybe.fromMaybe (ActivatedAbility.minimumX ability) (Cost.definedX Nothing pid srcId ability gs)
+  _ -> Maybe.fromMaybe (Cost.variableFloor (ActivatedAbility.cost ability)) (Cost.definedX Nothing pid srcId ability gs)
 
 -- CR 601.2b via 602.2b: the greatest X this player could actually pay for, which
 -- is what Prompt.ChooseX carries. The climb itself is Cost.greatestPayableX,

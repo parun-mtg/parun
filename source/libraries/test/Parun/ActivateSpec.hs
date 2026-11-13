@@ -134,7 +134,7 @@ chooseNoModes p = case p of
 theAbility :: Printing.Printing -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Activate" $ do
@@ -394,7 +394,6 @@ spec s registry = Spec.describe s "Parun.Engine.Activate" $ do
                   },
               ActivatedAbility.modal = Mint.oneMode Seq.empty,
               ActivatedAbility.maximumX = [],
-              ActivatedAbility.minimumX = 0,
               ActivatedAbility.definedX = Nothing,
               ActivatedAbility.restrictions = [],
               ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -1051,7 +1050,6 @@ cyclingSpec s registry = Spec.describe s "Cycling" $ do
             (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) [])
             []
             []
-            0
             Nothing
             ( Modal.MkModal
                 (Seq.fromList [Mode.MkMode Seq.empty Map.empty, Mode.MkMode Seq.empty Map.empty])

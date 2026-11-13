@@ -8,6 +8,10 @@
             "components": [
               {
                 "type": "TapThis"
+              },
+              {
+                "type": "VariableAtLeast",
+                "value": 1
               }
             ],
             "mana": [
@@ -19,7 +23,6 @@
               }
             ]
           },
-          "minimumX": 1,
           "modal": {
             "modes": [
               {

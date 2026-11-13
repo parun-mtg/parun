@@ -149,7 +149,7 @@ import qualified Parun.Types.Zone as Zone
 theAbility :: Printing.Printing -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] 0 Nothing (Face.spell (S.combinedFace p)) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Face.spell (S.combinedFace p)) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
 
 -- CR 607.2d: Doom Cannon's "{3}, {T}, Sacrifice a creature of the chosen type:
 -- This artifact deals 3 damage to any target" is linked to its "As this artifact
@@ -3021,6 +3021,7 @@ spec s registry = Spec.describe s "Parun.Engine.Cost" $ do
   kataraSeekingRevengeSpec s registry
   hamaSpec s registry
   mindGrindSpec s registry
+  lightUpTheNightSpec s registry
   flashSpec s registry
 
 -- alice holds `card` and controls `n` untapped Mountains, plus Omniscience when
@@ -5972,7 +5973,7 @@ unpaidLeaper s leaperId gs = case Projection.abilitiesOf leaperId gs of
 -- toughness is what a paid cost is read off -- a Goblin Piker is printed 2/1, so
 -- neither number the assertions read can be its own.
 --
--- "X can't be 0" is ActivatedAbility.minimumX (CR 101.1): the floor pair below
+-- "X can't be 0" is the cost's CostComponent.VariableAtLeast (CR 101.1): the floor pair below
 -- proves the announcement side and the offer pair the gate.
 --
 -- Every board is LANDLESS, geyserLeaperSpec's posture above: an activation that
@@ -6078,6 +6079,108 @@ mindGrindBoard s registry n = do
               }
         }
     )
+
+-- Light Up the Night {X}{R} Sorcery (Oracle text checked against Scryfall
+-- 2026-11-13): "Light Up the Night deals X damage to any target. It deals X
+-- plus 1 damage instead if that target is a creature or planeswalker." /
+-- "Flashback--{3}{R}, Remove X loyalty counters from among planeswalkers you
+-- control. If you cast this spell this way, X can't be 0."
+--
+-- The floor is the flashback cost's own CostComponent.VariableAtLeast (CR
+-- 101.1), so it binds that candidate and no other: the floor pair proves the
+-- announcement side, the offer pair the castability gate, and the two hand
+-- casts that a cast for another cost may still announce, or be fixed at, 0.
+--
+-- THE BOARD: alice controls `n` Mountains and, where `loyalty` is given, a
+-- Jace Beleren carrying that many loyalty counters; bob controls a Hill Giant.
+lightUpTheNightSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+lightUpTheNightSpec s registry = Spec.describe s "Light Up the Night" $ do
+  -- The first cast to pay a RemoveCounters of an announced X, and the damage
+  -- clause as a pair varying the TARGET alone.
+  Spec.it s "CR 702.34a/107.3a the flashback cost removes X loyalty counters, and a creature takes X plus 1 where a player takes X" $ do
+    (spell, jaceId, giantId, gs) <- lightUpBoard s registry S.addGraveyardCard 4 (Just 3)
+    let atGiant = lightUpCast (const 2) (Just giantId) spell gs
+        atBob = lightUpCast (const 2) Nothing spell gs
+    Spec.assertEqWith s "the Giant took X plus 1, 3 damage" (S.damageOf giantId atGiant) (Just 3)
+    Spec.assertEqWith s "and bob, a player, X alone" (S.lifeOf S.bob atBob) (Just 18)
+    Spec.assertEqWith s "CR 122.1 two of Jace's three loyalty counters paid for it" (S.counterOf CounterKind.Loyalty jaceId atGiant) 1
+    Spec.assertEqWith s "beside {3}{R}, four Mountains" (S.tappedCount S.alice atGiant) 4
+    Spec.assertEqWith s "CR 702.34a and the card was exiled" (length (Game.zoneMembers Zone.Exile S.alice atGiant), Game.zoneMembers Zone.Graveyard S.alice atGiant) (1, [])
+  -- A pair varying the ANNOUNCED value alone. The 1 is answered with the
+  -- least value ChooseX carries, so the prompt's floor is read too.
+  Spec.it s "CR 101.1 cast for its flashback cost an announced X of 0 is refused, and the floor of 1 is not" $ do
+    (spell, jaceId, giantId, gs) <- lightUpBoard s registry S.addGraveyardCard 4 (Just 3)
+    let zero = lightUpCast (const 0) (Just giantId) spell gs
+        least = lightUpCast id (Just giantId) spell gs
+    Spec.assertEqWith s "CR 101.1 at X=0 Light Up the Night is still in alice's graveyard" (Game.zoneMembers Zone.Graveyard S.alice zero) [spell]
+    Spec.assertEqWith s "and the Giant is undamaged" (S.damageOf giantId zero) (Just 0)
+    Spec.assertEqWith s "at the prompt's least X the Giant took 2" (S.damageOf giantId least) (Just 2)
+    Spec.assertEqWith s "and Jace paid one loyalty counter" (S.counterOf CounterKind.Loyalty jaceId least) 2
+  -- The gate's side: removing 0 counters is payable off no planeswalker at
+  -- all, so only the floor withholds the cast there. A pair differing in Jace.
+  Spec.it s "CR 101.1/601.2 the flashback is not offered when no X of 1 or more is payable" $ do
+    (bare, _, _, bareGs) <- lightUpBoard s registry S.addGraveyardCard 4 Nothing
+    (held, _, _, heldGs) <- lightUpBoard s registry S.addGraveyardCard 4 (Just 1)
+    Spec.assertBool s (not (any (S.isCastOf bare) (Action.legalActions S.alice bareGs))) "with no planeswalker no X of 1 is payable, so no cast is offered"
+    Spec.assertBool s (any (S.isCastOf held) (Action.legalActions S.alice heldGs)) "and one loyalty counter on Jace pays X=1, so one is"
+  -- "If you cast this spell this way": the printed {X}{R} carries no floor.
+  Spec.it s "CR 101.1 cast from hand for {X}{R} the floor does not bind, and X=0 deals 1 to a creature" $ do
+    (spell, _, giantId, gs) <- lightUpBoard s registry S.addHandCard 1 Nothing
+    let zero = lightUpCast (const 0) (Just giantId) spell gs
+    Spec.assertEqWith s "the Giant took 0 plus 1" (S.damageOf giantId zero) (Just 1)
+    Spec.assertEqWith s "and the card left alice's hand" (S.handSize S.alice zero) 0
+  -- CR 107.3b's fixed 0, which Mind Grind's face-wide floor withholds
+  -- (omniscienceSpec) and this card's cost-scoped one must not.
+  Spec.it s "CR 107.3b cast without paying its mana cost stays offered, X fixed at 0" $ do
+    mountain <- S.printingOf s registry "Mountain"
+    omniscience <- S.printingOf s registry "Omniscience"
+    lightUp <- S.printingOf s registry "Light Up the Night"
+    giant <- S.printingOf s registry "Hill Giant"
+    let (spell, base) = omniscienceBoard mountain omniscience lightUp 0 True
+        (giantId, gs) = S.addPermanent giant S.bob base
+        free = lightUpCast (const 5) (Just giantId) spell gs
+    Spec.assertBool s (any (S.isCastOf spell) (Action.legalActions S.alice gs)) "offered with no land at all"
+    Spec.assertEqWith s "and the Giant took 0 plus 1" (S.damageOf giantId free) (Just 1)
+
+-- See lightUpTheNightSpec for the board; `place` puts the card in alice's hand
+-- or graveyard. Without a `loyalty` there is no Jace, and no id for one.
+lightUpBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> (Printing.Printing -> PlayerId.PlayerId -> GameState.GameState -> (ObjectId.ObjectId, GameState.GameState)) -> Int -> Maybe Natural.Natural -> m (ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
+lightUpBoard s registry place n loyalty = do
+  lightUp <- S.printingOf s registry "Light Up the Night"
+  mountain <- S.printingOf s registry "Mountain"
+  jace <- S.printingOf s registry "Jace Beleren"
+  giant <- S.printingOf s registry "Hill Giant"
+  let lands = S.landsFor mountain S.alice n (Setup.emptyGame S.bothPlayers)
+      (jaceId, withJace) = case loyalty of
+        Just counters -> let (oid, g) = S.addPermanent jace S.alice lands in (oid, S.addCounter CounterKind.Loyalty counters oid g)
+        Nothing -> (S.noSource, lands)
+      (giantId, withGiant) = S.addPermanent giant S.bob withJace
+      (spell, gs) = place lightUp S.alice withGiant
+  pure
+    ( spell,
+      jaceId,
+      giantId,
+      gs
+        { GameState.turn =
+            (GameState.turn gs)
+              { TurnRegisters.phase = Phase.PrecombatMain,
+                TurnRegisters.activePlayer = S.alice,
+                TurnRegisters.priority = Just S.alice
+              }
+        }
+    )
+
+-- alice casts Light Up the Night and it resolves: X is `x` of the least value
+-- Prompt.ChooseX carries, the target the Giant named or else bob.
+lightUpCast :: (Natural.Natural -> Natural.Natural) -> Maybe ObjectId.ObjectId -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
+lightUpCast x target spell gs =
+  let aimed = maybe (Recipient.ToPlayer S.bob ==) (\oid -> (== Just oid) . Recipient.objectOf) target
+      answer :: Prompt.Prompt r -> r
+      answer p = case p of
+        Prompt.ChooseX _ _ _ _ floorX _ -> x floorX
+        Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter aimed . snd) sets
+        _ -> S.identityAnswer p
+   in S.runPure answer gs (do S.cast S.alice spell; Stack.resolveTop)
 
 -- Katara alone on alice's landless battlefield, alice holding priority in her
 -- own precombat main phase.

@@ -1993,7 +1993,6 @@ oneEffectActivated mana effect =
       ActivatedAbility.modal =
         Mint.oneMode (Seq.singleton effect),
       ActivatedAbility.maximumX = [],
-      ActivatedAbility.minimumX = 0,
       ActivatedAbility.definedX = Nothing,
       ActivatedAbility.restrictions = [],
       ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -2028,7 +2027,6 @@ modalActivated modes =
       ActivatedAbility.cost = Cost.Type.MkCost {Cost.Type.mana = Just (ManaCost.MkManaCost []), Cost.Type.components = []},
       ActivatedAbility.modal = Modal.MkModal (Seq.fromList modes) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty,
       ActivatedAbility.maximumX = [],
-      ActivatedAbility.minimumX = 0,
       ActivatedAbility.definedX = Nothing,
       ActivatedAbility.restrictions = [],
       ActivatedAbility.activator = Activator.Related PlayerRelation.You,
@@ -3153,6 +3151,7 @@ costComponentFilters component = case component of
   CostComponent.WaterbendInstead _ -> []
   -- Heirloom Epic's "an untapped creature you control".
   CostComponent.TapInsteadOfMana f -> [f]
+  CostComponent.VariableAtLeast _ -> []
 
 -- The Filter narrowing a target slot's CR 115 pool -- "target creature with
 -- flying" -- and CR 303.4a's enchant slot, which is a TargetSlot too.
