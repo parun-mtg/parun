@@ -686,8 +686,9 @@ payableCountedAtGiven modes pcs sources x extra spending pid oid gs cost =
       -- the printed ones are.
       blind = adjustmentsFor Map.empty
       blindCost = Cost.plusComponents blind substituted
+      (aimable, beyond) = castAimable (Cost.aimingKey pid oid gs blindCost) modes x pid oid gs
    in if Cost.readsBoundSlot blindCost || Cost.readsTargets pid oid gs
-        then any (\aiming -> askWith (adjustmentsFor aiming) aiming) (castAimable (Cost.aimingKey pid oid gs blindCost) modes x pid oid gs)
+        then beyond || any (\aiming -> askWith (adjustmentsFor aiming) aiming) aimable
         else askWith blind Map.empty
 
 -- What CR 601.2c could still bind for this proposal: every aiming
@@ -720,9 +721,16 @@ payableCountedAtGiven modes pcs sources x extra spending pid oid gs cost =
 -- slot, neither of which takes this
 -- road. A card printing an X-bounded target slot beside a slot-reading
 -- additional cost is what would make the two values differ.
-castAimable :: (Ord k) => (Recipient.Recipient -> k) -> Maybe (Seq.Seq ModeIndex.ModeIndex) -> Natural -> PlayerId -> ObjectId -> GameState -> [Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)]
+--
+-- The Bool says a walk was cut short at Target.subsetBudget (`aimingsOf`), which
+-- payableCountedAtGiven answers as payable: a false offer CR 601.2h's payment
+-- takes back with nothing changed (CR 734.1), where a false refusal would deny
+-- a legal cast.
+--
+-- Not implemented: an exact answer past the cap (#7297).
+castAimable :: (Ord k) => (Recipient.Recipient -> k) -> Maybe (Seq.Seq ModeIndex.ModeIndex) -> Natural -> PlayerId -> ObjectId -> GameState -> ([Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)], Bool)
 castAimable key announced x pid oid gs = case Game.faceOf oid gs of
-  Nothing -> []
+  Nothing -> ([], False)
   Just printedFace ->
     let enchants = Projection.enchantOf oid gs
         mutating = maybe False Object.mutating (Game.lookupObject oid gs)
@@ -762,20 +770,43 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
         pools = Target.wholePools gs
         coherent slots aiming = Target.jointlyCoherentGiven StackObjectKind.Spell Nothing pools (Just pid) True Map.empty oid slots aiming gs
         -- Every aiming of one selection's slots, at the counts CR 601.2c admits
-        -- for the X this gate is asking about (Target.aimingRanges). Where a slot
-        -- is jointly judged, recipients the cost cannot tell apart may still
-        -- differ to the joint check (whose graveyard, which object), so each is
-        -- its own class there and the check filters real aimings, not stand-ins.
+        -- for the X this gate is asking about (Target.aimingRanges), and whether
+        -- the walk was cut short. Recipients the cost cannot tell apart may
+        -- still differ to the joint check, which is settled three ways. A slot
+        -- a pool names is walked once per answer it could take
+        -- (Target.poolSplits), which leaves its dependents classed by the cost
+        -- alone. A `together` slot's members are classed by the zone holding
+        -- them besides. The members of every other jointly judged slot
+        -- (Target.entangledSlots) are each their own class, which is every
+        -- subset, so where such a slot takes several targets the walk stops at
+        -- Target.subsetBudget. Parun.CostSpec's "Drafna's Restoration" and
+        -- "Synthetic Wide Verdict" groups prove the split and the stop.
         aimingsOf slots =
           let sets = setsOf slots
-              joint = any (Target.jointlyJudged (Map.keysSet slots)) (Map.elems slots)
-              signature r = (key r, if joint then Just r else Nothing)
-           in filter (coherent slots) (Target.aimingsBy Cost.aimedReferent signature (Target.aimingRanges Nothing (Just pid) oid (Just x) slots sets gs) sets)
+              rangesOf legal = Target.aimingRanges Nothing (Just pid) oid (Just x) slots legal gs
+              ranges = rangesOf sets
+              legalUnder bindings slot = Target.legalRecipientsGiven StackObjectKind.Spell Nothing pools (Just pid) True bindings (Game.acquisitionFor Nothing oid gs) oid slot gs
+              (split, splits) = Target.poolSplits legalUnder ranges slots sets
+              entangled = Target.entangledSlots split slots
+              zoned = Map.keysSet (Map.filter (Maybe.isJust . TargetSlot.together) slots)
+              holders = Map.fromListWith Set.union [(Cost.aimedReferent a, Set.singleton name) | (name, members) <- Map.toList sets, a <- Set.toList members]
+              jointKey r =
+                let held = Map.findWithDefault Set.empty r holders
+                 in if Set.disjoint held entangled
+                      then Right (if Set.disjoint held zoned then Nothing else Target.zoneHolding gs r)
+                      else Left r
+              signature r = (key r, jointKey r)
+              walk = concatMap (\narrowed -> Target.aimingsBy Cost.aimedReferent signature (rangesOf narrowed) narrowed) splits
+              capped = any (\name -> maybe False ((> 1) . snd) (Map.lookup name ranges)) entangled
+              -- Lazy, so only the visited prefix and one aiming past it are built.
+              (visited, beyond) = if capped then List.genericSplitAt Target.subsetBudget walk else (walk, [])
+           in (filter (coherent slots) visited, not (null beyond))
         -- CR 700.2: the modes CR 601.2b announced, or every selection the printed
         -- instruction admits among the fillable modes -- a "choose two" spell
         -- (Ojutai's Command) aims across both.
         selected modal = maybe (Modal.selections (Target.fillableModes StackObjectKind.Spell Nothing (Just pid) Map.empty oid enchant modal gs) (Modal.Type.selection modal)) pure announced
-     in Set.toList (Set.fromList [aiming | modal <- readings, chosen <- selected modal, aiming <- aimingsOf (slotsOf modal chosen)])
+        walks = [aimingsOf (slotsOf modal chosen) | modal <- readings, chosen <- selected modal]
+     in (Set.toList (Set.fromList (concatMap fst walks)), any snd walks)
 
 -- CR 601.2b: the greatest value of X this player could actually pay for, which is
 -- what Prompt.ChooseX carries -- measured on the cost the cast is measuring, with
