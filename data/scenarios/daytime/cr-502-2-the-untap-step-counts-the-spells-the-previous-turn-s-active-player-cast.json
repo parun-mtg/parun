@@ -1,0 +1,312 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Infestation Expert",
+            "label": "expert"
+          },
+          {
+            "card": "Forest",
+            "label": "a-forest-1"
+          },
+          {
+            "card": "Forest",
+            "label": "a-forest-2"
+          },
+          {
+            "card": "Forest",
+            "label": "a-forest-3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Fog",
+            "label": "a-fog-1"
+          },
+          {
+            "card": "Fog",
+            "label": "a-fog-2"
+          },
+          {
+            "card": "Fog",
+            "label": "a-fog-3"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "b-forest-1"
+          },
+          {
+            "card": "Forest",
+            "label": "b-forest-2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Fog",
+            "label": "b-fog-1"
+          },
+          {
+            "card": "Fog",
+            "label": "b-fog-2"
+          },
+          {
+            "card": "Fog",
+            "label": "b-fog-3"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 502.2 the untap step counts the spells the previous turn's active player cast",
+  "note": "Turns are played out. Infestation Expert's daybound makes it day. Turn 1 (alice's): alice casts a Fog, so it stays day (A). Turn 2 (bob's): only alice casts, and the active player cast none, so it becomes night (B). Turn 3: alice and bob cast one Fog each, which is not the active player casting two, so it stays night (C). Turn 4: bob casts two, so it becomes day (D). Each read is at the draw step, after the untap step's check.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": "Day",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$a-forest-1",
+            null
+          ],
+          "object": "$a-fog-1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "Day",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Infestation Expert"
+          ],
+          "object": "$expert"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$a-forest-2",
+            null
+          ],
+          "object": "$a-fog-2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": "Night",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Infested Werewolf"
+          ],
+          "object": "$expert"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$a-forest-1",
+            null
+          ],
+          "object": "$a-fog-3"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$b-forest-1",
+            null
+          ],
+          "object": "$b-fog-1"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": "Night",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Infested Werewolf"
+          ],
+          "object": "$expert"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$b-forest-1",
+            null
+          ],
+          "object": "$b-fog-2"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$b-forest-2"
+          ],
+          "object": "$b-fog-3"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "View": {
+          "is": "Day",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Infestation Expert"
+          ],
+          "object": "$expert"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 5
+    }
+  ]
+}

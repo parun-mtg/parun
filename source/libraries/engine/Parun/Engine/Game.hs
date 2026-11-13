@@ -522,8 +522,7 @@ blankScratch =
 blankHistory :: History.History
 blankHistory =
   History.MkHistory
-    { History.spellsCastLastTurn = 0,
-      History.pastTurns = Seq.empty,
+    { History.pastTurns = Seq.empty,
       History.attacksInOwnLastTurn = Map.empty,
       History.triggeredThisGame = Seq.empty,
       History.resolvedNames = Map.empty
@@ -3499,10 +3498,10 @@ casterOf spell =
     . TurnRegisters.events
     . GameState.turn
 
--- CR 601.2i: how many spells each player cast during the turn this log holds --
--- turnLog's, or the outgoing one Engine.beginTurn folds CR 502.2's scalar out
--- of. Parun.Engine.PlayerEffect.castsThisTurn and Parun.Engine.Quantity's
--- SpellsCast arm read one seat out of it, so the readers cannot disagree.
+-- CR 601.2i: how many spells each player cast during the turn this log holds
+-- (turnLog's). Parun.Engine.PlayerEffect.castsThisTurn, Parun.Engine.Quantity's
+-- SpellsCast arm and spellsCastLastTurn read seats out of it, so the readers
+-- cannot disagree.
 --
 -- SPARSE: a player who cast nothing has no entry, and every reader takes 0 for an
 -- absent one.
@@ -3522,6 +3521,18 @@ turnLog which gs = case which of
   WhichTurn.LastTurn -> case Seq.viewr (History.pastTurns (GameState.history gs)) of
     _ Seq.:> newest -> PastTurn.events newest
     Seq.EmptyR -> Seq.empty
+
+-- CR 502.2 / 732.2: how many spells the previous turn's active player cast
+-- during it, off the newest of History.pastTurns; 0 on the game's first turn.
+-- CR 502.2a / 732.2a-b: under the shared team turns option the rule asks whether
+-- NO player on the previous active team cast a spell and whether ANY cast two
+-- or more, and the most any one of them cast answers both.
+spellsCastLastTurn :: GameState -> Natural
+spellsCastLastTurn gs = case Seq.viewr (History.pastTurns (GameState.history gs)) of
+  _ Seq.:> newest ->
+    let casts = castsPerPlayer (PastTurn.events newest)
+     in List.foldl' max 0 (fmap (\p -> Map.findWithDefault 0 p casts) (PastTurn.activePlayers newest))
+  Seq.EmptyR -> 0
 
 -- CR 601.2i: the casts a log holds, in the order they became cast.
 castsInLog :: Seq.Seq LoggedEvent.LoggedEvent -> Seq.Seq SpellWasCast.SpellWasCast

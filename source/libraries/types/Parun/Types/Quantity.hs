@@ -301,7 +301,7 @@ data Quantity
     -- object this quantity is evaluated against.
     DamageDealtThisTurn DamageDirection.DamageDirection
   | -- | CR 601.2i / 608.2i: how many spells that player cast during the turn the
-    -- tally names (not CR 502.2's active-player scalar).
+    -- tally names (not CR 502.2's active-player count).
     SpellsCast SpellTally.SpellTally
   | -- | CR 608.2n \/ 608.2i: how many times the ABILITY this quantity is
     -- evaluated against has resolved this turn, folded from the turn-scoped

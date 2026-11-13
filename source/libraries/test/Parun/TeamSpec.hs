@@ -78,7 +78,6 @@ import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.History as History
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MulliganDecision as MulliganDecision
@@ -296,7 +295,7 @@ sharedTurnsSpec s registry = Spec.describe s "SharedTeamTurns" $ do
                         }
                   }
               cast = S.runPure S.castAnswer board (S.cast S.bob held)
-           in (History.spellsCastLastTurn . GameState.history) (Engine.beginTurnOf S.carol cast)
+           in Game.spellsCastLastTurn (Engine.beginTurnOf S.carol cast)
     Spec.assertEqWith s "bob's one spell counts for his team" (run sharedTurns) 1
     Spec.assertEqWith s "without the option only alice's none counts" (run id) 0
   -- CR 805.4d's other half: an ability that does not refer to "that player"

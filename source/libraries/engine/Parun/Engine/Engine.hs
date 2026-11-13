@@ -2316,10 +2316,7 @@ beginTurn extra pid = newTurn extra pid . closeTurn
 -- Melee"); every other game, as the next begins (beginTurn).
 closeTurn :: GameState -> GameState
 closeTurn gs =
-  let -- CR 601.2i / 608.2i: how many spells each player cast during the turn that
-      -- is ending, taken here because the log it is folded from is cleared by the
-      -- record update below. `gs` still holds the OUTGOING active player.
-      casts = Game.castsPerPlayer (TurnRegisters.events (GameState.turn gs))
+  let -- `gs` still holds the OUTGOING active players.
       outgoing = Turn.activePlayers gs
    in gs
         { -- The outgoing turn's tallies, cleared together; newTurn and
@@ -2383,20 +2380,14 @@ closeTurn gs =
               },
           GameState.history =
             (GameState.history gs)
-              { -- CR 502.2 / 732.2: the count the NEXT turn's untap step asks about
-                -- "the previous turn's active player".
-                --
-                -- CR 502.2a / 732.2a: under the shared team turns option the rule asks
-                -- whether NO player on the previous active team cast a spell and
-                -- whether ANY cast two or more, and the most any one of them cast
-                -- answers both.
-                History.spellsCastLastTurn = List.foldl' max 0 (fmap (\p -> Map.findWithDefault 0 p casts) outgoing),
-                -- CR 608.2i: the outgoing turn, whole, joins the game's finished
+              { -- CR 608.2i: the outgoing turn, whole, joins the game's finished
                 -- turns before the log holding it is cleared above, for the per-seat
                 -- view, for every "last turn" tally a CARD asks (Quantity's
-                -- SpellsCast and LifeChanged at WhichTurn.LastTurn) and for the
+                -- SpellsCast and LifeChanged at WhichTurn.LastTurn), for the
                 -- game's casts (Game.castsThisGame) and earlier damage
-                -- (Game.damageBeforeThisTurn). Forced here, so
+                -- (Game.damageBeforeThisTurn), and, by its stamp, for the count
+                -- the NEXT turn's untap step asks about (CR 502.2,
+                -- Game.spellsCastLastTurn). Forced here, so
                 -- no record holds the state it was read from.
                 History.pastTurns =
                   seq (length outgoing) . (History.pastTurns (GameState.history gs) Seq.|>) $!

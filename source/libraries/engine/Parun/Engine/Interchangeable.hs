@@ -279,7 +279,7 @@ representatives pcs gs candidates =
 --     TurnRegisters.turnResume
 --     and the per-player
 --     counters (landsPlayed, departedThisTurn, turnsBegun,
---     spellsCastLastTurn, resolvedNames) are keyed by or valued
+--     resolvedNames) are keyed by or valued
 --     at a PLAYER and name no object.
 --   * Snapshots.lastKnown is about objects that have LEFT, bar the host each
 --     record names, which namedByAnother searches.

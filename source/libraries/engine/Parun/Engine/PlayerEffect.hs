@@ -569,11 +569,10 @@ storedSource active = RowSource.MkRowSource (Just (ActivePlayerEffect.source act
 -- turn, including spells cast before it was on the battlefield.
 --
 -- A Natural rather than an Integer, because a count of log entries cannot be
--- negative and CR 502.2's reader (History.spellsCastLastTurn, snapshotted by
--- Engine.beginTurnOf) holds one.
+-- negative and CR 502.2's reader (Game.spellsCastLastTurn) returns one.
 --
--- Read out of Game.castsPerPlayer rather than folding the log itself, so the
--- per-seat map Engine.beginTurnOf folds and this one seat's count are the same
+-- Read out of Game.castsPerPlayer rather than folding the log itself, so that
+-- reader's count of a finished turn and this one seat's count are the same
 -- fold.
 castsThisTurn :: PlayerId -> GameState -> Natural
 castsThisTurn pid gs = Map.findWithDefault 0 pid (Game.castsPerPlayer (TurnRegisters.events (GameState.turn gs)))

@@ -4,7 +4,7 @@
 -- Covers: Parun.Engine.Daytime (CR 732, "Day and Night", and CR 702.145's
 -- daybound and nightbound), the CR 502.2 turn-based action Parun.Engine.Engine
 -- runs from it, the CR 117.5 settle arm beside it, Parun.Types.Daytime, and
--- GameState's daytime and spellsCastLastTurn fields.
+-- GameState's daytime field and Game.spellsCastLastTurn.
 --
 -- Also CR 702.145b's FIRST static ability -- "if it is night and this permanent
 -- is represented by a double-faced card, it enters transformed" -- which is a
@@ -65,7 +65,6 @@ import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.History as History
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
@@ -130,12 +129,6 @@ upkeep gs =
           }
     }
 
--- How many spells the previous turn's active player cast during that turn, set
--- directly. Only the CR 502.2 cases use it, and what it stands in for is proved
--- through the rules by the handoff case at the foot of this module.
-afterCasting :: Natural.Natural -> GameState.GameState -> GameState.GameState
-afterCasting n gs = gs {GameState.history = (GameState.history gs) {History.spellsCastLastTurn = n}}
-
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Daytime" $ do
   designationSpec s registry
@@ -184,7 +177,7 @@ expertBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Na
 expertBoard tovolar forest expert spells =
   let (_, withTovolar) = S.addPermanent tovolar S.alice (S.landsInPlay forest 5)
       (gs, spellId) = S.handOne expert withTovolar
-   in (spellId, untapStep (afterCasting spells (settle gs)))
+   in (spellId, untapStep (S.afterCasting spells (settle gs)))
 
 -- alice casts Infestation Expert and it resolves. Answered in two steps because
 -- the assertion between them is the point: the permanent is on the battlefield
@@ -272,7 +265,7 @@ entrySpec s registry = Spec.describe s "EntersTransformed" $ do
     let (_, withTovolar) = S.addPermanent tovolar S.alice (S.landsFor island S.alice 1 (S.landsInPlay forest 6))
         (withConjurer, spellId) = S.handOne conjurer withTovolar
         (majorId, withMajor) = S.addHandCard doubleMajor S.alice withConjurer
-        board = untapStep (afterCasting 0 (settle withMajor))
+        board = untapStep (S.afterCasting 0 (settle withMajor))
         cast1 = S.runPure S.castAnswer board (S.cast S.alice spellId)
     case Maybe.listToMaybe (TurnRegisters.stack (GameState.turn cast1)) of
       Nothing -> Spec.assertFailure s "the spell never reached the stack"
@@ -294,7 +287,7 @@ entrySpec s registry = Spec.describe s "EntersTransformed" $ do
     let (_, withTovolar) = S.addPermanent tovolar S.alice (S.landsInPlay swamp 2)
         (buriedId, withBuried) = S.addGraveyardCard conjurer S.alice withTovolar
         (withExhume, exhumeId) = S.handOne exhume withBuried
-        board = untapStep (afterCasting 0 (settle withExhume))
+        board = untapStep (S.afterCasting 0 (settle withExhume))
         after = resolveSettled (S.runPure S.castAnswer board (S.cast S.alice exhumeId))
     Spec.assertEqWith s "it is night when Exhume resolves" (GameState.daytime board) (Just Daytime.Night)
     Spec.assertEqWith s "neither face is on the battlefield" (conjurerFaces after) []
@@ -463,7 +456,7 @@ anyNumberBoard tovolar ranger wolf =
    in (tovolarId, rangerId, bobRangerId, settle (afterOneCast g4))
 
 -- One spell cast by alice during the previous turn, written into the last-turn
--- log the Ranger's trigger folds. Set directly, as afterCasting above is, and
+-- log the Ranger's trigger folds. Set directly, as S.afterCasting is, and
 -- what it stands in for is proved through the rules by Parun.TransformSpec's
 -- "SpellsCast at LastTurn" group.
 afterOneCast :: GameState.GameState -> GameState.GameState
@@ -499,7 +492,7 @@ untapCheckSpec s registry = Spec.describe s "UntapCheck" $ do
   Spec.it s "CR 502.2 day and no spells last turn becomes night" $ do
     tovolar <- S.printingOf s registry "Tovolar, Dire Overlord"
     let (tovolarId, board) = tovolarBoard tovolar tovolar 0
-        after = untapStep (afterCasting 0 (settle board))
+        after = untapStep (S.afterCasting 0 (settle board))
     Spec.assertEqWith s "night" (GameState.daytime after) (Just Daytime.Night)
     Spec.assertEqWith s "and Tovolar turned over" (faceNameOf tovolarId after) (Just backName)
   -- The discriminator: one spell is not "didn't cast any spells", so the same
@@ -508,7 +501,7 @@ untapCheckSpec s registry = Spec.describe s "UntapCheck" $ do
   Spec.it s "CR 502.2 one spell last turn keeps it day" $ do
     tovolar <- S.printingOf s registry "Tovolar, Dire Overlord"
     let (tovolarId, board) = tovolarBoard tovolar tovolar 0
-        after = untapStep (afterCasting 1 (settle board))
+        after = untapStep (S.afterCasting 1 (settle board))
     Spec.assertEqWith s "still day" (GameState.daytime after) (Just Daytime.Day)
     Spec.assertEqWith s "and still front face up" (faceNameOf tovolarId after) (Just frontName)
   -- CR 502.2's second sentence, from a night reached the way the card reaches
@@ -519,7 +512,7 @@ untapCheckSpec s registry = Spec.describe s "UntapCheck" $ do
     wolf <- S.printingOf s registry "Russet Wolves"
     let (tovolarId, board) = tovolarBoard tovolar wolf 2
         night = S.runPure S.identityAnswer (upkeep (settle board)) Engine.runStep
-        after = untapStep (afterCasting 2 night)
+        after = untapStep (S.afterCasting 2 night)
     Spec.assertEqWith s "it was night" (GameState.daytime night) (Just Daytime.Night)
     Spec.assertEqWith s "with Tovolar on his back face" (faceNameOf tovolarId night) (Just backName)
     Spec.assertEqWith s "and is day again" (GameState.daytime after) (Just Daytime.Day)
@@ -532,7 +525,7 @@ untapCheckSpec s registry = Spec.describe s "UntapCheck" $ do
     wolf <- S.printingOf s registry "Russet Wolves"
     let (tovolarId, board) = tovolarBoard tovolar wolf 2
         night = S.runPure S.identityAnswer (upkeep (settle board)) Engine.runStep
-        after = untapStep (afterCasting 1 night)
+        after = untapStep (S.afterCasting 1 night)
     Spec.assertEqWith s "still night" (GameState.daytime after) (Just Daytime.Night)
     Spec.assertEqWith s "and Tovolar is still on his back face" (faceNameOf tovolarId after) (Just backName)
   -- CR 502.2's third sentence: "if it's neither day nor night, this check doesn't
@@ -541,18 +534,18 @@ untapCheckSpec s registry = Spec.describe s "UntapCheck" $ do
   Spec.it s "CR 502.2 neither day nor night: the check does not happen" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (_, board) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
-        after = untapStep (afterCasting 0 (settle board))
+        after = untapStep (S.afterCasting 0 (settle board))
     Spec.assertEqWith s "still neither" (GameState.daytime after) Nothing
   -- CR 732.2's input, taken through the rules rather than written: alice casts a
   -- Lightning Bolt, the turn is handed on, and the count the next untap step will
   -- read is the one her turn ended with. The event log it is folded from is
-  -- cleared by that same handoff, which is why the snapshot exists at all.
+  -- cleared by that same handoff, which files it under her (History.pastTurns).
   Spec.it s "CR 732.2 the handoff records what the previous turn's active player cast" $ do
     mountain <- S.printingOf s registry "Mountain"
     lightningBolt <- S.printingOf s registry "Lightning Bolt"
     let (gs, spellId) = S.handOne lightningBolt (S.landsInPlay mountain 1)
         cast = S.runPure S.castAnswer gs (S.cast S.alice spellId)
         handed = Engine.beginTurnOf S.bob cast
-    Spec.assertEqWith s "nothing was on the books before the turn ended" (History.spellsCastLastTurn (GameState.history gs)) 0
-    Spec.assertEqWith s "one spell rode across the handoff" (History.spellsCastLastTurn (GameState.history handed)) 1
+    Spec.assertEqWith s "nothing was on the books before the turn ended" (Game.spellsCastLastTurn gs) 0
+    Spec.assertEqWith s "one spell rode across the handoff" (Game.spellsCastLastTurn handed) 1
     Spec.assertEqWith s "and the log it was folded from is gone" (Seq.null (TurnRegisters.events (GameState.turn handed))) True
