@@ -10032,7 +10032,8 @@ counterOne settle before destination counterer source controller oid = do
           Countering.MkCountering
             { Countering.countered = oid,
               Countering.source = source,
-              Countering.controller = controller
+              Countering.controller = controller,
+              Countering.caster = Nothing
             }
       pure (Just Seq.empty)
     -- CR 113.6g, its condition judged with the spell's controller as "you" on
@@ -10057,7 +10058,8 @@ counterOne settle before destination counterer source controller oid = do
                 Countering.MkCountering
                   { Countering.countered = oid,
                     Countering.source = source,
-                    Countering.controller = controller
+                    Countering.controller = controller,
+                    Countering.caster = Game.casterOf oid gs
                   }
             pure (Just moved)
 

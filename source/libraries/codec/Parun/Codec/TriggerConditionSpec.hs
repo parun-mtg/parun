@@ -319,7 +319,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger CounteredKind.Spell PlayerRelation.You))
+      (TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger CounteredKind.Spell PlayerRelation.You PlayerRelation.AnyPlayer))
       " {\"type\":\"Countered\",\"value\":{\"counterer\":\"You\"}} "
   -- CR 615.13's prevention trigger. Both relations, for the same reason.
   Spec.it s "DamageToPlayerPrevented round-trips both relations" $ do

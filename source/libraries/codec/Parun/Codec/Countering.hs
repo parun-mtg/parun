@@ -5,6 +5,7 @@ module Parun.Codec.Countering where
 import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.Countering as Countering
 
@@ -16,9 +17,11 @@ codec = Fields.object $ do
   countered <- Fields.required "countered" ObjectId.codec Countering.countered
   source <- Fields.required "source" ObjectId.codec Countering.source
   controller <- Fields.required "controller" PlayerId.codec Countering.controller
+  caster <- Fields.defaulted "caster" Nothing (Common.maybe PlayerId.codec) Countering.caster
   pure
     Countering.MkCountering
       { Countering.countered = countered,
         Countering.source = source,
-        Countering.controller = controller
+        Countering.controller = controller,
+        Countering.caster = caster
       }

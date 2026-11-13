@@ -3463,6 +3463,23 @@ castsBefore spell gs =
     (_, []) -> Nothing
     (before, _) -> Just before
 
+-- CR 601.2i: who cast `spell`, off the turn's log, which outlives the spell's
+-- leaving the stack -- what CR 603.10e's look-back needs once the countered
+-- spell's id is dead (Parun.Engine.Event.counter's caller, Multani's Presence).
+--
+-- Nothing for a spell that was never cast (CR 707.10's copy), and for one cast
+-- before this turn, which no countering can see: CR 500.2 ends a step only with
+-- the stack empty, so a spell still on the stack was cast during the turn whose
+-- log this is. castsBefore above shares the scope for that reason.
+casterOf :: ObjectId -> GameState -> Maybe PlayerId
+casterOf spell =
+  fmap SpellWasCast.player
+    . List.find ((== spell) . SpellWasCast.spell)
+    . Maybe.mapMaybe (castOf . LoggedEvent.event)
+    . Foldable.toList
+    . TurnRegisters.events
+    . GameState.turn
+
 -- CR 601.2i: how many spells each player cast during the turn this log holds --
 -- turnLog's, or the outgoing one Engine.beginTurn folds CR 502.2's scalar out
 -- of. Parun.Engine.PlayerEffect.castsThisTurn and Parun.Engine.Quantity's

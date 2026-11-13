@@ -306,7 +306,7 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.SpellCountered (Countering.MkCountering (ObjectId.MkObjectId 4) (ObjectId.MkObjectId 5) (PlayerId.MkPlayerId 1)))
+      (GameEvent.SpellCountered (Countering.MkCountering (ObjectId.MkObjectId 4) (ObjectId.MkObjectId 5) (PlayerId.MkPlayerId 1) Nothing))
       " {\"type\":\"SpellCountered\",\"value\":{\"countered\":4,\"source\":5,\"controller\":1}} "
   -- CR 701.6a's other subject over the same payload, so the tag is the whole of
   -- the difference on the wire.
@@ -314,7 +314,7 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
     Common.assertCodec
       s
       GameEvent.codec
-      (GameEvent.AbilityCountered (Countering.MkCountering (ObjectId.MkObjectId 4) (ObjectId.MkObjectId 5) (PlayerId.MkPlayerId 1)))
+      (GameEvent.AbilityCountered (Countering.MkCountering (ObjectId.MkObjectId 4) (ObjectId.MkObjectId 5) (PlayerId.MkPlayerId 1) Nothing))
       " {\"type\":\"AbilityCountered\",\"value\":{\"countered\":4,\"source\":5,\"controller\":1}} "
   Spec.it s "AbilityActivated" $
     Common.assertCodec

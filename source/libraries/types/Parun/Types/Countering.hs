@@ -61,6 +61,9 @@ data Countering = MkCountering
     -- the scan boundary rather than at the event -- the divergence
     -- Snapshots.battlefieldWhenTriggered exists to close for the objects the scan
     -- walks, and which this field does not have.
-    controller :: PlayerId.PlayerId
+    controller :: PlayerId.PlayerId,
+    -- | CR 601.2i, 603.10e: who cast `countered`, read as it left the stack.
+    -- Nothing for an ability and for a spell nobody cast (CR 707.10's copy).
+    caster :: Maybe PlayerId.PlayerId
   }
   deriving (Eq, Ord, Show)
