@@ -1616,6 +1616,10 @@ armedDelayedAbility resolving source arm gs =
   let name = ArmDelayedTrigger.name arm
       -- CR 613.1f: an ability acquired from a lending card means that card's
       -- declaration of the name (Binding.delayedAsRead).
+      --
+      -- Not implemented: that reading for a mana ability, which has no object
+      -- to name it (CR 605.3b) and so reads the source's own declarations
+      -- (#7307).
       frozen = case fmap Object.source (Game.lookupObject resolving gs) of
         Just (Source.OfAbility activated) -> Map.lookup name (Binding.delayedAsRead (ActivatedAbility.name (ActivatedAbilitySource.ability activated)) (ActivatedAbilitySource.delayed activated))
         Just (Source.OfTrigger triggered) -> Map.lookup name (Binding.delayedAsRead (TriggeredAbility.name (TriggeredAbilitySource.ability triggered)) (TriggeredAbilitySource.delayed triggered))
