@@ -6047,6 +6047,7 @@ finalityOf oid gs =
               False
               LibraryPosition.defaultValue
               False
+              Nothing
               Seq.empty
           )
       ]
