@@ -55,8 +55,8 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
     Left problem -> usage [problem]
     Right options -> do
       registry <- Registry.defaultRegistry
-      lists <- (,) <$> load registry one <*> load registry two
-      format <- settle (PlayOptions.format options) [(one, fst lists), (two, snd lists)]
+      lists <- (,) <$> orExit (load registry one) <*> orExit (load registry two)
+      format <- orExit (settle (PlayOptions.format options) [(one, fst lists), (two, snd lists)])
       play options registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)
   (_, _, problems) -> usage problems
 
@@ -82,29 +82,32 @@ usage problems = do
   IO.hPutStr IO.stderr (GetOpt.usageInfo "usage: parun play [OPTION...] DECK DECK" flags)
   Exit.exitFailure
 
--- | A deck list file with no bad line, as `parun deck` reads it.
-load :: Registry.Registry Identity.Identity -> FilePath -> IO DeckList.Listed
+-- | A deck list file with no bad line, as `parun deck` reads it; or every
+-- problem with it.
+load :: Registry.Registry Identity.Identity -> FilePath -> IO (Either [Text.Text] DeckList.Listed)
 load registry path = do
   bytes <- ByteString.readFile path
-  contents <- either (\err -> failWith (path <> ": not valid UTF-8: " <> show err)) pure (Encoding.decodeUtf8' bytes)
-  case Identity.runIdentity (DeckList.parse registry contents) of
-    Left corpus -> failWith (Exception.displayException corpus)
-    Right listed -> case DeckList.sound listed of
-      Left problems -> do
-        mapM_ (TextIO.hPutStrLn IO.stderr . (\p -> Text.pack (path <> ": ") <> DeckList.explain p)) problems
-        Exit.exitFailure
-      Right _ -> pure listed
+  pure $ case Encoding.decodeUtf8' bytes of
+    Left err -> Left [Text.pack (path <> ": not valid UTF-8: " <> show err)]
+    Right contents -> case Identity.runIdentity (DeckList.parse registry contents) of
+      Left corpus -> Left [Text.pack (Exception.displayException corpus)]
+      Right listed -> case DeckList.sound listed of
+        Left problems -> Left (fmap (\p -> Text.pack (path <> ": ") <> DeckList.explain p) problems)
+        Right _ -> Right listed
 
 -- | The format a game between these lists is under, by name: the one asked
 -- for, else the one their headers name, checking every deck against it; or
--- stops before the game when two headers name different formats and none is
--- asked for (see docs/decisions.md, "The format of a game whose lists' headers
--- disagree").
-settle :: Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> IO (Maybe Format.Format)
-settle asked lists = do
-  name <- either (failWith . Text.unpack) pure (gameFormat asked lists)
-  refuse name lists
-  traverse (Legality.shipped Monad.>=> either (failWith . Text.unpack) pure) name
+-- why the game can't start, which it can't when two headers name different
+-- formats and none is asked for (see docs/decisions.md, "The format of a game
+-- whose lists' headers disagree").
+settle :: Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> IO (Either [Text.Text] (Maybe Format.Format))
+settle asked lists = case gameFormat asked lists of
+  Left problem -> pure (Left [problem])
+  Right name -> do
+    violations <- refusals name lists
+    if null violations
+      then fmap (maybe (Right Nothing) (Bifunctor.bimap pure Just)) (traverse Legality.shipped name)
+      else pure (Left violations)
 
 -- | The name of the format a game between these lists is under: the one asked
 -- for, else the one their headers name; or why there is none.
@@ -118,19 +121,16 @@ gameFormat asked lists = case (asked, headers) of
   where
     headers = [(path, name) | (path, listed) <- lists, Just (_, name) <- [DeckList.format listed]]
 
--- | Stops before the game when a list's header names a format other than the
+-- | Why the game can't start: a list's header names a format other than the
 -- one asked for, or its deck breaks the rules or pool of the format asked for
 -- or its header names, in a game not for ante, naming every violation of
 -- every deck as `parun deck` does; and, under a format, every violation of
 -- the rules a game states of its decks together (Parun.Legality.checkGame).
-refuse :: Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> IO ()
-refuse format lists = do
+refusals :: Maybe Text.Text -> [(FilePath, DeckList.Listed)] -> IO [Text.Text]
+refusals format lists = do
   reports <- traverse (\(path, listed) -> fmap (fmap (Text.pack (path <> ": ") <>) . snd) (Legality.report format Nothing listed)) lists
   let together = if Maybe.isJust format then fmap Legality.explain (Legality.checkGame GameSettings.plain (fmap (DeckList.deck . snd) lists)) else []
-      violations = concat reports <> together
-  Monad.unless (null violations) $ do
-    mapM_ (TextIO.hPutStrLn IO.stderr) violations
-    Exit.exitFailure
+  pure (concat reports <> together)
 
 -- | A game between the two decks under `format`, the one 'settle' names
 -- (CR 100.2).
@@ -216,3 +216,7 @@ exchange line = TextIO.putStrLn line >> Terminal.listen terminal
 
 failWith :: String -> IO a
 failWith problem = IO.hPutStrLn IO.stderr problem >> Exit.exitFailure
+
+-- | The answer, or its problems on standard error and a failed exit.
+orExit :: IO (Either [Text.Text] a) -> IO a
+orExit action = action >>= either (\problems -> mapM_ (TextIO.hPutStrLn IO.stderr) problems >> Exit.exitFailure) pure
