@@ -840,11 +840,15 @@ effect context e = case e of
     a <- Target.amounts context (PutCounters.quantity p)
     let on = Text.pack " on " <> Target.wording ref
     phrase <- case Target.reading a of
-      -- Free for a count: "for each" (Khabal Ghoul) or "a number of"
-      -- (Rhovanion Rampager).
+      -- Free for a count: "for each" (Khabal Ghoul), "a number of"
+      -- (Rhovanion Rampager) or "X ..., where X is" (Southern Air Temple).
       Target.Stated q -> fmap (\put -> Text.pack "put " <> put <> on) (counters (Target.keyword context) (PutCounters.kind p) q)
       Target.ForEach n each' -> fmap (\put -> Text.pack "put " <> put <> on <> Text.pack " for each " <> each') (counters (Target.keyword context) (PutCounters.kind p) (Quantity.Literal n))
-      Target.EqualTo equal -> fmap (\word -> Text.pack "put a number of " <> word <> Text.pack " counters" <> on <> Text.pack " equal to " <> equal) (Cost.counterWord (Target.keyword context) (PutCounters.kind p))
+      Target.EqualTo equal -> do
+        word <- Cost.counterWord (Target.keyword context) (PutCounters.kind p)
+        [ Text.pack "put a number of " <> word <> Text.pack " counters" <> on <> Text.pack " equal to " <> equal,
+          Text.pack "put X " <> word <> Text.pack " counters" <> on <> Text.pack ", where X is " <> equal
+          ]
     MkPredicate Nothing phrase [] (Target.mentions ref <> Target.names a) Nothing False : supported context p
   Effect.Tap (Tap.MkTap r Nothing) -> acted context (Text.pack "tap ") r
   -- "Sacrifice this creature" (CR 701.21a): one object, which the

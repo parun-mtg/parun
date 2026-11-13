@@ -783,7 +783,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
         invasion = Effect.Create (Create.MkCreate opponents snake EntryRiders.defaultValue Nothing (PlayerRef.Relative PlayerRelation.You) False)
     Spec.assertBool s (Oracle.says (spell [clause [invasion]] []) (CardName.MkCardName (Text.pack "Spark")) (Text.pack "Create a number of 1/1 green Snake creature tokens equal to the number of opponents you have.")) "no \"opponents you have\""
     let ghoul = Effect.PutCounters (PutCounters.MkPutCounters CounterKind.PlusOnePlusOne hand (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))) Nothing)
-    Spec.assertEq s [[Text.pack "Put a +1/+1 counter on Spark for each card in your hand.", Text.pack "Put a number of +1/+1 counters on Spark equal to the number of cards in your hand."]] (Oracle.abilities (spell [clause [ghoul]] []))
+    Spec.assertEq s [[Text.pack "Put a +1/+1 counter on Spark for each card in your hand.", Text.pack "Put a number of +1/+1 counters on Spark equal to the number of cards in your hand.", Text.pack "Put X +1/+1 counters on Spark, where X is the number of cards in your hand."]] (Oracle.abilities (spell [clause [ghoul]] []))
 
   -- A limit on the total has no wording, so a limited placement can't pass as a plain one.
   Spec.it s "render prints no placement limited by a total" $ do
