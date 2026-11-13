@@ -1,0 +1,33 @@
+{
+  "description": "CR 700.2b, 701.65a: Appa, Loyal Sky Bison's attack trigger airbends another nonland permanent its controller controls, who recasts it for {2}",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Appa, Loyal Sky Bison", "label": "appa", "ready": true}, {"card": "Hill Giant", "label": "giant"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Island", "label": "w1"}, {"card": "Island", "label": "w2"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Goblin Piker", "label": "piker"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$appa"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseModes", "with": [1]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"ChooseTargets": {"airbent": ["$appa"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"ChooseTargets": {"airbent": ["$piker"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"ChooseTargets": {"airbent": ["$w1"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseTargets": {"airbent": ["$giant"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Cast": {"object": "Hill Giant", "mana": ["$w1", "$w2"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Hill Giant", "count": 0}}}
+  ]
+}

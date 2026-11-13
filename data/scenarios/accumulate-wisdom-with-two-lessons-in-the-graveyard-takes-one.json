@@ -1,0 +1,33 @@
+{
+  "description": "CR 608.2c, 109.5: Accumulate Wisdom takes one card and bottoms the rest with two Lesson cards in its controller's graveyard, a third in an opponent's not counting",
+  "note": "Accumulate Wisdom is still on the stack as it counts (CR 608.2n), so it is no third Lesson of alice's.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "UU",
+        "hand": [{"card": "Accumulate Wisdom", "label": "wisdom"}],
+        "graveyard": [{"card": "Airbending Lesson"}, {"card": "Earthbending Lesson"}],
+        "library": [{"card": "Forest", "label": "f"}, {"card": "Plains", "label": "p"}, {"card": "Mountain", "label": "m"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "graveyard": [{"card": "Waterbending Lesson"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$wisdom"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "$p"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ArrangeLibraryArrivals", "with": [1, 0]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Plains", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Forest", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Mountain", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Forest", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Mountain", "count": 1}}}
+  ]
+}

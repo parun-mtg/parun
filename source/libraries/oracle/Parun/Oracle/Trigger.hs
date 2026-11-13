@@ -109,6 +109,15 @@ event context creature c = case c of
       "another creature you control" -> ["", "Alliance \8212 "]
       _ -> [""]
     [other (opening' <> "Whenever " <> subject <> " enters") [(becameSlot, word)]]
+  -- A disjunction with a kind described further names each kind in full and
+  -- spells CR 700.4's event out, Oracle text having no land "die": "another
+  -- creature you control or a land you control is put into a graveyard from
+  -- the battlefield" (Long Feng, Grand Secretariat).
+  TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f@(Filter.Type.And (Filter.Type.Or gs : common))) _ _)
+    | t == LeavesTrigger.dies (LeavingPermanent.Matching f),
+      any (\g -> case g of Filter.Type.And (_ : _ : _) -> True; _ -> False) gs -> do
+        ones <- traverse (\g -> fmap fst (described context (Filter.Type.And (g : common)))) gs
+        [other ("Whenever " <> List.intercalate " or " ones <> " is put into a graveyard from the battlefield") [(becameSlot, "it"), (departedPermanent, "it")]]
   TriggerCondition.Leaves t@(LeavesTrigger.MkLeavesTrigger (LeavingPermanent.Matching f) _ _) | t == LeavesTrigger.dies (LeavingPermanent.Matching f) -> do
     (one, that) <- described context f
     word <- ["it", that]
@@ -463,10 +472,9 @@ counted context n comparison k = case Count.scope n of
     plain <- Filter.describe number Target.card (Filter.merge p (Filter.MkPhrase [] [Target.card] []))
     (noun, _) <- Target.andOr (plain, number)
     place <- Target.zoneOf Zone.Graveyard who
-    let be = if number == Filter.Singular then Text.pack "is" else Text.pack "are"
-    -- Free for one card: "there is" or Dragonfly Swarm's "there's".
-    let rest = Text.pack " " <> before noun <> Text.pack " " <> noun <> Text.pack " " <> place
-    [Text.pack "there " <> be <> rest] <> [Text.pack "there's" <> rest | number == Filter.Singular]
+    -- Free: "there is" or "there's" a card (First-Time Flyer).
+    there <- if number == Filter.Singular then [Text.pack "there is", Text.pack "there's"] else [Text.pack "there are"]
+    [there <> Text.pack " " <> before noun <> Text.pack " " <> noun <> Text.pack " " <> place]
   Scope.InZone (InZone.MkInZone Zone.Hand who)
     | Count.filter n == Filter.Type.And [] -> do
         (subject, have) <- holder context who

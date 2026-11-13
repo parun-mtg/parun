@@ -402,6 +402,8 @@ object context determiner ref = case ref of
 data Person
   = Second
   | Third
+  | -- | "They", which takes the plural verb: "they lose 2 life".
+    ThirdPlural
   deriving (Eq, Show)
 
 -- | The players a reference names, as a subject.
@@ -414,7 +416,9 @@ player context ref = case ref of
   PlayerRef.Relative PlayerRelation.AnyPlayer -> [(MkReference (Text.pack "each player") [] Filter.Plural [], Third)]
   PlayerRef.InSlot s
     | s == youSlot -> [(MkReference (Text.pack "you") [] Filter.Singular [], Second)]
-    | Just word <- Map.lookup s (bound context) -> [(MkReference word [] Filter.Singular [], Third)]
+    -- Free for a player an event names: "that player" (Kambal, Consul of
+    -- Allocation) or "they" (Mai, Scornful Striker).
+    | Just word <- Map.lookup s (bound context) -> (MkReference word [] Filter.Singular [], Third) : [(MkReference (Text.pack "they") [] Filter.Singular [], ThirdPlural) | word == Text.pack "that player"]
     | otherwise -> fmap (\r -> (r, Third)) (target context s)
   -- CR 701.55a's facing player, one at a time.
   PlayerRef.EachInSlot s | Just word <- Map.lookup s (bound context) -> [(MkReference word [] Filter.Singular [], Third)]
