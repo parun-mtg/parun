@@ -1,0 +1,42 @@
+{
+  "description": "CR 701.65a, 601.3a, 611.2a: Avatar's Wrath airbends every creature but the one chosen, exiles itself, and until its controller's next turn opponents cannot cast the exiled cards",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "WWWW",
+        "hand": [{"card": "Avatar's Wrath", "label": "wrath"}],
+        "battlefield": [{"card": "Goblin Piker", "label": "mine"}, {"card": "Hill Giant", "label": "keep"}, {"card": "Island", "label": "w1"}, {"card": "Island", "label": "w2"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "hand": [{"card": "Grizzly Bears", "label": "inhand"}],
+        "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$wrath", "targets": ["$keep"], "mana": [null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Avatar's Wrath", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Goblin Piker", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "refuse": {"Cast": {"object": "Grizzly Bears#2", "mana": ["$f1", "$f2"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$inhand", "mana": ["$f1", "$f2"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "Goblin Piker", "mana": ["$w1", "$w2"]}}},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Goblin Piker", "count": 1}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 4, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "Grizzly Bears", "mana": ["$f1", "$f2"]}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 4, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Grizzly Bears", "count": 2}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Grizzly Bears", "count": 0}}}
+  ]
+}

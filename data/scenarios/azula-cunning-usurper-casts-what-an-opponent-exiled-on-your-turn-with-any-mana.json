@@ -1,0 +1,41 @@
+{
+  "description": "CR 607.2a, 608.2d, 118.14, 601.3b: Azula, Cunning Usurper's opponent exiles a nontoken creature and a nonland graveyard card, and her controller casts them with mana of any type as though they had flash, during their own turn only",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "UUBBB",
+        "hand": [{"card": "Azula, Cunning Usurper", "label": "azula"}],
+        "battlefield": [{"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}, {"card": "Forest", "label": "f3"}, {"card": "Forest", "label": "f4"}, {"card": "Forest", "label": "f5"}, {"card": "Forest", "label": "f6"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Hill Giant", "label": "giant"}, {"card": "Grizzly Bears", "label": "bears"}],
+        "graveyard": [{"card": "Goblin Piker", "label": "piker"}, {"card": "Mountain", "label": "land"}, {"card": "Wind Drake", "label": "drake"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$azula", "mana": [null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Answer": {"prompt": "ChoosePermanent", "with": "$giant"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "refuse": {"Answer": {"prompt": "ChooseCardInGraveyard", "with": "$land"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Answer": {"prompt": "ChooseCardInGraveyard", "with": "$piker"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Goblin Piker", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": {"Cast": {"object": "Hill Giant", "mana": ["$f1", "$f2", "$f3", "$f4", null]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 2, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "Goblin Piker", "mana": ["$f1", "$f2", null]}}},
+    {"turn": 3, "step": "Upkeep", "player": "alice", "do": {"Cast": {"object": "Goblin Piker", "mana": ["$f1", "$f2", null]}}},
+    {"turn": 3, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 3, "step": "Upkeep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Goblin Piker", "count": 1}}}
+  ]
+}

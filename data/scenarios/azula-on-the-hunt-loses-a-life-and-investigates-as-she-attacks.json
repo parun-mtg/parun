@@ -1,0 +1,26 @@
+{
+  "description": "CR 508.1m, 111.10f: Azula, On the Hunt's controller loses 1 life and creates a Clue as she attacks",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Azula, On the Hunt", "label": "azula", "ready": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$azula"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"OrderTriggers": ["$azula", "$azula"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Life": {"player": "alice", "life": 19}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Clue Token", "count": 1}}}
+  ]
+}

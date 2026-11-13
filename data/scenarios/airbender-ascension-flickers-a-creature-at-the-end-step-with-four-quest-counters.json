@@ -1,0 +1,33 @@
+{
+  "description": "CR 603.4, 603.6a: Airbender Ascension takes its fourth quest counter as a creature enters, and at its controller's end step exiles a creature and returns it",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "GG",
+        "hand": [{"card": "Grizzly Bears", "label": "bears"}],
+        "battlefield": [{"card": "Airbender Ascension", "label": "ascension", "counters": [{"key": {"type": "Named", "value": "quest"}, "value": 3}]}, {"card": "Hill Giant", "label": "giant", "tapped": true}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Goblin Piker", "label": "piker"}],
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$ascension", "kind": {"type": "Named", "value": "quest"}, "count": 4}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$piker"]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": {"ChooseTargets": {"target": ["$giant"]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Tapped": {"object": "Hill Giant", "tapped": false}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Counters": {"object": "$ascension", "kind": {"type": "Named", "value": "quest"}, "count": 5}}}
+  ]
+}
