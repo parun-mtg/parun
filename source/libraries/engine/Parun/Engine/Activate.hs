@@ -13,6 +13,7 @@ import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
+import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Fragmented as Fragmented
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
@@ -24,6 +25,7 @@ import qualified Parun.Engine.Resolve.Common as Resolve
 import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Resolve.Slots as Slots
 import qualified Parun.Engine.Target as Target
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityWasActivated as AbilityWasActivated
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
@@ -249,6 +251,18 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
           -- CR 101.1: the floor the same words put on it -- Katara, Water Tribe's
           -- Hope's "X can't be 0" -- or the defined X itself (Activatable.leastX).
           floorX = Activatable.leastX pid srcId ability gs
+          -- CR 601.4 via CR 602.2b: the instruction the chosen modes are judged
+          -- against once a cost is announced (Modal.settle). CR 601.2b announces
+          -- the cost's own options with it, so "if you blighted this way" is read
+          -- off the records its payment WILL bind (Cost.announcedRecords),
+          -- Cast.castProposed's `settledFor` exactly. `bound` is the announcement
+          -- so far and `counting` its reading of a "choose up to" number.
+          -- data/scenarios/synthetic-withering-relay-chooses-both-modes-when-its-blight-was-announced.json
+          -- proves the read.
+          settledGiven bound counting cost =
+            let context = Target.slotContext (ActivatedAbility.name ability) (Just pid) False bound (Game.acquisitionFor (ActivatedAbility.name ability) srcId gs) srcId Nothing gs
+                recorded = context {Filter.boundAmounts = Map.union (Filter.boundAmounts context) (Map.fromSet (const 0) (Cost.announcedRecords cost))}
+             in Modal.settle (Condition.holds (Projection.fullView gs) recorded gs srcId) counting selection
       -- CR 601.2b / 118.9 through CR 602.2b: announce which cost is paid, the
       -- printed activation cost or an alternative an effect offers in its place
       -- (Kíli the Resourceful's {0} for an equip cost), and which option of each
@@ -257,7 +271,13 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
       -- spell's alternative cost. Only the payable ones are offered, as the gate
       -- measured them, and a question with one answer is not asked. The
       -- printed cost is FIRST, so a default answer pays it.
-      let offeredCosts = filter (Activatable.payableCostAt aimableUnannounced floorX stamp (ActivatedAbility.name ability) spendable pid srcId gs) (Activatable.costsFor (PlayerEffect.applying pid gs) pid ability gs)
+      --
+      -- CR 601.4: and only the ones the chosen modes satisfy, so Synthetic
+      -- Withering Relay's blight is the one cost offered beside both modes and
+      -- is not offered beside one. X is unannounced here, so a "choose up to X"
+      -- is read with no ceiling, as the modes themselves were above.
+      let admitsModes cost = Modal.selectionSatisfiedBy legal (settledGiven Map.empty (const (Natural.length legal)) cost) chosenModes
+          offeredCosts = filter (\cost -> admitsModes cost && Activatable.payableCostAt aimableUnannounced floorX stamp (ActivatedAbility.name ability) spendable pid srcId gs cost) (Activatable.costsFor (PlayerEffect.applying pid gs) pid ability gs)
       printedCost <- case offeredCosts of
         _ : _ : _ -> CandidateCost.cost <$> Game.choose (Prompt.ChooseCost decider pid abilId (fmap Cost.untagged offeredCosts) Seq.empty)
         [only] -> pure only
@@ -302,14 +322,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
           -- data/scenarios/synthetic-tiered-relay-chooses-up-to-the-x-its-activation-announced.json
           -- proves. The modes were checked above against no ceiling, CR 601.2b
           -- choosing them before X.
-          --
-          -- Not implemented: a condition reading the record the announced cost's
-          -- payment will bind, Parun.Engine.Cast's `settledFor` read (#7157).
-          settledSelection =
-            Modal.settle
-              (Condition.holds (Projection.fullView gs) (Target.slotContext (ActivatedAbility.name ability) (Just pid) False seed (Game.acquisitionFor (ActivatedAbility.name ability) srcId gs) srcId Nothing gs) gs srcId)
-              (Target.countingBy (ActivatedAbility.name ability) (Just pid) seed srcId gs)
-              selection
+          settledSelection = settledGiven seed (Target.countingBy (ActivatedAbility.name ability) (Just pid) seed srcId gs) printedCost
       -- CR 602.2: an activation a player cannot comply with is illegal, and the
       -- game returns to the moment before it started. The X just named is where
       -- that can first become true: `activatable` measured the cost at the
