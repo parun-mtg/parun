@@ -3522,6 +3522,12 @@ turnLog which gs = case which of
     _ Seq.:> newest -> PastTurn.events newest
     Seq.EmptyR -> Seq.empty
 
+-- CR 102.1 / 805.4: the player's own most recent finished turn, as its index
+-- in History.pastTurns: the newest whose active players hold them. Nothing
+-- before their first turn has ended. The one answer to "your last turn".
+ownLastTurn :: PlayerId -> GameState -> Maybe Int
+ownLastTurn pid gs = Seq.findIndexR (elem pid . PastTurn.activePlayers) (History.pastTurns (GameState.history gs))
+
 -- CR 502.2 / 732.2: how many spells the previous turn's active player cast
 -- during it, off the newest of History.pastTurns; 0 on the game's first turn.
 -- CR 502.2a / 732.2a-b: under the shared team turns option the rule asks whether
@@ -3794,11 +3800,39 @@ controlChangesThisTurn oid gs =
 -- 713.8), which GameEvent.CardArrived names. Filter.EnteredThisTurn's view
 -- field reads it.
 arrivalThisTurn :: ObjectId -> GameState -> Maybe MovedBetween.MovedBetween
-arrivalThisTurn oid gs =
+arrivalThisTurn oid gs = arrivalIn (TurnRegisters.events (GameState.turn gs)) oid
+
+-- The same entry, over every turn since each player's own most recent turn
+-- ended (ownLastTurn), the live one included, keyed by each player still in
+-- the game it falls within. A player whose first turn has not ended reads the
+-- whole game: see docs/decisions.md, "What "since your last turn ended" spans
+-- before your first turn". Filter.EnteredThisTurn's SinceOwnLastTurn window
+-- reads it.
+--
+-- One search, newest turn first, down to the oldest of those last turns: the
+-- newest arrival is the one that made the object (CR 400.7), and a player's
+-- window holds it when their last turn is older than the turn it happened in.
+arrivalSinceOwnLastTurn :: ObjectId -> GameState -> Map.Map PlayerId MovedBetween.MovedBetween
+arrivalSinceOwnLastTurn oid gs =
+  let past = History.pastTurns (GameState.history gs)
+      lastTurns = Map.fromList (fmap (\p -> (p, ownLastTurn p gs)) (stillPlaying gs))
+      opens = List.foldl' min (Seq.length past) (fmap (maybe 0 (+ 1)) (Map.elems lastTurns))
+      -- Each turn the search may reach, by its index; the live turn's is
+      -- one past the newest finished turn's.
+      turns = (Seq.length past, TurnRegisters.events (GameState.turn gs)) : reverse (zip [opens ..] (fmap PastTurn.events (Foldable.toList (Seq.drop opens past))))
+      found = Maybe.listToMaybe (Maybe.mapMaybe (\(i, events) -> fmap ((,) i) (arrivalIn events oid)) turns)
+      within i = maybe True (< i)
+   in case found of
+        Just (i, moved) -> Map.mapMaybe (\lastTurn -> if within i lastTurn then Just moved else Nothing) lastTurns
+        Nothing -> Map.empty
+
+-- The newest arrival in a log keyed on this id, arrivalThisTurn's fold.
+arrivalIn :: Seq.Seq LoggedEvent.LoggedEvent -> ObjectId -> Maybe MovedBetween.MovedBetween
+arrivalIn events oid =
   let arrival event = case event of
         GameEvent.CardArrived change -> Just change
         _ -> movedChange event
-      mine = filter ((== oid) . ZoneChange.object) (Maybe.mapMaybe (arrival . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
+      mine = filter ((== oid) . ZoneChange.object) (Maybe.mapMaybe (arrival . LoggedEvent.event) (Foldable.toList events))
    in fmap (\change -> MovedBetween.MkMovedBetween {MovedBetween.from = ZoneChange.from change, MovedBetween.to = ZoneChange.to change}) (Maybe.listToMaybe (reverse mine))
 
 -- The same entry, kept WHOLE: CR 400.7's `from` is what a reader asking where the

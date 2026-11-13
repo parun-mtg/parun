@@ -405,7 +405,7 @@ data Filter keyword
     -- that dealt damage to it this turn".
     DealtDamageTo DealtDamageTo.DealtDamageTo
   | -- | CR 400.7 / 608.2i: the candidate ENTERED this zone, from one of these
-    -- zones, earlier this turn, as the object it is now -- Octomancer's "target
+    -- zones, within this window, as the object it is now -- Octomancer's "target
     -- creature token that entered the battlefield this turn", No Rest for the
     -- Wicked's "creature cards in your graveyard that were put there from the
     -- battlefield this turn". Read off the log's zone changes, so phasing in (CR

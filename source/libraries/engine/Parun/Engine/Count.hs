@@ -1162,6 +1162,7 @@ lastKnownView peers oid gs lastKnown =
           Filter.dealtDamageThisTurn = dealtDamageThisTurn oid gs,
           Filter.activatedThisTurn = activatedThisTurn oid gs,
           Filter.arrivalThisTurn = Game.arrivalThisTurn oid gs,
+          Filter.arrivalSinceOwnLastTurn = Game.arrivalSinceOwnLastTurn oid gs,
           Filter.beforeMoveView = departedAs gs oid >>= orLastKnown peers gs,
           Filter.crewedThisTurn = crewedThisTurn oid gs,
           Filter.convokedThisTurn = convokedThisTurn oid gs,
@@ -1510,6 +1511,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- CR 400.7 enters an OBJECT, and this view describes a snapshot rather
       -- than one -- `leftLibraryThisTurn` above's reason again.
       Filter.arrivalThisTurn = Nothing,
+      Filter.arrivalSinceOwnLastTurn = Map.empty,
       -- CR 702.122c relates two OBJECTS, and this view describes a snapshot
       -- rather than one -- `leftLibraryThisTurn` above's reason again.
       Filter.crewedThisTurn = Set.empty,

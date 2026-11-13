@@ -172,7 +172,7 @@ objects pcs gs a b =
       grants = Projection.View.controlGrants gs
       viewOf oid = Projection.viewOfObjectGiven pcs grants oid gs
       -- Every View field Parun.Engine.Projection.View fills from the turn's log
-      -- (CR 608.2i), Game.damageBeforeThisTurn (CR 120.1) or
+      -- or the finished turns' (CR 608.2i), Game.damageBeforeThisTurn (CR 120.1) or
       -- TurnRegisters.couldAttackThisTurn (CR 508.1).
       -- Hand-kept: a new look-back field owes a line here.
       lookBack view =
@@ -182,6 +182,7 @@ objects pcs gs a b =
           Filter.Engine.dealtDamageThisTurn view,
           Filter.Engine.activatedThisTurn view,
           Filter.Engine.arrivalThisTurn view,
+          Filter.Engine.arrivalSinceOwnLastTurn view,
           Filter.Engine.crewedThisTurn view,
           Filter.Engine.convokedThisTurn view,
           Filter.Engine.saddledThisTurn view,

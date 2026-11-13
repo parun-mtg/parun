@@ -26,6 +26,7 @@ import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.EnteredZone as EnteredZone
+import qualified Parun.Types.EntryWindow as EntryWindow
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Expansion as Expansion
 import qualified Parun.Types.Filter as Filter
@@ -504,7 +505,7 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      (Filter.EnteredThisTurn EnteredZone.MkEnteredZone {EnteredZone.to = Zone.Graveyard, EnteredZone.from = Set.singleton Zone.Battlefield})
+      (Filter.EnteredThisTurn EnteredZone.MkEnteredZone {EnteredZone.to = Zone.Graveyard, EnteredZone.from = Set.singleton Zone.Battlefield, EnteredZone.window = EntryWindow.ThisTurn})
       " {\"type\":\"EnteredThisTurn\",\"value\":{\"from\":[\"Battlefield\"],\"to\":\"Graveyard\"}} "
   Spec.it s "ControlledSinceTurnBegan" $
     Common.assertCodec
