@@ -3236,6 +3236,11 @@ conjuredName card = Face.name (NonEmpty.head (Card.Type.faces card))
 -- still an option, so a clause is impossible only when every instruction in it
 -- is -- effectIsImpossible says what that means for one instruction.
 --
+-- The exception is CR 121.3's: an option holding a draw by a player who can't
+-- draw can't be chosen, whatever else it holds (offersForbiddenDraw). A draw
+-- that only FOLLOWS the choice ("then each player who does draws", Turtles in
+-- Time) is no part of the option, and is written as a later clause.
+--
 -- An instruction acting only on what an EARLIER instruction of the same clause
 -- binds is left out of that test, its fate being its definer's: Carth the
 -- Lion's "you may reveal a planeswalker card from among them and put it into
@@ -3260,7 +3265,20 @@ clauseIsImpossible resolving source controller legal gs clause =
         let refs = effectObjectRefs effect
          in not (null refs) && all (Map.null . playerRefSlots) (effectPlayerRefs effect) && all (readsOnly defined) refs
       independent = [effect | (defined, effect) <- zip definedBefore effects, not (dependent defined effect)]
-   in not (null independent) && all (effectIsImpossible resolving source controller legal gs) independent
+   in any (offersForbiddenDraw resolving source controller legal gs) effects
+        || (not (null independent) && all (effectIsImpossible resolving source controller legal gs) independent)
+
+-- CR 121.3 and 121.3a: is this instruction a draw by players an effect says
+-- can't draw? The one instruction whose impossibility withholds its whole
+-- option, whatever else the option holds: the rule says the choice to draw
+-- can't be taken, where CR 609.3 would have the rest carried out. Asked of a
+-- dependent instruction too, the answer turning on the drawer alone.
+-- data/scenarios/cant-draw/cr-121-3-a-player-who-can-t-draw-is-not-offered-a-discard-and-draw.json
+-- proves it.
+offersForbiddenDraw :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> GameState -> Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+offersForbiddenDraw resolving source controller legal gs effect = case effect of
+  Effect.Draw {} -> effectIsImpossible resolving source controller legal gs effect
+  _ -> False
 
 -- clauseIsImpossible's per-opcode half: the CR 608.2d question one instruction
 -- at a time.

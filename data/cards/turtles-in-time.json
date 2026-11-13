@@ -81,7 +81,18 @@
                         ]
                       }
                     }
-                  },
+                  }
+                ],
+                "optionality": {
+                  "type": "Optional",
+                  "value": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  }
+                }
+              },
+              {
+                "effects": [
                   {
                     "type": "Draw",
                     "value": {
@@ -96,12 +107,11 @@
                     }
                   }
                 ],
-                "optionality": {
-                  "type": "Optional",
-                  "value": {
-                    "type": "Relative",
-                    "value": "AnyPlayer"
-                  }
+                "ifTaken": {
+                  "type": "AnyTaken",
+                  "value": [
+                    1
+                  ]
                 }
               },
               {
