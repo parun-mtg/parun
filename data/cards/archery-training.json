@@ -50,32 +50,16 @@
                                   "parts": [
                                     {
                                       "quantity": {
-                                        "type": "Count",
+                                        "type": "AgainstSlot",
                                         "value": {
-                                          "aggregation": {
-                                            "type": "Total",
+                                          "quantity": {
+                                            "type": "ObjectCounters",
                                             "value": {
-                                              "type": "ObjectCounters",
-                                              "value": {
-                                                "type": "Named",
-                                                "value": "arrow"
-                                              }
+                                              "type": "Named",
+                                              "value": "arrow"
                                             }
                                           },
-                                          "filter": {
-                                            "type": "IsBound",
-                                            "value": "thatGrantingPermanent"
-                                          },
-                                          "scope": {
-                                            "type": "InZone",
-                                            "value": {
-                                              "player": {
-                                                "type": "Relative",
-                                                "value": "AnyPlayer"
-                                              },
-                                              "zone": "Battlefield"
-                                            }
-                                          }
+                                          "slot": "thatGrantingPermanent"
                                         }
                                       },
                                       "ref": {

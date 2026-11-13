@@ -437,7 +437,11 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
               -- ability keeps all three once its source is gone: "Once activated or
               -- triggered, an ability exists on the stack independently of its
               -- source."
-              State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setAnnouncedTargets chosen (Binding.setThisAbility abilId (Binding.setYou pid (Binding.setTriggerSource srcId (Target.stampDefendingPlayers srcId chosen g (Binding.setDivisions divisions (Binding.setPaid (maybe Map.empty (Binding.paidObjects Binding.definingCard . Set.singleton . Recipient.ToObject) mDefining) (Binding.fromChoices chosen mAmount chosenModes)))))))}) abilId (GameState.objects g)})
+              --
+              -- CR 201.5a: a granted ability named for its granter binds it too
+              -- (Binding.setGranter), so CR 608.2h reads a granter that has left
+              -- off its last known information.
+              State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setGranter (ActivatedAbility.name ability) (Binding.setAnnouncedTargets chosen (Binding.setThisAbility abilId (Binding.setYou pid (Binding.setTriggerSource srcId (Target.stampDefendingPlayers srcId chosen g (Binding.setDivisions divisions (Binding.setPaid (maybe Map.empty (Binding.paidObjects Binding.definingCard . Set.singleton . Recipient.ToObject) mDefining) (Binding.fromChoices chosen mAmount chosenModes))))))))}) abilId (GameState.objects g)})
               -- CR 601.2c's board, before CR 601.2g/h's window and payment can
               -- change it: what Event.becameTarget samples below.
               announced <- State.get

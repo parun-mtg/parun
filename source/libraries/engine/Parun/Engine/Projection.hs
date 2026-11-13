@@ -9,6 +9,7 @@ import qualified Control.Applicative as Applicative
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Const as Const
 import qualified Data.Functor.Identity as Identity
 import qualified Data.Graph as Graph
 import qualified Data.List as List
@@ -17,6 +18,7 @@ import qualified Data.Map.Lazy as Map.Lazy
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Monoid as Monoid
 import qualified Data.Ord as Ord
 import qualified Data.Sequence as Seq
 import Data.Set (Set)
@@ -36,6 +38,7 @@ import qualified Parun.Engine.NameWords as NameWords
 import Parun.Engine.Projection.Rewrite (Modification, composeWordChanges, rewriteActivatedAbility, rewriteAffected, rewriteCharacteristicPT, rewriteCondition, rewriteModification, rewritePlayerStaticAbility, rewritePrintedReplacement, rewriteRuleAbilities, rewriteStaticAbility, rewriteTriggeredAbility)
 import Parun.Engine.Projection.View (ControlGrant, abilitiesFromCharacteristics, abilityFaceOf, abilityFaceOfId, abilitySources, controlGrants, controllerOf, controllerOfGiven, copiableCharacteristics, copiableRuleAbilitiesOf, copiableSnapshotOf, copiableSpecialActionsOf, correspondsTo, countersOf, definesColorless, definesEveryCreatureType, enchantedPlayerOf, functionsFromZone, grantedStaticAbilitiesOf, inSourceRangeGiven, lapsedGrantsOf, lastZoned, retainedThroughCardTypeSet, staticAbilitiesOf, staticTimestampOf, viewOfCard, viewOfCharacteristics, withAnnouncedX)
 import qualified Parun.Engine.Quantity as Quantity
+import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.RuleAbilities as RuleAbilities.Engine
 import qualified Parun.Engine.Saga as Saga
 import qualified Parun.Engine.Sector as Sector
@@ -375,11 +378,11 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         Modification.GainAbility g -> case g of
           -- The cost names its granter by id (Binding.grantingPermanent);
           -- data/scenarios' Fishing Pole files prove each names its own. The
-          -- effect does too (bakeGranter).
+          -- effect does too (bakeGranter). One whose quantity reads its granter
+          -- by slot is named for it, so Binding.setGranter can bind the slot as
+          -- it is activated (CR 608.2h).
           GrantedAbility.Activated a ->
-            let named
-                  | Keyword.countsActivations a = a {ActivatedAbility.name = Just (Binding.acquiredFrom src (ActivatedAbility.name a))}
-                  | otherwise = a
+            let named = namedForGranter src a
              in pc {PC.activatedAbilities = PC.activatedAbilities pc <> [named {ActivatedAbility.cost = Filter.bakeCost Binding.grantingPermanent src (ActivatedAbility.cost a), ActivatedAbility.costChoices = fmap (CostChoice.MkCostChoice . fmap (Filter.bakeCost Binding.grantingPermanent src) . CostChoice.unwrap) (ActivatedAbility.costChoices a), ActivatedAbility.modal = bakeGranter src (ActivatedAbility.modal a)}]}
           GrantedAbility.Triggered t ->
             let named = case TriggeredAbility.limit t of
@@ -907,16 +910,12 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
 -- Quantity, however deep the effect is nested, and every Filter a clause's
 -- condition counts over. Named by id, so a granter that has since changed
 -- zones is a different object and is not found (CR 400.7).
--- data/scenarios' Trusty Boomerang files prove the object, its Archery
--- Training file the Quantity and its Heliod's Punishment files the condition.
--- The triggered arm shares the bake and has no producer in data/cards; Spare
--- Dagger would be one.
+-- data/scenarios' Trusty Boomerang files prove the object and its Heliod's
+-- Punishment files the condition. The triggered arm shares the bake and has no
+-- producer in data/cards; Spare Dagger would be one.
 --
 -- Not implemented: the name in any other position of the granted ability -- a
 -- target slot, a quoted ability, a slot no cost binds (#7342).
---
--- Not implemented: a count of a granter that has left read off its last known
--- information (CR 608.2h); it reads zero (#7341).
 bakeGranter :: ObjectId -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . effect, Children.modalCondition = Identity.Identity . condition}
   where
@@ -925,6 +924,25 @@ bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.mod
     condition = Identity.runIdentity . Children.conditionChildren Children.conditionLeaves {Children.conditionQuantity = Identity.Identity . quantity, Children.conditionNested = Identity.Identity . condition}
     quantity = Identity.runIdentity . Children.quantityChildren (Children.descendingQuantities (Identity.Identity . quantity)) {Children.nest = Identity.Identity . bake}
     bake = Filter.bakeBound Map.empty (Map.singleton Binding.grantingPermanent (Set.singleton granter)) Map.empty
+
+-- CR 113.2c / 201.5a: a granted activated ability, named for its granter
+-- (Binding.acquiredFrom) where a rider counts its activations or a quantity of
+-- it reads the granter by slot (readsGranter).
+namedForGranter :: ObjectId -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
+namedForGranter src a
+  | Keyword.countsActivations a || readsGranter (ActivatedAbility.modal a) = a {ActivatedAbility.name = Just (Binding.acquiredFrom src (ActivatedAbility.name a))}
+  | otherwise = a
+
+-- CR 201.5a / 608.2h: whether a quantity of the granted ability reads its
+-- granter by slot (Binding.grantingPermanent), which only a binding answers off
+-- its last known information once the granter has left. data/scenarios'
+-- Archery Training files prove it.
+readsGranter :: Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
+readsGranter = Monoid.getAny . Const.getConst . Children.modalChildren Children.modalLeaves {Children.modalEffect = effect, Children.modalCondition = condition}
+  where
+    effect = Children.effectChildren Children.effectLeaves {Children.onEffect = effect, Children.onQuantity = quantity}
+    condition = Children.conditionChildren Children.conditionLeaves {Children.conditionQuantity = quantity, Children.conditionNested = condition}
+    quantity = Const.Const . Monoid.Any . Set.member Binding.grantingPermanent . QuantitySlot.slots
 
 -- One grant, dropped when CR 205.3d refuses it. The refusal is proved at the
 -- land-type direction (Parun.ProjectionSpec's Synthetic Marsh Song case) and is a

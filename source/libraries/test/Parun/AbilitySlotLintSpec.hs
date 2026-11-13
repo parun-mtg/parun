@@ -420,7 +420,12 @@ activatedAbilityOffendsGiven armed ability =
         if any (Maybe.isJust . DefinedX.choice) (ActivatedAbility.definedX ability)
           then Set.singleton Binding.definingCard
           else Set.empty
-   in modalSlotsOffend armed (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, defining, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, totalled, discarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
+      -- Binding.setGranter's condition: a name acquiredFrom gave.
+      granter =
+        if Maybe.isJust (Binding.acquiredSource =<< ActivatedAbility.name ability)
+          then Set.singleton Binding.grantingPermanent
+          else Set.empty
+   in modalSlotsOffend armed (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, defining, granter, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, totalled, discarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
 
 -- Does this cost tap permanents the payer CHOOSES? sacrificesAsCost's shape, and
 -- the same reason: CR 601.2h's payment binds Binding.tappedPermanent
@@ -1323,10 +1328,11 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- permanent it lands on activates it through the same Activate road. It is
   -- read as the projection hands it over, its granter baked in
   -- (Projection.bakeGranter), so Trusty Boomerang's name for its granter is no
-  -- slot read; any id serves.
+  -- slot read, and named for it (Projection.namedForGranter), so Archery
+  -- Training's read is bound; any id serves.
   Spec.it s "every slot an activated ability reads is bound for its activation, and every slot it declares is read" $ do
     ps <- S.allPrintings s corpus
-    let baked ability = ability {ActivatedAbility.modal = Projection.bakeGranter (ObjectId.MkObjectId 0) (ActivatedAbility.modal ability)}
+    let baked ability = (Projection.namedForGranter (ObjectId.MkObjectId 0) ability) {ActivatedAbility.modal = Projection.bakeGranter (ObjectId.MkObjectId 0) (ActivatedAbility.modal ability)}
         -- Each ability beside the face whose delayed abilities it can arm.
         faceAbilities face = fmap ((,) face) (Face.activatedAbilities face <> fmap baked (grantedActivatedAbilities face))
         -- Over withMinted, each ability against what its own activation binds:
