@@ -7,6 +7,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName.Type
 import qualified Parun.Types.CardType as CardType.Type
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Reference as Reference.Type
 import qualified Parun.Types.TypesAre as TypesAre.Type
 
@@ -16,7 +17,7 @@ spec s = Spec.describe s "Parun.Codec.TypesAre" $ do
     Common.assertCodec
       s
       TypesAre.codec
-      (TypesAre.Type.MkTypesAre (Reference.Type.Printed (CardName.Type.MkCardName (Text.pack "Soldier Token")) 1) (Set.fromList [CardType.Type.Creature, CardType.Type.Battle]))
+      (TypesAre.Type.MkTypesAre (Reference.Type.Printed Existence.Live (CardName.Type.MkCardName (Text.pack "Soldier Token")) 1) (Set.fromList [CardType.Type.Creature, CardType.Type.Battle]))
       " {\"object\":\"Soldier Token\",\"types\":[\"Battle\",\"Creature\"]} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s TypesAre.codec

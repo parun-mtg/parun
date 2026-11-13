@@ -29,6 +29,7 @@ import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Engine as Engine
+import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Replay as Replay
@@ -112,6 +113,7 @@ import qualified Parun.Types.PlayerView as PlayerView
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Question as Question
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Reply as R
@@ -283,6 +285,19 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertBool s (not (Scenario.withinOffer listed Subtype.Goblin)) "a creature type off the list is outside the offer"
     Spec.assertEqWith s "CR 612.2 a swap's families and forbidden words, beside its source and slot" (fmap (\key -> field key swap) ["source", "slot", "families", "forbidden"]) [Just (Protocol.object o7), Just (R.Text (Text.pack "target")), Just (R.Array [R.Text (Text.pack "BasicLandType"), R.Text (Text.pack "Color")]), Just (Reply.encode (Reply.list Reply.textWord) Protocol.namer [TextWord.ColorWord Color.Black])]
 
+  Spec.it s "CR 608.2h a departed option is named beside the options by last known information, where it left a public zone" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    piker <- S.printingOf s registry "Goblin Piker"
+    let (live, g1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        (dead, g2) = S.addPermanent piker S.alice g1
+        (held, g3) = S.addHandCard piker S.bob g2
+        gs = Event.forgetObject (S.runPure S.identityAnswer g3 (Event.destroy (pure ()) Regenerability.Regenerable [dead])) held
+        offer among = Protocol.offerOf gs (Prompt.ChooseCardFromAmong (Decider.MkDecider S.alice) S.alice live among)
+        gone = offer (live NonEmpty.:| [dead, held])
+    Spec.assertEqWith s "the Piker and the hand card have left the game" (fmap (`Map.member` GameState.objects gs) [live, dead, held]) [True, False, False]
+    Spec.assertEqWith s "every candidate is an option" (field "options" gone) (Just (R.Array (fmap Protocol.object [live, dead, held])))
+    Spec.assertEqWith s "CR 400.2 the permanent's name, and not the hidden hand card's" (field "departed" gone) (Just (R.Object [(Text.pack ("$" <> show (ObjectId.unwrap dead)), R.Text (Text.pack "Goblin Piker"))]))
+    Spec.assertEqWith s "nothing where every option is in the game" (field "departed" (offer (pure live))) Nothing
   Spec.it s "CR 404.3 a graveyard batch offers its cards top first, and an arrangement reads back" $ do
     let o5 = ObjectId.MkObjectId 5
         o7 = ObjectId.MkObjectId 7

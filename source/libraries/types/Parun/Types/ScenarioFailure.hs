@@ -48,7 +48,7 @@ data ScenarioFailure
     MkMisseated Label.Label
   | -- | The monarch names no seat.
     MkUnknownMonarch Label.Label
-  | -- | The reference named no live object, with whether the board did label
+  | -- | The reference named no object, with whether the board did label
     -- one so -- a stale label and a typo read alike otherwise.
     MkUnknownObject Reference.Reference Bool
   | -- | A label naming a seat where only an object will do.

@@ -63,6 +63,7 @@ import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Departure as Departure.Type
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GameEvent as GameEvent
@@ -3096,7 +3097,7 @@ creatureBattleDeclarationSpec s registry = Spec.describe s "CreatureBattleDeclar
             }
         script = S.turn 1 [S.on S.beginningOfCombat S.alice (S.castAction (S.aliasRef "spell") choices)]
     granted <- S.play s registry setup script S.priorityGame
-    let pikers = Scenario.namedObjects (CardName.MkCardName (Text.pack "Goblin Piker")) granted
+    let pikers = Scenario.namedObjects Existence.Live (CardName.MkCardName (Text.pack "Goblin Piker")) granted
         (battles, plain) = List.partition (\oid -> Projection.isBattleOf oid granted) pikers
         fought = S.runCombat S.aggressiveAnswer granted
     -- Gameplay level, and first. The life delta is NOT the discriminator here and
@@ -3126,10 +3127,10 @@ creatureBattleDeclarationSpec s registry = Spec.describe s "CreatureBattleDeclar
             }
         script = S.turn 1 [S.on S.beginningOfCombat S.bob (S.castAction (S.aliasRef "spell") choices)]
     granted <- S.play s registry setup script S.priorityGame
-    let pikers = Scenario.namedObjects (CardName.MkCardName (Text.pack "Goblin Piker")) granted
+    let pikers = Scenario.namedObjects Existence.Live (CardName.MkCardName (Text.pack "Goblin Piker")) granted
         (battles, plain) = List.partition (\oid -> Projection.isBattleOf oid granted) pikers
         fought = S.settleSba (S.runCombat S.aggressiveAnswer granted)
-        wardens = Scenario.namedObjects (CardName.MkCardName (Text.pack "Tapestry Warden")) granted
+        wardens = Scenario.namedObjects Existence.Live (CardName.MkCardName (Text.pack "Tapestry Warden")) granted
     Spec.assertEqWith s "CR 509.1a the offer holds the Piker that is not a battle, and only it" (Set.fromList (Combat.legalBlockers S.bob granted)) (Set.fromList plain)
     Spec.assertEqWith s "CR 510.1c and one Piker really blocked, so the Warden took two and lived" (fmap (\oid -> (S.onBattlefield oid fought, S.damageOf oid fought)) wardens) [(True, Just 2)]
     Spec.assertEqWith s "and the spell really left the other one a creature that is a battle" (length pikers, fmap (\oid -> Projection.isCreatureOf oid granted) battles) (2, [True])
@@ -3157,7 +3158,7 @@ creatureBattleDeclarationSpec s registry = Spec.describe s "CreatureBattleDeclar
           S.play s registry setup script Engine.runStep
     plain <- muster 0
     battle <- muster 1
-    let soldiers = Scenario.namedObjects (CardName.MkCardName (Text.pack "Soldier Token"))
+    let soldiers = Scenario.namedObjects Existence.Live (CardName.MkCardName (Text.pack "Soldier Token"))
     Spec.assertEqWith s "CR 508.8 the creature-battle attacked nothing, so the step after declare attackers is end of combat" (TurnRegisters.phase (GameState.turn battle)) S.endOfCombat
     Spec.assertEqWith s "CR 508.8 while the plain Soldier keeps the declare blockers step" (TurnRegisters.phase (GameState.turn plain)) S.declareBlockers
     Spec.assertEqWith s "and each mode really made one tapped Soldier, the second a creature that is a battle" (fmap (\gs -> fmap (\oid -> (fmap Object.tapped (Game.lookupObject oid gs), Projection.isCreatureOf oid gs, Projection.isBattleOf oid gs)) (soldiers gs)) [plain, battle]) [[(Just TapState.Tapped, True, False)], [(Just TapState.Tapped, True, True)]]

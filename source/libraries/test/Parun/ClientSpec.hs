@@ -27,6 +27,7 @@ import qualified Parun.CastProhibitionSpec as CastProhibitionSpec
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Driver as Driver
 import qualified Parun.Engine.Engine as Engine
+import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game.Engine
 import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.PlayerView as PlayerView
@@ -127,6 +128,7 @@ import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Result as Result
@@ -1361,6 +1363,16 @@ spec s registry = Spec.describe s "Client" $ do
     -- No other nonland permanent is on the board, so the bounce mode is not
     -- legal (CR 700.2a).
     Spec.assertEqWith s "each legal mode listed" (takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (/= heading) shown))) (fmap Text.pack ["  1. Create a 1/1 white Bird creature token with flying.", "  2. Draw a card."])
+
+  Spec.it s "CR 608.2h an option that has left play is listed by its last known name, and its number picks it" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    piker <- S.printingOf s registry "Goblin Piker"
+    let (live, g1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+        (dead, g2) = S.addPermanent piker S.alice g1
+        gs = S.runPure S.identityAnswer g2 (Event.destroy (pure ()) Regenerability.Regenerable [dead])
+        (picked, shown) = asking Hotseat.fresh {Hotseat.facing = Just S.alice} ["2"] gs (Prompt.ChooseCardFromAmong (Decider.MkDecider S.alice) S.alice live (live NonEmpty.:| [dead]))
+    Spec.assertEqWith s "the options" (filter (\line -> any ((`Text.isPrefixOf` line) . Text.pack) ["  1. ", "  2. "]) shown) (fmap Text.pack ["  1. Your Grizzly Bears 2/2", "  2. Goblin Piker (it is gone)"])
+    Spec.assertEqWith s "the departed one picked" picked (Right dead)
 
   Spec.it s "CR 701.55a a villainous choice is offered through the client by each branch's Oracle text, and the number picks the branch" $ do
     gs <- started s registry

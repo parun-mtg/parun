@@ -7,6 +7,7 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardName as CardName.Type
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Label as Label.Type
 import qualified Parun.Types.Reference as Reference.Type
 
@@ -15,23 +16,27 @@ spec s = Spec.describe s "Parun.Codec.Reference" $ do
   Spec.it s "a label is written after $" $
     Common.assertCodec s Reference.codec (Reference.Type.Labelled (Label.Type.MkLabel (Text.pack "bear"))) " \"$bear\" "
   Spec.it s "the first object with a card name is the bare name" $
-    Common.assertCodec s Reference.codec (Reference.Type.Printed (CardName.Type.MkCardName (Text.pack "Grizzly Bears")) 1) " \"Grizzly Bears\" "
+    Common.assertCodec s Reference.codec (Reference.Type.Printed Existence.Live (CardName.Type.MkCardName (Text.pack "Grizzly Bears")) 1) " \"Grizzly Bears\" "
   Spec.it s "a later one carries its occurrence after #" $
-    Common.assertCodec s Reference.codec (Reference.Type.Printed (CardName.Type.MkCardName (Text.pack "Grizzly Bears")) 2) " \"Grizzly Bears#2\" "
+    Common.assertCodec s Reference.codec (Reference.Type.Printed Existence.Live (CardName.Type.MkCardName (Text.pack "Grizzly Bears")) 2) " \"Grizzly Bears#2\" "
   Spec.it s "an ability on the stack is named by its kind and source" $
     Common.assertCodec s Reference.codec (Reference.Type.TriggerOf (Reference.Type.Labelled (Label.Type.MkLabel (Text.pack "bear")))) " \"trigger of $bear\" "
   Spec.it s "an activated one names a printed source too" $
-    Common.assertCodec s Reference.codec (Reference.Type.AbilityOf (Reference.Type.Printed (CardName.Type.MkCardName (Text.pack "Grizzly Bears")) 2)) " \"ability of Grizzly Bears#2\" "
+    Common.assertCodec s Reference.codec (Reference.Type.AbilityOf (Reference.Type.Printed Existence.Live (CardName.Type.MkCardName (Text.pack "Grizzly Bears")) 2)) " \"ability of Grizzly Bears#2\" "
   Spec.it s "a cast spell is named by the card it was cast from" $
     Common.assertCodec s Reference.codec (Reference.Type.SpellOf (Reference.Type.Labelled (Label.Type.MkLabel (Text.pack "will")))) " \"spell of $will\" "
   Spec.it s "an object on the stack is named by its place from the top" $
     Common.assertCodec s Reference.codec (Reference.Type.OnStack 2) " \"stack 2\" "
+  Spec.it s "CR 400.7 an object that has left the game is named after departed" $ do
+    Common.assertCodec s Reference.codec (Reference.Type.Printed Existence.Departed (CardName.Type.MkCardName (Text.pack "Goblin Piker")) 1) " \"departed Goblin Piker\" "
+    Common.assertCodec s Reference.codec (Reference.Type.Printed Existence.Departed (CardName.Type.MkCardName (Text.pack "Goblin Piker")) 2) " \"departed Goblin Piker#2\" "
+    Common.assertCodec s Reference.codec (Reference.Type.Printed Existence.Departed (CardName.Type.MkCardName (Text.pack "Departed Deckhand")) 1) " \"departed Departed Deckhand\" "
   Spec.it s "an explicit first occurrence reads as the bare name" $
-    Common.assertFromJson s (Codec.decode Reference.codec) " \"Grizzly Bears#1\" " (Reference.Type.Printed (CardName.Type.MkCardName (Text.pack "Grizzly Bears")) 1)
+    Common.assertFromJson s (Codec.decode Reference.codec) " \"Grizzly Bears#1\" " (Reference.Type.Printed Existence.Live (CardName.Type.MkCardName (Text.pack "Grizzly Bears")) 1)
   Spec.it s "rejects a bare @, an empty string and a non-number occurrence or place" $
     Spec.assertBool
       s
-      (all (Either.isLeft . Reference.fromText . Text.pack) ["$", "", "Grizzly Bears#", "Grizzly Bears#two", "stack ", "stack two"])
+      (all (Either.isLeft . Reference.fromText . Text.pack) ["$", "", "Grizzly Bears#", "Grizzly Bears#two", "stack ", "stack two", "departed ", "departed Grizzly Bears#"])
       "expected every one to fail"
   Spec.it s "has a schema" $
     Common.assertHasSchema s Reference.codec

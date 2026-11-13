@@ -94,6 +94,7 @@ import qualified Parun.Types.HandActionIndex as HandActionIndex
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.Label as Label
 import qualified Parun.Types.LandOrNonland as LandOrNonland
+import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana.Type
@@ -123,6 +124,7 @@ import qualified Parun.Types.Reply as R
 import qualified Parun.Types.Request as Request
 import qualified Parun.Types.RollAdjustment as RollAdjustment
 import qualified Parun.Types.SearchPlace as SearchPlace
+import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.ThrowResult as ThrowResult
@@ -130,6 +132,7 @@ import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Visibility as Visibility.Type
+import qualified Parun.Types.Zone as Zone
 import qualified Text.Read as Read
 
 -- | Answers each prompt a seat answers over the line `send` carries, asking
@@ -370,7 +373,7 @@ offerOf gs prompt = case prompt of
   -- CR 101.4b: the cards earlier choosers took, beside who took each.
   Prompt.ChooseCardInGraveyard _ _ source cards earlier -> choosing prompt "options" (Just source) [("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player Reply.object)) namer earlier)] (NonEmpty.toList cards)
   Prompt.ChooseCardInHand _ _ source cards -> choosing prompt "options" (Just source) [] (NonEmpty.toList cards)
-  Prompt.ChooseCardFromAmong _ _ source cards -> choosing prompt "options" (Just source) [] (NonEmpty.toList cards)
+  Prompt.ChooseCardFromAmong _ _ source cards -> choosing prompt "options" (Just source) (departed gs (NonEmpty.toList cards)) (NonEmpty.toList cards)
   Prompt.ChooseDungeon _ _ dungeons -> choosing prompt "options" Nothing [] (NonEmpty.toList dungeons)
   Prompt.ChooseSticker _ _ source stickers -> choosing prompt "options" (Just source) [] (NonEmpty.toList stickers)
   Prompt.ChooseStickerOrNone _ _ source stickers -> choosing prompt "options" (Just source) [] (orNone stickers)
@@ -744,6 +747,24 @@ manaSources gs sources =
     [ fields [("source", object oid), ("makes", Reply.encode (Reply.list (Reply.list (Reply.viaCodec Codec.ManaType.codec))) namer (fmap (fmap ManaUnit.manaType . Mana.Type.unwrap) (Mana.manaYieldsOf oid gs)))]
     | oid <- Foldable.toList sources
     ]
+
+-- | CR 608.2h: under @"departed"@, each of these whose id no longer names an
+-- object (CR 400.7), which no view shows, as its id and its last known name.
+-- Only one that left a public zone (CR 400.2), where every seat could see it;
+-- one that left a hand or a library stays unnamed. Proved by
+-- Parun.ProtocolSpec's "CR 608.2h a departed option".
+departed :: GameState.GameState -> [ObjectId.ObjectId] -> [(String, R.Reply)]
+departed gs oids =
+  [ ("departed", R.Object names)
+  | let names =
+          [ (Codec.Reference.toText (Reply.nameObject namer oid), R.Text (Render.snapshotName (LastKnown.characteristics known)))
+          | oid <- oids,
+            Map.notMember oid (GameState.objects gs),
+            Just known <- [Map.lookup oid (Snapshots.lastKnown (GameState.snapshots gs))],
+            notElem (LastKnown.zone known) [Zone.Hand, Zone.Library]
+          ],
+    not (null names)
+  ]
 
 fields :: [(String, R.Reply)] -> R.Reply
 fields = R.Object . fmap (Bifunctor.first Text.pack)

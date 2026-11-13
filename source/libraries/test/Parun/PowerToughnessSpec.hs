@@ -62,6 +62,7 @@ import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DistinctOf as DistinctOf
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
@@ -1538,7 +1539,7 @@ exilingEveryOffer p = case p of
 -- assertion also says HOW MANY such objects there were: a doubling that somehow
 -- left two is a different failure from one that doubled wrong.
 boxesOfNamed :: String -> GameState.GameState -> [Maybe (Integer, Integer)]
-boxesOfNamed name gs = fmap (`S.powerToughnessOf` gs) (Scenario.namedObjects (CardName.MkCardName (Text.pack name)) gs)
+boxesOfNamed name gs = fmap (`S.powerToughnessOf` gs) (Scenario.namedObjects Existence.Live (CardName.MkCardName (Text.pack name)) gs)
 
 -- Unleash Fury ({1}{R} Instant -- "Double the power of target creature until end
 -- of turn", Oracle text verified against Scryfall 2026-09-10).

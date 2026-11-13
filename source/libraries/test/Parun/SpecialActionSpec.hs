@@ -86,6 +86,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
@@ -841,7 +842,7 @@ valkyrieAnswers loreId prompt = case prompt of
 tapOneNamed :: Printing.Printing -> GameState.GameState -> GameState.GameState
 tapOneNamed island gs =
   let untapped oid = fmap Object.tapped (Game.lookupObject oid gs) == Just TapState.Untapped
-   in case filter untapped (Scenario.namedObjects (S.printingName island) gs) of
+   in case filter untapped (Scenario.namedObjects Existence.Live (S.printingName island) gs) of
         oid : _ -> gs {GameState.objects = Map.adjust (\o -> o {Object.tapped = TapState.Tapped}) oid (GameState.objects gs)}
         [] -> gs
 

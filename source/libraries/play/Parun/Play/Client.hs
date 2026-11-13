@@ -561,11 +561,17 @@ choice view question = Maybe.fromMaybe generic $ case Text.unpack (Question.kind
         entries = foldMap (fmap Just) (Protocol.field "entries" offer >>= Protocol.arrayOf) <> repeat Nothing
     pure
       ( told view self offer
-          <> (kindHeading <> foldMap (\source -> Text.pack " for " <> objectName view source) (Protocol.field "source" offer) <> Text.pack ":" : numbered (zipWith (\option entry -> maybe (name option) (entryName view) entry) options entries)),
+          <> (kindHeading <> foldMap (\source -> Text.pack " for " <> objectName view source) (Protocol.field "source" offer) <> Text.pack ":" : numbered (zipWith (\option entry -> maybe (Maybe.fromMaybe (name option) (gone option)) (entryName view) entry) options entries)),
         fmap (pickFrom options) . one (Natural.length options)
       )
   where
     offer = Question.offer question
+    -- CR 608.2h: an option that has left the game, by the last known name the
+    -- offer gives it (Parun.Play.Protocol.departed).
+    gone option = do
+      key <- textOf option
+      known <- Protocol.field "departed" offer >>= Protocol.field (Text.unpack key) >>= textOf
+      pure (known <> Text.pack " (it is gone)")
     -- A number from the offer's least to its greatest, for its source.
     bounded heading = do
       source <- Protocol.field "source" offer
@@ -1150,7 +1156,7 @@ told view self offer = case offer of
   R.Object pairs ->
     [ label key <> Text.pack ": " <> value key reply
     | (key, reply) <- pairs,
-      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "least", "most", "names", "costs", "repeats", "amounts", "floors", "recipients", "counters", "fromOne", "oneKind"],
+      key `notElem` fmap Text.pack ["source", "options", "entries", "players", "among", "departed", "least", "most", "names", "costs", "repeats", "amounts", "floors", "recipients", "counters", "fromOne", "oneKind"],
       reply /= R.Array []
     ]
   _ -> []

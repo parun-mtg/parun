@@ -67,9 +67,8 @@ Finished 2026-11-13.
   colour outlived its ability, #7189), #7193 (an optional draw offered to a
   player who can't draw, #7194).
 - Filed along the way and moved off the tracker, each open: #7157 (an
-  activated ability's mode count reading its own cost), #7173 (a prompt
-  naming a departed object), #7187 (a colour chosen on resolution read as
-  another ability's linked choice, Myr Welder only).
+  activated ability's mode count reading its own cost), #7187 (a colour chosen
+  on resolution read as another ability's linked choice, Myr Welder only).
 - Process changes during the set: #7158 (`docs/agents/set-by-set.md`, run
   `-p Parun.Ingest` for a hand-written card), #7185 (`CLAUDE.md`, no
   `IsInZone Battlefield` on a counter-put holder or look-back), #7192
