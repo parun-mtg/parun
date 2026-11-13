@@ -5726,6 +5726,22 @@ oneFaced face = Card.Type.MkCard {Card.Type.layout = Layout.Normal, Card.Type.fa
 anyFace :: (Face.Face Card.Type.Card -> Bool) -> Card.Type.Card -> Bool
 anyFace p = any p . Card.Type.faces
 
+-- A face beside its cardFilters. Gathering them is most of what a position
+-- lint costs, so the pool's are gathered once ('surveyedPool') and every case
+-- reads those; a lint's proof on a face it doctored surveys that face itself.
+data Surveyed = MkSurveyed
+  { surveyedFace :: Face.Face Card.Type.Card,
+    surveyedFilters :: [(Framing, Filter.Type.Filter Keyword.Keyword)]
+  }
+
+survey :: Face.Face Card.Type.Card -> Surveyed
+survey card = MkSurveyed {surveyedFace = card, surveyedFilters = cardFilters card}
+
+-- Every card that loaded, each face surveyed. S.allPrintings is what fails a
+-- case over a file that did not load.
+surveyedPool :: [(FilePath, Either Text.Text Card.Type.Card)] -> [(Printing.Printing, [Surveyed])]
+surveyedPool loaded = [(Printing.ofCard card, fmap survey (Foldable.toList (Card.Type.faces card))) | (_, Right card) <- loaded]
+
 -- anyFace over withMinted, for a lint a minted face owes as much as a printed
 -- one: CR 111.3's token, CR 114.4's emblem and a conjured card each answer for
 -- their own text, against what their own object binds rather than the minter's.

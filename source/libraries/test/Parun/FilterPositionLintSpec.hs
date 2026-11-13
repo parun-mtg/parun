@@ -15,7 +15,7 @@ import qualified Data.Monoid as Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), anyFace, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, triggerConditionFilters, turnUpRewriteFilters)
+import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), Surveyed, anyFace, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, survey, surveyedFace, surveyedFilters, surveyedPool, triggerConditionFilters, turnUpRewriteFilters)
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Filter as Filter.Codec
@@ -304,9 +304,9 @@ sourceFramed framing = case framing of
 -- -- and how many anywhere else. The second number is the offence; the first is
 -- what Aura Graft, Synthetic Aura Diffusion, Grifter's Blade and Glamer
 -- Spinners legitimately have one of each.
-canHostSubjectCounts :: Face.Face Card.Type.Card -> (Int, Int)
+canHostSubjectCounts :: Surveyed -> (Int, Int)
 canHostSubjectCounts card =
-  let total wanted = sum (fmap (\(_, f) -> canHostSubjects f) (filter (\(framing, _) -> elem framing [AttachDestination, EntryAttachDestination] == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> canHostSubjects f) (filter (\(framing, _) -> elem framing [AttachDestination, EntryAttachDestination] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- Every occurrence of one atom's codec tag in an ENCODED face. The completeness
@@ -601,10 +601,10 @@ otherCandidateCounts card =
 -- The second is not hypothetical maintenance theatre: cardFilters' Face-record
 -- fold is hand-maintained, and a new field holding a Filter is exactly the kind of
 -- change that would otherwise make this lint quietly stop doing its job.
-canHostSubjectOffends :: Face.Face Card.Type.Card -> Bool
+canHostSubjectOffends :: Surveyed -> Bool
 canHostSubjectOffends card =
   let (framed, unframedCount) = canHostSubjectCounts card
-   in unframedCount /= 0 || framed + unframedCount /= jsonAtoms (Text.pack "CanHostSubject") (Codec.encode (Face.Codec.codec Card.codec) card)
+   in unframedCount /= 0 || framed + unframedCount /= jsonAtoms (Text.pack "CanHostSubject") (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- jsonAtoms narrowed from a whole face to ONE Filter position of it. The atom
 -- this is asked about carries a payload (a SlotName), so counting the tag by hand
@@ -626,9 +626,9 @@ canAttachToSubjectTag = Text.pack "CanAttachToSubject"
 -- filter, and how many anywhere else. The second number is the offence; the first
 -- is what Auratouched Mage and Sovereigns of Lost Alara legitimately have one of
 -- each.
-canAttachToSubjectCounts :: Face.Face Card.Type.Card -> (Int, Int)
+canAttachToSubjectCounts :: Surveyed -> (Int, Int)
 canAttachToSubjectCounts card =
-  let total wanted = sum (fmap (\(_, f) -> filterAtoms canAttachToSubjectTag f) (filter (\(framing, _) -> (framing == SearchFramed) == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> filterAtoms canAttachToSubjectTag f) (filter (\(framing, _) -> (framing == SearchFramed) == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- Filter.CanAttachToSubject is answerable only where the evaluator supplies the
@@ -642,10 +642,10 @@ canAttachToSubjectCounts card =
 -- disagree about how many the card holds -- the second being a blind spot in
 -- cardFilters, in which an atom would be reported as zero rather than as an
 -- offence.
-canAttachToSubjectOffends :: Face.Face Card.Type.Card -> Bool
+canAttachToSubjectOffends :: Surveyed -> Bool
 canAttachToSubjectOffends card =
   let (framed, unframedCount) = canAttachToSubjectCounts card
-   in unframedCount /= 0 || framed + unframedCount /= jsonAtoms canAttachToSubjectTag (Codec.encode (Face.Codec.codec Card.codec) card)
+   in unframedCount /= 0 || framed + unframedCount /= jsonAtoms canAttachToSubjectTag (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- The CR 303.4f entry-host tag, spelled once.
 hasEntryHostTag :: Text.Text
@@ -653,18 +653,18 @@ hasEntryHostTag = Text.pack "HasEntryHost"
 
 -- How many CR 303.4f entry-host atoms this card carries in a RepeatIf's
 -- condition, and how many anywhere else. The second number is the offence.
-hasEntryHostCounts :: Face.Face Card.Type.Card -> (Int, Int)
+hasEntryHostCounts :: Surveyed -> (Int, Int)
 hasEntryHostCounts card =
-  let total wanted = sum (fmap (\(_, f) -> filterAtoms hasEntryHostTag f) (filter (\(framing, _) -> (framing == RepeatGateFramed) == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> filterAtoms hasEntryHostTag f) (filter (\(framing, _) -> (framing == RepeatGateFramed) == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- Filter.HasEntryHost is answerable only where the view fills it, which is
 -- Parun.Engine.Resolve.Arms.Zones.repeatIf's condition; anywhere else it is a
 -- silent False. canAttachToSubjectOffends' two offences.
-hasEntryHostOffends :: Face.Face Card.Type.Card -> Bool
+hasEntryHostOffends :: Surveyed -> Bool
 hasEntryHostOffends card =
   let (framed, unframedCount) = hasEntryHostCounts card
-   in unframedCount /= 0 || framed + unframedCount /= jsonAtoms hasEntryHostTag (Codec.encode (Face.Codec.codec Card.codec) card)
+   in unframedCount /= 0 || framed + unframedCount /= jsonAtoms hasEntryHostTag (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- The CR 205.2a subject's-host tag, spelled once.
 hostOfSubjectCardTypeTag :: Text.Text
@@ -683,9 +683,9 @@ hostOfSubjectCardTypeTag = Text.pack "HostOfSubjectHasCardType"
 -- entering the battlefield and an Aura being turned face up are each attached
 -- to nothing yet, so the set is empty and the atom is False at both. Only a
 -- resolving attach has a subject with a host.
-hostOfSubjectCardTypeCounts :: Face.Face Card.Type.Card -> (Int, Int)
+hostOfSubjectCardTypeCounts :: Surveyed -> (Int, Int)
 hostOfSubjectCardTypeCounts card =
-  let total wanted = sum (fmap (\(_, f) -> filterAtoms hostOfSubjectCardTypeTag f) (filter (\(framing, _) -> elem framing [AttachDestination, EntryAttachDestination] == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> filterAtoms hostOfSubjectCardTypeTag f) (filter (\(framing, _) -> elem framing [AttachDestination, EntryAttachDestination] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- Filter.HostOfSubjectHasCardType is answerable only where an attach frames the
@@ -695,10 +695,10 @@ hostOfSubjectCardTypeCounts card =
 -- Two offences under one name, for canHostSubjectOffends' two reasons: the
 -- traversal found the atom outside an attach's destination, or the traversal and
 -- the codec disagree about how many the card holds.
-hostOfSubjectCardTypeOffends :: Face.Face Card.Type.Card -> Bool
+hostOfSubjectCardTypeOffends :: Surveyed -> Bool
 hostOfSubjectCardTypeOffends card =
   let (framed, unframedCount) = hostOfSubjectCardTypeCounts card
-   in unframedCount /= 0 || framed + unframedCount /= jsonAtoms hostOfSubjectCardTypeTag (Codec.encode (Face.Codec.codec Card.codec) card)
+   in unframedCount /= 0 || framed + unframedCount /= jsonAtoms hostOfSubjectCardTypeTag (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- The CR 201.4 chosen-name tag, spelled once.
 hasChosenNameTag :: Text.Text
@@ -728,9 +728,9 @@ hasChosenNameTag = Text.pack "HasChosenName"
 -- filled by Parun.Engine.Resolve.Slots.effectContext itself, so every position a
 -- RESOLUTION reaches has it, and this rejects the atom in positions that would in
 -- fact answer. Widen it when a card wants one of them.
-hasChosenNameCounts :: Face.Face Card.Type.Card -> (Int, Int)
+hasChosenNameCounts :: Surveyed -> (Int, Int)
 hasChosenNameCounts card =
-  let total wanted = sum (fmap (\(_, f) -> filterAtoms hasChosenNameTag f) (filter (\(framing, _) -> elem framing [SearchFramed, MillTallyFramed, SourceHostFramed, InTargetSlot, PlayerEffectFramed, StoredPlayerEffectFramed, AffectedSetFramed, ClauseGateFramed, TriggerConditionFramed] == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> filterAtoms hasChosenNameTag f) (filter (\(framing, _) -> elem framing [SearchFramed, MillTallyFramed, SourceHostFramed, InTargetSlot, PlayerEffectFramed, StoredPlayerEffectFramed, AffectedSetFramed, ClauseGateFramed, TriggerConditionFramed] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- CR 201.4's chosen name is answerable only where Filter.Context.sourceChosenNames
@@ -756,10 +756,10 @@ hasChosenNameCounts card =
 -- position cardFilters walks, so the self-test's fixture for it goes to (0, 0)
 -- when effectFilters stops reporting it and the codec half is what still catches
 -- the atom.
-hasChosenNameOffends :: Face.Face Card.Type.Card -> Bool
+hasChosenNameOffends :: Surveyed -> Bool
 hasChosenNameOffends card =
   let (framed, elsewhere) = hasChosenNameCounts card
-   in elsewhere /= 0 || framed + elsewhere /= jsonAtoms hasChosenNameTag (Codec.encode (Face.Codec.codec Card.codec) card)
+   in elsewhere /= 0 || framed + elsewhere /= jsonAtoms hasChosenNameTag (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- The CR 607.2d chosen-colour and chosen-subtype tags, spelled once.
 hasChosenColorTag :: Text.Text
@@ -788,18 +788,18 @@ hasChosenCardTypeTag = Text.pack "HasChosenCardType"
 -- Parun.Engine.Resolve.Slots.effectContext frames the resolution's reads by the
 -- source's live choices, so a Create quantity's Count reads the type the
 -- clause before it chose (Orcrist, Goblin-cleaver's scenario).
-chosenValueCounts :: (Framing -> Bool) -> (ChosenQuality.ChosenQuality -> Bool) -> Text.Text -> Face.Face Card.Type.Card -> (Int, Int)
+chosenValueCounts :: (Framing -> Bool) -> (ChosenQuality.ChosenQuality -> Bool) -> Text.Text -> Surveyed -> (Int, Int)
 chosenValueCounts admitted answers tag card =
   let total keep pairs = sum (fmap (\(_, f) -> filterAtoms tag f) (filter (keep . fst) pairs))
-      spellPairs = modalFilters (Face.spell card)
-      answered = afterChoice answers (Face.spell card)
+      spellPairs = modalFilters (Face.spell (surveyedFace card))
+      answered = afterChoice answers (Face.spell (surveyedFace card))
       inSpell = total admitted spellPairs - total admitted answered
-      abilityModals = fmap TriggeredAbility.modal (Face.triggeredAbilities card) <> fmap ActivatedAbility.modal (Face.activatedAbilities card)
+      abilityModals = fmap TriggeredAbility.modal (Face.triggeredAbilities (surveyedFace card)) <> fmap ActivatedAbility.modal (Face.activatedAbilities (surveyedFace card))
       -- A keyword's own filter is read off the keyword long after the
       -- resolution, so the choice answers it only where it is baked
       -- (grantedChosenColors).
       inAbility = total (\framing -> not (admitted framing) && framing /= KeywordFramed) (concatMap (afterChoice answers) abilityModals)
-   in (total admitted (cardFilters card) - inSpell + inAbility, total (not . admitted) (cardFilters card) + inSpell - inAbility)
+   in (total admitted (surveyedFilters card) - inSpell + inAbility, total (not . admitted) (surveyedFilters card) + inSpell - inAbility)
 
 -- The filters a spell's mode reads after its first `Effect.ChooseQuality q`
 -- whose `q` answers the atom:
@@ -857,10 +857,10 @@ writesCardType quality = case quality of
 -- bare protection quality (grantedChosenColors) and CR 106.6's mana
 -- restriction, which Parun.Engine.Mana.admitsUnder fills off the mana unit
 -- (Throne of Eldraine). Everywhere else it is a silent False.
-hasChosenColorCounts :: Face.Face Card.Type.Card -> (Int, Int)
+hasChosenColorCounts :: Surveyed -> (Int, Int)
 hasChosenColorCounts card =
   let (framed, elsewhere) = chosenValueCounts (\framing -> framing == ManaRestrictionFramed || sourceFramed framing) writesColors hasChosenColorTag card
-      granted = grantedChosenColors card
+      granted = grantedChosenColors (surveyedFace card)
    in (framed + granted, elsewhere - granted)
 
 -- CR 607.2d's "protection from the chosen color", or CR 702.11d's hexproof
@@ -884,13 +884,13 @@ grantedChosenColors card =
 -- CR 205.3's chosen subtype in the same positions, plus CR 106.6's restriction,
 -- which Parun.Engine.Mana.admitsUnder answers off the mana unit (Pillar of
 -- Origins). The colour has no such reading, so the two lists differ.
-hasChosenSubtypeCounts :: Face.Face Card.Type.Card -> (Int, Int)
+hasChosenSubtypeCounts :: Surveyed -> (Int, Int)
 hasChosenSubtypeCounts = chosenValueCounts (\framing -> framing == ManaRestrictionFramed || sourceFramed framing) writesSubtype hasChosenSubtypeTag
 
 -- CR 205.2a's chosen card type in the source-framed positions alone: no mana
 -- unit bakes it (Parun.Engine.Mana.sourceChoicesOf), so a restriction cannot
 -- answer it.
-hasChosenCardTypeCounts :: Face.Face Card.Type.Card -> (Int, Int)
+hasChosenCardTypeCounts :: Surveyed -> (Int, Int)
 hasChosenCardTypeCounts = chosenValueCounts sourceFramed writesCardType hasChosenCardTypeTag
 
 -- CR 607.2a's last-exiled atom, spelled once: IsLastExiledWithSource's tag.
@@ -900,16 +900,16 @@ isLastExiledWithSourceTag = Text.pack "IsLastExiledWithSource"
 -- The atom is answerable only in CR 106.6's restriction, where
 -- Parun.Engine.Mana.admitsUnder fills Filter.Context.sourceLastExiled off the
 -- mana unit (Ice Cauldron); everywhere else it is a silent False.
-isLastExiledWithSourceCounts :: Face.Face Card.Type.Card -> (Int, Int)
+isLastExiledWithSourceCounts :: Surveyed -> (Int, Int)
 isLastExiledWithSourceCounts = chosenValueCounts (== ManaRestrictionFramed) (const False) isLastExiledWithSourceTag
 
 -- Two offences under one name, hasChosenNameOffends' two: an atom outside the
 -- admitted positions, or the traversal and the codec disagreeing about how many
 -- the card holds.
-chosenValueOffends :: (Face.Face Card.Type.Card -> (Int, Int)) -> Text.Text -> Face.Face Card.Type.Card -> Bool
+chosenValueOffends :: (Surveyed -> (Int, Int)) -> Text.Text -> Surveyed -> Bool
 chosenValueOffends counts tag card =
   let (framed, elsewhere) = counts card
-   in elsewhere /= 0 || framed + elsewhere /= jsonAtoms tag (Codec.encode (Face.Codec.codec Card.codec) card)
+   in elsewhere /= 0 || framed + elsewhere /= jsonAtoms tag (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- The CR 702.16k chosen-player tag, spelled once.
 ofChosenPlayerTag :: Text.Text
@@ -918,9 +918,9 @@ ofChosenPlayerTag = Text.pack "OfChosenPlayer"
 -- How many CR 702.16k chosen-player atoms this card carries inside a KEYWORD's
 -- own filter, and how many anywhere else. The second number is the offence; the
 -- first is what True-Name Nemesis legitimately has one of.
-ofChosenPlayerCounts :: Face.Face Card.Type.Card -> (Int, Int)
+ofChosenPlayerCounts :: Surveyed -> (Int, Int)
 ofChosenPlayerCounts card =
-  let total wanted = sum (fmap (\(_, f) -> filterAtoms ofChosenPlayerTag f) (filter (\(framing, _) -> (framing == KeywordFramed) == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> filterAtoms ofChosenPlayerTag f) (filter (\(framing, _) -> (framing == KeywordFramed) == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- CR 702.16k's chosen player is answerable only where
@@ -961,10 +961,10 @@ ofChosenPlayerCounts card =
 -- Two offences under one name, for hasChosenNameOffends' two reasons: the
 -- traversal found the atom outside a keyword, or the traversal and the codec
 -- disagree about how many the card holds.
-ofChosenPlayerOffends :: Face.Face Card.Type.Card -> Bool
+ofChosenPlayerOffends :: Surveyed -> Bool
 ofChosenPlayerOffends card =
   let (framed, elsewhere) = ofChosenPlayerCounts card
-   in elsewhere /= 0 || framed + elsewhere /= jsonAtoms ofChosenPlayerTag (Codec.encode (Face.Codec.codec Card.codec) card)
+   in elsewhere /= 0 || framed + elsewhere /= jsonAtoms ofChosenPlayerTag (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- How many atoms tagged `tag` in an encoding decode to one `wanted` admits:
 -- an anchored atom's trait and anchor are what tell its readings apart, and a
@@ -1011,10 +1011,10 @@ framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Share
 -- Parun.Engine.Cost.discardCandidates frames through
 -- Parun.Engine.Projection.contextWithSlots. The rest of ActivationCostFramed is
 -- not, since Cost.xValue and Cost.tapForManaWith read a bare source context.
-framedNameCounts :: Face.Face Card.Type.Card -> (Int, Int)
+framedNameCounts :: Surveyed -> (Int, Int)
 framedNameCounts card =
-  let total wanted = sum (fmap (\(_, f) -> framedNameAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, SearchFramed, HandSweepFramed, LifeLossAmountFramed, SourceHostFramed] == wanted) (cardFilters card)))
-      discarded = sum (fmap (framedNameAtoms . atomJson) (discardCostCriteria card))
+  let total wanted = sum (fmap (\(_, f) -> framedNameAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, SearchFramed, HandSweepFramed, LifeLossAmountFramed, SourceHostFramed] == wanted) (surveyedFilters card)))
+      discarded = sum (fmap (framedNameAtoms . atomJson) (discardCostCriteria (surveyedFace card)))
    in (total True + discarded, total False - discarded)
 
 -- The criteria of this face's activated abilities' CR 701.9a discard costs,
@@ -1051,10 +1051,10 @@ discardCostCriteria card =
 -- the first, so neutralizing the cross-check leaves the suite green. What would
 -- observe it is a future Face field cardFilters forgets, which is the thing that
 -- cannot be written down yet.
-framedNameOffends :: Face.Face Card.Type.Card -> Bool
+framedNameOffends :: Surveyed -> Bool
 framedNameOffends card =
   let (slotted, elsewhere) = framedNameCounts card
-   in elsewhere /= 0 || slotted + elsewhere /= framedNameAtoms (Codec.encode (Face.Codec.codec Card.codec) card)
+   in elsewhere /= 0 || slotted + elsewhere /= framedNameAtoms (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- The CR 205.3m and CR 205.2a atoms anchored at a SLOT in an encoding:
 -- Filter.Shares CreatureType or CardType at a Bound anchor, which share a posture.
@@ -1070,17 +1070,17 @@ yourCommanderAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Sh
 -- Parun.Engine.Projection.framedByCommanders fills the commanders' creature
 -- types (SpentOnFramed), and how many anywhere else, where the atom is a silent
 -- False. The second number is the offence.
-yourCommanderCounts :: Face.Face Card.Type.Card -> (Int, Int)
+yourCommanderCounts :: Surveyed -> (Int, Int)
 yourCommanderCounts card =
-  let total wanted = sum (fmap (\(_, f) -> yourCommanderAtoms (atomJson f)) (filter (\(framing, _) -> (framing == SpentOnFramed) == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> yourCommanderAtoms (atomJson f)) (filter (\(framing, _) -> (framing == SpentOnFramed) == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- The atom outside that position, or the traversal and the codec disagreeing
 -- about how many the card holds -- boundCreatureTypeOffends' two offences.
-yourCommanderOffends :: Face.Face Card.Type.Card -> Bool
+yourCommanderOffends :: Surveyed -> Bool
 yourCommanderOffends card =
   let (framed, elsewhere) = yourCommanderCounts card
-   in elsewhere /= 0 || framed + elsewhere /= yourCommanderAtoms (Codec.encode (Face.Codec.codec Card.codec) card)
+   in elsewhere /= 0 || framed + elsewhere /= yourCommanderAtoms (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- How many CR 205.3m atoms this card carries in a resolution's own positions --
 -- an effect's ObjectRef (Heirloom Blade), a clause's "if" (Mudbutton Clanger), a
@@ -1089,18 +1089,18 @@ yourCommanderOffends card =
 -- through Parun.Engine.Target.slotContext: the two fillers of
 -- Filter.Context.slotCreatureTypes and slotCardTypes. And how many anywhere else, where the atom
 -- is a silent True. The second number is the offence.
-boundCreatureTypeCounts :: Face.Face Card.Type.Card -> (Int, Int)
+boundCreatureTypeCounts :: Surveyed -> (Int, Int)
 boundCreatureTypeCounts card =
-  let total wanted = sum (fmap (\(_, f) -> boundCreatureTypeAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed, InTargetSlot] == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> boundCreatureTypeAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed, InTargetSlot] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- The atom outside those positions, or the traversal and the codec disagreeing
 -- about how many the card holds -- framedNameOffends' two offences, and its
 -- second disjunct is the same regression fence.
-boundCreatureTypeOffends :: Face.Face Card.Type.Card -> Bool
+boundCreatureTypeOffends :: Surveyed -> Bool
 boundCreatureTypeOffends card =
   let (framed, elsewhere) = boundCreatureTypeCounts card
-   in elsewhere /= 0 || framed + elsewhere /= boundCreatureTypeAtoms (Codec.encode (Face.Codec.codec Card.codec) card)
+   in elsewhere /= 0 || framed + elsewhere /= boundCreatureTypeAtoms (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- The CR 608.2c bound-object operand's tag, spelled once.
 ofBoundTag :: Text.Text
@@ -1111,17 +1111,17 @@ ofBoundTag = Text.pack "OfBound"
 -- Filter.Context field over: Parun.Engine.Resolve.Slots.effectContext is the one
 -- filler of Filter.Context.slotMeasures too, so the operand is a silent False
 -- elsewhere. The second number is the offence.
-ofBoundCounts :: Face.Face Card.Type.Card -> (Int, Int)
+ofBoundCounts :: Surveyed -> (Int, Int)
 ofBoundCounts card =
-  let total wanted = sum (fmap (\(_, f) -> filterAtoms ofBoundTag f) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed] == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> filterAtoms ofBoundTag f) (filter (\(framing, _) -> elem framing [SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- The atom outside those positions, or the traversal and the codec disagreeing
 -- about how many the card holds -- boundCreatureTypeOffends' two offences.
-ofBoundOffends :: Face.Face Card.Type.Card -> Bool
+ofBoundOffends :: Surveyed -> Bool
 ofBoundOffends card =
   let (framed, elsewhere) = ofBoundCounts card
-   in elsewhere /= 0 || framed + elsewhere /= jsonAtoms ofBoundTag (Codec.encode (Face.Codec.codec Card.codec) card)
+   in elsewhere /= 0 || framed + elsewhere /= jsonAtoms ofBoundTag (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- How many CR 110.2 shared-controller atoms under this hop an encoding holds:
 -- the tag is shared, and the hop is what tells the two lints' atoms apart.
@@ -1136,45 +1136,45 @@ relatesToBoundAtoms hop = decodedAtoms "ControllerRelatesToBound" (\atom -> case
 -- became a resolution's own when Parun.Engine.Attach.hostsFor started taking its
 -- Context from the caller, and it is the only one of these six a card writes
 -- this atom in (Simic Guildmage). The second number is the offence.
-hostRelatesToBoundCounts :: Face.Face Card.Type.Card -> (Int, Int)
+hostRelatesToBoundCounts :: Surveyed -> (Int, Int)
 hostRelatesToBoundCounts card =
-  let total wanted = sum (fmap (\(_, f) -> relatesToBoundAtoms Hop.Host (atomJson f)) (filter (\(framing, _) -> elem framing [AttachDestination, EntryAttachDestination, SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed] == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> relatesToBoundAtoms Hop.Host (atomJson f)) (filter (\(framing, _) -> elem framing [AttachDestination, EntryAttachDestination, SourceHostFramed, ClauseGateFramed, SearchFramed, MillTallyFramed, HandSweepFramed] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- The atom outside those positions, or the traversal and the codec disagreeing
 -- about how many the card holds -- boundCreatureTypeOffends' two offences.
-hostRelatesToBoundOffends :: Face.Face Card.Type.Card -> Bool
+hostRelatesToBoundOffends :: Surveyed -> Bool
 hostRelatesToBoundOffends card =
   let (framed, elsewhere) = hostRelatesToBoundCounts card
-   in elsewhere /= 0 || framed + elsewhere /= relatesToBoundAtoms Hop.Host (Codec.encode (Face.Codec.codec Card.codec) card)
+   in elsewhere /= 0 || framed + elsewhere /= relatesToBoundAtoms Hop.Host (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- How many CR 301.5a "attached to that creature" atoms this card carries in a
 -- mode's target slot, the position a joint check stands behind, and how many
 -- anywhere else. The second number is the offence: elsewhere the atom's
 -- unanswered slot is a silent True (Parun.Engine.Filter.attachedAnchored). An
 -- effect's object says it with ObjectRef.AttachedToBound.
-attachedToBoundCounts :: Face.Face Card.Type.Card -> (Int, Int)
+attachedToBoundCounts :: Surveyed -> (Int, Int)
 attachedToBoundCounts card =
-  let total wanted = sum (fmap (\(_, f) -> attachedToBoundAtoms (atomJson f)) (filter (\(framing, _) -> (framing == InTargetSlot) == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> attachedToBoundAtoms (atomJson f)) (filter (\(framing, _) -> (framing == InTargetSlot) == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 attachedToBoundAtoms :: Value.Value -> Int
 attachedToBoundAtoms = decodedAtoms "IsAttachedTo" (\atom -> case atom of Filter.Type.IsAttachedTo (Anchor.Bound _) -> True; _ -> False)
 
 -- Two offences, controllerRelatesToBoundOffends' two.
-attachedToBoundOffends :: Face.Face Card.Type.Card -> Bool
+attachedToBoundOffends :: Surveyed -> Bool
 attachedToBoundOffends card =
   let (admitted, elsewhere) = attachedToBoundCounts card
-   in elsewhere /= 0 || admitted + elsewhere /= attachedToBoundAtoms (Codec.encode (Face.Codec.codec Card.codec) card)
+   in elsewhere /= 0 || admitted + elsewhere /= attachedToBoundAtoms (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- How many unhopped CR 110.2 shared-controller atoms (Hop.Itself) this card carries inside a MODE's
 -- target slot filter, an attach effect's destination, a stored combat
 -- restriction class or an effect's ObjectRef, and how many anywhere else. The
 -- second number is the offence; the first is what Bioshift and Glamer Spinners
 -- legitimately have one of.
-controllerRelatesToBoundCounts :: Face.Face Card.Type.Card -> (Int, Int)
+controllerRelatesToBoundCounts :: Surveyed -> (Int, Int)
 controllerRelatesToBoundCounts card =
-  let total wanted = sum (fmap (\(_, f) -> relatesToBoundAtoms Hop.Itself (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, AttachDestination, StoredClassFramed, SourceHostFramed] == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> relatesToBoundAtoms Hop.Itself (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, AttachDestination, StoredClassFramed, SourceHostFramed] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- CR 110.2's shared-controller comparison is answerable only where
@@ -1192,10 +1192,10 @@ controllerRelatesToBoundCounts card =
 -- the atom outside a target slot, or the traversal and the codec disagree about
 -- how many the card holds. The second disjunct is a REGRESSION FENCE for that
 -- function's reason.
-controllerRelatesToBoundOffends :: Face.Face Card.Type.Card -> Bool
+controllerRelatesToBoundOffends :: Surveyed -> Bool
 controllerRelatesToBoundOffends card =
   let (slotted, elsewhere) = controllerRelatesToBoundCounts card
-   in elsewhere /= 0 || slotted + elsewhere /= relatesToBoundAtoms Hop.Itself (Codec.encode (Face.Codec.codec Card.codec) card)
+   in elsewhere /= 0 || slotted + elsewhere /= relatesToBoundAtoms Hop.Itself (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- The CR 303.4b tag, spelled once.
 hostOfSourceTag :: Text.Text
@@ -1206,7 +1206,7 @@ hostOfSourceTag = Text.pack "IsHostOfSource"
 -- offence; the first is what Ray of Frost legitimately has three of. A spell's
 -- own positions count as elsewhere, chosenValueCounts' rule: a spell is attached
 -- to nothing.
-hostOfSourceCounts :: Face.Face Card.Type.Card -> (Int, Int)
+hostOfSourceCounts :: Surveyed -> (Int, Int)
 hostOfSourceCounts = chosenValueCounts hostFramed (const False) hostOfSourceTag
 
 -- The source-framed positions the host atom is admitted in: narrower than
@@ -1234,10 +1234,10 @@ hostFramed framing = case framing of
 -- cardFilters, in which an atom would be reported as zero rather than as an
 -- offence. The second disjunct is a REGRESSION FENCE for framedNameOffends'
 -- reason.
-hostOfSourceOffends :: Face.Face Card.Type.Card -> Bool
+hostOfSourceOffends :: Surveyed -> Bool
 hostOfSourceOffends card =
   let (framed, elsewhere) = hostOfSourceCounts card
-   in elsewhere /= 0 || framed + elsewhere /= jsonAtoms hostOfSourceTag (Codec.encode (Face.Codec.codec Card.codec) card)
+   in elsewhere /= 0 || framed + elsewhere /= jsonAtoms hostOfSourceTag (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- How many atoms aimed at a quantity's object an encoding carries:
 -- Filter.IsEvaluated by tag, and Filter.Shares and Filter.IsAttachedTo at the
@@ -1292,9 +1292,9 @@ isBoundTag = Text.pack "IsBound"
 -- number is the offence here, which is the sibling position lints turned around:
 -- the atom is answerable in every position whose evaluator supplies the
 -- resolution's slots, and unanswerable in the four that supply none.
-isBoundCounts :: Face.Face Card.Type.Card -> (Int, Int)
+isBoundCounts :: Surveyed -> (Int, Int)
 isBoundCounts card =
-  let total wanted = sum (fmap (\(_, f) -> filterAtoms isBoundTag f) (filter (\(framing, _) -> elem framing [OutsideTheGameFramed, KeywordFramed, SlotlessCostFramed, MintedTargetSlot] == wanted) (cardFilters card)))
+  let total wanted = sum (fmap (\(_, f) -> filterAtoms isBoundTag f) (filter (\(framing, _) -> elem framing [OutsideTheGameFramed, KeywordFramed, SlotlessCostFramed, MintedTargetSlot] == wanted) (surveyedFilters card)))
    in (total True, total False)
 
 -- CR 400.11c's candidates are cards outside the game, which no spell or ability
@@ -1316,10 +1316,10 @@ isBoundCounts card =
 -- rejects it; IsControllerOfBound and HeldByBound are False wherever
 -- Parun.Engine.Filter.matches reaches them -- a fact about every position but a
 -- Scope.OverPlayers count's, not about this one.
-isBoundOffends :: Face.Face Card.Type.Card -> Bool
+isBoundOffends :: Surveyed -> Bool
 isBoundOffends card =
   let (wished, elsewhere) = isBoundCounts card
-   in wished /= 0 || wished + elsewhere /= jsonAtoms isBoundTag (Codec.encode (Face.Codec.codec Card.codec) card)
+   in wished /= 0 || wished + elsewhere /= jsonAtoms isBoundTag (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
 -- The CR 601.2b per-keyword tally's codec tag, spelled once.
 timesPaidTag :: Text.Text
@@ -1420,19 +1420,22 @@ anyOfOffends condition =
 assertAuthors ::
   Spec.Spec IO n ->
   Registry.Registry IO ->
-  [Printing.Printing] ->
+  [(Printing.Printing, [Surveyed])] ->
   String ->
-  (Face.Face Card.Type.Card -> (Int, Int)) ->
+  (Surveyed -> (Int, Int)) ->
   [(String, Int)] ->
   IO ()
-assertAuthors s registry ps label counts authors = do
-  let facesCount = Foldable.foldl' (\(a, b) (c, d) -> (a + c, b + d)) (0, 0) . fmap counts . Card.Type.faces . Printing.card
-  counted <- traverse (\(name, _) -> fmap (\p -> (name, facesCount p)) (S.printingOf s registry name)) authors
+assertAuthors s registry pool label counts authors = do
+  let facesCount faces = Foldable.foldl' (\(a, b) (c, d) -> (a + c, b + d)) (0, 0) (fmap counts faces)
+      authored = facesCount . fmap survey . Foldable.toList . Card.Type.faces . Printing.card
+  counted <- traverse (\(name, _) -> fmap (\p -> (name, authored p)) (S.printingOf s registry name)) authors
   Spec.assertEqWith s label counted (fmap (\(name, n) -> (name, (n, 0))) authors)
-  Spec.assertEqWith s "and they are the pool's only ones" (sum (fmap (uncurry (+) . facesCount) ps)) (sum (fmap snd authors))
+  Spec.assertEqWith s "and they are the pool's only ones" (sum (fmap (uncurry (+) . facesCount . snd) pool)) (sum (fmap snd authors))
 
 filterPositionLintSpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
+  -- Shared by every case below: a thunk, forced by whichever runs first.
+  let pool = surveyedPool corpus
   -- CR 603.2's event triggers and CR 603.8's state triggers are gathered by two
   -- different scans, so one ability may not be both. See anyOfOffends for the two
   -- shapes this rejects and why each would be incoherent rather than merely odd.
@@ -1479,8 +1482,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- creature" writes it (#3871). See canHostSubjectOffends for the
   -- two offences this one predicate covers.
   Spec.it s "CR 701.3a no card asks CanHostSubject outside a position an attach frames" $ do
-    ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace canHostSubjectOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any canHostSubjectOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only where an attach frames it" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool authors the atom, and the cards that do are ACCEPTED
     -- here rather than skipped -- at least one per framing opcode, so a
@@ -1488,7 +1490,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     assertAuthors
       s
       registry
-      ps
+      pool
       "each author's atoms are framed by an attach"
       canHostSubjectCounts
       [ ("Aura Graft", 1), -- its own attach
@@ -1517,7 +1519,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- and nothing else. See canAttachToSubjectOffends for the two offences.
   Spec.it s "CR 701.3a no card asks CanAttachToSubject outside a search's filter" $ do
     ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace canAttachToSubjectOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any canAttachToSubjectOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only in a search's filter" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool authors the atom, and every card that does is
     -- ACCEPTED here rather than skipped -- two saying "it" of their own source
@@ -1526,7 +1528,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     assertAuthors
       s
       registry
-      ps
+      pool
       "each author's atom is framed by its own search"
       canAttachToSubjectCounts
       [ ("Auratouched Mage", 1),
@@ -1541,23 +1543,21 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- CR 303.4f's entry host: answerable only in a RepeatIf's condition, whose
   -- view repeatIf fills. See hasEntryHostOffends for the two offences.
   Spec.it s "CR 303.4f no card asks HasEntryHost outside a RepeatIf's condition" $ do
-    ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace hasEntryHostOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any hasEntryHostOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only in a RepeatIf's condition" (fmap (S.nameOf . Printing.card) offenders) []
-    assertAuthors s registry ps "each author's atom is framed by its RepeatIf" hasEntryHostCounts [("Thieves' Auction", 1)]
+    assertAuthors s registry pool "each author's atom is framed by its RepeatIf" hasEntryHostCounts [("Thieves' Auction", 1)]
     -- The lint's own proof: the same atom in a static restriction's affected set.
     auction <- S.printingOf s registry "Thieves' Auction"
     let face = S.combinedFace auction
         restricted = face {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching Filter.Type.HasEntryHost) Nothing]}
-    Spec.assertBool s (hasEntryHostOffends restricted) "the atom in an affected set offends"
-    Spec.assertEqWith s "counted outside the admitted position" (hasEntryHostCounts restricted) (1, 1)
+    Spec.assertBool s (hasEntryHostOffends (survey restricted)) "the atom in an affected set offends"
+    Spec.assertEqWith s "counted outside the admitted position" (hasEntryHostCounts (survey restricted)) (1, 1)
   -- CR 201.4's chosen name is CR 701.3a's atom in nearly the same frame:
   -- answerable only where the resolution's own context is built
   -- (Parun.Engine.Resolve.Slots.effectContext), and a silent False everywhere
   -- else. See hasChosenNameOffends for the two offences.
   Spec.it s "CR 201.4 no card asks HasChosenName outside an admitted position" $ do
-    ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace hasChosenNameOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any hasChosenNameOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only where the resolution overlays the chosen names" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool authors the atom, and EVERY card that does is
     -- ACCEPTED here rather than skipped -- at least one per admitted position,
@@ -1565,7 +1565,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     assertAuthors
       s
       registry
-      ps
+      pool
       "each author's atoms are framed where the resolution overlays the chosen names"
       hasChosenNameCounts
       [ ("Ancient Vendetta", 1), -- its own search
@@ -1598,12 +1598,11 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- takes its filter off a keyword. See ofChosenPlayerOffends for the two
   -- offences.
   Spec.it s "CR 702.16k no card asks OfChosenPlayer outside a keyword's own filter" $ do
-    ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace ofChosenPlayerOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any ofChosenPlayerOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only in a keyword's filter" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool authors the atom, and the card that does is
     -- ACCEPTED here rather than skipped.
-    assertAuthors s registry ps "each author's atom is framed by its own keyword" ofChosenPlayerCounts [("True-Name Nemesis", 1)]
+    assertAuthors s registry pool "each author's atom is framed by its own keyword" ofChosenPlayerCounts [("True-Name Nemesis", 1)]
   -- The hole that bucket had while every keyword payload was KeywordFramed. CR
   -- 702.6c's equip quality is a payload that is NOT read as a keyword: rule
   -- 702.6a's minted ability carries it into a target slot, which
@@ -1622,15 +1621,15 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offending = base {Face.keywords = Map.singleton (equipping (Just buried)) 1}
         protecting = base {Face.keywords = Map.singleton (Keyword.Protection Protection.MkProtection {Protection.quality = buried, Protection.spares = Nothing}) 1}
     -- Ordered FIRST, and the assertion this framing exists for.
-    Spec.assertBool s (ofChosenPlayerOffends offending) "OfChosenPlayer in an equip quality offends"
-    Spec.assertEqWith s "counted outside the keyword bucket" (ofChosenPlayerCounts offending) (0, 1)
+    Spec.assertBool s (ofChosenPlayerOffends (survey offending)) "OfChosenPlayer in an equip quality offends"
+    Spec.assertEqWith s "counted outside the keyword bucket" (ofChosenPlayerCounts (survey offending)) (0, 1)
     -- The pair differing in exactly ONE thing: the same buried atom on the same
     -- face, moved into a quality rule 702.16 really does read off the keyword.
-    Spec.assertBool s (not (ofChosenPlayerOffends protecting)) "the same atom in a protection quality does not"
-    Spec.assertEqWith s "counted inside it" (ofChosenPlayerCounts protecting) (1, 0)
+    Spec.assertBool s (not (ofChosenPlayerOffends (survey protecting))) "the same atom in a protection quality does not"
+    Spec.assertEqWith s "counted inside it" (ofChosenPlayerCounts (survey protecting)) (1, 0)
     -- So the framing rejects the ATOM and not the position: the printed quality
     -- in the pool carries it and is accepted.
-    Spec.assertBool s (not (ofChosenPlayerOffends (S.combinedFace blade))) "Dúnedain Blade's own quality is accepted"
+    Spec.assertBool s (not (ofChosenPlayerOffends (survey (S.combinedFace blade)))) "Dúnedain Blade's own quality is accepted"
     Spec.assertEqWith
       s
       "and arrives framed as a minted target slot"
@@ -1642,8 +1641,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- the framing in its offending list for that.
     let slot = SlotName.MkSlotName (Text.pack "target")
         bound = Filter.Type.And [Filter.Type.Or [creatures, Filter.Type.IsBound slot]]
-    Spec.assertBool s (isBoundOffends (base {Face.keywords = Map.singleton (equipping (Just bound)) 1})) "IsBound in an equip quality offends too"
-    Spec.assertBool s (not (isBoundOffends (base {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching bound) Nothing]}))) "and the same atom at an unframed position does not"
+    Spec.assertBool s (isBoundOffends (survey (base {Face.keywords = Map.singleton (equipping (Just bound)) 1}))) "IsBound in an equip quality offends too"
+    Spec.assertBool s (not (isBoundOffends (survey (base {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching bound) Nothing]})))) "and the same atom at an unframed position does not"
   -- CR 701.23a: a search looks through a zone, so one naming none can find
   -- nothing. Nothing else catches an empty set. Search.zones is defaulted-absent
   -- to the library, so a card file has to write "zones": [] on purpose -- and the
@@ -1678,7 +1677,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- of the safe positions.
   Spec.it s "CR 709.4a no card asks a framed Shares Name outside a mode's target slot, a search filter, a hand sweep, a life loss amount, an effect's object or a discard cost" $ do
     ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace framedNameOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any framedNameOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only in a target slot's, a search's, a hand sweep's, a life loss amount's, an effect object's or a discard cost's filter" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous, the way the sibling sweeps would be alone: the pool authors the
     -- atom, and the cards that do are ACCEPTED here rather than skipped -- one in
@@ -1686,7 +1685,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     assertAuthors
       s
       registry
-      ps
+      pool
       "each author's atom is in an admitted position"
       framedNameCounts
       [ ("Harness the Storm", 1), -- its trigger's target slot
@@ -1718,84 +1717,79 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- Filter.Context.slotCreatureTypes. See boundCreatureTypeOffends for the two
   -- offences.
   Spec.it s "CR 205.3m no card asks a slot-anchored Shares CreatureType outside a resolution's own positions or a target slot" $ do
-    ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace boundCreatureTypeOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any boundCreatureTypeOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only where a resolution or a target slot fills the creature types" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: one card per admitted position the pool uses is ACCEPTED.
     blade <- S.printingOf s registry "Heirloom Blade"
-    Spec.assertEqWith s "Heirloom Blade's two atoms are in its ObjectRefs" (boundCreatureTypeCounts (S.combinedFace blade)) (2, 0)
+    Spec.assertEqWith s "Heirloom Blade's two atoms are in its ObjectRefs" (boundCreatureTypeCounts (survey (S.combinedFace blade))) (2, 0)
     clanger <- S.printingOf s registry "Mudbutton Clanger"
     let face = S.combinedFace clanger
         atom = Filter.Type.Shares Trait.CreatureType (Anchor.Bound (SlotName.MkSlotName (Text.pack "self")))
         restricted = face {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching atom) Nothing]}
-    Spec.assertEqWith s "Mudbutton Clanger's one atom is in its clause's gate" (boundCreatureTypeCounts face) (1, 0)
+    Spec.assertEqWith s "Mudbutton Clanger's one atom is in its clause's gate" (boundCreatureTypeCounts (survey face)) (1, 0)
     unbury <- S.printingOf s registry "Unbury"
-    Spec.assertEqWith s "Unbury's two atoms are in its target slots, one naming each sibling" (boundCreatureTypeCounts (S.combinedFace unbury)) (2, 0)
+    Spec.assertEqWith s "Unbury's two atoms are in its target slots, one naming each sibling" (boundCreatureTypeCounts (survey (S.combinedFace unbury))) (2, 0)
     gauntlets <- S.printingOf s registry "Gauntlets of Chaos"
-    Spec.assertEqWith s "Gauntlets of Chaos's CR 205.2a atom is in its second target slot" (boundCreatureTypeCounts (S.combinedFace gauntlets)) (1, 0)
+    Spec.assertEqWith s "Gauntlets of Chaos's CR 205.2a atom is in its second target slot" (boundCreatureTypeCounts (survey (S.combinedFace gauntlets))) (1, 0)
     confusion <- S.printingOf s registry "Confusion in the Ranks"
-    Spec.assertEqWith s "Confusion in the Ranks's CR 205.2a atom is in its target slot" (boundCreatureTypeCounts (S.combinedFace confusion)) (1, 0)
+    Spec.assertEqWith s "Confusion in the Ranks's CR 205.2a atom is in its target slot" (boundCreatureTypeCounts (survey (S.combinedFace confusion))) (1, 0)
     -- The lint's own proof, the pair differing in one position: the same atom in
     -- a static restriction's affected set, read through a bare contextFor.
-    Spec.assertBool s (boundCreatureTypeOffends restricted) "the atom in an affected set offends"
-    Spec.assertEqWith s "counted outside the admitted positions" (boundCreatureTypeCounts restricted) (1, 1)
+    Spec.assertBool s (boundCreatureTypeOffends (survey restricted)) "the atom in an affected set offends"
+    Spec.assertEqWith s "counted outside the admitted positions" (boundCreatureTypeCounts (survey restricted)) (1, 1)
   -- CR 903.3e's commander comparison: answerable only where
   -- Parun.Engine.ManaRider.spentOnMatches fills
   -- Filter.Context.commanderCreatureTypes.
   Spec.it s "CR 903.3e no card compares against its commander outside what mana was spent on" $ do
-    ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace yourCommanderOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any yourCommanderOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only in a spend trigger or rider" (fmap (S.nameOf . Printing.card) offenders) []
     path <- S.printingOf s registry "Path of Ancestry"
     let face = S.combinedFace path
         atom = Filter.Type.Shares Trait.CreatureType Anchor.YourCommander
         restricted = face {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching atom) Nothing]}
-    Spec.assertEqWith s "Path of Ancestry's one atom is in its spend trigger" (yourCommanderCounts face) (1, 0)
-    Spec.assertBool s (yourCommanderOffends restricted) "the atom in an affected set offends"
+    Spec.assertEqWith s "Path of Ancestry's one atom is in its spend trigger" (yourCommanderCounts (survey face)) (1, 0)
+    Spec.assertBool s (yourCommanderOffends (survey restricted)) "the atom in an affected set offends"
   -- CR 208.1's bound comparison in the arm above's frame, one Filter.Context field
   -- over: answerable only where effectContext fills Filter.Context.slotMeasures.
   -- See ofBoundOffends for the two offences.
   Spec.it s "CR 208.1 no card compares against a bound object outside a resolution's own positions" $ do
-    ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace ofBoundOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any ofBoundOffends . snd) pool)
     Spec.assertEqWith s "the operand sits only where the resolution fills the bound measures" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool authors the atom, and the card that does is ACCEPTED.
     profaner <- S.printingOf s registry "Profaner of the Dead"
     let face = S.combinedFace profaner
         atom = Filter.Type.Measures (Measures.MkMeasures Measure.Toughness Comparison.LessThan (Operand.OfBound (BoundMeasure.MkBoundMeasure (SlotName.MkSlotName (Text.pack "thatExploitedCreature")) Measure.Toughness)))
         restricted = face {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching atom) Nothing]}
-    Spec.assertEqWith s "Profaner of the Dead's one atom is in its ObjectRef" (ofBoundCounts face) (1, 0)
+    Spec.assertEqWith s "Profaner of the Dead's one atom is in its ObjectRef" (ofBoundCounts (survey face)) (1, 0)
     -- The lint's own proof, the pair differing in one position: the same atom in
     -- a static restriction's affected set, read through a bare contextFor.
-    Spec.assertBool s (ofBoundOffends restricted) "the atom in an affected set offends"
-    Spec.assertEqWith s "counted outside the admitted positions" (ofBoundCounts restricted) (1, 1)
+    Spec.assertBool s (ofBoundOffends (survey restricted)) "the atom in an affected set offends"
+    Spec.assertEqWith s "counted outside the admitted positions" (ofBoundCounts (survey restricted)) (1, 1)
   -- CR 110.2 asked of the bound object's HOST (CR 303.4b), the arm above's frame
   -- one Filter.Context field over and one position wider: effectContext fills
   -- Filter.Context.slotHostControllers, and the attach destination is one of its
   -- positions now that Parun.Engine.Attach.hostsFor takes its Context from the
   -- caller. See hostRelatesToBoundOffends for the two offences.
   Spec.it s "CR 110.2 no card asks a hopped ControllerRelatesToBound outside a resolution's own positions" $ do
-    ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace hostRelatesToBoundOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any hostRelatesToBoundOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only where the resolution fills the hosts' controllers" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool authors the atom, and the card that does is ACCEPTED.
     guildmage <- S.printingOf s registry "Simic Guildmage"
     let face = S.combinedFace guildmage
         atom = Filter.Type.ControllerRelatesToBound PlayerRelation.You Hop.Host (SlotName.MkSlotName (Text.pack "target"))
         restricted = face {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching atom) Nothing]}
-    Spec.assertEqWith s "Simic Guildmage's one atom is in its attach destination" (hostRelatesToBoundCounts face) (1, 0)
+    Spec.assertEqWith s "Simic Guildmage's one atom is in its attach destination" (hostRelatesToBoundCounts (survey face)) (1, 0)
     -- The lint's own proof, the pair differing in one position: the same atom in
     -- a static restriction's affected set, read through a bare contextFor.
-    Spec.assertBool s (hostRelatesToBoundOffends restricted) "the atom in an affected set offends"
-    Spec.assertEqWith s "counted outside the admitted positions" (hostRelatesToBoundCounts restricted) (1, 1)
+    Spec.assertBool s (hostRelatesToBoundOffends (survey restricted)) "the atom in an affected set offends"
+    Spec.assertEqWith s "counted outside the admitted positions" (hostRelatesToBoundCounts (survey restricted)) (1, 1)
   -- CR 205.2a asked of the same host (CR 303.4b), the arm above one
   -- characteristic over and one position NARROWER: this atom reads
   -- Filter.Context.subjectHostCardTypes, which Parun.Engine.Attach.hostsFor fills
   -- and nothing else does, so an attach's destination is the only position that
   -- answers it. See hostOfSubjectCardTypeOffends for the two offences.
   Spec.it s "CR 205.2a no card asks HostOfSubjectHasCardType outside a position an attach frames" $ do
-    ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace hostOfSubjectCardTypeOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any hostOfSubjectCardTypeOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only where an attach fills the subject's host" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool authors the atom, and the card that does is
     -- ACCEPTED. Two of them, one per card type "of that type" ranges over.
@@ -1803,26 +1797,25 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let face = S.combinedFace alteration
         atom = Filter.Type.HostOfSubjectHasCardType CardType.Creature
         restricted = face {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching atom) Nothing]}
-    Spec.assertEqWith s "Enchantment Alteration's two atoms are in its attach destination" (hostOfSubjectCardTypeCounts face) (2, 0)
+    Spec.assertEqWith s "Enchantment Alteration's two atoms are in its attach destination" (hostOfSubjectCardTypeCounts (survey face)) (2, 0)
     -- The lint's own proof, the pair differing in one position: the same atom in
     -- a static restriction's affected set, read through a bare contextFor.
-    Spec.assertBool s (hostOfSubjectCardTypeOffends restricted) "the atom in an affected set offends"
-    Spec.assertEqWith s "counted outside the admitted positions" (hostOfSubjectCardTypeCounts restricted) (2, 1)
+    Spec.assertBool s (hostOfSubjectCardTypeOffends (survey restricted)) "the atom in an affected set offends"
+    Spec.assertEqWith s "counted outside the admitted positions" (hostOfSubjectCardTypeCounts (survey restricted)) (2, 1)
   -- CR 110.2's Filter.ControllerRelatesToBound under Hop.Itself is CR 709.4a's atom one characteristic
   -- over, in the same position and with the STAKES reversed: it is vacuously TRUE
   -- where Filter.Context.slotControllers has no key for its slot, so an atom
   -- outside the positions filling it admits every candidate the card meant to
   -- exclude rather than none. See controllerRelatesToBoundOffends.
   Spec.it s "CR 110.2 no card asks ControllerRelatesToBound outside a mode's target slot, an attach destination, a stored class or an effect's object" $ do
-    ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace controllerRelatesToBoundOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any controllerRelatesToBoundOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only in an admitted position" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool authors the atom, and the cards that do are ACCEPTED
     -- here rather than skipped -- one in each admitted position.
     assertAuthors
       s
       registry
-      ps
+      pool
       "each author's atom is in an admitted position"
       controllerRelatesToBoundCounts
       [ ("Bioshift", 1), -- its second target slot
@@ -1861,19 +1854,18 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                     (NonEmpty.singleton Modification.LoseAllAbilities)
                 ]
             }
-    Spec.assertEqWith s "the same atom in a static ability's affected set is an offence" (controllerRelatesToBoundCounts planted) (0, 1)
-    Spec.assertBool s (controllerRelatesToBoundOffends planted) "and the lint says so"
-    Spec.assertBool s (not (controllerRelatesToBoundOffends (S.combinedFace piker))) "where the ungrafted card is accepted"
+    Spec.assertEqWith s "the same atom in a static ability's affected set is an offence" (controllerRelatesToBoundCounts (survey planted)) (0, 1)
+    Spec.assertBool s (controllerRelatesToBoundOffends (survey planted)) "and the lint says so"
+    Spec.assertBool s (not (controllerRelatesToBoundOffends (survey (S.combinedFace piker)))) "where the ungrafted card is accepted"
   -- CR 301.5a's Filter.IsAttachedTo at Bound, vacuously TRUE at an unanswered
   -- slot for ControllerRelatesToBound's reason above. See attachedToBoundOffends.
   Spec.it s "CR 301.5a no card asks IsAttachedTo at a bound slot outside a mode's target slot" $ do
-    ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace attachedToBoundOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any attachedToBoundOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only in an admitted position" (fmap (S.nameOf . Printing.card) offenders) []
     assertAuthors
       s
       registry
-      ps
+      pool
       "each author's atom is in an admitted position"
       attachedToBoundCounts
       [ ("Fiery Annihilation", 1) -- its second target slot
@@ -1893,9 +1885,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                     (NonEmpty.singleton Modification.LoseAllAbilities)
                 ]
             }
-    Spec.assertEqWith s "the same atom in a static ability's affected set is an offence" (attachedToBoundCounts planted) (0, 1)
-    Spec.assertBool s (attachedToBoundOffends planted) "and the lint says so"
-    Spec.assertBool s (not (attachedToBoundOffends (S.combinedFace piker))) "where the ungrafted card is accepted"
+    Spec.assertEqWith s "the same atom in a static ability's affected set is an offence" (attachedToBoundCounts (survey planted)) (0, 1)
+    Spec.assertBool s (attachedToBoundOffends (survey planted)) "and the lint says so"
+    Spec.assertBool s (not (attachedToBoundOffends (survey (S.combinedFace piker)))) "where the ungrafted card is accepted"
   -- CR 601.3a's lookahead (Parun.Engine.Filter.manaValueThresholds) bounds its
   -- sample by the mana value LITERALS a prohibition compares against, so a
   -- player effect comparing a mana value against any other operand would leave
@@ -1972,9 +1964,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     assertAuthors
       s
       registry
-      ps
+      pool
       "each author's one operand is in the slot that names its bound"
-      enclosingAmountCounts
+      (enclosingAmountCounts . surveyedFace)
       [ ("Celestine, the Living Saint", 1),
         ("Moseo, Vein's New Dean", 1),
         ("Ratchet, Field Medic", 1),
@@ -2078,7 +2070,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("The Dining Car", 1),
             ("Witch-king, Bringer of Ruin", 1)
           ]
-    assertAuthors s registry ps "each author's operands are in its edict or chosen permanents" otherCandidateCounts authors
+    assertAuthors s registry pool "each author's operands are in its edict or chosen permanents" (otherCandidateCounts . surveyedFace) authors
     -- The rejected side: the same atom in a target slot's filter.
     piker <- S.printingOf s registry "Goblin Piker"
     let atom = Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.Measures (Measures.MkMeasures Measure.Power Comparison.AtLeast (Operand.OfEachOtherCandidate Measure.Power))]
@@ -2100,15 +2092,14 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- CR 303.4b's Filter.IsHostOfSource is CR 709.4a's atom one axis over again:
   -- answerable only in the positions `hostFramed` admits. See hostOfSourceOffends for the two offences.
   Spec.it s "CR 303.4b no card asks IsHostOfSource where the source's host is unknown" $ do
-    ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace hostOfSourceOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any hostOfSourceOffends . snd) pool)
     Spec.assertEqWith s "the atom sits only where the host is supplied" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool authors the atom, and the cards that do are ACCEPTED
     -- here rather than skipped, every leg of the tagging among them.
     assertAuthors
       s
       registry
-      ps
+      pool
       "each author's atoms are framed"
       hostOfSourceCounts
       [ ("Ray of Frost", 3), -- a CR 604.2 clause, a CR 603.4 clause and an Effect.Tap's ObjectRef
@@ -2165,13 +2156,13 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             { Face.spell =
                 Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures (Just buried))) Seq.empty
             }
-    Spec.assertEqWith s "a planted atom is an offence" (hostOfSourceCounts planted) (0, 1)
-    Spec.assertBool s (hostOfSourceOffends planted) "and the lint says so"
+    Spec.assertEqWith s "a planted atom is an offence" (hostOfSourceCounts (survey planted)) (0, 1)
+    Spec.assertBool s (hostOfSourceOffends (survey planted)) "and the lint says so"
     -- A PERMANENT's trigger condition is source-framed, but CR 704.5n has
     -- unattached an Equipment before a CR 603.10a look-back is matched, so it
     -- is refused.
     let onTrigger = (S.combinedFace piker) {Face.triggeredAbilities = [oneEffectTrigger (TriggerCondition.Enters (EntersTrigger.matching buried)) (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing))]}
-    Spec.assertEqWith s "a trigger condition asking it is an offence too" (hostOfSourceCounts onTrigger) (0, 1)
+    Spec.assertEqWith s "a trigger condition asking it is an offence too" (hostOfSourceCounts (survey onTrigger)) (0, 1)
     -- CastOffer.payingInstead carries SlotlessCostFramed and is paid framed by
     -- the OFFERED card (Parun.Engine.Resolve.Effect.offerCastOnce), so neither the
     -- host nor a chosen value of the offering object answers there.
@@ -2308,7 +2299,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (isTargetOffends planted) "the same atom in an effect's filter is an offence"
   Spec.it s "CR 400.11c no card asks IsBound in a wish's filter" $ do
     ps <- S.allPrintings s corpus
-    let offenders = filter (anyFace isBoundOffends . Printing.card) ps
+    let offenders = fmap fst (filter (any isBoundOffends . snd) pool)
     Spec.assertEqWith s "no card names a bound slot where the candidate is a card outside the game" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool authors the atom, and the cards that do are ACCEPTED
     -- here rather than skipped: Showstopping Surprise writes "each other
@@ -2318,9 +2309,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "Showstopping Surprise's one atom is outside a wish's filter"
-      (isBoundCounts (S.combinedFace surprise))
+      (isBoundCounts (survey (S.combinedFace surprise)))
       (0, 1)
-    Spec.assertBool s (sum (fmap (snd . isBoundCounts . S.combinedFace) ps) > 5) "and the pool gives the accepted side other atoms to be about"
+    Spec.assertBool s (sum (fmap (snd . isBoundCounts . survey . S.combinedFace) ps) > 5) "and the pool gives the accepted side other atoms to be about"
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the SAME atom, buried under all three combinators, in a wish's
     -- own filter -- so an implementation reading only the top of a Filter would
@@ -2332,14 +2323,14 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let base = S.combinedFace piker
         wished = base {Face.spell = spellOf [Effect.FromOutsideTheGame (FromOutsideTheGame.MkFromOutsideTheGame 1 False OutsideDestination.Hand buried True Set.empty Nothing)]}
-    Spec.assertEqWith s "a planted atom in a wish's filter is an offence" (isBoundCounts wished) (1, 0)
-    Spec.assertBool s (isBoundOffends wished) "and the lint says so"
+    Spec.assertEqWith s "a planted atom in a wish's filter is an offence" (isBoundCounts (survey wished)) (1, 0)
+    Spec.assertBool s (isBoundOffends (survey wished)) "and the lint says so"
     -- And the pair that differs in exactly one thing: the same face carrying the
     -- same filter in a position whose candidates ARE objects is accepted -- so the
     -- lint is reading the position rather than rejecting every planted atom.
     let destroying = base {Face.spell = spellOf [Effect.Destroy (Destroy.MkDestroy (ObjectRef.EachMatching buried) Regenerability.Regenerable Nothing Nothing Nothing)]}
-    Spec.assertEqWith s "the same atom over objects is not" (isBoundCounts destroying) (0, 1)
-    Spec.assertBool s (not (isBoundOffends destroying)) "and the lint accepts it"
+    Spec.assertEqWith s "the same atom over objects is not" (isBoundCounts (survey destroying)) (0, 1)
+    Spec.assertBool s (not (isBoundOffends (survey destroying))) "and the lint accepts it"
     -- THE THIRD POSITION: a CR 118.12 gate's cost, measured and paid with the
     -- resolving object's slots (Cost.canPayReading, Cost.payReading), so the
     -- same buried atom is answerable there and accepted -- Calim, Djinn
@@ -2374,8 +2365,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                       )
                   )
             }
-    Spec.assertEqWith s "CR 118.12 the same atom in a gate's cost is not an offence" (isBoundCounts gated) (0, 1)
-    Spec.assertBool s (not (isBoundOffends gated)) "and the lint accepts it"
+    Spec.assertEqWith s "CR 118.12 the same atom in a gate's cost is not an offence" (isBoundCounts (survey gated)) (0, 1)
+    Spec.assertBool s (not (isBoundOffends (survey gated))) "and the lint accepts it"
     -- THE OTHER COST POSITIONS, every one paid through the same
     -- Parun.Engine.Cost.pay, split by whether an announcement is behind them.
     -- Built over the SAME `base` face and the SAME `buried` filter as every leg
@@ -2404,15 +2395,15 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "CR 601.2f / 118.9 / 602.2b a planted atom in a cost an announcement pays is answered"
-      (fmap isBoundCounts [added, alternatively, activating])
+      (fmap (isBoundCounts . survey) [added, alternatively, activating])
       [(0, 1), (0, 1), (0, 1)]
-    Spec.assertBool s (not (any isBoundOffends [added, alternatively, activating])) "and the lint accepts all three"
+    Spec.assertBool s (not (any (isBoundOffends . survey) [added, alternatively, activating])) "and the lint accepts all three"
     Spec.assertEqWith
       s
       "CR 116.2d / 116.2c / 508.1h / 509.1d a planted atom in a cost nothing announces is an offence"
-      (fmap isBoundCounts [ignoring, ending, attacking, blocking])
+      (fmap (isBoundCounts . survey) [ignoring, ending, attacking, blocking])
       [(1, 0), (1, 0), (1, 0), (1, 0)]
-    Spec.assertBool s (all isBoundOffends [ignoring, ending, attacking, blocking]) "and the lint says so at all four"
+    Spec.assertBool s (all (isBoundOffends . survey) [ignoring, ending, attacking, blocking]) "and the lint says so at all four"
   -- CR 702 / CR 122.1b: a keyword's own Filter is read off a continuous effect or
   -- off the printed face, through Parun.Engine.Filter.contextFor, which fills
   -- neither the resolution's slots nor the source's host. keywordFilters tags it
@@ -2473,17 +2464,17 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Filter is reached from. A site that lost the tag reddens under its own
     -- label rather than under a total.
     let sited =
-          [ ("CR 702.11d's printed keyword", isBoundCounts (base {Face.keywords = Map.singleton (keywordOf boundAtom) 1})),
-            ("CR 613's granted keyword", isBoundCounts (base {Face.staticAbilities = granting (keywordOf boundAtom)})),
-            ("CR 122.1b's keyword counter", isBoundCounts (base {Face.counterRestrictions = prohibiting (kindOf boundAtom)})),
+          [ ("CR 702.11d's printed keyword", isBoundCounts (survey (base {Face.keywords = Map.singleton (keywordOf boundAtom) 1}))),
+            ("CR 613's granted keyword", isBoundCounts (survey (base {Face.staticAbilities = granting (keywordOf boundAtom)}))),
+            ("CR 122.1b's keyword counter", isBoundCounts (survey (base {Face.counterRestrictions = prohibiting (kindOf boundAtom)}))),
             -- CR 208.2b's as-enters options and CR 614.1c's outright grant, the
             -- three positions #3232 named: each carries a Set of whole Keywords,
             -- so each reaches a Filter the same way CR 707.9a's exception does.
             -- ONE option of the flip's two carries the atom, so the count is 1
             -- here as it is at every other site.
-            ("CR 208.2b's as-enters option", isBoundCounts (base {Face.replacementEffects = entering (EntryRewrite.ChoiceOf [optionWith (Set.singleton (keywordOf boundAtom))])})),
-            ("CR 705.2's flipped option", isBoundCounts (base {Face.replacementEffects = entering (EntryRewrite.ChoiceByCoinFlip EntryFlip.MkEntryFlip {EntryFlip.heads = optionWith (Set.singleton (keywordOf boundAtom)), EntryFlip.tails = optionWith Set.empty})})),
-            ("CR 614.1c's granted keyword", isBoundCounts (base {Face.replacementEffects = entering (EntryRewrite.EntersWith (EntersWith.MkEntersWith Nothing (Set.singleton (keywordOf boundAtom)) Seq.empty))}))
+            ("CR 208.2b's as-enters option", isBoundCounts (survey (base {Face.replacementEffects = entering (EntryRewrite.ChoiceOf [optionWith (Set.singleton (keywordOf boundAtom))])}))),
+            ("CR 705.2's flipped option", isBoundCounts (survey (base {Face.replacementEffects = entering (EntryRewrite.ChoiceByCoinFlip EntryFlip.MkEntryFlip {EntryFlip.heads = optionWith (Set.singleton (keywordOf boundAtom)), EntryFlip.tails = optionWith Set.empty})}))),
+            ("CR 614.1c's granted keyword", isBoundCounts (survey (base {Face.replacementEffects = entering (EntryRewrite.EntersWith (EntersWith.MkEntersWith Nothing (Set.singleton (keywordOf boundAtom)) Seq.empty))})))
           ]
     Spec.assertEqWith s "IsBound under a keyword is an offence at every site that reaches one" sited (fmap (fmap (const (1, 0))) sited)
     -- The pair that differs in exactly ONE thing: the same prohibition, the same
@@ -2492,32 +2483,32 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- the atom is accepted. So the lint is reading the keyword and not rejecting
     -- every plant.
     let besideIt = base {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching boundAtom) (Just plain)]}
-    Spec.assertEqWith s "the same atom beside the kind rather than under it is not" (isBoundCounts besideIt) (0, 1)
-    Spec.assertBool s (not (isBoundOffends besideIt)) "and the lint accepts it"
+    Spec.assertEqWith s "the same atom beside the kind rather than under it is not" (isBoundCounts (survey besideIt)) (0, 1)
+    Spec.assertBool s (not (isBoundOffends (survey besideIt))) "and the lint accepts it"
     -- CR 303.4b, the first position #2733 named: a CR 614.1 replacement row's own
     -- Filters ARE read with the source's host supplied, and the keyword counter
     -- inside one is not.
     let rowKeyword = base {Face.replacementEffects = scaling (kindOf hostAtom) creatures}
         rowItself = base {Face.replacementEffects = scaling plain hostAtom}
-    Spec.assertEqWith s "IsHostOfSource under a replacement row's keyword counter is an offence" (hostOfSourceCounts rowKeyword) (0, 1)
-    Spec.assertBool s (hostOfSourceOffends rowKeyword) "and the lint says so"
-    Spec.assertEqWith s "the same atom in the row's own pattern is not" (hostOfSourceCounts rowItself) (1, 0)
-    Spec.assertBool s (not (hostOfSourceOffends rowItself)) "and the lint accepts it"
+    Spec.assertEqWith s "IsHostOfSource under a replacement row's keyword counter is an offence" (hostOfSourceCounts (survey rowKeyword)) (0, 1)
+    Spec.assertBool s (hostOfSourceOffends (survey rowKeyword)) "and the lint says so"
+    Spec.assertEqWith s "the same atom in the row's own pattern is not" (hostOfSourceCounts (survey rowItself)) (1, 0)
+    Spec.assertBool s (not (hostOfSourceOffends (survey rowItself))) "and the lint accepts it"
     -- CR 709.4a, the second: a MODE's target slot IS matched with the bound names
     -- supplied, and the keyword counter inside the slot's CR 202.3 amount is not.
     let amountKeyword = base {Face.spell = counting (kindOf nameAtom) Nothing}
         slotItself = base {Face.spell = counting plain (Just nameAtom)}
-    Spec.assertEqWith s "Shares Name Bound under a slot amount's keyword counter is an offence" (framedNameCounts amountKeyword) (0, 1)
-    Spec.assertBool s (framedNameOffends amountKeyword) "and the lint says so"
-    Spec.assertEqWith s "the same atom in the slot's own filter is not" (framedNameCounts slotItself) (1, 0)
-    Spec.assertBool s (not (framedNameOffends slotItself)) "and the lint accepts it"
+    Spec.assertEqWith s "Shares Name Bound under a slot amount's keyword counter is an offence" (framedNameCounts (survey amountKeyword)) (0, 1)
+    Spec.assertBool s (framedNameOffends (survey amountKeyword)) "and the lint says so"
+    Spec.assertEqWith s "the same atom in the slot's own filter is not" (framedNameCounts (survey slotItself)) (1, 0)
+    Spec.assertBool s (not (framedNameOffends (survey slotItself))) "and the lint accepts it"
     -- The same pair for the group anchor, which framedBySlots fills beside the slot names.
     let groupKeyword = base {Face.spell = counting (kindOf groupAtom) Nothing}
         groupSlot = base {Face.spell = counting plain (Just groupAtom)}
-    Spec.assertEqWith s "Shares Name AnyPermanent under a slot amount's keyword counter is an offence" (framedNameCounts groupKeyword) (0, 1)
-    Spec.assertBool s (framedNameOffends groupKeyword) "and the lint says so"
-    Spec.assertEqWith s "the same group atom in the slot's own filter is not" (framedNameCounts groupSlot) (1, 0)
-    Spec.assertBool s (not (framedNameOffends groupSlot)) "and the lint accepts it"
+    Spec.assertEqWith s "Shares Name AnyPermanent under a slot amount's keyword counter is an offence" (framedNameCounts (survey groupKeyword)) (0, 1)
+    Spec.assertBool s (framedNameOffends (survey groupKeyword)) "and the lint says so"
+    Spec.assertEqWith s "the same group atom in the slot's own filter is not" (framedNameCounts (survey groupSlot)) (1, 0)
+    Spec.assertBool s (not (framedNameOffends (survey groupSlot))) "and the lint accepts it"
     -- NOT vacuous: the codec sees exactly one atom in each planted face, so
     -- every pair above is a comparison against a real occurrence rather than
     -- against nothing -- and a (0, 0) from a traversal that stopped digging would
@@ -2665,16 +2656,16 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             { Face.counterRestrictions =
                 [CounterRestriction.MkCounterRestriction (Affected.Matching (Filter.Type.HasCardType CardType.Creature)) (Just kind)]
             }
-    Spec.assertEqWith s "a prohibition's kind is counted outside a search" (canAttachToSubjectCounts prohibiting) (0, 1)
+    Spec.assertEqWith s "a prohibition's kind is counted outside a search" (canAttachToSubjectCounts (survey prohibiting)) (0, 1)
     -- NOT vacuous: the codec sees exactly one atom in that face, so the pair above
     -- is being compared against a real occurrence rather than against nothing.
     Spec.assertEqWith s "and the codec agrees there is one" (jsonAtoms canAttachToSubjectTag (Codec.encode (Face.Codec.codec Card.codec) prohibiting)) 1
-    Spec.assertBool s (canAttachToSubjectOffends prohibiting) "and the lint says so"
+    Spec.assertBool s (canAttachToSubjectOffends (survey prohibiting)) "and the lint says so"
     -- The pair that differs in one thing again: the same prohibition over a
     -- plain kind carries no atom, so the face is accepted.
     let plainly = base {Face.counterRestrictions = [CounterRestriction.MkCounterRestriction (Affected.Matching (Filter.Type.HasCardType CardType.Creature)) (Just plain)]}
-    Spec.assertEqWith s "a prohibition naming a plain kind carries none" (canAttachToSubjectCounts plainly) (0, 0)
-    Spec.assertBool s (not (canAttachToSubjectOffends plainly)) "and the lint accepts it"
+    Spec.assertEqWith s "a prohibition naming a plain kind carries none" (canAttachToSubjectCounts (survey plainly)) (0, 0)
+    Spec.assertBool s (not (canAttachToSubjectOffends (survey plainly))) "and the lint accepts it"
     -- The gate's OTHER position, end to end over a printing rather than a
     -- fixture: Lithophage's "unless you sacrifice a Mountain" writes card text
     -- into PayGate.cost, and it is far from the only printing that does. That
@@ -3221,7 +3212,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
               base {Face.mulliganActions = [HandAction.MkHandAction Nothing [Effect.Search Search.MkSearch {Search.searcher = PlayerRef.Relative PlayerRelation.You, Search.owner = PlayerRef.Relative PlayerRelation.You, Search.zones = Set.singleton Zone.Library, Search.outsideTheGame = False, Search.quantity = Just (Quantity.Type.Literal 1), Search.filter = buried, Search.descriptions = Seq.empty, Search.upTo = False, Search.destination = SearchDestination.RevealThenHand, Search.counters = Map.empty, Search.subject = Nothing, Search.slot = Nothing, Search.handSlot = Nothing, Search.librarySlot = Nothing, Search.differentIn = Set.empty, Search.exactly = False, Search.andOr = False}]]}
             )
           ]
-        report (label, card) = (label, canHostSubjectOffends card, canHostSubjectCounts card)
+        report (label, card) = (label, canHostSubjectOffends (survey card), canHostSubjectCounts (survey card))
     Spec.assertEqWith
       s
       "every unframed position is rejected, and the traversal is what finds it"
@@ -3261,18 +3252,18 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "Aura Graft is accepted"
-      (canHostSubjectOffends (S.combinedFace graft), canHostSubjectCounts (S.combinedFace graft))
+      (canHostSubjectOffends (survey (S.combinedFace graft)), canHostSubjectCounts (survey (S.combinedFace graft)))
       (False, (1, 0))
     let grafted = base {Face.spell = spellOf [Effect.AttachTarget (AttachTarget.MkAttachTarget slot buried)] (Map.singleton slot (TargetSlot.required Pool.Permanents Nothing))}
     Spec.assertEqWith
       s
       "a buried atom in an AttachTarget destination is accepted"
-      (canHostSubjectOffends grafted, canHostSubjectCounts grafted)
+      (canHostSubjectOffends (survey grafted), canHostSubjectCounts (survey grafted))
       (False, (1, 0))
     Spec.assertEqWith
       s
       "and the ungrafted base card carries no atom at all"
-      (canHostSubjectOffends base, canHostSubjectCounts base)
+      (canHostSubjectOffends (survey base), canHostSubjectCounts (survey base))
       (False, (0, 0))
   -- The rejecting direction for CR 709.4a, for the reason the test above gives:
   -- Harness the Storm only exercises the ACCEPTING one, and a card that offends a
@@ -3371,7 +3362,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 }
             )
           ]
-        report (label, card) = (label, framedNameOffends card, framedNameCounts card)
+        report (label, card) = (label, framedNameOffends (survey card), framedNameCounts (survey card))
     Spec.assertEqWith
       s
       "every position that cannot answer is rejected, and the traversal is what finds it"
@@ -3404,13 +3395,13 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "Harness the Storm is accepted"
-      (framedNameOffends (S.combinedFace harness), framedNameCounts (S.combinedFace harness))
+      (framedNameOffends (survey (S.combinedFace harness)), framedNameCounts (survey (S.combinedFace harness)))
       (False, (1, 0))
     let slotted = base {Face.spell = spellOf [] (Map.singleton slot (TargetSlot.required Pool.Permanents (Just buried)))}
     Spec.assertEqWith
       s
       "a buried atom in a mode's target slot is accepted"
-      (framedNameOffends slotted, framedNameCounts slotted)
+      (framedNameOffends (survey slotted), framedNameCounts (survey slotted))
       (False, (1, 0))
     -- The OTHER accepted position, and the pair to the rejections above: a search
     -- filter is matched in the resolution's own context
@@ -3420,7 +3411,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "a buried atom in a search's filter is accepted"
-      (framedNameOffends searched, framedNameCounts searched)
+      (framedNameOffends (survey searched), framedNameCounts (survey searched))
       (False, (1, 0))
     -- The THIRD accepted position, and the one that separates this lint from a
     -- rule about ObjectRefs: EachCardInHand's own filter is matched in the
@@ -3431,12 +3422,12 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "a buried atom in a hand sweep's filter is accepted"
-      (framedNameOffends sweptHand, framedNameCounts sweptHand)
+      (framedNameOffends (survey sweptHand), framedNameCounts (survey sweptHand))
       (False, (1, 0))
     Spec.assertEqWith
       s
       "and the ungrafted base card carries no atom at all"
-      (framedNameOffends base, framedNameCounts base)
+      (framedNameOffends (survey base), framedNameCounts (survey base))
       (False, (0, 0))
   -- The rejecting direction for CR 201.4, for the reason the two tests above give:
   -- Ancient Vendetta only exercises the ACCEPTING one, and a card that offends a
@@ -3504,7 +3495,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
               base {Face.keywords = Map.singleton (Keyword.Cycling (Cycling.MkCycling (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) (Just buried))) 1}
             )
           ]
-        report (label, card) = (label, hasChosenNameOffends card, hasChosenNameCounts card)
+        report (label, card) = (label, hasChosenNameOffends (survey card), hasChosenNameCounts (survey card))
     Spec.assertEqWith
       s
       "every position that cannot answer is rejected, and the traversal is what finds it"
@@ -3521,13 +3512,13 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "Ancient Vendetta is accepted"
-      (hasChosenNameOffends (S.combinedFace vendetta), hasChosenNameCounts (S.combinedFace vendetta))
+      (hasChosenNameOffends (survey (S.combinedFace vendetta)), hasChosenNameCounts (survey (S.combinedFace vendetta)))
       (False, (1, 0))
     let searched = base {Face.spell = spellOf [searchFor buried] Map.empty}
     Spec.assertEqWith
       s
       "a buried atom in a search's filter is accepted"
-      (hasChosenNameOffends searched, hasChosenNameCounts searched)
+      (hasChosenNameOffends (survey searched), hasChosenNameCounts (survey searched))
       (False, (1, 0))
     -- A trigger condition's own Filter, grafted the same way: Parun.Engine.Event.Match
     -- reads it through Projection.sourceContext, which carries the bearer's
@@ -3543,7 +3534,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "a buried atom in a trigger condition is accepted"
-      (hasChosenNameOffends triggered, hasChosenNameCounts triggered)
+      (hasChosenNameOffends (survey triggered), hasChosenNameCounts (survey triggered))
       (False, (1, 0))
     -- The second accepting position, grafted the same way: the mill arm's
     -- tally reads the resolution's own context, so its filter answers exactly as
@@ -3552,7 +3543,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "a buried atom in a mill's tally is accepted"
-      (hasChosenNameOffends tallied, hasChosenNameCounts tallied)
+      (hasChosenNameOffends (survey tallied), hasChosenNameCounts (survey tallied))
       (False, (1, 0))
     -- A mode's target slot: Parun.Engine.Target.slotContext frames it by its
     -- source, so a name the source chose as it entered (CR 614.1c) answers
@@ -3561,7 +3552,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "a buried atom in a mode's target slot is accepted"
-      (hasChosenNameOffends targeting, hasChosenNameCounts targeting)
+      (hasChosenNameOffends (survey targeting), hasChosenNameCounts (survey targeting))
       (False, (1, 0))
     -- And the third, see #2992: an ObjectRef's own Filter is matched through
     -- Resolve.Slots.objectRefObjects, which builds the same context, so Petra
@@ -3571,7 +3562,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "a buried atom in an ObjectRef's own filter is accepted"
-      (hasChosenNameOffends referenced, hasChosenNameCounts referenced)
+      (hasChosenNameOffends (survey referenced), hasChosenNameCounts (survey referenced))
       (False, (1, 0))
     -- And a static ability's affected set, Immediate Action's: matched through
     -- Projection.affectedContext, which frames it by its source. This one was
@@ -3591,24 +3582,23 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "a buried atom in a static ability's affected set is accepted"
-      (hasChosenNameOffends affected, hasChosenNameCounts affected)
+      (hasChosenNameOffends (survey affected), hasChosenNameCounts (survey affected))
       (False, (1, 0))
     Spec.assertEqWith
       s
       "and the ungrafted base card carries no atom at all"
-      (hasChosenNameOffends base, hasChosenNameCounts base)
+      (hasChosenNameOffends (survey base), hasChosenNameCounts (survey base))
       (False, (0, 0))
   -- CR 607.2d's chosen colour and chosen subtype: answerable only where the
   -- asking ability's SOURCE supplies its choice, and a silent False elsewhere.
   -- See chosenValueCounts for the positions and chosenValueOffends for the two
   -- offences.
   Spec.it s "CR 607.2d no card asks HasChosenColor, HasChosenSubtype or HasChosenCardType outside an admitted position" $ do
-    ps <- S.allPrintings s corpus
-    let offends card =
-          anyFace (chosenValueOffends hasChosenColorCounts hasChosenColorTag) card
-            || anyFace (chosenValueOffends hasChosenSubtypeCounts hasChosenSubtypeTag) card
-            || anyFace (chosenValueOffends hasChosenCardTypeCounts hasChosenCardTypeTag) card
-    Spec.assertEqWith s "the atoms sit only where the source's choice is supplied" (fmap (S.nameOf . Printing.card) (filter (offends . Printing.card) ps)) []
+    let offends faces =
+          any (chosenValueOffends hasChosenColorCounts hasChosenColorTag) faces
+            || any (chosenValueOffends hasChosenSubtypeCounts hasChosenSubtypeTag) faces
+            || any (chosenValueOffends hasChosenCardTypeCounts hasChosenCardTypeTag) faces
+    Spec.assertEqWith s "the atoms sit only where the source's choice is supplied" (fmap (S.nameOf . Printing.card . fst) (filter (offends . snd) pool)) []
     -- NOT vacuous: a card per admitted position is ACCEPTED rather than skipped,
     -- so a framing that stopped marking one would redden.
     Monad.forM_
@@ -3632,7 +3622,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       ]
       $ \(name, counts, position, expected) -> do
         printing <- S.printingOf s registry name
-        Spec.assertEqWith s (name <> "'s atoms are framed by " <> position) (counts (S.combinedFace printing)) expected
+        Spec.assertEqWith s (name <> "'s atoms are framed by " <> position) (counts (survey (S.combinedFace printing))) expected
   -- The rejecting direction, for both atoms: each buried under all three
   -- combinators and planted in a spell's positions, which cannot answer, then
   -- in source-framed ones, which can.
@@ -3685,7 +3675,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       ]
       $ \(atom, quality, counts, tag) -> do
         let buried = Filter.Type.And [Filter.Type.Or [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not atom]]
-            report (label, card) = (label, chosenValueOffends counts tag card, counts card)
+            report (label, card) = (label, chosenValueOffends counts tag (survey card), counts (survey card))
         Spec.assertEqWith
           s
           "every position that cannot answer is rejected"
@@ -3706,14 +3696,13 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- Cauldron is accepted rather than skipped, and the same atom moved into an
   -- activated ability's target slot is rejected, so the lint is not vacuous.
   Spec.it s "CR 607.2a no card asks IsLastExiledWithSource outside a mana restriction" $ do
-    ps <- S.allPrintings s corpus
     Spec.assertEqWith
       s
       "the atom sits only in a mana restriction"
-      (fmap (S.nameOf . Printing.card) (filter (anyFace (chosenValueOffends isLastExiledWithSourceCounts isLastExiledWithSourceTag) . Printing.card) ps))
+      (fmap (S.nameOf . Printing.card . fst) (filter (any (chosenValueOffends isLastExiledWithSourceCounts isLastExiledWithSourceTag) . snd) pool))
       []
     cauldron <- S.printingOf s registry "Ice Cauldron"
-    Spec.assertEqWith s "Ice Cauldron's atom is framed by a mana restriction" (isLastExiledWithSourceCounts (S.combinedFace cauldron)) (1, 0)
+    Spec.assertEqWith s "Ice Cauldron's atom is framed by a mana restriction" (isLastExiledWithSourceCounts (survey (S.combinedFace cauldron))) (1, 0)
     sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
     let slot = SlotName.MkSlotName (Text.pack "target")
         aimed =
@@ -3722,7 +3711,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith
       s
       "and a target slot asking it is rejected"
-      (chosenValueOffends isLastExiledWithSourceCounts isLastExiledWithSourceTag planted, isLastExiledWithSourceCounts planted)
+      (chosenValueOffends isLastExiledWithSourceCounts isLastExiledWithSourceTag (survey planted), isLastExiledWithSourceCounts (survey planted))
       (True, (0, 1))
 
 spec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
