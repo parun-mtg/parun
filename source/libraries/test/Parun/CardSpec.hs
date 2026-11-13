@@ -769,7 +769,7 @@ objectRefPositions :: [(String, Effect.Effect () (), [ObjectRef.ObjectRef])]
 objectRefPositions =
   let plainRiders = EntryRiders.defaultValue
       handChoice = ChosenCardInHand.MkChosenCardInHand (plantedPlayer "xh") (Filter.Type.And []) HowMany.one
-   in [ ("deal-damage", Effect.DealDamage (DealDamage.MkDealDamage (Seq.fromList [DamagePart.MkDamagePart (plantedRef "dd1") (Quantity.Type.Literal 1), DamagePart.MkDamagePart (plantedRef "dd2") (Quantity.Type.Literal 1)]) Nothing Nothing Nothing Nothing Nothing), [plantedRef "dd1", plantedRef "dd2"]),
+   in [ ("deal-damage", Effect.DealDamage (DealDamage.MkDealDamage (Seq.fromList [DamagePart.MkDamagePart (plantedRef "dd1") (Quantity.Type.Literal 1), DamagePart.MkDamagePart (plantedRef "dd2") (Quantity.Type.Literal 1)]) (Just (SlotName.MkSlotName (Text.pack "dd"))) (Just (plantedRef "dd3")) Nothing Nothing Nothing Nothing), [plantedRef "dd1", plantedRef "dd2", plantedRef "dd3"]),
         ("modify-target", Effect.ModifyTarget (ModifyTarget.MkModifyTarget Duration.UntilEndOfTurn (Modification.GainKeyword Keyword.Flying) (plantedRef "mt") Nothing), [plantedRef "mt"]),
         ("restart-game", Effect.RestartGame (Just (plantedRef "rg")), [plantedRef "rg"]),
         ("choose-group", Effect.ChooseGroup (ChooseGroup.MkChooseGroup (Grouping.Piles (SlotName.MkSlotName (Text.pack "cg1") NonEmpty.:| [SlotName.MkSlotName (Text.pack "cg2")])) (SlotName.MkSlotName (Text.pack "cg")) (Just (plantedRef "cg-about"))), [plantedRef "cg1", plantedRef "cg2", plantedRef "cg-about"]),
@@ -5025,8 +5025,9 @@ effectFilters effect = case effect of
   -- Rule 701.3a frames this opcode's destination filter exactly as it frames
   -- AttachTarget's; CR 303.4d only moves whose choice it is.
   Effect.AttachTargetToEach (AttachTarget.MkAttachTarget _ f) -> [(AttachDestination, f)]
-  -- The dealer is a SlotName and carries no Filter.
-  Effect.DealDamage (DealDamage.MkDealDamage parts _ _ _ _ _) -> foldMap (\part -> frame SourceHostFramed (objectRefFilters (DamagePart.ref part)) <> frame Unframed (quantityFilters (DamagePart.quantity part))) parts
+  -- The dealer is a SlotName and carries no Filter; a sweep of dealers is
+  -- framed like a recipient's ref.
+  Effect.DealDamage (DealDamage.MkDealDamage parts _ dealers _ _ _ _) -> foldMap (frame SourceHostFramed . objectRefFilters) dealers <> foldMap (\part -> frame SourceHostFramed (objectRefFilters (DamagePart.ref part)) <> frame Unframed (quantityFilters (DamagePart.quantity part))) parts
   Effect.ModifyTarget (ModifyTarget.MkModifyTarget duration modification ref _) ->
     frame Unframed (durationFilters duration) <> frame Unframed (modificationFilters modification) <> frame SourceHostFramed (objectRefFilters ref)
   Effect.ChangeText x -> frame Unframed (durationFilters (ChangeText.duration x))
@@ -6579,7 +6580,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
       (Resolve.slotsAreExhaustive (destroying (Quantity.Type.Literal 3)), Resolve.hasRead StaticRead.ReadsX [destroying (Quantity.Type.Literal 3)], effectCounts (destroying (Quantity.Type.Literal 3)))
       (True, False, [])
   Spec.it s "the lint itself catches a dangling reference" $
-    let bad = Map.keysSet (Resolve.slotsOf (Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "ghost"))) (Quantity.Type.Literal 3))) Nothing Nothing Nothing Nothing Nothing)))
+    let bad = Map.keysSet (Resolve.slotsOf (Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "ghost"))) (Quantity.Type.Literal 3))) Nothing Nothing Nothing Nothing Nothing Nothing)))
      in Spec.assertBool s (bad /= Map.keysSet (Map.empty :: Map.Map SlotName.SlotName TargetSlot.TargetSlot)) "misauthored card detected"
   -- CR 120.2b's dealer is a slot READ like any other, so the same lint has to
   -- reach it. The effect below references no other slot, so the answer is the
@@ -6589,7 +6590,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
      in Spec.assertEqWith
           s
           "the dealer slot is read"
-          (Map.keysSet (Resolve.slotsOf (Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing)) (Quantity.Type.Literal 3))) (Just ghost) Nothing Nothing Nothing Nothing))))
+          (Map.keysSet (Resolve.slotsOf (Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing)) (Quantity.Type.Literal 3))) (Just ghost) Nothing Nothing Nothing Nothing Nothing))))
           (Set.singleton ghost)
   -- The SPELL half of CR 601.2b's contract: what a card's own modes read is
   -- announced against the card's own cost -- mana cost, additional costs and

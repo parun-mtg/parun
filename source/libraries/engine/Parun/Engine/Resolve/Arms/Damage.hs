@@ -135,7 +135,7 @@ import qualified Parun.Types.Unblocking as Unblocking
 import qualified Parun.Types.Zone as Zone
 
 dealDamage :: (Game Result -> Game ()) -> (Game Result -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> DealDamage.DealDamage -> Game ()
-dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source controller legal (DealDamage.MkDealDamage parts dealer excess mTally mDamaged mExcessTally) = do
+dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source controller legal (DealDamage.MkDealDamage parts dealer sweep excess mTally mDamaged mExcessTally) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       -- CR 120.1a: damage only to a battle, creature, or planeswalker, so every
@@ -150,13 +150,15 @@ dealDamage runPreventionRiders runReplacementEffects runSubgame resolving source
       --
       -- EVERY object the slot names deals (Allies at Last), each paired with
       -- the context its amount is read in: the slot naming that dealer alone,
-      -- so "equal to their power" is each one's own.
+      -- so "equal to their power" is each one's own. A sweep (CR 608.2h) is
+      -- found now and bound under the same name, Judgment of Alexander's
+      -- commanders.
       bindings = slotBindings resolving gs
       dealers = case dealer of
         Nothing -> [(source, effectContext gs resolving controller source legal bindings)]
         Just slot ->
           [ (oid, effectContextNaming slot oid gs resolving controller source legal bindings)
-          | oid <- ListUtils.nubOrd (objectRefObjects legal resolving controller source gs (ObjectRef.InSlot slot))
+          | oid <- ListUtils.nubOrd (objectRefObjects legal resolving controller source gs (Maybe.fromMaybe (ObjectRef.InSlot slot) sweep))
           ]
   (dealtEvents, excessDealt) <- do
     -- HOW MUCH, read ONCE PER RECIPIENT off the clause that named it: Acidic

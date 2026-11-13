@@ -1404,7 +1404,8 @@ effectObjectRefs effect =
         Effect.AttachTargetToEach {} -> []
         Effect.AttachBound {} -> []
         Effect.AttachAll (AttachAll.MkAttachAll ref _) -> [(permanentQuestions, ref)]
-        Effect.DealDamage (DealDamage.MkDealDamage parts _ _ _ _ _) -> read_ (fmap DamagePart.ref (Foldable.toList parts))
+        -- The dealers are swept through the pure objectRefObjects too.
+        Effect.DealDamage (DealDamage.MkDealDamage parts _ dealers _ _ _ _) -> read_ (Foldable.toList dealers <> fmap DamagePart.ref (Foldable.toList parts))
         Effect.ModifyTarget (ModifyTarget.MkModifyTarget _ _ ref _) -> [(permanentQuestions, ref)]
         Effect.ChangeText {} -> []
         Effect.AddMana {} -> []
@@ -2470,7 +2471,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- Nothing about the opcode matters: what is on trial is the atom inside
         -- the number.
         counting quantity = Effect.Draw (Draw.MkDraw (PlayerRef.Relative PlayerRelation.You) quantity Nothing)
-        dealing dealer quantity = Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.InSlot elsewhereSlot) quantity)) (Just dealer) Nothing Nothing Nothing Nothing)
+        dealing dealer quantity = Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.InSlot elsewhereSlot) quantity)) (Just dealer) Nothing Nothing Nothing Nothing Nothing)
         against slot = Quantity.Type.AgainstSlot (AgainstSlot.MkAgainstSlot slot (Quantity.Type.Measure Measure.Power))
         -- The corpus half of the number leg: does any card read ANY slot inside a
         -- number? A presence probe over the traversal rather than over the arm,

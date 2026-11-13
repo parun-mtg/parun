@@ -985,8 +985,8 @@ effectLeaves =
 -- effect is handed to onEffect and not descended here.
 effectChildren :: (Applicative f) => EffectChildren card ability f -> Effect.Effect card ability -> f (Effect.Effect card ability)
 effectChildren c effect = case effect of
-  Effect.DealDamage (DealDamage.MkDealDamage parts dealer excess tally damaged excessTally) ->
-    fmap Effect.DealDamage (DealDamage.MkDealDamage <$> traverse (damagePartChildren c) parts <*> traverse (onSlot c) dealer <*> pure excess <*> traverse (onSlot c) tally <*> traverse (onSlot c) damaged <*> traverse (onSlot c) excessTally)
+  Effect.DealDamage (DealDamage.MkDealDamage parts dealer dealers excess tally damaged excessTally) ->
+    fmap Effect.DealDamage (DealDamage.MkDealDamage <$> traverse (damagePartChildren c) parts <*> traverse (onSlot c) dealer <*> traverse (onObjectRef c) dealers <*> pure excess <*> traverse (onSlot c) tally <*> traverse (onSlot c) damaged <*> traverse (onSlot c) excessTally)
   Effect.Fight (Fight.MkFight first second hop excessTally) -> fmap Effect.Fight (Fight.MkFight <$> onSlot c first <*> onSlot c second <*> pure hop <*> traverse (onSlot c) excessTally)
   Effect.ModifyTarget (ModifyTarget.MkModifyTarget duration modification ref each) ->
     fmap Effect.ModifyTarget (ModifyTarget.MkModifyTarget <$> onDuration c duration <*> onModification c modification <*> onObjectRef c ref <*> traverse (onSlot c) each)

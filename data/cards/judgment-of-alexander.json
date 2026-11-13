@@ -26,35 +26,10 @@
                   {
                     "effects": [
                       {
-                        "type": "ForEach",
+                        "type": "DealDamage",
                         "value": {
-                          "body": [
-                            {
-                              "type": "DealDamage",
-                              "value": {
-                                "dealer": "commander",
-                                "parts": [
-                                  {
-                                    "quantity": {
-                                      "type": "AgainstSlot",
-                                      "value": {
-                                        "quantity": {
-                                          "type": "Measure",
-                                          "value": "Power"
-                                        },
-                                        "slot": "commander"
-                                      }
-                                    },
-                                    "ref": {
-                                      "type": "InSlot",
-                                      "value": "thatDamageSource"
-                                    }
-                                  }
-                                ]
-                              }
-                            }
-                          ],
-                          "ref": {
+                          "dealer": "commander",
+                          "dealers": {
                             "type": "EachMatching",
                             "value": {
                               "type": "And",
@@ -76,7 +51,24 @@
                               ]
                             }
                           },
-                          "slot": "commander"
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "AgainstSlot",
+                                "value": {
+                                  "quantity": {
+                                    "type": "Measure",
+                                    "value": "Power"
+                                  },
+                                  "slot": "commander"
+                                }
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "thatDamageSource"
+                              }
+                            }
+                          ]
                         }
                       }
                     ]
