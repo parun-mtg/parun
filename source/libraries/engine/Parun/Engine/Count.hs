@@ -83,6 +83,7 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PastActivation as PastActivation
+import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -179,6 +180,7 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
                 EventShape.CardArrivedIn {} -> []
                 EventShape.AttackerDeclared -> []
                 EventShape.CountersPut -> []
+                EventShape.Sacrificed -> []
               views = Maybe.mapMaybe (snapshotView viewOf gs shape) (earlier <> logged)
               kept = fmap ((,) Nothing) (Maybe.mapMaybe (keep predicate context . Just) views)
            in pure (aggregate quantityOf aggregation kept)
@@ -785,6 +787,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared -> Nothing
     EventShape.CountersPut -> Nothing
+    EventShape.Sacrificed -> Nothing
   GameEvent.DamageDealt _ -> Nothing
   -- CR 615.13's record names two ids, a recipient and an amount, and snapshots no
   -- characteristics, so there is nothing for a Filter to look at.
@@ -822,6 +825,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.AttackerDeclared -> Nothing
     EventShape.CountersPut -> Nothing
+    EventShape.Sacrificed -> Nothing
     where
       -- CR 113.6 / 604.2: on the stack. A regression fence: nothing in
       -- data/cards/ asks a cast whether it had an activated ability.
@@ -857,6 +861,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.SpellCast _ -> Nothing
     EventShape.CountersPut -> Nothing
+    EventShape.Sacrificed -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
   GameEvent.BlocksDeclared {} -> Nothing
   GameEvent.AttackerBlocked {} -> Nothing
@@ -880,7 +885,18 @@ snapshotView viewOf gs shape event = case event of
   GameEvent.Convoked _ -> Nothing
   GameEvent.Saddled _ -> Nothing
   GameEvent.Crewed _ -> Nothing
-  GameEvent.PermanentSacrificed {} -> Nothing
+  -- CR 701.21a / 608.2h: the permanent as it last existed on the battlefield,
+  -- the view TriggerCondition.PermanentSacrificed takes of the same event
+  -- (Parun.Engine.Event.Match). Its controller there is the player who
+  -- sacrificed it, CR 701.21a letting no one else.
+  GameEvent.PermanentSacrificed sacrificed -> case shape of
+    EventShape.Sacrificed -> orLastKnown viewOf gs (PermanentWasSacrificed.permanent sacrificed)
+    EventShape.MovedBetween {} -> Nothing
+    EventShape.MovedFrom {} -> Nothing
+    EventShape.CardArrivedIn {} -> Nothing
+    EventShape.SpellCast _ -> Nothing
+    EventShape.AttackerDeclared -> Nothing
+    EventShape.CountersPut -> Nothing
   GameEvent.AbilityTriggered {} -> Nothing
   GameEvent.AbilityActivated _ -> Nothing
   GameEvent.LifeLost {} -> Nothing
@@ -909,6 +925,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared -> Nothing
+    EventShape.Sacrificed -> Nothing
   -- CR 122.1's removal names an object by id and snapshots no characteristics,
   -- and no EventShape names it.
   GameEvent.CountersRemoved {} -> Nothing
@@ -995,6 +1012,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared -> Nothing
     EventShape.CountersPut -> Nothing
+    EventShape.Sacrificed -> Nothing
 
 -- CR 110.2 / 608.2i: an arrival under the controller it entered under, so
 -- "entered the battlefield under your control this turn" still counts one

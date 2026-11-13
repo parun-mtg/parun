@@ -436,6 +436,7 @@ records reading event = case reading of
   HistoryRead.Moves -> moved event
   HistoryRead.PlanarRolls -> planarDieRolled event
   HistoryRead.Resolutions -> Maybe.isJust (Game.abilityResolved event)
+  HistoryRead.Sacrifices -> sacrificed event
   HistoryRead.Saddles -> saddled event
   HistoryRead.StepBegins -> stepBegan event
   HistoryRead.Taps -> Maybe.isJust (Game.tappedOf event)
@@ -493,6 +494,11 @@ crewed event = case event of
 convoked :: GameEvent -> Bool
 convoked event = case event of
   GameEvent.Convoked {} -> True
+  _ -> False
+
+sacrificed :: GameEvent -> Bool
+sacrificed event = case event of
+  GameEvent.PermanentSacrificed {} -> True
   _ -> False
 
 saddled :: GameEvent -> Bool

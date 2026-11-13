@@ -731,6 +731,7 @@ eventShapeNames asking x = case x of
   EventShape.SpellCast _castWindow -> history asking HistoryRead.Casts
   EventShape.AttackerDeclared -> history asking HistoryRead.Attacks
   EventShape.CountersPut -> history asking HistoryRead.CounterPlacements
+  EventShape.Sacrificed -> history asking HistoryRead.Sacrifices
 
 faceNames :: (Monoid r) => Asking r -> (card -> r) -> Face.Face card -> r
 faceNames asking onCard =

@@ -77,6 +77,7 @@ import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
+import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
@@ -143,6 +144,21 @@ spec s registry = Spec.describe s "a fragmented loop (CR 733.3)" $ do
            in Fragmented.lapIsRead (Fragmented.digest gs2) (S.withEvents [GameEvent.AttackerDeclared declared] gs2)
     Spec.assertEqWith s "CR 733.3 Desert Were-Worm reads the lap's attack" (lap (Just worm)) True
     Spec.assertEqWith s "CR 733.3 with no reader the lap's attack is unread" (lap Nothing) False
+
+  Spec.it s "a count of the turn's sacrifices reads the sacrifice a lap appends" $ do
+    dargo <- S.printingOf s registry "Dargo, the Shipwrecker"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    -- A lap in which alice sacrifices her Grizzly Bears appends one sacrifice
+    -- to the log (CR 701.21a). Dargo, the Shipwrecker, in her library, costs
+    -- less for it, so the lap is read; without it, nothing reads the
+    -- sacrifices.
+    let lap reader =
+          let (bearsId, gs1) = S.addPermanent bears S.alice (Setup.emptyGame S.bothPlayers)
+              gs2 = maybe gs1 (\printing -> snd (S.addLibraryCard printing S.alice gs1)) reader
+              sacrificed = PermanentWasSacrificed.MkPermanentWasSacrificed S.alice bearsId
+           in Fragmented.lapIsRead (Fragmented.digest gs2) (S.withEvents [GameEvent.PermanentSacrificed sacrificed] gs2)
+    Spec.assertEqWith s "CR 733.3 Dargo reads the lap's sacrifice" (lap (Just dargo)) True
+    Spec.assertEqWith s "CR 733.3 with no reader the lap's sacrifice is unread" (lap Nothing) False
 
   Spec.it s "an activation is refused as announced, not as a whole" $ do
     poppet <- S.printingOf s registry "Grim Poppet"

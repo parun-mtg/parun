@@ -1,0 +1,146 @@
+{
+  "faces": [
+    {
+      "additionalCosts": [
+        {
+          "type": "Sacrifice",
+          "value": {
+            "count": {
+              "type": "Announced",
+              "value": "X"
+            },
+            "whichPermanents": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Artifact"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    }
+                  ]
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "costReductions": [
+        {
+          "amount": [
+            {
+              "type": "Generic",
+              "value": 2
+            }
+          ],
+          "perEach": {
+            "type": "InSlot",
+            "value": "X"
+          }
+        },
+        {
+          "amount": [
+            {
+              "type": "Generic",
+              "value": 2
+            }
+          ],
+          "perEach": {
+            "type": "Count",
+            "value": {
+              "aggregation": {
+                "type": "Members"
+              },
+              "filter": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "Or",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Artifact"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                ]
+              },
+              "scope": {
+                "type": "InHistory",
+                "value": {
+                  "type": "Sacrificed"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Trample"
+        },
+        {
+          "type": "Partner"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 6
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Dargo, the Shipwrecker",
+      "oracleText": "As an additional cost to cast this spell, you may sacrifice any number of artifacts and/or creatures. This spell costs {2} less to cast for each permanent sacrificed this way and {2} less to cast for each other artifact or creature you've sacrificed this turn.\nTrample\nPartner (You can have two commanders if both have partner.)",
+      "power": {
+        "type": "Literal",
+        "value": 7
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "typeLine": {
+        "subtypes": [
+          "Giant",
+          "Pirate"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

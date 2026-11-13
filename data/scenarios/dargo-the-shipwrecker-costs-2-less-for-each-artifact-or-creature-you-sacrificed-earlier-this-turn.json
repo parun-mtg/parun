@@ -1,0 +1,184 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Nantuko Husk",
+            "label": "husk"
+          },
+          {
+            "card": "Atog",
+            "label": "atog"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Darksteel Ingot",
+            "label": "ingot"
+          },
+          {
+            "card": "Spellbook",
+            "label": "book"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Dargo, the Shipwrecker",
+            "label": "dargo"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2f Dargo, the Shipwrecker costs {2} less for each artifact or creature its controller sacrificed earlier this turn",
+  "final": [
+    {
+      "Count": {
+        "card": "Dargo, the Shipwrecker",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Hill Giant",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Spellbook",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "Alice sacrifices a Goblin Piker to her Husk, which leaves Dargo at {4}{R}: her three Mountains cannot cast it sacrificing nothing more. A Darksteel Ingot sacrificed to her Atog makes it {2}{R}, and they can. The Hill Giant and the Spellbook make each sacrifice a real choice.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "object": "$husk"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$piker"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3"
+          ],
+          "object": "$dargo",
+          "x": 0
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "object": "$atog"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseSacrifices",
+          "with": [
+            "$ingot"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3"
+          ],
+          "object": "$dargo",
+          "x": 0
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
