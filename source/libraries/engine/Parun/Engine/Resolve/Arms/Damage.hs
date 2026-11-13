@@ -505,6 +505,9 @@ addMana resolving source controller legal (ManaAddition.MkManaAddition ref produ
       -- printing (Scryfall o:"that color" o:"mana of any color", 2026-11-13), is
       -- a mana ability and takes Parun.Engine.Cost.tapForManaWith's road. A
       -- triggered or loyalty ability printing the sentence would observe it.
+      --
+      -- Not implemented: ending the write with the resolution, as
+      -- tapForManaWith ends its own with the clause (#7187).
       choose manaTypes =
         Monad.when choosesColor $
           State.modify' (Game.recordChoice Chosen.Colors (Game.readingAcquisition resolving source gs0 source) (const (Just (Mana.colorsAmong manaTypes))) source)

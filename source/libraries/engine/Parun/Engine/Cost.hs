@@ -6754,9 +6754,21 @@ tapForManaWith perform window inFlight refused activator oid = do
                         -- Resolve.Arms.Damage.addMana's write. A clause's shares
                         -- are added as one, so its additions are not told apart:
                         -- Parun.CardSpec keeps a choosing addition alone in its clause.
-                        Monad.when (any ManaAddition.choosesColor (Maybe.mapMaybe ManaAbility.manaProduced (Foldable.toList (Clause.effects clause)))) $
-                          State.modify' (Game.recordChoice Chosen.Colors (Game.readingAcquisition oid oid gsNow oid) (const (Just (Mana.colorsAmong (fmap ManaUnit.manaType (concatMap snd shares))))) oid)
+                        --
+                        -- The write ends with the clause, the source's choice put
+                        -- back as it stood: "that color" is this ability's own, no
+                        -- CR 607.2d choice another ability or a later unit of
+                        -- mana (Mana.sourceChoicesOf) may read. Proved by
+                        -- data/scenarios/mana-source's two Foraging Wickermaw
+                        -- scenarios.
+                        let choosing = any ManaAddition.choosesColor (Maybe.mapMaybe ManaAbility.manaProduced (Foldable.toList (Clause.effects clause)))
+                            acquisition = Game.readingAcquisition oid oid gsNow oid
+                            standing = Game.choiceWithLastKnown Chosen.Colors acquisition oid gsNow
+                        Monad.when choosing $
+                          State.modify' (Game.recordChoice Chosen.Colors acquisition (const (Just (Mana.colorsAmong (fmap ManaUnit.manaType (concatMap snd shares))))) oid)
                         bound2 <- ManaAbilityPerformer.effects perform oid controller bound1 (filter (Maybe.isNothing . ManaAbility.manaProduced) trailing)
+                        Monad.when choosing $
+                          State.modify' (Game.recordChoice Chosen.Colors acquisition (const standing) oid)
                         pure (answers2, bound2, filled <> shares, made <> produced)
               -- CR 602.2's history, off `gs`, the board the activation began on:
               -- a Treasure its own cost sacrificed is still logged as what it was.
