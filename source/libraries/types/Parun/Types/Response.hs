@@ -22,6 +22,7 @@ import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.EntwineDecision as EntwineDecision
+import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.ForageMode as ForageMode
 import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
@@ -729,6 +730,9 @@ data Response
   | -- | CR 601.3 / 305.1: the permission a player made a play under (Nothing =
     -- none of the offered ones).
     ChosePlayPermission (Maybe (ObjectId.ObjectId, CastFromZone.CastFromZone))
+  | -- | CR 601.3 / 305.1: the permission the card itself held that a player
+    -- made a play under.
+    ChoseHeldPermission ExilePlayPermission.ExilePlayPermission
   | -- | CR 315.5a: the index of the hand a player kept of those they drew as
     -- the game began.
     KeptHand Natural.Natural

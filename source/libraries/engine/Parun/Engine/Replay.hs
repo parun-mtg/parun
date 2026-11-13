@@ -253,6 +253,7 @@ encode p answer = case p of
   Prompt.ChooseTurnUpAttachment {} -> Response.ChoseTurnUpAttachment answer
   Prompt.ChooseCost {} -> Response.ChoseCost answer
   Prompt.ChoosePlayPermission {} -> Response.ChosePlayPermission answer
+  Prompt.ChooseHeldPermission {} -> Response.ChoseHeldPermission answer
   Prompt.KeepHand {} -> Response.KeptHand answer
   Prompt.DeclareMulligan {} -> Response.DeclaredMulligan answer
   Prompt.Bottom {} -> Response.PutOnBottom answer
@@ -720,6 +721,9 @@ decode p response = case p of
     _ -> Nothing
   Prompt.ChoosePlayPermission {} -> case response of
     Response.ChosePlayPermission permission -> Just permission
+    _ -> Nothing
+  Prompt.ChooseHeldPermission {} -> case response of
+    Response.ChoseHeldPermission permission -> Just permission
     _ -> Nothing
   Prompt.KeepHand {} -> case response of
     Response.KeptHand index -> Just index
@@ -1357,6 +1361,8 @@ defaultAnswer p = case p of
   -- The head is the permission that spends no budget where one admits the play
   -- (Parun.Engine.PlayerEffect.permissionOptions orders them so).
   Prompt.ChoosePlayPermission _ _ _ options -> NonEmpty.head options
+  -- The oldest (Parun.Engine.Expiry.openPermissions orders them so).
+  Prompt.ChooseHeldPermission _ _ _ options -> NonEmpty.head options
   -- CR 103.5: keeping is always legal.
   Prompt.KeepHand {} -> 0
   Prompt.DeclareMulligan {} -> MulliganDecision.Keep

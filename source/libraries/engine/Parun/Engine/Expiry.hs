@@ -394,6 +394,14 @@ permissionOpen pid permission gs =
           (Condition.holds (Projection.fullView gs) (Projection.sourceContext gs (Just pid) source) gs source)
           (ExilePlayPermission.condition permission)
 
+-- CR 601.3: the permissions `oid` holds that `pid` may use right now
+-- (permissionOpen), oldest first. Several where several grants reached the card
+-- (#5294); a play is made under one, Parun.Engine.Cast.chooseHeldPermission's
+-- answer, and a reader asking for one permission's terms reads the head of a
+-- board narrowed to it (Parun.Engine.Cast.underHeld).
+openPermissions :: PlayerId -> ObjectId -> GameState -> [ExilePlayPermission.ExilePlayPermission]
+openPermissions pid oid gs = filter (\permission -> permissionOpen pid permission gs) (foldMap Object.playPermissions (Game.lookupObject oid gs))
+
 -- CR 611.2: a moment at which a stored duration can end. Each sweep below names
 -- its moment, and endsAt alone says which expiries end there.
 data Moment
@@ -747,17 +755,12 @@ windowReached gs afterObjectTurn =
 -- `rowExpiry` until it says what its expiry is. `edit` is handed each row's
 -- source and expiry and answers the expiry the row keeps, or Nothing to end it.
 --
--- A row ended is DROPPED from its list, except an object's play permission
--- (CR 601.3, Object.playPermission), which is CLEARED on an object that
--- stays.
+-- A row ended is DROPPED from its list, an object's play permissions (CR
+-- 601.3, Object.playPermissions) included.
 traverseExpiries :: (Applicative f) => (ObjectId -> Expiry -> f (Maybe Expiry)) -> GameState -> f GameState
 traverseExpiries edit gs =
-  let object o = case Object.playPermission o of
-        Nothing -> pure o
-        Just p ->
-          fmap
-            (\kept -> o {Object.playPermission = fmap (\e -> p {ExilePlayPermission.expiry = e}) kept})
-            (edit (ExilePlayPermission.source p) (ExilePlayPermission.expiry p))
+  let permission p = fmap (fmap (\e -> p {ExilePlayPermission.expiry = e})) (edit (ExilePlayPermission.source p) (ExilePlayPermission.expiry p))
+      object o = fmap (\kept -> o {Object.playPermissions = Maybe.catMaybes kept}) (traverse permission (Object.playPermissions o))
    in (\stored objects -> gs {GameState.stored = stored, GameState.objects = objects})
         <$> Stored.traverseRows (rowExpiry edit) (GameState.stored gs)
         <*> traverse object (GameState.objects gs)

@@ -810,15 +810,15 @@ grantPlayFromExile resolving source controller legal (GrantPlayFromExile.MkGrant
     case filter (inZone gs) (objectRefObjects legal resolving controller source gs ref) of
       [] -> gs
       targets -> case playerRefPlayers legal resolving source controller gs player of
-        -- CR 716.3d's "that player" is ONE seat and
-        -- Object.playPermission holds one, so a reference naming nobody --
-        -- or naming several -- grants nothing, PlayerRef.InSlot's own
-        -- collapse.
+        -- CR 716.3d's "that player" is ONE seat and a permission names
+        -- one, so a reference naming nobody -- or naming several -- grants
+        -- nothing, PlayerRef.InSlot's own collapse.
         [holder] -> case Expiry.arm resolving legal controller source duration gs of
           -- CR 611.2b: the duration never started, so no permission is stored.
           Nothing -> gs
           Just expiry ->
-            let permission =
+            let (stamp, stamped) = Game.freshTimestamp gs
+                permission =
                   (ExilePlayPermission.defaultValue holder source)
                     { ExilePlayPermission.expiry = expiry,
                       -- CR 118.14, carried from the opcode unread;
@@ -841,11 +841,14 @@ grantPlayFromExile resolving source controller legal (GrantPlayFromExile.MkGrant
                       ExilePlayPermission.increase = increase,
                       ExilePlayPermission.landEnters = landEnters,
                       -- CR 601.3: one budget over every object granted,
-                      -- so a play of any of them spends it for all.
-                      ExilePlayPermission.budget = fmap (\n -> PlayBudget.MkPlayBudget n (Set.fromList targets)) upTo
+                      -- so a play of any of them spends it for all, told
+                      -- from another grant's by its stamp.
+                      ExilePlayPermission.budget = fmap (\n -> PlayBudget.MkPlayBudget n (Set.fromList targets) stamp) upTo
                     }
-                grant o = o {Object.playPermission = Just permission}
-             in gs {GameState.objects = foldr (Map.adjust grant) (GameState.objects gs) targets}
+                -- CR 601.3: beside any permission the card already holds,
+                -- each grant being a permission of its own.
+                grant o = o {Object.playPermissions = Object.playPermissions o <> [permission]}
+             in stamped {GameState.objects = foldr (Map.adjust grant) (GameState.objects stamped) targets}
         _ -> gs
   where
     inZone gs oid = maybe False (lies . Object.zone) (Map.lookup oid (GameState.objects gs))

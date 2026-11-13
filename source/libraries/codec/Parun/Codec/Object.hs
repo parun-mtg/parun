@@ -124,7 +124,7 @@ codec = Fields.object $ do
   face <- Fields.defaulted "face" (Object.face defaults) (Common.maybe CardName.codec) Object.face
   turnedOverAt <- Fields.defaulted "turnedOverAt" (Object.turnedOverAt defaults) (Common.maybe Timestamp.codec) Object.turnedOverAt
   worldSince <- Fields.defaulted "worldSince" (Object.worldSince defaults) (Common.maybe Timestamp.codec) Object.worldSince
-  playPermission <- Fields.defaulted "playPermission" (Object.playPermission defaults) (Common.maybe ExilePlayPermission.codec) Object.playPermission
+  playPermissions <- Fields.defaulted "playPermissions" (Object.playPermissions defaults) (Common.list ExilePlayPermission.codec) Object.playPermissions
   plotted <- Fields.defaulted "plotted" (Object.plotted defaults) (Common.maybe Common.natural) Object.plotted
   foretold <- Fields.defaulted "foretold" (Object.foretold defaults) (Common.maybe Common.natural) Object.foretold
   foretellCostReduction <- Fields.defaulted "foretellCostReduction" (Object.foretellCostReduction defaults) (Common.maybe ManaCost.codec) Object.foretellCostReduction
@@ -198,7 +198,7 @@ codec = Fields.object $ do
         Object.face = face,
         Object.turnedOverAt = turnedOverAt,
         Object.worldSince = worldSince,
-        Object.playPermission = playPermission,
+        Object.playPermissions = playPermissions,
         Object.plotted = plotted,
         Object.foretold = foretold,
         Object.foretellCostReduction = foretellCostReduction,

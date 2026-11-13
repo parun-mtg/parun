@@ -182,6 +182,7 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.ChooseTurnUpAttachment {} -> "ChooseTurnUpAttachment"
   Prompt.ChooseCost {} -> "ChooseCost"
   Prompt.ChoosePlayPermission {} -> "ChoosePlayPermission"
+  Prompt.ChooseHeldPermission {} -> "ChooseHeldPermission"
   Prompt.OrderCostComponents {} -> "OrderCostComponents"
   Prompt.OrderCombatTolls {} -> "OrderCombatTolls"
   Prompt.OrderComponentCards {} -> "OrderComponentCards"
