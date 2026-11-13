@@ -1,0 +1,31 @@
+{
+  "description": "Maralen, Fae Ascendant offers the same card once you control a third Elf or Faerie",
+  "note": "The control for the scenario this is named for: the same board with a Faerie Miscreant under alice, so the count is 3 and Centaur Courser is offered and cast.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "G",
+        "battlefield": [{"card": "Maralen, Fae Ascendant"}, {"card": "Faerie Miscreant"}],
+        "hand": [{"card": "Llanowar Elves", "label": "elves"}],
+        "library": [{"card": "Hill Giant"}, {"card": "Hill Giant"}, {"card": "Hill Giant"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Elvish Mystic"}],
+        "library": [{"card": "Grizzly Bears"}, {"card": "Centaur Courser"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$elves"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Cast Grizzly Bears", "Cast Centaur Courser"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "Centaur Courser"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Centaur Courser", "count": 1}}}
+  ]
+}

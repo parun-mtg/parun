@@ -1584,7 +1584,7 @@ matchesObjectFrom src filter_ oid gs =
 
 -- matchesObjectFrom with CR 109.5's "you" NAMED rather than read off the object.
 --
--- Two callers: castPermissionsFrom, whose "you" is the grant's controller, and
+-- Two readers: permissionContext, whose "you" is the grant's controller, and
 -- prohibitsCasting's CR 601.3a arm, under one rule: a card being cast
 -- has no controller yet (CR 108.4 gives a card in a hand none), so rule 109.5's
 -- "you" for it is the player who would control the spell -- the caster. The two
@@ -1726,6 +1726,13 @@ prohibitsAtManaValue pid oid manaValue gs =
 permissionHolder :: PlayerId -> Maybe ObjectId -> GameState -> PlayerId
 permissionHolder pid source gs = Maybe.fromMaybe pid (source >>= \sid -> Projection.controllerOf sid gs)
 
+-- CR 601.3: the Context a CastFrom row's `matching` is matched against, for
+-- castPermissionsFrom and admitsAtManaValue alike: matchesObjectFor's, at the
+-- holder's "you", with the grant's `amount` framed in (Maralen, Fae Ascendant).
+permissionContext :: PlayerId -> RowSource -> CastFromZone.CastFromZone -> ObjectId -> GameState -> Filter.Context
+permissionContext pid source grant oid gs =
+  amountFramed pid source (CastFromZone.amount grant) oid gs (contextFor (Just (permissionHolder pid (RowSource.object source) gs)) source gs)
+
 -- CR 601.2e / 601.3: prohibitsAtManaValue's permission-side twin. Does the CR
 -- 601.3 permission the cast is made under still admit `oid` at `manaValue`?
 -- Judged as castPermissionsFrom judged it, with only the mana value replaced;
@@ -1738,12 +1745,15 @@ permissionHolder pid source gs = Maybe.fromMaybe pid (source >>= \sid -> Project
 -- choices (CR 608.2h); any of them admitting it is enough. A pair no row answers
 -- to any more falls back to the source read live. A fence: no card in the pool
 -- stores a cast permission that reads a choice.
+--
+-- The grant's `amount` is framed in here as at the gate, also a fence: Maralen,
+-- Fae Ascendant's cast is free, so CR 107.3b announces no X to re-ask about.
 admitsAtManaValue :: PlayerId -> Maybe (ObjectId, CastFromZone.CastFromZone) -> ObjectId -> Integer -> GameState -> Bool
 admitsAtManaValue pid permission oid manaValue gs = case permission of
   Nothing -> True
   Just (sid, grant) ->
     let view = (Projection.viewOfObject oid gs) {Filter.manaValue = Just manaValue}
-        admits source = Filter.matches (contextFor (Just (permissionHolder pid (RowSource.object source) gs)) source gs) view (CastFromZone.matching grant)
+        admits source = Filter.matches (permissionContext pid source grant oid gs) view (CastFromZone.matching grant)
         rows = [source | (source, PlayerEffect.CastFrom granted) <- applying pid gs, RowSource.object source == Just sid, granted == grant]
      in if null rows then admits (liveSource (Just sid)) else any admits rows
 
@@ -1858,19 +1868,23 @@ perTargetTimes pid source gs perTarget target = case PerTarget.each perTarget of
      in maybe 0 Integer.toNaturalSaturating (target >>= \oid -> Quantity.evaluate (Projection.fullView gs) context gs oid quantity)
 
 -- CR 118.9: does a free-cast grant cover this card? Its filter is matched as
--- matchesObjectFrom matches, with its `amount` evaluated into
--- Filter.slotAmount for the EnclosingAmount operand: read against the row's
--- SOURCE with targetPerspective's "you", perEachCount's posture (CR 109.5,
--- Omnipresence's "the number of creatures you control").
+-- matchesObjectFrom matches, with its `amount` framed in (Omnipresence's "the
+-- number of creatures you control").
 freeCastAdmits :: PlayerId -> RowSource -> FreeCast.FreeCast -> ObjectId -> GameState -> Bool
 freeCastAdmits pid source grant oid gs =
-  let framed context = case FreeCast.amount grant of
-        Nothing -> context
-        Just quantity ->
-          let against = Maybe.fromMaybe oid (RowSource.object source)
-              you = contextFor (Just (targetPerspective pid source gs)) source gs
-           in context {Filter.slotAmount = Quantity.evaluate (Projection.fullView gs) you gs against quantity}
-   in Filter.matches (framed (contextFrom source oid gs)) (Projection.viewOfObject oid gs) (FreeCast.spells grant)
+  Filter.matches (amountFramed pid source (FreeCast.amount grant) oid gs (contextFrom source oid gs)) (Projection.viewOfObject oid gs) (FreeCast.spells grant)
+
+-- CR 109.5: a grant's `amount` evaluated into Filter.slotAmount for the
+-- EnclosingAmount operand: read against the row's SOURCE with
+-- targetPerspective's "you", perEachCount's posture; against the card where
+-- the row names no source. FreeCast's and CastFromZone's `amount` both.
+amountFramed :: PlayerId -> RowSource -> Maybe Quantity.Type.Quantity -> ObjectId -> GameState -> Filter.Context -> Filter.Context
+amountFramed pid source amount oid gs context = case amount of
+  Nothing -> context
+  Just quantity ->
+    let against = Maybe.fromMaybe oid (RowSource.object source)
+        you = contextFor (Just (targetPerspective pid source gs)) source gs
+     in context {Filter.slotAmount = Quantity.evaluate (Projection.fullView gs) you gs against quantity}
 
 -- CR 601.2f: how many times a `perEach` cost change applies -- its Quantity read
 -- as the total is determined, against the row's SOURCE (CR 113.7, Animar, Soul
@@ -2543,7 +2557,7 @@ castPermissionsFrom pid zone oid gs =
   let allows (source, grant) =
         opensZoneOf pid zone oid (CastFromZone.from grant) gs
           && inPool source (CastFromZone.pool grant)
-          && matchesObjectFor (permissionHolder pid (RowSource.object source) gs) source (CastFromZone.matching grant) oid gs
+          && Filter.matches (permissionContext pid source grant oid gs) (Projection.viewOfObject oid gs) (CastFromZone.matching grant)
           && unspentPermission pid source grant gs
       grantOf (source, effect) = fmap ((,) source) (castFromGrantOf effect)
       -- CR 109.5: the Filter's "you" is the granting ability's controller, not

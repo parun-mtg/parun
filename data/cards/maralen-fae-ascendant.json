@@ -1,0 +1,249 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Maralen, Fae Ascendant",
+      "oracleText": "Flying\nWhenever Maralen or another Elf or Faerie you control enters, exile the top two cards of target opponent's library.\nOnce each turn, you may cast a spell with mana value less than or equal to the number of Elves and Faeries you control from among cards exiled with Maralen this turn without paying its mana cost.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "CastFrom",
+            "value": {
+              "alternativeCost": {
+                "type": "InsteadOfManaCost",
+                "value": []
+              },
+              "amount": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Members"
+                  },
+                  "filter": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "Or",
+                        "value": [
+                          {
+                            "type": "HasSubtype",
+                            "value": "Elf"
+                          },
+                          {
+                            "type": "HasSubtype",
+                            "value": "Faerie"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
+                      }
+                    ]
+                  },
+                  "scope": {
+                    "type": "InZone",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "AnyPlayer"
+                      },
+                      "zone": "Battlefield"
+                    }
+                  }
+                }
+              },
+              "from": {
+                "player": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                },
+                "zone": "Exile"
+              },
+              "limit": "OnceEachTurn",
+              "matching": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "Measures",
+                    "value": {
+                      "comparison": "AtMost",
+                      "measure": "ManaValue",
+                      "operand": {
+                        "type": "EnclosingAmount"
+                      }
+                    }
+                  },
+                  {
+                    "type": "EnteredThisTurn",
+                    "value": {
+                      "to": "Exile"
+                    }
+                  }
+                ]
+              },
+              "pool": {
+                "type": "InExiledPile",
+                "value": {
+                  "type": "OwnAbilities"
+                }
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "Enters",
+                "value": {}
+              },
+              {
+                "type": "Enters",
+                "value": {
+                  "permanent": {
+                    "type": "Matching",
+                    "value": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Or",
+                          "value": [
+                            {
+                              "type": "HasSubtype",
+                              "value": "Elf"
+                            },
+                            {
+                              "type": "HasSubtype",
+                              "value": "Faerie"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsSource"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "Literal",
+                                "value": 2
+                              },
+                              "player": {
+                                "type": "InSlot",
+                                "value": "opponent"
+                              }
+                            }
+                          },
+                          "zone": "Exile"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "opponent": {
+                    "filter": {
+                      "type": "IsPlayer",
+                      "value": "Opponent"
+                    },
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Elf",
+          "Faerie",
+          "Noble"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
@@ -17,6 +18,9 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpending as ManaSpending
+import qualified Parun.Types.Measure as Measure
+import qualified Parun.Types.Measures as Measures
+import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
@@ -46,7 +50,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
-            CastFromZone.entersWith = Nothing
+            CastFromZone.entersWith = Nothing,
+            CastFromZone.amount = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]}} "
@@ -65,7 +70,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
-            CastFromZone.entersWith = Nothing
+            CastFromZone.entersWith = Nothing,
+            CastFromZone.amount = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Hand\",\"player\":{\"type\":\"InSlot\",\"value\":\"opponent\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
@@ -86,7 +92,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
-            CastFromZone.entersWith = Nothing
+            CastFromZone.entersWith = Nothing,
+            CastFromZone.amount = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Library\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"limit\":\"OnceEachTurn\"} "
@@ -106,7 +113,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
-            CastFromZone.entersWith = Nothing
+            CastFromZone.entersWith = Nothing,
+            CastFromZone.amount = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"limit\":\"OnceEachOfYourTurns\",\"verb\":\"Play\"} "
@@ -125,7 +133,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AnyType,
             CastFromZone.alternativeCost = Nothing,
-            CastFromZone.entersWith = Nothing
+            CastFromZone.entersWith = Nothing,
+            CastFromZone.amount = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"spending\":\"AnyType\"} "
@@ -145,6 +154,7 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
             CastFromZone.entersWith = Nothing,
+            CastFromZone.amount = Nothing,
             CastFromZone.additionalCosts = [CostComponent.RemoveCounters (CountersFromPermanents.MkCountersFromPermanents (CostAmount.Fixed 3) WhichCounters.OfAnyKind (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]) CounterSpread.FromAmong)]
           }
       )
@@ -165,7 +175,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.reduction = 2,
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
-            CastFromZone.entersWith = Nothing
+            CastFromZone.entersWith = Nothing,
+            CastFromZone.amount = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"verb\":\"Play\",\"pool\":{\"type\":\"InExiledPile\",\"value\":{\"type\":\"OwnAbilities\"}},\"reduction\":2} "
@@ -185,7 +196,8 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Just (PermissionCost.InsteadOfManaCost (ManaCost.MkManaCost [])),
-            CastFromZone.entersWith = Nothing
+            CastFromZone.entersWith = Nothing,
+            CastFromZone.amount = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Hand\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"Or\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Instant\"},{\"type\":\"HasCardType\",\"value\":\"Sorcery\"}]},\"limit\":\"OnceEachOfYourTurns\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]}} "
@@ -205,8 +217,30 @@ spec s = Spec.describe s "Parun.Codec.CastFromZone" $ do
             CastFromZone.reduction = 0,
             CastFromZone.spending = ManaSpending.AsProduced,
             CastFromZone.alternativeCost = Nothing,
-            CastFromZone.entersWith = Just (WithCounters.one CounterKind.Finality (Quantity.Literal 1))
+            CastFromZone.entersWith = Just (WithCounters.one CounterKind.Finality (Quantity.Literal 1)),
+            CastFromZone.amount = Nothing
           }
       )
       " {\"from\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"And\",\"value\":[]},\"entersWith\":[{\"kind\":{\"type\":\"Finality\"},\"count\":{\"type\":\"Literal\",\"value\":1}}]} "
+  -- Maralen, Fae Ascendant's shape: a mana value compared against a count
+  -- read for the permission's source (CR 109.5).
+  Spec.it s "a computed bound" $
+    Common.assertCodec
+      s
+      CastFromZone.codec
+      ( CastFromZone.MkCastFromZone
+          { CastFromZone.from = InZone.MkInZone {InZone.zone = Zone.Exile, InZone.player = PlayerRef.Relative PlayerRelation.AnyPlayer},
+            CastFromZone.matching = Filter.Measures (Measures.MkMeasures Measure.ManaValue Comparison.AtMost Operand.EnclosingAmount),
+            CastFromZone.limit = PermissionLimit.OnceEachTurn,
+            CastFromZone.verb = PermissionVerb.Cast,
+            CastFromZone.pool = PermissionPool.InExiledPile ExiledPile.OwnAbilities,
+            CastFromZone.additionalCosts = [],
+            CastFromZone.reduction = 0,
+            CastFromZone.spending = ManaSpending.AsProduced,
+            CastFromZone.alternativeCost = Just (PermissionCost.InsteadOfManaCost (ManaCost.MkManaCost [])),
+            CastFromZone.entersWith = Nothing,
+            CastFromZone.amount = Just (Quantity.Literal 2)
+          }
+      )
+      " {\"from\":{\"zone\":\"Exile\",\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"matching\":{\"type\":\"Measures\",\"value\":{\"measure\":\"ManaValue\",\"comparison\":\"AtMost\",\"operand\":{\"type\":\"EnclosingAmount\"}}},\"limit\":\"OnceEachTurn\",\"pool\":{\"type\":\"InExiledPile\",\"value\":{\"type\":\"OwnAbilities\"}},\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"amount\":{\"type\":\"Literal\",\"value\":2}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s CastFromZone.codec

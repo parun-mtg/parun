@@ -57,6 +57,7 @@ import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
 import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
@@ -480,8 +481,9 @@ cantPayKeywordCostTag = Text.pack "CantPayKeywordCost"
 -- atom needs is a property of the enclosing SLOT rather than of the Framing, and
 -- a Framing tag cannot say which slot a filter came out of.
 --
--- "pool" is the key that identifies a target slot -- Parun.Codec.TargetSlot is the
--- only codec in the tree that writes one -- and "amount" beside it is the slot
+-- "pool" is the key that identifies a target slot -- Parun.Codec.TargetSlot and
+-- Parun.Codec.CastFromZone are the only codecs in the tree that write one, and
+-- the second names no "filter" -- and "amount" beside it is the slot
 -- naming its bound. The other positions that fill the bound are a conjure's
 -- reference pick (Parun.Types.FromReference), the "Reference" arm of
 -- Parun.Codec.ConjureCards, whose value carries the same two keys, and a combat
@@ -499,9 +501,12 @@ amountedSlotAtoms value = case value of
         referenceAtoms = sum (fmap (amountedAtoms "filter") (if tagged ["Reference"] then keyed "value" else []))
         restrictionAtoms = sum (fmap (amountedAtoms "affected") (if tagged ["CantAttack", "CantBlock"] then keyed "value" else []))
         freeCastAtoms = sum (fmap (amountedAtoms "spells") (if tagged ["CastWithoutPayingManaCost"] then keyed "value" else []))
+        -- A CastFrom value writes "pool" and "amount" too, so the descent below
+        -- takes it for a slot and reads its absent "filter": counted here alone.
+        castFromAtoms = sum (fmap (amountedAtoms "matching") (if tagged ["CastFrom"] then keyed "value" else []))
         here =
           if null (keyed "pool") || null (keyed "amount")
-            then referenceAtoms + restrictionAtoms + freeCastAtoms
+            then referenceAtoms + restrictionAtoms + freeCastAtoms + castFromAtoms
             else sum (fmap (jsonAtoms enclosingAmountTag) (keyed "filter"))
      in here + sum (fmap (amountedSlotAtoms . Pair.value) pairs)
   Value.String _ -> 0
@@ -510,8 +515,8 @@ amountedSlotAtoms value = case value of
   Value.Number _ -> 0
 
 -- A conjure reference pick's value, a combat restriction's
--- (Parun.Types.AffectedUnless) or a free-cast grant's
--- (Parun.Types.FreeCast): the atoms of its subtree at `key` where an
+-- (Parun.Types.AffectedUnless), a free-cast grant's (Parun.Types.FreeCast) or
+-- a cast permission's (Parun.Types.CastFromZone): the atoms of its subtree at `key` where an
 -- "amount" sits beside it, and none where it does not.
 amountedAtoms :: String -> Value.Value -> Int
 amountedAtoms key value = case value of
@@ -522,14 +527,15 @@ amountedAtoms key value = case value of
   _ -> 0
 
 -- How many CR 202.3 computed-bound operands this card carries in a target slot,
--- reference pick, combat restriction or free-cast grant that names an amount, and how many
+-- reference pick, combat restriction, free-cast grant or cast permission that names an amount, and how many
 -- anywhere else. The second
 -- number is the offence; the first is what Celestine, the Living Saint
 -- legitimately has one of.
 --
 -- Parun.Engine.Target.slotContext fills Filter.Context.slotAmount off the SLOT's
 -- own Quantity (Parun.Engine.CombatRestriction.amountFrame off a restriction's,
--- Parun.Engine.PlayerEffect.freeCastAdmits off a free-cast grant's),
+-- Parun.Engine.PlayerEffect.amountFramed off a free-cast grant's or a cast
+-- permission's),
 -- so the operand in a slot that names none -- or in a Count filter, a static
 -- ability's affected set, a search filter, a cost criterion -- is a silent False
 -- rather than a rejected card. This is where that is made loud.
@@ -1918,11 +1924,14 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- Parun.Engine.PlayerEffect's freeCastAdmits reaches neither choiceCouldEscape
   -- nor choiceCouldApply,
   -- and CR 107.3b fixes X at 0 under the grant, so the hand's mana value is the
-  -- spell's (Omnipresence's EnclosingAmount).
+  -- spell's (Omnipresence's EnclosingAmount). So is a cast permission's
+  -- `matching` beside an `amount`: castPermissionsFrom reaches neither as well,
+  -- and admitsAtManaValue re-judges the announced X against the same bound
+  -- (CR 601.2e; Maralen, Fae Ascendant).
   Spec.it s "CR 601.3a no player effect compares a mana value against anything but a literal" $ do
     ps <- S.allPrintings s corpus
     let encode = Codec.encode (Filter.Codec.codec Keyword.Codec.codec)
-        freeCastSpells c = [FreeCast.spells grant | PlayerEffect.CastWithoutPayingManaCost grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c)]
+        freeCastSpells c = [FreeCast.spells grant | PlayerEffect.CastWithoutPayingManaCost grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c)] <> [CastFromZone.matching grant | PlayerEffect.CastFrom grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c), Maybe.isJust (CastFromZone.amount grant)]
         inPlayerEffects wanted c = sum [manaValueComparisons wanted (encode f) | (framing, f) <- cardFilters c, elem framing [PlayerEffectFramed, StoredPlayerEffectFramed]] - sum [manaValueComparisons wanted (encode f) | f <- freeCastSpells c]
         nonLiteral = (/= Text.pack "Literal")
         offenders = filter (anyFace ((/= 0) . inPlayerEffects nonLiteral) . Printing.card) ps
@@ -1940,7 +1949,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- Filter.Context.slotAmount off the target slot's own Quantity, so an
   -- EnclosingAmount operand in a slot naming no amount -- or anywhere that is not
   -- a target slot, a conjure's reference pick, a combat restriction's affected
-  -- set or a free-cast grant's spells at all -- is a silent False. See enclosingAmountCounts.
+  -- set, a free-cast grant's spells or a cast permission's criterion at all --
+  -- is a silent False. See enclosingAmountCounts.
   Spec.it s "CR 202.3 no card compares against an enclosing amount outside a slot that names one" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace enclosingAmountOffends . Printing.card) ps
@@ -1982,6 +1992,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- Ensnaring Bridge.
     --
     -- At most, against the mana value, in a free-cast grant's spells: Omnipresence.
+    --
+    -- At most, against the mana value, in a cast permission's criterion:
+    -- Maralen, Fae Ascendant.
     assertAuthors
       s
       registry
@@ -2020,6 +2033,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("March of Burgeoning Life", 1),
         ("Ensnaring Bridge", 1),
         ("Omnipresence", 1),
+        ("Maralen, Fae Ascendant", 1),
         ("Isareth the Awakener", 1)
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
@@ -2057,6 +2071,14 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             }
     Spec.assertEqWith s "a planted atom in a restriction naming no amount is an offence" (enclosingAmountCounts (restricting Nothing)) (0, 1)
     Spec.assertEqWith s "and one naming an amount is not" (enclosingAmountCounts (restricting (Just (Quantity.Type.Literal 4)))) (1, 0)
+    -- And at the fourth: a cast permission's criterion, Maralen's own with its
+    -- amount struck.
+    maralen <- S.printingOf s registry "Maralen, Fae Ascendant"
+    let struck ability = case PlayerStaticAbility.effect ability of
+          PlayerEffect.CastFrom grant -> ability {PlayerStaticAbility.effect = PlayerEffect.CastFrom grant {CastFromZone.amount = Nothing}}
+          _ -> ability
+        permitting = (S.combinedFace maralen) {Face.playerAbilities = fmap struck (Face.playerAbilities (S.combinedFace maralen))}
+    Spec.assertEqWith s "a cast permission naming no amount is an offence" (enclosingAmountCounts permitting) (0, 1)
   -- CR 608.2d's other-candidates operand is answerable only in an edict's or a
   -- chosen permanent's own filter. See otherCandidateCounts.
   Spec.it s "CR 608.2d no card compares against other candidates outside an edict or a chosen permanent" $ do

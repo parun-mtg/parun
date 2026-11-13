@@ -1,0 +1,37 @@
+{
+  "description": "Maralen, Fae Ascendant casts one card exiled with it this turn without paying its mana cost, and no second",
+  "note": "Llanowar Elves entering exiles bob's top two cards, both of mana value 2, the number of Elves and Faeries alice then controls. alice has no mana once the Elves are cast, so Maralen is the only way to cast either; after the first, the once-each-turn permission is spent and the second is not offered. Soul-Guide Lantern exiles bob's Goblin Piker this turn too, mana value 2, and it is never offered: Maralen did not exile it.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "G",
+        "battlefield": [{"card": "Maralen, Fae Ascendant"}, {"card": "Soul-Guide Lantern", "label": "lantern"}],
+        "hand": [{"card": "Llanowar Elves", "label": "elves"}],
+        "library": [{"card": "Hill Giant"}, {"card": "Hill Giant"}, {"card": "Hill Giant"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [],
+        "graveyard": [{"card": "Goblin Piker"}],
+        "library": [{"card": "Grizzly Bears"}, {"card": "Runeclaw Bear"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$lantern", "ability": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Goblin Piker", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$elves"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Cast Grizzly Bears", "Cast Runeclaw Bear"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "Grizzly Bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass"]}}}
+  ]
+}

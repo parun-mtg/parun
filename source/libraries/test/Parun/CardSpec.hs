@@ -916,7 +916,7 @@ playerRefPositions =
         -- zone (Sen Triplets). All three are planted, since Parun.Engine.PlayerEffect's
         -- traversal is what the AffectPlayers arm delegates to and a missing arm
         -- there answers [] rather than failing to compile.
-        ("affect-players-cast-from", affecting (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Hand (plantedPlayer "ap-cast")) (Filter.Type.And []) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced Nothing Nothing)), [plantedPlayer "ap-cast"]),
+        ("affect-players-cast-from", affecting (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Hand (plantedPlayer "ap-cast")) (Filter.Type.And []) PermissionLimit.Unlimited PermissionVerb.Cast PermissionPool.EveryCard [] 0 ManaSpending.AsProduced Nothing Nothing Nothing)), [plantedPlayer "ap-cast"]),
         ("affect-players-play-lands-from", affecting (PlayerEffect.PlayLandsFrom (InZone.MkInZone Zone.Graveyard (plantedPlayer "ap-land"))), [plantedPlayer "ap-land"]),
         ("affect-players-plot-from", affecting (PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone (InZone.MkInZone Zone.Library (plantedPlayer "ap-plot")) (Filter.Type.And []))), [plantedPlayer "ap-plot"]),
         -- And an arm carrying none, so the traversal is shown answering nothing where
@@ -3975,8 +3975,9 @@ playerEffectFilters playerEffect = case playerEffect of
   -- Horde's "creature spells"). WHOSE zone rides beside the Filter and is no
   -- quality of the card, so it is not a position this lint sweeps. A linked
   -- pool (CR 607.2a) is listed as the IsExiledWithSource atom naming the same
-  -- cards, refFilters' EachCardInExiledPile posture.
-  PlayerEffect.CastFrom grant -> CastFromZone.matching grant : poolFilters (CastFromZone.pool grant) <> concatMap costComponentFilters (CastFromZone.additionalCosts grant) <> fmap snd (foldMap withCountersFilters (CastFromZone.entersWith grant))
+  -- cards, refFilters' EachCardInExiledPile posture. An `amount` count's
+  -- Filters take the same framing, as a free-cast grant's below do.
+  PlayerEffect.CastFrom grant -> CastFromZone.matching grant : poolFilters (CastFromZone.pool grant) <> concatMap costComponentFilters (CastFromZone.additionalCosts grant) <> fmap snd (foldMap withCountersFilters (CastFromZone.entersWith grant)) <> foldMap (fmap snd . quantityFilters) (CastFromZone.amount grant)
   -- CR 305.1's play-side permission narrows nothing: a land play has already
   -- fixed the card type, and Crucible of Worlds' sentence says no more.
   PlayerEffect.PlayLandsFrom _ -> []

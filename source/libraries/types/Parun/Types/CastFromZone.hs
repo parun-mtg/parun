@@ -10,6 +10,7 @@ import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.WithCounters as WithCounters
 
 -- | The payload of Parun.Types.PlayerEffect's CastFrom arm: whose copy of which
@@ -57,6 +58,10 @@ data CastFromZone = MkCastFromZone
     alternativeCost :: Maybe PermissionCost.PermissionCost,
     -- | CR 614.1d: the counters the permanent a spell cast under it becomes
     -- enters with (Leonardo, Sewer Samurai). Nothing where it states none.
-    entersWith :: Maybe WithCounters.WithCounters
+    entersWith :: Maybe WithCounters.WithCounters,
+    -- | CR 109.5: the number `matching`'s EnclosingAmount operand compares
+    -- against, read for the permission's SOURCE as Parun.Types.FreeCast's
+    -- `amount` is (Maralen, Fae Ascendant). Nothing where it states none.
+    amount :: Maybe Quantity.Quantity
   }
   deriving (Eq, Ord, Show)
