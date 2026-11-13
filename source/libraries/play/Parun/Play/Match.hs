@@ -45,8 +45,8 @@ main arguments = case GetOpt.getOpt GetOpt.Permute flags arguments of
     Left problem -> usage [problem]
     Right options -> do
       registry <- Registry.defaultRegistry
-      lists <- (,) <$> Command.load registry one <*> Command.load registry two
-      format <- Command.settle Nothing [(one, fst lists), (two, snd lists)]
+      lists <- (,) <$> Command.orExit (Command.load registry one) <*> Command.orExit (Command.load registry two)
+      format <- Command.orExit (Command.settle Nothing [(one, fst lists), (two, snd lists)])
       match options registry format (Bifunctor.bimap DeckList.deck DeckList.deck lists)
   (_, _, problems) -> usage problems
 

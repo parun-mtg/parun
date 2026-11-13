@@ -69,8 +69,8 @@ agrees s rule markers enum = do
   rules <- rulesText
   let listed = listedBy rules rule markers
   Spec.assertBool s (not (Set.null listed)) ("no list found in CR " <> rule)
-  Spec.assertEqWith s "listed by the CR, but no constructor" [] (Set.toList (Set.difference listed enum))
-  Spec.assertEqWith s "a constructor, but not listed by the CR" [] (Set.toList (Set.difference enum listed))
+  Spec.assertEqWith s "listed by the CR, but no constructor" (Set.toList (Set.difference listed enum)) []
+  Spec.assertEqWith s "a constructor, but not listed by the CR" (Set.toList (Set.difference enum listed)) []
 
 -- The items after each marker on the rule's line, up to the sentence's full
 -- stop, with "(see rule N)" asides dropped.

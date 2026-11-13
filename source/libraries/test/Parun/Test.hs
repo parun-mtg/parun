@@ -1037,6 +1037,9 @@ import qualified Parun.SubtypeSpec
 import qualified Parun.TargetPerPlayerSpec
 import qualified Parun.TargetSpec
 import qualified Parun.TeamSpec
+import qualified Parun.Test.ConfigSpec
+import qualified Parun.Test.ContextSpec
+import qualified Parun.Test.FlagSpec
 import qualified Parun.Test.Runner as Runner
 import qualified Parun.Test.RunnerSpec
 import qualified Parun.TransformSpec
@@ -2123,6 +2126,9 @@ spec s registry corpus = do
   Parun.TargetPerPlayerSpec.spec s registry
   Parun.TargetSpec.spec s registry
   Parun.TeamSpec.spec s registry
+  Parun.Test.ConfigSpec.spec s
+  Parun.Test.ContextSpec.spec s
+  Parun.Test.FlagSpec.spec s
   Parun.Test.RunnerSpec.spec s
   Parun.TransformSpec.spec s registry
   Parun.TriggerSpec.spec s registry
