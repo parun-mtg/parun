@@ -2309,7 +2309,7 @@ inCombat attacker blocker gs =
 -- the second player for the first.
 attacked :: ObjectId.ObjectId -> PlayerId.PlayerId -> PlayerId.PlayerId -> GameState.GameState -> GameState.GameState
 attacked attacker by against =
-  S.withEvents [GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared attacker against (AttackTarget.OfPlayer against) 1 by (S.attackerSnapshot attacker by 0))]
+  S.withEvents [GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared attacker against (AttackTarget.OfPlayer against) 1 by (S.permanentSnapshot attacker by 0))]
 
 -- A fixture write standing in for Elvish Hunter's resolution, sicken's shape.
 freeze :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState

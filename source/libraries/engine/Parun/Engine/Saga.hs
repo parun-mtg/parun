@@ -299,7 +299,7 @@ awaitingChapter pcs events gs oid =
       -- the SBA and the matcher to agree, not because a test reddens without it.
       restricted = any (\pc -> readAheadRestricted pc gs oid) (Map.lookup oid pcs)
       pending event = case event of
-        GameEvent.CountersPut (CountersPlaced.MkCountersPlaced _ target CounterKind.Lore before after) ->
+        GameEvent.CountersPut (CountersPlaced.MkCountersPlaced _ target CounterKind.Lore before after _) ->
           target == oid && any (chapterTriggers restricted before after) chapters
         _ -> False
    in any onStack (Game.allStacks gs) || any pending events

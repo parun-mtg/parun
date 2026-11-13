@@ -1006,6 +1006,16 @@ recordChoice field acquisition change oid gs = case lookupObject oid gs of
   Just _ -> gs {GameState.objects = Map.adjust (overObjectChoices field (Map.alter change acquisition)) oid (GameState.objects gs)}
   Nothing -> gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.lastKnown = Map.adjust (overLastKnownChoices field (Map.alter change acquisition)) oid (Snapshots.lastKnown (GameState.snapshots gs))}}
 
+-- | CR 607.2d: the choices `from`'s abilities acquired as `acquisition` have
+-- made, handed to `to`, an object those abilities made whose own text reads
+-- them, under the acquisition `to` reads its choices by. A choice `from`
+-- never made stays unmade on `to`.
+handChoices :: Acquisition.Acquisition -> ObjectId -> ObjectId -> GameState -> GameState
+handChoices acquisition from to gs =
+  let hand :: Chosen.Chosen a -> GameState -> GameState
+      hand field = recordChoice field (acquisitionOf to gs) (const (choiceWithLastKnown field acquisition from gs)) to
+   in (hand Chosen.Colors . hand Chosen.Subtype . hand Chosen.CardType . hand Chosen.Names . hand Chosen.Players . hand Chosen.Number) gs
+
 -- | The Object field `field` names.
 objectChoices :: Chosen.Chosen a -> Object -> Map.Map Acquisition.Acquisition a
 objectChoices field = case field of
@@ -3685,20 +3695,18 @@ enteredBattlefield = fmap ZoneChange.object . enteredBattlefieldChange
 enteredThisTurn :: ObjectId -> GameState -> Bool
 enteredThisTurn oid gs = fmap MovedBetween.to (arrivalThisTurn oid gs) == Just Zone.Battlefield
 
--- CR 111.2 / 608.2i: has this player created a token this turn? Read off the
--- creation's own entry (Moved.created), never the object, which may since have
--- stopped being a token (CR 731.2d) or ceased to exist (CR 111.7), and
--- wherever the token went (CR 701.7b: a replaced entry is still a creation).
--- Proved by the scenarios
+-- CR 614.1a: would this player have created one or more tokens in an earlier
+-- action this turn, whether or not a token came of it
+-- (TurnRegisters.wouldCreateTokens)? Never asked of the tokens: one may since
+-- have stopped being a token (CR 731.2d), ceased to exist (CR 111.7), gone
+-- elsewhere (CR 701.7b) or never been created (CR 111.5). Proved by the
+-- scenarios
 -- mirrormind-crown-stays-spent-once-the-turn-s-first-token-is-mutated-over,
--- mirrormind-crown-stays-spent-once-the-turn-s-first-token-is-sacrificed and
--- mirrormind-crown-is-spent-by-tokens-hallowed-moonlight-exiles.
-createdTokenThisTurn :: PlayerId -> GameState -> Bool
-createdTokenThisTurn pid gs =
-  let createdBy event = case event of
-        GameEvent.Moved moved -> Moved.created moved
-        _ -> Nothing
-   in any ((== Just pid) . createdBy . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
+-- mirrormind-crown-stays-spent-once-the-turn-s-first-token-is-sacrificed,
+-- mirrormind-crown-is-spent-by-tokens-hallowed-moonlight-exiles and
+-- mirrormind-crown-stays-spent-once-its-land-copies-cannot-be-created.
+wouldCreateTokensThisTurn :: PlayerId -> GameState -> Bool
+wouldCreateTokensThisTurn pid gs = Set.member pid (TurnRegisters.wouldCreateTokens (GameState.turn gs))
 
 -- CR 110.2 / 608.2i: this turn's control changes of this permanent, oldest
 -- first. The first one's `before` is the player it entered under, if it
@@ -3779,7 +3787,7 @@ arrivalsOf oid gs =
 -- than in each of them.
 movedChange :: GameEvent -> Maybe ZoneChange.ZoneChange
 movedChange event = case event of
-  GameEvent.Moved (Moved.MkMoved change _ _ _ _ _ _ _ _ _) -> Just change
+  GameEvent.Moved (Moved.MkMoved change _ _ _ _ _ _ _ _) -> Just change
   GameEvent.Discarded {} -> Nothing
   GameEvent.Drew {} -> Nothing
   GameEvent.SpellCast {} -> Nothing

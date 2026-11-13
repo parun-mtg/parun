@@ -30,8 +30,7 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = False,
             Moved.seenArriving = False,
             Moved.causedBy = Nothing,
-            Moved.arrived = Nothing,
-            Moved.created = Nothing
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Battlefield\",\"to\":\"Graveyard\"},\"characteristics\":"
@@ -53,8 +52,7 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = False,
             Moved.seenArriving = False,
             Moved.causedBy = Nothing,
-            Moved.arrived = Nothing,
-            Moved.created = Nothing
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Battlefield\",\"to\":\"Graveyard\"},\"characteristics\":"
@@ -76,8 +74,7 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = False,
             Moved.seenArriving = False,
             Moved.causedBy = Nothing,
-            Moved.arrived = Nothing,
-            Moved.created = Nothing
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Exile\",\"to\":\"Battlefield\"},\"characteristics\":"
@@ -99,8 +96,7 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = False,
             Moved.seenArriving = False,
             Moved.causedBy = Nothing,
-            Moved.arrived = Nothing,
-            Moved.created = Nothing
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Stack\",\"to\":\"Graveyard\"},\"characteristics\":"
@@ -122,8 +118,7 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = True,
             Moved.seenArriving = False,
             Moved.causedBy = Nothing,
-            Moved.arrived = Nothing,
-            Moved.created = Nothing
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Hand\",\"to\":\"Library\"},\"characteristics\":"
@@ -145,8 +140,7 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = False,
             Moved.seenArriving = True,
             Moved.causedBy = Nothing,
-            Moved.arrived = Nothing,
-            Moved.created = Nothing
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Library\",\"to\":\"Battlefield\"},\"characteristics\":"
@@ -168,35 +162,12 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
             Moved.revealed = False,
             Moved.seenArriving = False,
             Moved.causedBy = Just (PlayerId.MkPlayerId 1),
-            Moved.arrived = Nothing,
-            Moved.created = Nothing
+            Moved.arrived = Nothing
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Battlefield\",\"to\":\"Graveyard\"},\"characteristics\":"
           <> ProjectedCharacteristicsSpec.testCharacteristicsJson
           <> ",\"otherArrivals\":[],\"causedBy\":1}"
-      )
-  -- CR 111.2: the entry a token's creation records names its creator.
-  Spec.it s "MkMoved, CR 111.2's creation of a token" $
-    Common.assertCodec
-      s
-      Moved.codec
-      ( Moved.MkMoved
-          { Moved.change = ZoneChange.MkZoneChange (ObjectId.MkObjectId 2) (ObjectId.MkObjectId 2) Zone.Battlefield Zone.Battlefield,
-            Moved.characteristics = ProjectedCharacteristicsSpec.testCharacteristics,
-            Moved.otherArrivals = Seq.empty,
-            Moved.otherDepartures = Seq.empty,
-            Moved.duringResolution = False,
-            Moved.revealed = False,
-            Moved.seenArriving = False,
-            Moved.causedBy = Nothing,
-            Moved.arrived = Nothing,
-            Moved.created = Just (PlayerId.MkPlayerId 1)
-          }
-      )
-      ( "{\"change\":{\"departed\":2,\"object\":2,\"from\":\"Battlefield\",\"to\":\"Battlefield\"},\"characteristics\":"
-          <> ProjectedCharacteristicsSpec.testCharacteristicsJson
-          <> ",\"otherArrivals\":[],\"created\":1}"
       )
   -- CR 608.2i's arrival as it stood once the move finished, under a
   -- controller and owner who differ.
@@ -223,8 +194,7 @@ spec s = Spec.describe s "Parun.Codec.Moved" $ do
                     ObjectSnapshot.zone = Zone.Battlefield,
                     ObjectSnapshot.home = Zone.Battlefield,
                     ObjectSnapshot.lapsedGrants = Set.empty
-                  },
-            Moved.created = Nothing
+                  }
           }
       )
       ( "{\"change\":{\"departed\":1,\"object\":2,\"from\":\"Hand\",\"to\":\"Battlefield\"},\"characteristics\":"

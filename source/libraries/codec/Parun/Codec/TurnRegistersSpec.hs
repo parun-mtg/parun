@@ -42,6 +42,7 @@ spec s = Spec.describe s "Parun.Codec.TurnRegisters" $ do
           TurnRegisters.endTurnSignal = EndTurnSignal.Running,
           TurnRegisters.drawsThisTurn = Map.empty,
           TurnRegisters.couldAttackThisTurn = Set.empty,
+          TurnRegisters.wouldCreateTokens = Set.empty,
           TurnRegisters.activatedThisTurn = Map.empty,
           TurnRegisters.activationsThisTurn = Seq.empty,
           TurnRegisters.castPermissionsUsedThisTurn = Map.empty,

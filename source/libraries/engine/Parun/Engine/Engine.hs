@@ -2314,6 +2314,8 @@ closeTurn gs =
                 -- CR 508.1: who could have attacked is asked of THIS turn's
                 -- declare attackers steps.
                 TurnRegisters.couldAttackThisTurn = Set.empty,
+                -- CR 614.1a's "the first time ... each turn", for every player.
+                TurnRegisters.wouldCreateTokens = Set.empty,
                 -- CR 602.5b's "Activate only once each turn", cleared for every
                 -- object rather than the active player's: the rider is about the
                 -- object, and a permanent whose controller is not the active player

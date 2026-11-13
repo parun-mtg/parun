@@ -56,6 +56,7 @@ codec = Fields.object $ do
   endTurnSignal <- Fields.defaulted "endTurnSignal" EndTurnSignal.Type.Running EndTurnSignal.codec TurnRegisters.endTurnSignal
   drawsThisTurn <- Fields.defaulted "drawsThisTurn" Map.empty (Common.naturalMap PlayerId.codec (Common.seq ObjectId.codec)) TurnRegisters.drawsThisTurn
   couldAttackThisTurn <- Fields.defaulted "couldAttackThisTurn" Set.empty (Common.set ObjectId.codec) TurnRegisters.couldAttackThisTurn
+  wouldCreateTokens <- Fields.defaulted "wouldCreateTokens" Set.empty (Common.set PlayerId.codec) TurnRegisters.wouldCreateTokens
   activatedThisTurn <- Fields.defaulted "activatedThisTurn" Map.empty (Common.naturalMap ObjectId.codec (Common.repeats (ActivatedAbility.codec Card.codec (GrantedAbility.codec Card.codec)))) TurnRegisters.activatedThisTurn
   activationsThisTurn <- Fields.defaulted "activationsThisTurn" Seq.empty (Common.seq PastActivation.codec) TurnRegisters.activationsThisTurn
   castPermissionsUsedThisTurn <- Fields.defaulted "castPermissionsUsedThisTurn" Map.empty (Common.naturalMap ObjectId.codec (Common.set CastFromZone.codec)) TurnRegisters.castPermissionsUsedThisTurn
@@ -82,6 +83,7 @@ codec = Fields.object $ do
         TurnRegisters.endTurnSignal = endTurnSignal,
         TurnRegisters.drawsThisTurn = drawsThisTurn,
         TurnRegisters.couldAttackThisTurn = couldAttackThisTurn,
+        TurnRegisters.wouldCreateTokens = wouldCreateTokens,
         TurnRegisters.activatedThisTurn = activatedThisTurn,
         TurnRegisters.activationsThisTurn = activationsThisTurn,
         TurnRegisters.castPermissionsUsedThisTurn = castPermissionsUsedThisTurn,

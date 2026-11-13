@@ -610,7 +610,7 @@ fileBoards gs =
 -- The zone change an event describes, if it is one.
 movedOf :: GameEvent -> Maybe ZoneChange
 movedOf event = case event of
-  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _ _) -> Just zc
+  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _) -> Just zc
   -- CR 713.8 / CR 731.3: each component card after the leading one DID change
   -- zones, so the event that announces it answers with its zone change like any
   -- other. That is what puts it in front of the two graveyard candidate sources
@@ -1547,7 +1547,7 @@ eventTriggersGiven scope standing events gs =
                 _ -> Map.empty
               _ -> Map.empty
       leftBattlefield event = case event of
-        GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _ _)
+        GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _)
           | ZoneChange.from zc == Zone.Battlefield && ZoneChange.to zc /= Zone.Battlefield ->
               case Map.lookup (ZoneChange.departed zc) (Snapshots.lastKnown (GameState.snapshots gs)) of
                 Nothing -> Map.empty
@@ -3987,6 +3987,10 @@ resnapshot gs without event =
         GameEvent.LifeLost {} -> Just event
         GameEvent.LifeGained {} -> Just event
         GameEvent.AbilityActivated {} -> Just event
+        -- Kept, snapshot and all: no trigger's match reads it (Match's
+        -- CounterMotion.Put arm asks the board), only Count.snapshotView's
+        -- look-back, and a later placement in the same batch changes the
+        -- object, which a re-read would answer Nothing for.
         GameEvent.CountersPut {} -> Just event
         GameEvent.CountersRemoved {} -> Just event
         GameEvent.HalfUnlocked {} -> Just event

@@ -171,6 +171,7 @@ evaluate viewOf quantityOf talliesWhatHappened context gs count =
                 EventShape.MovedFrom {} -> []
                 EventShape.CardArrivedIn {} -> []
                 EventShape.AttackerDeclared -> []
+                EventShape.CountersPut -> []
               views = Maybe.mapMaybe (snapshotView viewOf gs shape) (earlier <> logged)
               kept = fmap ((,) Nothing) (Maybe.mapMaybe (keep predicate context . Just) views)
            in pure (aggregate quantityOf aggregation kept)
@@ -728,7 +729,7 @@ slotPlayers context gs name = case Map.lookup name (Filter.slotPlayers context) 
 -- itself is: Parun.Engine.Projection imports this module.
 snapshotView :: ViewOf -> GameState -> EventShape.EventShape -> GameEvent.GameEvent -> Maybe Filter.View
 snapshotView viewOf gs shape event = case event of
-  GameEvent.Moved (Moved.MkMoved zc snapshot _ _ _ _ _ _ arrivedAs _) -> case shape of
+  GameEvent.Moved (Moved.MkMoved zc snapshot _ _ _ _ _ _ arrivedAs) -> case shape of
     EventShape.MovedBetween (MovedBetween.MkMovedBetween from to) ->
       if ZoneChange.from zc == from && ZoneChange.to zc == to then Just (departedView viewOf gs zc snapshot) else Nothing
     -- CR 603.6c: to another zone, so Event.recordMintedArrival's same-zone
@@ -759,6 +760,7 @@ snapshotView viewOf gs shape event = case event of
         else Nothing
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared -> Nothing
+    EventShape.CountersPut -> Nothing
   GameEvent.DamageDealt _ -> Nothing
   -- CR 615.13's record names two ids, a recipient and an amount, and snapshots no
   -- characteristics, so there is nothing for a Filter to look at.
@@ -795,6 +797,7 @@ snapshotView viewOf gs shape event = case event of
     -- too would count one cast twice.
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.AttackerDeclared -> Nothing
+    EventShape.CountersPut -> Nothing
     where
       -- CR 113.6 / 604.2: on the stack. A regression fence: nothing in
       -- data/cards/ asks a cast whether it had an activated ability.
@@ -829,6 +832,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.MovedFrom {} -> Nothing
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.SpellCast _ -> Nothing
+    EventShape.CountersPut -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
   GameEvent.BlocksDeclared {} -> Nothing
   GameEvent.AttackerBlocked {} -> Nothing
@@ -857,9 +861,23 @@ snapshotView viewOf gs shape event = case event of
   GameEvent.AbilityActivated _ -> Nothing
   GameEvent.LifeLost {} -> Nothing
   GameEvent.LifeGained {} -> Nothing
-  -- CR 122.6's placement names an object by id and snapshots no characteristics,
-  -- and no EventShape names it either.
-  GameEvent.CountersPut {} -> Nothing
+  -- CR 122.6 / 608.2i: the object as the counters landed, off the event's
+  -- snapshot, so a creature the counter killed still had one put on it (the
+  -- scenario lasting-tarfire-counts-a-creature-its-counter-killed). The one
+  -- placement this event is stands in for the object's whole turn of them, so
+  -- Filter.CountersPutThisTurn answers for this putter and this kind alone.
+  GameEvent.CountersPut placed -> case shape of
+    EventShape.CountersPut ->
+      fmap
+        (\view -> (asSnapshotted gs (CountersPlaced.snapshot placed) view) {Filter.countersPutThisTurn = Set.singleton (CountersPlaced.putter placed, CountersPlaced.kind placed)})
+        (orLastKnown viewOf gs (CountersPlaced.object placed))
+    EventShape.MovedBetween {} -> Nothing
+    EventShape.MovedFrom {} -> Nothing
+    EventShape.CardArrivedIn {} -> Nothing
+    EventShape.SpellCast _ -> Nothing
+    EventShape.AttackerDeclared -> Nothing
+  -- CR 122.1's removal names an object by id and snapshots no characteristics,
+  -- and no EventShape names it.
   GameEvent.CountersRemoved {} -> Nothing
   -- A control change names two players and one object by id, snapshots no
   -- characteristics, and no EventShape names it.
@@ -943,6 +961,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.MovedFrom {} -> Nothing
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared -> Nothing
+    EventShape.CountersPut -> Nothing
 
 -- CR 110.2 / 608.2i: an arrival under the controller it entered under, so
 -- "entered the battlefield under your control this turn" still counts one

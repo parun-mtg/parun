@@ -3,6 +3,8 @@ module Parun.Types.ManaProduction where
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CouldProduce as CouldProduce
+import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaType as ManaType
 
@@ -76,4 +78,6 @@ data ManaProduction
     Circled
   | -- | CR 905.2b: one mana of a colour the producing player noted during the draft for cards of this name (Paliano, the High City).
     DraftNoted CardName.CardName
+  | -- | CR 105.2 / 106.1a: one mana of each colour among the permanents the filter matches, no choice in it (Bloom Tender).
+    EachColorAmong (Filter.Filter Keyword.Keyword)
   deriving (Eq, Ord, Show)

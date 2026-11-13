@@ -569,7 +569,7 @@ isMainPhase phase = case phase of
 -- CR 122.6a's putter read against `you`; Nothing for every other event.
 countersMoved :: GameState -> PlayerId -> CounterTrigger.CounterTrigger -> GameEvent -> Maybe (ObjectId, Natural, Natural)
 countersMoved gs you counterTrigger event = case (CounterTrigger.motion counterTrigger, event) of
-  (CounterMotion.Put relation, GameEvent.CountersPut (CountersPlaced.MkCountersPlaced putter oid kind before after))
+  (CounterMotion.Put relation, GameEvent.CountersPut (CountersPlaced.MkCountersPlaced putter oid kind before after _))
     | wanted kind && PlayerRelation.holds (Game.teams gs) relation you putter -> Just (oid, before, after)
   (CounterMotion.Removed, GameEvent.CountersRemoved (CounterChange.MkCounterChange oid kind before after))
     | wanted kind -> Just (oid, before, after)
@@ -647,7 +647,7 @@ enters context board gs bearer you t event = case Game.enteredBattlefieldChange 
 -- Parun.Types.EventGroup is what fires it once (CR 603.2c).
 leaves :: Map.Map SlotName.SlotName Binding -> Filter.Context -> GameState -> ObjectId -> PlayerId -> LeavesTrigger.LeavesTrigger -> GameEvent -> Bool
 leaves bindings context gs bearer you t event = case event of
-  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _ _) ->
+  GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _) ->
     ZoneChange.from zc == Zone.Battlefield
       && ZoneChange.to zc /= Zone.Battlefield
       && (Set.null destinations || any (reaches (ZoneChange.to zc) (ZoneChange.departed zc)) destinations)

@@ -301,6 +301,7 @@ blankGame match order active =
             TurnRegisters.endTurnSignal = EndTurnSignal.Running,
             TurnRegisters.drawsThisTurn = mempty,
             TurnRegisters.couldAttackThisTurn = mempty,
+            TurnRegisters.wouldCreateTokens = mempty,
             TurnRegisters.activatedThisTurn = mempty,
             TurnRegisters.activationsThisTurn = mempty,
             TurnRegisters.castPermissionsUsedThisTurn = mempty,

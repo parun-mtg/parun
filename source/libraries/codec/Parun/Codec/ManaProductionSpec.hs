@@ -65,6 +65,12 @@ spec s = Spec.describe s "Parun.Codec.ManaProduction" $ do
       ManaProduction.codec
       (ManaProduction.Pooled (ManaCount.MkManaCount (PlayerRef.Relative PlayerRelation.You) ManaFilter.Any))
       " {\"type\":\"Pooled\",\"value\":{\"filter\":{\"type\":\"Any\"},\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
+  Spec.it s "EachColorAmong" $
+    Common.assertCodec
+      s
+      ManaProduction.codec
+      (ManaProduction.EachColorAmong (Filter.HasCardType CardType.Land))
+      " {\"type\":\"EachColorAmong\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}} "
   Spec.it s "ProducedByTapped" $
     Common.assertCodec
       s

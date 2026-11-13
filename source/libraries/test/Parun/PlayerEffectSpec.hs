@@ -2819,7 +2819,7 @@ angelicArbiterSpec s registry =
                         }
                   }
           pure (bobBolt, carolBolt, bobPiker, S.withEvents (acted bobPiker) positioned)
-        attacked piker = [GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared piker S.alice (AttackTarget.OfPlayer S.alice) 1 S.bob (S.attackerSnapshot piker S.bob 0))]
+        attacked piker = [GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared piker S.alice (AttackTarget.OfPlayer S.alice) 1 S.bob (S.permanentSnapshot piker S.bob 0))]
         castOne _ = [GameEvent.SpellCast (SpellWasCast.MkSpellWasCast S.bob S.noSource S.emptyCharacteristics (Just Zone.Hand) Nothing Set.empty)]
 
     -- The condition is asked of EACH opponent with that opponent as

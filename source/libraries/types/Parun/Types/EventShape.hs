@@ -10,8 +10,8 @@ import qualified Parun.Types.Zone as Zone
 -- so the log's extent IS the window -- "this turn" -- for every shape but
 -- SpellCast, which names its own (Parun.Types.CastWindow).
 --
--- Only the zone changes, GameEvent.LeftTheGame, the cast and the attacker
--- declaration have a shape: every other GameEvent constructor is recorded in the log with no EventShape arm, so a
+-- Only the zone changes, GameEvent.LeftTheGame, the cast, the attacker
+-- declaration and the counter placement have a shape: every other GameEvent constructor is recorded in the log with no EventShape arm, so a
 -- count cannot fold over any of them (#162).
 --
 -- That is not the same as the log being unreadable for those events, and the
@@ -72,4 +72,9 @@ data EventShape
     -- it. A creature put onto the battlefield attacking never "attacked"
     -- (CR 508.4).
     AttackerDeclared
+  | -- | CR 122.6 / 608.2i: counters of one kind were put on an object, each
+    -- member the object as they landed -- Lasting Tarfire's "you put a counter
+    -- on a creature this turn". Filter.CountersPutThisTurn asks a member that
+    -- one placement's putter and kind.
+    CountersPut
   deriving (Eq, Ord, Show)

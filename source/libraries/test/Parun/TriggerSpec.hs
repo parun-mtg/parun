@@ -160,7 +160,7 @@ logSpec s registry =
           expected = Projection.project piker gs
           after = S.runPure S.identityAnswer gs (Event.changeZone (pure ()) piker Zone.Graveyard)
       case S.eventsOf after of
-        GameEvent.Moved (Moved.MkMoved _ snapshot _ _ _ _ _ _ _ _) : _ -> Spec.assertEqWith s "snapshot from the origin zone" snapshot expected
+        GameEvent.Moved (Moved.MkMoved _ snapshot _ _ _ _ _ _ _) : _ -> Spec.assertEqWith s "snapshot from the origin zone" snapshot expected
         _ -> Spec.assertFailure s "expected exactly one Moved event"
     -- CR 704.5h's window is "since the last SBA check": the check CONSUMES by
     -- bumping a watermark, and the record survives.
@@ -305,7 +305,7 @@ scanSpec s registry =
       -- On the battlefield, since the condition reads its creature through
       -- Filter.IsSource on the bearer's view.
       let (bearer, gs0) = S.addPermanent giant S.alice (Setup.emptyGame S.bothPlayers)
-          declared = GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared bearer S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice (S.attackerSnapshot bearer S.alice 0))
+          declared = GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared bearer S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice (S.permanentSnapshot bearer S.alice 0))
           gsWith events = S.withEvents events gs0
           matches frequency events =
             Event.matchesTrigger (gsWith events) bearer S.alice (TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.frequency = frequency})) declared
@@ -316,7 +316,7 @@ scanSpec s registry =
       Spec.assertBool s (matches TriggerFrequency.EveryTime [declared, declared]) "EveryTime matches the second too"
       -- The count is per bearer, not per turn: two creatures declared
       -- together are each attacking for the first time.
-      Spec.assertBool s (matches TriggerFrequency.FirstTimeEachTurn [GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared (ObjectId.MkObjectId 99) S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice (S.attackerSnapshot (ObjectId.MkObjectId 99) S.alice 0)), declared]) "another creature's declaration does not spend this one's first time"
+      Spec.assertBool s (matches TriggerFrequency.FirstTimeEachTurn [GameEvent.AttackerDeclared (AttackerDeclared.MkAttackerDeclared (ObjectId.MkObjectId 99) S.bob (AttackTarget.OfPlayer S.bob) 1 S.alice (S.permanentSnapshot (ObjectId.MkObjectId 99) S.alice 0)), declared]) "another creature's declaration does not spend this one's first time"
       -- CR 508.3a's last sentence, unchanged by the frequency: a
       -- non-declaration event never matches.
       Spec.assertBool s (not (Event.matchesTrigger (gsWith [declared]) bearer S.alice (TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue {AttackerTrigger.frequency = TriggerFrequency.FirstTimeEachTurn})) (GameEvent.StepBegan (StepBegan.MkStepBegan (Phase.Combat CombatStep.DeclareAttackers) S.alice)))) "a step beginning is not an attack"

@@ -1822,3 +1822,23 @@ Entries are ordered by the first rule each cites.
   Ecological Appreciation by the scenario
   `twilight-diviner-copies-the-creature-found-in-a-graveyard-beside-one-found-in-a-library`.
 - **Issue**: #7151, #7177.
+
+## Whether a token creation that creates nothing spends Mirrormind Crown's first time
+
+- **Question**: Under Worms of the Earth, Cackling Counterpart would create a
+  copy of Dryad Arbor, and no token is created. Is Mirrormind Crown, on
+  another creature, offered the Treasure the same player creates later that
+  turn?
+- **Rules**: CR 111.5, 614.1a, 614.17c (CR of 2026-11-06); Esix, Fractal
+  Bloom's rulings of 2021-04-16, on the same wording, speak only of tokens
+  that were created or of a choice that was offered.
+- **Decision**: No. CR 111.5 calls the refused creation one a spell "would
+  create", and the Crown's first time is the first such event of the turn,
+  whatever came of it. So with CR 303.4g and 303.4i, which end the same way.
+- **Rejected**: Counting only an event the Crown could have replaced, since
+  CR 614.17c keeps every replacement off one that can't happen: the Crown
+  already loses its turn to a creation it was not on the battlefield for
+  (Esix's ruling), so being offered the event is not what spends it.
+- **Site**: `Parun.Engine.Event.noteWouldCreate`. Proved by the scenario
+  `mirrormind-crown-is-spent-by-a-land-token-that-cannot-be-created`.
+- **Issue**: #7171.

@@ -1493,11 +1493,11 @@ attackerDeclarationsOf gs =
 emptyCharacteristics :: PC.ProjectedCharacteristics
 emptyCharacteristics = Projection.project (ObjectId.MkObjectId 999) (Setup.emptyGame bothPlayers)
 
--- A hand-built GameEvent.AttackerDeclared's snapshot: this attacker on the
--- battlefield under this player, with this power and characteristics
--- otherwise empty.
-attackerSnapshot :: ObjectId.ObjectId -> PlayerId.PlayerId -> Integer -> ObjectSnapshot.ObjectSnapshot
-attackerSnapshot oid pid power =
+-- A hand-built GameEvent.AttackerDeclared's or CountersPut's snapshot: this
+-- permanent on the battlefield under this player, with this power and
+-- characteristics otherwise empty.
+permanentSnapshot :: ObjectId.ObjectId -> PlayerId.PlayerId -> Integer -> ObjectSnapshot.ObjectSnapshot
+permanentSnapshot oid pid power =
   ObjectSnapshot.MkObjectSnapshot
     { ObjectSnapshot.object = oid,
       ObjectSnapshot.characteristics = emptyCharacteristics {PC.power = Just power},
