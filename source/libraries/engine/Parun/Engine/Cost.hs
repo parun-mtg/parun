@@ -3960,6 +3960,62 @@ targetComputed component = case component of
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
 
+-- | CR 601.2b: the reserved slot a payment of this component binds for a later
+-- "if" to read through Quantity.WasBound, known from the announcement alone --
+-- what CR 700.2's mode count asks of a cost not yet paid (Pyrrhic Strike's "if
+-- this spell's additional cost was paid, choose both instead";
+-- Parun.Engine.Cast's `settledFor`). Blight's arm is the one a printing's mode
+-- count reaches; the others are the same fact about `payComponent`'s arms, and
+-- Parun.CardSpec's slot lint reads them all.
+-- EXHAUSTIVE with no wildcard, so a new recording component answers here.
+announcedRecord :: CostComponent.CostComponent Keyword.Type.Keyword -> Maybe SlotName.SlotName
+announcedRecord component = case component of
+  CostComponent.CollectEvidenceOfTargets -> Just Binding.collectedEvidence
+  CostComponent.CollectEvidence _ -> Just Binding.collectedEvidence
+  CostComponent.ExileCardsTotalling _ -> Nothing
+  CostComponent.TapThis -> Nothing
+  CostComponent.UntapThis -> Nothing
+  CostComponent.SacrificeThis -> Nothing
+  CostComponent.ReturnThis -> Nothing
+  CostComponent.PayLife _ -> Nothing
+  CostComponent.PayComputedLife _ -> Nothing
+  CostComponent.Sacrifice _ -> Nothing
+  CostComponent.TapForTotalPower _ -> Nothing
+  CostComponent.TapPermanents _ -> Nothing
+  CostComponent.ReturnPermanents _ -> Nothing
+  CostComponent.ExilePermanents _ -> Nothing
+  CostComponent.DiscardCards _ -> Nothing
+  CostComponent.DiscardThis _ -> Nothing
+  CostComponent.PutCardFromHandOntoBattlefield _ -> Nothing
+  CostComponent.PayEnergy _ -> Nothing
+  CostComponent.AddLoyaltyToThis _ -> Nothing
+  CostComponent.RemoveLoyaltyFromThis _ -> Nothing
+  CostComponent.RemoveCountersFromThis _ -> Nothing
+  CostComponent.RemoveCounters _ -> Nothing
+  CostComponent.PutCountersOnThis _ -> Nothing
+  CostComponent.PutCountersOnPayer _ -> Nothing
+  CostComponent.Blight _ -> Just Binding.blightCost
+  CostComponent.Forage -> Nothing
+  CostComponent.FlipCoin -> Nothing
+  CostComponent.ExileThisFrom _ -> Nothing
+  CostComponent.ExileThis -> Nothing
+  CostComponent.ExileCardsFromGraveyard _ -> Nothing
+  CostComponent.ExileMaterials _ -> Nothing
+  CostComponent.ExileTopFromGraveyard _ -> Nothing
+  CostComponent.ExileCardsFromHand {} -> Nothing
+  CostComponent.RevealCardFromHand _ -> Nothing
+  CostComponent.Behold _ -> Just Binding.beheldObject
+  CostComponent.BeholdAndExile _ -> Nothing
+  CostComponent.MillCards _ -> Nothing
+  CostComponent.RevealTopOfLibrary _ -> Nothing
+  CostComponent.ChooseOpponent _ -> Nothing
+  CostComponent.Waterbend _ -> Just Binding.waterbendCost
+  CostComponent.WaterbendInstead _ -> Nothing
+
+-- | `announcedRecord` over a whole cost.
+announcedRecords :: Cost Keyword.Type.Keyword -> Set.Set SlotName.SlotName
+announcedRecords = Set.fromList . Maybe.mapMaybe announcedRecord . Cost.components
+
 -- CR 119.4's payments a cost owes OUTSIDE its mana part, added up -- what CR
 -- 118.3 makes the mana part's own life share a total with. Total, so a new
 -- life-spending component cannot be added without answering here. The payer and
@@ -7545,8 +7601,12 @@ payPayable perform moment paidFor slots pid oid component = case component of
     blighted <- Blight.blight Blight.payable (CounterCause.ByPayment pid) oid n
     -- The creature chosen is DISCARDED here, where the effect arm binds it: CR
     -- 701.68c's "blighted creature" is read by a later clause of the same
-    -- resolution, and a cost is paid before there is one.
-    pure (if Maybe.isJust blighted then bindsNothing else Payment.Unpaid)
+    -- resolution, and a cost is paid before there is one. The AMOUNT is bound
+    -- under Binding.blightCost, Waterbend's arm below's reason: it is what "if
+    -- this spell's additional cost was paid" reads (Quantity.WasBound).
+    -- The scenario cinder-strike-deals-4-damage-when-its-blight-was-paid is the
+    -- proof.
+    pure (if Maybe.isJust blighted then Payment.Paid (Map.singleton Binding.blightCost (Binding.toAmount n)) else Payment.Unpaid)
   -- CR 701.61a's whole procedure, which Parun.Engine.Forage owns -- the Blight arm
   -- above's shape. Unpaid on the board CR 118.3 refuses, which canPayComponent
   -- has already checked, so reaching it means the graveyard or the Food went away

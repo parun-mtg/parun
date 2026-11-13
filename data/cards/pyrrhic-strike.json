@@ -1,0 +1,150 @@
+{
+  "faces": [
+    {
+      "additionalCostChoices": [
+        [
+          {
+            "mana": []
+          },
+          {
+            "components": [
+              {
+                "type": "Blight",
+                "value": {
+                  "type": "Fixed",
+                  "value": 2
+                }
+              }
+            ],
+            "mana": []
+          }
+        ]
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Pyrrhic Strike",
+      "oracleText": "As an additional cost to cast this spell, you may blight 2. (You may put two -1/-1 counters on a creature you control.)\nChoose one. If this spell's additional cost was paid, choose both instead.\n• Destroy target artifact or enchantment.\n• Destroy target creature with mana value 3 or greater.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "permanent"
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "permanent": {
+                "filter": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Artifact"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Enchantment"
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "creature"
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "creature": {
+                "filter": {
+                  "type": "Measures",
+                  "value": {
+                    "comparison": "AtLeast",
+                    "measure": "ManaValue",
+                    "operand": {
+                      "type": "Literal",
+                      "value": 3
+                    }
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ],
+        "selection": {
+          "type": "ChooseInstead",
+          "value": {
+            "condition": {
+              "type": "Compares",
+              "value": {
+                "comparison": "AtLeast",
+                "measured": {
+                  "type": "WasBound",
+                  "value": "thatBlightCost"
+                },
+                "threshold": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            },
+            "instead": {
+              "type": "ChooseExactly",
+              "value": 2
+            },
+            "ordinary": {
+              "type": "ChooseExactly",
+              "value": 1
+            }
+          }
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

@@ -1165,7 +1165,7 @@ declaresVariable = Cost.hasVariable
 -- IS a reveal: it binds a slot of its own (Binding.beheldObject), and merging
 -- the two names would let a spell that beholds read "the revealed card's mana
 -- value" off a permanent chosen on the battlefield, which rule 701.4a reveals to
--- nobody. beholdsAsCost below is its exemption.
+-- nobody. Cost.announcedRecords is its exemption.
 revealsAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
 revealsAsCost =
   let isReveal component = case component of
@@ -1173,28 +1173,13 @@ revealsAsCost =
         _ -> False
    in any isReveal . Cost.Type.components
 
--- Does this cost BEHOLD an object? revealsAsCost's shape exactly: CR 601.2h's
--- payment binds Binding.beheldObject (Parun.Engine.Cost.payComponent's Behold
--- arm, folded onto the spell by Parun.Engine.Cast), so a spell whose cost has such
--- a component may read the slot and one whose cost has not may not. That is CR
--- 701.4b's linkage -- "if a [quality] was beheld" is printed only on a card whose
--- own cost beholds -- falling out of the ordinary available-slots comparison.
---
--- AbilitySlotLintSpec offers no such exemption: no printing puts this component
--- on an activation cost.
-beholdsAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
-beholdsAsCost =
-  let isBehold component = case component of
-        CostComponent.Behold _ -> True
-        _ -> False
-   in any isBehold . Cost.Type.components
-
--- Does this cost COLLECT EVIDENCE? beholdsAsCost's shape exactly: CR 601.2h's
+-- Does this cost COLLECT EVIDENCE? revealsAsCost's shape exactly: CR 601.2h's
 -- payment binds Binding.collectedEvidence (Parun.Engine.Cost.payComponent's
 -- CollectEvidence arm), which is CR 701.59c's linkage -- "if evidence was
--- collected" is printed only on a card whose own cost collects it. Read by the
--- spell lint below and by AbilitySlotLintSpec's triggered-ability sweep, CR
--- 400.7d carrying the record onto the permanent the spell becomes.
+-- collected" is printed only on a card whose own cost collects it. Read by
+-- AbilitySlotLintSpec's triggered-ability sweep, CR 400.7d carrying the record
+-- onto the permanent the spell becomes; the spell lint below reads
+-- Cost.announcedRecords.
 collectsEvidenceAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
 collectsEvidenceAsCost =
   let isCollect component = case component of
@@ -2065,6 +2050,7 @@ reservedSlots =
       Binding.beheldObject,
       Binding.collectedEvidence,
       Binding.waterbendCost,
+      Binding.blightCost,
       Binding.removedCounters,
       Binding.loyaltyRemoved,
       Binding.crewedVehicle,
@@ -5825,17 +5811,15 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         --     "the revealed card's mana value" is an ordinary slot read.
         --     activatedAbilityOffends offers no such exemption: no printing puts
         --     this component on an activation cost.
-        --   * Binding.beheldObject, and only when the cost beholds, per
-        --     `beholdsAsCost`. CR 601.2h's payment binds it and Parun.Engine.Cast
-        --     folds it onto the spell, so Osseous Exhale's "if a Dragon was
-        --     beheld" is an ordinary slot read -- of the BINDING alone, which is
-        --     what CR 701.4b asks for.
-        --   * Binding.collectedEvidence, and only when the cost collects
-        --     evidence, per `collectsEvidenceAsCost`: CR 701.59c's "if evidence
-        --     was collected", beheldObject's reasoning exactly.
-        --   * Binding.waterbendCost, and only when the cost waterbends, per
-        --     `waterbendsAsCost`: "if this spell's additional cost was paid",
-        --     the same reasoning again.
+        --   * the record a cost's own payment binds, per
+        --     Cost.announcedRecords, and only when the cost has that component.
+        --     CR 601.2h's payment binds it and Parun.Engine.Cast folds it onto
+        --     the spell, so each is an ordinary slot read of the BINDING alone:
+        --     Binding.beheldObject for CR 701.4b's "if a Dragon was beheld"
+        --     (Osseous Exhale), Binding.collectedEvidence for CR 701.59c's "if
+        --     evidence was collected", and Binding.waterbendCost and
+        --     Binding.blightCost for "if this spell's additional cost was paid"
+        --     (Spirit Water Revival, Cinder Strike).
         --   * Binding.sacrificedPermanent, and only when the cost sacrifices a
         --     permanent the payer chooses, per `sacrificesAsCost`. CR 601.2h's
         --     payment binds it and Parun.Engine.Cast folds it onto the spell, so
@@ -5863,18 +5847,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
                 if any sacrificesAsCost (spellCostsOf card)
                   then Set.singleton Binding.sacrificedPermanent
                   else Set.empty
-              beheld =
-                if any beholdsAsCost (spellCostsOf card)
-                  then Set.singleton Binding.beheldObject
-                  else Set.empty
-              collected =
-                if any collectsEvidenceAsCost (spellCostsOf card)
-                  then Set.singleton Binding.collectedEvidence
-                  else Set.empty
-              waterbent =
-                if any waterbendsAsCost (spellCostsOf card)
-                  then Set.singleton Binding.waterbendCost
-                  else Set.empty
+              recorded = Set.unions (fmap Cost.announcedRecords (spellCostsOf card))
               chooser =
                 if Face.modeChooser card /= PlayerRelation.You
                   then Set.singleton Binding.modeChooser
@@ -5890,7 +5863,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
                     Just delayed <- [Map.lookup (ArmDelayedTrigger.name arm) (Face.delayedAbilities card)],
                     (_, f) <- triggeredAbilityFilters delayed
                   ]
-           in modalSlotsOffend armedReads (Set.unions [Set.fromList [Binding.you, Binding.triggerSource], announcedX, revealed, sacrificed, beheld, collected, waterbent, chooser, payGateBound (Face.spell card)]) (Face.spell card)
+           in modalSlotsOffend armedReads (Set.unions [Set.fromList [Binding.you, Binding.triggerSource], announcedX, revealed, sacrificed, recorded, chooser, payGateBound (Face.spell card)]) (Face.spell card)
         sweeps = anyFaceOrMinted cardOffends
         offenders = filter (sweeps . Printing.card) ps
         slot = SlotName.MkSlotName (Text.pack "creature")
