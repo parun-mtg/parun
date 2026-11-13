@@ -177,6 +177,7 @@ main collect = do
   Foldable.for_ (json options) $ \file ->
     ByteString.writeFile file . Encoding.encodeUtf8 . Common.render $ Codec.encode reportCodec MkReport {shuffled = Key.toHex s, results = ran}
   let summary = summarize ran
+  Foldable.for_ (rerunLine ran) TextIO.putStrLn
   TextIO.putStrLn $ summaryLine s summary
   Monad.unless (succeeded summary) Exit.exitFailure
 
@@ -330,6 +331,15 @@ progressLine :: Natural -> Summary -> Natural -> Text.Text
 progressLine count tally elapsed =
   let (minutes, seconds) = divMod (div elapsed 1000000000) 60
    in Text.pack (show (total tally) <> "/" <> show count <> " run, " <> show (failures tally) <> " failed, " <> show minutes <> ":" <> (if seconds < 10 then "0" else "") <> show seconds)
+
+-- | A command running only the cases that failed, one pattern each, when any
+-- did.
+rerunLine :: [Result] -> Maybe Text.Text
+rerunLine ran = case List.sort [title r | r <- ran, Maybe.isJust (failure r)] of
+  [] -> Nothing
+  failing -> Just . Text.unwords $ Text.pack "Rerun the failures with: cabal run parun -- test" : foldMap (\t -> [Text.pack "-p", quoted t]) failing
+  where
+    quoted t = Text.pack "'" <> Text.replace (Text.pack "'") (Text.pack "'\\''") t <> Text.pack "'"
 
 succeeded :: Summary -> Bool
 succeeded summary = total summary > 0 && failures summary == 0

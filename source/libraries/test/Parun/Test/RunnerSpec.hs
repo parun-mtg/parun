@@ -168,6 +168,12 @@ spec s = Spec.describe s "Parun.Test.Runner" $ do
         (Common.render $ Codec.encode Runner.reportCodec Runner.MkReport {Runner.shuffled = Text.pack "07", Runner.results = [Runner.MkResult (Text.pack "g.a") Nothing Nothing 5, Runner.MkResult (Text.pack "g.b") (Just $ Text.pack "boom") (Just Runner.MkSite {Runner.sourceFile = Text.pack "source/A.hs", Runner.sourceLine = 7}) 900]})
         (Text.pack "{\"seed\":\"07\",\"cases\":[{\"name\":\"g.a\",\"nanoseconds\":5},{\"name\":\"g.b\",\"failure\":\"boom\",\"site\":{\"file\":\"source/A.hs\",\"line\":7},\"nanoseconds\":900}]}")
 
+  Spec.describe s "rerunLine" $ do
+    Spec.it s "has nothing to rerun when every case passed" $
+      Spec.assertEq s (Runner.rerunLine [Runner.MkResult (Text.pack "g.a") Nothing Nothing 5]) Nothing
+    Spec.it s "names each failure once, sorted and quoted for the shell" $
+      Spec.assertEq s (Runner.rerunLine [Runner.MkResult (Text.pack "g.z") (Just $ Text.pack "boom") Nothing 5, Runner.MkResult (Text.pack "g.a") Nothing Nothing 5, Runner.MkResult (Text.pack "g.Ayula's") (Just $ Text.pack "boom") Nothing 5]) (Just $ Text.pack "Rerun the failures with: cabal run parun -- test -p 'g.Ayula'\\''s' -p 'g.z'")
+
   Spec.describe s "summaryLine" $ do
     Spec.it s "names the seed in a pass" $
       Spec.assertEq s (Runner.summaryLine (key 9) Runner.MkSummary {Runner.total = 3, Runner.failures = 0}) (Text.pack ("Passed all 3 tests with seed " <> nine <> "."))
