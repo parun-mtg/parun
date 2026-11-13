@@ -61,7 +61,7 @@
         }
       ],
       "name": "Planeswalkerificate",
-      "oracleText": "Enchant creature you control\nEnchanted creature is a planeswalker in addition to its other types. Its toughness becomes its loyalty. (You change its toughness to activate loyalty abilities. Damage lowers toughness. Toughness doesn't heal at end of turn.) It can't block and gains the following abilities —\n+1: Add {R}{R}.\n−1: Exile the top card of your library. You may play it this turn.\n−X: This planeswalker deals X damage to any target.",
+      "oracleText": "Enchant creature you control\nEnchanted creature is a planeswalker in addition to its other types. Its toughness becomes its loyalty. (You change its toughness to activate loyalty abilities. Damage lowers toughness. Toughness doesn't heal at end of turn.) It can't block and gains the following abilities —\n[+1]: Add {R}{R}.\n[−1]: Exile the top card of your library. You may play it this turn.\n[−X]: This planeswalker deals X damage to any target.",
       "staticAbilities": [
         {
           "affected": {
