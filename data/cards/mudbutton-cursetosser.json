@@ -1,0 +1,140 @@
+{
+  "faces": [
+    {
+      "additionalCostChoices": [
+        [
+          {
+            "components": [
+              {
+                "type": "Behold",
+                "value": {
+                  "count": 1,
+                  "whichObjects": {
+                    "type": "HasSubtype",
+                    "value": "Goblin"
+                  }
+                }
+              }
+            ],
+            "mana": []
+          },
+          {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      ],
+      "combatRestrictions": [
+        {
+          "type": "CantBlock",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Mudbutton Cursetosser",
+      "oracleText": "As an additional cost to cast this spell, behold a Goblin or pay {2}. (To behold a Goblin, choose a Goblin you control or reveal a Goblin card from your hand.)\nThis creature can't block.\nWhen this creature dies, destroy target creature an opponent controls with power 2 or less.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Destroy",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "regenerability": "Regenerable"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Measures",
+                          "value": {
+                            "comparison": "AtMost",
+                            "measure": "Power",
+                            "operand": {
+                              "type": "Literal",
+                              "value": 2
+                            }
+                          }
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "Opponent"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Goblin",
+          "Warlock"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

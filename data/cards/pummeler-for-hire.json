@@ -1,0 +1,126 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Reach"
+        },
+        {
+          "type": "Vigilance"
+        },
+        {
+          "type": "Ward",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Pummeler for Hire",
+      "oracleText": "Reach, vigilance\nWard {2} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}.)\nWhen this creature enters, you gain X life, where X is the greatest power among Giants you control.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Greatest",
+                                "value": {
+                                  "type": "Measure",
+                                  "value": "Power"
+                                }
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasSubtype",
+                                    "value": "Giant"
+                                  },
+                                  {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  }
+                                ]
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "AnyPlayer"
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Giant",
+          "Mercenary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

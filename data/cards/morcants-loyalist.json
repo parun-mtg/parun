@@ -1,0 +1,154 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Morcant's Loyalist",
+      "oracleText": "Other Elves you control get +1/+1.\nWhen this creature dies, return another target Elf card from your graveyard to your hand.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasSubtype",
+                  "value": "Elf"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                {
+                  "type": "Not",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 1
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "zone": "Hand"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasSubtype",
+                          "value": "Elf"
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsBound",
+                            "value": "became"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "CardsInGraveyard",
+                      "value": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "You"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Elf",
+          "Warrior"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

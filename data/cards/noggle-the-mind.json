@@ -1,0 +1,80 @@
+{
+  "faces": [
+    {
+      "enchant": [
+        {
+          "pool": {
+            "type": "Creatures"
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Flash"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Noggle the Mind",
+      "oracleText": "Flash\nEnchant creature\nEnchanted creature loses all abilities and is a colorless Noggle with base power and toughness 1/1. (It loses all colors and all other creature types.)",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Attached"
+          },
+          "modifications": [
+            {
+              "type": "LoseAllAbilities"
+            },
+            {
+              "type": "Colors",
+              "value": {
+                "colors": [],
+                "mode": "Replace"
+              }
+            },
+            {
+              "type": "CreatureSubtype",
+              "value": {
+                "mode": "Replace",
+                "subtype": "Noggle"
+              }
+            },
+            {
+              "type": "SetBasePowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 1
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

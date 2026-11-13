@@ -1,0 +1,112 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Perfect Intimidation",
+      "oracleText": "Choose one or both —\n• Target opponent exiles two cards from their hand.\n• Remove all counters from target creature.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardInHand",
+                        "value": {
+                          "count": {
+                            "type": "Exactly",
+                            "value": {
+                              "type": "Literal",
+                              "value": 2
+                            }
+                          },
+                          "filter": {
+                            "type": "And",
+                            "value": []
+                          },
+                          "player": {
+                            "type": "InSlot",
+                            "value": "opponent"
+                          }
+                        }
+                      },
+                      "zone": "Exile"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "opponent": {
+                "filter": {
+                  "type": "IsPlayer",
+                  "value": "Opponent"
+                },
+                "pool": {
+                  "type": "Players"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "RemoveCountersAmong",
+                    "value": {
+                      "count": {
+                        "type": "All"
+                      },
+                      "from": {
+                        "type": "InSlot",
+                        "value": "creature"
+                      },
+                      "kind": {
+                        "type": "OfAnyKind"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "creature": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ],
+        "selection": {
+          "type": "ChooseBetween",
+          "value": {
+            "least": 1,
+            "most": 2
+          }
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

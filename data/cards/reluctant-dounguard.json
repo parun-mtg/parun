@@ -1,0 +1,145 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Reluctant Dounguard",
+      "oracleText": "This creature enters with two -1/-1 counters on it.\nWhenever another creature you control enters while this creature has a -1/-1 counter on it, remove a -1/-1 counter from this creature.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "WithCounters",
+                "value": [
+                  {
+                    "count": {
+                      "type": "Literal",
+                      "value": 2
+                    },
+                    "kind": {
+                      "type": "MinusOneMinusOne"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsSource"
+                      }
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "AgainstSlot",
+                "value": {
+                  "quantity": {
+                    "type": "ObjectCounters",
+                    "value": {
+                      "type": "MinusOneMinusOne"
+                    }
+                  },
+                  "slot": "self"
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RemoveCounters",
+                        "value": {
+                          "kind": {
+                            "type": "MinusOneMinusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "slot": "self"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Kithkin",
+          "Soldier"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

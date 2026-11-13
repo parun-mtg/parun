@@ -1,0 +1,136 @@
+{
+  "faces": [
+    {
+      "delayedAbilities": {
+        "return them": {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "exiled"
+                          },
+                          "riders": {
+                            "tapped": "Tapped",
+                            "under": {
+                              "type": "Owner"
+                            }
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Morningtide's Light",
+      "oracleText": "Exile any number of target creatures. At the beginning of the next end step, return those cards to the battlefield tapped under their owners' control.\nUntil your next turn, prevent all damage that would be dealt to you.\nExile Morningtide's Light.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "slot": "exiled",
+                      "zone": "Exile"
+                    }
+                  },
+                  {
+                    "type": "ArmDelayedTrigger",
+                    "value": {
+                      "name": "return them"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "PreventAllDamage",
+                    "value": {
+                      "duration": {
+                        "type": "UntilYourNextTurn"
+                      },
+                      "whoRecipient": "You"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "ExileThisSpell"
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Prismabasher",
+      "oracleText": "Trample\nVivid — When this creature enters, up to X target creatures you control get +X/+X until end of turn, where X is the number of colors among permanents you control.",
+      "power": {
+        "type": "Literal",
+        "value": 6
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 6
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "Distinct",
+                                    "value": "Colors"
+                                  },
+                                  "filter": {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  },
+                                  "scope": {
+                                    "type": "InZone",
+                                    "value": {
+                                      "player": {
+                                        "type": "Relative",
+                                        "value": "AnyPlayer"
+                                      },
+                                      "zone": "Battlefield"
+                                    }
+                                  }
+                                }
+                              },
+                              "toughness": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "Distinct",
+                                    "value": "Colors"
+                                  },
+                                  "filter": {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  },
+                                  "scope": {
+                                    "type": "InZone",
+                                    "value": {
+                                      "player": {
+                                        "type": "Relative",
+                                        "value": "AnyPlayer"
+                                      },
+                                      "zone": "Battlefield"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "targets"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "targets": {
+                    "count": {
+                      "type": "UpToComputed",
+                      "value": {
+                        "type": "Count",
+                        "value": {
+                          "aggregation": {
+                            "type": "Distinct",
+                            "value": "Colors"
+                          },
+                          "filter": {
+                            "type": "HeldBy",
+                            "value": {
+                              "holder": "Controller",
+                              "relation": "You"
+                            }
+                          },
+                          "scope": {
+                            "type": "InZone",
+                            "value": {
+                              "player": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              },
+                              "zone": "Battlefield"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Elemental"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
