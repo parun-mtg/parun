@@ -156,7 +156,10 @@
                             ]
                           },
                           "spending": "AnyColor",
-                          "upTo": 1
+                          "upTo": {
+                            "type": "Plays",
+                            "value": 1
+                          }
                         }
                       }
                     ]
