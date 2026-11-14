@@ -102,7 +102,7 @@
     "step": "PrecombatMain"
   },
   "description": "Aerith Rescue Mission's second mode taps up to three target creatures and puts a stun counter on the one of them its caster picks, never on an illegal target or a creature it did not target",
-  "note": "CR 700.2 / 115.1 / 608.2b / 608.2d / 122.1d / 502.3. Alice targets bob's Hill Giant and Grizzly Bears and charlie's Runeclaw Bear; bob answers with Gods Willing, giving his Giant protection from white, so it is an illegal target at resolution and is neither tapped nor offered the stun counter (refused), and neither is bob's untargeted Wall of Stone (refused). Alice picks charlie's Runeclaw Bear, the later of the two left. Bob's untap step untaps his Bears; charlie's leaves his Bear tapped and spends the counter.",
+  "note": "CR 700.2 / 115.1 / 608.2b / 608.2d / 122.1d / 502.3. Alice targets bob's Hill Giant and Grizzly Bears and charlie's Runeclaw Bear; bob answers with Gods Willing, giving his Giant protection from white, so it is an illegal target at resolution and is neither tapped nor offered the stun counter (refused), and neither is bob's untargeted Wall of Stone (refused). Alice picks charlie's Runeclaw Bear over bob's Bears. Bob's untap step untaps his Bears; charlie's leaves his Bear tapped and spends the counter.",
   "timeline": [
     {
       "do": {
