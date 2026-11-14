@@ -31,25 +31,27 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.SourceChoices as SourceChoices
 
 -- | Filter.contextFor framed by `source`, with every source-derived field
--- filled (framedBy).
-sourceContext :: GameState.GameState -> Maybe PlayerId.PlayerId -> ObjectId.ObjectId -> Filter.Context
-sourceContext gs perspective source =
-  framedBy source gs (Filter.contextIn gs perspective (Just source))
+-- filled (framedBy), objects read through `viewOf`.
+sourceContext :: Count.ViewOf -> GameState.GameState -> Maybe PlayerId.PlayerId -> ObjectId.ObjectId -> Filter.Context
+sourceContext viewOf gs perspective source =
+  framedBy viewOf source gs (Filter.contextIn gs perspective (Just source))
 
 -- | `context` with every source-derived field of `source` filled, its choices
 -- read live through CR 608.2h's last known information (choicesOf), for the
 -- abilities it has now (Game.acquisitionOf). Leaves
 -- `Filter.source` alone, so a caller whose IsSource names nothing keeps that.
-framedBy :: ObjectId.ObjectId -> GameState.GameState -> Filter.Context -> Filter.Context
-framedBy source gs = framedWith (choicesOf (Game.acquisitionOf source gs) source gs) source gs
+framedBy :: Count.ViewOf -> ObjectId.ObjectId -> GameState.GameState -> Filter.Context -> Filter.Context
+framedBy viewOf source gs = framedWith viewOf (choicesOf (Game.acquisitionOf source gs) source gs) source gs
 
 -- | framedBy with the choices supplied: what a stored effect baked as it began
 -- (CR 608.2h), in place of the source's current ones. Every other field is
 -- still read off the board, the entrants under the choices' acquisition. All
 -- are thunks: a filter that names none of their atoms forces none of them.
-framedWith :: SourceChoices.SourceChoices -> ObjectId.ObjectId -> GameState.GameState -> Filter.Context -> Filter.Context
-framedWith choices source gs context =
-  (withDefendingPlayer (\_ _ -> Nothing) source gs (withChoices choices context))
+-- `viewOf` is the caller's: the layer fold's bounded view inside CR 613,
+-- Projection's full one outside it.
+framedWith :: Count.ViewOf -> SourceChoices.SourceChoices -> ObjectId.ObjectId -> GameState.GameState -> Filter.Context -> Filter.Context
+framedWith viewOf choices source gs context =
+  (withChoices choices context)
     { -- CR 608.2h / 113.7a: a source that has left still names the host it
       -- had as it left.
       Filter.sourceAttachedTo = Game.hostWithLastKnown source gs,
@@ -61,23 +63,15 @@ framedWith choices source gs context =
       -- CR 607.5: the same acquisition's counter links.
       Filter.sourceCountered = Map.filter (not . Set.null) (fmap (Set.map CounterLink.moved . Set.filter (\link -> CounterLink.source link == source && CounterLink.acquisition link == SourceChoices.acquisition choices)) (GameState.counteredWith gs)),
       -- CR 607.2a: the cards in exile now (CR 400.7) linked to the source.
-      Filter.sourceExiled = Map.filter ((== source) . ExileLink.source) (Map.restrictKeys (GameState.exiledWith gs) (GameState.exile gs))
+      Filter.sourceExiled = Map.filter ((== source) . ExileLink.source) (Map.restrictKeys (GameState.exiledWith gs) (GameState.exile gs)),
+      -- CR 508.5, for a source that is attacking or was removed from combat,
+      -- and CR 506.4e's protector for a planeswalker that became only a
+      -- battle, whose card types `viewOf` answers. data/scenarios/
+      -- planeswalker-combat's "swathcutter-giant" scenario proves it for an
+      -- ability's own resolution, and its "gaeas-liege" one inside the layer
+      -- fold.
+      Filter.defendingPlayers = Maybe.maybeToList (Defender.defendingPlayerOf (const viewOf) source gs)
     }
-
--- | `context` with CR 508.5's defending player of `source`, for a source that
--- is attacking or was removed from combat (Gaea's Liege), read through
--- `viewOf`. framedWith passes no lookup, being below Parun.Engine.Projection:
--- a declared attack records its seat (Combat.attackedUnder), so `playerOf`'s
--- live arm is never reached. Projection.framedBy and framedWith pass the
--- projected view, which CR 506.4e's protector for a planeswalker that became
--- only a battle needs: data/scenarios/planeswalker-combat's
--- "swathcutter-giant" scenario proves it.
---
--- Not implemented: that protector inside the CR 613 layer fold, whose
--- contexts come from here with no lookup (#7357).
-withDefendingPlayer :: (GameState.GameState -> Count.ViewOf) -> ObjectId.ObjectId -> GameState.GameState -> Filter.Context -> Filter.Context
-withDefendingPlayer viewOf source gs context =
-  context {Filter.defendingPlayers = Maybe.maybeToList (Defender.defendingPlayerOf viewOf source gs)}
 
 -- | The choices `source`'s abilities acquired as `acquisition` have made so
 -- far (CR 607.5), carrying that acquisition, through CR 608.2h's last known

@@ -2935,7 +2935,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- player, and three callers fill Filter.Context.defendingPlayers:
   -- Parun.Engine.Target.admittedGiven for a target slot (CR 702.39a's provoke,
   -- Sensational Spider-Man, Yare), Parun.Engine.CombatRestriction.inForce for a
-  -- CR 508.1c gate (Armored Galleon) and Parun.Engine.SourceContext.withDefendingPlayer,
+  -- CR 508.1c gate (Armored Galleon) and Parun.Engine.SourceContext.framedWith,
   -- which answers only for a source that is itself attacking or was removed from
   -- combat, so a static ability affecting just its source (Gaea's Liege) and the
   -- source's own "whenever this creature attacks" ability (Swathcutter Giant). Any

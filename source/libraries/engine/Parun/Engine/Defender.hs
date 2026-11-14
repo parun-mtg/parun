@@ -78,9 +78,10 @@ designatedPlayers = Turn.roleHolders TurnRole.Defending
 -- information asks for once CR 704.5i has buried the planeswalker: reading the
 -- object itself would answer nobody, and reading its owner the wrong seat.
 -- So does Projection.framedBy for a source's own ability; the CR 613 layer fold,
--- below Projection, frames through Parun.Engine.SourceContext.framedWith with no
--- lookup and reads the seat a declared attack records (playerOfAttacker).
--- Parun.CombatEffectSpec's LastKnownDefendingPlayer group is those two falsifiers.
+-- below Projection, frames through Parun.Engine.SourceContext.framedWith with its
+-- own bounded view.
+-- data/scenarios/planeswalker-combat's "swathcutter-giant" and "gaeas-liege"
+-- scenarios prove the two.
 --
 -- CR 506.4 is why the lookup serves CR 802.2a's PRESENT tense on its own: a
 -- planeswalker whose controller changes is removed from combat, so "controls" and
