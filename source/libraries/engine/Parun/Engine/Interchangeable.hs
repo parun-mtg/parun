@@ -686,7 +686,7 @@ namedByRelation oid gs =
         || any (triggeredNames oid) [record | r <- parked, GameEvent.AbilityTriggered record <- fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events r))]
         || any (any (any (spentActivationNames oid) . Map.keys) . Map.elems . TurnRegisters.activatedThisTurn) parked
         || any (any (activationNames oid) . TurnRegisters.activationsThisTurn) parked
-        || any (any (attackedLastTurnNames oid) . Game.attacksInOwnLastTurn gs) (GameState.turnOrder gs)
+        || any (any (attackedLastTurnNames oid) . Game.attacksInOwnLastTurn gs) (GameState.seating gs)
 
 -- The objects a GameState.phasedOut row names BEYOND its key: none, since CR
 -- 702.26a's stored value is the player the permanent phased out under.

@@ -413,6 +413,7 @@ manaProduced effect = case effect of
   Effect.LoseGame {} -> Nothing
   Effect.WinGame {} -> Nothing
   Effect.DrawGame {} -> Nothing
+  Effect.ReverseTurnOrder {} -> Nothing
   Effect.RedistributeLifeTotals -> Nothing
   Effect.IncreaseSpeed {} -> Nothing
   Effect.DecreaseSpeed {} -> Nothing
@@ -626,6 +627,7 @@ playerChoice effect = case effect of
   Effect.LoseGame {} -> Nothing
   Effect.WinGame {} -> Nothing
   Effect.DrawGame {} -> Nothing
+  Effect.ReverseTurnOrder {} -> Nothing
   Effect.RedistributeLifeTotals -> Nothing
   Effect.IncreaseSpeed {} -> Nothing
   Effect.DecreaseSpeed {} -> Nothing
@@ -894,6 +896,7 @@ movesLibraryCard effect = case effect of
   Effect.LoseGame {} -> False
   Effect.WinGame {} -> False
   Effect.DrawGame {} -> False
+  Effect.ReverseTurnOrder {} -> False
   Effect.RedistributeLifeTotals -> False
   Effect.IncreaseSpeed {} -> False
   Effect.DecreaseSpeed {} -> False

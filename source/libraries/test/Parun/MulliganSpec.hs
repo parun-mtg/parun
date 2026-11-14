@@ -920,7 +920,7 @@ spec s registry =
       Spec.assertEqWith s "two seats: none is" (Mulligan.freeMulligans (Setup.emptyGame S.bothPlayers)) 0
     Spec.it s "CR 800.1: a game that BEGAN with three players keeps its free mulligan after a departure" $
       -- CR 800.1: "A multiplayer game is a game that begins with more than two
-      -- players." Begins with, not currently has. GameState.turnOrder is the
+      -- players." Begins with, not currently has. GameState.seating is the
       -- permanent seating roster, so this stays 1 with two survivors; an
       -- implementation that counted Game.stillPlaying would answer 0.
       Spec.assertEqWith

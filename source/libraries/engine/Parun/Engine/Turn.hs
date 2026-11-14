@@ -81,7 +81,7 @@ sharesTurnUnder settings one other =
 -- team. A reference no reader can answer admits no turn.
 turnScopeAdmits :: (PlayerRef.PlayerRef -> Maybe [PlayerId]) -> GameState -> TurnScope.TurnScope -> PlayerId -> PlayerId -> Bool
 turnScopeAdmits named gs scope@(TurnScope.PlayersTurn ref) active own = case ref of
-  PlayerRef.Relative _ -> any (\player -> sharesTurn gs active player && scopeNames named gs scope own player) (GameState.turnOrder gs)
+  PlayerRef.Relative _ -> any (\player -> sharesTurn gs active player && scopeNames named gs scope own player) (GameState.seating gs)
   _ -> maybe False (any (sharesTurn gs active)) (named ref)
 
 -- CR 102.1: does the scope name this seat, read against `own`? A relation (CR
@@ -171,14 +171,21 @@ thatExtraTurn source controller gs =
   let created turn = ExtraTurn.source turn == source && sharesTurn gs controller (ExtraTurn.taker turn)
    in fmap ExtraTurn.createdAt (List.find created (GameState.extraTurns gs))
 
--- | Every active player in seating order from the active player, departed
--- seats included (CR 800.4j); a caller that must not name one filters them.
+-- | CR 101.4: the turn order -- GameState.seating, run the other way round
+-- while GameState.turnOrderReversed holds. Every player who began the game,
+-- departed seats included. Not rotated: a reversed order does not begin with
+-- the starting player, so who started and who sits where read seating.
+turnOrder :: GameState -> [PlayerId]
+turnOrder gs = (if GameState.turnOrderReversed gs then reverse else id) (GameState.seating gs)
+
+-- | Every active player in turn order from the active player, departed seats
+-- included (CR 800.4j); a caller that must not name one filters them.
 --
 -- Not implemented: CR 805.6's "in whatever order they like" -- the active team
 -- does not choose the order its members act in (#7293).
 activePlayers :: GameState -> [PlayerId]
 activePlayers gs =
-  let (before, from) = break (== TurnRegisters.activePlayer (GameState.turn gs)) (GameState.turnOrder gs)
+  let (before, from) = break (== TurnRegisters.activePlayer (GameState.turn gs)) (turnOrder gs)
    in filter (isActive gs) (from <> before)
 
 -- | CR 102.1 / 805.4a / 802.2: the players holding a role the turn hands out --

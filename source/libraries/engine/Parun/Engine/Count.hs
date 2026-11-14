@@ -723,7 +723,7 @@ historyPlayersFor viewOf context gs =
             Players.controllerOf = viewOf Monad.>=> Filter.controller,
             Players.ownerOf = viewOf Monad.>=> Filter.owner,
             Players.acquisitionOf = (`Game.acquisitionOf` gs),
-            Players.roster = filter (\pid -> all (\you -> Game.wasInRangeOf you pid gs) reach) (GameState.turnOrder gs),
+            Players.roster = filter (\pid -> all (\you -> Game.wasInRangeOf you pid gs) reach) (GameState.seating gs),
             Players.reaches = const True
           }
         gs

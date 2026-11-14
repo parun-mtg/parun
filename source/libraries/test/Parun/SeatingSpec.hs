@@ -12,6 +12,7 @@ import qualified Data.Map.Strict as Map
 import qualified Parun.Engine.AlternatingTeams as AlternatingTeams
 import qualified Parun.Engine.Emperor as Emperor
 import qualified Parun.Engine.Engine as Engine
+import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Seating as Seating
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Extra.Natural as Natural
@@ -39,10 +40,10 @@ spec s registry = Spec.describe s "Seating" $ do
         (teamed, teamDraws) = S.newGameDrawingLast forest (teamGame [0, 0, 1])
     Spec.assertEqWith s "CR 806.3 carol takes the next turn" (nextTurn started) (seat 2)
     Spec.assertEqWith s "CR 806.3 the seats after alice drawn" drawnFrom [[seat 1, seat 2]]
-    Spec.assertEqWith s "CR 806.3 the seating drawn" (GameState.turnOrder started) [seat 0, seat 2, seat 1]
+    Spec.assertEqWith s "CR 806.3 the seating drawn" (GameState.seating started) [seat 0, seat 2, seat 1]
     Spec.assertEqWith s "CR 808.2 a team game draws no seat" teamDraws []
     -- CR 808.4 rotates the turn order to the starting team; the seating stands.
-    Spec.assertEqWith s "CR 808.2 and keeps its seating" (Setup.rotateTo (seat 0) (GameState.turnOrder teamed)) [seat 0, seat 1, seat 2]
+    Spec.assertEqWith s "CR 808.2 and keeps its seating" (Game.rotateTo (seat 0) (GameState.seating teamed)) [seat 0, seat 1, seat 2]
 
   -- CR 808.2: two teams of two seated alternately split both. Seat 2 opens
   -- team 0's second run. The same seating is CR 811.3's, so as an Alternating

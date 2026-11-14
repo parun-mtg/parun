@@ -1561,7 +1561,7 @@ resolveSpec s registry = Spec.describe s "Resolve" $ do
     -- seated for the subgame (Setup.subgameStateFrom seats only
     -- Game.stillPlayingInOrder) -- only alice and carol played it. The stub
     -- reports alice won, so carol is the whole non-winner set; bob still appears
-    -- in the raw seating roster (GameState.turnOrder) and is the non-participant
+    -- in the raw seating roster (GameState.seating) and is the non-participant
     -- a roster bug would wrongly charge.
     let g0 = S.departs Departure.Type.Conceded S.bob S.threePlayerGame
         stubRunner :: Game Result.Result

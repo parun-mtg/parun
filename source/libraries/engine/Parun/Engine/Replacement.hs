@@ -1013,7 +1013,7 @@ matchesPrinted viewOf gs event candidate =
           PhasePattern.whichPhase pat == selector
             && any
               (\other -> Turn.sharesTurn gs pid other && matchesPlayer gs candidate (PhasePattern.whosePhase pat) other)
-              (GameState.turnOrder gs)
+              (GameState.seating gs)
         -- CR 614.1c-d: which entering permanents this replacement watches, as a
         -- Filter over the entering object (see Parun.Types.ReplacementEffect).
         -- 614.1c's self-scope is Filter.IsSource; 614.1d's is a characteristic
@@ -3254,7 +3254,7 @@ legalCopyTargets context batch filter_ among self gs =
           && all (\you -> Projection.objectInRangeGiven grants you oid gs) chooser
       domain = case among of
         CopyDomain.InZone Zone.Battlefield -> Set.toAscList (GameState.battlefield gs)
-        CopyDomain.InZone Zone.Graveyard -> concatMap (\pid -> Game.cardsIn Zone.Graveyard pid gs) (GameState.turnOrder gs)
+        CopyDomain.InZone Zone.Graveyard -> concatMap (\pid -> Game.cardsIn Zone.Graveyard pid gs) (GameState.seating gs)
         CopyDomain.InZone _ -> []
         CopyDomain.InPile pile ->
           let src = Maybe.fromMaybe self (Filter.source context)

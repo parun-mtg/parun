@@ -435,7 +435,7 @@ spec s registry = Spec.describe s "Ante" $ do
   Spec.it s "CR 104.2c without shared team turns the winning team's first seat is asked who takes the ante" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let teamed = anteGame {GameSettings.teams = Teams.MkTeams (Map.fromList [(S.alice, TeamId.MkTeamId 0), (S.bob, TeamId.MkTeamId 0), (S.carol, TeamId.MkTeamId 1)])}
-        seated gs = gs {GameState.turnOrder = [S.carol, S.bob, S.alice]}
+        seated gs = gs {GameState.seating = [S.carol, S.bob, S.alice]}
         (carols, g1) = S.addObjectIn Zone.Ante piker S.carol (seated (Setup.gameWith teamed S.threePlayers))
         ((_, won), asked) = State.runState (Engine.runGame lastOffered g1 (Departure.leaveGame Departure.Type.Conceded S.carol)) []
     Spec.assertEqWith s "bob, the first seat, was asked, offered the winners in seat order" asked [(S.bob, carols, [S.bob, S.alice])]

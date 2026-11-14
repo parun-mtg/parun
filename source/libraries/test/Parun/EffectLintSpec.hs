@@ -1522,6 +1522,7 @@ effectObjectRefs effect =
         Effect.LoseGame {} -> []
         Effect.WinGame {} -> []
         Effect.DrawGame {} -> []
+        Effect.ReverseTurnOrder {} -> []
         Effect.RedistributeLifeTotals -> []
         Effect.IncreaseSpeed {} -> []
         Effect.DecreaseSpeed {} -> []

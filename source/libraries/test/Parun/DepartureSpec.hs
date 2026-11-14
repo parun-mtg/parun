@@ -135,7 +135,7 @@ stolenTowershellBoard base towershell controlMagic island =
       (aura, g2) = S.addPermanent controlMagic S.alice g1
       g3 = S.attach aura turtle g2
       stock g pid = List.foldl' (\h _ -> snd (S.addLibraryCard island pid h)) g [1 :: Int .. 12]
-   in List.foldl' stock g3 (GameState.turnOrder g3)
+   in List.foldl' stock g3 (GameState.seating g3)
 
 -- The one object in the game made from this printing, with its id -- which CR
 -- 400.7 changes at every zone change, so the id the fixture handed out is gone
@@ -217,13 +217,13 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
         after = S.runPure S.identityAnswer gs (Departure.leaveGame Departure.Type.Conceded S.alice)
     Spec.assertEq s (Game.stillPlaying after) [S.bob]
 
-  Spec.it s "CR 800.4a/800.4m turnOrder is the SEATING roster: a departure does not shorten it" $ do
+  Spec.it s "CR 800.4a/800.4m seating is the SEATING roster: a departure does not shorten it" $ do
     -- The whole of M5.6a rests on this. CR 800.4m needs the departed seat to
     -- know when their turn WOULD have begun, and CR 800.4a's last sentence
-    -- needs their position to find their successor. Pruning turnOrder makes
+    -- needs their position to find their successor. Pruning seating makes
     -- both impossible; every read filters through stillPlaying instead.
     let after = S.runPure S.identityAnswer S.threePlayerGame (Departure.leaveGame Departure.Type.Conceded S.bob)
-    Spec.assertEqWith s "bob keeps his seat" (GameState.turnOrder after) [S.alice, S.bob, S.carol]
+    Spec.assertEqWith s "bob keeps his seat" (GameState.seating after) [S.alice, S.bob, S.carol]
     Spec.assertEqWith s "but is no longer playing" (Game.stillPlaying after) [S.alice, S.carol]
 
   -- CR 726.4: "If the monarch leaves the game, the active player becomes the
@@ -340,7 +340,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
         board = S.withMonarch S.carol twoGone
         gone = S.departs Departure.Type.Conceded S.carol board
     Spec.assertEqWith s "nobody is left to become the monarch" (GameState.monarch gone) Nothing
-    Spec.assertEqWith s "and the roster is untouched" (GameState.turnOrder gone) [S.alice, S.bob, S.carol]
+    Spec.assertEqWith s "and the roster is untouched" (GameState.seating gone) [S.alice, S.bob, S.carol]
     -- The third sentence records NOTHING: a crown that went nowhere is not a
     -- player becoming the monarch. The two earlier departures record none
     -- either -- there was no monarch to reassign yet -- so this list is exactly
@@ -1065,7 +1065,7 @@ spec s registry = Spec.describe s "Parun.Engine.Departure" $ do
     island <- S.printingOf s registry "Island"
     diversion <- S.printingOf s registry "Synthetic Exile Diversion"
     let ranged gs =
-          let ranges = RangeOfInfluence.MkRangeOfInfluence (Map.fromList (fmap (\pid -> (pid, 1)) (GameState.turnOrder gs)))
+          let ranges = RangeOfInfluence.MkRangeOfInfluence (Map.fromList (fmap (\pid -> (pid, 1)) (GameState.seating gs)))
            in gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.rangeOfInfluence = ranges}}}
         boardWith holder =
           let (islandId, g1) = S.addPermanent island S.carol (ranged S.fourPlayerGame)

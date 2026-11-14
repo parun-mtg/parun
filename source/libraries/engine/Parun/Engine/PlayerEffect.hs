@@ -4321,7 +4321,7 @@ precludes outcome pid gs =
         PlayerEffect.Cant _ -> False
         PlayerEffect.Shows _ -> False
       team = Game.teams gs
-      members = pid : [other | GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)), other <- GameState.turnOrder gs, Teams.sameTeam team pid other]
+      members = pid : [other | GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)), other <- GameState.seating gs, Teams.sameTeam team pid other]
    in any (\member -> any (says . snd) (applying member gs)) members
 
 -- CR 609.4b / 613.11: the clauses saying what this player may spend their mana

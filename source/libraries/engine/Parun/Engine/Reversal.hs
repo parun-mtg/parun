@@ -128,7 +128,8 @@ withoutAnnouncement before entry closed = do
   attackProhibitions <- listOf (StoredEffects.attackProhibitions . GameState.stored)
   evasions <- listOf (StoredEffects.evasions . GameState.stored)
   ignoredAbilities <- listOf (StoredEffects.ignoredAbilities . GameState.stored)
-  turnOrder <- one GameState.turnOrder
+  seating <- one GameState.seating
+  turnOrderReversed <- one GameState.turnOrderReversed
   activePlayer <- one (TurnRegisters.activePlayer . GameState.turn)
   phase <- one (TurnRegisters.phase . GameState.turn)
   remaining <- one (TurnRegisters.remaining . GameState.turn)
@@ -338,7 +339,8 @@ withoutAnnouncement before entry closed = do
               StoredEffects.pendingEntryEffects = pendingEntryEffects
             },
         GameState.detachedBindings = detachedBindings,
-        GameState.turnOrder = turnOrder,
+        GameState.seating = seating,
+        GameState.turnOrderReversed = turnOrderReversed,
         GameState.turnsBegun = turnsBegun,
         GameState.result = result,
         GameState.restartSignal = restartSignal,

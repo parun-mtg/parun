@@ -2186,7 +2186,7 @@ exileFoundFor agent exiled =
 -- 724.1a's way of taking one's own decisions back.
 controlledTeam :: PlayerId -> PlayerId -> GameState -> [PlayerId]
 controlledTeam controller target gs =
-  filter (\pid -> pid == target || (pid /= controller && Turn.sharesTurn gs target pid)) (GameState.turnOrder gs)
+  filter (\pid -> pid == target || (pid /= controller && Turn.sharesTurn gs target pid)) (GameState.seating gs)
 
 -- CR 402.3 with a CR 608.2d choice: each hand the reference names is offered to
 -- its OWN owner (a hand's cards are that player's alone), who picks the ref's
@@ -3555,6 +3555,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.LoseGame {} -> False
   Effect.WinGame {} -> False
   Effect.DrawGame {} -> False
+  Effect.ReverseTurnOrder {} -> False
   Effect.RedistributeLifeTotals {} -> False
   Effect.IncreaseSpeed {} -> False
   Effect.DecreaseSpeed {} -> False
