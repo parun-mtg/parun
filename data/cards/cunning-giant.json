@@ -30,8 +30,10 @@
           },
           "modifications": [
             {
-              "type": "MayAssignCombatDamage",
-              "value": "ToDefendingCreature"
+              "type": "AssignCombatDamageAs",
+              "value": {
+                "option": "ToDefendingCreature"
+              }
             }
           ]
         }

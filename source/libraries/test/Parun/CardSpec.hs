@@ -3698,7 +3698,7 @@ modificationFilters modification = case modification of
   Modification.GrantsStationToughness -> []
   Modification.LoyaltyIsToughness -> []
   -- An enum payload holds neither.
-  Modification.MayAssignCombatDamage _ -> []
+  Modification.AssignCombatDamageAs {} -> []
 
 -- Four Filter positions, not two: the affected set, each modification's own
 -- keywords and Counts, -- since CR 604.2's "as long as" gate landed -- the

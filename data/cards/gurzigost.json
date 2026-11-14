@@ -49,8 +49,10 @@
                             "type": "UntilEndOfTurn"
                           },
                           "modification": {
-                            "type": "MayAssignCombatDamage",
-                            "value": "AsThoughUnblocked"
+                            "type": "AssignCombatDamageAs",
+                            "value": {
+                              "option": "AsThoughUnblocked"
+                            }
                           },
                           "ref": {
                             "type": "InSlot",

@@ -14,6 +14,7 @@ import qualified Parun.Types.ChangeWord as ChangeWord
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
+import qualified Parun.Types.CombatDamageObligation as CombatDamageObligation
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.Copyability as Copyability
@@ -353,9 +354,9 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     textChangedKeywords :: Map.Map Keyword.Keyword Natural.Natural,
     -- | CR 510.1a: the amount this creature assigns rather than its power's.
     combatDamageAmount :: Maybe CombatDamageAmount.CombatDamageAmount,
-    -- | CR 510.1b-c: where this creature's controller may have it assign all
-    -- its combat damage instead.
-    combatDamageOptions :: Set.Set CombatDamageOption.CombatDamageOption,
+    -- | CR 510.1b-c: where this creature assigns all its combat damage instead,
+    -- and whether its controller may decline.
+    combatDamageOptions :: Map.Map CombatDamageOption.CombatDamageOption CombatDamageObligation.CombatDamageObligation,
     -- | CR 702.184c: does this object's controller's station abilities read a
     -- tapped creature's toughness instead of its power?
     -- Modification.GrantsStationToughness's only writer. Read by

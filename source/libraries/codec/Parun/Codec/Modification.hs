@@ -10,6 +10,7 @@ import qualified Parun.Codec.ChangeMode as ChangeMode
 import qualified Parun.Codec.ChangeWord as ChangeWord
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.CombatDamageAmount as CombatDamageAmount
+import qualified Parun.Codec.CombatDamageObligation as CombatDamageObligationCodec
 import qualified Parun.Codec.CombatDamageOption as CombatDamageOption
 import qualified Parun.Codec.CostKeyword as CostKeyword
 import qualified Parun.Codec.Filter as Filter
@@ -31,6 +32,7 @@ import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
+import qualified Parun.Types.CombatDamageObligation as CombatDamageObligation
 import qualified Parun.Types.Modification as Modification
 
 -- | The wire format is unchanged by the conversion to a bundle; what it adds is
@@ -63,6 +65,13 @@ codec abilityCodec =
             <$> Fields.required "keyword" (KeywordDesignator.codec Keyword.codec) (\(d, _, _) -> d)
             <*> Fields.required "zone" Zone.codec (\(_, z, _) -> z)
             <*> Fields.required "among" (Filter.codec Keyword.codec) (\(_, _, f) -> f)
+      -- Optional is the unmarked value, every printed "you may", so a card says
+      -- nothing unless it means Outmaneuver's forced form.
+      combatDamageAs =
+        Fields.object $
+          (,)
+            <$> Fields.defaulted "obligation" CombatDamageObligation.Optional CombatDamageObligationCodec.codec fst
+            <*> Fields.required "option" CombatDamageOption.codec snd
       cardType =
         Fields.object $
           (,)
@@ -112,7 +121,7 @@ codec abilityCodec =
           Arm.payload "InsertNameWords" NameInsertion.codec Modification.InsertNameWords (\x -> case x of Modification.InsertNameWords y -> Just y; _ -> Nothing),
           Arm.nullary "SwitchPowerToughness" Modification.SwitchPowerToughness,
           Arm.payload "AssignCombatDamage" CombatDamageAmount.codec Modification.AssignCombatDamage (\x -> case x of Modification.AssignCombatDamage y -> Just y; _ -> Nothing),
-          Arm.payload "MayAssignCombatDamage" CombatDamageOption.codec Modification.MayAssignCombatDamage (\x -> case x of Modification.MayAssignCombatDamage y -> Just y; _ -> Nothing),
+          Arm.payload "AssignCombatDamageAs" combatDamageAs (uncurry Modification.AssignCombatDamageAs) (\x -> case x of Modification.AssignCombatDamageAs o y -> Just (o, y); _ -> Nothing),
           Arm.nullary "GrantsStationToughness" Modification.GrantsStationToughness,
           Arm.payload "Intensify" Quantity.codec Modification.Intensify (\x -> case x of Modification.Intensify y -> Just y; _ -> Nothing),
           Arm.nullary "LoyaltyIsToughness" Modification.LoyaltyIsToughness
@@ -162,7 +171,7 @@ tagOf x = case x of
   Modification.InsertNameWords {} -> "InsertNameWords"
   Modification.SwitchPowerToughness {} -> "SwitchPowerToughness"
   Modification.AssignCombatDamage {} -> "AssignCombatDamage"
-  Modification.MayAssignCombatDamage {} -> "MayAssignCombatDamage"
+  Modification.AssignCombatDamageAs {} -> "AssignCombatDamageAs"
   Modification.GrantsStationToughness {} -> "GrantsStationToughness"
   Modification.Intensify {} -> "Intensify"
   Modification.LoyaltyIsToughness {} -> "LoyaltyIsToughness"

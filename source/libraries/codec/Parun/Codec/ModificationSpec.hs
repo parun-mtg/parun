@@ -21,6 +21,7 @@ import qualified Parun.Types.ChangeMode as ChangeMode
 import qualified Parun.Types.ChangeWord as ChangeWord
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
+import qualified Parun.Types.CombatDamageObligation as CombatDamageObligation
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost
@@ -401,12 +402,18 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
       codec
       (Modification.AssignCombatDamage CombatDamageAmount.EqualToToughness)
       " {\"type\":\"AssignCombatDamage\",\"value\":\"EqualToToughness\"} "
-  Spec.it s "MayAssignCombatDamage" $
+  Spec.it s "AssignCombatDamageAs" $
     Common.assertCodec
       s
       codec
-      (Modification.MayAssignCombatDamage CombatDamageOption.AsThoughUnblocked)
-      " {\"type\":\"MayAssignCombatDamage\",\"value\":\"AsThoughUnblocked\"} "
+      (Modification.AssignCombatDamageAs CombatDamageObligation.Optional CombatDamageOption.AsThoughUnblocked)
+      " {\"type\":\"AssignCombatDamageAs\",\"value\":{\"option\":\"AsThoughUnblocked\"}} "
+  Spec.it s "AssignCombatDamageAs, forced" $
+    Common.assertCodec
+      s
+      codec
+      (Modification.AssignCombatDamageAs CombatDamageObligation.Mandatory CombatDamageOption.AsThoughUnblocked)
+      " {\"type\":\"AssignCombatDamageAs\",\"value\":{\"obligation\":\"Mandatory\",\"option\":\"AsThoughUnblocked\"}} "
   -- layer 6, CR 702.184c: this object's controller's station abilities read
   -- toughness instead of power. Payload-free, self-only.
   Spec.it s "GrantsStationToughness" $

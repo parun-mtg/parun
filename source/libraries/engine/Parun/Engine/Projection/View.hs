@@ -1928,7 +1928,7 @@ noCharacteristics =
       PC.wordChanges = [],
       PC.textChangedKeywords = Map.empty,
       PC.combatDamageAmount = Nothing,
-      PC.combatDamageOptions = Set.empty,
+      PC.combatDamageOptions = Map.empty,
       -- CR 702.184c: an ability on the stack grants nothing to its
       -- controller's station abilities of its own.
       PC.grantsStationToughness = False,
@@ -2125,7 +2125,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               PC.textChangedKeywords = Map.empty,
               -- CR 613.1's starting point, before rules-changing effects.
               PC.combatDamageAmount = Nothing,
-              PC.combatDamageOptions = Set.empty,
+              PC.combatDamageOptions = Map.empty,
               -- CR 613.1's starting point, before layer 6 has run:
               -- applyModification's GrantsStationToughness arm is the only writer.
               PC.grantsStationToughness = False,
