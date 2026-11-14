@@ -1,0 +1,192 @@
+{
+  "faces": [
+    {
+      "enchant": [
+        {
+          "filter": {
+            "type": "HeldBy",
+            "value": {
+              "holder": "Controller",
+              "relation": "You"
+            }
+          },
+          "pool": {
+            "type": "Creatures"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "With Great Power . . .",
+      "oracleText": "Enchant creature you control\nEnchanted creature gets +2/+2 for each Aura and Equipment attached to it.\nAll damage that would be dealt to you is dealt to enchanted creature instead.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "DamageR",
+            "value": {
+              "matching": {
+                "whoRecipient": "You"
+              },
+              "rewrite": {
+                "type": "RedirectMatching",
+                "value": {
+                  "type": "IsHostOfSource"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Times",
+                  "value": {
+                    "factor": {
+                      "type": "Literal",
+                      "value": 2
+                    },
+                    "quantity": {
+                      "type": "Count",
+                      "value": {
+                        "aggregation": {
+                          "type": "Members"
+                        },
+                        "filter": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "Or",
+                              "value": [
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Aura"
+                                },
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Equipment"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "IsAttachedTo",
+                              "value": {
+                                "type": "Evaluated"
+                              }
+                            }
+                          ]
+                        },
+                        "scope": {
+                          "type": "InZone",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "AnyPlayer"
+                            },
+                            "zone": "Battlefield"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "toughness": {
+                  "type": "Times",
+                  "value": {
+                    "factor": {
+                      "type": "Literal",
+                      "value": 2
+                    },
+                    "quantity": {
+                      "type": "Count",
+                      "value": {
+                        "aggregation": {
+                          "type": "Members"
+                        },
+                        "filter": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "Or",
+                              "value": [
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Aura"
+                                },
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Equipment"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "IsAttachedTo",
+                              "value": {
+                                "type": "Evaluated"
+                              }
+                            }
+                          ]
+                        },
+                        "scope": {
+                          "type": "InZone",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "AnyPlayer"
+                            },
+                            "zone": "Battlefield"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

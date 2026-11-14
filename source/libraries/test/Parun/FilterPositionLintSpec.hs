@@ -2159,6 +2159,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       [ ("Ray of Frost", 3), -- a CR 604.2 clause, a CR 603.4 clause and an Effect.Tap's ObjectRef
         ("Oppressive Rays", 1), -- a printed player ability's own effect (Parun.PlayerEffectSpec)
         ("Pariah", 1), -- a CR 614.1 replacement row's own Filter (Parun.ReplacementSpec)
+        ("With Great Power . . .", 1), -- Pariah's wording
         ("Animate Dead", 1), -- the ObjectRef of its return
         ("Bewitching Leechcraft", 1), -- a CR 603.4 tap
         ("Abduction", 1), -- an untap in the same entering trigger

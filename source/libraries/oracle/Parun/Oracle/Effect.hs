@@ -320,8 +320,9 @@ lowered context text
 
 -- | A clause's sentences and the slots they name: its instructions, "you may"
 -- and the one instruction you may follow (CR 603.5), its instructions with a
--- cost paid on resolution (CR 118.12), or "If [condition], [instructions]."
--- or "[Instructions] if [condition]." (CR 608.2c). A clause gated by an "if you do" reads with its neighbour
+-- cost paid on resolution (CR 118.12), "If [condition], [instructions].",
+-- "[Instructions] if [condition]." or "[Instructions] unless [complement]."
+-- (CR 608.2c). A clause gated by an "if you do" reads with its neighbour
 -- ('steps'), and a "may" another player decides or one over more than one
 -- instruction is not spelled out here.
 clause :: Target.Context -> Clause.Clause Card.Card Continuous.Ability -> [(Text.Text, [SlotName.SlotName])]
@@ -344,7 +345,16 @@ clause context c
       let trailed = [(Text.dropEnd 1 body <> Text.pack " if " <> words' <> Text.pack ".", ms) | Text.null word, Text.isSuffixOf (Text.pack ".") body]
       -- Free: "Then if" after the instructions before it (Tend the Sprigs).
       let thenIf = [(Text.pack "Then if " <> words' <> Text.pack ", " <> opened, ms) | Text.null word]
-      (word <> Text.pack "If " <> words' <> Text.pack ", " <> opened, ms) : trailed <> thenIf
+      -- Free: "unless" and the complement trail the instructions instead (The
+      -- Spot's Portal's "You lose 2 life unless you control a Villain").
+      let unlessed =
+            [ (Text.dropEnd 1 body <> Text.pack " unless " <> complement <> Text.pack ".", ms)
+            | Text.null word,
+              Text.isSuffixOf (Text.pack ".") body,
+              held <- foldMap pure (Trigger.unless gate),
+              (complement, False) <- condition context held
+            ]
+      (word <> Text.pack "If " <> words' <> Text.pack ", " <> opened, ms) : trailed <> thenIf <> unlessed
   | otherwise = do
       predicates <- instructions context (Foldable.toList (Clause.effects c))
       case (Clause.payGate c, Clause.optionality c, List.foldr addedTogether [] predicates) of
@@ -657,6 +667,8 @@ joined context predicates = case predicates of
         [(Prose.sentence (clauseText p <> Text.pack " and " <> clauseText q) <> trailing q, allMentions p <> allMentions q) | fmap Target.wording (subject q) == Just (Text.pack "you")]
           <> [(Prose.sentence (clauseText p <> Text.pack " and " <> verb q) <> trailing q, allMentions p <> mentions q)]
           <> [(Prose.sentence ((if implied p then verb p else clauseText p) <> Text.pack ", then " <> verb q) <> trailing q, allMentions p <> mentions q)]
+          -- Free: ", then you" (Wall Crawl).
+          <> [(Prose.sentence ((if implied p then verb p else clauseText p) <> Text.pack ", then " <> clauseText q) <> trailing q, allMentions p <> allMentions q) | fmap Target.wording (subject q) == Just (Text.pack "you")]
           -- Free for one count read twice: "equal to" each time, above, or one
           -- X defined once (Graveborn Muse's "you draw X cards and lose X life,
           -- where X is the number of Zombies you control").
