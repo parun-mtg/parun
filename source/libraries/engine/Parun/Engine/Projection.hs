@@ -1526,6 +1526,7 @@ framedBySlots gs recipients context =
           Filter.slotControllers = over (maybe Set.empty Set.singleton . Filter.controller),
           Filter.slotCreatureTypes = fmap (Map.unionsWith Set.union . fmap (\view -> Map.singleton (Filter.controller view) (Set.filter Subtype.isCreatureType (Filter.subtypes view))) . Maybe.mapMaybe lastKnown . Set.toList . objectsOf) recipients,
           Filter.slotCardTypes = over Filter.cardTypes,
+          Filter.slotColors = over Filter.colors,
           Filter.slotMeasures = measures,
           Filter.slotHostControllers = fmap (foldMap hostController . objectsOf) recipients,
           -- CR 614.12: less a batch still entering (Scratch.enteringBeside),

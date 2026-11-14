@@ -1115,11 +1115,12 @@ framedNameOffends card =
   let (slotted, elsewhere) = framedNameCounts card
    in elsewhere /= 0 || slotted + elsewhere /= framedNameAtoms (Codec.encode (Face.Codec.codec Card.codec) (surveyedFace card))
 
--- The CR 205.3m and CR 205.2a atoms anchored at a SLOT in an encoding:
--- Filter.Shares CreatureType or CardType at a Bound anchor, which share a posture.
+-- The CR 205.3m, CR 205.2a and CR 105.2 atoms anchored at a SLOT in an
+-- encoding: Filter.Shares CreatureType, CardType or Color at a Bound anchor,
+-- which share a posture.
 -- evaluatedOffends polices the Evaluated one.
 boundCreatureTypeAtoms :: Value.Value -> Int
-boundCreatureTypeAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.CreatureType (Anchor.Bound _ _) -> True; Filter.Type.Shares (Trait.CardType _) (Anchor.Bound _ _) -> True; _ -> False)
+boundCreatureTypeAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Shares Trait.CreatureType (Anchor.Bound _ _) -> True; Filter.Type.Shares (Trait.CardType _) (Anchor.Bound _ _) -> True; Filter.Type.Shares Trait.Color (Anchor.Bound _ _) -> True; _ -> False)
 
 -- The CR 903.3e atoms in an encoding: Filter.Shares at YourCommander.
 yourCommanderAtoms :: Value.Value -> Int
@@ -1146,7 +1147,7 @@ yourCommanderOffends card =
 -- search, a mill tally or a hand sweep, each read through
 -- Parun.Engine.Resolve.Slots.effectContext -- or in a target slot (Unbury), read
 -- through Parun.Engine.Target.slotContext: the two fillers of
--- Filter.Context.slotCreatureTypes and slotCardTypes. And how many anywhere else, where the atom
+-- Filter.Context.slotCreatureTypes, slotCardTypes and slotColors. And how many anywhere else, where the atom
 -- is a silent True. The second number is the offence.
 boundCreatureTypeCounts :: Surveyed -> (Int, Int)
 boundCreatureTypeCounts card =
@@ -1309,7 +1310,7 @@ evaluatedAtoms value =
 
 -- How many Filter.Shares and Filter.IsAttachedTo atoms in an encoding pair an
 -- anchor with a reading Parun.Engine.Filter has none for -- sharesAnchored's
--- Nothing (#5636) and attachedAnchored's, which Filter.matches answers False --
+-- Nothing (#7557) and attachedAnchored's, which Filter.matches answers False --
 -- and how many it carries in all.
 unreadAnchorCounts :: Value.Value -> (Int, Int)
 unreadAnchorCounts value =
@@ -1808,6 +1809,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "Winnowing's atom, narrowed to the candidate's controller, is in its sacrifice's ObjectRef" (boundCreatureTypeCounts (survey (S.combinedFace winnowing))) (1, 0)
     confusion <- S.printingOf s registry "Confusion in the Ranks"
     Spec.assertEqWith s "Confusion in the Ranks's CR 205.2a atom is in its target slot" (boundCreatureTypeCounts (survey (S.combinedFace confusion))) (1, 0)
+    rally <- S.printingOf s registry "Rally the Righteous"
+    Spec.assertEqWith s "Rally the Righteous's two CR 105.2 atoms are in its ObjectRefs" (boundCreatureTypeCounts (survey (S.combinedFace rally))) (2, 0)
     -- The lint's own proof, the pair differing in one position: the same atom in
     -- a static restriction's affected set, read through a bare contextFor.
     Spec.assertBool s (boundCreatureTypeOffends (survey restricted)) "the atom in an affected set offends"
@@ -2317,7 +2320,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             }
     Spec.assertEqWith s "Coat of Arms' two atoms planted are outside every Count" (evaluatedCounts plantedOthers) (0, 2)
   -- A pair Filter.matches has no reading for answers False wherever it sits,
-  -- so it is rejected outright rather than by position (#5636).
+  -- so it is rejected outright rather than by position (#7557).
   Spec.it s "no card writes a Shares or IsAttachedTo anchor the filter context carries no values for" $ do
     ps <- S.allPrintings s corpus
     let encodedFace = Codec.encode (Face.Codec.codec Card.codec)
@@ -2325,8 +2328,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "every anchored atom has a reading" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: the pool writes the atoms the sweep is about.
     Spec.assertBool s (sum (fmap (snd . unreadAnchorCounts . encodedFace . S.combinedFace) ps) > 10) "the pool writes anchored atoms"
-    -- The rejected side: radiance's "each other creature that shares a color
-    -- with it" and a group anchor, planted in a target slot, beside a read pair
+    -- The rejected side: Jaded Response's "shares a color with a creature you
+    -- control" and a group anchor, planted in a target slot, beside a read pair
     -- that is not counted.
     piker <- S.printingOf s registry "Goblin Piker"
     let slot = SlotName.MkSlotName (Text.pack "target")
@@ -2335,7 +2338,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             { Face.spell =
                 Mint.oneModeTargeting (Map.singleton slot (TargetSlot.required Pool.Creatures (Just (Filter.Type.And [Filter.Type.Not atom])))) Seq.empty
             }
-    Spec.assertEqWith s "a planted Shares Color Bound is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Color (Anchor.Bound Nothing slot))))) (1, 1)
+    Spec.assertEqWith s "a planted Shares Color AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Color (Anchor.AnyPermanent (Filter.Type.And [])))))) (1, 1)
+    Spec.assertEqWith s "a planted Shares Color Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Color (Anchor.Bound Nothing slot))))) (0, 1)
     Spec.assertEqWith s "a planted IsAttachedTo AnyPermanent is unread" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.AnyPermanent (Filter.Type.And [])))))) (1, 1)
     Spec.assertEqWith s "a planted IsAttachedTo Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.IsAttachedTo (Anchor.Bound Nothing slot))))) (0, 1)
     Spec.assertEqWith s "a planted Shares Name Bound is read" (unreadAnchorCounts (encodedFace (plantedWith (Filter.Type.Shares Trait.Name (Anchor.Bound Nothing slot))))) (0, 1)
