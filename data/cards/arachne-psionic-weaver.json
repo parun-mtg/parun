@@ -1,0 +1,137 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "WebSlinging",
+          "value": {
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Arachne, Psionic Weaver",
+      "oracleText": "Web-slinging {W} (You may cast this spell for {W} if you also return a tapped creature you control to its owner's hand.)\nAs Arachne enters, look at an opponent's hand, then choose a card type other than creature.\nSpells of the chosen type cost {1} more to cast.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Increase",
+                "value": [
+                  {
+                    "type": "Generic",
+                    "value": 1
+                  }
+                ]
+              },
+              "matching": {
+                "type": "HasChosenCardType"
+              },
+              "subject": {
+                "type": "Spells"
+              }
+            }
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "RunEffects",
+                "value": [
+                  {
+                    "type": "ChoosePlayer",
+                    "value": {
+                      "scope": {
+                        "type": "Opponent"
+                      },
+                      "slot": "opponent"
+                    }
+                  },
+                  {
+                    "type": "LookAt",
+                    "value": {
+                      "ref": {
+                        "type": "EachCardInHand",
+                        "value": {
+                          "hands": {
+                            "type": "InSlot",
+                            "value": "opponent"
+                          }
+                        }
+                      },
+                      "slot": "looked"
+                    }
+                  },
+                  {
+                    "type": "ChooseQuality",
+                    "value": {
+                      "quality": {
+                        "type": "CardType",
+                        "value": [
+                          "Creature"
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Hero",
+          "Human",
+          "Spider"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

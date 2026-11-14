@@ -49,8 +49,14 @@ spec s = Spec.describe s "Parun.Codec.ChosenQuality" $ do
     Common.assertCodec
       s
       ChosenQuality.codec
-      ChosenQuality.CardType
+      (ChosenQuality.CardType [])
       " {\"type\":\"CardType\"} "
+  Spec.it s "CardType other than the listed ones (Arachne, Psionic Weaver)" $
+    Common.assertCodec
+      s
+      ChosenQuality.codec
+      (ChosenQuality.CardType [CardType.Creature])
+      " {\"type\":\"CardType\",\"value\":[\"Creature\"]} "
   Spec.it s "Parity (Gollum, Riddle Master)" $
     Common.assertCodec
       s

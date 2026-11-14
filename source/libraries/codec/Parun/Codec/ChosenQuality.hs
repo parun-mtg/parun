@@ -1,5 +1,7 @@
 module Parun.Codec.ChosenQuality where
 
+import qualified Data.List.NonEmpty as NonEmpty
+import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.ChooseBetween as ChooseBetween
 import qualified Parun.Codec.ExiledPile as ExiledPile
 import qualified Parun.Codec.Filter as Filter
@@ -18,7 +20,7 @@ codec =
     tagOf
     [ Arm.payload "Colors" ChooseBetween.codec ChosenQuality.Colors (\x -> case x of ChosenQuality.Colors y -> Just y; _ -> Nothing),
       Arm.payload "Subtype" subtype (uncurry ChosenQuality.Subtype) (\x -> case x of ChosenQuality.Subtype family among -> Just (family, among); _ -> Nothing),
-      Arm.nullary "CardType" ChosenQuality.CardType,
+      Arm.optionalPayload "CardType" (Common.nonEmpty CardType.codec) (ChosenQuality.CardType . foldMap NonEmpty.toList) (\x -> case x of ChosenQuality.CardType except -> Just (NonEmpty.nonEmpty except); _ -> Nothing),
       Arm.payload "Number" ChooseBetween.codec ChosenQuality.Number (\x -> case x of ChosenQuality.Number y -> Just y; _ -> Nothing),
       Arm.nullary "Parity" ChosenQuality.Parity,
       Arm.payload "Word" (Common.nonEmpty Common.text) ChosenQuality.Word (\x -> case x of ChosenQuality.Word y -> Just y; _ -> Nothing),
@@ -41,7 +43,7 @@ tagOf x = case x of
   ChosenQuality.Colors {} -> "Colors"
   ChosenQuality.Subtype {} -> "Subtype"
   ChosenQuality.Number {} -> "Number"
-  ChosenQuality.CardType -> "CardType"
+  ChosenQuality.CardType {} -> "CardType"
   ChosenQuality.Parity -> "Parity"
   ChosenQuality.Word {} -> "Word"
   ChosenQuality.ExiledCard {} -> "ExiledCard"
