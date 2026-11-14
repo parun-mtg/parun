@@ -704,6 +704,7 @@ operandChildren children operand = case operand of
   Operand.AmountInSlot name -> fmap Operand.AmountInSlot (slot children SlotArity.Amount name)
   Operand.EnclosingAmount -> pure operand
   Operand.OfEachOtherCandidate _ -> pure operand
+  Operand.YourCounters _ -> pure operand
 
 -- | A damage look-back's children: the slot its party reads, at MANY
 -- (membership, IsBound's reading).

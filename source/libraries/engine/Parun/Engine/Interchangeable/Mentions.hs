@@ -948,6 +948,8 @@ operandNames asking x = case x of
   -- The other candidates' numbers: two objects alike in every respect read
   -- each other's, so the answer is the same for both.
   Operand.OfEachOtherCandidate _measure -> mempty
+  -- A player's counters, the same for every candidate.
+  Operand.YourCounters _kind -> mempty
 
 payGateNames :: (Monoid r) => Asking r -> PayGate.PayGate -> r
 payGateNames asking = Const.getConst . Children.payGateChildren (countVisitors asking)

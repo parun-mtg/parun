@@ -4242,6 +4242,8 @@ filterReads f = case f of
       Operand.Literal _ -> Set.empty
       Operand.AmountInSlot _ -> Set.empty
       Operand.EnclosingAmount -> Set.empty
+      -- A player's counters, no object's projection.
+      Operand.YourCounters _ -> Set.empty
       -- Another object's projection, declared as the candidate's (Aspect's note).
       Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates measure scope) ->
         measureReads measure <> case scope of
@@ -4624,6 +4626,7 @@ filterReadsPeers f = case f of
     Operand.OfBound _ -> False
     Operand.AmountInSlot _ -> False
     Operand.EnclosingAmount -> False
+    Operand.YourCounters _ -> False
   Filter.Type.ControllerIsOwner -> False
   Filter.Type.HeldBy _ _ -> False
   Filter.Type.ControlledByRole _ -> False

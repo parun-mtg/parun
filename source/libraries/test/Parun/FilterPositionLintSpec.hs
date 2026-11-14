@@ -162,6 +162,7 @@ import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
 import qualified Parun.Types.PerCreature as PerCreature
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -3866,6 +3867,32 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       "and a target slot asking it is rejected"
       (chosenValueOffends isLastExiledWithSourceCounts isLastExiledWithSourceTag (survey planted), isLastExiledWithSourceCounts (survey planted))
       (True, (0, 1))
+
+  -- CR 122.1: a player's counters are on the Context only where
+  -- Filter.contextIn built it; a trigger condition is framed so, and a
+  -- static ability's affected set (Filter.contextFor) is not.
+  Spec.it s "CR 122.1 no card compares against a player's counters outside a trigger condition" $ do
+    let needle = Value.String (String.MkString (Text.pack "YourCounters"))
+        encoded = Codec.encode (Face.Codec.codec Card.codec) . surveyedFace
+        counts c = let e = encoded c in (triggerConditionAtoms needle e, occurrences needle e - triggerConditionAtoms needle e)
+    Spec.assertEqWith s "the operand is written only in a trigger condition" [S.nameOf (Printing.card p) | (p, faces) <- pool, any ((/= 0) . snd . counts) faces] []
+    mizzix <- S.printingOf s registry "Mizzix of the Izmagnus"
+    Spec.assertEqWith s "Mizzix's is in its trigger condition" (counts (survey (S.combinedFace mizzix))) (1, 0)
+    piker <- S.printingOf s registry "Goblin Piker"
+    let atom = Filter.Type.Measures (Measures.MkMeasures Measure.ManaValue Comparison.GreaterThan (Operand.YourCounters PlayerCounterKind.Experience))
+        planted =
+          (S.combinedFace piker)
+            { Face.staticAbilities =
+                [ StaticAbility.MkStaticAbility
+                    (Affected.Matching atom)
+                    Nothing
+                    Set.empty
+                    Nothing
+                    Nothing
+                    (NonEmpty.singleton Modification.LoseAllAbilities)
+                ]
+            }
+    Spec.assertEqWith s "and one in an affected set is seen" (counts (survey planted)) (0, 1)
 
 spec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 spec s registry corpus = Spec.describe s "Parun.Engine.Card" $ do
