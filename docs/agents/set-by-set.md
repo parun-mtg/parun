@@ -99,6 +99,12 @@ and patch them all before rebuilding, rather than letting `-Werror` name them
 one build at a time. Then find the sites `-Werror` will not name
 (`CLAUDE.md`, "Before you consider a change done").
 
+Two kinds compile unchanged and are missed most. A field added to a
+constructor's payload: grep every arm matching that constructor and read
+what each takes from the payload, since one reading only the old fields
+still compiles. A new funnel every path is meant to go through: list each
+path still going around it, and route it or say why it stays.
+
 ### Parameters, not siblings
 
 Before adding a constructor, field or function, grep for one the new thing is
@@ -302,7 +308,10 @@ so in the PR.
   never dropped for want of a card in the pool. Only a rules reason lets a
   known problem go unfiled.
 - **File a set's issue under its tracker** (a sub-issue), so the
-  orchestrator schedules it.
+  orchestrator schedules it, opening with the "Session setup" line and
+  ending with the Footer (`docs/agents/orchestrating.md`, "Templates"). An
+  issue that is not the set's card work (a variant corner, an older bug no
+  set card needs) goes under no tracker.
 - **Blocked is a good outcome.** A unit that cannot land adds
   `needs-planning`, links its blocker as a dependency (`CLAUDE.md`), or, where
   the blocker is an owner decision, names the question. A decomposition beats
