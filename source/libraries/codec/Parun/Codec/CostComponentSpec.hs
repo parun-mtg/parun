@@ -275,8 +275,8 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard 1 (Filter.HasCardType CardType.Creature)))
-      " {\"type\":\"ExileCardsFromGraveyard\",\"value\":{\"count\":1,\"whichCards\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
+      (CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Fixed 1) (Filter.HasCardType CardType.Creature)))
+      " {\"type\":\"ExileCardsFromGraveyard\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichCards\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- CR 702.167a's [materials], which CR 702.167b reads across two zones -- a
   -- separate tag from the arm above, whose pool is the graveyard alone.
   Spec.it s "ExileMaterials" $

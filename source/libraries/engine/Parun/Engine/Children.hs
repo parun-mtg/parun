@@ -2025,7 +2025,7 @@ costComponentChildren c component = case component of
   CostComponent.FlipCoin -> pure component
   CostComponent.ExileThisFrom _ -> pure component
   CostComponent.ExileThis -> pure component
-  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n criterion) -> fmap CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n <$> costFilter c criterion)
+  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n criterion) -> fmap CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard <$> costAmountChildren c n <*> costFilter c criterion)
   CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore criterion) -> fmap CostComponent.ExileMaterials (ExileMaterials.MkExileMaterials n orMore <$> costFilter c criterion)
   CostComponent.ExileTopFromGraveyard criterion -> CostComponent.ExileTopFromGraveyard <$> costFilter c criterion
   CostComponent.CollectEvidence _ -> pure component

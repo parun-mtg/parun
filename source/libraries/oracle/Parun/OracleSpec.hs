@@ -864,8 +864,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let untapped = Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Not Filter.IsTapped]
     Spec.assertEq s (Just (Text.pack "Tap an untapped creature you control: Draw a card.")) (costed [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) untapped False)])
     Spec.assertEq s (Just (Text.pack "Tap two untapped creatures you control that share a creature type: Draw a card.")) (costed [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 2) untapped True)])
-    Spec.assertEq s (Just (Text.pack "Exile seven other cards from your graveyard: Draw a card.")) (costed [CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard 7 (Filter.Not Filter.IsSource))])
-    Spec.assertEq s (Just (Text.pack "Exile an instant or sorcery card from your graveyard: Draw a card.")) (costed [CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard 1 (Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery]))])
+    Spec.assertEq s (Just (Text.pack "Exile seven other cards from your graveyard: Draw a card.")) (costed [CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Fixed 7) (Filter.Not Filter.IsSource))])
+    Spec.assertEq s (Just (Text.pack "Exile an instant or sorcery card from your graveyard: Draw a card.")) (costed [CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Fixed 1) (Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery]))])
 
   -- CR 705.1 / CR 705.2: "flip a coin", its outcome read by a later clause as
   -- won or lost (Winter Sky), and flipping a coin as a cost (Karplusan Minotaur).

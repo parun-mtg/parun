@@ -98,7 +98,10 @@
                       {
                         "type": "ExileCardsFromGraveyard",
                         "value": {
-                          "count": 4,
+                          "count": {
+                            "type": "Fixed",
+                            "value": 4
+                          },
                           "whichCards": {
                             "type": "HasName",
                             "value": "Sphinx's Approach"
