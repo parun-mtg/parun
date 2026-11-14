@@ -440,6 +440,8 @@ manaProduced effect = case effect of
   Effect.PayAnyEnergy _ -> Nothing
   Effect.ChooseNumber _ -> Nothing
   Effect.BindAmount _ -> Nothing
+  Effect.BindPlayers _ -> Nothing
+  Effect.BindLeaders _ -> Nothing
   Effect.Tap _ -> Nothing
   Effect.Untap _ -> Nothing
   Effect.Unattach _ -> Nothing
@@ -645,6 +647,8 @@ playerChoice effect = case effect of
   Effect.PayAnyEnergy _ -> Nothing
   Effect.ChooseNumber _ -> Nothing
   Effect.BindAmount _ -> Nothing
+  Effect.BindPlayers _ -> Nothing
+  Effect.BindLeaders _ -> Nothing
   Effect.Tap _ -> Nothing
   Effect.Untap _ -> Nothing
   Effect.Unattach _ -> Nothing
@@ -937,6 +941,8 @@ movesLibraryCard effect = case effect of
   Effect.PayAnyEnergy _ -> False
   Effect.ChooseNumber _ -> False
   Effect.BindAmount _ -> False
+  Effect.BindPlayers _ -> False
+  Effect.BindLeaders _ -> False
   Effect.Tap _ -> False
   Effect.Untap _ -> False
   Effect.Unattach _ -> False

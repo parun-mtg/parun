@@ -312,6 +312,10 @@ library codec
     Parun.Codec.BindAmountSpec
     Parun.Codec.Binding
     Parun.Codec.BindingSpec
+    Parun.Codec.BindLeaders
+    Parun.Codec.BindLeadersSpec
+    Parun.Codec.BindPlayers
+    Parun.Codec.BindPlayersSpec
     Parun.Codec.Blight
     Parun.Codec.BlockCost
     Parun.Codec.BlockCostSpec
@@ -2804,6 +2808,8 @@ library types
     Parun.Types.Bid
     Parun.Types.BindAmount
     Parun.Types.Binding
+    Parun.Types.BindLeaders
+    Parun.Types.BindPlayers
     Parun.Types.Blight
     Parun.Types.BlockCost
     Parun.Types.BlockCount

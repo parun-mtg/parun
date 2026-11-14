@@ -1196,7 +1196,10 @@ discover applyLoopBody runSubgame resolving source controller legal chosen quant
 -- state that run left -- live, so the tally the run's own mill just bound is
 -- what it reads. While it holds, the "if"'s instructions and another run. No
 -- prompt: no player chooses, which is Effect.Repeat's CR 608.2d difference.
--- Rescoped and unbracketed per run for Effect.Repeat's reasons.
+-- Rescoped and unbracketed per run for Effect.Repeat's reasons. A slot only
+-- the "if" binds is not rescoped, Repeat.ifAgain's posture, so it carries one
+-- run's outcome into the next: Timesifter's tied players, whom the scenarios
+-- named timesifter prove.
 --
 -- The condition's views carry Filter.View.hasEntryHost, which no other reader
 -- fills (Attach.hasEntryHost).
@@ -1214,9 +1217,12 @@ discover applyLoopBody runSubgame resolving source controller legal chosen quant
 repeatIf :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Set SlotName -> Seq.Seq (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> RepeatIf.RepeatIf (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()
 repeatIf applyLoopBody runSubgame resolving source controller legal chosen (RepeatIf.MkRepeatIf process condition ifHolds) = do
   let bound = foldMap boundSlots (process <> ifHolds)
-  rescope <- State.gets (Common.rescopeRun resolving bound)
+  rescope <- State.gets (Common.rescopeRun resolving (foldMap boundSlots process))
   outer <- State.gets (Bookkeeping.repeatPicks . GameState.bookkeeping)
-  let apply = applyLoopBody runSubgame resolving source controller legal chosen bound
+  -- What the loop binds is read off its own bindings, not the announcement's
+  -- copy of a slot bound before it, which would shadow every later run's.
+  let legal' = Map.withoutKeys legal bound
+      apply = applyLoopBody runSubgame resolving source controller legal' chosen bound
       run previous = do
         State.modify' rescope
         here <- State.gets Fragmented.digest
@@ -1235,7 +1241,7 @@ repeatIf applyLoopBody runSubgame resolving source controller legal chosen (Repe
         -- `targets`, which effectContext reads only through the map it is
         -- handed, so the run's own names join it here, as Effect.ForEach's
         -- `defined` does for its body.
-        let seen = Map.union legal (Map.restrictKeys (Binding.targetsOf (slotBindings resolving gs)) bound)
+        let seen = Map.union legal' (Map.restrictKeys (Binding.targetsOf (slotBindings resolving gs)) bound)
             context = effectContext gs resolving controller source seen (slotBindings resolving gs)
             viewOf oid = fmap (\view -> view {Filter.hasEntryHost = Attach.hasEntryHost oid gs}) (effectViewOf resolving source seen gs oid)
         Monad.when (Condition.holds viewOf context gs source condition) $ do

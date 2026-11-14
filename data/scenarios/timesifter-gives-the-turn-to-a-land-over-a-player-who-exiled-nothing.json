@@ -1,0 +1,61 @@
+{
+  "description": "CR 608.2c / 202.3a: a player whose library is empty exiles nothing and is not ranked, so Timesifter gives the extra turn to an exiled land's mana value of 0",
+  "note": "Bob's empty library leaves Alice's Island alone at the top: no tie, one exile, and Alice takes turn 2. Ranking Bob at 0 would tie him with Alice and exile her second Island.",
+  "board": {
+    "active": "alice",
+    "step": "Untap",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Timesifter"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "View": {
+          "is": "alice",
+          "of": "ActivePlayer"
+        }
+      }
+    }
+  ]
+}

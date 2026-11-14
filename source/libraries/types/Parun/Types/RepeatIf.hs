@@ -13,7 +13,8 @@ data RepeatIf effect = MkRepeatIf
     process :: Seq.Seq effect,
     -- | Asked after each run of the process, against the state it left.
     condition :: Condition.Condition,
-    -- | What the "if" also does before the next run, in written order.
+    -- | What the "if" also does before the next run, in written order. A slot
+    -- only this binds survives the per-run rescope.
     ifHolds :: Seq.Seq effect
   }
   deriving (Eq, Ord, Show)

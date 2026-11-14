@@ -58,6 +58,8 @@ import qualified Parun.Types.AttackingPlayers as AttackingPlayers
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.Bid as Bid
 import qualified Parun.Types.BindAmount as BindAmount
+import qualified Parun.Types.BindLeaders as BindLeaders
+import qualified Parun.Types.BindPlayers as BindPlayers
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Blight as Blight.Type
 import qualified Parun.Types.Card as Card.Type
@@ -879,6 +881,8 @@ effectPlayerRefs effect = case effect of
   Effect.PayAnyEnergy {} -> []
   Effect.ChooseNumber number -> [ChooseNumber.chooser number]
   Effect.BindAmount {} -> []
+  Effect.BindPlayers payload -> [BindPlayers.players payload]
+  Effect.BindLeaders {} -> []
   Effect.Tap {} -> []
   Effect.Untap {} -> []
   Effect.Unattach {} -> []
@@ -1365,6 +1369,8 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.PayAnyEnergy _ -> Map.empty
   Effect.ChooseNumber number -> foldMap quantitySlots (ChooseNumber.upTo number)
   Effect.BindAmount payload -> quantitySlots (BindAmount.quantity payload)
+  Effect.BindPlayers {} -> Map.empty
+  Effect.BindLeaders payload -> Map.singleton (BindLeaders.among payload) SlotArity.Many
   Effect.Tap _ -> Map.empty
   Effect.Untap _ -> Map.empty
   Effect.Unattach _ -> Map.empty
@@ -2205,6 +2211,8 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.PayAnyEnergy _ -> True
   Effect.ChooseNumber number -> all Quantity.slotsAreExhaustive (ChooseNumber.upTo number)
   Effect.BindAmount payload -> Quantity.slotsAreExhaustive (BindAmount.quantity payload)
+  Effect.BindPlayers {} -> True
+  Effect.BindLeaders {} -> True
   Effect.Tap _ -> True
   Effect.Untap _ -> True
   Effect.Unattach _ -> True
@@ -2494,6 +2502,8 @@ hasRead wanted =
         Effect.PayAnyEnergy _ -> False
         Effect.ChooseNumber number -> any (Quantity.hasRead wanted) (ChooseNumber.upTo number)
         Effect.BindAmount payload -> Quantity.hasRead wanted (BindAmount.quantity payload)
+        Effect.BindPlayers {} -> False
+        Effect.BindLeaders {} -> False
         Effect.Tap _ -> False
         Effect.Untap _ -> False
         Effect.Unattach _ -> False
@@ -2803,6 +2813,8 @@ boundSlots effect = case effect of
   Effect.PayAnyEnergy slot -> Set.singleton slot
   Effect.ChooseNumber (ChooseNumber.MkChooseNumber slot _ _) -> Set.singleton slot
   Effect.BindAmount payload -> Set.singleton (BindAmount.slot payload)
+  Effect.BindPlayers payload -> Set.singleton (BindPlayers.slot payload)
+  Effect.BindLeaders payload -> Set.singleton (BindLeaders.slot payload)
   Effect.Tap tap -> foldMap Set.singleton (Tap.tapped tap)
   Effect.Untap _ -> Set.empty
   Effect.Unattach _ -> Set.empty

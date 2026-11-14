@@ -32,6 +32,8 @@ import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Bid as Bid
 import qualified Parun.Types.BindAmount as BindAmount
+import qualified Parun.Types.BindLeaders as BindLeaders
+import qualified Parun.Types.BindPlayers as BindPlayers
 import qualified Parun.Types.Blight as Blight
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -483,6 +485,20 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.BindAmount (BindAmount.MkBindAmount (Quantity.ObjectCounters CounterKind.PlusOnePlusOne) (SlotName.MkSlotName (Text.pack "counted"))))
       " {\"type\":\"BindAmount\",\"value\":{\"quantity\":{\"type\":\"ObjectCounters\",\"value\":{\"type\":\"PlusOnePlusOne\"}},\"slot\":\"counted\"}} "
+  Spec.it s "BindPlayers" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.BindPlayers BindPlayers.MkBindPlayers {BindPlayers.players = PlayerRef.EachInSlot (SlotName.MkSlotName (Text.pack "leaders")), BindPlayers.slot = SlotName.MkSlotName (Text.pack "contenders")})
+      " {\"type\":\"BindPlayers\",\"value\":{\"players\":{\"type\":\"EachInSlot\",\"value\":\"leaders\"},\"slot\":\"contenders\"}} "
+  Spec.it s "BindLeaders" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.BindLeaders BindLeaders.MkBindLeaders {BindLeaders.among = SlotName.MkSlotName (Text.pack "exiled"), BindLeaders.measure = Measure.ManaValue, BindLeaders.slot = SlotName.MkSlotName (Text.pack "leaders")})
+      " {\"type\":\"BindLeaders\",\"value\":{\"among\":\"exiled\",\"measure\":\"ManaValue\",\"slot\":\"leaders\"}} "
   Spec.it s "Bid" $
     Common.assertJsonCodec
       s
