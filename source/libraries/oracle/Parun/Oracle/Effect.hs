@@ -681,8 +681,9 @@ joined context predicates = case predicates of
     -- Free: two sentences (Afterlife Insurance), "and" (Bad Deal) or, after
     -- an imperative, ", then" (Macabre Waltz) or "and" (Sorcerer's Strongbox).
     | implied p || implied q -> apart <> together <> togetherX <> thenImperative <> andImperative <> imperativeAnd <> imperativeThen
-    -- Free: "and" (Vampiric Feast) or two sentences (Soul Shred).
-    | otherwise -> together <> apart <> togetherX <> durationFirst
+    -- Free: "and" (Vampiric Feast), two sentences (Soul Shred) or, after an
+    -- instruction naming no subject, ", then" (Rust Harvester).
+    | otherwise -> together <> apart <> togetherX <> durationFirst <> subjectlessThen
     where
       -- Free for one duration read twice: after each verb, above, or once ahead
       -- of both (Rookie Mistake).
@@ -692,6 +693,7 @@ joined context predicates = case predicates of
           Just vq <- [Text.stripSuffix (Text.pack " until end of turn") (verb q)]
         ]
       together = [(Prose.sentence (clauseText p <> Text.pack " and " <> clauseText q) <> trailing q, allMentions p <> allMentions q)]
+      subjectlessThen = [(Prose.sentence (clauseText p <> Text.pack ", then " <> clauseText q) <> trailing q, allMentions p <> allMentions q) | Maybe.isNothing (subject p)]
       apart = [(text, allMentions p <> allMentions q) | text <- followedBy context (sentences p) (sentences q)]
       -- Free: a series, whose last step alone keeps "then" (Curse-Marred
       -- Demon's "put it into your hand, shuffle, then discard a card at random").
