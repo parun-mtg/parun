@@ -1533,6 +1533,11 @@ data Context = MkContext
     -- sibling target slot's (Gauntlets of Chaos). `slotCreatureTypes` above in
     -- every respect, under that lint too.
     slotCardTypes :: Map.Map SlotName.SlotName (Set.Set CardType.CardType),
+    -- CR 105.2: the COLOURS of the objects the slots hold, for Shares Color
+    -- Bound -- radiance's "each other creature that shares a color with it"
+    -- (Rally the Righteous). `slotCreatureTypes` above in every respect, under
+    -- that lint too.
+    slotColors :: Map.Map SlotName.SlotName (Set.Set Color.Color),
     -- CR 608.2c: the MEASURES of the object a resolution's slot holds, for the
     -- Measures atom's OfBound operand (Profaner of the Dead's "the exploited
     -- creature's toughness"). `slotCreatureTypes` above in every respect but one
@@ -1935,7 +1940,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
@@ -2063,7 +2068,7 @@ heldBy holder view = case holder of
 -- of its own, but for one posture below.
 --
 -- Not implemented: a pair the Context carries no anchored values for, answered
--- Nothing (#5636).
+-- Nothing (#7557).
 sharesAnchored :: Trait.Trait -> Anchor.Anchor (Filter.Filter Keyword.Type.Keyword) -> Maybe (Context -> View -> Bool)
 sharesAnchored trait anchor = case anchor of
   Anchor.Source -> case trait of
@@ -2101,7 +2106,9 @@ sharesAnchored trait anchor = case anchor of
     -- Parun.Engine.Target.selectionLegal's joint check narrows it (Unbury's "two
     -- target creature cards that share a creature type").
     Trait.CreatureType -> Just (\context view -> maybe True (meets (subtypes view) . Foldable.fold) (Map.lookup slot (slotCreatureTypes context)))
-    Trait.Color -> Nothing
+    -- CR 105.2, CreatureType's posture and for its reason. A colourless object
+    -- shares a colour with nothing, either side.
+    Trait.Color -> Just (\context view -> maybe True (meets (colors view)) (Map.lookup slot (slotColors context)))
     Trait.Owner -> Nothing
     Trait.Controller -> Nothing
     Trait.Sector -> Nothing
@@ -2184,7 +2191,7 @@ attachedAnchored anchor = case anchor of
             || Set.member host (Map.findWithDefault Set.empty slot (slotObjects context))
       )
   -- Not implemented: a slot narrowed to the members the candidate's holder
-  -- holds (#5636).
+  -- holds (#7557).
   Anchor.Bound (Just _) _ -> Nothing
   -- A group names no one host: Filter.AttachedTo is that reading.
   Anchor.AnyPermanent _ -> Nothing
