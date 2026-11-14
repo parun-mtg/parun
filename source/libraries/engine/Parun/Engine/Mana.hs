@@ -1823,7 +1823,7 @@ namesAnother = maybe False ((/= Activator.Related PlayerRelation.You) . Activate
 mayTakeRoute :: Bool -> PlayerId -> ObjectId -> GameState -> Activator.Activator -> Bool
 mayTakeRoute controls pid oid gs activator
   | activator == Activator.Related PlayerRelation.You = controls
-  | otherwise = maybe False (\usual -> Game.activatorPermits activator usual oid pid gs) (Projection.controllerOf oid gs)
+  | otherwise = maybe False (\usual -> Players.activatorPermits (`Projection.controllerOf` gs) activator usual oid pid gs) (Projection.controllerOf oid gs)
 
 -- What ONE mana must be to satisfy one typed symbol of a cost: one of these mana
 -- types, carrying at least these production-time tags.

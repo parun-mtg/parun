@@ -14,6 +14,7 @@ import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
 import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
+import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.AffectPlayers as AffectPlayers
@@ -2681,7 +2682,9 @@ data AbilityChildren card ability effect f = MkAbilityChildren
     -- | A granted permission about the mana spent to cast its object (CR 609.4b), whole.
     abilitySpendMana :: SpendManaAsThough.SpendManaAsThough -> f SpendManaAsThough.SpendManaAsThough,
     -- | The slot an activated ability binds its announced player under (CR 115.10a).
-    abilitySlot :: SlotName.SlotName -> f SlotName.SlotName
+    abilitySlot :: SlotName.SlotName -> f SlotName.SlotName,
+    -- | The player an activated ability's activation instructions name (CR 602.1b).
+    abilityPlayer :: PlayerRef.PlayerRef -> f PlayerRef.PlayerRef
   }
 
 -- | Every child of an ability record left as it is: the base a walk overrides.
@@ -2704,7 +2707,8 @@ abilityLeaves =
       abilityFilter = pure,
       abilityRules = pure,
       abilitySpendMana = pure,
-      abilitySlot = pure
+      abilitySlot = pure,
+      abilityPlayer = pure
     }
 
 -- | An activated ability's children. Each choice's costs go to abilityCost.
@@ -2718,7 +2722,11 @@ activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices
     <*> traverse (\(DefinedX.MkDefinedX quantity choice) -> fmap (`DefinedX.MkDefinedX` choice) (abilityQuantity c quantity)) definedX
     <*> abilityModal c modal
     <*> traverse (abilityRestriction c) restrictions
-    <*> pure activator
+    <*> ( case activator of
+            Activator.Player ref -> Activator.Player <$> abilityPlayer c ref
+            Activator.Related _ -> pure activator
+            Activator.Owner -> pure activator
+        )
     <*> traverse (abilityCondition c) condition
     <*> pure name
     <*> traverse (abilityKeyword c) stamp

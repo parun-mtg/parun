@@ -1,5 +1,6 @@
 module Parun.Types.Activator where
 
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 
 -- | CR 602.1b: which players an activated ability's own activation instructions
@@ -9,7 +10,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 -- only ..." rider. They compose: Detention Vortex's "Only your opponents may
 -- activate this ability and only as a sorcery" narrows both WHO and WHEN.
 --
--- One reader, Parun.Engine.Game.activatorPermits, asked for the stack by
+-- One reader, Parun.Engine.Players.activatorPermits, asked for the stack by
 -- Parun.Engine.Activatable.mayActivateGiven and for CR 605.3b's routes by
 -- Parun.Engine.Mana.routeAccess. Nothing here says who PAYS: CR 602.1a gives the
 -- cost to the player activating the ability.
@@ -18,4 +19,6 @@ data Activator
     Related PlayerRelation.PlayerRelation
   | -- | "Only this creature's owner may activate this ability" (CR 108.3).
     Owner
+  | -- | The players a reference names, judged from CR 602.2's default activator (CR 602.1b).
+    Player PlayerRef.PlayerRef
   deriving (Eq, Ord, Show)

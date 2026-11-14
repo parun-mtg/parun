@@ -21,6 +21,7 @@ import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
+import qualified Parun.Engine.Players as Players
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Snapshot as Snapshot
@@ -290,7 +291,7 @@ activatorOfGiven grants oid gs = case Game.lookupObject oid gs of
 
 -- CR 602.2's whole permission conjunct: its default, and the "unless the object
 -- specifically says otherwise" that CR 602.1b lets an ability write
--- (Game.activatorPermits).
+-- (Players.activatorPermits).
 --
 -- activatorOfGiven's Nothing is a zone abilities are not read from at all --
 -- abilitiesForGiven's silence there -- so a printed "any player" or "owner"
@@ -303,7 +304,7 @@ activatorOfGiven grants oid gs = case Game.lookupObject oid gs of
 mayActivateGiven :: [Projection.ControlGrant] -> PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> GameState -> Bool
 mayActivateGiven grants pid srcId ability gs = case activatorOfGiven grants srcId gs of
   Nothing -> False
-  Just usual -> Game.activatorPermits (ActivatedAbility.activator ability) usual srcId pid gs && elem pid (Game.stillPlaying gs)
+  Just usual -> Players.activatorPermits (`Projection.controllerOf` gs) (ActivatedAbility.activator ability) usual srcId pid gs && elem pid (Game.stillPlaying gs)
 
 -- The objects whose activated abilities `pid` may be offered, which is the
 -- candidate half of CR 602.2 as mayActivateGiven above is the permission half:
