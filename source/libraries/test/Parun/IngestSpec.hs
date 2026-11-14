@@ -24,6 +24,7 @@ import qualified Parun.Oracle.Normalise as Normalise
 import qualified Parun.Registry as Registry
 import qualified Parun.Slug as Slug
 import qualified Parun.Spec as Spec
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -33,7 +34,6 @@ import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.TypeLine as TypeLine
-import qualified System.Directory as Directory
 
 spec :: (Monad n) => Spec.Spec IO n -> [(FilePath, Either Text.Text Card.Card)] -> n ()
 spec s corpus = Spec.describe s "Parun.Ingest" $ do

@@ -30,6 +30,7 @@ import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Action as A
 import qualified Parun.Types.Answer as Answer
 import qualified Parun.Types.BeginningStep as BeginningStep
@@ -69,7 +70,6 @@ import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.When as When
-import qualified System.Directory as Directory
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Scenario" $ do

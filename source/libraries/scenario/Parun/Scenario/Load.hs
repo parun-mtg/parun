@@ -9,9 +9,9 @@ import qualified Data.Text.Encoding as Encoding
 import qualified Parun.Codec.Scenario as Scenario
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Paths_parun as Paths
-import qualified System.Directory as Directory
 
 -- | data/scenarios as cabal data-files, as Parun.Registry.defaultRoot finds
 -- data/cards.

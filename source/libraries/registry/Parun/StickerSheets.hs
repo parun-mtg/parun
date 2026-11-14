@@ -10,9 +10,9 @@ import qualified Data.Text.Encoding as Encoding
 import qualified Parun.Codec.StickerSheet as StickerSheet
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.StickerSheet as StickerSheet.Type
 import qualified Paths_parun as Paths
-import qualified System.Directory as Directory
 
 -- | The sheet corpus's default root, Parun.Registry.defaultRoot's posture.
 defaultRoot :: IO FilePath
