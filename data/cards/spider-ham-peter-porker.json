@@ -1,0 +1,248 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Spider-Ham, Peter Porker",
+      "oracleText": "",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasSubtype",
+                      "value": "Spider"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Boar"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Bat"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Bear"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Bird"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Cat"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Dog"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Frog"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Jackal"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Lizard"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Mouse"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Otter"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Rabbit"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Raccoon"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Rat"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Squirrel"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Turtle"
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Wolf"
+                    }
+                  ]
+                },
+                {
+                  "type": "Not",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 1
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "activatedAbilities": [
+                                  {
+                                    "cost": {
+                                      "components": [
+                                        {
+                                          "type": "TapThis"
+                                        },
+                                        {
+                                          "type": "SacrificeThis"
+                                        }
+                                      ],
+                                      "mana": [
+                                        {
+                                          "type": "Generic",
+                                          "value": 2
+                                        }
+                                      ]
+                                    },
+                                    "modal": {
+                                      "modes": [
+                                        {
+                                          "clauses": [
+                                            {
+                                              "effects": [
+                                                {
+                                                  "type": "GainLife",
+                                                  "value": {
+                                                    "player": {
+                                                      "type": "Relative",
+                                                      "value": "You"
+                                                    },
+                                                    "quantity": {
+                                                      "type": "Literal",
+                                                      "value": 3
+                                                    }
+                                                  }
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "name": "Food Token",
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Food"
+                                  ],
+                                  "types": [
+                                    "Artifact"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Boar",
+          "Hero",
+          "Spider"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
