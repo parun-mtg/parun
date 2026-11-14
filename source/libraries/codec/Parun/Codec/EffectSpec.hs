@@ -1127,7 +1127,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance Duration.UntilEndOfTurn Nothing (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "you"))) (Filter.And []) Seq.empty NextDamageOutcome.Prevented))
+      (Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance Duration.UntilEndOfTurn Nothing (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "you"))) DamageDirection.DealtTo (Filter.And []) Seq.empty NextDamageOutcome.Prevented))
       " {\"type\":\"NextDamageInstance\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"you\"}}} "
   -- The same shield with a NARROWED chosen source written out, which is what
   -- proves the defaulted key decodes: CR 609.7a's choice held to a property.
@@ -1136,7 +1136,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance Duration.UntilEndOfTurn Nothing (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Filter.HasCardType CardType.Creature) Seq.empty NextDamageOutcome.Prevented))
+      (Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance Duration.UntilEndOfTurn Nothing (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) DamageDirection.DealtTo (Filter.HasCardType CardType.Creature) Seq.empty NextDamageOutcome.Prevented))
       " {\"type\":\"NextDamageInstance\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"chosenSource\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- Forcefield's shield: CR 615.8's instance held to combat damage, with all but
   -- 1 of it prevented.
@@ -1145,7 +1145,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance Duration.UntilEndOfTurn (Just DamageKind.Combat) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "you"))) (Filter.And []) Seq.empty (NextDamageOutcome.PreventedAllBut 1)))
+      (Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance Duration.UntilEndOfTurn (Just DamageKind.Combat) (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "you"))) DamageDirection.DealtTo (Filter.And []) Seq.empty (NextDamageOutcome.PreventedAllBut 1)))
       " {\"type\":\"NextDamageInstance\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"kind\":\"Combat\",\"ref\":{\"type\":\"InSlot\",\"value\":\"you\"},\"outcome\":{\"type\":\"PreventedAllBut\",\"value\":1}}} "
   -- CR 615.5's additional effect on the same shield: Reverse Damage's "you gain
   -- life equal to the damage prevented this way".
@@ -1154,8 +1154,16 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance Duration.UntilEndOfTurn Nothing (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "you"))) (Filter.And []) (Seq.singleton (Effect.GainLife (PlayerQuantity.MkPlayerQuantity (PlayerRef.Relative PlayerRelation.You) (Quantity.InSlot (SlotName.MkSlotName (Text.pack "thatMuch")))))) NextDamageOutcome.Prevented))
+      (Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance Duration.UntilEndOfTurn Nothing (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "you"))) DamageDirection.DealtTo (Filter.And []) (Seq.singleton (Effect.GainLife (PlayerQuantity.MkPlayerQuantity (PlayerRef.Relative PlayerRelation.You) (Quantity.InSlot (SlotName.MkSlotName (Text.pack "thatMuch")))))) NextDamageOutcome.Prevented))
       " {\"type\":\"NextDamageInstance\",\"value\":{\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"you\"},\"riders\":[{\"type\":\"GainLife\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"InSlot\",\"value\":\"thatMuch\"}}}]}} "
+  -- Awe Strike's shield: the ref names the SOURCE, so the key is written.
+  Spec.it s "NextDamageInstance dealt by its ref" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance Duration.UntilEndOfTurn Nothing (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) DamageDirection.DealtBy (Filter.And []) Seq.empty NextDamageOutcome.Prevented))
+      " {\"type\":\"NextDamageInstance\",\"value\":{\"direction\":\"DealtBy\",\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}}} "
   -- CR 608.2f: Soulfire Eruption's per-object body, the other nesting of an
   -- effect inside an effect -- a DealDamage reading the mana value of the card
   -- an earlier body instruction exiled for THIS member.

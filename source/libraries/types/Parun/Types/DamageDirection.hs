@@ -2,7 +2,8 @@ module Parun.Types.DamageDirection where
 
 -- | Which SIDE of a damage event (CR 120.1) is asked about: the permanent or
 -- player the damage is dealt TO, or the object that deals it. An unbounded
--- prevention shield (CR 615.1 / 615.3) watches one side, and
+-- prevention shield (CR 615.1 / 615.3) or a one-instance one (CR 615.8, Awe
+-- Strike) watches one side, and
 -- Parun.Types.Quantity.DamageDealtThisTurn totals one side. Dovin, Hand of Control's "-1: prevent all damage
 -- that would be dealt to and dealt BY target permanent an opponent controls"
 -- prints both of one another, so its clause carries one

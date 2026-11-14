@@ -1,6 +1,7 @@
 module Parun.Types.NextDamageInstance where
 
 import qualified Data.Sequence as Seq
+import qualified Parun.Types.DamageDirection as DamageDirection
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Filter as Filter
@@ -8,10 +9,10 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
 import qualified Parun.Types.ObjectRef as ObjectRef
 
--- | CR 609.7's "the next time a source of your choice would deal damage": over
--- whom, from which chosen source, for how long, what it does to that one INSTANCE
--- of damage, whatever its size, and CR 615.5's additional effect riding a
--- prevention. The shield is then used up.
+-- | CR 615.8's "the next time a specific source would deal damage": over whom,
+-- from which source, for how long, what it does to that one INSTANCE of damage,
+-- whatever its size, and CR 615.5's additional effect riding a prevention. The
+-- shield is then used up.
 
 -- Parametric in the effect for Parun.Types.PreventNextDamage's reason.
 data NextDamageInstance effect = MkNextDamageInstance
@@ -19,22 +20,28 @@ data NextDamageInstance effect = MkNextDamageInstance
     -- | PRINTED, as Parun.Types.PreventNextDamage's @kind@ is: Forcefield says
     -- "would deal COMBAT damage". Nothing takes combat and noncombat alike.
     kind :: Maybe DamageKind.DamageKind,
-    -- | The recipients this RESOLUTION names -- Deflecting Palm's "to you",
-    -- Honorable Passage's "to any target" -- one CR 615.8 shield each.
+    -- | The objects or players this RESOLUTION names, on the side @direction@
+    -- says: the recipients (Deflecting Palm's "to you", Honorable Passage's "to
+    -- any target"), one CR 615.8 shield each, or the SOURCE (Awe Strike's
+    -- "target creature"), whose shield then covers every recipient.
     --
-    -- Required, where the two shields beside this one make it optional: CR 615.8
-    -- describes an effect that watches ONE source, and every card in data/cards/ of
-    -- that shape names the protected recipient outright (Pilgrim of Justice names
-    -- none). A card describing its recipients by
-    -- characteristic instead would want Parun.Types.PreventNextDamage's
-    -- @whatRecipient@ and @whoRecipient@ pair here too.
+    -- Required, where the two shields beside this one make it optional: every
+    -- card in data/cards/ of this shape names one end outright. A card
+    -- describing its recipients by characteristic instead would want
+    -- Parun.Types.PreventNextDamage's @whatRecipient@ and @whoRecipient@ pair
+    -- here too.
     ref :: ObjectRef.ObjectRef,
+    -- | Which side of the damage event @ref@ names, as
+    -- Parun.Types.PreventAllDamage's field of the same name. DealtTo for every
+    -- shield but Awe Strike's, so the key is elided.
+    direction :: DamageDirection.DamageDirection,
     -- | CR 609.7a's "a source of your choice", as the PROPERTIES the chosen
-    -- source must have. Required for the reason @ref@ is: CR 615.8's shield is
-    -- about "the next time a SPECIFIC source would deal damage", so there is no
-    -- shape of this rule that watches every source. Deflecting Palm says only "a
+    -- source must have. Required on the DealtTo side: CR 615.8's shield is about
+    -- "the next time a SPECIFIC source would deal damage", so there is no shape
+    -- of this rule that watches every source. Deflecting Palm says only "a
     -- source", so its Filter is the trivial `And []` -- "any source of your
-    -- choice" is still a choice.
+    -- choice" is still a choice. Not read beside DealtBy, whose source is CR
+    -- 601.2c's target (Parun.Types.DamageDirection).
     --
     -- BOTH halves of CR 615.9, exactly as the sibling shields carry it: it
     -- narrows the candidates offered, and it is written into

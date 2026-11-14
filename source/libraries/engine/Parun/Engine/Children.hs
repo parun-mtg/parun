@@ -1114,8 +1114,8 @@ effectChildren c effect = case effect of
           <*> onFilter c whatSource
           <*> traverse (onEffect c) riders
       )
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance duration kind ref chosenSource riders outcome) ->
-    fmap Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance <$> onDuration c duration <*> pure kind <*> onObjectRef c ref <*> onFilter c chosenSource <*> traverse (onEffect c) riders <*> pure outcome)
+  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance duration kind ref direction chosenSource riders outcome) ->
+    fmap Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance <$> onDuration c duration <*> pure kind <*> onObjectRef c ref <*> pure direction <*> onFilter c chosenSource <*> traverse (onEffect c) riders <*> pure outcome)
   Effect.RedirectDamage (RedirectDamage.MkRedirectDamage duration kind amount from whatRecipient whoRecipient to chosenSource uses whatSource) ->
     fmap
       Effect.RedirectDamage
