@@ -23,6 +23,7 @@ import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Daytime as Daytime
+import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
@@ -125,6 +126,7 @@ import qualified Parun.Types.MonarchTarget as MonarchTarget
 import qualified Parun.Types.NewX as NewX
 import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.NextDamageOutcome as NextDamageOutcome
+import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ObjectRef (ObjectRef)
@@ -136,6 +138,7 @@ import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PreventAllDamage as PreventAllDamage
@@ -144,6 +147,7 @@ import qualified Parun.Types.PreventionRider as PreventionRider
 import qualified Parun.Types.Prohibit as Prohibit
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.Quantity as Quantity.Type
 import Parun.Types.Recipient (Recipient)
 import qualified Parun.Types.Recipient as Recipient
@@ -691,19 +695,20 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
       -- yields no copy, read off `gs` with the objects.
       -- data/scenarios/choreographed-sparks and
       -- data/scenarios/gogo-master-of-mimicry prove it.
-      each (playerRefPlayers legal resolving source controller gs copierRef) $ \copier -> each (Foldable.toList (Common.copyOnStackOf (Object.source obj))) $ \(copySource, kind) -> each [() | not (cantBeCopied original obj kind gs), _ <- [1 .. copies]] $ \() -> do
+      each (playerRefPlayers legal resolving source controller gs copierRef) $ \copier -> each (Foldable.toList (Common.copyOnStackOf (Object.source obj))) $ \(copySource, kind) -> do
         -- CR 707.10's answers, as the target maps to write: one EMPTY map
         -- where the copy keeps the decisions rule 707.10 copied (rule 707.10c
         -- included, its offer below being a separate act), CR 707.10d's one
         -- map per candidate, in the order its controller chose, and CR
         -- 707.10e's single map for the target the effect states. The list's
         -- LENGTH is how both of the latter two say "a copy isn't created".
-        plan <- case targets of
+        planned <- each [() | not (cantBeCopied original obj kind gs), _ <- [1 .. copies]] $ \() -> case targets of
           CopyTargets.Copied -> pure [Map.empty]
           CopyTargets.ChosenByController -> pure [Map.empty]
           CopyTargets.ForEach candidates -> Common.copyForEachTargets controller copier resolving source legal original candidates
           CopyTargets.Stated newRef -> Common.copyStatedTargets controller copier resolving source legal original newRef
-        Monad.forM plan $ \retarget -> do
+        arranged <- additionalCopies copier original kind planned
+        Monad.forM arranged $ \(retarget, additional) -> do
           -- CR 707.10d / 707.10e with CR 115.7f: a target the effect re-aims
           -- takes the replaced target's part of the division, reaimDivisions'
           -- reading. An answer handing out other parts keeps the targets
@@ -876,8 +881,10 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
           State.put (Game.insertIntoZone Zone.Stack LibraryPosition.defaultValue copier copyId gs2 {GameState.objects = Map.insert copyId copy (GameState.objects gs2)})
           -- CR 707.10c's chooser is the COPY's controller and not the copying
           -- effect's: Meletis Charlatan's "that player may choose new targets
-          -- for the copy". Proved by Parun.CopySpec's Charlatan group.
-          Monad.when (targets == CopyTargets.ChosenByController) (Common.chooseNewTargetsFor False source copier copier copyId)
+          -- for the copy". Proved by Parun.CopySpec's Charlatan group. An
+          -- additional copy is offered it whatever the effect says (Twinning
+          -- Staff's ruling).
+          Monad.when (additional || targets == CopyTargets.ChosenByController) (Common.chooseNewTargetsFor False source copier copier copyId)
           -- CR 115.1: "these targets are declared as part of the process of
           -- putting the spell or ability on the stack", and CR 707.10c puts the
           -- copy on the stack once its controller has decided what its targets
@@ -905,6 +912,27 @@ copyStackObject resolving source controller legal (CopyStackObject.MkCopyStackOb
   where
     each :: [a] -> (a -> Game [b]) -> Game [b]
     each xs f = concat <$> traverse f xs
+    -- CR 614.1a: copying a SPELL is an instruction a row can resize (Twinning
+    -- Staff), proposed once its count is known: the copies every plan above
+    -- yields. Each copy a row adds keeps the original's decisions (CR 707.10;
+    -- docs/decisions.md, "What an additional copy of a spell targets"), and
+    -- its copier places it among the others (Twinning Staff's ruling), asked
+    -- as how many go onto the stack ahead of it. An ability's copies propose
+    -- nothing.
+    additionalCopies copier original kind planned = case (kind, planned) of
+      (StackObjectKind.Spell, _ : _) -> do
+        let count = Natural.length planned
+        outcome <- Event.applyReplacements (ProposedEvent.WouldPerform PlayerInstruction.CopySpell Nothing copier count)
+        case outcome >>= Replacement.asPerformed PlayerInstruction.CopySpell of
+          Nothing -> pure []
+          Just (_, settled) -> Monad.foldM (\placed () -> place copier original placed) (fmap (\p -> (p, False)) (List.genericTake settled planned)) (List.genericReplicate (Natural.minusSaturating settled count) ())
+      _ -> pure (fmap (\p -> (p, False)) planned)
+    place copier original placed = do
+      gs <- State.get
+      let most = Natural.length placed
+      at <- Game.choose (Prompt.ChooseNumber (Decide.deciderFor copier gs) copier original 0 NumberFloor.Least (Just most))
+      let (ahead, behind) = List.genericSplitAt (min most at) placed
+      pure (ahead <> [(Map.empty, True)] <> behind)
 
 -- CR 115.7d over each named spell or ability still on the stack.
 chooseNewTargets :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()

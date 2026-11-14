@@ -354,9 +354,10 @@ data Prompt r where
   ChoosePaidEnergy :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Natural.Natural -> Prompt Natural.Natural
   -- | CR 107.1c / 608.2d: the number an Effect.ChooseNumber binds as the object
   -- resolves, an Effect.Bid's bid, or how many colours a ChosenQuality.Colors
-  -- range picks (CR 105.4); the Natural is its floor, the NumberFloor what
-  -- that floor means, and the Maybe its bound, the answer clamped to the
-  -- bound. Answers as Response.ChoseNumber.
+  -- range picks (CR 105.4), or how many copies of a spell go onto the stack
+  -- ahead of an additional one (Twinning Staff's ruling); the Natural is its
+  -- floor, the NumberFloor what that floor means, and the Maybe its bound, the
+  -- answer clamped to the bound. Answers as Response.ChoseNumber.
   ChooseNumber :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Natural.Natural -> NumberFloor.NumberFloor -> Maybe Natural.Natural -> Prompt Natural.Natural
   -- | CR 702.155b / 715.3b: which chapter a Saga with read ahead enters on; the
   -- Natural is the final chapter (CR 715.2d), the answer clamped into the
