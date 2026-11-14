@@ -1428,7 +1428,7 @@ groupingChildren c grouping = case grouping of
 -- slots, or the players' slot.
 voteChoicesChildren :: (Applicative f) => EffectChildren card ability f -> VoteChoices.VoteChoices -> f VoteChoices.VoteChoices
 voteChoicesChildren c choices = case choices of
-  VoteChoices.Objects (VoteObjects.MkVoteObjects filter_ named) -> fmap VoteChoices.Objects (VoteObjects.MkVoteObjects <$> onFilter c filter_ <*> onSlot c named)
+  VoteChoices.Objects (VoteObjects.MkVoteObjects filter_ named anyVotes) -> fmap VoteChoices.Objects (VoteObjects.MkVoteObjects <$> onFilter c filter_ <*> onSlot c named <*> pure anyVotes)
   VoteChoices.Words slots -> fmap VoteChoices.Words (traverse (onSlot c) slots)
   VoteChoices.Players (VotePlayers.MkVotePlayers another named) -> fmap (VoteChoices.Players . VotePlayers.MkVotePlayers another) (onSlot c named)
 

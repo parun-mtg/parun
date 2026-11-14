@@ -2314,7 +2314,14 @@ vote resolving source controller legal (Vote.MkVote starter choices secret) = do
               -- voted. Rule 701.38a's vote determines "some aspect of the effect",
               -- and the aspect this arm determines is which objects the slot names.
               winners = if best <= 0 then [] else filter (\oid -> tallyOf oid == best) candidates
-          State.modify' (Common.bindObjectsSlot resolving (VoteObjects.slot objects) (Seq.fromList winners))
+              voted = filter (\oid -> tallyOf oid > 0) candidates
+              bound = if VoteObjects.anyVotes objects then voted else winners
+              -- Each voted-for object's tally, for a later Effect.ForEach over
+              -- the slot to read as that member's amount: Trap the
+              -- Trespassers' "put that many stun counters on it".
+              tallies = Map.fromList [(Recipient.ToObject oid, Natural.length (filter (== Just (BallotChoice.ForObject oid)) ballots)) | oid <- voted]
+          State.modify' (Common.bindObjectsSlot resolving (VoteObjects.slot objects) (Seq.fromList bound))
+          State.modify' (Common.overHolderBindings resolving (Map.adjust (\binding -> binding {Binding.Type.perMember = Just tallies}) (VoteObjects.slot objects)))
     -- CR 701.38b's words. No sweep and no empty case: the listed choices are
     -- printed on the card, so the list cannot come up empty the way a
     -- battlefield sweep can.
