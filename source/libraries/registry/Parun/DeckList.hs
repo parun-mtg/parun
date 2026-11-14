@@ -556,14 +556,22 @@ suffix (set, number) = Text.singleton '(' <> set <> Text.pack ") " <> number
 -- once: the printed, spaced "Wax // Wane" and Parun.Types.CardName.join's
 -- unspaced "Wax//Wane", which is what data/comprehensive-rules.txt's own
 -- examples use.
+--
+-- A name a face prints with "//" in it (SP//dr, Piloted by Peni) is looked up
+-- whole first, so splitting it applies only to a name no card has.
 resolve :: (Monad m) => Registry.Registry m -> Natural.Natural -> CardName.CardName -> m (Either InvalidCorpus.InvalidCorpus (Either Problem Card.Card))
 resolve registry number name = do
-  looked <- mapM (Registry.fetchCard registry) halves
-  pure . flip fmap (sequence looked) $ \found -> case List.find carriesEvery (Maybe.catMaybes (NonEmpty.toList found)) of
-    Just card -> Right card
-    Nothing
-      | any Maybe.isNothing found -> Left (NoSuchCard number name)
-      | otherwise -> Left (HalvesDisagree number name)
+  whole <- if length halves > 1 then Registry.fetchCard registry name else pure (Right Nothing)
+  case whole of
+    Left problem -> pure (Left problem)
+    Right (Just card) -> pure (Right (Right card))
+    Right Nothing -> do
+      looked <- mapM (Registry.fetchCard registry) halves
+      pure . flip fmap (sequence looked) $ \found -> case List.find carriesEvery (Maybe.catMaybes (NonEmpty.toList found)) of
+        Just card -> Right card
+        Nothing
+          | any Maybe.isNothing found -> Left (NoSuchCard number name)
+          | otherwise -> Left (HalvesDisagree number name)
   where
     halves = halvesOf name
     carriesEvery card =
