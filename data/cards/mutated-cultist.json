@@ -1,0 +1,344 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Deathtouch"
+        },
+        {
+          "type": "Devoid"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Mutated Cultist",
+      "oracleText": "Devoid (This card has no color.)\nWhen you cast this spell, remove all counters from up to one target permanent or opponent. The next spell you cast this turn costs {1} less to cast for each counter removed this way.\nDeathtouch",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Self"
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RemoveCountersAmong",
+                        "value": {
+                          "count": {
+                            "type": "All"
+                          },
+                          "from": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "kind": {
+                            "type": "OfAnyKind"
+                          },
+                          "tally": "permanentCounters"
+                        }
+                      },
+                      {
+                        "type": "RemovePlayerCounters",
+                        "value": {
+                          "kind": "Energy",
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "PlayerCounters",
+                            "value": {
+                              "kind": "Energy",
+                              "player": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          },
+                          "tally": "energyCounters"
+                        }
+                      },
+                      {
+                        "type": "RemovePlayerCounters",
+                        "value": {
+                          "kind": "Ticket",
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "PlayerCounters",
+                            "value": {
+                              "kind": "Ticket",
+                              "player": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          },
+                          "tally": "ticketCounters"
+                        }
+                      },
+                      {
+                        "type": "RemovePlayerCounters",
+                        "value": {
+                          "kind": "Poison",
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "PlayerCounters",
+                            "value": {
+                              "kind": "Poison",
+                              "player": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          },
+                          "tally": "poisonCounters"
+                        }
+                      },
+                      {
+                        "type": "RemovePlayerCounters",
+                        "value": {
+                          "kind": "Rad",
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "PlayerCounters",
+                            "value": {
+                              "kind": "Rad",
+                              "player": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          },
+                          "tally": "radCounters"
+                        }
+                      },
+                      {
+                        "type": "RemovePlayerCounters",
+                        "value": {
+                          "kind": "Experience",
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "PlayerCounters",
+                            "value": {
+                              "kind": "Experience",
+                              "player": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          },
+                          "tally": "experienceCounters"
+                        }
+                      },
+                      {
+                        "type": "RemovePlayerCounters",
+                        "value": {
+                          "kind": "Point",
+                          "player": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "PlayerCounters",
+                            "value": {
+                              "kind": "Point",
+                              "player": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          },
+                          "tally": "pointCounters"
+                        }
+                      },
+                      {
+                        "type": "AffectPlayers",
+                        "value": {
+                          "duration": {
+                            "type": "UntilUsed"
+                          },
+                          "effect": {
+                            "type": "ModifyCost",
+                            "value": {
+                              "change": {
+                                "type": "Reduce",
+                                "value": {
+                                  "amount": [
+                                    {
+                                      "type": "Generic",
+                                      "value": 1
+                                    }
+                                  ]
+                                }
+                              },
+                              "matching": {
+                                "type": "And",
+                                "value": []
+                              },
+                              "perEach": {
+                                "type": "Plus",
+                                "value": {
+                                  "left": {
+                                    "type": "InSlot",
+                                    "value": "permanentCounters"
+                                  },
+                                  "right": {
+                                    "type": "Plus",
+                                    "value": {
+                                      "left": {
+                                        "type": "InSlot",
+                                        "value": "energyCounters"
+                                      },
+                                      "right": {
+                                        "type": "Plus",
+                                        "value": {
+                                          "left": {
+                                            "type": "InSlot",
+                                            "value": "ticketCounters"
+                                          },
+                                          "right": {
+                                            "type": "Plus",
+                                            "value": {
+                                              "left": {
+                                                "type": "InSlot",
+                                                "value": "poisonCounters"
+                                              },
+                                              "right": {
+                                                "type": "Plus",
+                                                "value": {
+                                                  "left": {
+                                                    "type": "InSlot",
+                                                    "value": "radCounters"
+                                                  },
+                                                  "right": {
+                                                    "type": "Plus",
+                                                    "value": {
+                                                      "left": {
+                                                        "type": "InSlot",
+                                                        "value": "experienceCounters"
+                                                      },
+                                                      "right": {
+                                                        "type": "InSlot",
+                                                        "value": "pointCounters"
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "subject": {
+                                "type": "Spells"
+                              }
+                            }
+                          },
+                          "players": {
+                            "type": "Scoped",
+                            "value": {
+                              "type": "You"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 1
+                      }
+                    },
+                    "filter": {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "IsPlayer",
+                          "value": "Opponent"
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsPlayer",
+                            "value": "AnyPlayer"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "PermanentsAndPlayers"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Eldrazi",
+          "Horror"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

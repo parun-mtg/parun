@@ -5097,7 +5097,8 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.CantCastSpells -> pure effect
   PlayerEffect.CantActivateAbilities {} -> pure effect
   PlayerEffect.CantCastMoreThan _ -> pure effect
-  -- Not implemented: the references inside a `perEach` or per-target count (#5153).
+  -- A `perEach` is fixed whole at resolution (overResolutionQuantities), and a
+  -- per-target count reads the later cast's own targets (CR 601.2c).
   PlayerEffect.ModifyCost {} -> pure effect
   PlayerEffect.AlternativeActivationCost _ -> pure effect
   PlayerEffect.PlayAdditionalLands _ -> pure effect
@@ -5154,6 +5155,22 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.RevealsDraw _ -> pure effect
   PlayerEffect.Precluded _ -> pure effect
   PlayerEffect.Shows _ -> pure effect
+
+-- CR 608.2h / 611.2d: the quantities a resolving spell or ability determines
+-- once, as it stores this effect: a cost change's `perEach`, Mutated Cultist's
+-- "for each counter removed this way". The reader is Parun.Engine.Resolve.Slots'
+-- report, the writer the bake in Parun.Engine.Resolve.Arms.Objects.affectPlayers.
+-- A per-target count is not among them: it is read against the later cast's
+-- targets (CR 601.2c). Every other arm holds none.
+overResolutionQuantities :: (Applicative f) => (Quantity.Type.Quantity -> f Quantity.Type.Quantity) -> PlayerEffect -> f PlayerEffect
+overResolutionQuantities f effect = case effect of
+  PlayerEffect.ModifyCost modifier ->
+    fmap (\each -> PlayerEffect.ModifyCost modifier {CostModifier.perEach = each}) (traverse f (CostModifier.perEach modifier))
+  _ -> pure effect
+
+-- overResolutionQuantities read.
+resolutionQuantitiesIn :: PlayerEffect -> [Quantity.Type.Quantity]
+resolutionQuantitiesIn = Functor.getConst . overResolutionQuantities (Functor.Const . pure)
 
 -- overPlayerRefs read, for a caller that only wants the references.
 playerRefsIn :: PlayerEffect -> [PlayerRef.PlayerRef]

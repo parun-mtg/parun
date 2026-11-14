@@ -1393,11 +1393,14 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- (Whippoorwill's "that creature"). The second is Many, and for
   -- ObjectRef.InSlot's reason: Resolve.bakeDamagePatternRecipient reads the
   -- whole set and stores one effect per recipient, so a slot holding two is not
-  -- silently narrowed to one.
+  -- silently narrowed to one. A third, the numbers the effect fixes as it is
+  -- stored (Mutated Cultist's tallies).
   Effect.AffectPlayers (AffectPlayers.MkAffectPlayers _ affected playerEffect) ->
-    joinTwo
-      (affectedPlayersSlots affected)
-      (joinSlots (fmap (\slot -> Map.singleton slot SlotArity.Many) (PlayerEffect.boundRecipientSlots playerEffect)))
+    joinSlots
+      [ affectedPlayersSlots affected,
+        joinSlots (fmap (\slot -> Map.singleton slot SlotArity.Many) (PlayerEffect.boundRecipientSlots playerEffect)),
+        joinSlots (fmap quantitySlots (PlayerEffect.resolutionQuantitiesIn playerEffect))
+      ]
   -- RequireAttack's reading below, for a Matching blocker or class.
   Effect.RequireBlock (RequireBlock.MkRequireBlock duration blocker attacker _) -> joinTwo (durationSlots duration) (joinTwo (matchingSlots blocker) (foldMap matchingSlots attacker))
   Effect.Prohibit (Prohibit.MkProhibit _ duration affected) -> joinTwo (durationSlots duration) (matchingSlots affected)
@@ -2229,8 +2232,8 @@ ownSlotsAreExhaustive effect = case effect of
   -- CR 603.7c: the armed ability inherits this object's whole environment.
   Effect.ArmDelayedTrigger {} -> False
   -- GainControl's reason for the Duration.
-  Effect.AffectPlayers (AffectPlayers.MkAffectPlayers duration _ _) ->
-    Map.null (durationSlots duration) && durationSlotsAreExhaustive duration
+  Effect.AffectPlayers (AffectPlayers.MkAffectPlayers duration _ playerEffect) ->
+    Map.null (durationSlots duration) && durationSlotsAreExhaustive duration && all Quantity.slotsAreExhaustive (PlayerEffect.resolutionQuantitiesIn playerEffect)
   -- slotsOf reports the Duration and a Matching class's Filter, RequireAttack's
   -- reading below.
   Effect.RequireBlock (RequireBlock.MkRequireBlock duration _ _ _) -> durationSlotsAreExhaustive duration
@@ -2512,7 +2515,7 @@ hasRead wanted =
         Effect.GainControl (GainControl.MkGainControl {}) -> False
         Effect.ExchangeControl _ -> False
         Effect.ArmDelayedTrigger {} -> False
-        Effect.AffectPlayers {} -> False
+        Effect.AffectPlayers (AffectPlayers.MkAffectPlayers _ _ playerEffect) -> any (Quantity.hasRead wanted) (PlayerEffect.resolutionQuantitiesIn playerEffect)
         Effect.RequireBlock {} -> False
         Effect.Prohibit {} -> False
         Effect.ForbidAttack {} -> False
