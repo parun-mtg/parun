@@ -2,6 +2,7 @@ module Parun.Types.Operand where
 
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.Measure as Measure
+import qualified Parun.Types.OtherCandidates as OtherCandidates
 import qualified Parun.Types.SlotName as SlotName
 
 -- | What a Parun.Types.Measures comparison compares the candidate's measure
@@ -25,6 +26,6 @@ data Operand
     -- Parun.Types.AffectedUnless's, Parun.Types.FreeCast's and
     -- Parun.Types.CastFromZone's @amount@).
     EnclosingAmount
-  | -- | CR 608.2d: that measure of every other candidate the enclosing choice offers (Crackling Doom).
-    OfEachOtherCandidate Measure.Measure
+  | -- | CR 608.2d: a measure of every other candidate the enclosing position offers, within a scope (Crackling Doom).
+    OfEachOtherCandidate OtherCandidates.OtherCandidates
   deriving (Eq, Ord, Show)

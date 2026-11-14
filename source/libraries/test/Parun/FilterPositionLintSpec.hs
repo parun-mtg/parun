@@ -55,6 +55,7 @@ import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BoundMeasure as BoundMeasure
+import qualified Parun.Types.CandidateScope as CandidateScope
 import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
 import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card.Type
@@ -155,6 +156,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Optionality as Optionality
+import qualified Parun.Types.OtherCandidates as OtherCandidates
 import qualified Parun.Types.OutsideDestination as OutsideDestination
 import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
@@ -562,12 +564,13 @@ otherCandidateTag = Text.pack "OfEachOtherCandidate"
 -- Filter.Context.candidateMeasures, called for an edict's pool, a battlefield
 -- choice's, a target slot's (Parun.Engine.Target.admittedListGiven), a choice
 -- out of a hand, and one out of graveyards the controller makes
--- (Parun.Engine.Resolve.Common.graveyardCards) -- so the operand anywhere else,
--- a choice out of exile and a trigger's filter included, is a silent False.
--- Counted off the encoding for
+-- (Parun.Engine.Resolve.Common.graveyardCards), and a leaves-the-battlefield
+-- trigger's (Parun.Engine.Event.Match.leaves) -- so the operand anywhere else,
+-- a choice out of exile and any other trigger's filter included, is a silent
+-- False. Counted off the encoding for
 -- amountedSlotAtoms' reason: the position is the enclosing PlayerSacrifices,
--- ChoosePermanents, ChosenPermanents, ChosenCardInHand, ChosenCardInGraveyard
--- or target slot, which no Framing names.
+-- ChoosePermanents, ChosenPermanents, ChosenCardInHand, ChosenCardInGraveyard,
+-- Leaves trigger or target slot, which no Framing names.
 otherCandidateCounts :: Face.Face Card.Type.Card -> (Int, Int)
 otherCandidateCounts card =
   let encoded = Codec.encode (Face.Codec.codec Card.codec) card
@@ -592,6 +595,7 @@ otherCandidateCounts card =
                 | typed "ChosenCardInGraveyard" = Just (concatMap (field "filter") (byController (keyed "value")))
                 | typed "ChosenPermanents" = Just (concatMap (field "filter") (onBattlefield (keyed "value")))
                 | typed "ChoosePermanents" = Just (concatMap (field "filter") (onBattlefield (concatMap (field "permanents") (keyed "value"))))
+                | typed "Leaves" = Just [f | permanent <- concatMap (field "permanent") (keyed "value"), any (\t -> case t of Value.String x -> String.unwrap x == Text.pack "Matching"; _ -> False) (field "type" permanent), f <- field "value" permanent]
                 | otherwise = Nothing
               -- A target slot's own filter (CR 601.2c, 608.2b), beside
               -- whatever else the object holds.
@@ -2104,12 +2108,12 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> ability
         permitting = (S.combinedFace maralen) {Face.playerAbilities = fmap struck (Face.playerAbilities (S.combinedFace maralen))}
     Spec.assertEqWith s "a cast permission naming no amount is an offence" (enclosingAmountCounts permitting) (0, 1)
-  -- CR 608.2d's other-candidates operand is answerable only where a choice
-  -- gathers a pool. See otherCandidateCounts.
-  Spec.it s "CR 608.2d no card compares against other candidates outside a choice's pool" $ do
+  -- CR 608.2d's other-candidates operand is answerable only where a choice or
+  -- a leaves trigger gathers a pool. See otherCandidateCounts.
+  Spec.it s "CR 608.2d no card compares against other candidates outside a choice's or a leaves trigger's pool" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace ((/= 0) . snd . otherCandidateCounts) . Printing.card) ps
-    Spec.assertEqWith s "the operand sits only in a choice's or a target slot's filter" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "the operand sits only in a choice's, a target slot's or a leaves trigger's filter" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: these author it, and are accepted -- each with how many.
     -- Juxtapose writes two, one per ChoosePermanents.
     let authors :: [(String, Int)]
@@ -2128,6 +2132,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("Flare of Malice", 1),
             ("Highcliff Felidar", 1),
             ("Juxtapose", 2),
+            ("Kraven the Hunter", 1), -- a Leaves trigger
             ("Myrkul's Edict", 1),
             ("Papalymo Totolymo", 1),
             ("Penregon Besieged", 1),
@@ -2143,13 +2148,13 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("The Dining Car", 1),
             ("Witch-king, Bringer of Ruin", 1)
           ]
-    assertAuthors s registry pool "each author's operands are in a choice's or a target slot's filter" (otherCandidateCounts . surveyedFace) authors
-    -- The rejected side: the same atom in a trigger's filter, which gathers no
-    -- pool (gap #7401, Kraven the Hunter).
+    assertAuthors s registry pool "each author's operands are in a choice's, a target slot's or a leaves trigger's filter" (otherCandidateCounts . surveyedFace) authors
+    -- The rejected side: the same atom in an entry trigger's filter, which
+    -- gathers no pool.
     piker <- S.printingOf s registry "Goblin Piker"
-    let atom = Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.Measures (Measures.MkMeasures Measure.Power Comparison.AtLeast (Operand.OfEachOtherCandidate Measure.Power))]
+    let atom = Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.Measures (Measures.MkMeasures Measure.Power Comparison.AtLeast (Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates Measure.Power CandidateScope.SameController)))]
         planted = (S.combinedFace piker) {Face.triggeredAbilities = [oneEffectTrigger (TriggerCondition.Enters (EntersTrigger.matching atom)) (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing))]}
-    Spec.assertEqWith s "a planted atom in a trigger's filter is an offence" (otherCandidateCounts planted) (0, 1)
+    Spec.assertEqWith s "a planted atom in an entry trigger's filter is an offence" (otherCandidateCounts planted) (0, 1)
     -- And in a target slot's filter, and a chosen permanent's on the
     -- battlefield, but not in exile: chosenCandidates' exile arm never calls
     -- Filter.amongCandidates.

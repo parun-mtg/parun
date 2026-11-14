@@ -83,7 +83,10 @@
                                       "measure": "Toughness",
                                       "operand": {
                                         "type": "OfEachOtherCandidate",
-                                        "value": "Toughness"
+                                        "value": {
+                                          "measure": "Toughness",
+                                          "scope": "EveryCandidate"
+                                        }
                                       }
                                     }
                                   }

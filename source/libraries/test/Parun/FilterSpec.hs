@@ -14,6 +14,7 @@ import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BoundMeasure as BoundMeasure
+import qualified Parun.Types.CandidateScope as CandidateScope
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
@@ -51,6 +52,7 @@ import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.NameChooser as NameChooser
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Operand as Operand
+import qualified Parun.Types.OtherCandidates as OtherCandidates
 import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.ParityOperand as ParityOperand
 import qualified Parun.Types.PlayerId as PlayerId
@@ -540,15 +542,25 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- CR 608.2d: blackCreature is object 7 with power 2. Its own entry in the
     -- pool is skipped, which is what lets a strict comparison hold at all.
     Spec.it s "OfEachOtherCandidate compares against every other candidate" $ do
-      let pooled entries = self {Filter.candidateMeasures = Just (Map.fromList [(ObjectId.MkObjectId oid, Map.singleton Measure.Power n) | (oid, n) <- entries])}
-          greatest = power Comparison.AtLeast (Operand.OfEachOtherCandidate Measure.Power)
-          strictly = power Comparison.GreaterThan (Operand.OfEachOtherCandidate Measure.Power)
+      let pooled entries = self {Filter.candidateMeasures = Just (Map.fromList [(ObjectId.MkObjectId oid, blackCreature {Filter.power = Just n}) | (oid, n) <- entries])}
+          greatest = power Comparison.AtLeast (Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates Measure.Power CandidateScope.EveryCandidate))
+          strictly = power Comparison.GreaterThan (Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates Measure.Power CandidateScope.EveryCandidate))
       Spec.assertBool s (Filter.matches (pooled [(7, 2), (8, 1), (9, 2)]) blackCreature greatest) "tied for the greatest"
       Spec.assertBool s (not (Filter.matches (pooled [(7, 2), (8, 3)]) blackCreature greatest)) "3 is greater"
       Spec.assertBool s (Filter.matches (pooled [(7, 2), (8, 1)]) blackCreature strictly) "its own 2 is not compared"
       Spec.assertBool s (Filter.matches (pooled []) blackCreature strictly) "no other candidate, as the pool is gathered"
       Spec.assertBool s (not (Filter.matches self blackCreature greatest)) "no pool"
       Spec.assertBool s (not (Filter.matches (pooled []) noPower greatest)) "no power"
+    -- "Among creatures that player controls": blackCreature is player 0's, so
+    -- player 1's greater creature is not compared against.
+    Spec.it s "OfEachOtherCandidate SameController compares within the candidate's controller" $ do
+      let pooled entries = self {Filter.candidateMeasures = Just (Map.fromList [(ObjectId.MkObjectId oid, blackCreature {Filter.power = Just n, Filter.controller = PlayerId.MkPlayerId <$> holder}) | (oid, n, holder) <- entries])}
+          greatest scope = power Comparison.AtLeast (Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates Measure.Power scope))
+          pool = pooled [(7, 2, Just 0), (8, 1, Just 0), (9, 3, Just 1)]
+      Spec.assertBool s (Filter.matches pool blackCreature (greatest CandidateScope.SameController)) "player 1's 3 is not its controller's"
+      Spec.assertBool s (not (Filter.matches pool blackCreature (greatest CandidateScope.EveryCandidate))) "but is every candidate's"
+      Spec.assertBool s (not (Filter.matches (pooled [(8, 3, Just 0)]) blackCreature (greatest CandidateScope.SameController))) "its controller's 3 is compared"
+      Spec.assertBool s (Filter.matches (pooled [(8, 3, Nothing)]) blackCreature (greatest CandidateScope.SameController)) "a candidate with no controller is not"
   -- CR 702.39a's "defending player controls", whose player comes from the
   -- Context rather than from the perspective. blackCreature is controlled by
   -- player 0 and OWNED by player 1, so a reading that consulted the wrong field

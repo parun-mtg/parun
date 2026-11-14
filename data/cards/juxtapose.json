@@ -55,7 +55,10 @@
                                       "measure": "ManaValue",
                                       "operand": {
                                         "type": "OfEachOtherCandidate",
-                                        "value": "ManaValue"
+                                        "value": {
+                                          "measure": "ManaValue",
+                                          "scope": "SameController"
+                                        }
                                       }
                                     }
                                   }
@@ -127,7 +130,10 @@
                                       "measure": "ManaValue",
                                       "operand": {
                                         "type": "OfEachOtherCandidate",
-                                        "value": "ManaValue"
+                                        "value": {
+                                          "measure": "ManaValue",
+                                          "scope": "SameController"
+                                        }
                                       }
                                     }
                                   }

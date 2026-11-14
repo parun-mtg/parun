@@ -62,6 +62,7 @@ import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.BattlefieldCandidate as BattlefieldCandidate
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Bookkeeping as Bookkeeping
+import qualified Parun.Types.CandidateScope as CandidateScope
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
@@ -126,6 +127,7 @@ import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.Operand as Operand
+import qualified Parun.Types.OtherCandidates as OtherCandidates
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
@@ -4234,7 +4236,10 @@ filterReads f = case f of
       Operand.AmountInSlot _ -> Set.empty
       Operand.EnclosingAmount -> Set.empty
       -- Another object's projection, declared as the candidate's (Aspect's note).
-      Operand.OfEachOtherCandidate measure -> measureReads measure
+      Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates measure scope) ->
+        measureReads measure <> case scope of
+          CandidateScope.EveryCandidate -> Set.empty
+          CandidateScope.SameController -> holderReads Holder.Controller
   Filter.Type.ControllerIsOwner -> holderReads Holder.Controller <> holderReads Holder.Owner
   Filter.Type.HeldBy holder _ -> holderReads holder
   -- The candidate's controller; who defends is a combat-record fact.

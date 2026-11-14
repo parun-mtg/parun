@@ -49,7 +49,7 @@ import qualified Parun.Engine.CounterRestriction as CounterRestriction
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Dice as Dice
 import qualified Parun.Engine.EntryRestriction as EntryRestriction
-import Parun.Engine.Event.Match (matchesTriggerGiven)
+import Parun.Engine.Event.Match (matchesAt)
 import Parun.Engine.Event.Trigger (Standing, battlefieldCandidates, delayedArmed, delayedPending, eventTriggers, eventTriggersGiven, interveningHolds, isReflexive, participants, reflexiveFiring, standingOf, stateTriggers)
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
@@ -12218,10 +12218,12 @@ revealedObjects revealed gs =
 -- constructor, but only at the JSON boundary.
 --
 -- The BINDINGLESS reading, which is every caller that has no environment to offer
--- and every condition but one. `matchesTriggerGiven` below is the same act with CR
--- 603.7c's captured environment in hand.
+-- and every condition but one, with no board filed before the event, so a
+-- look-back pool (CR 603.10a, Event.Match.leaves) is empty.
+-- Event.Match.matchesTriggerGiven is the same act with CR 603.7c's captured
+-- environment and the event's group in hand.
 matchesTrigger :: GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-matchesTrigger gs = matchesTriggerGiven Map.empty (battlefieldCandidates gs) gs gs
+matchesTrigger gs = matchesAt Map.empty (battlefieldCandidates gs) gs Nothing gs
 
 -- CR 603.2b / 109.5: does this condition restrict the turn its event may occur
 -- on to the ABILITY'S CONTROLLER's turn? True for "at the beginning of YOUR

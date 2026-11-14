@@ -5,8 +5,10 @@ import qualified Parun.Codec.Operand as Operand
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.BoundMeasure as BoundMeasure
+import qualified Parun.Types.CandidateScope as CandidateScope
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Operand as Operand
+import qualified Parun.Types.OtherCandidates as OtherCandidates
 import qualified Parun.Types.SlotName as SlotName
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -51,6 +53,6 @@ spec s = Spec.describe s "Parun.Codec.Operand" $ do
     Common.assertCodec
       s
       Operand.codec
-      (Operand.OfEachOtherCandidate Measure.ManaValue)
-      " {\"type\":\"OfEachOtherCandidate\",\"value\":\"ManaValue\"} "
+      (Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates Measure.ManaValue CandidateScope.EveryCandidate))
+      " {\"type\":\"OfEachOtherCandidate\",\"value\":{\"measure\":\"ManaValue\",\"scope\":\"EveryCandidate\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Operand.codec
