@@ -48,6 +48,8 @@ import qualified Parun.Engine.TextWord as TextWord
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
+import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Binding as Binding.Type
@@ -423,7 +425,21 @@ modifyTarget resolving source controller legal chosen (ModifyTarget.MkModifyTarg
                  in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = eff : StoredEffects.continuousEffects (GameState.stored g1)}}
               storeSet g (objs, frozen) = case frozen of
                 Nothing -> g
-                Just m -> List.foldl' (store objs) g (Common.expandGrant legal resolving controller source gs m)
+                Just m -> List.foldl' (store objs) g (fmap bakeActivator (Common.expandGrant legal resolving controller source gs m))
+              -- CR 109.5 / 602.1b: a reference to who may activate a granted
+              -- ability, written outside its quotes, is the grant's own text,
+              -- so its "you" is this resolution's controller (Martyrdom's
+              -- "Only you"), baked now as the seat it names. data/scenarios'
+              -- Martyrdom files prove it.
+              --
+              -- Not implemented: a reference naming several players or none
+              -- stays unbaked, read from the receiver's controller (#7635).
+              bakeActivator m = case m of
+                Modification.GainAbility (GrantedAbility.Activated a)
+                  | Activator.Player who <- ActivatedAbility.activator a,
+                    [p] <- playerRefPlayers legal resolving source controller gs who ->
+                      Modification.GainAbility (GrantedAbility.Activated a {ActivatedAbility.activator = Activator.Player (PlayerRef.Specific p)})
+                _ -> m
            in List.foldl' storeSet gs frozenSets
 
 -- CR 608.2d: a word swap is not among CR 601.2b-d's announcements, so the

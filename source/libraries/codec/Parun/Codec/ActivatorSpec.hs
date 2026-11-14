@@ -4,6 +4,7 @@ import qualified Parun.Codec.Activator as Activator
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.Activator as Activator
+import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -32,5 +33,11 @@ spec s = Spec.describe s "Parun.Codec.Activator" $ do
       Activator.codec
       Activator.Owner
       " {\"type\":\"Owner\"} "
+  Spec.it s "Player" $
+    Common.assertCodec
+      s
+      Activator.codec
+      (Activator.Player (PlayerRef.Relative PlayerRelation.You))
+      " {\"type\":\"Player\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s Activator.codec

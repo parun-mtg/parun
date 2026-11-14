@@ -1,0 +1,135 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Martyrdom",
+      "oracleText": "Until end of turn, target creature you control gains \"{0}: The next 1 damage that would be dealt to target creature, planeswalker, or player this turn is dealt to this creature instead.\" Only you may activate this ability.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainAbility",
+                        "value": {
+                          "type": "Activated",
+                          "value": {
+                            "activator": {
+                              "type": "Player",
+                              "value": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            },
+                            "cost": {
+                              "mana": []
+                            },
+                            "modal": {
+                              "modes": [
+                                {
+                                  "clauses": [
+                                    {
+                                      "effects": [
+                                        {
+                                          "type": "RedirectDamage",
+                                          "value": {
+                                            "amount": {
+                                              "type": "Literal",
+                                              "value": 1
+                                            },
+                                            "duration": {
+                                              "type": "UntilEndOfTurn"
+                                            },
+                                            "from": {
+                                              "type": "InSlot",
+                                              "value": "target"
+                                            },
+                                            "to": {
+                                              "type": "InSlot",
+                                              "value": "self"
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ],
+                                  "targetSlots": {
+                                    "target": {
+                                      "filter": {
+                                        "type": "Not",
+                                        "value": {
+                                          "type": "HasCardType",
+                                          "value": "Battle"
+                                        }
+                                      },
+                                      "pool": {
+                                        "type": "AnyTarget"
+                                      }
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

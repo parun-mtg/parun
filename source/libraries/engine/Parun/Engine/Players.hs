@@ -10,6 +10,7 @@ import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.Acquisition as Acquisition
+import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackingPlayers as AttackingPlayers
 import qualified Parun.Types.Chosen as Chosen
@@ -302,3 +303,30 @@ superlative controllerOf' roster' gs leading =
       tallies = fmap (\pid -> (pid, measureOf pid)) roster'
       stands (pid, n) = all (\(other, m) -> other == pid || Filter.compares (Superlative.comparison leading) n m) tallies
    in fmap fst (filter stands tallies)
+
+-- | CR 602.1b: does this activator admit `pid`? `usual` is CR 602.2's default
+-- activator, the player an ability's relation or reference is judged against
+-- (CR 109.5); `controllerOf` is the caller's projected controller read.
+--
+-- A reference is read as zoneOwners reads a stored permission's
+-- (Parun.Engine.PlayerEffect): over no bindings, every player still in the
+-- game, so a slot-reading arm names nobody and admits nobody. A grant bakes
+-- its reference as it resolves (Parun.Engine.Resolve.Arms.Damage.modifyTarget).
+activatorPermits :: (ObjectId -> Maybe PlayerId) -> Activator.Activator -> PlayerId -> ObjectId -> PlayerId -> GameState -> Bool
+activatorPermits controllerOf' activator usual oid pid gs = case activator of
+  Activator.Related relation -> PlayerRelation.holds (Game.teams gs) relation usual pid
+  Activator.Owner -> fmap Object.owner (Game.lookupObject oid gs) == Just pid
+  Activator.Player ref -> maybe False (elem pid) (named given gs ref)
+  where
+    given =
+      MkReads
+        { perspective = Just usual,
+          bound = False,
+          slotPlayers = const Nothing,
+          slotObject = const Nothing,
+          controllerOf = controllerOf',
+          ownerOf = fmap Object.owner . (`Game.lookupObject` gs),
+          acquisitionOf = (`Game.acquisitionOf` gs),
+          roster = Game.stillPlaying gs,
+          reaches = const True
+        }

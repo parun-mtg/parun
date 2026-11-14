@@ -827,7 +827,8 @@ abilityVisitors asking onCard onAbility onEffect =
       Children.abilityFilter = Const.Const . filterNames asking,
       Children.abilityRules = Const.Const . ruleAbilitiesNames asking,
       Children.abilitySpendMana = Const.Const . spendManaAsThoughNames asking,
-      Children.abilitySlot = Const.Const . slotNames asking
+      Children.abilitySlot = Const.Const . slotNames asking,
+      Children.abilityPlayer = Const.Const . playerRefNames asking
     }
 
 handActionNames :: (Monoid r) => Asking r -> (card -> r) -> HandAction.HandAction card -> r
