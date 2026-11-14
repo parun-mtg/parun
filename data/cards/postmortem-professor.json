@@ -8,7 +8,10 @@
               {
                 "type": "ExileCardsFromGraveyard",
                 "value": {
-                  "count": 1,
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
                   "whichCards": {
                     "type": "Or",
                     "value": [

@@ -1,0 +1,82 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Emissary Escort",
+            "label": "escort"
+          },
+          {
+            "card": "Bonesplitter",
+            "label": "ring"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bear"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Darksteel Myr",
+            "label": "myr"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.4c, 202.3: Emissary Escort gets +X/+0 where X is the greatest mana value among other artifacts you control",
+  "note": "Bonesplitter's 1 is the greatest: the Escort's own 2, bob's Darksteel Myr's 3 and the nonartifact Grizzly Bears' 2 don't count.",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$escort",
+          "power": 1,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

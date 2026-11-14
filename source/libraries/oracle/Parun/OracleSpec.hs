@@ -36,6 +36,7 @@ import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CharacteristicPT as CharacteristicPT
 import qualified Parun.Types.ChooseBetween as ChooseBetween
+import qualified Parun.Types.ChooseInstead as ChooseInstead
 import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.Clause as Clause
@@ -864,8 +865,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let untapped = Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You, Filter.Not Filter.IsTapped]
     Spec.assertEq s (Just (Text.pack "Tap an untapped creature you control: Draw a card.")) (costed [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) untapped False)])
     Spec.assertEq s (Just (Text.pack "Tap two untapped creatures you control that share a creature type: Draw a card.")) (costed [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 2) untapped True)])
-    Spec.assertEq s (Just (Text.pack "Exile seven other cards from your graveyard: Draw a card.")) (costed [CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard 7 (Filter.Not Filter.IsSource))])
-    Spec.assertEq s (Just (Text.pack "Exile an instant or sorcery card from your graveyard: Draw a card.")) (costed [CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard 1 (Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery]))])
+    Spec.assertEq s (Just (Text.pack "Exile seven other cards from your graveyard: Draw a card.")) (costed [CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Fixed 7) (Filter.Not Filter.IsSource))])
+    Spec.assertEq s (Just (Text.pack "Exile an instant or sorcery card from your graveyard: Draw a card.")) (costed [CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Fixed 1) (Filter.Or [Filter.HasCardType CardType.Instant, Filter.HasCardType CardType.Sorcery]))])
 
   -- CR 705.1 / CR 705.2: "flip a coin", its outcome read by a later clause as
   -- won or lost (Winter Sky), and flipping a coin as a cost (Karplusan Minotaur).
@@ -921,6 +922,12 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let three = [destroying CardType.Artifact, destroying CardType.Land, drawing]
     Spec.assertEq s (Just (Text.pack "Choose two \8212\n\8226 Destroy target artifact.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseExactly 2) three))
     Spec.assertEq s (Just (Text.pack "Choose one or more \8212\n\8226 Destroy target artifact.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 3)) three))
+    -- CR 700.2: an instruction replaced while a condition holds (Disciple of
+    -- Perdition), "you may" where it only widens the choice.
+    let thirteen = Condition.Compares (Compares.MkCompares (Quantity.LifeTotal (PlayerRef.Relative PlayerRelation.You)) Comparison.Exactly (Quantity.Literal 13))
+        instead' = ModeSelection.ChooseInstead . ChooseInstead.MkChooseInstead thirteen (ModeSelection.ChooseExactly 1)
+    Spec.assertEq s (Just (Text.pack "Choose one. If you have exactly 13 life, you may choose both instead.\n\8226 Destroy target artifact.\n\8226 Draw a card.")) (Oracle.render (chosen (instead' (ModeSelection.ChooseBetween (ChooseBetween.MkChooseBetween 1 2))) [destroying CardType.Artifact, drawing]))
+    Spec.assertEq s (Just (Text.pack "Choose one. If you have exactly 13 life, choose two instead.\n\8226 Destroy target artifact.\n\8226 Destroy target land.\n\8226 Draw a card.")) (Oracle.render (chosen (instead' (ModeSelection.ChooseExactly 2)) three))
     let adding c = Mode.MkMode (Seq.singleton (clause [Effect.AddMana (ManaAddition.MkManaAddition (PlayerRef.Relative PlayerRelation.You) (ManaProduction.OfType (ManaType.Colored c)) (Quantity.Literal 1) ManaRetention.Ordinary Nothing Nothing Nothing False)])) Map.empty
         elf = ActivatedAbility.MkActivatedAbility (mana [ManaSymbol.Generic 1]) [] [] Nothing (Modal.MkModal (Seq.fromList [adding Color.Red, adding Color.White]) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
     Spec.assertEq s (Just (Text.pack "{1}: Add {R} or {W}.")) (Oracle.render (withFace (\f -> f {Face.activatedAbilities = [elf]})))

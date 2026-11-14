@@ -877,7 +877,7 @@ matchesPrinted viewOf gs event candidate =
         -- hallowed-moonlight-exiles-a-card-that-enters-as-a-copy-of-a-creature,
         -- hallowed-moonlight-judges-heliod-on-the-devotion-of-the-player-it-enters-under
         -- and hallowed-moonlight-leaves-a-caged-creature-card-in-the-graveyard.
-        (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ _ _), ProposedEvent.WouldChangeZone zc discarded _ resolving) ->
+        (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ _ _ _), ProposedEvent.WouldChangeZone zc discarded _ resolving) ->
           let oid = ZoneChange.object zc
               entering = Map.member oid (Scratch.enteringSubjects (GameState.scratch gs))
               namesBattlefield = ZoneChangePattern.whenDestination pat == Just Zone.Battlefield
@@ -3727,8 +3727,9 @@ redirectDestination gs candidate dest = Monad.mfilter (withinRangeOf gs (reachOf
 -- CR 801.13a / 801.18: whose range of influence bounds this replacement's
 -- reach -- its controller's, or nobody's for a planar card's
 -- (Plane.exemptFromRange), which every reader then treats as a row with no
--- controller. A regression fence: no plane in `data/cards/` prints a
--- replacement effect.
+-- controller. Parun.PlanechaseSpec's "CR 614.6 The Doctor's Tomb exiles ..."
+-- proves it through `reaches`; no plane in `data/cards/` prints a damage
+-- redirection.
 reachOf :: GameState -> ReplacementCandidate -> Maybe PlayerId
 reachOf gs candidate
   | Plane.exemptFromRange (ReplacementCandidate.source candidate) gs = Nothing
@@ -5016,6 +5017,7 @@ installSpellMoveRow destination shuffling spellId caster gs =
                     LibraryPosition.defaultValue
                     False
                     Nothing
+                    Seq.empty
                     Seq.empty
                 ),
             -- CR 113.7: the spell itself, which the pattern's IsSource is

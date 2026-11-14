@@ -1,0 +1,94 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "The Eternity Elevator",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "charge"
+                },
+                "value": 19
+              }
+            ],
+            "label": "elevator"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Air Elemental",
+            "label": "air"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 722.2, 106.1b: The Eternity Elevator at nineteen charge counters has only its {C}{C}{C} ability, so tapping it asks for no yield and Air Elemental cannot be cast from the colorless mana",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $elevator"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [],
+          "object": "$air"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Air Elemental",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

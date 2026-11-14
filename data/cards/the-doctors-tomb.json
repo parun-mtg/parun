@@ -1,0 +1,83 @@
+{
+  "faces": [
+    {
+      "name": "The Doctor's Tomb",
+      "oracleText": "If a creature would die, instead exile it and that creature's controller loses 2 life.\nWhenever chaos ensues, redistribute any number of players' life totals. (Each of those players gets one life total back.)",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "ZoneChangeR",
+            "value": {
+              "destination": "Exile",
+              "matching": {
+                "whatObject": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "IsInZone",
+                      "value": "Battlefield"
+                    }
+                  ]
+                },
+                "whenDestination": "Graveyard"
+              },
+              "riders": [
+                {
+                  "type": "LoseLife",
+                  "value": {
+                    "player": {
+                      "type": "HolderOfBound",
+                      "value": {
+                        "holder": "Controller",
+                        "hop": "Itself",
+                        "slot": "thatDepartedPermanent"
+                      }
+                    },
+                    "quantity": {
+                      "type": "Literal",
+                      "value": 2
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RedistributeLifeTotals"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Trenzalore"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}

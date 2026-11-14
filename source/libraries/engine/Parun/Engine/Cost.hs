@@ -1724,7 +1724,7 @@ substituteComponent :: Keyword.Substitute -> Natural -> CostComponent.CostCompon
 substituteComponent substitute n = case substitute of
   Keyword.TapUntapped criterion -> CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) criterion False)
   Keyword.TapToConvoke criterion -> CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) criterion False)
-  Keyword.ExileFromGraveyard criterion -> CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n criterion)
+  Keyword.ExileFromGraveyard criterion -> CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Fixed n) criterion)
 
 -- The components an offer's substitutes are paid as, `substituteComponent` over
 -- each.
@@ -2016,7 +2016,8 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.VariableAtLeast _ -> False
   CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
-  CostComponent.ExileCardsFromGraveyard {} -> False
+  -- One card per exile out of a finite graveyard, Sacrifice's reason.
+  CostComponent.ExileCardsFromGraveyard exile -> ExileCardsFromGraveyard.count exile == announced
   CostComponent.ExileMaterials {} -> False
   CostComponent.ExileTopFromGraveyard _ -> False
   CostComponent.CollectEvidence _ -> False
@@ -3035,8 +3036,10 @@ claimOfGiven board slots pid oid component gs =
           claim (ClaimAxis.Removal Zone.Hand) (Set.fromList (exileFromHandCandidates slots pid oid criterion gs)) n
         -- Nothing until CR 601.2b fixes the count, Sacrifice's arm.
         CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand (CostAmount.Announced _) _) -> Nothing
-        CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n criterion) ->
+        CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Fixed n) criterion) ->
           claim (ClaimAxis.Removal Zone.Graveyard) (Set.fromList (exileCandidatesGiven board slots pid oid criterion gs)) n
+        -- Nothing until CR 601.2b fixes the count, Sacrifice's arm.
+        CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Announced _) _) -> Nothing
         -- The same graveyard pool and the same axis, as ONE selection reaching the
         -- threshold rather than the component's number of cards: the number is a
         -- THRESHOLD on the cards' total tally, so which cards a payment exiles is
@@ -4449,8 +4452,8 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- many matching cards. Headless Skaab with an empty graveyard is never OFFERED
   -- rather than merely unpaid, which is what puts the additional cost INSIDE the
   -- total cost as CR 601.2f says. This component ALONE, Sacrifice's caveat.
-  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n criterion) ->
-    Natural.length (exileCandidatesGiven board slots pid oid criterion gs) >= n
+  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard amount criterion) ->
+    payableAnnounced amount (\n -> Natural.length (exileCandidatesGiven board slots pid oid criterion gs) >= n)
   -- CR 118.3: the arm above over CR 702.167a's two pools at once, so that a craft
   -- ability is not OFFERED where the battlefield and the graveyard together hold
   -- too few materials. ">=" answers both readings of the count: an exact one is
@@ -7918,14 +7921,20 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- only on the casting road), BeholdAndExile's CR 607.2q link. An activated
   -- ability's `oid` is its source, which CR 607.2q links nothing to. Skyway
   -- Robber's scenarios are the proof; no test observes the gate.
-  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n criterion) -> do
+  --
+  -- A count of 0 (Gorex, the Tombshell announcing none) has the empty set as
+  -- its one answer, so nothing is asked.
+  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard amount criterion) -> paidAnnounced amount $ \n -> do
     gs <- State.get
     let candidates = exileCandidates slots pid oid criterion gs
         decider = Decide.deciderFor pid gs
     chosen <-
-      if Natural.length candidates <= n
-        then pure (Set.fromList candidates)
-        else Game.choose (Prompt.ChooseExilesFromGraveyard decider pid oid candidates n)
+      if n == 0
+        then pure Set.empty
+        else
+          if Natural.length candidates <= n
+            then pure (Set.fromList candidates)
+            else Game.choose (Prompt.ChooseExilesFromGraveyard decider pid oid candidates n)
     if Set.isSubsetOf chosen (Set.fromList candidates) && Natural.length chosen == n
       then do
         arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\c -> (c, Zone.Exile)) (Set.toAscList chosen))

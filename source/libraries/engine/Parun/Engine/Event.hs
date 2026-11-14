@@ -3074,7 +3074,7 @@ dealing de = if DamageEvent.amount de == 0 then Nothing else Just (ProposedEvent
 apply :: Game () -> Set ObjectId -> Set CandidateId -> Replacement.Tally -> ReplacementCandidate -> ProposedEvent -> Game (Maybe ProposedEvent)
 apply settle batch applied batchPrevented candidate event =
   case (ReplacementCandidate.effect candidate, event) of
-    (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR _ toDest revealing _ toPosition optional _ whenYouDo), ProposedEvent.WouldChangeZone zc discarded position resolving) -> do
+    (ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR _ toDest revealing _ toPosition optional _ whenYouDo riders), ProposedEvent.WouldChangeZone zc discarded position resolving) -> do
       -- CR 614.1a's "you may ... instead" (Library of Leng): the row's
       -- controller is asked as it applies, DrawRewrite.Dredge's posture below.
       -- Declining leaves the event standing, and `applyChosen` still records the
@@ -3126,6 +3126,28 @@ apply settle batch applied batchPrevented candidate event =
           -- no "you" to do it.
           Foldable.for_ ((,) <$> Replacement.linkedTrigger whenYouDo <*> ReplacementCandidate.controller candidate) $ \(linked, you) ->
             State.modify' (\g -> armDelayed linked (Projection.delayedSnapshotOf (ReplacementCandidate.source candidate) g) (ReplacementCandidate.source candidate) you Map.empty (Just TurnWindow.AnyTurn) Nothing g)
+          -- CR 614.1a / 614.6: "instead exile it and ...", the riders part of
+          -- the modified event. QUEUED for DamageRewrite.RunEffects' reason
+          -- below, with the moving object bound under
+          -- Binding.departedPermanent so "that creature's controller" and
+          -- "that creature's power" read it as it last existed (CR 608.2h).
+          -- No controller, nobody to perform them; the move stands.
+          Foldable.for_ (if Seq.null riders then Nothing else ReplacementCandidate.controller candidate) $ \controller ->
+            State.modify' $ \g ->
+              g
+                { GameState.stored =
+                    (GameState.stored g)
+                      { StoredEffects.pendingReplacementEffects =
+                          StoredEffects.pendingReplacementEffects (GameState.stored g)
+                            Seq.|> PendingReplacementEffect.MkPendingReplacementEffect
+                              { PendingReplacementEffect.effects = riders,
+                                PendingReplacementEffect.targets =
+                                  Map.insert Binding.departedPermanent (Set.singleton (Recipient.ToObject (ZoneChange.departed zc))) (fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate)),
+                                PendingReplacementEffect.controller = controller,
+                                PendingReplacementEffect.source = ReplacementCandidate.source candidate
+                              }
+                      }
+                }
           pure (Just (ProposedEvent.WouldChangeZone zc {ZoneChange.to = toDest} discarded settledPosition resolving))
     -- Unreachable: `applies` admits ZoneChangeR only against WouldChangeZone.
     (ReplacementEffect.ZoneChangeR {}, _) -> pure (Just event)

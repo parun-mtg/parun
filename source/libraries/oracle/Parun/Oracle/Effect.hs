@@ -26,6 +26,7 @@ import qualified Parun.Types.Amass as Amass
 import qualified Parun.Types.AmassKind as AmassKind
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.ChooseBetween as ChooseBetween
+import qualified Parun.Types.ChooseInstead as ChooseInstead
 import qualified Parun.Types.ChoosePawprints as ChoosePawprints
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
@@ -157,7 +158,7 @@ modal context m = case (Foldable.toList (Modal.modes m), Modal.selection m) of
         following <- mode context rest
         followedBy context (Prose.sentence (Text.pack "add " <> Prose.listing "or" (fmap fst split))) following
     | otherwise -> do
-        heading <- choose (Modal.memory m) selection (length modes)
+        heading <- choose context (Modal.memory m) selection (length modes)
         bodies <- traverse (mode context {Target.breaks = [Text.pack " "]}) modes
         [heading <> mconcat (zipWith (\b body -> Text.pack "\n" <> b <> body) (bullets selection) bodies)]
   _ -> []
@@ -168,9 +169,12 @@ modal context m = case (Foldable.toList (Modal.modes m), Modal.selection m) of
 -- may choose the same mode more than once.", "Choose up to five {P} worth of
 -- modes. You may choose the same mode more than once." (CR 700.2i), "Choose
 -- one that hasn't been chosen \8212", "Choose one that hasn't been chosen this
--- turn \8212".
-choose :: ModeMemory.ModeMemory -> ModeSelection.ModeSelection -> Int -> [Text.Text]
-choose memory selection count = case (memory, selection) of
+-- turn \8212", and CR 700.2's instruction replaced while a condition holds:
+-- "Choose one. If you have exactly 13 life, you may choose both instead."
+-- (Disciple of Perdition), a spell's board condition read with or without "as
+-- you cast this spell" (Flame of Anor; See Double prints neither).
+choose :: Target.Context -> ModeMemory.ModeMemory -> ModeSelection.ModeSelection -> Int -> [Text.Text]
+choose context memory selection count = case (memory, selection) of
   (ModeMemory.ObjectLifetime, ModeSelection.ChooseExactly n) -> [Text.pack "Choose " <> Prose.cardinal (toInteger n) <> Text.pack " that hasn't been chosen \8212"]
   (ModeMemory.ObjectLifetime, _) -> []
   (ModeMemory.ThisTurn, ModeSelection.ChooseExactly n) -> [Text.pack "Choose " <> Prose.cardinal (toInteger n) <> Text.pack " that hasn't been chosen this turn \8212"]
@@ -185,7 +189,18 @@ choose memory selection count = case (memory, selection) of
     ModeSelection.ChooseUpTo (Quantity.InSlot slot)
       | slot == Target.xSlot -> [Text.pack "Choose up to X \8212"]
     ModeSelection.ChoosePawprintsWithRepeats cp -> [Text.pack "Choose up to " <> Prose.cardinal (toInteger (ChoosePawprints.most cp)) <> Text.pack " {P} worth of modes. You may choose the same mode more than once."]
+    ModeSelection.ChooseInstead ci
+      | ModeSelection.ChooseExactly n <- ChooseInstead.ordinary ci -> do
+          (words', _) <- condition context (ChooseInstead.condition ci)
+          casting <- Text.empty : [Text.pack " as you cast this spell" | elem (Text.pack "\n") (Target.breaks context)]
+          widened <- case ChooseInstead.instead ci of
+            ModeSelection.ChooseExactly k | k > n -> [Text.pack "choose " <> many k]
+            ModeSelection.ChooseBetween b | ChooseBetween.least b == n, ChooseBetween.most b > n -> [Text.pack "you may choose " <> many (ChooseBetween.most b)]
+            _ -> []
+          [Text.pack "Choose " <> Prose.cardinal (toInteger n) <> Text.pack ". If " <> words' <> casting <> Text.pack ", " <> widened <> Text.pack " instead."]
     _ -> []
+  where
+    many k = if count == 2 && k == 2 then Text.pack "both" else Prose.cardinal (toInteger k)
 
 -- | What precedes each mode, in printed order: a bullet, or under CR 700.2i
 -- the mode's pawprints (CR 107.18).

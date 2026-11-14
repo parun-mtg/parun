@@ -157,7 +157,7 @@ component self named c = case c of
     p <- ListUtils.nubOrd (Filter.phrase f named <> Filter.phraseJoining Filter.Inclusive f named)
     tapped <- some (toInteger n) permanent p
     [Text.pack "Tap " <> tapped <> (if sharing then Text.pack " that share a creature type" else Text.empty)]
-  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n f) -> do
+  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Fixed n) f) -> do
     p <- Filter.phrase f named
     exiled <- some (toInteger n) card (Filter.merge p (Filter.MkPhrase [] [card] []))
     [Text.pack "Exile " <> exiled <> Text.pack " from your graveyard"]

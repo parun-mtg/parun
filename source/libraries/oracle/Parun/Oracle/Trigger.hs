@@ -379,6 +379,7 @@ condition context c = case c of
       bound' <- case comparison of
         Comparison.AtLeast -> [Text.pack (show k <> " or more")]
         Comparison.AtMost -> [Text.pack (show k <> " or less")]
+        Comparison.Exactly -> [Text.pack ("exactly " <> show k)]
         _ -> []
       [subject <> Text.pack " " <> have <> Text.pack " " <> bound' <> Text.pack " life"]
     (Quantity.IsMonarch who, Quantity.Literal 1) | comparison == Comparison.AtLeast -> do

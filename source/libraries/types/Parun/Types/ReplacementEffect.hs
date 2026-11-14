@@ -73,7 +73,8 @@ import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 -- Parametric in the EFFECT, which is how the arms that carry effects reach them
 -- without a module cycle: CR 615.5's additional effect on DamageR's riders, CR
 -- 614.1a's "instead [do something]" on Parun.Types.DamageRewrite's RunEffects
--- and Parun.Types.DrawRewrite's RunEffects,
+-- and Parun.Types.DrawRewrite's RunEffects, its "instead exile it and [do
+-- something]" on Parun.Types.ZoneChangeR's riders,
 -- and CR 614.1c's "as [this permanent] enters, [do something]" on
 -- Parun.Types.EntryRewrite's RunEffects. Parun.Types.Effect holds this type and
 -- this type holds effects. See Parun.Types.DamageR. Every other arm ignores the

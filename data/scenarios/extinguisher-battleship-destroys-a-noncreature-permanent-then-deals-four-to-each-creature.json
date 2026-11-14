@@ -1,0 +1,55 @@
+{
+  "description": "CR 603.2, 608.2c, 120.3, 702.184a: Extinguisher Battleship's enter trigger destroys target noncreature permanent, then the Battleship deals 4 damage to each creature, its controller's included; at five charge counters a Battleship is a 10/10 artifact creature with flying and trample",
+  "note": "Bob's Hill Giant cannot be the target; his Mind Stone is destroyed and carol's Sol Ring stays. The 4 damage kills a 3/3 on each side, marks 4 on bob's 4/5 Leatherback Baloth and on alice's five-charge Battleship, a creature, and none on her four-charge one, which is not.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "CCCCCCCC",
+        "battlefield": [
+          {"card": "Extinguisher Battleship", "label": "five", "counters": [{"key": {"type": "Named", "value": "charge"}, "value": 5}]},
+          {"card": "Extinguisher Battleship", "label": "four", "counters": [{"key": {"type": "Named", "value": "charge"}, "value": 4}]},
+          {"card": "Grizzly Bears", "label": "bears"}
+        ],
+        "hand": [{"card": "Extinguisher Battleship", "label": "ship"}],
+        "library": [{"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {"card": "Hill Giant", "label": "giant"},
+          {"card": "Leatherback Baloth", "label": "baloth"},
+          {"card": "Mind Stone", "label": "stone"}
+        ],
+        "library": [{"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "carol",
+        "battlefield": [{"card": "Sol Ring", "label": "ring"}],
+        "library": [{"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Types": {"object": "$five", "types": ["Artifact", "Creature"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$five", "power": 10, "toughness": 10}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Flying"}, "object": "$five"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 1, "keyword": {"type": "Trample"}, "object": "$five"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Types": {"object": "$four", "types": ["Artifact"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"count": 0, "keyword": {"type": "Flying"}, "object": "$four"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$ship"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$stone"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Mind Stone", "count": 1, "player": "bob", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Sol Ring", "count": 1, "player": "carol", "zone": "Battlefield"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Hill Giant", "count": 1, "player": "bob", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Grizzly Bears", "count": 1, "player": "alice", "zone": "Graveyard"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$baloth", "damage": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$five", "damage": 4}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$four", "damage": 0}}}
+  ]
+}

@@ -1,14 +1,17 @@
 module Parun.Codec.ExileCardsFromGraveyardSpec where
 
+import qualified Data.Text as Text
 import qualified Parun.Codec.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.SlotName as SlotName
 
 -- | Instantiated at 'Keyword.Keyword', the only concrete instantiation anywhere
 -- in the pool.
@@ -23,9 +26,20 @@ spec s = Spec.describe s "Parun.Codec.ExileCardsFromGraveyard" $ do
       s
       codec
       ( ExileCardsFromGraveyard.MkExileCardsFromGraveyard
-          { ExileCardsFromGraveyard.count = 1,
+          { ExileCardsFromGraveyard.count = CostAmount.Fixed 1,
             ExileCardsFromGraveyard.whichCards = Filter.HasCardType CardType.Creature
           }
       )
-      " {\"count\":1,\"whichCards\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+      " {\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichCards\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  -- Gorex, the Tombshell's "any number", announced at CR 601.2b.
+  Spec.it s "Announced" $
+    Common.assertCodec
+      s
+      codec
+      ( ExileCardsFromGraveyard.MkExileCardsFromGraveyard
+          { ExileCardsFromGraveyard.count = CostAmount.Announced (SlotName.MkSlotName (Text.pack "X")),
+            ExileCardsFromGraveyard.whichCards = Filter.HasCardType CardType.Creature
+          }
+      )
+      " {\"count\":{\"type\":\"Announced\",\"value\":\"X\"},\"whichCards\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec
