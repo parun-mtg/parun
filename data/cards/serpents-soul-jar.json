@@ -42,7 +42,10 @@
                               }
                             }
                           },
-                          "upTo": 1,
+                          "upTo": {
+                            "type": "Plays",
+                            "value": 1
+                          },
                           "verb": "Cast"
                         }
                       }

@@ -113,6 +113,7 @@ import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
+import qualified Parun.Types.PlayAllowance as PlayAllowance
 import qualified Parun.Types.PlayBudget as PlayBudget
 import qualified Parun.Types.PlayPermissionOrigin as PlayPermissionOrigin
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
@@ -1567,12 +1568,24 @@ permitsCastPrepared pid oid gs = case Game.lookupObject oid gs of
 -- CR 716.3d's "it can't be cast as an Adventure this way": may `face` be cast
 -- under this held permission? Not the Adventure face under a permission rule
 -- 716.3d itself wrote, rather than an Effect.GrantPlayFromExile a card states.
+-- Nor, CR 601.3, a face none of whose card types (CR 205.2b) the permission's
+-- per-type budget has left (unspentTypes). Reading the projected types rather
+-- than the face's printed ones is not implemented (#7517).
 --
 -- A classification of the PERMISSION, never of the effect that wrote one --
 -- ExilePlayPermission.origin has two arms and neither names a card.
 heldAdmits :: Face.Face Card.Type.Card -> ExilePlayPermission.ExilePlayPermission -> Bool
 heldAdmits face permission =
   not (Card.isAdventure face && ExilePlayPermission.origin permission == PlayPermissionOrigin.Adventure)
+    && maybe True (not . Set.null) (unspentTypes (TypeLine.types (Face.typeLine face)) permission)
+
+-- CR 601.3 / 205.2b: which of `types` a spell may still be cast as under this
+-- permission's per-type budget (PlayAllowance.EachCardTypeBut); Nothing for a
+-- permission with no such budget.
+unspentTypes :: Set CardType.CardType -> ExilePlayPermission.ExilePlayPermission -> Maybe (Set CardType.CardType)
+unspentTypes types permission = case fmap PlayBudget.remaining (ExilePlayPermission.budget permission) of
+  Just (PlayAllowance.EachCardTypeBut spent) -> Just (Set.difference types spent)
+  _ -> Nothing
 
 -- Object.playPermissions on their own -- whichever rule wrote each, with none
 -- of permitsCastFromExile's other disjuncts and without its Adventure
@@ -3028,7 +3041,7 @@ playLand settle offered pid oid mName = do
     State.modify' (PlayerEffect.spendCastPermission pid (PlayerEffect.permissionSpent permission))
     -- CR 601.3: a land played under the card's own exile permission spends
     -- its budget, as a cast does.
-    Monad.when (Maybe.isNothing permission) (State.modify' (spendPlayBudget (ownExilePermission offered pid oid held)))
+    Monad.when (Maybe.isNothing permission) (spendPlayBudget pid (Maybe.fromMaybe oid (Seq.lookup 0 moved)) (ownExilePermission offered pid oid held))
     State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.continuousEffects = concatMap riders (filter (`Set.member` GameState.battlefield g) (Foldable.toList moved)) <> StoredEffects.continuousEffects (GameState.stored g)}})
     -- CR 305.1 / 400.7i: the card was played, under its pre-move id and the
     -- permanent's.
@@ -3102,16 +3115,25 @@ chooseHeldPermission pid oid playable admits gs =
 -- holding that same grant's budget is touched, so another grant's permission
 -- on the same cards stands: Idol of Endurance activated twice casts twice.
 -- Nothing for a permission with no budget.
-spendPlayBudget :: Maybe ExilePlayPermission.ExilePlayPermission -> GameState -> GameState
-spendPlayBudget permission gs = case permission >>= ExilePlayPermission.budget of
-  Nothing -> gs
-  Just budget ->
-    let spend held
-          | fmap PlayBudget.granted (ExilePlayPermission.budget held) /= Just (PlayBudget.granted budget) = Just held
-          | PlayBudget.remaining budget <= 1 = Nothing
-          | otherwise = Just held {ExilePlayPermission.budget = Just budget {PlayBudget.remaining = PlayBudget.remaining budget - 1}}
-        adjust o = o {Object.playPermissions = Maybe.mapMaybe spend (Object.playPermissions o)}
-     in gs {GameState.objects = foldr (Map.adjust adjust) (GameState.objects gs) (Set.toList (PlayBudget.covers budget))}
+--
+-- A per-type budget spends the card type `played` (the object played, by
+-- `pid`) is cast as: the one it has left, or, where it has several (an
+-- artifact creature under Aminatou's Augury), the one `pid` chooses, per the
+-- card's 2018-07-13 ruling.
+spendPlayBudget :: PlayerId -> ObjectId -> Maybe ExilePlayPermission.ExilePlayPermission -> Game ()
+spendPlayBudget pid played permission = Monad.forM_ (permission >>= ExilePlayPermission.budget) $ \budget -> do
+  types <- State.gets (PC.cardTypes . Projection.project played)
+  left <- case PlayBudget.remaining budget of
+    PlayAllowance.Plays n -> pure (if n <= 1 then Nothing else Just (PlayAllowance.Plays (n - 1)))
+    PlayAllowance.EachCardTypeBut spent -> do
+      spending <- Game.chooseAmong (\decider asked -> Prompt.ChooseCardType decider asked played) pid (Set.toList (Set.difference types spent))
+      let after = maybe spent (`Set.insert` spent) spending
+      pure (if after == Set.fromList [minBound .. maxBound] then Nothing else Just (PlayAllowance.EachCardTypeBut after))
+  let spend held
+        | fmap PlayBudget.granted (ExilePlayPermission.budget held) /= Just (PlayBudget.granted budget) = Just held
+        | otherwise = fmap (\remaining -> held {ExilePlayPermission.budget = Just budget {PlayBudget.remaining = remaining}}) left
+      adjust o = o {Object.playPermissions = Maybe.mapMaybe spend (Object.playPermissions o)}
+  State.modify' (\gs -> gs {GameState.objects = foldr (Map.adjust adjust) (GameState.objects gs) (Set.toList (PlayBudget.covers budget))})
 
 -- CR 400.7i / 614.1d: a land `pid` plays out of exile under the card's own
 -- permission enters as ExilePlayPermission.landEnters says, as a replacement
@@ -4612,7 +4634,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- CR 601.3: and a cast made under the card's own exile
                           -- permission spends that permission's budget, for the
                           -- same reason.
-                          Monad.when (not ownPermission && Maybe.isNothing permissionUsed) (State.modify' (spendPlayBudget exilePermission))
+                          Monad.when (not ownPermission && Maybe.isNothing permissionUsed) (spendPlayBudget pid sid exilePermission)
                           -- CR 601.2c: each chosen object became a target of this
                           -- spell, which is what CR 702.21a's ward watches. Here
                           -- rather than beside `chosen` above for CR 601.2i's

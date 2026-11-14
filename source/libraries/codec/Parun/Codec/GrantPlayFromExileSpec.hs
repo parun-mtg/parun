@@ -17,6 +17,7 @@ import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.PermissionVerb as PermissionVerb
+import qualified Parun.Types.PlayAllowance as PlayAllowance
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
@@ -213,12 +214,12 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
-            GrantPlayFromExile.upTo = Just 2,
+            GrantPlayFromExile.upTo = Just (PlayAllowance.Plays 2),
             GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
-      " {\"duration\":{\"type\":\"UntilEndOfYourNextTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"upTo\":2} "
+      " {\"duration\":{\"type\":\"UntilEndOfYourNextTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"upTo\":{\"type\":\"Plays\",\"value\":2}} "
   -- Durnan of the Yawning Portal's: CR 400.7h's "that spell has undaunted".
   Spec.it s "MkGrantPlayFromExile, a permission giving its spell a keyword" $
     Common.assertCodec

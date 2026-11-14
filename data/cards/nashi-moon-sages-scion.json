@@ -110,7 +110,10 @@
                             "type": "InSlot",
                             "value": "exiled"
                           },
-                          "upTo": 1
+                          "upTo": {
+                            "type": "Plays",
+                            "value": 1
+                          }
                         }
                       }
                     ]
