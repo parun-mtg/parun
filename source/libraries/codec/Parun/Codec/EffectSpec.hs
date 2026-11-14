@@ -677,7 +677,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       ( Effect.LookAt
           ( LookAt.MkLookAt
-              (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1)))
+              (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))
               (SlotName.MkSlotName (Text.pack "looked"))
               (PlayerRef.Relative PlayerRelation.You)
           )
@@ -783,7 +783,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "looked"))) (PlayerRef.Relative PlayerRelation.You)))
+      (Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "looked"))) (PlayerRef.Relative PlayerRelation.You) Nothing))
       " {\"type\":\"ArrangeInLibrary\",\"value\":{\"ref\":{\"type\":\"InSlot\",\"value\":\"looked\"}}} "
   -- Raffine's Informant's "it connives", against the trigger-source slot.
   Spec.it s "Connive" $
@@ -1374,7 +1374,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ExchangeCardZones (ExchangeCardZones.MkExchangeCardZones (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "card"))) (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1)))))
+      (Effect.ExchangeCardZones (ExchangeCardZones.MkExchangeCardZones (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "card"))) (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))))
       " {\"type\":\"ExchangeCardZones\",\"value\":{\"one\":{\"type\":\"InSlot\",\"value\":\"card\"},\"other\":{\"type\":\"TopOfLibrary\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"count\":{\"type\":\"Literal\",\"value\":1}}}}} "
   -- CR 701.24a on its own: the arm above with no ref at all, so the payload is a
   -- bare PlayerRef. Undercity's "then shuffle" is what writes it.
@@ -2675,8 +2675,17 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      Effect.ChaosEnsues
+      (Effect.ChaosEnsues Nothing)
       " {\"type\":\"ChaosEnsues\"} "
+  -- CR 311.7's last case: Pools of Becoming's "each of the revealed cards'
+  -- chaos abilities triggers".
+  Spec.it s "ChaosEnsues for an object" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.ChaosEnsues (Just (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "revealed")))))
+      " {\"type\":\"ChaosEnsues\",\"value\":{\"type\":\"InSlot\",\"value\":\"revealed\"}} "
   -- CR 702.159b: nullary, the prize's actions being the effects after it.
   Spec.it s "ClaimPrize" $
     Common.assertJsonCodec

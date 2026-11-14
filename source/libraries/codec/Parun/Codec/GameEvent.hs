@@ -145,7 +145,7 @@ codec =
       Arm.payload "DieResultSettled" (DieResult.codec PlayerId.codec) GameEvent.DieResultSettled (\x -> case x of GameEvent.DieResultSettled y -> Just y; _ -> Nothing),
       Arm.payload "RolledToVisit" (DieResult.codec PlayerId.codec) GameEvent.RolledToVisit (\x -> case x of GameEvent.RolledToVisit y -> Just y; _ -> Nothing),
       Arm.payload "PlanarDieRolled" PlanarDieRolled.codec GameEvent.PlanarDieRolled (\x -> case x of GameEvent.PlanarDieRolled y -> Just y; _ -> Nothing),
-      Arm.nullary "ChaosEnsued" GameEvent.ChaosEnsued,
+      Arm.optionalPayload "ChaosEnsued" ObjectId.codec GameEvent.ChaosEnsued (\x -> case x of GameEvent.ChaosEnsued y -> Just y; _ -> Nothing),
       Arm.payload "TurnedUpOffDeck" TurnedUpOffDeck.codec GameEvent.TurnedUpOffDeck (\x -> case x of GameEvent.TurnedUpOffDeck y -> Just y; _ -> Nothing),
       Arm.payload "ClassLevelSet" ClassLevelChange.codec GameEvent.ClassLevelSet (\x -> case x of GameEvent.ClassLevelSet y -> Just y; _ -> Nothing),
       Arm.payload "Plotted" ObjectId.codec GameEvent.Plotted (\x -> case x of GameEvent.Plotted y -> Just y; _ -> Nothing),

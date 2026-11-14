@@ -178,7 +178,7 @@ codec cardCodec abilityCodec =
           Arm.nullary "OpenAttraction" Effect.OpenAttraction,
           Arm.payload "Assemble" (Common.maybe ObjectRef.codec) Effect.Assemble (\x -> case x of Effect.Assemble y -> Just y; _ -> Nothing),
           Arm.nullary "Planeswalk" Effect.Planeswalk,
-          Arm.nullary "ChaosEnsues" Effect.ChaosEnsues,
+          Arm.optionalPayload "ChaosEnsues" ObjectRef.codec Effect.ChaosEnsues (\x -> case x of Effect.ChaosEnsues y -> Just y; _ -> Nothing),
           Arm.nullary "Abandon" Effect.Abandon,
           Arm.payload "SetInMotion" ObjectRef.codec Effect.SetInMotion (\x -> case x of Effect.SetInMotion y -> Just y; _ -> Nothing),
           Arm.nullary "ClaimPrize" Effect.ClaimPrize,

@@ -514,7 +514,7 @@ event view logged = case LoggedEvent.event logged of
   GameEvent.RolledToVisit r -> said [player (DieResult.roller r), Text.pack "rolls", Text.pack (show (DieResult.result r)), Text.pack "to visit their Attractions"]
   GameEvent.PlanarDieRolled r -> said [player (PlanarDieRolled.roller r), Text.pack "rolls", planarFace (PlanarDieRolled.face r), Text.pack "on the planar die"]
   GameEvent.TurnedUpOffDeck t -> said [player (TurnedUpOffDeck.player t), Text.pack "turns up", name (TurnedUpOffDeck.card t), Text.pack "from their", sideDeck (TurnedUpOffDeck.deck t)]
-  GameEvent.ChaosEnsued -> said [Text.pack "Chaos ensues"]
+  GameEvent.ChaosEnsued _ -> said [Text.pack "Chaos ensues"]
   GameEvent.ClassLevelSet c -> said [name (ClassLevelChange.object c), Text.pack "becomes level", Text.pack (show (ClassLevel.unwrap (ClassLevelChange.after c)))]
   GameEvent.Plotted oid -> said [name oid, Text.pack "becomes plotted"]
   GameEvent.CoinFlipped c ->

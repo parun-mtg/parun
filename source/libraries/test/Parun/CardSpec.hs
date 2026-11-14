@@ -784,7 +784,7 @@ objectRefPositions =
         ("guess", Effect.Guess Guess.MkGuess {Guess.subject = plantedRef "gu", Guess.slot = SlotName.MkSlotName (Text.pack "gs"), Guess.guesser = PlayerRef.Relative PlayerRelation.You, Guess.proposition = Filter.Type.And [], Guess.right = SlotName.MkSlotName (Text.pack "gr")}, [plantedRef "gu"]),
         ("explore", Effect.Explore (plantedRef "ex"), [plantedRef "ex"]),
         ("assemble", Effect.Assemble (Just (plantedRef "as")), [plantedRef "as"]),
-        ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (PlayerRef.Relative PlayerRelation.You)), [plantedRef "al"]),
+        ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (PlayerRef.Relative PlayerRelation.You) Nothing), [plantedRef "al"]),
         ("connive", Effect.Connive (Connive.MkConnive (Quantity.Type.Literal 1) (plantedRef "cn")), [plantedRef "cn"]),
         ("set-x", Effect.SetX (SetX.MkSetX (NewX.Becomes (Quantity.Type.Literal 5)) (plantedRef "sx")), [plantedRef "sx"]),
         ("discard-these", Effect.Discard (Discard.These (TheseDiscard.MkTheseDiscard (plantedRef "di") Nothing)), [plantedRef "di"]),
@@ -876,7 +876,7 @@ playerRefPositions =
         ("reveal", Effect.Reveal (Reveal.MkReveal (plantedRef "rv") Nothing (Just (plantedPlayer "rv"))), [plantedPlayer "rv"]),
         ("look-at", Effect.LookAt (LookAt.MkLookAt (plantedRef "la") (SlotName.MkSlotName (Text.pack "seen")) (plantedPlayer "lk")), [plantedPlayer "lk"]),
         ("guess", Effect.Guess Guess.MkGuess {Guess.subject = plantedRef "gu", Guess.slot = SlotName.MkSlotName (Text.pack "gs"), Guess.guesser = plantedPlayer "gu", Guess.proposition = Filter.Type.And [], Guess.right = SlotName.MkSlotName (Text.pack "gr")}, [plantedPlayer "gu"]),
-        ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (plantedPlayer "ac")), [plantedPlayer "ac"]),
+        ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (plantedPlayer "ac") Nothing), [plantedPlayer "ac"]),
         ("move-to-zone-arranged", Effect.MoveToZone (MoveToZone.MkMoveToZone (plantedRef "ma") Zone.Library EntryRiders.defaultValue {EntryRiders.under = EntryController.Instructed (plantedPlayer "mu")} Nothing Nothing (LibraryPlacement.ArrangedBy (ArrangedArrival.MkArrangedArrival LibraryPosition.Top (plantedPlayer "mc"))) Nothing), [plantedPlayer "mu", plantedPlayer "mc"]),
         ("lose-life", Effect.LoseLife (LifeLoss.MkLifeLoss (plantedPlayer "ll") one LifeLossCause.ByEffect Nothing), [plantedPlayer "ll"]),
         ("gain-life", Effect.GainLife (playerQuantity "gl"), [plantedPlayer "gl"]),
@@ -942,8 +942,8 @@ playerRefPositions =
 -- (CR 400.1's per-player zones). Resolve.objectRefPlayerRefs is what owes these.
 objectRefPlayerRefPositions :: [(String, ObjectRef.ObjectRef, [PlayerRef.PlayerRef])]
 objectRefPlayerRefPositions =
-  [ ("top-of-library", ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (plantedPlayer "tl") (Quantity.Type.Literal 1)), [plantedPlayer "tl"]),
-    ("top-of-library-until", ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (plantedPlayer "tu") (Filter.Type.And []) (Quantity.Type.Literal 1) (Quantity.Type.Literal 1)), [plantedPlayer "tu"]),
+  [ ("top-of-library", ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (plantedPlayer "tl") (Quantity.Type.Literal 1) Nothing), [plantedPlayer "tl"]),
+    ("top-of-library-until", ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (plantedPlayer "tu") (Filter.Type.And []) (Quantity.Type.Literal 1) (Quantity.Type.Literal 1) Nothing), [plantedPlayer "tu"]),
     ("top-of-graveyard", ObjectRef.TopOfGraveyard (plantedPlayer "tg"), [plantedPlayer "tg"]),
     ("chosen-card-in-hand", ObjectRef.ChosenCardInHand (ChosenCardInHand.MkChosenCardInHand (plantedPlayer "ch") (Filter.Type.And []) HowMany.one), [plantedPlayer "ch"]),
     ("random-card-in-hand", ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (plantedPlayer "rh") (Filter.Type.And []) (Quantity.Type.Literal 1)), [plantedPlayer "rh"]),
@@ -3339,7 +3339,7 @@ objectRefFilters ref = case ref of
   -- as well as carrying the arm above's count, so both are linted: the
   -- match-defining Filter here, and whatever a Count or a CR 122.1b counter kind
   -- under the count would hold via the arm above's route.
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ f _ _) -> unframed [f] <> refFilters ref
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ f _ _ _) -> unframed [f] <> refFilters ref
   -- Soldevi Digger's "the top card of your graveyard" names a POSITION with no
   -- depth and no Filter beside it, so unlike the two library arms above it holds
   -- nothing at all to lint: its PlayerRef names players.
@@ -5121,7 +5121,7 @@ effectFilters effect = case effect of
   Effect.TemptWithTheRing -> []
   Effect.OpenAttraction -> []
   Effect.Planeswalk -> []
-  Effect.ChaosEnsues -> []
+  Effect.ChaosEnsues ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
   Effect.Abandon -> []
   Effect.SetInMotion ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.ClaimPrize -> []
@@ -5189,7 +5189,7 @@ effectFilters effect = case effect of
   -- reaches it, as PutCounters' does.
   Effect.Explore ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Assemble ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
-  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref _) -> frame SourceHostFramed (objectRefFilters ref)
+  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref _ _) -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Connive (Connive.MkConnive quantity ref) -> frame Unframed (quantityFilters quantity) <> frame SourceHostFramed (objectRefFilters ref)
   -- The These arm's ref carries a Filter a card author writes -- Amnesia's
   -- "nonland" -- so the lint reaches it, as Reveal's does.
@@ -6601,7 +6601,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- slotsOf and nothing else, so all three answered a constant for it.
   Spec.it s "CR 107.3 a depth nested in an opcode's ref reaches all three checks" $ do
     let ghost = SlotName.MkSlotName (Text.pack "ghost")
-        destroying q = Effect.Destroy (Destroy.MkDestroy (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q)) Regenerability.Regenerable Nothing Nothing Nothing)
+        destroying q = Effect.Destroy (Destroy.MkDestroy (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q Nothing)) Regenerability.Regenerable Nothing Nothing Nothing)
         tally = Count.Type.MkCount (Scope.InZone (InZone.MkInZone Zone.Hand (PlayerRef.Relative PlayerRelation.You))) (Filter.Type.And []) Aggregation.Members
     Spec.assertEqWith
       s

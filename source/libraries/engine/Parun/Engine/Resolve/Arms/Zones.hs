@@ -1492,7 +1492,7 @@ guess resolving source controller legal chosen (Guess.MkGuess subject slot guess
        in State.modify' (\gs -> gs {GameState.objects = Map.adjust clear resolving (Map.adjust clear source (GameState.objects gs))})
 
 arrangeInLibrary :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ArrangeInLibrary.ArrangeInLibrary -> Game ()
-arrangeInLibrary resolving source controller legal (ArrangeInLibrary.MkArrangeInLibrary ref chooser) = do
+arrangeInLibrary resolving source controller legal (ArrangeInLibrary.MkArrangeInLibrary ref chooser end) = do
   -- CR 608.2c / 608.2d: the instruction's player states the order, not the
   -- library's owner -- Cruel Fate's caster orders an opponent's cards. A
   -- chooser naming nobody leaves the cards where they are (CR 101.3).
@@ -1502,12 +1502,12 @@ arrangeInLibrary resolving source controller legal (ArrangeInLibrary.MkArrangeIn
   -- Ponder is the slot the look bound one clause earlier.
   let named = objectRefObjects legal resolving controller source gs ref
       -- CR 400.3 makes every library its owner's, so the owner is the seat
-      -- whose library is rewritten.
-      owners = ListUtils.nubOrd (Maybe.mapMaybe (\oid -> fmap Object.owner (Game.lookupObject oid gs)) named)
+      -- whose library is rewritten; a side deck's is the seat holding it.
+      piles = ListUtils.nubOrd (Maybe.mapMaybe (`Common.pileOf` gs) named)
   -- APNAP (CR 101.4) for a reference that could name two seats' cards at once;
-  -- each library is rewritten before the next is asked.
+  -- each pile is rewritten before the next is asked.
   Monad.forM_ asked $ \arranger ->
-    Monad.mapM_ (Common.arrangeInLibrary arranger named) (filter (\pid -> List.elem pid owners) (Game.apnapOrder gs))
+    Monad.mapM_ (Common.arrangeInLibrary arranger named end) (List.sortOn (\(_, holder) -> List.elemIndex holder (Game.apnapOrder gs)) piles)
 
 scry :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerQuantity.PlayerQuantity -> Game ()
 scry settle resolving source controller legal (PlayerQuantity.MkPlayerQuantity ref quantity) = do

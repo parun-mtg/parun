@@ -1689,7 +1689,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
         moving =
           Effect.MoveCounters
             ( MoveCounters.MkMoveCounters
-                (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Count counted)))
+                (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.Count counted) Nothing))
                 (MovedKinds.EveryOfKind CounterKind.PlusOnePlusOne)
                 Nothing
                 (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "recipient")))

@@ -690,7 +690,7 @@ movedOf event = case event of
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
   GameEvent.TurnedUpOffDeck _ -> Nothing
-  GameEvent.ChaosEnsued -> Nothing
+  GameEvent.ChaosEnsued _ -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing
@@ -856,7 +856,7 @@ participants event =
         GameEvent.RolledToVisit r -> player (DieResult.roller r)
         GameEvent.PlanarDieRolled r -> player (PlanarDieRolled.roller r)
         GameEvent.TurnedUpOffDeck e -> ([TurnedUpOffDeck.card e], [TurnedUpOffDeck.player e])
-        GameEvent.ChaosEnsued -> ([], [])
+        GameEvent.ChaosEnsued on -> (Maybe.maybeToList on, [])
         GameEvent.ClassLevelSet c -> one (ClassLevelChange.object c)
         GameEvent.Plotted oid -> one oid
         GameEvent.BecameTapped oid -> one oid
@@ -1587,7 +1587,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.RolledToVisit _ -> Map.empty
         GameEvent.PlanarDieRolled _ -> Map.empty
         GameEvent.TurnedUpOffDeck _ -> Map.empty
-        GameEvent.ChaosEnsued -> Map.empty
+        GameEvent.ChaosEnsued _ -> Map.empty
         GameEvent.ClassLevelSet _ -> Map.empty
         GameEvent.Plotted _ -> Map.empty
         GameEvent.PermanentActed _ -> Map.empty
@@ -1974,7 +1974,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.RolledToVisit _ -> Map.empty
         GameEvent.PlanarDieRolled _ -> Map.empty
         GameEvent.TurnedUpOffDeck _ -> Map.empty
-        GameEvent.ChaosEnsued -> Map.empty
+        GameEvent.ChaosEnsued _ -> Map.empty
         GameEvent.ClassLevelSet _ -> Map.empty
         GameEvent.Plotted _ -> Map.empty
         GameEvent.BecameAttacked _ -> Map.empty
@@ -2089,6 +2089,22 @@ eventTriggersGiven scope standing events gs =
               not (null abilities)
             ]
         _ -> Map.empty
+      -- CR 311.7's last case: chaos ensuing for one plane card still in its
+      -- planar deck, revealed, triggers that card's chaos ability, controlled
+      -- by the current planar controller. Read through last known information
+      -- (CR 608.2h), so a card the resolving effect has moved on since still
+      -- triggers. One face up is `inCommand`'s. The abilities are those that
+      -- trigger from the command zone, where a planar card lies.
+      -- Parun.PlanechaseSpec's "CR 311.7 Pools of Becoming triggers each
+      -- revealed plane's chaos ability" proves it.
+      chaosEnsuedOn event = case event of
+        GameEvent.ChaosEnsued (Just oid)
+          | Set.notMember oid (GameState.command gs),
+            Just face <- Game.faceOfWithLastKnown oid gs,
+            Plane.isPlanarFace face,
+            abilities@(_ : _) <- filter (Set.member Zone.Command . zonesTriggeredFrom . fst) (fmap whole (Face.triggeredAbilities face)) ->
+              Map.singleton oid (Plane.planarController gs, abilities)
+        _ -> Map.empty
       -- CR 113.6k's other zone: the spell that just became cast, offered from the
       -- STACK, where CR 601.2a leaves it. Desolation Twin's "when you cast this
       -- spell" is borne by an object that is on nobody's battlefield and in
@@ -2186,7 +2202,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.RolledToVisit _ -> Map.empty
         GameEvent.PlanarDieRolled _ -> Map.empty
         GameEvent.TurnedUpOffDeck _ -> Map.empty
-        GameEvent.ChaosEnsued -> Map.empty
+        GameEvent.ChaosEnsued _ -> Map.empty
         GameEvent.ClassLevelSet _ -> Map.empty
         GameEvent.Plotted _ -> Map.empty
         GameEvent.BecameAttacked _ -> Map.empty
@@ -2305,7 +2321,7 @@ eventTriggersGiven scope standing events gs =
         GameEvent.RolledToVisit _ -> Map.empty
         GameEvent.PlanarDieRolled _ -> Map.empty
         GameEvent.TurnedUpOffDeck _ -> Map.empty
-        GameEvent.ChaosEnsued -> Map.empty
+        GameEvent.ChaosEnsued _ -> Map.empty
         GameEvent.ClassLevelSet _ -> Map.empty
         GameEvent.Plotted _ -> Map.empty
         GameEvent.BecameAttacked _ -> Map.empty
@@ -2421,6 +2437,8 @@ eventTriggersGiven scope standing events gs =
       -- `walkedAwayFrom` overlaps nothing: its ids no longer exist, and none
       -- of them stood on the battlefield or is in the command zone `inCommand`
       -- walks.
+      -- `chaosEnsuedOn` overlaps nothing either: its card is in a planar deck,
+      -- which no other source walks.
       -- `spellCast` overlaps nothing: CR 601.2a keeps its object on the stack,
       -- which no other source reads. Neither does `inCommand`: CR 114.1 puts an
       -- emblem into the command zone, and no rule or effect in parun moves one
@@ -2429,7 +2447,7 @@ eventTriggersGiven scope standing events gs =
       -- no other. `revealedInHand` and `spellCast` overlap `inStatedZones`, which
       -- comes last so the bias hands them the id: each offers the stated
       -- abilities the scan would, plus its keyword-minted ones.
-      candidates onBattlefield logged later same graveyard = let event = LoggedEvent.event logged in Map.toAscList (restrict (Map.unions [lookedBackAt onBattlefield logged, onBattlefield, leftBattlefield event, later, same, walkedAwayFrom event, cycledCard event, spellCast event, revealedInHand event, graveyard, inCommand, Map.unionWith (\(c, a) (_, b) -> (c, a <> b)) inExile (exiledForMadness event), inStatedZones]))
+      candidates onBattlefield logged later same graveyard = let event = LoggedEvent.event logged in Map.toAscList (restrict (Map.unions [lookedBackAt onBattlefield logged, onBattlefield, leftBattlefield event, later, same, walkedAwayFrom event, chaosEnsuedOn event, cycledCard event, spellCast event, revealedInHand event, graveyard, inCommand, Map.unionWith (\(c, a) (_, b) -> (c, a <> b)) inExile (exiledForMadness event), inStatedZones]))
       scanOne board later same graveyard logged = concatMap (forOne board logged) (candidates (onBattlefieldOf (restrict board)) logged later same graveyard)
       -- The battlefield reading is per GROUP and so is hoisted out of the block:
       -- every event in one group happened at the same time, so they share it. A

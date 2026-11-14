@@ -2,9 +2,11 @@
 
 module Parun.Codec.ArrangeInLibrary where
 
+import qualified Parun.Codec.LibraryPosition as LibraryPosition
 import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -16,8 +18,10 @@ codec :: Codec.Codec ArrangeInLibrary.ArrangeInLibrary
 codec = Fields.object $ do
   ref <- Fields.required "ref" ObjectRef.codec ArrangeInLibrary.ref
   chooser <- Fields.defaulted "chooser" (PlayerRef.Relative PlayerRelation.You) PlayerRef.codec ArrangeInLibrary.chooser
+  end <- Fields.defaulted "end" Nothing (Common.maybe LibraryPosition.codec) ArrangeInLibrary.end
   pure
     ArrangeInLibrary.MkArrangeInLibrary
       { ArrangeInLibrary.ref = ref,
-        ArrangeInLibrary.chooser = chooser
+        ArrangeInLibrary.chooser = chooser,
+        ArrangeInLibrary.end = end
       }

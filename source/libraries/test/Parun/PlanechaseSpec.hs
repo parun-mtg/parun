@@ -187,6 +187,40 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
         chaos = rollAndResolve 5 (S.withRange 1 (inMain S.alice withCarols))
     Spec.assertEqWith s "CR 801.18 carol's Piker died with bob's" (fmap (\pid -> length (Game.zoneMembers Zone.Graveyard pid chaos)) [S.bob, S.carol]) [1, 1]
 
+  -- CR 311.7's last case: Pools of Becoming's chaos ability reveals the top
+  -- three cards of alice's planar deck -- Tazeem ("draw a card for each land
+  -- you control"), The Dining Car and Agyrem -- and each one's chaos ability
+  -- triggers; Panopticon ("draw a card"), fourth, is not revealed and does not.
+  -- With one Forest, alice draws exactly one card: Pools' own chaos ability
+  -- does not trigger again on the chaos ensuing for each revealed card. She
+  -- puts the three on the bottom in the order she states.
+  Spec.it s "CR 311.7 Pools of Becoming triggers each revealed plane's chaos ability" $ do
+    forest <- S.printingOf s registry "Forest"
+    board <- planarBoard s registry ["Pools of Becoming", "Tazeem", "The Dining Car", "Agyrem", "Panopticon"]
+    let (_, forested) = S.addPermanent forest S.alice board
+        answer :: Prompt.Prompt r -> r
+        answer p = case p of
+          Prompt.RollDie _ -> 5
+          Prompt.ArrangeLibraryArrivals {} -> [2, 1, 0]
+          _ -> S.identityAnswer p
+        chaos = S.runPure answer (inMain S.alice forested) (Planechase.roll S.manaPerformer S.alice >> Engine.priorityLoop)
+    Spec.assertEqWith s "CR 311.7 Tazeem's chaos drew one card and Panopticon's none" (S.handSize S.alice chaos) 1
+    Spec.assertEqWith s "the revealed three are on the bottom in the stated order" (fmap (\oid -> fmap Face.name (Game.faceOf oid chaos)) (Planechase.deckOf S.alice chaos)) (fmap cardName ["Panopticon", "Agyrem", "The Dining Car", "Tazeem"])
+
+  -- CR 311.7's last case and The Fertile Lands of Saulvinia's ruling: its chaos
+  -- ability reveals Mutual Epiphany, a phenomenon, and then Panopticon ("draw a
+  -- card"), and chaos ensues on Panopticon alone. alice draws exactly one card:
+  -- the face-up Fertile Lands' own chaos ability does not trigger again, and
+  -- Tazeem, unrevealed beneath, does not trigger. Both revealed cards go to the
+  -- bottom.
+  Spec.it s "CR 311.7 The Fertile Lands of Saulvinia makes chaos ensue on the revealed plane alone" $ do
+    forest <- S.printingOf s registry "Forest"
+    board <- planarBoard s registry ["The Fertile Lands of Saulvinia", "Mutual Epiphany", "Panopticon", "Tazeem"]
+    let (_, forested) = S.addPermanent forest S.alice board
+        chaos = rollAndResolve 5 (inMain S.alice forested)
+    Spec.assertEqWith s "CR 311.7 Panopticon's chaos drew one card" (S.handSize S.alice chaos) 1
+    Spec.assertEqWith s "the revealed two are on the bottom" (fmap (\oid -> fmap Face.name (Game.faceOf oid chaos)) (Planechase.deckOf S.alice chaos)) (fmap cardName ["Tazeem", "Mutual Epiphany", "Panopticon"])
+
   -- CR 801.18 for a plane's target: the same four seats at range 1, Akoum
   -- ("Whenever chaos ensues, destroy target creature that isn't enchanted.")
   -- face up, and a Goblin Piker each for bob and carol. CR 801.4 and 801.5a

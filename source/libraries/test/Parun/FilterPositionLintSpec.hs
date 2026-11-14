@@ -2680,7 +2680,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- The same kind written as a NUMBER rather than as a kind: CR 122.1's
         -- per-object tally, which is what the three traversals below reach.
         counting = Condition.Type.Compares (Compares.MkCompares (Quantity.Type.ObjectCounters kind) Comparison.AtLeast one)
-        topDepth = ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ObjectCounters kind))
+        topDepth = ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ObjectCounters kind) Nothing)
         -- Every position a card may write a CounterKind in, each named for the
         -- traversal that has to reach it. An arm that stops digging names itself.
         walked =
@@ -2709,7 +2709,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("a Condition's own number", holds (conditionFilters counting)),
             ("CR 611.2b's for-as-long-as clause", holds (durationFilters (Duration.ForAsLongAs counting))),
             ("a library depth", holds (objectRefFilters topDepth)),
-            ("its reveal-until mirror", holds (objectRefFilters (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) (Filter.Type.HasCardType CardType.Land) (Quantity.Type.Literal 1) (Quantity.Type.ObjectCounters kind))))),
+            ("its reveal-until mirror", holds (objectRefFilters (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) (Filter.Type.HasCardType CardType.Land) (Quantity.Type.Literal 1) (Quantity.Type.ObjectCounters kind) Nothing)))),
             -- The fourth: the gate is a clause's FIELD rather than an effect, so
             -- payGateFilters is the only traversal that reaches it (#2876).
             ("CR 118.12's gate multiplier", holds (payGateFilters gate)),
@@ -2745,7 +2745,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       "a number naming a plain kind contributes nothing either"
       ( conditionFilters plainNumber,
         durationFilters (Duration.ForAsLongAs plainNumber),
-        objectRefFilters (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ObjectCounters plain)))
+        objectRefFilters (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Type.ObjectCounters plain) Nothing))
       )
       ([], [], [])
     -- And the whole road, end to end, at the ONE position no traversal above

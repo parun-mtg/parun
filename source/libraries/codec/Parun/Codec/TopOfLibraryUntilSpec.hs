@@ -12,6 +12,7 @@ import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 
@@ -27,7 +28,8 @@ spec s = Spec.describe s "Parun.Codec.TopOfLibraryUntil" $ do
           { TopOfLibraryUntil.player = PlayerRef.Relative PlayerRelation.You,
             TopOfLibraryUntil.filter = Filter.Not (Filter.HasCardType CardType.Land),
             TopOfLibraryUntil.weight = Quantity.Literal 1,
-            TopOfLibraryUntil.count = Quantity.Literal 1
+            TopOfLibraryUntil.count = Quantity.Literal 1,
+            TopOfLibraryUntil.deck = Nothing
           }
       )
       " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"filter\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}},\"count\":{\"type\":\"Literal\",\"value\":1}} "
@@ -41,7 +43,8 @@ spec s = Spec.describe s "Parun.Codec.TopOfLibraryUntil" $ do
           { TopOfLibraryUntil.player = PlayerRef.Relative PlayerRelation.You,
             TopOfLibraryUntil.filter = Filter.HasCardType CardType.Land,
             TopOfLibraryUntil.weight = Quantity.Literal 1,
-            TopOfLibraryUntil.count = Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))
+            TopOfLibraryUntil.count = Quantity.InSlot (SlotName.MkSlotName (Text.pack "X")),
+            TopOfLibraryUntil.deck = Nothing
           }
       )
       " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"count\":{\"type\":\"InSlot\",\"value\":\"X\"}} "
@@ -55,7 +58,8 @@ spec s = Spec.describe s "Parun.Codec.TopOfLibraryUntil" $ do
           { TopOfLibraryUntil.player = PlayerRef.Relative PlayerRelation.You,
             TopOfLibraryUntil.filter = Filter.And [],
             TopOfLibraryUntil.weight = Quantity.Measure Measure.ManaValue,
-            TopOfLibraryUntil.count = Quantity.Literal 4
+            TopOfLibraryUntil.count = Quantity.Literal 4,
+            TopOfLibraryUntil.deck = Nothing
           }
       )
       " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"filter\":{\"type\":\"And\",\"value\":[]},\"weight\":{\"type\":\"Measure\",\"value\":\"ManaValue\"},\"count\":{\"type\":\"Literal\",\"value\":4}} "
@@ -72,4 +76,18 @@ spec s = Spec.describe s "Parun.Codec.TopOfLibraryUntil" $ do
       s
       (Either.isLeft (Common.parse (Text.pack " {\"player\":{\"type\":\"Relative\",\"value\":{\"type\":\"You\"}},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"}} ") >>= Codec.decode TopOfLibraryUntil.codec))
       "expected a decode failure"
+  -- The Fertile Lands of Saulvinia's "until you reveal a plane card" (CR 901.3).
+  Spec.it s "MkTopOfLibraryUntil, a side deck" $
+    Common.assertCodec
+      s
+      TopOfLibraryUntil.codec
+      ( TopOfLibraryUntil.MkTopOfLibraryUntil
+          { TopOfLibraryUntil.player = PlayerRef.Relative PlayerRelation.You,
+            TopOfLibraryUntil.filter = Filter.HasCardType CardType.Plane,
+            TopOfLibraryUntil.weight = Quantity.Literal 1,
+            TopOfLibraryUntil.count = Quantity.Literal 1,
+            TopOfLibraryUntil.deck = Just SideDeck.Planar
+          }
+      )
+      " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Plane\"},\"count\":{\"type\":\"Literal\",\"value\":1},\"deck\":\"Planar\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s TopOfLibraryUntil.codec

@@ -9,6 +9,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 
@@ -22,7 +23,8 @@ spec s = Spec.describe s "Parun.Codec.TopOfLibrary" $ do
       TopOfLibrary.codec
       ( TopOfLibrary.MkTopOfLibrary
           { TopOfLibrary.player = PlayerRef.Relative PlayerRelation.You,
-            TopOfLibrary.count = Quantity.Literal 3
+            TopOfLibrary.count = Quantity.Literal 3,
+            TopOfLibrary.deck = Nothing
           }
       )
       " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"count\":{\"type\":\"Literal\",\"value\":3}} "
@@ -34,10 +36,23 @@ spec s = Spec.describe s "Parun.Codec.TopOfLibrary" $ do
       TopOfLibrary.codec
       ( TopOfLibrary.MkTopOfLibrary
           { TopOfLibrary.player = PlayerRef.Relative PlayerRelation.You,
-            TopOfLibrary.count = Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))
+            TopOfLibrary.count = Quantity.InSlot (SlotName.MkSlotName (Text.pack "X")),
+            TopOfLibrary.deck = Nothing
           }
       )
       " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"count\":{\"type\":\"InSlot\",\"value\":\"X\"}} "
+  -- Pools of Becoming's "the top three cards of your planar deck" (CR 901.3).
+  Spec.it s "MkTopOfLibrary, a side deck" $
+    Common.assertCodec
+      s
+      TopOfLibrary.codec
+      ( TopOfLibrary.MkTopOfLibrary
+          { TopOfLibrary.player = PlayerRef.Relative PlayerRelation.You,
+            TopOfLibrary.count = Quantity.Literal 3,
+            TopOfLibrary.deck = Just SideDeck.Planar
+          }
+      )
+      " {\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"count\":{\"type\":\"Literal\",\"value\":3},\"deck\":\"Planar\"} "
   -- The bare number was the depth's whole spelling before the widening, so a card
   -- file written against it is a decode failure rather than a silent literal.
   Spec.it s "a bare number is rejected as a depth" $

@@ -627,8 +627,9 @@ data Prompt r where
   ChooseLibraryEnd :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> Natural.Natural -> Prompt LibraryPosition.LibraryPosition
   -- | CR 401.4 / 608.2c: the player arranges two or more cards arriving at one
   -- end of a library at once -- the owner, or the player the text names
-  -- (Agonizing Memories' caster); the answer permutes the indices, reading from
-  -- that end inward.
+  -- (Agonizing Memories' caster) -- or moved to one end of a side deck (Pools
+  -- of Becoming's "on the bottom of your planar deck in any order"); the answer
+  -- permutes the indices, reading from that end inward.
   ArrangeLibraryArrivals :: Decider.Decider -> PlayerId.PlayerId -> LibraryPosition.LibraryPosition -> [ObjectId.ObjectId] -> Prompt [Natural.Natural]
   -- | CR 401.4 / 608.2c: the player arranges two or more cards an effect puts
   -- back into their owner's library at the positions those cards already occupy

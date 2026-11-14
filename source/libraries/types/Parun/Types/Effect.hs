@@ -766,8 +766,9 @@ data Effect card ability
     -- Parun.Engine.Planechase.planeswalk.
     Planeswalk
   | -- | CR 311.7: chaos ensues, which a face-up plane's chaos ability triggers
-    -- on.
-    ChaosEnsues
+    -- on; for each object the ObjectRef names, where it ensues for a
+    -- particular object (Pools of Becoming).
+    ChaosEnsues (Maybe ObjectRef.ObjectRef)
   | -- | CR 701.33: abandon this scheme -- the effect's source (CR 314.7) --
     -- performed by Parun.Engine.Archenemy.abandon.
     Abandon

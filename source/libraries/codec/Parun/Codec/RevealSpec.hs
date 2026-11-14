@@ -48,7 +48,7 @@ spec s = Spec.describe s "Parun.Codec.Reveal" $ do
       s
       Reveal.codec
       ( Reveal.MkReveal
-          { Reveal.ref = ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Quantity.Literal 1)),
+          { Reveal.ref = ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (Quantity.Literal 1) Nothing),
             Reveal.slot = Nothing,
             Reveal.revealer = Just (PlayerRef.Relative PlayerRelation.You)
           }
