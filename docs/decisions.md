@@ -494,6 +494,29 @@ Entries are ordered by the first rule each cites.
   `aven-mindcensor-leaves-assemble-the-team-s-top-third-of-three-at-three`.
 - **Issue**: #7326.
 
+## What an additional copy of a spell targets
+
+- **Question**: Twinning Staff makes a copy instruction copy "that many times
+  plus an additional time". Where the copying effect states its copies'
+  targets (Ivy, Gleeful Spellthief's "the copy targets Ivy"; Precursor
+  Golem's "each copy targets a different one of those Golems"), what does the
+  additional copy target before the Staff's new-target offer?
+- **Rules**: CR 614.1a, 707.10, 707.10c, 707.10d, 707.10e; CR of 2026-11-06.
+  Twinning Staff's rulings speak only to the offer.
+- **Decision**: The original's targets: the additional copy is one CR 707.10
+  makes, copying every decision, and the effect's re-aim names only the copies
+  it counts. The Staff's offer then lets the copier keep or change them under
+  CR 707.10c.
+- **Rejected**: The effect's stated target for the additional copy too: the
+  Staff adds a copy to the instruction, not one of the effect's own, and
+  Precursor Golem's "a different one of those Golems" leaves no Golem for it.
+  The readings differ where the original's target is one the copier could not
+  choose anew, such as an opponent's hexproof creature.
+- **Site**: `Parun.Engine.Resolve.Arms.Objects.copyStackObject`'s
+  `additionalCopies`, proved by the scenario
+  `twinning-staff-s-additional-copy-of-ivy-s-copy-keeps-the-original-s-target`.
+- **Issue**: #4343.
+
 ## Who on a winning team takes the ante
 
 - **Question**: CR 407.2 gives the ante to "the winner", but a team win (CR

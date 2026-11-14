@@ -50,4 +50,8 @@ data PlayerInstruction
   | -- | CR 701.32c: set this many schemes in motion. Raised once per
     -- instruction by Parun.Engine.Archenemy.setInMotion.
     SetInMotion
+  | -- | CR 707.10: copy this spell this many times. Raised once per copied
+    -- spell and copier by Parun.Engine.Resolve.Arms.Objects.copyStackObject,
+    -- for a positive count only; a copy of an ability or of a card raises none.
+    CopySpell
   deriving (Bounded, Enum, Eq, Ord, Show)
