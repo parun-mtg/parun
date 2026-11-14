@@ -618,6 +618,7 @@ import qualified Parun.Codec.PendingReplacementEffectSpec
 import qualified Parun.Codec.PendingSkipEffectSpec
 import qualified Parun.Codec.PerTargetSpec
 import qualified Parun.Codec.PermanentActionSpec
+import qualified Parun.Codec.PermanentActsTriggerSpec
 import qualified Parun.Codec.PermanentBecomesDesignatedSpec
 import qualified Parun.Codec.PermanentCandidateSpec
 import qualified Parun.Codec.PermanentIsDealtDamageSpec
@@ -1695,6 +1696,7 @@ spec s reference corpus = do
   Parun.Codec.PendingReplacementEffectSpec.spec s
   Parun.Codec.PendingSkipEffectSpec.spec s
   Parun.Codec.PermanentActionSpec.spec s
+  Parun.Codec.PermanentActsTriggerSpec.spec s
   Parun.Codec.PermanentBecomesDesignatedSpec.spec s
   Parun.Codec.PermanentCandidateSpec.spec s
   Parun.Codec.BlockCountSpec.spec s

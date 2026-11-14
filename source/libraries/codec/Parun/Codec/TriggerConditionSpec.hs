@@ -63,6 +63,7 @@ import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
+import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
@@ -543,12 +544,12 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PermanentActs (PermanentActed.MkPermanentActed PermanentAction.Evolve ActingPermanent.Self))
+      (TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed PermanentAction.Evolve ActingPermanent.Self) Batching.EachOccurrence))
       " {\"type\":\"PermanentActs\",\"value\":{\"action\":\"Evolve\",\"permanent\":{\"type\":\"Self\"}}} "
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PermanentActs (PermanentActed.MkPermanentActed PermanentAction.Explore (ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You))))
+      (TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed PermanentAction.Explore (ActingPermanent.Matching (Filter.HeldBy Holder.Controller PlayerRelation.You))) Batching.EachOccurrence))
       " {\"type\":\"PermanentActs\",\"value\":{\"action\":\"Explore\",\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}}} "
   -- CR 708.9: Synthetic Unmasking Witness's condition.
   Spec.it s "FaceDownPermanentLeavesRevealed round-trips" $

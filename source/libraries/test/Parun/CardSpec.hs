@@ -364,6 +364,7 @@ import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
@@ -3738,7 +3739,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- A bystander's PermanentActs DOES carry one, a predicate over the actor --
   -- Wildgrowth Walker's "a creature you control" -- which the card lint must
   -- sweep. The self-scoped reading carries nothing.
-  TriggerCondition.PermanentActs acts -> actingFilters (PermanentActed.permanent acts)
+  TriggerCondition.PermanentActs acts -> actingFilters (PermanentActed.permanent (PermanentActsTrigger.acted acts))
   -- CR 702.134c's carries none either: "equipped creature" is CR 301.5f's one
   -- permanent rather than a class of them, and "a creature" narrows by nothing.
   TriggerCondition.AttachedCreatureMentors -> []
