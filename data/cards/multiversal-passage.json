@@ -1,0 +1,66 @@
+{
+  "faces": [
+    {
+      "manaCost": [],
+      "name": "Multiversal Passage",
+      "oracleText": "As this land enters, choose a basic land type. Then you may pay 2 life. If you don't, it enters tapped.\nThis land is the chosen type.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "InOrder",
+                "value": [
+                  {
+                    "type": "ChooseQuality",
+                    "value": {
+                      "type": "Subtype",
+                      "value": {
+                        "family": "BasicLandType"
+                      }
+                    }
+                  },
+                  {
+                    "type": "OrTapped",
+                    "value": {
+                      "type": "PayLife",
+                      "value": 2
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "modifications": [
+            {
+              "type": "ChosenSubtype",
+              "value": {
+                "family": "BasicLandType",
+                "mode": "Replace"
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

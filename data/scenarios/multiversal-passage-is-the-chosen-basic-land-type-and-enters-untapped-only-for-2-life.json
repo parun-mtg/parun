@@ -1,0 +1,57 @@
+{
+  "description": "Multiversal Passage: the basic land type chosen as it enters is its only land type and its mana, and the choice does not strip the life payment that follows it in the same ability; paying 2 life lets it enter untapped, declining makes it enter tapped. No CR 616.1 order is asked: the paragraph is one replacement effect.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "hand": [
+          { "card": "Multiversal Passage", "label": "passage" },
+          { "card": "Savannah Lions", "label": "lions" },
+          { "card": "Typhoid Rats", "label": "rats" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      },
+      {
+        "name": "bob",
+        "hand": [
+          { "card": "Multiversal Passage", "label": "passage2" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$passage" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseBasicLandType", "with": "Swamp" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChoosePayLifeOnEntry", "with": "Exercises" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "Multiversal Passage#2", "tapped": false } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 18 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "Multiversal Passage#2", "subtypes": ["Swamp"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$lions", "mana": ["Multiversal Passage#2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$rats", "mana": ["Multiversal Passage#2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Typhoid Rats", "count": 1 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "PlayLand": "$passage2" } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "ChooseBasicLandType", "with": "Island" } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "ChoosePayLifeOnEntry", "with": "Declines" } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Tapped": { "object": "Multiversal Passage#2", "tapped": true } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Life": { "player": "bob", "life": 20 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Subtypes": { "object": "Multiversal Passage#2", "subtypes": ["Island"] } } },
+    { "turn": 3, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
+    { "turn": 4, "step": "Upkeep", "player": "bob", "do": { "Take": { "action": "ActivateManaAbility Multiversal Passage#2" } } },
+    { "turn": 4, "step": "Upkeep", "player": "bob", "check": { "View": { "of": "ManaPool", "player": "bob", "is": [{ "manaType": { "type": "Colored", "value": "Blue" }, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": { "subtype": "Island" } }] } } }
+  ],
+  "note": "Alice chooses Swamp and pays: her Passage is untapped at 18 life, a Swamp only, and pays Typhoid Rats' {B} but not Savannah Lions' {W}. Bob chooses Island and declines: his is tapped at 20 life, an Island only, and taps for {U} in his next upkeep. Each pay prompt comes after the type choice made the land a basic land type, which CR 305.7 would have stripped a second row's ability from."
+}

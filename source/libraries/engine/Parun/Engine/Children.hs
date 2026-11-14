@@ -2371,6 +2371,7 @@ entryRewriteChildren c rewrite = case rewrite of
   EntryRewrite.PayAnyLife cap -> EntryRewrite.PayAnyLife <$> traverse (replacementQuantity c) cap
   EntryRewrite.EntersTransformed -> pure rewrite
   EntryRewrite.RunEffects effects -> EntryRewrite.RunEffects <$> traverse (replacementEffect c) effects
+  EntryRewrite.InOrder rewrites -> EntryRewrite.InOrder <$> traverse (entryRewriteChildren c) rewrites
 
 -- | The subtypes a choice of a quality lists (CR 205.3) and the Filter a
 -- choice of an exiled card states: its children, as a colour, a card type, a

@@ -1734,6 +1734,7 @@ entryRewriteReads rewrite = case rewrite of
   -- The nested effects' reads are replacementRowEffects' answer rather than this
   -- one's, for the reason replacementRowReads' header gives.
   EntryRewrite.RunEffects _ -> ([], [])
+  EntryRewrite.InOrder rewrites -> foldMap entryRewriteReads rewrites
 
 -- What a TURN-UP rewrite reads. entryRewriteReads' two shapes and its discipline:
 -- CR 702.37b's count is evaluated against the row's Context, and CR 303.4k's host
@@ -1947,6 +1948,7 @@ entryRewriteEffects rewrite = case rewrite of
   EntryRewrite.OrTapped _ -> []
   EntryRewrite.PayAnyLife _ -> []
   EntryRewrite.EntersTransformed -> []
+  EntryRewrite.InOrder rewrites -> foldMap entryRewriteEffects rewrites
 
 -- The program a DAMAGE rewrite runs. entryRewriteEffects' twin, and its
 -- discipline: no wildcard.
