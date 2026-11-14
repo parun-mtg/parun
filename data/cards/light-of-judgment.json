@@ -1,0 +1,103 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Light of Judgment",
+      "oracleText": "Light of Judgment deals 6 damage to target creature. Destroy up to one Equipment attached to that creature.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "DealDamage",
+                    "value": {
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 6
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "ChoosePermanents",
+                    "value": {
+                      "permanents": {
+                        "count": {
+                          "type": "UpTo",
+                          "value": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        },
+                        "filter": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasSubtype",
+                              "value": "Equipment"
+                            },
+                            {
+                              "type": "AttachedTo",
+                              "value": {
+                                "type": "IsBound",
+                                "value": "target"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "slot": "equipment"
+                    }
+                  },
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "equipment"
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,206 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flashback",
+          "value": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 7
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Memories Returning",
+      "oracleText": "Reveal the top five cards of your library. Put one of them into your hand. Then choose an opponent. They put one on the bottom of your library. Then you put one into your hand. Then they put one on the bottom of your library. Put the other into your hand.\nFlashback {7}{U}{U}",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Reveal",
+                    "value": {
+                      "ref": {
+                        "type": "TopOfLibrary",
+                        "value": {
+                          "count": {
+                            "type": "Literal",
+                            "value": 5
+                          },
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        }
+                      },
+                      "slot": "revealed"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardFromAmong",
+                        "value": {
+                          "filter": {
+                            "type": "And",
+                            "value": []
+                          },
+                          "slot": "revealed"
+                        }
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "ChoosePlayer",
+                    "value": {
+                      "scope": {
+                        "type": "Opponent"
+                      },
+                      "slot": "opponent"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardFromAmong",
+                        "value": {
+                          "chooser": {
+                            "type": "InSlot",
+                            "value": "opponent"
+                          },
+                          "filter": {
+                            "type": "And",
+                            "value": []
+                          },
+                          "slot": "revealed"
+                        }
+                      },
+                      "zone": "Library"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardFromAmong",
+                        "value": {
+                          "filter": {
+                            "type": "And",
+                            "value": []
+                          },
+                          "slot": "revealed"
+                        }
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardFromAmong",
+                        "value": {
+                          "chooser": {
+                            "type": "InSlot",
+                            "value": "opponent"
+                          },
+                          "filter": {
+                            "type": "And",
+                            "value": []
+                          },
+                          "slot": "revealed"
+                        }
+                      },
+                      "zone": "Library"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "revealed"
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

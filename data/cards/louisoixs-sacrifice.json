@@ -1,0 +1,104 @@
+{
+  "faces": [
+    {
+      "additionalCostChoices": [
+        [
+          {
+            "components": [
+              {
+                "type": "Sacrifice",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "whichPermanents": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "HasSupertype",
+                        "value": "Legendary"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "mana": []
+          },
+          {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Louisoix's Sacrifice",
+      "oracleText": "As an additional cost to cast this spell, sacrifice a legendary creature or pay {2}.\nCounter target activated ability, triggered ability, or noncreature spell.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Counter",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "IsAbility"
+                    },
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      }
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "SpellsAndAbilities"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

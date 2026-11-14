@@ -1,0 +1,157 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lindblum, Industrial Regency",
+            "label": "lind"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 716.3, 716.3d, 304.1, 305.2: Mage Siege is an instant, cast on another player's turn, creating the black Wizard; Lindblum then waits in exile and is played as its owner's land, entering tapped",
+  "note": "Alice casts Mage Siege in bob's upkeep; the Wizard enters under her control and Lindblum is exiled, and on her own turn she plays it from exile tapped.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "face": "Mage Siege",
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3"
+          ],
+          "object": "$lind"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wizard Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lindblum, Industrial Regency",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "PlayLand": "Lindblum, Industrial Regency"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Lindblum, Industrial Regency",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}
