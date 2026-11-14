@@ -1315,6 +1315,8 @@ library codec
     Parun.Codec.PermanentActed
     Parun.Codec.PermanentAction
     Parun.Codec.PermanentActionSpec
+    Parun.Codec.PermanentActsTrigger
+    Parun.Codec.PermanentActsTriggerSpec
     Parun.Codec.PermanentBecomesDesignated
     Parun.Codec.PermanentBecomesDesignatedSpec
     Parun.Codec.PermanentCandidate
@@ -3390,6 +3392,7 @@ library types
     Parun.Types.PerformerR
     Parun.Types.PermanentActed
     Parun.Types.PermanentAction
+    Parun.Types.PermanentActsTrigger
     Parun.Types.PermanentBecomesDesignated
     Parun.Types.PermanentCandidate
     Parun.Types.PermanentIsDealtDamage

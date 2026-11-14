@@ -24,6 +24,7 @@ import qualified Parun.Codec.KeywordDesignator as KeywordDesignator.Codec
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
+import qualified Parun.Engine.Event.Trigger as Trigger
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Keyword as Keyword.Engine
 import qualified Parun.Engine.Mint as Mint
@@ -52,6 +53,7 @@ import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCostScope as AttackCostScope
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
+import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BoundMeasure as BoundMeasure
@@ -1440,8 +1442,8 @@ timesPaidOffends card =
       isPrinted = not . null . taggedValues (Text.pack "Printed")
    in any (`notElem` printed) (timesPaidKeywords encoded) || any (`notElem` linked) (filter isPrinted (timesPaidDesignators encoded))
 
--- Two things a TriggerCondition.AnyOf may not contain, checked at every depth so
--- that a nested one cannot smuggle either in.
+-- Three things a TriggerCondition.AnyOf may not contain, checked at every depth so
+-- that a nested one cannot smuggle any in.
 --
 -- A CR 603.8 STATE trigger, because the two kinds of condition are gathered by
 -- different scans: Parun.Engine.Event.Trigger.stateTriggers walks the battlefield (and the
@@ -1456,14 +1458,20 @@ timesPaidOffends card =
 -- A NESTED AnyOf, because a flat list says everything a nested one could and the
 -- nesting only multiplies the shapes the classifications above have to be right
 -- for.
+--
+-- Disjuncts that DISAGREE on CR 603.2c's batching, because
+-- Parun.Engine.Event.Trigger.batchScoped's AnyOf arm answers `any`, so a
+-- per-occurrence disjunct beside a batch one would fire once per group. The War
+-- Doctor's two "one or more" halves agree.
 anyOfOffends :: TriggerCondition.TriggerCondition -> Bool
 anyOfOffends condition =
   let inside c = case c of
         TriggerCondition.StateIs _ -> True
         TriggerCondition.AnyOf _ -> True
         _ -> False
+      mixed conditions = any Trigger.batchScoped conditions && not (all Trigger.batchScoped conditions)
    in case condition of
-        TriggerCondition.AnyOf conditions -> any inside conditions || any anyOfOffends conditions
+        TriggerCondition.AnyOf conditions -> any inside conditions || any anyOfOffends conditions || mixed conditions
         _ -> False
 
 -- | A position lint's accepting side: each author's atoms, as many as named,
@@ -1499,7 +1507,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- pool with no AnyOf at all would pass this without examining anything.
   -- The pool's AnyOf cards -- Balemurk Leech, Bartered Cow and their like -- are
   -- all ACCEPTED here.
-  Spec.it s "CR 603.2 no AnyOf mixes in a state trigger or nests another AnyOf" $ do
+  Spec.it s "CR 603.2 no AnyOf mixes in a state trigger, nests another AnyOf or mixes CR 603.2c batching" $ do
     ps <- S.allPrintings s corpus
     let conditions c = fmap TriggeredAbility.condition (Face.triggeredAbilities c)
         isAnyOf c = case c of TriggerCondition.AnyOf _ -> True; _ -> False
@@ -1508,7 +1516,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       s
       (any (anyFace (any isAnyOf . conditions) . Printing.card) ps)
       "the pool has a card with an AnyOf condition to lint"
-    Spec.assertEqWith s "every AnyOf holds only event triggers, flat" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "every AnyOf holds only event triggers, flat, batched alike" (fmap (S.nameOf . Printing.card) offenders) []
   -- The REJECTING direction, against hand-built offenders rather than card files,
   -- as the repeated-face-name lint above does it.
   Spec.it s "the lint itself catches a state trigger and a nested AnyOf inside an AnyOf" $ do
@@ -1523,6 +1531,10 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- NOT an offence outside an AnyOf: a bare state trigger is how every CR 603.8
     -- card in the pool is written, and this lint must not reject those.
     Spec.assertBool s (not (anyOfOffends (TriggerCondition.StateIs never))) "a bare state trigger is left alone"
+    -- CR 603.2c: a batch Enters beside a per-occurrence one.
+    let entersOne = TriggerCondition.Enters EntersTrigger.defaultValue {EntersTrigger.batching = Batching.OneOrMore}
+    Spec.assertBool s (anyOfOffends (TriggerCondition.AnyOf [entersOne, TriggerCondition.Enters EntersTrigger.defaultValue])) "a batch disjunct beside a per-occurrence one is rejected"
+    Spec.assertBool s (not (anyOfOffends (TriggerCondition.AnyOf [entersOne, entersOne]))) "and two batch disjuncts are fine"
   Spec.it s "no mode declares a slot named enchant" $ do
     ps <- S.allPrintings s corpus
     let offends c = any (Map.member Card.enchantSlot . Mode.targetSlots) (Modal.modes (Face.spell c))

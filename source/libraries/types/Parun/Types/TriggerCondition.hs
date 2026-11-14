@@ -27,7 +27,7 @@ import qualified Parun.Types.LeavesTrigger as LeavesTrigger
 import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
 import qualified Parun.Types.LifeTrigger as LifeTrigger
 import qualified Parun.Types.LostPermanent as LostPermanent
-import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
@@ -312,11 +312,12 @@ data TriggerCondition
     -- in one resolution, where this fires once (#2121).
     Reflexive
   | -- | CR 603.2: "whenever [a permanent] <acts>" (Renegade Krasis, Wildgrowth
-    -- Walker), the actor being the bearer itself or one the Filter admits.
+    -- Walker), the actor being the bearer itself or one the Filter admits, per
+    -- actor or per batch (CR 603.2c).
     --
     -- Not implemented: a card bearing two exert paragraphs, whose two
     -- PermanentAction.Exert triggers would each see both exerts (#4946).
-    PermanentActs (PermanentActed.PermanentActed ActingPermanent.ActingPermanent)
+    PermanentActs PermanentActsTrigger.PermanentActsTrigger
   | -- | CR 603.2: "whenever [a player] <acts>", the actor read against CR
     -- 109.5's "you" (Matoya, Archon Elder; Synthetic Blight Chronicler).
     PlayerActs (PlayerActed.PlayerActed PlayerRelation.PlayerRelation)

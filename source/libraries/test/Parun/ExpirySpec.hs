@@ -1681,12 +1681,9 @@ suspendAggressionSpec s registry = Spec.describe s "SuspendAggression" $ do
   -- library" is one action on two objects, so both arrivals share ONE
   -- Parun.Types.EventGroup, which is what CR 603.2c's batch conditions ("whenever
   -- one or more cards are put into exile") read. Asserted on the log, as
-  -- Parun.MeldSpec's "CR 608.2f the pair leaves the battlefield in one event" is:
-  -- no batch exile trigger in data/cards/ tells the readings apart, since
-  -- Stonebinder's Familiar triggers once each turn, Rakshasa Vizier watches
-  -- only a graveyard, and Ketramose, the New Dawn counts the permanent alone,
-  -- a library being neither of its origins (pool grep for "one or more cards
-  -- are put into exile", 2026-10-18). The War Doctor would; see #5189.
+  -- Parun.MeldSpec's "CR 608.2f the pair leaves the battlefield in one event" is.
+  -- data/scenarios/the-war-doctor-gets-one-time-counter-when-suspend-aggression-exiles-two-cards.json
+  -- reads the batch at gameplay level.
   Spec.it s "CR 608.2f the permanent and the library card are exiled in one event" $ do
     (pikerId, mineId, resolved) <- suspendAggressionBoard s registry
     let logged = Foldable.toList (TurnRegisters.events (GameState.turn resolved))

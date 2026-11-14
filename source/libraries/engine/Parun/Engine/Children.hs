@@ -352,6 +352,7 @@ import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
@@ -1643,7 +1644,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.SelfBecomesPlotted -> pure condition
   TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger end direction other) -> fmap (TriggerCondition.AttachmentChanges . AttachmentTrigger.MkAttachmentTrigger end direction) (triggerFilter c other)
   TriggerCondition.Reflexive -> pure condition
-  TriggerCondition.PermanentActs (PermanentActed.MkPermanentActed action permanent) -> fmap (TriggerCondition.PermanentActs . PermanentActed.MkPermanentActed action) (actingChildren c permanent)
+  TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action permanent) batching) -> fmap (\p -> TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action p) batching)) (actingChildren c permanent)
   TriggerCondition.PlayerActs (PlayerActed.MkPlayerActed _ _) -> pure condition
   TriggerCondition.PlacesSticker (PlacesSticker.MkPlacesSticker placer kinds stickered) -> fmap (TriggerCondition.PlacesSticker . PlacesSticker.MkPlacesSticker placer kinds) (triggerFilter c stickered)
 
