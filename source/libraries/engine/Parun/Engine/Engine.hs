@@ -204,15 +204,15 @@ nextInOrder order pid = case dropWhile (/= pid) order of
     [] -> pid
 
 -- CR 800.4a (last sentence): priority passes to the next player in turn order
--- who's still in the game. The seat is looked up in the FULL seating order
--- (GameState.turnOrder is never shortened), so a player who has ALREADY departed
--- still has a position from which to find their successor -- which is how
+-- who's still in the game. The seat is looked up in the FULL turn order
+-- (Turn.turnOrder; GameState.seating is never shortened), so a player who has
+-- ALREADY departed still has a position from which to find their successor -- which is how
 -- priorityLoop's concede arm calls this. Total. Deliberately NOT shared with
 -- Game.heirOnDeparture (CR 726.4 / 727.4), which anchors on the ACTIVE seat,
 -- excludes it, and must return a Maybe.
 nextStillPlaying :: GameState -> PlayerId -> PlayerId
 nextStillPlaying gs pid =
-  let order = GameState.turnOrder gs
+  let order = Turn.turnOrder gs
       playing = Game.stillPlaying gs
       -- Everyone after `pid`, then the whole order again so the wrap is covered.
       scan = drop 1 (dropWhile (/= pid) order) <> order
@@ -257,7 +257,7 @@ priorityHolder gs =
 passPriorityFrom :: GameState -> PlayerId -> PlayerId
 passPriorityFrom gs pid =
   let playing = Game.stillPlaying gs
-      order = GameState.turnOrder gs
+      order = Turn.turnOrder gs
       scan = filter (\p -> List.elem p playing && GrandMelee.eligible gs p) (drop 1 (dropWhile (/= pid) order) <> order)
       teammate = Turn.sharesTurn gs pid
    in case filter (\p -> teammate p && not (Set.member p (TurnRegisters.passed (GameState.turn gs)))) scan of
@@ -317,7 +317,7 @@ untapAll :: [PlayerId] -> Game ()
 untapAll actives = do
   determined <- Monad.mapM determineUntap actives
   gs <- State.get
-  let others = [oid | pid <- GameState.turnOrder gs, not (Turn.isActive gs pid), oid <- Projection.controls pid gs]
+  let others = [oid | pid <- GameState.seating gs, not (Turn.isActive gs pid), oid <- Projection.controls pid gs]
       extended = Set.unions [named | (UntapHold.DuringOthersSteps, named) <- UntapRestriction.gathered others gs]
       untapping = concatMap fst determined <> filter (`Set.member` extended) others
       held = concatMap snd determined
@@ -540,7 +540,7 @@ discardToHandSize pid = do
 -- first does, every member of it being an active player on that turn (CR
 -- 805.4a); CR 103.8c and CR 800.7, in other multiplayer games nobody does. CR
 -- 800.1 makes a multiplayer game one that BEGINS with more than two players, and
--- turnOrder is the permanent roster, so a three-player game down to two
+-- seating is the permanent roster, so a three-player game down to two
 -- survivors still does not skip. The whole step is skipped (CR 500.11), not just
 -- its draw: runStep asks this ahead of the replacement system. Every draw step
 -- of that turn, a CR 500.8 added one included (docs/decisions.md, "Whether an
@@ -548,8 +548,8 @@ discardToHandSize pid = do
 skipsDraw :: GameState -> Bool
 skipsDraw gs =
   TurnRegisters.turnNumber (GameState.turn gs) == 1
-    && (length (GameState.turnOrder gs) <= 2 || GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)))
-    && case GameState.turnOrder gs of
+    && (length (GameState.seating gs) <= 2 || GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)))
+    && case GameState.seating gs of
       starter : _ -> starter == TurnRegisters.activePlayer (GameState.turn gs)
       [] -> False
 
@@ -1248,7 +1248,7 @@ placeBorne srcId pending = do
 -- first and then the rest in turn order, grouped by controller because the
 -- within-controller ORDER is itself a choice. A departed seat is not in the APNAP
 -- order at all (CR 101.4 with CR 102.1) and CR 800.4d keeps its triggers off the
--- stack; turnOrder being the permanent roster, the filter below enforces both.
+-- stack; seating being the permanent roster, the filter below enforces both.
 apnapPlayers :: GameState -> [PendingTrigger.PendingTrigger] -> [PlayerId]
 apnapPlayers gs pending =
   let rotated = Game.apnapOrder gs
@@ -2008,7 +2008,7 @@ takeOrdinaryTurn :: Game ()
 takeOrdinaryTurn = do
   gs <- State.get
   case GameState.extraTurns gs of
-    [] -> walkToNextTurn (length (GameState.turnOrder gs)) (turnAnchorOf gs) (turnAnchorOf gs)
+    [] -> walkToNextTurn (length (GameState.seating gs)) (turnAnchorOf gs) (turnAnchorOf gs)
     entry : rest -> do
       let pid = ExtraTurn.taker entry
           -- The entry is spent whether it begins, is skipped, or is CR
@@ -2254,7 +2254,7 @@ walkToNextTurn :: Int -> PlayerId -> PlayerId -> Game ()
 walkToNextTurn seatsLeft anchor seat = do
   gs <- State.get
   Monad.when (seatsLeft > 0) $ do
-    let next = nextInOrder (GameState.turnOrder gs) seat
+    let next = nextInOrder (Turn.turnOrder gs) seat
         playing = Game.stillPlaying gs
         teamPlays = any (Turn.sharesTurn gs next) playing
     if (next /= anchor && Turn.sharesTurn gs anchor next) || (List.notElem next playing && teamPlays)
@@ -2277,7 +2277,7 @@ walkToNextTurn seatsLeft anchor seat = do
                                 }
                           }
                   )
-              else walkToNextTurn (length (GameState.turnOrder gs)) next next
+              else walkToNextTurn (length (GameState.seating gs)) next next
           else do
             -- CR 702.26n beside CR 800.4m: a row keyed to a seat this
             -- walk passes is rescheduled and phases in at the untap step of
@@ -2298,7 +2298,7 @@ dropAtTurnOfTeam :: PlayerId -> GameState -> GameState
 dropAtTurnOfTeam pid gs =
   let playing = Game.stillPlaying gs
       sweepSeat g seat = if List.elem seat playing then Expiry.dropAtTurnOf seat g else wouldHaveBegun seat g
-   in List.foldl' sweepSeat gs (filter (Turn.sharesTurn gs pid) (GameState.turnOrder gs))
+   in List.foldl' sweepSeat gs (filter (Turn.sharesTurn gs pid) (GameState.seating gs))
 
 -- The turn actually begins for `pid`, split out so the CR 800.4k seat walk has
 -- exactly one place to land.
@@ -2408,7 +2408,7 @@ newTurn :: Maybe Timestamp.Timestamp -> PlayerId -> GameState -> GameState
 newTurn extra pid gs =
   let -- CR 805.4: every player whose turn this is, `pid` alone without the
       -- shared team turns option.
-      takers = filter (Turn.sharesTurn gs pid) (GameState.turnOrder gs)
+      takers = filter (Turn.sharesTurn gs pid) (GameState.seating gs)
       -- CR 807.4b: the players taking a parked Grand Melee turn, whose
       -- control (CR 724.1b) runs on through this one's beginning.
       parked = Map.elems (GameState.parkedTurns gs)

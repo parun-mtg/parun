@@ -894,7 +894,7 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
     -- the skip to the wrong player.
     let sub = Setup.subgameStateFrom S.bob (Setup.emptyGame S.bothPlayers)
     Spec.assertEqWith s "bob is the subgame's active player" (TurnRegisters.activePlayer (GameState.turn sub)) S.bob
-    Spec.assertEqWith s "the subgame turn order begins with bob" (GameState.turnOrder sub) [S.bob, S.alice]
+    Spec.assertEqWith s "the subgame turn order begins with bob" (GameState.seating sub) [S.bob, S.alice]
 
   Spec.it s "CR 730.4: the subgame sees the main game's cards as outside it, minus the ones it took" $ do
     mountain <- S.printingOf s registry "Mountain"
@@ -1583,7 +1583,7 @@ turnOrderSpec s registry = Spec.describe s "TurnOrder (CR 800.4)" $ do
         after = S.runPure S.identityAnswer gone Engine.handoffTurn
     Spec.assertEqWith s "carol is active, bob is skipped" (TurnRegisters.activePlayer (GameState.turn after)) S.carol
     Spec.assertEqWith s "exactly one turn began" (TurnRegisters.turnNumber (GameState.turn after)) 2
-    Spec.assertEqWith s "the seating roster is untouched" (GameState.turnOrder after) [S.alice, S.bob, S.carol]
+    Spec.assertEqWith s "the seating roster is untouched" (GameState.seating after) [S.alice, S.bob, S.carol]
 
   Spec.it s "CR 800.4k the walk is a loop: two consecutive departed seats are both skipped" $ do
     -- Proves the walk keeps walking rather than skipping exactly one seat.

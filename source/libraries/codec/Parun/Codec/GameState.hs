@@ -93,7 +93,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 -- has no reader of it.
 --
 -- 'Fields.required' is kept for the fields no game can be missing -- `settings`,
--- `objects`, `players`, `turnOrder`, `turn` -- and for the counters and clocks
+-- `objects`, `players`, `seating`, `turn` -- and for the counters and clocks
 -- whose zero is a position rather than an absence: `nextEventGroup`,
 -- `nextObjectId`, `nextPrintingId`, `nextTimestamp` and `lastChoice`.
 -- Parun.Codec.TurnRegisters keeps the same split for `turn`'s own fields.
@@ -179,7 +179,8 @@ codec resolve = Fields.object $ do
   attackProhibitions <- Fields.defaulted "attackProhibitions" [] (Common.list ActiveAttackProhibition.codec) (StoredEffects.attackProhibitions . GameState.stored)
   evasions <- Fields.defaulted "evasions" [] (Common.list ActiveEvasion.codec) (StoredEffects.evasions . GameState.stored)
   ignoredAbilities <- Fields.defaulted "ignoredAbilities" [] (Common.list IgnoredAbility.codec) (StoredEffects.ignoredAbilities . GameState.stored)
-  turnOrder <- Fields.required "turnOrder" (Common.list PlayerId.codec) GameState.turnOrder
+  seating <- Fields.required "seating" (Common.list PlayerId.codec) GameState.seating
+  turnOrderReversed <- Fields.defaulted "turnOrderReversed" False Common.boolean GameState.turnOrderReversed
   turnsBegun <- Fields.defaulted "turnsBegun" Map.empty (Common.naturalMap PlayerId.codec Common.natural) GameState.turnsBegun
   result <- Fields.defaulted "result" Nothing (Common.maybe Result.codec) GameState.result
   restartSignal <- Fields.defaulted "restartSignal" RestartSignal.Type.Playing RestartSignal.codec GameState.restartSignal
@@ -330,7 +331,8 @@ codec resolve = Fields.object $ do
               StoredEffects.pendingEntryEffects = pendingEntryEffects
             },
         GameState.detachedBindings = detachedBindings,
-        GameState.turnOrder = turnOrder,
+        GameState.seating = seating,
+        GameState.turnOrderReversed = turnOrderReversed,
         GameState.turnsBegun = turnsBegun,
         GameState.result = result,
         GameState.restartSignal = restartSignal,

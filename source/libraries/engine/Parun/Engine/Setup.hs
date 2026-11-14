@@ -344,7 +344,8 @@ blankGame match order active =
       GameState.bookkeeping = Game.blankBookkeeping,
       GameState.snapshots = Game.blankSnapshots,
       GameState.detachedBindings = Map.empty,
-      GameState.turnOrder = order,
+      GameState.seating = order,
+      GameState.turnOrderReversed = False,
       GameState.turnsBegun = Turn.firstTurnBegun (MatchScope.settings match) order active,
       GameState.result = Nothing,
       GameState.restartSignal = RestartSignal.Playing,
@@ -458,7 +459,7 @@ createDeck pid deck = do
           -- CR 400.11a: the sideboard is recorded on the player for the same
           -- reason and no object is minted for it either. CR 400.11c is what
           -- keeps anything else from reaching these until a card brings one in.
-          let total = startingLifeOf (MatchScope.settings (GameState.match gs)) (length (GameState.turnOrder gs)) pid (Deck.commander deck) (Vanguard.lifeModifierOf pid gs + (if Map.null (Map.findWithDefault Map.empty SideDeck.Scheme (Deck.sideDecks deck)) then 0 else Archenemy.lifeBonus))
+          let total = startingLifeOf (MatchScope.settings (GameState.match gs)) (length (GameState.seating gs)) pid (Deck.commander deck) (Vanguard.lifeModifierOf pid gs + (if Map.null (Map.findWithDefault Map.empty SideDeck.Scheme (Deck.sideDecks deck)) then 0 else Archenemy.lifeBonus))
            in Map.adjust (\p -> p {Player.life = total, Player.startingLife = total, Player.dungeons = Set.fromList dungeonIds, Player.outsideTheGame = Map.fromList sideboardIds, Player.stickerSheets = Deck.stickerSheets deck, Player.draftNotes = Deck.draftNotes deck}) pid (GameState.players gs)
       }
   -- CR 718.2 / 901.4 / 904.4 and the Unstable FAQ: each supplementary deck
@@ -557,7 +558,7 @@ newGame perform matchup = do
     State.modify'
       ( \g ->
           (Archenemy.setUp archenemy g)
-            { GameState.turnOrder = rotateTo archenemy (GameState.turnOrder g),
+            { GameState.seating = Game.rotateTo archenemy (GameState.seating g),
               GameState.turn =
                 (GameState.turn (Archenemy.setUp archenemy g))
                   { TurnRegisters.activePlayer = archenemy
@@ -588,7 +589,7 @@ newGame perform matchup = do
   -- CR 807.4b: from the starting player CR 103.1 settled.
   State.modify' GrandMelee.handOut
   countFirstTurn
-  seated <- State.gets GameState.turnOrder
+  seated <- State.gets GameState.seating
   -- CR 103.2b: the companion reveal round, after every starting deck is recorded
   -- (CR 103.2a, createDeck above) and before CR 103.5's opening hands -- rule
   -- 103.2's steps come first, and rule 702.139b's condition reads the deck rather
@@ -966,7 +967,7 @@ drawStickerSheets seated = Monad.forM_ seated $ \pid -> do
 -- CR 904.2) are final.
 countFirstTurn :: Game ()
 countFirstTurn =
-  State.modify' (\g -> g {GameState.turnsBegun = Turn.firstTurnBegun (MatchScope.settings (GameState.match g)) (GameState.turnOrder g) (TurnRegisters.activePlayer (GameState.turn g))})
+  State.modify' (\g -> g {GameState.turnsBegun = Turn.firstTurnBegun (MatchScope.settings (GameState.match g)) (GameState.seating g) (TurnRegisters.activePlayer (GameState.turn g))})
 
 -- CR 103.1c: rotate the turn order to begin with the player whose command zone
 -- holds a card naming them the starting player, superseding CR 103.1's
@@ -987,7 +988,7 @@ claimStartingPlayer = do
     State.modify'
       ( \g ->
           g
-            { GameState.turnOrder = rotateTo pid (GameState.turnOrder g),
+            { GameState.seating = Game.rotateTo pid (GameState.seating g),
               GameState.turn =
                 (GameState.turn g)
                   { TurnRegisters.activePlayer = pid
@@ -1006,11 +1007,11 @@ randomSeating :: Game ()
 randomSeating = do
   gs <- State.get
   Monad.when (Map.null (Teams.unwrap (GameSettings.teams (MatchScope.settings (GameState.match gs))))) $
-    case GameState.turnOrder gs of
+    case GameState.seating gs of
       [] -> pure ()
       starter : rest -> do
         drawn <- Game.drawDistinct Prompt.RandomPlayer (Natural.length rest) rest
-        State.modify' (\g -> g {GameState.turnOrder = starter : drawn})
+        State.modify' (\g -> g {GameState.seating = starter : drawn})
 
 -- CR 809.4: in an Emperor game a randomly determined emperor goes first, turn
 -- order to the left. Randomness and not a choice, so Prompt.RandomFirstPlayer,
@@ -1021,12 +1022,12 @@ randomEmperorFirst :: Game ()
 randomEmperorFirst = do
   gs <- State.get
   let emperors = GameSettings.emperors (MatchScope.settings (GameState.match gs))
-  drawn <- Game.drawAmong Prompt.RandomFirstPlayer (filter (Emperors.isEmperor emperors) (GameState.turnOrder gs))
+  drawn <- Game.drawAmong Prompt.RandomFirstPlayer (filter (Emperors.isEmperor emperors) (GameState.seating gs))
   Monad.forM_ drawn $ \starter ->
     State.modify'
       ( \g ->
           g
-            { GameState.turnOrder = rotateTo starter (GameState.turnOrder g),
+            { GameState.seating = Game.rotateTo starter (GameState.seating g),
               GameState.turn =
                 (GameState.turn g)
                   { TurnRegisters.activePlayer = starter
@@ -1045,7 +1046,7 @@ randomTeamFirst :: Game ()
 randomTeamFirst = do
   gs <- State.get
   let settings = MatchScope.settings (GameState.match gs)
-      order = GameState.turnOrder gs
+      order = GameState.seating gs
       teamVsTeam =
         not (Map.null (Teams.unwrap (GameSettings.teams settings)))
           && not (GameSettings.twoHeadedGiant settings)
@@ -1058,7 +1059,7 @@ randomTeamFirst = do
       State.modify'
         ( \g ->
             g
-              { GameState.turnOrder = rotateTo starter (GameState.turnOrder g),
+              { GameState.seating = Game.rotateTo starter (GameState.seating g),
                 GameState.turn =
                   (GameState.turn g)
                     { TurnRegisters.activePlayer = starter
@@ -1076,16 +1077,10 @@ teamStarters :: Teams.Teams -> [PlayerId] -> [PlayerId]
 teamStarters teams order =
   let opening = Map.fromListWith (\_ earlier -> earlier) [(team, seat) | (seat, team) <- Seating.openings teams order]
       starterOf team open =
-        let run = rotateTo open (filter ((== Just team) . Teams.teamOf teams) order)
+        let run = Game.rotateTo open (filter ((== Just team) . Teams.teamOf teams) order)
          in Maybe.listToMaybe (drop (length run `div` 2) run)
       starters = Map.elems (Map.mapMaybeWithKey starterOf opening)
    in filter (`elem` starters) order
-
--- CR 103 / 728.1a: put `starter` at the head of the turn order, preserving the
--- cyclic order. Total: a `starter` not in the order leaves it as-is.
-rotateTo :: PlayerId -> [PlayerId] -> [PlayerId]
-rotateTo starter order = case break (== starter) order of
-  (before, after) -> after <> before
 
 -- CR 103.4 / CR 728.1 / CR 730.2: put every player back to a new game's
 -- starting state for the two paths that rebuild a game in place (restart and
@@ -1096,7 +1091,7 @@ rotateTo starter order = case break (== starter) order of
 -- subgame. Their Status.Departed survives the rebuild, and they keep their
 -- entry in the map rather than being deleted, so every Map.lookup naming them
 -- stays total. Which players are in the rebuilt game is the rebuilt
--- GameState.turnOrder.
+-- GameState.seating.
 --
 -- Takes the rebuilt game's settings and seat count rather than reading them off
 -- the state it is rebuilding, because CR 903.12f's life total turns on the
@@ -1202,10 +1197,10 @@ restartGame perform exempt starter = do
   State.modify' $ \gs ->
     -- CR 728.1: the rebuilt seating order is the players who were still in the
     -- game, in their seats, rotated to begin with `starter` (CR 728.1a).
-    let order = rotateTo starter (Game.stillPlayingInOrder gs)
+    let order = Game.rotateTo starter (Game.stillPlayingInOrder gs)
         -- CR 728.1a. Read back off the rebuilt order, exactly as
         -- subgameStateFrom does, so the two can never disagree and this
-        -- always names a seat: rotateTo leaves an order alone when `starter`
+        -- always names a seat: Game.rotateTo leaves an order alone when `starter`
         -- is not in it, and the head is then the first still-playing seat.
         -- Serra Avenger's ruling: the restarted game's turns are counted
         -- afresh, which blankGame does.
@@ -1302,7 +1297,7 @@ subgameStateFrom :: PlayerId -> GameState -> GameState
 subgameStateFrom starter parent =
   let libIds =
         Set.fromList
-          (concatMap (\pid -> Foldable.toList (Map.findWithDefault Seq.empty pid (GameState.library parent))) (GameState.turnOrder parent))
+          (concatMap (\pid -> Foldable.toList (Map.findWithDefault Seq.empty pid (GameState.library parent))) (GameState.seating parent))
       -- CR 730.2c: "as a subgame of a Commander game starts, each player moves
       -- their commander from the main-game command zone (if it's there) to the
       -- subgame command zone", and CR 730.2b says the same of a vanguard card.
@@ -1335,7 +1330,7 @@ subgameStateFrom starter parent =
       -- Invariant: `libIds` here and funnelBack's `oldLibIds` MUST compute the
       -- identical id set, and so must `cmdIds` and funnelBack's `oldCmdIds`.
       -- Both draw from the parent's FULL roster
-      -- (GameState.turnOrder), never narrowed to Game.stillPlayingInOrder --
+      -- (GameState.seating), never narrowed to Game.stillPlayingInOrder --
       -- `order` below does narrow to the seated players (CR 730.4), but this
       -- pool must not. funnelBack drops every id in that set from the parent's
       -- kept objects and refunds it only from what survived the subgame, so
@@ -1347,7 +1342,7 @@ subgameStateFrom starter parent =
       -- That is a maintenance invariant, not a live gap. A player who departs
       -- INSIDE the subgame is a separate concern, handled by funnelBack's
       -- `recovered` pass.
-      order = rotateTo starter (Game.stillPlayingInOrder parent)
+      order = Game.rotateTo starter (Game.stillPlayingInOrder parent)
       firstPlayer = Maybe.fromMaybe (TurnRegisters.activePlayer (GameState.turn parent)) (Maybe.listToMaybe order)
       -- CR 730.4: "all objects in the main game and all cards outside the main
       -- game are considered outside the subgame (except those specifically
@@ -1586,9 +1581,9 @@ applyCrossings finalSub parent =
 -- so its firing is the only thing that can need recovering.
 --
 -- Owner-absence rather than `Departure.continuesAfterDeparture finalSub`, which
--- was tried and rejected: that reads turnOrder at the END of the subgame while
+-- was tried and rejected: that reads seating at the END of the subgame while
 -- objectsLeaveWith's gate was decided at departure time, and an in-subgame
--- restart rewrites turnOrder to the still-playing seats, so the two disagree. A
+-- restart rewrites seating to the still-playing seats, so the two disagree. A
 -- departed owner stays absent from `finalSub`'s objects through any number of
 -- restarts, since a restart rebuilds from the pool that already exists and can
 -- never resurrect what objectsLeaveWith deleted. It stays correctly False for a
@@ -1647,7 +1642,7 @@ funnelBack finalSub parent =
           (Map.filterWithKey (\oid obj -> isCard obj && (Commander.isCommander oid finalSub || Vanguard.isVanguard oid finalSub)) (Map.restrictKeys subObjects subCmdIds))
       oldLibIds =
         Set.fromList
-          (concatMap (\pid -> Foldable.toList (Map.findWithDefault Seq.empty pid (GameState.library parent))) (GameState.turnOrder parent))
+          (concatMap (\pid -> Foldable.toList (Map.findWithDefault Seq.empty pid (GameState.library parent))) (GameState.seating parent))
       -- The same expression as subgameStateFrom's `cmdIds`; see the invariant note
       -- there. These are the ids CR 730.2b and CR 730.2c moved out of the parent's
       -- command zone, so they are dropped from the parent and refunded from the
@@ -1701,7 +1696,7 @@ funnelBack finalSub parent =
         | GameSettings.singlePlanarDeck (MatchScope.settings (GameState.match parent)) = fmap (const (Seq.fromList (Map.keys planarBack))) (Game.sideDecksOf SideDeck.Planar parent)
         | otherwise = Map.mapWithKey (\pid _ -> ownedIn planarBack pid) (Game.sideDecksOf SideDeck.Planar parent)
       backKind oid = Game.sideDeckBack oid finalSub Applicative.<|> Game.sideDeckBack oid parent
-      backedDecks kind = Map.filter (not . Seq.null) (Map.fromList [(pid, ownedIn (Map.filterWithKey (\oid _ -> backKind oid == Just kind) backedBack) pid) | pid <- GameState.turnOrder parent])
+      backedDecks kind = Map.filter (not . Seq.null) (Map.fromList [(pid, ownedIn (Map.filterWithKey (\oid _ -> backKind oid == Just kind) backedBack) pid) | pid <- GameState.seating parent])
       -- A commander whose owner departed INSIDE the subgame is recovered to the
       -- zone it left the parent from, not to a library: CR 730.1b keeps the
       -- subgame's departure from meaning anything in the main game, where that
@@ -1809,7 +1804,7 @@ funnelBack finalSub parent =
    in parent
         { GameState.objects = Map.unions [allReturned, toCommand, backedBack, planarBack, schemesBack, keptParentObjects],
           GameState.players = carriedPools,
-          GameState.library = Map.fromList (fmap (\pid -> (pid, libraryOf pid)) (GameState.turnOrder parent)),
+          GameState.library = Map.fromList (fmap (\pid -> (pid, libraryOf pid)) (GameState.seating parent)),
           -- CR 730.5a; Engine.playSubgame shuffles them.
           GameState.sideDecks =
             Map.filter

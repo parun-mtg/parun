@@ -736,6 +736,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.GainControl payload -> Counters.gainControl resolving source controller legal payload
   Effect.ExchangeControl payload -> Counters.exchangeControl resolving source controller legal payload
   Effect.TakeExtraTurn payload -> Counters.takeExtraTurnArm resolving source controller legal payload
+  Effect.ReverseTurnOrder -> Counters.reverseTurnOrder
 
 -- The no-subgame executor, for a test that drives one effect directly: a
 -- PlaySubgame resolves as a draw here (see noSubgame).

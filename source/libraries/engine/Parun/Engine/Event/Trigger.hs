@@ -748,7 +748,7 @@ eventWithinRange board gs perspective event = case perspective of
             -- the turn's players.
             playerWithin pid =
               reaches pid || case event of
-                GameEvent.StepBegan _ -> any (\mate -> Turn.sharesTurn gs pid mate && reaches mate) (GameState.turnOrder gs)
+                GameEvent.StepBegan _ -> any (\mate -> Turn.sharesTurn gs pid mate && reaches mate) (GameState.seating gs)
                 _ -> False
          in all playerWithin players && all objectWithin objects
 

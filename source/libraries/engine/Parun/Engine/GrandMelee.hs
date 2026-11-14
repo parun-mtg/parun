@@ -23,7 +23,7 @@ import qualified Parun.Types.TurnMarker as TurnMarker
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 
 -- | CR 807.2 / 807.4b: a Grand Melee game's options over this game's seating
--- (GameState.turnOrder) -- CR 807.2a's range of 1, CR 807.2b's attack left
+-- (GameState.seating) -- CR 807.2a's range of 1, CR 807.2b's attack left
 -- option and CR 807.2c's options off -- and its turn markers, handed out from
 -- the active player. CR 807.3's random seating is
 -- Parun.Engine.Setup.randomSeating's.
@@ -36,7 +36,7 @@ setUp gs =
             { MatchScope.settings =
                 (MatchScope.settings (GameState.match gs))
                   { GameSettings.grandMelee = True,
-                    GameSettings.rangeOfInfluence = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(pid, 1) | pid <- GameState.turnOrder gs]),
+                    GameSettings.rangeOfInfluence = RangeOfInfluence.MkRangeOfInfluence (Map.fromList [(pid, 1) | pid <- GameState.seating gs]),
                     GameSettings.attackOption = Just AttackOption.Leftward,
                     GameSettings.deployCreatures = False
                   }
@@ -85,7 +85,7 @@ eligible gs pid =
 -- Every other seat, departed ones included, nearest `pid`'s left first.
 seatsLeftOf :: PlayerId -> GameState -> [PlayerId]
 seatsLeftOf pid gs =
-  let order = GameState.turnOrder gs
+  let order = GameState.seating gs
    in drop 1 (dropWhile (/= pid) order) <> takeWhile (/= pid) order
 
 -- The still-playing players to `pid`'s left, nearest first, `pid` excluded.

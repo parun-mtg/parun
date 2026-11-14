@@ -455,7 +455,7 @@ inTeams teams gs =
 -- influence and differing in nothing else, inTeams's posture.
 withRange :: Natural -> GameState.GameState -> GameState.GameState
 withRange range gs =
-  let ranges = RangeOfInfluence.MkRangeOfInfluence (Map.fromList (fmap (\pid -> (pid, range)) (GameState.turnOrder gs)))
+  let ranges = RangeOfInfluence.MkRangeOfInfluence (Map.fromList (fmap (\pid -> (pid, range)) (GameState.seating gs)))
    in gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.rangeOfInfluence = ranges}}}
 
 -- A fourth seat, alongside threePlayers, for cases where three seats cannot
@@ -940,7 +940,7 @@ performer = Resolve.performHandAction Engine.playSubgame
 newGameDrawingLast :: Printing.Printing -> GameState.GameState -> (GameState.GameState, [[PlayerId.PlayerId]])
 newGameDrawingLast card seated =
   let deck = Deck.fromCards (Map.singleton card 20)
-      matchup = fmap (\pid -> (pid, deck)) (Maybe.fromMaybe (alice NonEmpty.:| []) (NonEmpty.nonEmpty (GameState.turnOrder seated)))
+      matchup = fmap (\pid -> (pid, deck)) (Maybe.fromMaybe (alice NonEmpty.:| []) (NonEmpty.nonEmpty (GameState.seating seated)))
       lastDrawn :: Prompt.Prompt r -> State.State [[PlayerId.PlayerId]] r
       lastDrawn p = case p of
         Prompt.RandomPlayer candidates -> NonEmpty.last candidates <$ State.modify' (<> [NonEmpty.toList candidates])

@@ -138,7 +138,7 @@ data Quantity
     -- 0; a player who has never had it reads 0.
     HasPlayerDesignation PlayerDesignationTally.PlayerDesignationTally
   | -- | CR 103.1 \/ 103.1c: 1 if that player is the starting player -- the head
-    -- of GameState.turnOrder -- else 0.
+    -- of GameState.seating -- else 0.
     IsStartingPlayer PlayerRef.PlayerRef
   | -- | CR 102.1: 1 if that player is the active player, else 0.
     IsActivePlayer PlayerRef.PlayerRef

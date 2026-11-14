@@ -1433,6 +1433,13 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       Effect.DrawGame
       " {\"type\":\"DrawGame\"} "
+  Spec.it s "ReverseTurnOrder" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      Effect.ReverseTurnOrder
+      " {\"type\":\"ReverseTurnOrder\"} "
   -- CR 608.2g, in the shape rule 310.12b's battles and rule 702's keywords mint
   -- in the engine (Parun.Engine.Battle, Parun.Engine.Keyword): both defaulted keys
   -- elided. Wild Evocation is the one card that writes them, and

@@ -100,10 +100,16 @@ data GameState = MkGameState
     -- for an object it can no longer find. Never pruned.
     detachedBindings :: Map.Map ObjectId.ObjectId (Map.Map SlotName.SlotName Binding.Binding),
     -- | The seating order (CR 800.5) rotated so the starting player is first,
-    -- which CR 103.1 makes the turn order. Lists every player who began the
-    -- game and is never shortened -- CR 800.4a and 800.4m need a departed
-    -- player's seat; who is still in is Game.stillPlaying.
-    turnOrder :: [PlayerId.PlayerId],
+    -- which CR 103.1 makes the turn order until a reversal
+    -- (`turnOrderReversed`). Lists every player who began the game and is
+    -- never shortened -- CR 800.4a and 800.4m need a departed player's seat;
+    -- who is still in is Game.stillPlaying. Turn.turnOrder reads it as the
+    -- turn order.
+    seating :: [PlayerId.PlayerId],
+    -- | CR 101.4 with Aeon Engine's rulings: whether the turn order now runs
+    -- opposite to `seating`, an odd number of reversals having resolved.
+    -- Seating itself does not change.
+    turnOrderReversed :: Bool,
     -- | CR 500.7 / 805.4: how many turns each player has begun this game, extra
     -- turns included; under the shared team turns option a team's turn is each
     -- member's. Kept across turns; a restart (CR 728.1) and a subgame (CR

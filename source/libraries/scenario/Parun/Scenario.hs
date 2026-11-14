@@ -415,7 +415,7 @@ stage registry board =
 -- have counted them -- one turn per team under CR 805.4's option.
 turnsBegunBy :: GameState.GameState -> PlayerId.PlayerId -> Natural -> Map.Map PlayerId.PlayerId Natural
 turnsBegunBy gs active turn =
-  let order = GameState.turnOrder gs
+  let order = GameState.seating gs
       -- One seat per turn of the rotation: the first of each sharing group.
       takers = [p | p <- order, List.find (Turn.sharesTurn gs p) order == Just p]
       rotation = Natural.length takers
@@ -432,7 +432,7 @@ turnsBegunBy gs active turn =
 settleStartingLife :: Staged.Staged -> Staged.Staged
 settleStartingLife board =
   let gs = Staged.state board
-      seats = length (GameState.turnOrder gs)
+      seats = length (GameState.seating gs)
       record pid p = p {Player.startingLife = Setup.startingLifeOf (MatchScope.settings (GameState.match gs)) seats pid (Player.commander p) (Setup.lifeModifierOf pid gs)}
    in board {Staged.state = gs {GameState.players = Map.mapWithKey record (GameState.players gs)}}
 
@@ -2166,7 +2166,7 @@ renderView gs viewIs =
           pure (ReplyType.Array rows)
         View.Seers -> do
           oid <- needObject
-          let seers = [pid | pid <- GameState.turnOrder gs, Visibility.sees pid oid gs == Visibility.Type.Visible]
+          let seers = [pid | pid <- GameState.seating gs, Visibility.sees pid oid gs == Visibility.Type.Visible]
           labels <- mapM labelOf seers
           pure (ReplyType.Array (fmap (ReplyType.Text . Label.unwrap) labels))
         View.Witnessed -> do

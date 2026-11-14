@@ -79,7 +79,7 @@ spec s registry = Spec.describe s "Emperor" $ do
     let deck = Deck.fromCards (Map.singleton forest 20)
         matchup = fmap (\pid -> (pid, deck)) (S.alice NonEmpty.:| drop 1 seats)
         ((_, started), drawnFrom) = State.runState (Engine.runGame secondDrawn emperorGame (Setup.newGame S.performer matchup)) []
-    Spec.assertEqWith s "CR 809.4 erin takes the first turn, turn order to her left" (TurnRegisters.activePlayer (GameState.turn started), GameState.turnOrder started) (erin, [erin, frank, S.alice, S.bob, S.carol, S.dave])
+    Spec.assertEqWith s "CR 809.4 erin takes the first turn, turn order to her left" (TurnRegisters.activePlayer (GameState.turn started), GameState.seating started) (erin, [erin, frank, S.alice, S.bob, S.carol, S.dave])
     Spec.assertEqWith s "the draw was among the emperors alone" drawnFrom [[S.bob, erin]]
 
   Spec.it s "CR 809.5b a team loses the game if its emperor loses" $ do

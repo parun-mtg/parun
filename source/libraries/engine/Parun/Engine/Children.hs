@@ -1079,6 +1079,7 @@ effectChildren c effect = case effect of
   Effect.LoseGame who -> fmap Effect.LoseGame (onPlayer c who)
   Effect.WinGame who -> fmap Effect.WinGame (onPlayer c who)
   Effect.DrawGame -> pure effect
+  Effect.ReverseTurnOrder -> pure effect
   Effect.RedistributeLifeTotals -> pure effect
   Effect.IncreaseSpeed x -> fmap Effect.IncreaseSpeed (playerQuantityChildren c x)
   Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease who quantity floor_) -> fmap Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease <$> onPlayer c who <*> onQuantity c quantity <*> pure floor_)

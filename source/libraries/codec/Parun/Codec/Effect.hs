@@ -239,6 +239,7 @@ codec cardCodec abilityCodec =
           Arm.payload "LoseGame" PlayerRef.codec Effect.LoseGame (\x -> case x of Effect.LoseGame y -> Just y; _ -> Nothing),
           Arm.payload "WinGame" PlayerRef.codec Effect.WinGame (\x -> case x of Effect.WinGame y -> Just y; _ -> Nothing),
           Arm.nullary "DrawGame" Effect.DrawGame,
+          Arm.nullary "ReverseTurnOrder" Effect.ReverseTurnOrder,
           Arm.nullary "RedistributeLifeTotals" Effect.RedistributeLifeTotals,
           Arm.payload "IncreaseSpeed" PlayerQuantity.codec Effect.IncreaseSpeed (\x -> case x of Effect.IncreaseSpeed y -> Just y; _ -> Nothing),
           Arm.payload "DecreaseSpeed" SpeedDecrease.codec Effect.DecreaseSpeed (\x -> case x of Effect.DecreaseSpeed y -> Just y; _ -> Nothing),
@@ -515,6 +516,7 @@ tagOf x = case x of
   Effect.FlipCoin {} -> "FlipCoin"
   Effect.Guess {} -> "Guess"
   Effect.TakeExtraTurn {} -> "TakeExtraTurn"
+  Effect.ReverseTurnOrder {} -> "ReverseTurnOrder"
   Effect.ShuffleIntoLibrary {} -> "ShuffleIntoLibrary"
   Effect.Ante {} -> "Ante"
   Effect.PutSticker {} -> "PutSticker"

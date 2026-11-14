@@ -76,7 +76,7 @@ setUp archenemy gs =
             (GameState.match gs)
               { MatchScope.settings =
                   (MatchScope.settings (GameState.match gs))
-                    { GameSettings.teams = Teams.MkTeams (Map.fromList [(pid, teamOf pid) | pid <- GameState.turnOrder gs]),
+                    { GameSettings.teams = Teams.MkTeams (Map.fromList [(pid, teamOf pid) | pid <- GameState.seating gs]),
                       GameSettings.sharedTeamTurns = True,
                       GameSettings.attackOption = Just AttackOption.MultiplePlayers
                     }

@@ -1,5 +1,5 @@
 -- | CR 805.1 / 808.2 / 809 / 811.3: whether a game's seating
--- (GameState.turnOrder) is one its teams and emperors allow.
+-- (GameState.seating) is one its teams and emperors allow.
 module Parun.Engine.Seating where
 
 import qualified Data.Foldable as Foldable
@@ -26,7 +26,7 @@ misseated :: GameState -> Maybe PlayerId
 misseated gs =
   let settings = MatchScope.settings (GameState.match gs)
       teams = GameSettings.teams settings
-      seats = GameState.turnOrder gs
+      seats = GameState.seating gs
    in if GameSettings.alternatingTeams settings
         then if AlternatingTeams.seated teams seats then Nothing else Maybe.listToMaybe seats
         else
@@ -58,7 +58,7 @@ emperorFault gs =
   let settings = MatchScope.settings (GameState.match gs)
       teams = GameSettings.teams settings
       emperors = Emperors.unwrap (GameSettings.emperors settings)
-      seats = GameState.turnOrder gs
+      seats = GameState.seating gs
       members team = filter ((== Just team) . Teams.teamOf teams) seats
       byTeam = Map.fromList [(team, members team) | Just team <- fmap (Teams.teamOf teams) seats]
       firstOf team = Maybe.listToMaybe (members team)

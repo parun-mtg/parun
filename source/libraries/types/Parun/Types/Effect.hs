@@ -845,6 +845,9 @@ data Effect card ability
     -- PhaseSelectors are the steps and phases each such turn skips (Savor the
     -- Moment).
     TakeExtraTurn TakeExtraTurn.TakeExtraTurn
+  | -- | CR 101.4: reverse the game's turn order, seating unchanged (Aeon
+    -- Engine).
+    ReverseTurnOrder
   | -- | CR 701.24: the referenced objects are shuffled into their owners'
     -- libraries (Riftsweeper), and CR 701.24c shuffles even where they are gone;
     -- ShuffleIntoLibrary.library names the library where the card's words do not

@@ -657,7 +657,7 @@ plainBoardKeys =
     "turn",
     "players",
     "nextEventGroup",
-    "turnOrder",
+    "seating",
     "turnsBegun",
     "nextObjectId",
     "printings",

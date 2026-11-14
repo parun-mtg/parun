@@ -81,7 +81,7 @@ depart reason pid = departTogether True reason [pid]
 -- zone change like any other, so it goes through the zone-change funnel (CR
 -- 400.7, CR 613.7d, CR 603.6c) rather than editing the zone maps. The other
 -- three clauses stay pure functions on the state, composed here in the rule's
--- order. continuesAfterDeparture reads GameState.turnOrder, which the flip
+-- order. continuesAfterDeparture reads GameState.seating, which the flip
 -- does not touch.
 --
 -- The status flip sits between the pure clauses and the exile. The first
@@ -227,12 +227,12 @@ teamFallsWith reason leaving gs =
         Departure.Drew -> []
         _
           | GameSettings.twoHeadedGiant (MatchScope.settings (GameState.match gs)) ->
-              [(Departure.Lost, pid) | pid <- GameState.turnOrder gs, List.elem pid (Game.stillPlaying gs), followed pid]
+              [(Departure.Lost, pid) | pid <- GameState.seating gs, List.elem pid (Game.stillPlaying gs), followed pid]
           | otherwise -> []
 
 -- CR 800.4: a multiplayer game can continue after players leave, and CR 800.1
 -- makes "multiplayer" mean a game that BEGINS with more than two players.
--- GameState.turnOrder is the roster the game began with and is never shortened
+-- GameState.seating is the roster the game began with and is never shortened
 -- (see Parun.Types.GameState), so counting seats answers that directly: a
 -- three-player game down to two survivors still continues, and a rebuilt game
 -- (CR 728.1, CR 730.2) is seated from the game it came from.
@@ -247,7 +247,7 @@ teamFallsWith reason leaving gs =
 -- A bare Bool, following Engine.skipsDraw: a proposition read by one `if`, with
 -- no third state to model, naming the CAPABILITY rather than the cause.
 continuesAfterDeparture :: GameState -> Bool
-continuesAfterDeparture gs = length (GameState.turnOrder gs) > 2
+continuesAfterDeparture gs = length (GameState.seating gs) > 2
 
 -- CR 800.4a, first clause: every object owned by the departing player leaves the
 -- game, each through Event.leaveTheGame -- the step CR 730.4a's subgame crossing
@@ -731,9 +731,9 @@ exileOrphanedByEndedControl :: Game Bool
 exileOrphanedByEndedControl = do
   gs <- State.get
   let playing = Game.stillPlaying gs
-      -- GameState.turnOrder is the roster the game began with, so the players
+      -- GameState.seating is the roster the game began with, so the players
       -- missing from it are exactly those who have left.
-      departed = filter (\pid -> List.notElem pid playing) (GameState.turnOrder gs)
+      departed = filter (\pid -> List.notElem pid playing) (GameState.seating gs)
       victims = concatMap (\pid -> controlledBy pid gs) departed
   if not (continuesAfterDeparture gs) || null victims
     then pure False

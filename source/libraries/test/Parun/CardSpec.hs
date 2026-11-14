@@ -5226,6 +5226,7 @@ effectFilters effect = case effect of
   Effect.LoseGame {} -> []
   Effect.WinGame {} -> []
   Effect.DrawGame {} -> []
+  Effect.ReverseTurnOrder {} -> []
   Effect.RedistributeLifeTotals -> []
   Effect.IncreaseSpeed (PlayerQuantity.MkPlayerQuantity _ quantity) -> frame Unframed (quantityFilters quantity)
   Effect.DecreaseSpeed d -> frame Unframed (quantityFilters (SpeedDecrease.quantity d))

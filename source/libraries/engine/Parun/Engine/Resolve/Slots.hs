@@ -855,6 +855,7 @@ effectPlayerRefs effect = case effect of
   Effect.LoseGame ref -> [ref]
   Effect.WinGame ref -> [ref]
   Effect.DrawGame -> []
+  Effect.ReverseTurnOrder -> []
   Effect.RedistributeLifeTotals -> []
   Effect.IncreaseSpeed (PlayerQuantity.MkPlayerQuantity ref _) -> [ref]
   Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease ref _ _) -> [ref]
@@ -1271,6 +1272,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.LoseGame {} -> Map.empty
   Effect.WinGame {} -> Map.empty
   Effect.DrawGame {} -> Map.empty
+  Effect.ReverseTurnOrder {} -> Map.empty
   Effect.RedistributeLifeTotals -> Map.empty
   Effect.IncreaseSpeed (PlayerQuantity.MkPlayerQuantity _ quantity) -> quantitySlots quantity
   Effect.DecreaseSpeed d -> quantitySlots (SpeedDecrease.quantity d)
@@ -2170,6 +2172,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.LoseGame {} -> True
   Effect.WinGame {} -> True
   Effect.DrawGame {} -> True
+  Effect.ReverseTurnOrder {} -> True
   Effect.RedistributeLifeTotals -> True
   Effect.IncreaseSpeed (PlayerQuantity.MkPlayerQuantity _ quantity) -> Quantity.slotsAreExhaustive quantity
   Effect.DecreaseSpeed d -> Quantity.slotsAreExhaustive (SpeedDecrease.quantity d)
@@ -2482,6 +2485,7 @@ hasRead wanted =
         Effect.LoseGame {} -> False
         Effect.WinGame {} -> False
         Effect.DrawGame {} -> False
+        Effect.ReverseTurnOrder {} -> False
         Effect.RedistributeLifeTotals -> False
         Effect.IncreaseSpeed (PlayerQuantity.MkPlayerQuantity _ quantity) -> Quantity.hasRead wanted quantity
         Effect.DecreaseSpeed d -> Quantity.hasRead wanted (SpeedDecrease.quantity d)
@@ -2796,6 +2800,7 @@ boundSlots effect = case effect of
   Effect.LoseGame {} -> Set.empty
   Effect.WinGame {} -> Set.empty
   Effect.DrawGame {} -> Set.empty
+  Effect.ReverseTurnOrder {} -> Set.empty
   Effect.RedistributeLifeTotals -> Set.empty
   Effect.IncreaseSpeed {} -> Set.empty
   Effect.DecreaseSpeed {} -> Set.empty

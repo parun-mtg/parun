@@ -280,7 +280,7 @@ setupSpec s registry = Spec.describe s "Setup" $ do
 
   Spec.it s "CR 800.5/806.3/103.1 emptyGame seats every player in the order given, starting player first" $ do
     let gs = Setup.emptyGame S.threePlayers
-    Spec.assertEqWith s "seating order" (GameState.turnOrder gs) [S.alice, S.bob, S.carol]
+    Spec.assertEqWith s "seating order" (GameState.seating gs) [S.alice, S.bob, S.carol]
     Spec.assertEqWith s "the starting player is active" (TurnRegisters.activePlayer (GameState.turn gs)) S.alice
     Spec.assertEqWith s "three seats in the players map" (Map.size (GameState.players gs)) 3
 
@@ -658,9 +658,9 @@ restartSpec s registry = Spec.describe s "restart (CR 728)" $ do
         byBob = snd (Engine.runGamePure S.identityAnswer g0 (Setup.restartGame S.performer Set.empty S.bob))
         byAlice = snd (Engine.runGamePure S.identityAnswer g0 (Setup.restartGame S.performer Set.empty S.alice))
     Spec.assertEqWith s "bob restarted: bob is the new active player" (TurnRegisters.activePlayer (GameState.turn byBob)) S.bob
-    Spec.assertEqWith s "bob restarted: bob heads the turn order" (Maybe.listToMaybe (GameState.turnOrder byBob)) (Just S.bob)
+    Spec.assertEqWith s "bob restarted: bob heads the turn order" (Maybe.listToMaybe (GameState.seating byBob)) (Just S.bob)
     Spec.assertEqWith s "alice restarted: alice is the new active player" (TurnRegisters.activePlayer (GameState.turn byAlice)) S.alice
-    Spec.assertEqWith s "alice restarted: alice heads the turn order" (Maybe.listToMaybe (GameState.turnOrder byAlice)) (Just S.alice)
+    Spec.assertEqWith s "alice restarted: alice heads the turn order" (Maybe.listToMaybe (GameState.seating byAlice)) (Just S.alice)
 
   Spec.it s "CR 728.2: every owned card returns to its owner (library or hand), regardless of prior zone" $ do
     -- alice owns 8 cards, one on the battlefield; bob owns 8, one moved to his
@@ -756,9 +756,9 @@ restartSpec s registry = Spec.describe s "restart (CR 728)" $ do
         g1 = S.departs Departure.Type.Conceded S.bob g0
         after = snd (Engine.runGamePure S.identityAnswer g1 (Setup.restartGame S.performer Set.empty S.alice))
         libSizeOf pid = length (Game.zoneMembers Zone.Library pid after)
-    Spec.assertEqWith s "two seats in the rebuilt order, in their seating order" (GameState.turnOrder after) [S.alice, S.carol]
+    Spec.assertEqWith s "two seats in the rebuilt order, in their seating order" (GameState.seating after) [S.alice, S.carol]
     Spec.assertEqWith s "alice starts it (CR 728.1a)" (TurnRegisters.activePlayer (GameState.turn after)) S.alice
-    Spec.assertBool s (List.elem (TurnRegisters.activePlayer (GameState.turn after)) (GameState.turnOrder after)) "the active player is one of the rebuilt seats (totality)"
+    Spec.assertBool s (List.elem (TurnRegisters.activePlayer (GameState.turn after)) (GameState.seating after)) "the active player is one of the rebuilt seats (totality)"
     Spec.assertEqWith s "bob has no library" (libSizeOf S.bob) 0
     Spec.assertEqWith s "bob drew no opening hand" (S.handSize S.bob after) 0
     Spec.assertEqWith s "alice drew hers" (S.handSize S.alice after) 7
@@ -990,16 +990,16 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
     Spec.assertEqWith s "bob, who departed, comes back through the parent pool" (length (libraryObjects S.bob)) 3
     Spec.assertEqWith s "every returned card forgot its previous existence" (all forgotten everyone) True
 
-  -- The narrower door: continuesAfterDeparture reads `finalSub`'s turnOrder
+  -- The narrower door: continuesAfterDeparture reads `finalSub`'s seating
   -- at the END of the subgame, but objectsLeaveWith's own gate fired at
   -- DEPARTURE time -- and a restart resolving INSIDE the subgame AFTER the
   -- departure (Setup.restartGame, reachable via Effect.RestartGame /
-  -- Resolve.hs from a still-running subgame) rewrites turnOrder to
+  -- Resolve.hs from a still-running subgame) rewrites seating to
   -- Game.stillPlayingInOrder, which DROPS the departed seat. So by the
-  -- time funnelBack reads `finalSub`, its turnOrder is back down to two and
+  -- time funnelBack reads `finalSub`, its seating is back down to two and
   -- continuesAfterDeparture would read False even though bob's objects were
   -- genuinely destroyed earlier. funnelBack's guard must not depend on
-  -- `finalSub`'s turnOrder at all for this reason.
+  -- `finalSub`'s seating at all for this reason.
   Spec.it s "CR 730.5/800.4a a restart INSIDE the subgame, after the departure, does not un-recover the departed player's library" $ do
     mountain <- S.printingOf s registry "Mountain"
     let g0 = Setup.emptyGame S.threePlayers
@@ -1009,7 +1009,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
         departedSub = S.departs Departure.Type.Lost S.bob seated
         (_, restarted) = Engine.runGamePure S.identityAnswer departedSub (Setup.restartGame S.performer Set.empty S.alice)
         after = Setup.funnelBack restarted g1
-    Spec.assertEqWith s "the in-subgame restart really did shrink finalSub's own turnOrder to two" (length (GameState.turnOrder restarted)) 2
+    Spec.assertEqWith s "the in-subgame restart really did shrink finalSub's own seating to two" (length (GameState.seating restarted)) 2
     Spec.assertEqWith s "so the naive seam-at-the-end reading would (wrongly) say it is not multiplayer any more" (Departure.continuesAfterDeparture restarted) False
     Spec.assertEqWith s "bob still has nothing anywhere in the restarted subgame" (Map.keys (Map.filter (\o -> Object.owner o == S.bob) (GameState.objects restarted))) []
     Spec.assertEqWith s "bob's 3-card library still comes back whole" (length (Game.zoneMembers Zone.Library S.bob after)) 3
@@ -1299,7 +1299,7 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
     -- rotateTo carol [alice, bob, carol] = [carol, alice, bob], with bob in it.
     let g0 = S.departs Departure.Type.Conceded S.bob (Setup.emptyGame S.threePlayers)
         sub = Setup.subgameStateFrom S.carol g0
-    Spec.assertEqWith s "two seats, rotated to the starter" (GameState.turnOrder sub) [S.carol, S.alice]
+    Spec.assertEqWith s "two seats, rotated to the starter" (GameState.seating sub) [S.carol, S.alice]
     Spec.assertEqWith s "carol goes first" (TurnRegisters.activePlayer (GameState.turn sub)) S.carol
     Spec.assertEqWith s "CR 800.1: a two-seat subgame is not a multiplayer game, so no free mulligan" (Mulligan.freeMulligans sub) 0
 
@@ -1487,9 +1487,9 @@ sideboardConspiracySpec s registry = Spec.describe s "conspiracies from the side
     Spec.assertEqWith s "setup: bob's command zone starts empty" (Game.zoneMembers Zone.Command S.bob before) []
     Spec.assertEqWith s "CR 315.2 bob is offered Power Play alone, any number up to one" [o | o@Offered {} <- offers] [Offered 0 S.bob ["Power Play"] 0 1]
     Spec.assertEqWith s "taken, it is in his command zone" (cardNames (Game.zoneMembers Zone.Command S.bob taken) taken) ["Power Play"]
-    Spec.assertEqWith s "CR 103.1c so bob starts the new game" (GameState.turnOrder taken) [S.bob, S.alice]
+    Spec.assertEqWith s "CR 103.1c so bob starts the new game" (GameState.seating taken) [S.bob, S.alice]
     Spec.assertEqWith s "CR 400.11b and his sideboard holds only the Mountain" (poolNames S.bob taken) [("Mountain", 1)]
-    Spec.assertEqWith s "declined, CR 728.1a alice starts it" (GameState.turnOrder declined) [S.alice, S.bob]
+    Spec.assertEqWith s "declined, CR 728.1a alice starts it" (GameState.seating declined) [S.alice, S.bob]
     Spec.assertEqWith s "and Power Play stays in his sideboard" (poolNames S.bob declined) [("Mountain", 1), ("Power Play", 1)]
 
   -- CR 730.2 / 315.2: the Shahrazad subgame offers it too, and CR 103.1c makes

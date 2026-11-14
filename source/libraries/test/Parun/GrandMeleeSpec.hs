@@ -62,7 +62,7 @@ spec s registry = Spec.describe s "GrandMelee" $ do
     let (started, drawnFrom) = S.newGameDrawingLast forest (GrandMelee.setUp (seated 5))
     Spec.assertEqWith s "CR 807.4c the marker passes to seat 4" (turnsAfter 1 started) [(seat 4, False)]
     Spec.assertEqWith s "CR 807.3 each seat drawn from the players not yet seated" drawnFrom (fmap seats [[1, 2, 3, 4], [1, 2, 3], [1, 2]])
-    Spec.assertEqWith s "CR 807.3 the seating drawn" (GameState.turnOrder started) (seats [0, 4, 3, 2, 1])
+    Spec.assertEqWith s "CR 807.3 the seating drawn" (GameState.seating started) (seats [0, 4, 3, 2, 1])
 
   -- CR 807.4b-d: seats 0 and 4 begin at once. Seat 0's marker passes to seat
   -- 1, which waits (seat 4 holds a marker within three seats) until seat 4's

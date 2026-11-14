@@ -1,0 +1,145 @@
+{
+  "board": {
+    "active": "alice",
+    "attackOption": "Leftward",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Aeon Engine",
+            "label": "engine"
+          },
+          {
+            "card": "Copper Tablet",
+            "label": "aliceTablet"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Copper Tablet",
+            "label": "bobTablet"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "attacker",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Aeon Engine reverses the turn order: carol takes the next turn, her upkeep's triggers stack in the new APNAP order, and attacking left still reaches the seat to her left",
+  "note": "Seated alice, bob, carol. Reversed, turn 2 is carol's, not bob's; APNAP from carol is carol, bob, alice, so alice's tablet trigger goes on the stack last and is on top. Carol's left is still alice, though bob is now next in turn order.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "object": "$engine"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Aeon Engine",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "carol",
+          "of": "ActivePlayer"
+        }
+      },
+      "player": "carol",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $aliceTablet",
+            "trigger of $bobTablet"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "carol",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "$attacker"
+        ]
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Defenders": {
+          "players": [
+            "alice"
+          ]
+        }
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 2
+    }
+  ]
+}

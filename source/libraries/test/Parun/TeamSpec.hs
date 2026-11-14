@@ -227,14 +227,14 @@ spec s registry = Spec.describe s "Teams" $ do
         seats = S.alice NonEmpty.:| [S.bob, S.carol, S.dave, erin, frank]
         board = S.inTeams [[S.alice, S.bob, S.carol], [S.dave, erin, frank]] (Setup.emptyGame seats)
         (started, drawnFrom) = startWith forest board
-    Spec.assertEqWith s "CR 808.4 erin goes first, turn order to her left" (TurnRegisters.activePlayer (GameState.turn started), GameState.turnOrder started) (erin, [erin, frank, S.alice, S.bob, S.carol, S.dave])
+    Spec.assertEqWith s "CR 808.4 erin goes first, turn order to her left" (TurnRegisters.activePlayer (GameState.turn started), GameState.seating started) (erin, [erin, frank, S.alice, S.bob, S.carol, S.dave])
     Spec.assertEqWith s "the draw was among the center seats" drawnFrom [[S.bob, erin]]
   -- CR 808.4's even case, on a team that wraps the turn order: dave and alice
   -- sit together, alice on dave's left, so alice is left of their midpoint.
   Spec.it s "CR 808.4 an even team's player left of its midpoint goes first" $ do
     forest <- S.printingOf s registry "Forest"
     let (started, drawnFrom) = startWith forest (daveAliceTeams S.fourPlayerGame)
-    Spec.assertEqWith s "CR 808.4 carol goes first, turn order to her left" (TurnRegisters.activePlayer (GameState.turn started), GameState.turnOrder started) (S.carol, [S.carol, S.dave, S.alice, S.bob])
+    Spec.assertEqWith s "CR 808.4 carol goes first, turn order to her left" (TurnRegisters.activePlayer (GameState.turn started), GameState.seating started) (S.carol, [S.carol, S.dave, S.alice, S.bob])
     Spec.assertEqWith s "the draw was among alice and carol" drawnFrom [[S.alice, S.carol]]
   -- CR 810 and CR 811 keep CR 103.1's determination. Each board is paired with
   -- the same teams without the variant, which CR 808.4 rotates.
@@ -243,7 +243,7 @@ spec s registry = Spec.describe s "Teams" $ do
     let giant gs = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.twoHeadedGiant = True}}}
         alternating gs = gs {GameState.match = (GameState.match gs) {MatchScope.settings = (MatchScope.settings (GameState.match gs)) {GameSettings.alternatingTeams = True}}}
         interleaved = S.inTeams [[S.alice, S.carol], [S.bob, S.dave]] S.fourPlayerGame
-        orderOf = GameState.turnOrder . fst . startWith forest
+        orderOf = GameState.seating . fst . startWith forest
     Spec.assertEqWith s "CR 810 the caller's order stands" (orderOf (giant (twoTeams S.fourPlayerGame))) [S.alice, S.bob, S.carol, S.dave]
     Spec.assertEqWith s "without it dave's team's draw rotates" (orderOf (twoTeams S.fourPlayerGame)) [S.dave, S.alice, S.bob, S.carol]
     Spec.assertEqWith s "CR 811 the caller's order stands" (orderOf (alternating interleaved)) [S.alice, S.bob, S.carol, S.dave]
@@ -692,7 +692,7 @@ atCombat gs =
 startWith :: Printing.Printing -> GameState.GameState -> (GameState.GameState, [[PlayerId.PlayerId]])
 startWith forest board =
   let deck = Deck.fromCards (Map.singleton forest 20)
-      matchup = fmap (\pid -> (pid, deck)) (Maybe.fromMaybe (S.alice NonEmpty.:| []) (NonEmpty.nonEmpty (GameState.turnOrder board)))
+      matchup = fmap (\pid -> (pid, deck)) (Maybe.fromMaybe (S.alice NonEmpty.:| []) (NonEmpty.nonEmpty (GameState.seating board)))
       secondDrawn :: Prompt.Prompt r -> State.State [[PlayerId.PlayerId]] r
       secondDrawn p = case p of
         Prompt.RandomFirstPlayer candidates -> do
