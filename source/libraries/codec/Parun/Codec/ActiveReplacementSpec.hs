@@ -56,6 +56,7 @@ effect =
         False
         Nothing
         Seq.empty
+        Seq.empty
     )
 
 effectJson :: String

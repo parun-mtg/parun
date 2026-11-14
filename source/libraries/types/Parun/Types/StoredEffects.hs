@@ -70,15 +70,16 @@ data StoredEffects = MkStoredEffects
     pendingPreventionRiders :: Seq.Seq Prevention.Prevention,
     -- | CR 614.1a: the effects a replacement applied in an event's place and
     -- that have not run yet -- a damage event's (DamageRewrite.RunEffects), a
-    -- loss of the game's (GameLossR) or a draw's (DrawRewrite.FromGraveyardOrLose,
-    -- DrawRewrite.RunEffects)
+    -- zone change's (ZoneChangeR.riders), a loss of the game's (GameLossR) or a
+    -- draw's (DrawRewrite.FromGraveyardOrLose, DrawRewrite.RunEffects)
     -- -- drained by Resolve.runReplacementEffects.
     --
     -- Empty at every priority window because every road that can fill it drains
     -- it: for damage, each road into Parun.Engine.Damage.applyDamage (Resolve's
     -- Effect.DealDamage and Effect.Fight arms, and Parun.Engine.Engine's combat
-    -- damage step); for a loss or a draw, the state-based action pass that met
-    -- it (Sba.checkOnce, Engine.settlePasses) and each resolved instruction
+    -- damage step); for a loss, a draw or a zone change, the state-based
+    -- action pass that met it (Sba.checkOnce, Engine.settlePasses) and each
+    -- resolved instruction
     -- (Resolve.applyEffectWith), and each draw of a sequence, an instruction's
     -- or a replacement's (Event.drawSeries).
     pendingReplacementEffects :: Seq.Seq PendingReplacementEffect.PendingReplacementEffect,

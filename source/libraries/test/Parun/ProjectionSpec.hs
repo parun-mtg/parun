@@ -3627,7 +3627,7 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
       s
       "one redirect replacement"
       (fmap snd (Projection.replacementsOf Zone.Battlefield rip gs))
-      [ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR (ZoneChangePattern.MkZoneChangePattern (Just Zone.Graveyard) (ControllerRelation.Related PlayerRelation.AnyPlayer) (Filter.Type.And []) Nothing Nothing False) Zone.Exile False False LibraryPosition.defaultValue False Nothing Seq.empty)]
+      [ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR (ZoneChangePattern.MkZoneChangePattern (Just Zone.Graveyard) (ControllerRelation.Related PlayerRelation.AnyPlayer) (Filter.Type.And []) Nothing Nothing False) Zone.Exile False False LibraryPosition.defaultValue False Nothing Seq.empty Seq.empty)]
 
   Spec.it s "a vanilla creature projects no replacements" $ do
     pikerPrinting <- S.printingOf s registry "Goblin Piker"

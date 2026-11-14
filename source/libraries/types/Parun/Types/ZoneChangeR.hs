@@ -7,15 +7,17 @@ import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
 
 -- | The payload of Parun.Types.ReplacementEffect's ZoneChangeR arm (#1305): the
--- zone change intercepted, the zone the object goes to instead, and the two
+-- zone change intercepted, the zone the object goes to instead, and the
 -- actions the redirect may perform alongside the move.
 --
--- Both riders default to False and are elided rather than written, DamageR's
--- `riders` posture: a redirect that only names a destination is the common
--- shape. `position` defaults to LibraryPosition.defaultValue, `optional` to
--- False and `counters` to Nothing the same way.
+-- `revealing` and `shuffling` default to False and are elided rather than
+-- written, DamageR's `riders` posture: a redirect that only names a
+-- destination is the common shape. `position` defaults to
+-- LibraryPosition.defaultValue, `optional` to False, `counters` to Nothing and
+-- `riders` to empty the same way.
 --
--- Parametric in the EFFECT for `whenYouDo`, Parun.Types.DamageR's reason.
+-- Parametric in the EFFECT for `whenYouDo` and `riders`, Parun.Types.DamageR's
+-- reason.
 data ZoneChangeR effect = MkZoneChangeR
   { matching :: ZoneChangePattern.ZoneChangePattern,
     destination :: Zone.Zone,
@@ -41,6 +43,11 @@ data ZoneChangeR effect = MkZoneChangeR
     -- | CR 603.11: the linked ability "When you do, ..." triggers each time
     -- the redirect applies (Head of the Hunt). Empty, and elided, for a
     -- redirect linking none.
-    whenYouDo :: Seq.Seq effect
+    whenYouDo :: Seq.Seq effect,
+    -- | CR 614.1a / 614.6: what the modified event does beside the move --
+    -- Kalitas, Traitor of Ghet's "instead exile that card and create a 2/2
+    -- black Zombie creature token". The moved object is bound under
+    -- Parun.Engine.Binding.departedPermanent as it last existed (CR 608.2h).
+    riders :: Seq.Seq effect
   }
   deriving (Eq, Ord, Show)

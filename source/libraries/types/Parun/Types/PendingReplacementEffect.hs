@@ -13,7 +13,8 @@ import qualified Parun.Types.SlotName as SlotName
 
 -- | CR 614.1a: the effects a replacement ran in an event's place and has not
 -- run yet -- Kill-Suit Cultist's "destroy that creature instead"
--- (DamageRewrite.RunEffects), Lich's Mirror's reset (GameLossR), Forbidden
+-- (DamageRewrite.RunEffects), Kalitas, Traitor of Ghet's Zombie
+-- (ZoneChangeR.riders), Lich's Mirror's reset (GameLossR), Forbidden
 -- Crypt's loss of the game (DrawRewrite.FromGraveyardOrLose) and Island
 -- Sanctuary's restriction (DrawRewrite.RunEffects), and Time Vault's untap
 -- (PhaseRewrite.MaySkipFor, StoredEffects.pendingSkipEffects).

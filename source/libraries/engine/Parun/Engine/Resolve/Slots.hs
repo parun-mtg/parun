@@ -1632,7 +1632,7 @@ replacementRowReads re = case re of
   -- The rewrite is a Zone, a LibraryPosition and Bools (Parun.Types.ZoneChangeR),
   -- plus a linked trigger's effects replacementRowEffects answers for; only
   -- the arrival counters' amounts can name a slot beside the pattern.
-  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ counters _) -> ([ZoneChangePattern.whatObject pat], foldMap (Map.elems . WithCounters.counters) counters)
+  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR pat _ _ _ _ _ counters _ _) -> ([ZoneChangePattern.whatObject pat], foldMap (Map.elems . WithCounters.counters) counters)
   ReplacementEffect.EntryR (EntryR.MkEntryR pat rewrite) -> addFilter pat (entryRewriteReads rewrite)
   ReplacementEffect.DamageR (DamageR.MkDamageR pat rewrite _) ->
     let (filters, quantities) = damageRewriteReads rewrite
@@ -1905,7 +1905,8 @@ replacementRowEffects re = case re of
   -- the rider is the card's own field beside the rewrite.
   ReplacementEffect.DamageR (DamageR.MkDamageR _ rewrite riders) -> Foldable.toList riders <> damageRewriteEffects rewrite
   -- CR 603.11's linked trigger resolves as its own ability, entryRewriteEffects'
-  -- reason for AsCopy's.
+  -- reason for AsCopy's. A redirect's riders (CR 614.6) are printed only on
+  -- static abilities in data/cards/, which no resolution installs.
   ReplacementEffect.ZoneChangeR _ -> []
   ReplacementEffect.DestructionR _ -> []
   ReplacementEffect.CounterR _ -> []

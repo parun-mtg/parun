@@ -301,7 +301,7 @@ gamerPower gs = fmap (`Projection.powerOf` gs) (namedOn gamerName gs)
 exileEnteringAttractions :: ObjectId -> ActiveReplacement.ActiveReplacement
 exileEnteringAttractions src =
   ActiveReplacement.MkActiveReplacement
-    { ActiveReplacement.effect = ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR (ZoneChangePattern.MkZoneChangePattern (Just Zone.Battlefield) (ControllerRelation.Related PlayerRelation.AnyPlayer) (Filter.Type.HasSubtype Subtype.Attraction) Nothing Nothing False) Zone.Exile False False LibraryPosition.defaultValue False Nothing Seq.empty),
+    { ActiveReplacement.effect = ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR (ZoneChangePattern.MkZoneChangePattern (Just Zone.Battlefield) (ControllerRelation.Related PlayerRelation.AnyPlayer) (Filter.Type.HasSubtype Subtype.Attraction) Nothing Nothing False) Zone.Exile False False LibraryPosition.defaultValue False Nothing Seq.empty Seq.empty),
       ActiveReplacement.source = src,
       ActiveReplacement.controller = S.bob,
       ActiveReplacement.timestamp = Timestamp.MkTimestamp 0,

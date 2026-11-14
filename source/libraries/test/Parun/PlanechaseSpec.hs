@@ -75,6 +75,7 @@ import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
@@ -333,6 +334,37 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
           _ -> S.identityAnswer p
         chaos = S.runPure voting ranged (Planechase.roll S.manaPerformer S.alice >> Engine.priorityLoop)
     Spec.assertEqWith s "CR 801.18 carol's ballot left bob's Piker the one creature exiled" (fmap (`Set.member` GameState.battlefield chaos) [bobs, carols, daves]) [False, True, True]
+    Spec.assertBool s (not (Game.inRangeOf S.alice S.carol ranged)) "carol is outside alice's range"
+
+  -- CR 614.1a / 614.6 with CR 801.18: four seats at range 1 and alice's The
+  -- Doctor's Tomb ("If a creature would die, instead exile it and that
+  -- creature's controller loses 2 life.") face up. carol's Goblin Piker, outside
+  -- alice's range, and bob's, under dave's control, are destroyed: both are
+  -- exiled, and carol and dave, their controllers, each lose 2.
+  Spec.it s "CR 614.6 The Doctor's Tomb exiles a dying creature and its controller loses 2, outside the planar controller's range too" $ do
+    piker <- S.printingOf s registry "Goblin Piker"
+    board <- seatedPlanarBoard s registry S.alice [(S.alice, ["The Doctor's Tomb"]), (S.bob, []), (S.carol, []), (S.dave, [])]
+    let (carols, withCarols) = S.addPermanent piker S.carol board
+        (bobs, withBobs) = S.addPermanent piker S.bob withCarols
+        ranged = S.withRange 1 (inMain S.alice (S.giveControl bobs S.dave withBobs))
+        died = S.runPure S.identityAnswer ranged (Event.destroy (pure ()) Regenerability.Regenerable [carols, bobs] >> Engine.settleForPriority)
+    Spec.assertEqWith s "both Pikers were exiled and neither reached a graveyard" (fmap (\pid -> (length (Game.zoneMembers Zone.Exile pid died), length (Game.zoneMembers Zone.Graveyard pid died))) [S.bob, S.carol]) [(1, 0), (1, 0)]
+    Spec.assertEqWith s "CR 614.6 carol and dave, the controllers, lost 2 each" (fmap (`S.lifeOf` died) [S.alice, S.bob, S.carol, S.dave]) (fmap Just [20, 20, 18, 18])
+    Spec.assertBool s (not (Game.inRangeOf S.alice S.carol ranged)) "carol is outside alice's range"
+
+  -- CR 801.18 / 901.13 for a plane's redistribution: the same four seats at
+  -- range 1, The Doctor's Tomb face up, and carol at 7. alice rolls chaos and
+  -- swaps her total with carol's, two seats away.
+  Spec.it s "CR 801.18 The Doctor's Tomb's chaos redistributes the life total of a player outside the planar controller's range" $ do
+    board <- seatedPlanarBoard s registry S.alice [(S.alice, ["The Doctor's Tomb"]), (S.bob, []), (S.carol, []), (S.dave, [])]
+    let ranged = S.withRange 1 (inMain S.alice board {GameState.players = Map.adjust (\p -> p {Player.life = 7}) S.carol (GameState.players board)})
+        swapping :: Prompt.Prompt r -> r
+        swapping p = case p of
+          Prompt.RollDie _ -> 5
+          Prompt.ChooseRedistribution {} -> Map.fromList [(S.alice, S.carol), (S.carol, S.alice)]
+          _ -> S.identityAnswer p
+        chaos = S.runPure swapping ranged (Planechase.roll S.manaPerformer S.alice >> Engine.priorityLoop)
+    Spec.assertEqWith s "CR 801.18 alice and carol swapped totals" (fmap (`S.lifeOf` chaos) [S.alice, S.bob, S.carol, S.dave]) (fmap Just [7, 20, 20, 20])
     Spec.assertBool s (not (Game.inRangeOf S.alice S.carol ranged)) "carol is outside alice's range"
 
   -- CR 113.6p / 901.7: a face-up plane's player ability functions from the

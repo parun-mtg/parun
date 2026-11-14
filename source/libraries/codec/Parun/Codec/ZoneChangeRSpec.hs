@@ -41,7 +41,8 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.position = LibraryPosition.defaultValue,
             ZoneChangeR.optional = False,
             ZoneChangeR.counters = Nothing,
-            ZoneChangeR.whenYouDo = Seq.empty
+            ZoneChangeR.whenYouDo = Seq.empty,
+            ZoneChangeR.riders = Seq.empty
           }
       )
       " {\"matching\":{\"whenDestination\":\"Graveyard\"},\"destination\":\"Exile\"} "
@@ -67,7 +68,8 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.position = LibraryPosition.defaultValue,
             ZoneChangeR.optional = False,
             ZoneChangeR.counters = Nothing,
-            ZoneChangeR.whenYouDo = Seq.empty
+            ZoneChangeR.whenYouDo = Seq.empty,
+            ZoneChangeR.riders = Seq.empty
           }
       )
       " {\"matching\":{\"whenDestination\":\"Graveyard\",\"whatObject\":{\"type\":\"IsSource\"}},\"destination\":\"Library\",\"revealing\":true,\"shuffling\":true} "
@@ -93,7 +95,8 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.position = LibraryPosition.Top,
             ZoneChangeR.optional = True,
             ZoneChangeR.counters = Nothing,
-            ZoneChangeR.whenYouDo = Seq.empty
+            ZoneChangeR.whenYouDo = Seq.empty,
+            ZoneChangeR.riders = Seq.empty
           }
       )
       " {\"matching\":{\"whenDestination\":\"Graveyard\",\"whoseObject\":{\"type\":\"You\"},\"whenDiscarded\":\"ByEffect\"},\"destination\":\"Library\",\"position\":\"Top\",\"optional\":true} "
@@ -119,10 +122,38 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.position = LibraryPosition.defaultValue,
             ZoneChangeR.optional = False,
             ZoneChangeR.counters = Nothing,
-            ZoneChangeR.whenYouDo = Seq.singleton (Text.pack "wolf")
+            ZoneChangeR.whenYouDo = Seq.singleton (Text.pack "wolf"),
+            ZoneChangeR.riders = Seq.empty
           }
       )
       " {\"matching\":{\"whenDestination\":\"Graveyard\"},\"destination\":\"Exile\",\"whenYouDo\":[\"wolf\"]} "
+  -- CR 614.1a / 614.6: Kalitas, Traitor of Ghet's "instead exile that card and
+  -- create a 2/2 black Zombie creature token".
+  Spec.it s "MkZoneChangeR with a rider (Kalitas, Traitor of Ghet)" $
+    Common.assertCodec
+      s
+      (ZoneChangeR.codec Common.text)
+      ( ZoneChangeR.MkZoneChangeR
+          { ZoneChangeR.matching =
+              ZoneChangePattern.MkZoneChangePattern
+                { ZoneChangePattern.whenDestination = Just Zone.Graveyard,
+                  ZoneChangePattern.whatObject = Filter.And [],
+                  ZoneChangePattern.whoseObject = ControllerRelation.Related PlayerRelation.AnyPlayer,
+                  ZoneChangePattern.whenDiscarded = Nothing,
+                  ZoneChangePattern.causedBy = Nothing,
+                  ZoneChangePattern.duringResolution = False
+                },
+            ZoneChangeR.destination = Zone.Exile,
+            ZoneChangeR.revealing = False,
+            ZoneChangeR.shuffling = False,
+            ZoneChangeR.position = LibraryPosition.defaultValue,
+            ZoneChangeR.optional = False,
+            ZoneChangeR.counters = Nothing,
+            ZoneChangeR.whenYouDo = Seq.empty,
+            ZoneChangeR.riders = Seq.singleton (Text.pack "zombie")
+          }
+      )
+      " {\"matching\":{\"whenDestination\":\"Graveyard\"},\"destination\":\"Exile\",\"riders\":[\"zombie\"]} "
   -- CR 122.1: Goliath Daydreamer's "exile that card with a dream counter on it".
   Spec.it s "MkZoneChangeR with arrival counters (Goliath Daydreamer)" $
     Common.assertCodec
@@ -144,7 +175,8 @@ spec s = Spec.describe s "Parun.Codec.ZoneChangeR" $ do
             ZoneChangeR.position = LibraryPosition.defaultValue,
             ZoneChangeR.optional = False,
             ZoneChangeR.counters = Just (WithCounters.one (CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "dream"))) (Quantity.Literal 1)),
-            ZoneChangeR.whenYouDo = Seq.empty
+            ZoneChangeR.whenYouDo = Seq.empty,
+            ZoneChangeR.riders = Seq.empty
           }
       )
       " {\"matching\":{\"whenDestination\":\"Graveyard\",\"duringResolution\":true},\"destination\":\"Exile\",\"counters\":[{\"kind\":{\"type\":\"Named\",\"value\":\"dream\"},\"count\":{\"type\":\"Literal\",\"value\":1}}]} "

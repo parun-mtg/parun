@@ -2317,8 +2317,8 @@ replacementLeaves =
 -- | A ReplacementEffect's children, its payload matched positionally.
 replacementEffectChildren :: (Applicative f) => ReplacementChildren card ability effect f -> ReplacementEffect.ReplacementEffect card ability effect -> f (ReplacementEffect.ReplacementEffect card ability effect)
 replacementEffectChildren c replacement = case replacement of
-  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR (ZoneChangePattern.MkZoneChangePattern whenDestination whose what discarded causedBy resolving) destination revealing shuffling position optional counters whenYouDo) ->
-    fmap ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR <$> (ZoneChangePattern.MkZoneChangePattern whenDestination <$> replacementWhose c whose <*> replacementFilter c what <*> pure discarded <*> pure causedBy <*> pure resolving) <*> pure destination <*> pure revealing <*> pure shuffling <*> pure position <*> pure optional <*> traverse (replacementCounters c) counters <*> traverse (replacementEffect c) whenYouDo)
+  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR (ZoneChangePattern.MkZoneChangePattern whenDestination whose what discarded causedBy resolving) destination revealing shuffling position optional counters whenYouDo riders) ->
+    fmap ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR <$> (ZoneChangePattern.MkZoneChangePattern whenDestination <$> replacementWhose c whose <*> replacementFilter c what <*> pure discarded <*> pure causedBy <*> pure resolving) <*> pure destination <*> pure revealing <*> pure shuffling <*> pure position <*> pure optional <*> traverse (replacementCounters c) counters <*> traverse (replacementEffect c) whenYouDo <*> traverse (replacementEffect c) riders)
   ReplacementEffect.EntryR (EntryR.MkEntryR matching rewrite) -> fmap ReplacementEffect.EntryR (EntryR.MkEntryR <$> replacementFilter c matching <*> entryRewriteChildren c rewrite)
   ReplacementEffect.DamageR (DamageR.MkDamageR matching rewrite riders) ->
     fmap ReplacementEffect.DamageR (DamageR.MkDamageR <$> replacementDamage c matching <*> damageRewriteChildren c rewrite <*> traverse (replacementEffect c) riders)

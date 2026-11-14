@@ -108,6 +108,7 @@ spec s =
                     False
                     Nothing
                     Seq.empty
+                    Seq.empty
                 )
             )
             " {\"type\":\"ZoneChangeR\",\"value\":{\"matching\":{\"whenDestination\":\"Graveyard\"},\"destination\":\"Exile\"}} "
@@ -133,6 +134,7 @@ spec s =
                     LibraryPosition.defaultValue
                     False
                     Nothing
+                    Seq.empty
                     Seq.empty
                 )
             )
