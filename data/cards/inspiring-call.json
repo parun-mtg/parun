@@ -52,7 +52,9 @@
                               {
                                 "type": "HasCounters",
                                 "value": {
-                                  "type": "PlusOnePlusOne"
+                                  "kind": {
+                                    "type": "PlusOnePlusOne"
+                                  }
                                 }
                               }
                             ]
@@ -102,7 +104,9 @@
                             {
                               "type": "HasCounters",
                               "value": {
-                                "type": "PlusOnePlusOne"
+                                "kind": {
+                                  "type": "PlusOnePlusOne"
+                                }
                               }
                             }
                           ]

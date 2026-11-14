@@ -43,7 +43,9 @@
                     "filter": {
                       "type": "HasCounters",
                       "value": {
-                        "type": "PlusOnePlusOne"
+                        "kind": {
+                          "type": "PlusOnePlusOne"
+                        }
                       }
                     },
                     "pool": {

@@ -854,13 +854,20 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.HasDesignation Designation.Suspected)
       " {\"type\":\"HasDesignation\",\"value\":\"Suspected\"} "
-  -- CR 122.1's presence read, the one Filter atom with a CounterKind payload.
+  -- CR 122.1's count read, the one Filter atom with a CounterKind payload. One,
+  -- the presence read every printing but Runadi's asks, is left unsaid.
   Spec.it s "HasCounters" $
     Common.assertCodec
       s
       codec
-      (Filter.HasCounters CounterKind.PlusOnePlusOne)
-      " {\"type\":\"HasCounters\",\"value\":{\"type\":\"PlusOnePlusOne\"}} "
+      (Filter.HasCounters 1 CounterKind.PlusOnePlusOne)
+      " {\"type\":\"HasCounters\",\"value\":{\"kind\":{\"type\":\"PlusOnePlusOne\"}}} "
+  Spec.it s "HasCounters atLeast" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.HasCounters 3 CounterKind.PlusOnePlusOne)
+      " {\"type\":\"HasCounters\",\"value\":{\"atLeast\":3,\"kind\":{\"type\":\"PlusOnePlusOne\"}}} "
   -- CR 122.1's kind-agnostic presence read. Razorfin Abolisher's whole target
   -- filter is this atom BARE, so this case is also the card's own round trip and
   -- there is nothing for it to add to the nested-composite list below.

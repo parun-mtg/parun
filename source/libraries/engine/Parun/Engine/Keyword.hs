@@ -987,7 +987,7 @@ expansionOf keyword = case keyword of
         KeywordExpansion.combatRestrictions =
           [ CombatRestriction.CantBlock
               AffectedUnless.MkAffectedUnless
-                { AffectedUnless.affected = Affected.Matching (Filter.And [Filter.IsSource, Filter.HasCounters CounterKind.PlusOnePlusOne]),
+                { AffectedUnless.affected = Affected.Matching (Filter.And [Filter.IsSource, Filter.HasCounters 1 CounterKind.PlusOnePlusOne]),
                   AffectedUnless.unless = Nothing,
                   AffectedUnless.name = Nothing,
                   AffectedUnless.amount = Nothing

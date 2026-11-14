@@ -194,8 +194,10 @@
                     {
                       "type": "HasCounters",
                       "value": {
-                        "type": "Named",
-                        "value": "revival"
+                        "kind": {
+                          "type": "Named",
+                          "value": "revival"
+                        }
                       }
                     }
                   ]

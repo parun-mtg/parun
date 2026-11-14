@@ -195,7 +195,7 @@ codec keywordCodec =
       Arm.nullary "IsPairedWithSource" Filter.IsPairedWithSource,
       Arm.payload "BlockPartnerOfSource" BlockRole.codec Filter.BlockPartnerOfSource (\x -> case x of Filter.BlockPartnerOfSource y -> Just y; _ -> Nothing),
       Arm.payload "HasDesignation" Designation.codec Filter.HasDesignation (\x -> case x of Filter.HasDesignation y -> Just y; _ -> Nothing),
-      Arm.payload "HasCounters" (CounterKind.codec keywordCodec) Filter.HasCounters (\x -> case x of Filter.HasCounters y -> Just y; _ -> Nothing),
+      Arm.payload "HasCounters" (hasCounters keywordCodec) (uncurry Filter.HasCounters) (\x -> case x of Filter.HasCounters n k -> Just (n, k); _ -> Nothing),
       Arm.nullary "HasCountersOfAnyKind" Filter.HasCountersOfAnyKind,
       Arm.payload "HasSticker" StickerKind.codec Filter.HasSticker (\x -> case x of Filter.HasSticker y -> Just y; _ -> Nothing),
       Arm.nullary "Stickered" Filter.Stickered,
@@ -236,6 +236,14 @@ ownsBound keywordCodec =
       <$> Fields.required "atLeast" Common.natural (\(n, _, _) -> n)
       <*> Fields.required "slot" SlotName.codec (\(_, y, _) -> y)
       <*> Fields.required "filter" (codec keywordCodec) (\(_, _, f) -> f)
+
+-- | The counters' kind, and how many at least; one when unsaid.
+hasCounters :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (Natural.Natural, CounterKind.CounterKind keyword)
+hasCounters keywordCodec =
+  Fields.object $
+    (,)
+      <$> Fields.defaulted "atLeast" 1 Common.natural fst
+      <*> Fields.required "kind" (CounterKind.codec keywordCodec) snd
 
 -- | Who put the counters, related to the perspective, and their kind.
 countersPutThisTurn :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (PlayerRelation.PlayerRelation, Maybe (CounterKind.CounterKind keyword))

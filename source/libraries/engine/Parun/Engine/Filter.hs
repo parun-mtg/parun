@@ -2892,10 +2892,10 @@ matches context view predicate = case predicate of
   -- 701.60c hangs off `Suspected` -- a permanent can have either from somewhere
   -- else.
   Filter.HasDesignation d -> Set.member d (designations view)
-  -- CR 122.1, asked of the CANDIDATE: has it one or more counters of the kind?
+  -- CR 122.1, asked of the CANDIDATE: has it at least n counters of the kind?
   -- HasDesignation's live read, of counters instead of a designation: CR 400.7's new
   -- incarnation arrives with none, so nothing is stamped on the candidate.
-  Filter.HasCounters kind -> Map.findWithDefault 0 kind (counters view) > 0
+  Filter.HasCounters n kind -> Map.findWithDefault 0 kind (counters view) >= n
   -- CR 122.1 again, of the same field and without a kind to look up. `any (> 0)`
   -- and NOT `not (Map.null ...)`: the map is keyed per kind, so a key standing at
   -- zero is a permanent with no counters on it and a null test would answer True
@@ -3335,7 +3335,7 @@ manaValueThresholds predicate = case predicate of
   Filter.IsPairedWithSource -> []
   Filter.BlockPartnerOfSource _ -> []
   Filter.HasDesignation _ -> []
-  Filter.HasCounters _ -> []
+  Filter.HasCounters _ _ -> []
   Filter.HasCountersOfAnyKind -> []
   Filter.HasSticker _ -> []
   Filter.Stickered -> []
@@ -3527,7 +3527,7 @@ statesAQuality predicate = case predicate of
   Filter.IsPairedWithSource -> True
   Filter.BlockPartnerOfSource _ -> True
   Filter.HasDesignation _ -> True
-  Filter.HasCounters _ -> True
+  Filter.HasCounters _ _ -> True
   Filter.HasCountersOfAnyKind -> True
   Filter.HasSticker _ -> True
   Filter.Stickered -> True
@@ -3699,7 +3699,7 @@ readsSourceValues predicate = case predicate of
   Filter.IsPairedWithSource -> False
   Filter.BlockPartnerOfSource _ -> False
   Filter.HasDesignation _ -> False
-  Filter.HasCounters _ -> False
+  Filter.HasCounters _ _ -> False
   Filter.HasCountersOfAnyKind -> False
   Filter.HasSticker _ -> False
   Filter.Stickered -> False
