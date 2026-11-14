@@ -1154,6 +1154,28 @@ wildEvocationSpec s registry =
           Spec.assertEqWith s "with the Levy out, bob was ASKED whether to cast the Piker" (offersUnder 0 levied) 1
           Spec.assertEqWith s "and declining left his whole hand in place" (bobsHand after) ["Goblin Piker", "Bog Wraith", "Bird Maiden"]
           Spec.assertEqWith s "without it, the same hand is still instructed" (offersUnder 0 without) 0
+        -- CR 118.8c's first conjunct on a behold: Close Encounter's choice spans
+        -- bob's battlefield and his exile, both public (CR 400.2), so the "if
+        -- able" stays an instruction. The Hill Giant is bob's only creature, so
+        -- it is both the beheld creature and the target, and its own 3 kills it.
+        Spec.it s "CR 118.8c a behold offering exile and the battlefield is not excused" $ do
+          evocation <- S.printingOf s registry "Wild Evocation"
+          encounter <- S.printingOf s registry "Close Encounter"
+          giant <- S.printingOf s registry "Hill Giant"
+          let gs = snd (S.addPermanent giant S.bob (board evocation [encounter]))
+              after = runBobsUpkeep (rolling 0) gs
+          Spec.assertEqWith s "the Encounter was cast and resolved, killing the Giant" (bobsHand after, List.sort (bobsGraveyard after)) ([], ["Close Encounter", "Hill Giant"])
+          Spec.assertEqWith s "because nobody was asked" (offersUnder 0 gs) 0
+        -- The pair: Caustic Exhale's behold reveals out of the hand, so the same
+        -- arm still excuses it. The Shivan Dragon is the Dragon it can behold.
+        Spec.it s "CR 118.8c a behold revealing from the hand is still excused" $ do
+          evocation <- S.printingOf s registry "Wild Evocation"
+          exhale <- S.printingOf s registry "Caustic Exhale"
+          dragon <- S.printingOf s registry "Shivan Dragon"
+          let gs = snd (S.addPermanent dragon S.bob (board evocation [exhale]))
+              after = runBobsUpkeep (rolling 0) gs
+          Spec.assertEqWith s "declining left the Exhale in hand" (bobsHand after) ["Caustic Exhale"]
+          Spec.assertEqWith s "because bob was ASKED whether to cast it" (offersUnder 0 gs) 1
         -- CR 609.3 at the empty end: the reveal names nothing, so the slot goes
         -- unbound, Resolve.slotOne answers Nothing and the "otherwise" clause --
         -- whose AtMost 0 count DOES hold over an empty hand -- offers nothing.

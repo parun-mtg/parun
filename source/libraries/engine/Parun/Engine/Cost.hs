@@ -2382,8 +2382,11 @@ componentStatesHiddenQuality component = case component of
   -- PUBLIC zone as well: CR 701.4a's hand half is RevealCardsFromHand's action
   -- exactly, and rule 118.8c asks whether the cost INCLUDES such an action rather
   -- than whether it forces one, so the battlefield half it offers instead does
-  -- not take this arm out.
-  CostComponent.Behold behold -> Filter.statesAQuality (Behold.whichObjects behold)
+  -- not take this arm out. The card half's zone decides the first conjunct:
+  -- Close Encounter's exile is public (CR 400.2), so its cost has no hidden
+  -- half. Parun.InvestigateSpec's "CR 118.8c a behold offering exile and the
+  -- battlefield is not excused" proves it.
+  CostComponent.Behold behold -> Game.isHiddenZone (Behold.cardZone behold) && Filter.statesAQuality (Behold.whichObjects behold)
   -- The sixth, Behold's arm above: the exile after the behold changes nothing
   -- about which cards the cost is described by.
   CostComponent.BeholdAndExile criterion -> Filter.statesAQuality criterion
