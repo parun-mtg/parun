@@ -1108,35 +1108,49 @@ damageEvent :: GameState -> DamageKind.DamageKind -> ObjectId -> Recipient.Recip
 damageEvent gs kind source target amount =
   let -- One projection for the keyword and creature-type riders.
       characteristics = Projection.projectWithLastKnown source gs
-      keywords = PC.keywords characteristics
-      has keyword = Map.member keyword keywords
-      -- CR 702.164b: toxic is parameterized, so its rider is the SUM of every
-      -- instance's N rather than a membership test -- Projection.totalToxic's
-      -- fold, taken over the same map so it shares the fallback.
-      toxic = Projection.toxicIn keywords
       -- CR 608.2h once for the two riders that ask it: rule 702.15b's payee and
       -- rule 702.76a's and rule 702.173a's "under your control".
       controller = Projection.controllerWithLastKnown source gs
-   in DamageEvent.MkDamageEvent
-        { DamageEvent.source = source,
-          DamageEvent.target = target,
-          DamageEvent.amount = amount,
-          -- CR 120.10's excess is the batch's, settled once it is dealt.
-          DamageEvent.excess = 0,
-          DamageEvent.dealtByDeathtouch = has Keyword.Type.Deathtouch,
-          DamageEvent.dealtByInfect = has Keyword.Type.Infect,
-          DamageEvent.dealtByWither = has Keyword.Type.Wither,
-          DamageEvent.dealtByToxic = toxic,
+   in withRiders
+        (PC.keywords characteristics)
+        DamageEvent.MkDamageEvent
+          { DamageEvent.source = source,
+            DamageEvent.target = target,
+            DamageEvent.amount = amount,
+            -- CR 120.10's excess is the batch's, settled once it is dealt.
+            DamageEvent.excess = 0,
+            DamageEvent.dealtByDeathtouch = False,
+            DamageEvent.dealtByInfect = False,
+            DamageEvent.dealtByWither = False,
+            DamageEvent.dealtByToxic = 0,
+            DamageEvent.dealtByLifelink = Nothing,
+            DamageEvent.dealtByController = controller,
+            DamageEvent.dealtByCreatureTypes = Set.filter Subtype.Engine.isCreatureType (PC.subtypes characteristics),
+            DamageEvent.dealtByCommander = Commander.isCommander source gs,
+            DamageEvent.dealtByCardTypes = PC.cardTypes characteristics,
+            DamageEvent.dealtFromZone = Game.zoneOf source gs,
+            DamageEvent.kind = kind
+          }
+
+-- damageEvent's keyword riders, added to those the event already carries: the
+-- source's own keywords as it is built, and CR 120.3's "as though its source had"
+-- keywords as it is dealt (asThough). Lifelink's payee is the event's
+-- dealtByController, the CR 608.2h read damageEvent made.
+--
+-- CR 702.164b: toxic is parameterized, so its rider is the SUM of every
+-- instance's N rather than a membership test -- Projection.totalToxic's fold.
+withRiders :: Map.Map Keyword.Type.Keyword Natural -> DamageEvent.DamageEvent -> DamageEvent.DamageEvent
+withRiders keywords de =
+  let has keyword = Map.member keyword keywords
+   in de
+        { DamageEvent.dealtByDeathtouch = DamageEvent.dealtByDeathtouch de || has Keyword.Type.Deathtouch,
+          DamageEvent.dealtByInfect = DamageEvent.dealtByInfect de || has Keyword.Type.Infect,
+          DamageEvent.dealtByWither = DamageEvent.dealtByWither de || has Keyword.Type.Wither,
+          DamageEvent.dealtByToxic = DamageEvent.dealtByToxic de + Projection.toxicIn keywords,
           DamageEvent.dealtByLifelink =
-            if has Keyword.Type.Lifelink
-              then controller
-              else Nothing,
-          DamageEvent.dealtByController = controller,
-          DamageEvent.dealtByCreatureTypes = Set.filter Subtype.Engine.isCreatureType (PC.subtypes characteristics),
-          DamageEvent.dealtByCommander = Commander.isCommander source gs,
-          DamageEvent.dealtByCardTypes = PC.cardTypes characteristics,
-          DamageEvent.dealtFromZone = Game.zoneOf source gs,
-          DamageEvent.kind = kind
+            if Maybe.isNothing (DamageEvent.dealtByLifelink de) && has Keyword.Type.Lifelink
+              then DamageEvent.dealtByController de
+              else DamageEvent.dealtByLifelink de
         }
 
 -- CR 701.26a: turn one permanent sideways from an upright position, and record
@@ -6632,7 +6646,16 @@ resolveDamageBatch events = do
   (dealt, (prevented, _)) <- settleThreads mempty (fmap (\de -> (de, Set.empty)) events)
   Replacement.spendPrevented prevented
   after <- State.get
-  pure (Replacement.oneEventPerRecipient (fmap (asDealt before after) dealt), Replacement.groupPreventions prevented)
+  pure (Replacement.oneEventPerRecipient (fmap (asThough after . asDealt before after) dealt), Replacement.groupPreventions prevented)
+
+-- CR 120.3 / 613.11: the keywords an effect has this damage dealt as though its
+-- source had (Phyrexian Unlife), asked on the board the damage is dealt on, after
+-- replacement (CR 120.4b) and before any of the batch is applied, so the pattern
+-- reads the final recipient and its "as long as" reads life before the damage.
+-- Proved by the scenarios cr-120-3-phyrexian-unlife-turns-damage-to-you-at-0-or-less-life-into-poison
+-- and cr-120-3-everlasting-torment-deals-damage-to-a-creature-as-minus-one-counters.
+asThough :: GameState -> DamageEvent.DamageEvent -> DamageEvent.DamageEvent
+asThough gs de = withRiders (Map.fromListWith (+) (fmap (\keyword -> (keyword, 1)) (Replacement.dealtAsThough gs de))) de
 
 -- CR 120.4b: damage is dealt once replacement and prevention effects have
 -- finished, so the riders of a source the batch turned face up (CR 708.8) are

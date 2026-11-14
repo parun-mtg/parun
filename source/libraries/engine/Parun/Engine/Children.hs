@@ -2176,6 +2176,7 @@ playerEffectChildren c effect = case effect of
     fmap PlayerEffect.TargetPastHexproof (HexproofExemption.MkHexproofExemption <$> playerFilter c permanents <*> pure players)
   PlayerEffect.DamageCantBePrevented damage -> PlayerEffect.DamageCantBePrevented <$> playerDamage c damage
   PlayerEffect.DamageCantBeRedirected damage -> PlayerEffect.DamageCantBeRedirected <$> playerDamage c damage
+  PlayerEffect.DamageAsThoughSourceHad damage lent -> PlayerEffect.DamageAsThoughSourceHad <$> playerDamage c damage <*> playerKeyword c lent
   PlayerEffect.CantSearchLibraries _ -> pure effect
   PlayerEffect.SearchesTopOfLibraries _ -> pure effect
   PlayerEffect.StateBasedActionDoesntApply action exempted -> PlayerEffect.StateBasedActionDoesntApply action <$> playerFilter c exempted
