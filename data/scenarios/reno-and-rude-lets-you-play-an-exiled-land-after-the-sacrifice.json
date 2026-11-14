@@ -99,7 +99,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 305.1, 701.21a: the card Reno and Rude exiles may be played, so a land exiled from the damaged player's library is played as the turn's land",
+  "description": "CR 305.2a, 701.21a: the card Reno and Rude exiles may be played, so a land exiled from the damaged player's library is played as the turn's land",
   "note": "Carol's top card is a Forest; alice sacrifices Millstone, an artifact and no creature, and plays the Forest in her postcombat main phase.",
   "timeline": [
     {

@@ -98,7 +98,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 702.34a, 701.20a, 608.2c: Resentful Revelation cast with flashback for {6}{B} from its owner's graveyard puts one of the top three cards into hand, the rest into the graveyard, and is exiled",
+  "description": "CR 702.34a, 608.2c: Resentful Revelation cast with flashback for {6}{B} from its owner's graveyard puts one of the top three cards into hand, the rest into the graveyard, and is exiled",
   "note": "Seven Swamps are tapped for exactly {6}{B} and alice's pool is empty afterwards, so nothing cheaper was charged. Craw Wurm, fourth from the top, is not among the cards looked at.",
   "timeline": [
     {
