@@ -2352,8 +2352,8 @@ eventTriggersGiven scope standing events gs =
             fires (cond, _) = matchesTriggerGiven bindings board (LoggedEvent.group logged) gs oid (controllerFor cond) cond event && eventWithinRange board gs (Plane.rangePerspective oid (controllerFor cond) gs) event
             -- CR 400.7d: an ability of a permanent may read what costs were
             -- paid for the spell it was, so the bearer's record rides on every
-            -- ability it triggers (Binding.paidCostRecord).
-            pend (cond, ab) = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) (controllerFor cond) ab (Map.union (Binding.paidCostRecord bindings) (eventBindingsOver board gs (Map.lookup oid becameInGraveyard) becameInPublicZone oid (controllerFor cond) cond event)) Nothing (Just logged) (copiesIn (fmap snd abilities) ab) (delayedAsTriggered board oid gs) Nothing
+            -- ability it triggers (Binding.triggeredCostRecord).
+            pend (cond, ab) = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) (controllerFor cond) ab (Map.union (Binding.triggeredCostRecord bindings) (eventBindingsOver board gs (Map.lookup oid becameInGraveyard) becameInPublicZone oid (controllerFor cond) cond event)) Nothing (Just logged) (copiesIn (fmap snd abilities) ab) (delayedAsTriggered board oid gs) Nothing
             -- CR 603.2d: a permanent entering may make an ability of a
             -- permanent trigger additional times (Yarok, the Desecrated),
             -- whichever side of the move its condition names (docs/decisions.md,
@@ -3369,7 +3369,7 @@ stateTriggersOn gs
           armed (before, ab) = 1 + length (filter (ab ==) before) > instancesOnStack oid ab
           -- CR 400.7d, the event scan's stamp above on this road too. A
           -- fence: no state trigger in data/cards/ reads the record.
-          pend ab = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) ctrl ab (maybe Map.empty (Binding.paidCostRecord . Object.bindings) (Game.lookupObject oid gs)) Nothing Nothing (copiesIn abilities ab) (Projection.delayedSnapshotOf oid gs) Nothing
+          pend ab = PendingTrigger.MkPendingTrigger (TriggerSource.OfObject oid) ctrl ab (maybe Map.empty (Binding.triggeredCostRecord . Object.bindings) (Game.lookupObject oid gs)) Nothing Nothing (copiesIn abilities ab) (Projection.delayedSnapshotOf oid gs) Nothing
           -- CR 603.2d: a state trigger triggers additional times like any other,
           -- on a permanent; CR 603.8 holds each back while any is on the stack.
           instances = if Set.member oid (GameState.battlefield gs) then 1 + PlayerEffect.additionalTriggers ctrl oid gs else 1
