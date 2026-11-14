@@ -166,8 +166,8 @@
       "typeLine": {
         "subtypes": [
           "Human",
-          "Wizard",
-          "Warrior"
+          "Warrior",
+          "Wizard"
         ],
         "supertypes": [
           "Legendary"

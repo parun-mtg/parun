@@ -111,7 +111,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 603.4 / 701.27a / 712.9 / 508.1m: The Emperor of Palamecia counts only noncreature spells with four or more mana spent, transforms at its third +1/+1 counter, and The Lord Master of Hell's Starfall deals damage to each opponent equal to your noncreature, nonland graveyard cards",
+  "description": "CR 603.4 / 701.27a / 701.27c / 712.6d / 508.1m: The Emperor of Palamecia counts only noncreature spells with four or more mana spent, transforms at its third +1/+1 counter, and The Lord Master of Hell's Starfall deals damage to each opponent equal to your noncreature, nonland graveyard cards",
   "note": "It starts with one counter: Fireball at X=2 (three mana) adds none, nor does four-mana Hill Giant, X=3 the second (still the Emperor), X=4 the third (transformed). Each Fireball hits alice. The graveyard holds three Fireballs and a Shock, plus an Island and a Hill Giant that Starfall must not count: X is 4. Three seats so each opponent is two players and bob, attacked, differs from carol.",
   "timeline": [
     {
