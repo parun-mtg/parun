@@ -2933,14 +2933,23 @@ resolutionReads legal resolving source controller gs =
 -- ObjectId, matched in this effect's context with its player slots baked as
 -- battlefieldMatching bakes them -- Mirror of Fate's "face-up exiled cards you
 -- own", CR 109.5's "you" being the resolving controller.
+--
+-- After them, the same read over the chooser's ownZones, where the chooser ref
+-- names one seat; Parun.Codec.ChosenPermanents refuses the ref that can name
+-- several beside ownZones.
 chosenCandidates :: Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> ObjectId -> GameState -> ChosenPermanents.ChosenPermanents -> [ObjectId]
-chosenCandidates legal resolving controller source gs choice = case ChosenPermanents.zone choice of
-  Zone.Battlefield -> battlefieldMatching legal resolving controller source gs (ChosenPermanents.filter choice)
-  zone ->
-    let context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-        viewOf = Projection.viewsOf gs
-        baked = Filter.bakeBound (Binding.playerSlots (slotBindings resolving gs)) Map.empty Map.empty (ChosenPermanents.filter choice)
-     in concatMap (\pid -> List.sort (filter (\oid -> Filter.matches context (viewOf oid) baked) (Game.zoneMembers zone pid gs))) (Game.apnapOrder gs)
+chosenCandidates legal resolving controller source gs choice =
+  shared <> case playerRefPlayers legal resolving source controller gs (ChosenPermanents.chooser choice) of
+    [pid] -> concatMap (`inZoneOf` pid) (Set.toList (ChosenPermanents.ownZones choice))
+    _ -> []
+  where
+    shared = case ChosenPermanents.zone choice of
+      Zone.Battlefield -> battlefieldMatching legal resolving controller source gs (ChosenPermanents.filter choice)
+      zone -> concatMap (inZoneOf zone) (Game.apnapOrder gs)
+    context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+    viewOf = Projection.viewsOf gs
+    baked = Filter.bakeBound (Binding.playerSlots (slotBindings resolving gs)) Map.empty Map.empty (ChosenPermanents.filter choice)
+    inZoneOf zone pid = List.sort (filter (\oid -> Filter.matches context (viewOf oid) baked) (Game.zoneMembers zone pid gs))
 
 -- CR 109.2's battlefield, narrowed by an effect-borne Filter and sorted into CR
 -- 608.2f's APNAP order. ObjectRef.EachMatching's whole answer, and the

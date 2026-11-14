@@ -570,8 +570,8 @@ otherCandidateTag = Text.pack "OfEachOtherCandidate"
 -- out of a hand, and one out of graveyards the controller makes
 -- (Parun.Engine.Resolve.Common.graveyardCards), and a leaves-the-battlefield
 -- trigger's (Parun.Engine.Event.Match.leaves) -- so the operand anywhere else,
--- a choice out of exile and any other trigger's filter included, is a silent
--- False. Counted off the encoding for
+-- a choice out of exile or the chooser's own zones and any other trigger's
+-- filter included, is a silent False. Counted off the encoding for
 -- amountedSlotAtoms' reason: the position is the enclosing PlayerSacrifices,
 -- ChoosePermanents, ChosenPermanents, ChosenCardInHand, ChosenCardInGraveyard,
 -- Leaves trigger or target slot, which no Framing names.
@@ -590,8 +590,9 @@ otherCandidateCounts card =
               slotFilters v = case v of
                 Value.Object x -> concatMap (field "filter" . Pair.value) (Object.unwrap x)
                 _ -> []
-              -- A choice's zone is defaulted, so only the battlefield's omits it.
-              onBattlefield = filter (null . field "zone")
+              -- A choice's zone is defaulted, so only the battlefield's omits it;
+              -- the cards of ownZones are matched outside the pool.
+              onBattlefield = filter (\v -> null (field "zone" v) && null (field "ownZones" v))
               -- A graveyard choice's chooser, only the controller's gathering one pool.
               byController = filter (any (any (\t -> case t of Value.String x -> String.unwrap x == Text.pack "TheController"; _ -> False) . field "type") . field "chooser")
               positioned
@@ -2190,7 +2191,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         choosing zone =
           (S.combinedFace piker)
             { Face.spell =
-                Mint.oneMode (Seq.singleton (Effect.Destroy (Destroy.MkDestroy (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents atom (PlayerRef.InSlot Binding.you) HowMany.one Nothing zone)) Regenerability.Regenerable Nothing Nothing Nothing)))
+                Mint.oneMode (Seq.singleton (Effect.Destroy (Destroy.MkDestroy (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents atom (PlayerRef.InSlot Binding.you) HowMany.one Nothing zone Set.empty)) Regenerability.Regenerable Nothing Nothing Nothing)))
             }
     Spec.assertEqWith s "the atom in a target slot's filter is accepted" (otherCandidateCounts targeting) (1, 0)
     Spec.assertEqWith s "and in a battlefield choice's filter" (otherCandidateCounts (choosing Zone.Battlefield)) (1, 0)

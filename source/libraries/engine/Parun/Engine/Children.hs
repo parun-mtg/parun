@@ -3311,13 +3311,14 @@ objectRefChildren c ref = case ref of
 -- | A battlefield choice's children (CR 608.2d): what it picks among, who
 -- picks, how many and within what total.
 chosenPermanentsChildren :: (Applicative f) => ObjectRefChildren f -> ChosenPermanents.ChosenPermanents -> f ChosenPermanents.ChosenPermanents
-chosenPermanentsChildren c (ChosenPermanents.MkChosenPermanents filter_ chooser count total zone) =
+chosenPermanentsChildren c (ChosenPermanents.MkChosenPermanents filter_ chooser count total zone own) =
   ChosenPermanents.MkChosenPermanents
     <$> refFilter c filter_
     <*> refPlayer c chooser
     <*> howManyChildren (refQuantity c) count
     <*> traverse (\(TotalCap.MkTotalCap weight most) -> TotalCap.MkTotalCap <$> refQuantity c weight <*> refQuantity c most) total
     <*> pure zone
+    <*> pure own
 
 -- | One visitor per kind of child a rule-affecting row holds (CR 613.11): a
 -- restriction on declaring attackers or blockers (CR 508.1c, 509.1b), a cost to
