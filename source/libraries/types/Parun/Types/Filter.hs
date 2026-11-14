@@ -656,6 +656,9 @@ data Filter keyword
     -- unlike the atoms above it: CR 613.1f writes abilities, so Humility stops it
     -- matching.
     HasActivatedAbility (Maybe AbilityKind.AbilityKind)
+  | -- | CR 113.1a / 113.3: does the CANDIDATE have any ability at all?
+    -- Characteristic, HasActivatedAbility's reason.
+    HasAbility
   | -- | CR 400.1: the candidate OBJECT is in this zone; "from anywhere other than
     -- their hands" is @Not (IsInZone Hand)@ (#163). A cast gate reads it before
     -- CR 601.2a moves the card to the stack, which is what CR 601.2's "take it

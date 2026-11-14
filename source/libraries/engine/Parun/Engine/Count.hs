@@ -32,6 +32,7 @@ import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Players as Players
 import qualified Parun.Engine.Sector as Sector
 import qualified Parun.Engine.Subtype as Subtype
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.Aggregation as Aggregation
@@ -49,8 +50,10 @@ import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.Convoking as Convoking
+import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.Counterability as Counterability
 import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Crewing as Crewing
 import qualified Parun.Types.DamageEvent as DamageEvent
@@ -79,6 +82,7 @@ import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Milled as Milled
+import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MovedBetween as MovedBetween
 import qualified Parun.Types.Object as Object
@@ -1747,6 +1751,8 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- through abilitiesOf, the roster every view builder reads, less what CR
       -- 604.2 withheld (snapshotRoster).
       Filter.activatedAbilityKinds = ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf snapshot) (snapshotRoster deploy zone home lapsed snapshot),
+      -- CR 113.1a off the snapshot, `activatedAbilityKinds` above beside it.
+      Filter.hasAbility = characteristicsHaveAbility (ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf snapshot) (snapshotRoster deploy zone home lapsed snapshot)) snapshot,
       -- CR 702.184c off the snapshot, which carries the field: the marker
       -- outlives the object exactly as a keyword or a P/T does.
       Filter.grantsStationToughness = PC.grantsStationToughness snapshot,
@@ -1769,6 +1775,46 @@ snapshotRoster deploy zone home lapsed snapshot =
 -- recorded as lapsed? An ability with no clause always is.
 grantHeld :: Set.Set Condition.Condition -> ActivatedAbility.ActivatedAbility card ability -> Bool
 grantHeld lapsed = maybe True (`Set.notMember` lapsed) . ActivatedAbility.condition
+
+-- CR 113.1a / 113.3: does a projection have any ability at all, given the
+-- kinds of activated ability its builder measured (CR 305.6's intrinsic one
+-- among them)? The layer-6 lists count as they stand, since CR 613.1f's wipe
+-- empties them and a later grant refills them; the lists no layer writes, and
+-- CR 306.5b's and CR 310.4b's intrinsic abilities, count unless that wipe
+-- applied (PC.lostAllAbilities). Spell abilities count on an instant or a
+-- sorcery only (CR 113.3a).
+characteristicsHaveAbility :: Set.Set AbilityKind.AbilityKind -> PC.ProjectedCharacteristics -> Bool
+characteristicsHaveAbility activated pc =
+  not (Set.null activated)
+    || not (Map.null (PC.keywords pc))
+    || not (null (PC.lentKeywords pc))
+    || Maybe.isJust (PC.characteristicPT pc)
+    || PC.definesChosenColor pc
+    || not (null (PC.triggeredAbilities pc))
+    || not (null (PC.replacementEffects pc))
+    || not (null (PC.grantedPlayerAbilities pc))
+    || not (null (PC.grantedStaticAbilities pc))
+    || PC.grantedRuleAbilities pc /= mempty
+    || not (null (PC.grantedCostReductions pc))
+    || not (null (PC.grantedAlternativeCosts pc))
+    || not (null (PC.grantedSpendManaAsThough pc))
+    || not (null (PC.enchant pc))
+    || not (null (PC.castingPermissions pc))
+    || PC.counterability pc /= Counterability.Counterable
+    || PC.copyability pc /= Copyability.Copyable
+    || ( not (PC.lostAllAbilities pc)
+           && ( not (null (PC.staticAbilities pc))
+                  || not (null (PC.playerAbilities pc))
+                  || PC.ruleAbilities pc /= mempty
+                  || not (null (PC.specialActions pc))
+                  || not (null (PC.costReductions pc))
+                  || not (null (PC.alternativeCosts pc))
+                  || not (null (PC.additionalCosts pc))
+                  || not (null (PC.additionalCostChoices pc))
+                  || any (`Set.member` PC.cardTypes pc) [CardType.Planeswalker, CardType.Battle]
+                  || (any (`Set.member` PC.cardTypes pc) [CardType.Instant, CardType.Sorcery] && not (null (Modal.modes (PC.spell pc))))
+              )
+       )
 
 -- | The live view of an object with a sample's CHARACTERISTICS written over it,
 -- for an event whose object is still there to be asked about but whose
@@ -1811,6 +1857,7 @@ overlaySnapshot deploy zone home lapsed snapshot live =
           Filter.manaValue = Filter.manaValue sampled,
           Filter.manaCost = Filter.manaCost sampled,
           Filter.activatedAbilityKinds = Filter.activatedAbilityKinds sampled,
+          Filter.hasAbility = Filter.hasAbility sampled,
           Filter.grantsStationToughness = Filter.grantsStationToughness sampled,
           Filter.devotionBonus = Filter.devotionBonus sampled,
           Filter.loyaltyIsToughness = Filter.loyaltyIsToughness sampled

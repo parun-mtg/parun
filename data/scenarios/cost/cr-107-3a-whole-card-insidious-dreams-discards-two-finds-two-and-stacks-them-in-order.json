@@ -1,0 +1,224 @@
+{
+  "description": "CR 107.3a whole card: X=2 discards two, finds two, and stacks them in the stated order",
+  "note": "X appears in no mana cost, only in the discard, and is still announced (CR 107.3a, 601.2b). The two discards are paid (CR 601.2h); the search finds X cards, the rest of the library is shuffled without them (CR 701.24b), and they go on top in the order alice states (CR 401.4).",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "swamp"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-3"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Insidious Dreams",
+            "label": "dreams"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          },
+          {
+            "card": "Plains",
+            "label": "plains"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest",
+            "label": "forest"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain"
+          },
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Swamp"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$piker",
+            "$bolt"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$dreams",
+          "x": 2,
+          "mana": [
+            "$swamp",
+            "$swamp-2",
+            "$swamp-3",
+            "$swamp-4"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand",
+          "is": [
+            "$plains"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard",
+          "is": [
+            "Goblin Piker",
+            "Lightning Bolt"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$mountain",
+            "$giant"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$bears",
+            "$island",
+            "$forest"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ArrangeLibraryCards",
+          "with": [
+            1,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library",
+          "is": [
+            "Hill Giant",
+            "Mountain",
+            "Grizzly Bears",
+            "Island",
+            "Forest"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Graveyard",
+          "card": "Insidious Dreams",
+          "count": 1
+        }
+      }
+    }
+  ]
+}

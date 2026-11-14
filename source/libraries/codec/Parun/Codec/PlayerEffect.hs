@@ -84,6 +84,12 @@ codec =
           (,)
             <$> Fields.required "action" StateBasedAction.codec fst
             <*> Fields.defaulted "matching" (Filter.Type.And []) filterCodec snd
+      -- An empty pattern is all damage (Everlasting Torment).
+      asThough =
+        Fields.object $
+          (,)
+            <$> Fields.required "matching" DamagePattern.codec fst
+            <*> Fields.required "keyword" Keyword.codec snd
       -- The quality absent is every spell and ability the scope's players control.
       targetingBan =
         Fields.object $
@@ -119,6 +125,7 @@ codec =
           Arm.payload "TargetPastHexproof" HexproofExemption.codec PlayerEffect.TargetPastHexproof (\x -> case x of PlayerEffect.TargetPastHexproof y -> Just y; _ -> Nothing),
           Arm.payload "DamageCantBePrevented" DamagePattern.codec PlayerEffect.DamageCantBePrevented (\x -> case x of PlayerEffect.DamageCantBePrevented y -> Just y; _ -> Nothing),
           Arm.payload "DamageCantBeRedirected" DamagePattern.codec PlayerEffect.DamageCantBeRedirected (\x -> case x of PlayerEffect.DamageCantBeRedirected y -> Just y; _ -> Nothing),
+          Arm.payload "DamageAsThoughSourceHad" asThough (uncurry PlayerEffect.DamageAsThoughSourceHad) (\x -> case x of PlayerEffect.DamageAsThoughSourceHad y z -> Just (y, z); _ -> Nothing),
           Arm.payload "CantSearchLibraries" CantSearchLibraries.codec PlayerEffect.CantSearchLibraries (\x -> case x of PlayerEffect.CantSearchLibraries y -> Just y; _ -> Nothing),
           Arm.payload "SearchesTopOfLibraries" Common.natural PlayerEffect.SearchesTopOfLibraries (\x -> case x of PlayerEffect.SearchesTopOfLibraries y -> Just y; _ -> Nothing),
           Arm.payload "HasProtectionFrom" filterCodec PlayerEffect.HasProtectionFrom (\x -> case x of PlayerEffect.HasProtectionFrom y -> Just y; _ -> Nothing),
@@ -179,6 +186,7 @@ tagOf x = case x of
   PlayerEffect.TargetPastHexproof {} -> "TargetPastHexproof"
   PlayerEffect.DamageCantBePrevented {} -> "DamageCantBePrevented"
   PlayerEffect.DamageCantBeRedirected {} -> "DamageCantBeRedirected"
+  PlayerEffect.DamageAsThoughSourceHad {} -> "DamageAsThoughSourceHad"
   PlayerEffect.CantSearchLibraries {} -> "CantSearchLibraries"
   PlayerEffect.SearchesTopOfLibraries {} -> "SearchesTopOfLibraries"
   PlayerEffect.HasProtectionFrom {} -> "HasProtectionFrom"

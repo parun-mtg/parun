@@ -1,0 +1,42 @@
+{
+  "description": "CR 113.1a / 613.1f / 613.8a: Ruxa, Patient Professor gives +1/+1 to creatures alice controls with no abilities; cycling, a static ability or a granted ability keeps a creature out, an Aura granting no ability does not, and losing all abilities lets one in",
+  "note": "Grizzly Bears is vanilla; Desert Cerodon has cycling; Giant Tortoise has a static ability; Hill Giant wears Flight, which grants flying; Gray Ogre wears Holy Strength, which grants none; bob's Barbarian Horde is not alice's. Turn to Frog then strips the Tortoise, which joins the set as a 1/1 Frog.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "UC",
+        "hand": [{ "card": "Turn to Frog", "label": "frog" }],
+        "battlefield": [
+          { "card": "Ruxa, Patient Professor", "label": "ruxa" },
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Desert Cerodon", "label": "cerodon" },
+          { "card": "Giant Tortoise", "label": "tortoise" },
+          { "card": "Hill Giant", "label": "giant" },
+          { "card": "Flight", "attached": "giant" },
+          { "card": "Gray Ogre", "label": "ogre" },
+          { "card": "Holy Strength", "attached": "ogre" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Barbarian Horde", "label": "horde" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 3, "toughness": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$cerodon", "power": 6, "toughness": 4 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$tortoise", "power": 1, "toughness": 4 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$giant", "power": 3, "toughness": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$ogre", "power": 4, "toughness": 5 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$ruxa", "power": 4, "toughness": 4 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$horde", "power": 3, "toughness": 3 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$frog", "targets": ["$tortoise"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$tortoise", "power": 2, "toughness": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$cerodon", "power": 6, "toughness": 4 } } }
+  ]
+}

@@ -174,6 +174,10 @@ data PlayerEffect
     -- instead to another permanent or player -- the redirection twin of the arm
     -- above.
     DamageCantBeRedirected DamagePattern.DamagePattern
+  | -- | CR 120.3 / 613.11 / Phyrexian Unlife: damage matching the pattern is dealt
+    -- as though its source had the keyword, asked as the damage is dealt
+    -- (Parun.Engine.Event.resolveDamageBatch). Proved by the cr-120-3 scenarios.
+    DamageAsThoughSourceHad DamagePattern.DamagePattern Keyword.Keyword
   | -- | CR 701.23 / 613.11 / Leonin Arbiter: this player can't search libraries.
     CantSearchLibraries CantSearchLibraries.CantSearchLibraries
   | -- | CR 614.1a / 701.23f / Aven Mindcensor: this player searches only that

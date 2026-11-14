@@ -200,6 +200,7 @@ codec keywordCodec =
       Arm.payload "HasSticker" StickerKind.codec Filter.HasSticker (\x -> case x of Filter.HasSticker y -> Just y; _ -> Nothing),
       Arm.nullary "Stickered" Filter.Stickered,
       Arm.optionalPayload "HasActivatedAbility" AbilityKind.codec Filter.HasActivatedAbility (\x -> case x of Filter.HasActivatedAbility y -> Just y; _ -> Nothing),
+      Arm.nullary "HasAbility" Filter.HasAbility,
       Arm.payload "IsInZone" Zone.codec Filter.IsInZone (\x -> case x of Filter.IsInZone y -> Just y; _ -> Nothing),
       Arm.payload "WasCastFrom" Zone.codec Filter.WasCastFrom (\x -> case x of Filter.WasCastFrom y -> Just y; _ -> Nothing),
       Arm.payload "TagWasSpent" ProductionTag.codec Filter.TagWasSpent (\x -> case x of Filter.TagWasSpent y -> Just y; _ -> Nothing),
@@ -395,6 +396,7 @@ tagOf x = case x of
   Filter.HasSticker {} -> "HasSticker"
   Filter.Stickered {} -> "Stickered"
   Filter.HasActivatedAbility {} -> "HasActivatedAbility"
+  Filter.HasAbility {} -> "HasAbility"
   Filter.IsInZone {} -> "IsInZone"
   Filter.WasCastFrom {} -> "WasCastFrom"
   Filter.TagWasSpent {} -> "TagWasSpent"

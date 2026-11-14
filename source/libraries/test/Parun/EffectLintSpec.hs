@@ -1062,6 +1062,9 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
   -- a damage event too, so Parun.Engine.PlayerEffect.unredirectable's board-wide
   -- fold is exact only while AnyPlayer is the one scope a card may write.
   PlayerEffect.DamageCantBeRedirected _ -> scope /= AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer)
+  -- CR 120.3's "as though its source had" names a damage event too, and
+  -- Parun.Engine.PlayerEffect.damageAsThough folds it board-wide the same way.
+  PlayerEffect.DamageAsThoughSourceHad {} -> scope /= AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer)
   PlayerEffect.CantSearchLibraries _ -> False
   PlayerEffect.SearchesTopOfLibraries _ -> False
   PlayerEffect.HasProtectionFrom _ -> False
@@ -1148,6 +1151,7 @@ unpreventablePatternOffends :: PlayerEffect.PlayerEffect -> Bool
 unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.DamageCantBePrevented pattern_ -> Maybe.isJust (DamagePattern.whichRecipient pattern_) || Maybe.isJust (DamagePattern.whichSource pattern_)
   PlayerEffect.DamageCantBeRedirected pattern_ -> Maybe.isJust (DamagePattern.whichRecipient pattern_) || Maybe.isJust (DamagePattern.whichSource pattern_)
+  PlayerEffect.DamageAsThoughSourceHad pattern_ _ -> Maybe.isJust (DamagePattern.whichRecipient pattern_) || Maybe.isJust (DamagePattern.whichSource pattern_)
   PlayerEffect.CantSearchLibraries _ -> False
   PlayerEffect.SearchesTopOfLibraries _ -> False
   PlayerEffect.HasProtectionFrom _ -> False
@@ -1211,6 +1215,7 @@ isUnpreventable :: PlayerEffect.PlayerEffect -> Bool
 isUnpreventable playerEffect = case playerEffect of
   PlayerEffect.DamageCantBePrevented _ -> True
   PlayerEffect.DamageCantBeRedirected _ -> True
+  PlayerEffect.DamageAsThoughSourceHad {} -> True
   _ -> False
 
 -- CR 700.5a: does this face author a devotion increase that

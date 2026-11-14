@@ -40,6 +40,7 @@ ability =
     Nothing
     Nothing
     Copyability.Copyable
+    Nothing
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ActivatedAbilitySource" $ do

@@ -194,6 +194,18 @@ attachmentWith equippable src destination gs
       (Nothing, Nothing) -> a == b
       _ -> False
 
+-- CR 701.3b: the attachment moving `subject` to `destination` stores, or
+-- Nothing when the move does nothing -- the legality reading refuses it, or
+-- `subject` is already attached there. Event.attachVia moves on it and CR
+-- 608.2d's offer (Resolve.Common.effectIsImpossible) asks it, so the two
+-- cannot disagree.
+moveFor :: (ObjectId -> Recipient -> GameState -> Maybe Recipient) -> ObjectId -> Recipient -> GameState -> Maybe Recipient
+moveFor legality subject destination gs = do
+  attachment <- legality subject destination gs
+  if fmap Object.attachedTo (Game.lookupObject subject gs) == Just (Just attachment)
+    then Nothing
+    else Just attachment
+
 -- CR 701.3a through CR 608.2h: could `src` be attached to `host` -- as `host` is
 -- now, or, once `host` no longer exists, as it MOST RECENTLY existed? Auratouched
 -- Mage's "an Aura card that could enchant it" asked of a Mage that was killed

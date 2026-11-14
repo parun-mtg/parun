@@ -3821,6 +3821,17 @@ printedDestination gs candidate filter_ =
 preventable :: (ObjectId -> Filter.View) -> GameState -> DamageEvent.DamageEvent -> Bool
 preventable viewOf gs de = not (any (\(src, pat) -> matchesDamagePattern viewOf gs (patternContext gs src) pat de) (PlayerEffect.unpreventable gs))
 
+-- CR 120.3 / 613.11: the keywords this damage event is dealt as though its source
+-- had (Phyrexian Unlife), `preventable`'s reading of a pattern in its source's
+-- context, one entry per matching effect. A Set first, since AnyPlayer lists one
+-- effect once per seat.
+dealtAsThough :: GameState -> DamageEvent.DamageEvent -> [Keyword.Type.Keyword]
+dealtAsThough gs de =
+  [ keyword
+  | (src, pat, keyword) <- Set.toList (Set.fromList (PlayerEffect.damageAsThough gs)),
+    matchesDamagePattern (Projection.viewsOf gs) gs (patternContext gs src) pat de
+  ]
+
 -- CR 109.5's Context for a CR 613.10/613.11 pattern: the perspective is the
 -- controller of the effect's own source, derived off the board rather than
 -- carried. Shared by the two questions of that shape so they cannot disagree

@@ -34,12 +34,12 @@ import qualified Parun.Scenario.Load as Load
 import qualified Parun.Slug as Slug
 import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Test
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.LegalityTable as LegalityTable
 import qualified Parun.Types.StickerSheet as StickerSheet.Type
-import qualified System.Directory as Directory
 import qualified System.Environment as Environment
 import qualified System.Exit as Exit
 import qualified System.IO as IO

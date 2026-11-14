@@ -8,6 +8,7 @@
     - GADTs
     - RankNTypes
     - ScopedTypeVariables
+    - Trustworthy # the trustworthy library's wrappers, and nowhere else
 
 # Hint groups beyond the default set.
 # dollar:     prefer `f . g $ h x` over `f $ g $ h x`

@@ -60,6 +60,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Slug as Slug
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActingPermanent as ActingPermanent
@@ -386,6 +387,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.PlayerScope as PlayerScope
+import qualified Parun.Types.PlayerSlot as PlayerSlot
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.PlaysLand as PlaysLand
@@ -448,7 +450,6 @@ import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SkipWindow as SkipWindow
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
-import qualified Parun.Types.SlotPerPlayer as SlotPerPlayer
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.SpellCast as SpellCast
@@ -506,7 +507,6 @@ import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
 import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 import qualified Parun.Types.ZonePair as ZonePair
-import qualified System.Directory as Directory
 
 -- Not red-specific despite its first callers: just the Maybe wrapper every
 -- printed mana cost needs (CR 202.1).
@@ -2029,7 +2029,8 @@ oneEffectActivated mana effect =
       ActivatedAbility.condition = Nothing,
       ActivatedAbility.name = Nothing,
       ActivatedAbility.keyword = Nothing,
-      ActivatedAbility.copyability = Copyability.Copyable
+      ActivatedAbility.copyability = Copyability.Copyable,
+      ActivatedAbility.chosenPlayer = Nothing
     }
 
 -- One CR 700.2 mode for the fixtures below: the effects it runs and the target
@@ -2063,7 +2064,8 @@ modalActivated modes =
       ActivatedAbility.condition = Nothing,
       ActivatedAbility.name = Nothing,
       ActivatedAbility.keyword = Nothing,
-      ActivatedAbility.copyability = Copyability.Copyable
+      ActivatedAbility.copyability = Copyability.Copyable,
+      ActivatedAbility.chosenPlayer = Nothing
     }
 
 -- Parun.Engine.Binding's reserved slot names in full: the binding keys the engine
@@ -2276,7 +2278,7 @@ modalDeclaredSlots =
 
 -- A per-player target slot's "that player" name (CR 601.2c), if it has one.
 perPlayerSlots :: TargetSlot.TargetSlot -> Set.Set SlotName.SlotName
-perPlayerSlots = foldMap (Set.singleton . SlotPerPlayer.slot) . TargetSlot.perPlayer
+perPlayerSlots = foldMap (Set.singleton . PlayerSlot.slot) . TargetSlot.perPlayer
 
 -- Every slot a card DECLARES as a target: the four carriers above, on the card's
 -- own face AND on every face it mints. A token's triggered ability
@@ -4036,6 +4038,8 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.DamageCantBePrevented pattern_ -> damagePatternFilters pattern_
   -- CR 614.9's twin, patterned by the same type and read the same way.
   PlayerEffect.DamageCantBeRedirected pattern_ -> damagePatternFilters pattern_
+  -- CR 120.3's "as though its source had", patterned by the same type too.
+  PlayerEffect.DamageAsThoughSourceHad pattern_ _ -> damagePatternFilters pattern_
   -- CR 701.23's prohibition narrows by WHOSE library and WHOSE spell or
   -- ability, both PlayerScopes, and by no quality a Filter could state.
   PlayerEffect.CantSearchLibraries _ -> []

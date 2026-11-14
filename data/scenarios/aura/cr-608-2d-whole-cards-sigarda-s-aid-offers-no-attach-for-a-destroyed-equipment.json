@@ -1,0 +1,142 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains"
+          },
+          {
+            "card": "Sigarda's Aid"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "War Mammoth",
+            "label": "mammoth"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Bonesplitter",
+            "label": "splitter"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shatter",
+            "label": "shatter"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 608.2d Sigarda's Aid's may is not offered once the Equipment it would attach is destroyed",
+  "final": [
+    {
+      "PowerToughness": {
+        "object": "$piker",
+        "power": 2,
+        "toughness": 1
+      }
+    }
+  ],
+  "note": "Sigarda's Aid's attach trigger targets alice's Goblin Piker; bob's Shatter destroys the Bonesplitter in response. The target stays legal, so the trigger resolves, but the Equipment is gone and the attach would move nothing (CR 701.3b), so CR 608.2d's may is never asked: that prompt would fail this run unscheduled. data/scenarios/aura's \"sigarda-s-aid-equips-the-piker\" scenario is the control.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains"
+          ],
+          "object": "$splitter"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$piker"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Bonesplitter",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2"
+          ],
+          "object": "$shatter"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

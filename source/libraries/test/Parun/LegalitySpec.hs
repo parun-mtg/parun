@@ -20,6 +20,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Support as S
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Deck as Deck
@@ -32,7 +33,6 @@ import qualified Parun.Types.RuleFamily as RuleFamily
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.StickerSheet as StickerSheet
 import qualified Parun.Types.Violation as Violation
-import qualified System.Directory as Directory
 
 -- A deck and a sideboard, each as (name, count) pairs.
 deckOf :: Spec.Spec IO n -> Registry.Registry IO -> [(String, Natural.Natural)] -> [(String, Natural.Natural)] -> IO Deck.Deck

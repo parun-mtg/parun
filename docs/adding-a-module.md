@@ -53,3 +53,14 @@ Shared fixtures live in `Parun.Support`, imported `qualified ... as S` --- the
 one documented exception to alias-to-last-component; a group-local helper stays
 with its group, and a helper two or more sibling modules want is duplicated
 rather than hoisted, since `Parun.Support` rebuilds every spec in the tree.
+
+### Safe Haskell
+
+Every module is `Safe` by default (the `library` common stanza), so an
+escape hatch --- `unsafePerformIO`, `unsafeCoerce`, Template Haskell, an
+import the compiler cannot check --- fails the build. When an external module
+its package does not mark Safe or Trustworthy is needed, import it through a
+`Trustworthy` wrapper in the `trustworthy` sublibrary, one per external
+module, re-exporting only what Parun uses; never add `Trustworthy` anywhere
+else. This is a compiler-checked lint, not a sandbox: it does not confine
+`IO` or verify a library's own `Trustworthy` claim.

@@ -915,6 +915,12 @@ data View = MkView
     -- in every view builder" is what holds the three to one answer. Named apart
     -- from `activatedAbility` above, which asks whether the candidate IS one.
     activatedAbilityKinds :: Set.Set AbilityKind.AbilityKind,
+    -- CR 113.1a / 113.3: does the candidate have any ability at all, of any of
+    -- CR 113.3's four kinds, keywords and intrinsic abilities included? What
+    -- Filter.HasAbility asks. The abilities it reads are the ones the object
+    -- HAS, so CR 702.29b's cycling counts in a graveyard. LAZY, for
+    -- activatedAbilityKinds' reason, whose disjunct it is.
+    hasAbility :: Bool,
     -- CR 702.184c: does this candidate's controller's station abilities read a
     -- tapped creature's toughness instead of its power? The projected mirror
     -- of ProjectedCharacteristics.grantsStationToughness -- read off the
@@ -1189,6 +1195,8 @@ nobodyView =
       -- 109.1's list of what an object is has no player in it -- `keywords`
       -- above, one rule over.
       activatedAbilityKinds = Set.empty,
+      -- CR 113.1a: `activatedAbilityKinds` above, same sentence.
+      hasAbility = False,
       -- CR 702.184c reaches a permanent's controller, and a player view built
       -- from a bare PlayerId has no permanent behind it to grant this at all.
       grantsStationToughness = False,
@@ -2829,6 +2837,9 @@ matches context view predicate = case predicate of
   -- land Humility has stripped stops matching at once, and CR 702.29b's and CR
   -- 702.77b's abilities are in the list the builder measured.
   Filter.HasActivatedAbility kind -> maybe (not (Set.null (activatedAbilityKinds view))) (`Set.member` activatedAbilityKinds view) kind
+  -- CR 113.1a, applied by the builder that holds the abilities, the arm above's
+  -- posture.
+  Filter.HasAbility -> hasAbility view
   -- CR 400.1 off Object.zone, a live read like `token` and `tapped` above: the
   -- object moves and the atom answers about where it is NOW. That is what makes
   -- it answer CR 601.2's "from where it is" at a cast gate, which runs before CR
@@ -3336,6 +3347,7 @@ manaValueThresholds predicate = case predicate of
   Filter.HasSticker _ -> []
   Filter.Stickered -> []
   Filter.HasActivatedAbility _ -> []
+  Filter.HasAbility -> []
   Filter.IsInZone _ -> []
   Filter.WasCastFrom _ -> []
   Filter.TagWasSpent _ -> []
@@ -3527,6 +3539,7 @@ statesAQuality predicate = case predicate of
   Filter.HasSticker _ -> True
   Filter.Stickered -> True
   Filter.HasActivatedAbility _ -> True
+  Filter.HasAbility -> True
   -- CR 400.1 states a quality like any other atom here: a search whose predicate
   -- names a zone is looking for cards with a stated quality, so CR 701.23b's
   -- shortfall applies rather than CR 701.23d's "must find".
@@ -3698,6 +3711,7 @@ readsSourceValues predicate = case predicate of
   Filter.HasSticker _ -> False
   Filter.Stickered -> False
   Filter.HasActivatedAbility _ -> False
+  Filter.HasAbility -> False
   Filter.IsInZone _ -> False
   Filter.WasCastFrom _ -> False
   Filter.TagWasSpent _ -> False

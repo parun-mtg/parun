@@ -398,6 +398,14 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       PlayerEffect.codec
       (PlayerEffect.DamageCantBeRedirected (DamagePattern.MkDamagePattern Nothing Filter.IsSource (Just (Filter.HasCardType CardType.Creature)) Nothing Nothing Nothing Nothing))
       " {\"type\":\"DamageCantBeRedirected\",\"value\":{\"whatRecipient\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"whatSource\":{\"type\":\"IsSource\"}}} "
+  -- CR 120.3 / Phyrexian Unlife: damage dealt to you as though its source had
+  -- infect.
+  Spec.it s "DamageAsThoughSourceHad, dealt to you" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.DamageAsThoughSourceHad (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing (Just PlayerRelation.You) Nothing Nothing Nothing) Keyword.Infect)
+      " {\"type\":\"DamageAsThoughSourceHad\",\"value\":{\"matching\":{\"whoRecipient\":\"You\"},\"keyword\":{\"type\":\"Infect\"}}} "
   -- CR 701.23 / Leonin Arbiter.
   Spec.it s "CantSearchLibraries" $
     Common.assertCodec

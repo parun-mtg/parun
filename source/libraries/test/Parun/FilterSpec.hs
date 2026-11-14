@@ -180,6 +180,7 @@ blackCreature =
       -- CR 602.1 / 605.1a: a vanilla creature as far as this axis goes, so the
       -- atom's own cases below say which view they want rather than inheriting it.
       Filter.activatedAbilityKinds = Set.empty,
+      Filter.hasAbility = False,
       Filter.grantsStationToughness = False,
       Filter.devotionBonus = 0,
       Filter.loyaltyIsToughness = False
@@ -280,6 +281,7 @@ devoidBigCreature =
       Filter.manaSpent = Mana.MkMana [],
       Filter.manaSpentOnX = Mana.MkMana [],
       Filter.activatedAbilityKinds = Set.empty,
+      Filter.hasAbility = False,
       Filter.grantsStationToughness = False,
       Filter.devotionBonus = 0,
       Filter.loyaltyIsToughness = False

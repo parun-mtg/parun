@@ -100,6 +100,8 @@ phraseJoining joining f named = case f of
   Filter.Not (Filter.HasKeyword k) -> do
     word <- named k
     [qualifier (Text.pack "without " <> Text.toLower word) (Text.pack "without " <> Text.toLower word)]
+  -- Ruxa, Patient Professor.
+  Filter.Not Filter.HasAbility -> [qualifier (Text.pack "with no abilities") (Text.pack "with no abilities")]
   Filter.Not Filter.IsSource -> [adjective (Text.pack "other")]
   -- Another of the mode's objects than the one a slot names (Fall of the
   -- Hammer).

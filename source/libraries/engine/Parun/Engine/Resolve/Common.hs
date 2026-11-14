@@ -71,6 +71,7 @@ import qualified Parun.Types.AnyNumberMatching as AnyNumberMatching
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.ArmDelayedTrigger as ArmDelayedTrigger
 import qualified Parun.Types.ArrangedArrival as ArrangedArrival
+import qualified Parun.Types.AttachBound as AttachBound
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.Ballot as Ballot
 import qualified Parun.Types.Binding as Binding.Type
@@ -807,9 +808,7 @@ askedChooser resolving source controller legal ref = do
 attachTogether :: [ObjectId] -> Recipient -> Game ()
 attachTogether movers recipient = do
   gs <- State.get
-  let restamped mover = case Attach.attachmentFor mover recipient gs of
-        Just attachment -> fmap Object.attachedTo (Game.lookupObject mover gs) /= Just (Just attachment)
-        Nothing -> False
+  let restamped mover = Maybe.isJust (Attach.moveFor Attach.attachmentFor mover recipient gs)
   ordered <- Restamp.order (filter restamped movers)
   Foldable.for_ (ordered <> filter (not . restamped) movers) $ \mover ->
     Event.attach mover recipient
@@ -3455,11 +3454,27 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.ControlPlayerThisResolution {} -> False
   Effect.Destroy {} -> False
   Effect.Sacrifice {} -> False
-  Effect.Attach {} -> False
-  Effect.AttachAsThoughCreature {} -> False
+  -- CR 701.3b: an attach to a fixed destination where no move would do
+  -- anything -- the Equipment destroyed or animated in response (CR 301.5c),
+  -- or already on that host (docs/decisions.md, "Whether an attach to the host
+  -- it is already on can be chosen"). The movers and destinations are the
+  -- executing arms' own reads, judged by Event.attach's Attach.moveFor.
+  -- data/scenarios/magitek-scythe's "offers no attach" scenarios prove Attach,
+  -- and data/scenarios/aura's "sigarda-s-aid-offers-no-attach" AttachBound;
+  -- AttachAsThoughCreature is a regression fence, no printed "may" in
+  -- data/cards reaching it.
+  Effect.Attach slot ->
+    let destinations = case fmap Foldable.toList (slotGroup slot resolving gs) of
+          Just group@(_ : _) -> fmap Recipient.ToObject group
+          _ -> Maybe.maybeToList (legalOne slot legal)
+     in movesNothing Attach.attachmentFor [source] destinations
+  Effect.AttachAsThoughCreature slot -> movesNothing Attach.attachmentAsThoughCreature [source] (Maybe.maybeToList (legalOne slot legal))
+  -- The three that choose a destination on resolution are not answered here
+  -- (gap #7541).
   Effect.AttachTarget {} -> False
   Effect.AttachTargetToEach {} -> False
-  Effect.AttachBound {} -> False
+  Effect.AttachBound (AttachBound.MkAttachBound subject destination) ->
+    movesNothing Attach.attachmentFor (objectRefObjects legal resolving controller source gs (ObjectRef.InSlot subject)) (Maybe.maybeToList (legalOne destination legal))
   Effect.AttachAll {} -> False
   -- CR 701.3d: the sweep names at least one permanent and none of them is
   -- attached to anything, so there is nothing to move away (Akiri, Fearless
@@ -3870,6 +3885,9 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
       -- Only when no member names anything: a read always might.
       ObjectRef.AllOf refs -> all choosesFromNothing refs
       _ -> False
+    -- Movers and destinations both named, and no pairing moves anything.
+    movesNothing legality movers destinations =
+      not (null movers) && not (null destinations) && and [Maybe.isNothing (Attach.moveFor legality mover destination gs) | mover <- movers, destination <- destinations]
     -- A read that names objects, none of them exchangeable.
     namesOnlyTheGone ref =
       let named = objectRefObjects legal resolving controller source gs ref

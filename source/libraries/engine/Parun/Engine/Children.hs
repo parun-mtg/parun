@@ -373,6 +373,7 @@ import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
+import qualified Parun.Types.PlayerSlot as PlayerSlot
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.PlaysLand as PlaysLand
@@ -434,7 +435,6 @@ import qualified Parun.Types.SkipPhase as SkipPhase
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
-import qualified Parun.Types.SlotPerPlayer as SlotPerPlayer
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
 import qualified Parun.Types.SpellCast as SpellCast
@@ -665,6 +665,7 @@ filterChildren children predicate = case predicate of
   Filter.HasSticker _ -> pure predicate
   Filter.Stickered -> pure predicate
   Filter.HasActivatedAbility _ -> pure predicate
+  Filter.HasAbility -> pure predicate
   Filter.IsInZone _ -> pure predicate
   Filter.WasCastFrom _ -> pure predicate
   Filter.TagWasSpent _ -> pure predicate
@@ -2177,6 +2178,7 @@ playerEffectChildren c effect = case effect of
     fmap PlayerEffect.TargetPastHexproof (HexproofExemption.MkHexproofExemption <$> playerFilter c permanents <*> pure players)
   PlayerEffect.DamageCantBePrevented damage -> PlayerEffect.DamageCantBePrevented <$> playerDamage c damage
   PlayerEffect.DamageCantBeRedirected damage -> PlayerEffect.DamageCantBeRedirected <$> playerDamage c damage
+  PlayerEffect.DamageAsThoughSourceHad damage lent -> PlayerEffect.DamageAsThoughSourceHad <$> playerDamage c damage <*> playerKeyword c lent
   PlayerEffect.CantSearchLibraries _ -> pure effect
   PlayerEffect.SearchesTopOfLibraries _ -> pure effect
   PlayerEffect.StateBasedActionDoesntApply action exempted -> PlayerEffect.StateBasedActionDoesntApply action <$> playerFilter c exempted
@@ -2669,7 +2671,9 @@ data AbilityChildren card ability effect f = MkAbilityChildren
     -- | A granted rule-affecting static ability (CR 613.11), whole.
     abilityRules :: RuleAbilities.RuleAbilities -> f RuleAbilities.RuleAbilities,
     -- | A granted permission about the mana spent to cast its object (CR 609.4b), whole.
-    abilitySpendMana :: SpendManaAsThough.SpendManaAsThough -> f SpendManaAsThough.SpendManaAsThough
+    abilitySpendMana :: SpendManaAsThough.SpendManaAsThough -> f SpendManaAsThough.SpendManaAsThough,
+    -- | The slot an activated ability binds its announced player under (CR 115.10a).
+    abilitySlot :: SlotName.SlotName -> f SlotName.SlotName
   }
 
 -- | Every child of an ability record left as it is: the base a walk overrides.
@@ -2691,12 +2695,13 @@ abilityLeaves =
       abilityReplacement = pure,
       abilityFilter = pure,
       abilityRules = pure,
-      abilitySpendMana = pure
+      abilitySpendMana = pure,
+      abilitySlot = pure
     }
 
 -- | An activated ability's children. Each choice's costs go to abilityCost.
 activatedAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> ActivatedAbility.ActivatedAbility card ability -> f (ActivatedAbility.ActivatedAbility card ability)
-activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices maximumX definedX modal restrictions activator condition name stamp copyability) =
+activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices maximumX definedX modal restrictions activator condition name stamp copyability chosenPlayer) =
   ActivatedAbility.MkActivatedAbility
     <$> abilityCost c cost
     <*> traverse (fmap CostChoice.MkCostChoice . traverse (abilityCost c) . CostChoice.unwrap) costChoices
@@ -2710,6 +2715,7 @@ activatedAbilityChildren c (ActivatedAbility.MkActivatedAbility cost costChoices
     <*> pure name
     <*> traverse (abilityKeyword c) stamp
     <*> pure copyability
+    <*> traverse (\(PlayerSlot.MkPlayerSlot players named) -> PlayerSlot.MkPlayerSlot players <$> abilitySlot c named) chosenPlayer
 
 -- | A triggered ability's children.
 triggeredAbilityChildren :: (Applicative f) => AbilityChildren card ability effect f -> TriggeredAbility.TriggeredAbility card ability -> f (TriggeredAbility.TriggeredAbility card ability)
@@ -4012,8 +4018,8 @@ targetSlotChildren c (TargetSlot.MkTargetSlot pool filter_ count amount chooser 
       SlotCount.AnnouncedX -> pure n
       SlotCount.UpToAnnouncedX -> pure n
       SlotCount.UpToComputed bound -> SlotCount.UpToComputed <$> permissionQuantity c bound
-    perPlayerChildren (SlotPerPlayer.MkSlotPerPlayer players thatPlayer) =
-      SlotPerPlayer.MkSlotPerPlayer players <$> permissionSlot c thatPlayer
+    perPlayerChildren (PlayerSlot.MkPlayerSlot players thatPlayer) =
+      PlayerSlot.MkPlayerSlot players <$> permissionSlot c thatPlayer
 
 -- | A casting permission's children (CR 601.3). A keyword family and a flash
 -- cast's additional mana cost are left as they are.
