@@ -2294,7 +2294,7 @@ sicknessOkGiven grants pcs pid oid cost gs =
   not (requiresSicknessCheck cost)
     || not (Set.member CardType.Creature (Projection.cardTypesGiven pcs oid gs))
     || Summoning.settledOrHastyGiven pcs controller oid gs
-    || (pid == controller && Set.member (oid, RuleWaiver.ActivationSickness) (RulePermission.waivers [oid] gs))
+    || (pid == controller && Map.member (oid, RuleWaiver.ActivationSickness) (RulePermission.waivers [oid] gs))
   where
     controller = Maybe.fromMaybe pid (Projection.controllerOfGiven grants oid gs)
 

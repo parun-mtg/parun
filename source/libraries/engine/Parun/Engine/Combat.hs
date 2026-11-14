@@ -479,7 +479,7 @@ isCreatureObjectGiven = Projection.isCreatureGiven
 canAttack :: PlayerId -> ObjectId -> GameState -> Bool
 canAttack pid oid gs = canAttackGiven (Snapshot.onDemand gs) (CombatRestriction.cantAttack [oid] gs) (RulePermission.waivers [oid] gs) pid oid gs
 
-canAttackGiven :: Snapshot.Snapshot -> Set ObjectId -> Set (ObjectId, RuleWaiver.RuleWaiver) -> PlayerId -> ObjectId -> GameState -> Bool
+canAttackGiven :: Snapshot.Snapshot -> Set ObjectId -> Map (ObjectId, RuleWaiver.RuleWaiver) (Maybe (Set (PlayerId, AttackTargetKind.AttackTargetKind))) -> PlayerId -> ObjectId -> GameState -> Bool
 canAttackGiven (Snapshot.MkSnapshot {Snapshot.projected = pcs, Snapshot.grants = grants}) restricted waived pid oid gs = case Game.lookupObject oid gs of
   Nothing -> False
   Just obj ->
@@ -494,8 +494,10 @@ canAttackGiven (Snapshot.MkSnapshot {Snapshot.projected = pcs, Snapshot.grants =
       -- it hasn't been controlled continuously since its controller's most recent
       -- turn began. `waived` lets one attack as though it had haste (Instill
       -- Energy); it stays out of the shared predicate, whose {T} readers it doesn't
-      -- relax.
-      && (Summoning.settledOrHastyGiven pcs pid oid gs || Set.member (oid, RuleWaiver.AttackSickness) waived)
+      -- relax. A waiver bound to what the attack is aimed at keeps the creature
+      -- a candidate here and is asked of each announcement in
+      -- barredAnnouncements (Frenzied Saddlebrute).
+      && (Summoning.settledOrHastyGiven pcs pid oid gs || Map.member (oid, RuleWaiver.AttackSickness) waived)
       && isCreatureObjectGiven pcs oid gs
       -- CR 508.1a's "they can't also be battles". A separate conjunct from the
       -- creature test above and not a consequence of it: CR 205.1b's "in addition
@@ -507,7 +509,7 @@ canAttackGiven (Snapshot.MkSnapshot {Snapshot.projected = pcs, Snapshot.grants =
       -- still block -- 702.3b says nothing about blocking. `waived` holds the
       -- creatures an effect lets attack as though they didn't have it (Prison
       -- Barricade kicked).
-      && (not (Projection.hasKeywordGiven pcs Keyword.Defender oid gs) || Set.member (oid, RuleWaiver.Defender) waived)
+      && (not (Projection.hasKeywordGiven pcs Keyword.Defender oid gs) || Map.member (oid, RuleWaiver.Defender) waived)
       -- CR 508.1c: every per-creature attacking restriction in force -- printed
       -- (Pacifism), CR 701.35a's detain, stored by the resolution that said it
       -- (Netter en-Dal), or on the controller (Angelic Arbiter).
@@ -714,7 +716,8 @@ attackCeiling candidates gs =
 -- Defender.defendingPlayers).
 --
 -- TWO restrictions land here and they key on an announcement DIFFERENTLY, which
--- is why one set is built from two:
+-- is why one set is built from two (plus `outOfReach`, a target-bound
+-- permission's complement):
 --
 --   * The AIMED-AT one (Blazing Archon, "creatures can't attack you"; Vow of
 --     Flight, "can't attack you or planeswalkers you control") names WHICH of CR
@@ -743,11 +746,27 @@ barredAnnouncements candidates gs =
       gated = CombatRestriction.cantAttackDefender candidates defenders gs
       aimedAt oid target = Maybe.maybe False (\d -> Set.member (oid, d, attackTargetKind target) aimed) (targetDefender target gs)
       gatedAt oid target = Maybe.maybe False (\d -> Set.member (oid, d) gated) (targetDefender target gs)
+      -- CR 302.6 / 702.3b through CR 508.1b: a creature canAttackGiven admitted
+      -- on a waiver bound to what it attacks (Frenzied Saddlebrute's "your
+      -- opponents and planeswalkers your opponents control") is barred from
+      -- every other announcement, for each rule it needs lifted.
+      waived = RulePermission.waivers candidates gs
+      outOfReach oid target =
+        any
+          ( \waiver -> case Map.lookup (oid, waiver) waived of
+              Just (Just reach) -> needs oid waiver && Maybe.maybe True (\d -> not (Set.member (d, attackTargetKind target) reach)) (targetDefender target gs)
+              _ -> False
+          )
+          [minBound .. maxBound]
+      needs oid waiver = case waiver of
+        RuleWaiver.AttackSickness -> not (Maybe.maybe False (\pid -> Summoning.settledOrHasty pid oid gs) (Projection.controllerOf oid gs))
+        RuleWaiver.Defender -> Projection.hasKeyword Keyword.Defender oid gs
+        RuleWaiver.ActivationSickness -> False
    in Set.fromList
         ( do
             oid <- candidates
             target <- declarableTargets gs
-            Monad.guard (aimedAt oid target || gatedAt oid target)
+            Monad.guard (aimedAt oid target || gatedAt oid target || outOfReach oid target)
             pure (oid, target)
         )
 
