@@ -621,7 +621,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Discard payload -> Zones.discard (runReplacementEffects runSubgame) resolving source controller legal chosen payload
   Effect.LoseLife payload -> Zones.loseLife (runReplacementEffects runSubgame) resolving source controller legal payload
   Effect.GainLife payload -> Zones.gainLife (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.ExchangeLifeTotals payload -> Zones.exchangeLifeTotals (runReplacementEffects runSubgame) controller legal payload
+  Effect.ExchangeLifeTotals payload -> Zones.exchangeLifeTotals (runReplacementEffects runSubgame) resolving source controller legal payload
   Effect.ExchangeValues payload -> Zones.exchangeValues (runReplacementEffects runSubgame) resolving source controller legal payload
   Effect.SetLifeTotal payload -> Zones.setLifeTotal (runReplacementEffects runSubgame) resolving source controller legal payload
   Effect.LoseGame payload -> Zones.loseGame resolving source controller legal payload

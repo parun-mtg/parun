@@ -169,6 +169,7 @@ import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
+import qualified Parun.Types.LifeExchange as LifeExchange
 import qualified Parun.Types.LifeGainR as LifeGainR
 import qualified Parun.Types.LifeLoss as LifeLoss
 import qualified Parun.Types.LifeLossPattern as LifeLossPattern
@@ -1245,7 +1246,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
       joinTwo (maybe Map.empty quantitySlots atMost) (filterSlotsOf filter_)
   Effect.LoseLife (LifeLoss.MkLifeLoss _ quantity _ _) -> quantitySlots quantity
   Effect.GainLife (PlayerQuantity.MkPlayerQuantity _ quantity) -> quantitySlots quantity
-  Effect.ExchangeLifeTotals sides -> exchangeSidesSlots sides
+  Effect.ExchangeLifeTotals x -> exchangeSidesSlots (LifeExchange.sides x)
   -- Both sides' references are effectObjectRefs' and effectPlayerRefs' halves.
   Effect.ExchangeValues x -> durationSlots (ExchangeValues.duration x)
   Effect.ExchangeZones {} -> Map.empty
@@ -2743,7 +2744,9 @@ boundSlots effect = case effect of
   -- (Parun.Types.LifeLoss.tally).
   Effect.LoseLife (LifeLoss.MkLifeLoss _ _ _ mTally) -> foldMap Set.singleton mTally
   Effect.GainLife {} -> Set.empty
-  Effect.ExchangeLifeTotals _ -> Set.empty
+  -- How much life the controller lost in the exchange, for Mister Negative's
+  -- "draw that many cards" (Parun.Types.LifeExchange.tally).
+  Effect.ExchangeLifeTotals x -> foldMap Set.singleton (LifeExchange.tally x)
   Effect.ExchangeValues _ -> Set.empty
   Effect.ExchangeZones _ -> Set.empty
   Effect.ExchangeCardZones _ -> Set.empty

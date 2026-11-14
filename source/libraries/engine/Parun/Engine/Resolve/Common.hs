@@ -4346,15 +4346,19 @@ bindAmountSlot resolving source slot n gs =
 -- Effect.RedistributeLifeTotals.
 --
 -- `settle` is Event.drawSeries', for the draws Lich makes in a gain's place.
-changeLifeByDelta :: Game () -> PlayerId -> Integer -> Game ()
+--
+-- Answers the SETTLED signed change, for Effect.ExchangeLifeTotals' tally.
+changeLifeByDelta :: Game () -> PlayerId -> Integer -> Game Integer
 changeLifeByDelta settle pid delta =
   if delta < 0
     then do
       settled <- Event.resolveLifeLoss settle LifeLossCause.ByEffect pid (Integer.toNaturalSaturating (negate delta))
       Event.changeLife pid (negate (toInteger settled))
+      pure (negate (toInteger settled))
     else do
       settled <- Event.resolveLifeGain settle pid (Integer.toNaturalSaturating delta)
       Event.changeLife pid (toInteger settled)
+      pure (toInteger settled)
 
 -- CR 701.23: do to a found card what the search said -- a move, a CR 701.20a
 -- reveal, or both, every move through the CR 400.7 funnel.

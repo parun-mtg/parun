@@ -48,7 +48,6 @@ import qualified Parun.Types.Earthbend as Earthbend
 import qualified Parun.Types.ExchangeBlocks as ExchangeBlocks
 import qualified Parun.Types.ExchangeCardZones as ExchangeCardZones
 import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
-import qualified Parun.Types.ExchangeSides as ExchangeSides
 import qualified Parun.Types.ExchangeValues as ExchangeValues
 import qualified Parun.Types.ExchangeZones as ExchangeZones
 import qualified Parun.Types.ExileHaunting as ExileHaunting
@@ -66,6 +65,7 @@ import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.Guess as Guess
 import qualified Parun.Types.InitiativeTarget as InitiativeTarget
 import qualified Parun.Types.LaterPayment as LaterPayment
+import qualified Parun.Types.LifeExchange as LifeExchange
 import qualified Parun.Types.LifeLoss as LifeLoss
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.MakeForetold as MakeForetold
@@ -312,9 +312,9 @@ data Effect card ability
   | -- | CR 119.3: the players the PlayerRef names each gain this much life,
     -- LoseLife's mirror but for the sign.
     GainLife PlayerQuantity.PlayerQuantity
-  | -- | CR 701.12c: the two players the ExchangeSides names exchange life
+  | -- | CR 701.12c: the two players the LifeExchange names exchange life
     -- totals, each reaching the other's previous total.
-    ExchangeLifeTotals ExchangeSides.ExchangeSides
+    ExchangeLifeTotals LifeExchange.LifeExchange
   | -- | CR 701.12g: two numerical values -- a life total, a power, a toughness --
     -- each become the other's previous value.
     ExchangeValues ExchangeValues.ExchangeValues
