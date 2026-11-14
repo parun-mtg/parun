@@ -1,0 +1,20 @@
+{
+  "description": "CR 118.12a / 107.3a / 701.6a: Syncopate asks the targeted spell's controller to pay {X}; declined, the spell is countered and exiled instead of going to its owner's graveyard",
+  "note": "bob could pay X = 2 with his Islands and declines; carol, a third seat, is never asked. The Hill Giant ends in exile, Syncopate in alice's graveyard.",
+  "board": {"active": "bob", "step": "PrecombatMain", "seats": [
+    {"name": "bob", "manaPool": "RRRR", "battlefield": [{"card": "Island", "label": "bi1"}, {"card": "Island", "label": "bi2"}, {"card": "Island", "label": "bi3"}], "hand": [{"card": "Hill Giant", "label": "giant"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "carol", "battlefield": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "alice", "manaPool": "UUU", "hand": [{"card": "Syncopate", "label": "syncopate"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$giant", "mana": [null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$syncopate", "x": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "source": "Syncopate", "do": {"ChooseToPay": {"decision": "Declines"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Tapped": {"object": "$bi1", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Syncopate", "count": 1}}}
+  ]
+}

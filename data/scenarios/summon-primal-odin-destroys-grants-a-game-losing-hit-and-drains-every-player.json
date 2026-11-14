@@ -1,0 +1,73 @@
+{
+  "description": "CR 715.3a, 715.2b, 715.4, 113.6, 510.2, 104.3e, 800.4a, 120.3: Summon: Primal Odin's chapter I destroys a creature an opponent controls; chapter II gives it a trigger that makes a player it deals combat damage to lose the game; chapter III draws two and each player loses 2 life, and the Saga is then sacrificed",
+  "note": "Turn 1: Odin enters with a lore counter; chapter I refuses alice's own Grizzly Bears and destroys bob's Craw Wurm, leaving carol's Hill Giant. Turn 4: chapter II, then Odin attacks bob alone and deals 5; bob, at 15, loses the game to the granted trigger, so carol's turn is turn 5 and alice's is turn 6 (an entry for alice at turn 6 would never come were bob still in). Turn 6: chapter III draws Volcanic Hammer and Lightning Bolt, Giant Growth staying on top, alice and carol each lose 2, and Odin goes to the graveyard (CR 715.4).",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "BBBBBB",
+        "hand": [{ "card": "Summon: Primal Odin", "label": "odin" }],
+        "battlefield": [{ "card": "Grizzly Bears", "label": "bears" }],
+        "library": [
+          { "card": "Lava Axe" },
+          { "card": "Shock" },
+          { "card": "Volcanic Hammer" },
+          { "card": "Lightning Bolt" },
+          { "card": "Giant Growth" },
+          { "card": "Island" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Craw Wurm", "label": "wurm" }],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant" }],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$odin" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "ChooseTargets": { "target": ["$bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$wurm"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Summon: Primal Odin", "kind": { "type": "Lore" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Craw Wurm", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "carol", "zone": "Battlefield", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 3, "step": "DeclareAttackers", "player": "carol", "do": { "Attack": [] } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of Summon: Primal Odin"] } } },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 4, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Summon: Primal Odin", "kind": { "type": "Lore" }, "count": 2 } } },
+    { "turn": 4, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["Summon: Primal Odin"] } },
+    { "turn": 4, "step": "DeclareAttackers", "player": "alice", "do": { "ChooseAttackTarget": "$bob" }, "source": "Summon: Primal Odin" },
+    { "turn": 4, "step": "CombatDamage", "player": "alice", "check": { "Life": { "player": "bob", "life": 15 } } },
+    { "turn": 4, "step": "CombatDamage", "player": "alice", "check": { "View": { "of": "Result", "is": null } } },
+    { "turn": 5, "step": "DeclareAttackers", "player": "carol", "do": { "Attack": [] } },
+    { "turn": 6, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of Summon: Primal Odin"] } } },
+    { "turn": 6, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 6, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 18 } } },
+    { "turn": 6, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 18 } } },
+    { "turn": 6, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Volcanic Hammer", "count": 1 } } },
+    { "turn": 6, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Lightning Bolt", "count": 1 } } },
+    { "turn": 6, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Giant Growth", "count": 0 } } },
+    { "turn": 6, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Summon: Primal Odin", "count": 0 } } },
+    { "turn": 6, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Summon: Primal Odin", "count": 1 } } }
+  ]
+}

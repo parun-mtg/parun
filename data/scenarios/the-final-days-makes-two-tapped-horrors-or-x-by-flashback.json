@@ -1,0 +1,23 @@
+{
+  "description": "CR 702.34a / 608.2c: The Final Days cast from hand creates two tapped 2/2 black Horrors; cast by flashback from the graveyard it instead creates one per creature card in your graveyard",
+  "note": "alice's graveyard holds three creature cards and a Plains, so the flashback makes 3 Horrors, not 2 and not 4; bob's four creature cards rule out counting his graveyard. The Final Days is on the stack while it resolves, so it does not count itself.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "BBBBBBBBBB", "hand": [{"card": "The Final Days", "label": "days"}], "graveyard": [{"card": "Hill Giant"}, {"card": "Grizzly Bears"}, {"card": "Goblin Piker"}, {"card": "Plains"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "graveyard": [{"card": "Hill Giant"}, {"card": "Hill Giant"}, {"card": "Hill Giant"}, {"card": "Hill Giant"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$days"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Horror Token", "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Horror Token#2", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Horror Token", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Colors", "object": "Horror Token", "is": ["Black"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "Horror Token", "subtypes": ["Horror"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "The Final Days", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "The Final Days"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Horror Token", "count": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "Horror Token#5", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "The Final Days", "count": 1}}}
+  ]
+}
