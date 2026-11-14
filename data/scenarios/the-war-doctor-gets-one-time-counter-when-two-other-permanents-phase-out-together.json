@@ -1,0 +1,179 @@
+{
+  "description": "CR 603.2c: Clever Concealment phases out two Grizzly Bears in one event, and The War Doctor's \"one or more other permanents phase out\" triggers once.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "The War Doctor",
+            "label": "doc"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bear"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bear-2"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Clever Concealment",
+            "label": "concealment"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$concealment",
+          "targets": [
+            "$bear",
+            "$bear-2"
+          ],
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4"
+          ],
+          "cost": [
+            {
+              "type": "Generic",
+              "value": 2
+            },
+            {
+              "type": "OfType",
+              "value": {
+                "type": "Colored",
+                "value": "White"
+              }
+            },
+            {
+              "type": "OfType",
+              "value": {
+                "type": "Colored",
+                "value": "White"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $doc"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$doc",
+          "kind": {
+            "type": "Time"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Grizzly Bears",
+          "count": 0
+        }
+      }
+    }
+  ]
+}

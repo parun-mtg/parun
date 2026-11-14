@@ -575,6 +575,8 @@ library codec
     Parun.Codec.CouldProduce
     Parun.Codec.CouldProduceSpec
     Parun.Codec.Count
+    Parun.Codec.CountedAgainst
+    Parun.Codec.CountedAgainstSpec
     Parun.Codec.CountedDiscard
     Parun.Codec.CountedDiscardSpec
     Parun.Codec.Counter
@@ -1315,6 +1317,8 @@ library codec
     Parun.Codec.PermanentActed
     Parun.Codec.PermanentAction
     Parun.Codec.PermanentActionSpec
+    Parun.Codec.PermanentActsTrigger
+    Parun.Codec.PermanentActsTriggerSpec
     Parun.Codec.PermanentBecomesDesignated
     Parun.Codec.PermanentBecomesDesignatedSpec
     Parun.Codec.PermanentCandidate
@@ -2958,6 +2962,7 @@ library types
     Parun.Types.CostSubject
     Parun.Types.CouldProduce
     Parun.Types.Count
+    Parun.Types.CountedAgainst
     Parun.Types.CountedDiscard
     Parun.Types.Counter
     Parun.Types.Counterability
@@ -3390,6 +3395,7 @@ library types
     Parun.Types.PerformerR
     Parun.Types.PermanentActed
     Parun.Types.PermanentAction
+    Parun.Types.PermanentActsTrigger
     Parun.Types.PermanentBecomesDesignated
     Parun.Types.PermanentCandidate
     Parun.Types.PermanentIsDealtDamage

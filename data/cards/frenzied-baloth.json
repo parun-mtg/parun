@@ -1,0 +1,78 @@
+{
+  "faces": [
+    {
+      "counterability": {
+        "type": "CantBeCountered"
+      },
+      "keywords": [
+        {
+          "type": "Haste"
+        },
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Frenzied Baloth",
+      "oracleText": "This spell can't be countered.\nTrample, haste\nCreature spells you control can't be countered.\nCombat damage can't be prevented.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "CantBeCountered",
+            "value": {
+              "countered": {
+                "type": "HasCardType",
+                "value": "Creature"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        },
+        {
+          "effect": {
+            "type": "DamageCantBePrevented",
+            "value": {
+              "whichKind": "Combat"
+            }
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Beast"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

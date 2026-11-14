@@ -1,0 +1,124 @@
+{
+  "faces": [
+    {
+      "enchant": [
+        {
+          "filter": {
+            "type": "And",
+            "value": [
+              {
+                "type": "HasCardType",
+                "value": "Artifact"
+              },
+              {
+                "type": "HeldBy",
+                "value": {
+                  "holder": "Controller",
+                  "relation": "You"
+                }
+              }
+            ]
+          },
+          "pool": {
+            "type": "Permanents"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Hardlight Containment",
+      "oracleText": "Enchant artifact you control\nWhen this Aura enters, exile target creature an opponent controls until this Aura leaves the battlefield.\nEnchanted permanent has ward {1}.",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "HasAttached",
+              "value": {
+                "type": "IsSource"
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Ward",
+                "value": {
+                  "cost": {
+                    "mana": [
+                      {
+                        "type": "Generic",
+                        "value": 1
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "duration": "UntilSourceLeavesTheBattlefield",
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "zone": "Exile"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "Opponent"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

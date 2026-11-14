@@ -1,0 +1,118 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Singularity Rupture",
+      "oracleText": "Destroy all creatures, then any number of target players each mill half their library, rounded down.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        }
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  },
+                  {
+                    "type": "Mill",
+                    "value": {
+                      "player": {
+                        "type": "EachInSlot",
+                        "value": "targets"
+                      },
+                      "quantity": {
+                        "type": "Quotient",
+                        "value": {
+                          "divisor": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": []
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "Candidate"
+                                  },
+                                  "zone": "Library"
+                                }
+                              }
+                            }
+                          },
+                          "rounding": "Down"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "targets": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0
+                  }
+                },
+                "pool": {
+                  "type": "Players"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

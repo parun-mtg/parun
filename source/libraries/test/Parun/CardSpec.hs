@@ -181,6 +181,7 @@ import qualified Parun.Types.CostReduction as CostReduction
 import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.Count as Count.Type
+import qualified Parun.Types.CountedAgainst as CountedAgainst
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterDestination as CounterDestination
@@ -363,6 +364,7 @@ import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
@@ -3737,7 +3739,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- A bystander's PermanentActs DOES carry one, a predicate over the actor --
   -- Wildgrowth Walker's "a creature you control" -- which the card lint must
   -- sweep. The self-scoped reading carries nothing.
-  TriggerCondition.PermanentActs acts -> actingFilters (PermanentActed.permanent acts)
+  TriggerCondition.PermanentActs acts -> actingFilters (PermanentActed.permanent (PermanentActsTrigger.acted acts))
   -- CR 702.134c's carries none either: "equipped creature" is CR 301.5f's one
   -- permanent rather than a class of them, and "a creature" narrows by nothing.
   TriggerCondition.AttachedCreatureMentors -> []
@@ -3961,7 +3963,7 @@ playerEffectFilters playerEffect = case playerEffect of
   -- 605.1a's or 606.2's classification is a Filter. A `perEach` or per-target
   -- count's Filters are read with the same Context, so they take the same
   -- framing.
-  PlayerEffect.ModifyCost (CostModifier.MkCostModifier _ f targets perTarget perEach _ change) ->
+  PlayerEffect.ModifyCost (CostModifier.MkCostModifier _ f targets perTarget perEach _ _ change) ->
     f
       : Maybe.maybeToList targets <> foldMap (pure . PerTarget.matching) perTarget <> foldMap (fmap snd . quantityFilters) (Maybe.maybeToList (PerTarget.each =<< perTarget) <> Maybe.maybeToList perEach) <> case change of
         CostChange.Add addition -> concatMap costComponentFilters (CostAddition.components addition)
@@ -5143,7 +5145,7 @@ effectFilters effect = case effect of
   -- listed choices are judged against each candidate on the battlefield, which
   -- is neither an attach destination nor a target slot.
   Effect.Bid bid -> frame Unframed (quantityFilters (Bid.opening bid))
-  Effect.Vote (Vote.MkVote _ choices _) -> case choices of
+  Effect.Vote (Vote.MkVote _ choices _ _) -> case choices of
     VoteChoices.Objects objects -> unframed [VoteObjects.filter objects]
     -- Rule 701.38b's words carry no filter to frame.
     VoteChoices.Words _ -> []
@@ -6646,7 +6648,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- quantity, by all three checks.
   Spec.it s "the lint reaches a stored cost change's per-each count" $ do
     let ghost = SlotName.MkSlotName (Text.pack "ghost")
-        storing each = Effect.AffectPlayers (AffectPlayers.MkAffectPlayers (Duration.UntilUsed Nothing) (AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)) (PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells (Filter.Type.And []) Nothing Nothing (Just each) Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 1])))))
+        storing each = Effect.AffectPlayers (AffectPlayers.MkAffectPlayers (Duration.UntilUsed Nothing) (AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)) (PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells (Filter.Type.And []) Nothing Nothing (Just each) CountedAgainst.ChangeSource Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 1])))))
     Spec.assertEqWith s "the counted slot is read" (Map.keysSet (Resolve.slotsOf (storing (Quantity.Type.InSlot ghost)))) (Set.singleton ghost)
     Spec.assertEqWith s "CR 603.3b a count hiding a target slot is not exhaustively reported" (Resolve.slotsAreExhaustive (storing (Quantity.Type.LifeTotal (PlayerRef.InSlot ghost)))) False
     Spec.assertEqWith s "CR 107.3 a count reading X makes the effect an X reader" (Resolve.hasRead StaticRead.ReadsX [storing (Quantity.Type.InSlot Binding.variableX)]) True

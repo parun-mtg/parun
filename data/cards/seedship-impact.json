@@ -1,0 +1,179 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Seedship Impact",
+      "oracleText": "Destroy target artifact or enchantment. If its mana value was 2 or less, create a Lander token. (It's an artifact with \"{2}, {T}, Sacrifice this token: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\")",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Compares",
+                  "value": {
+                    "comparison": "AtMost",
+                    "measured": {
+                      "type": "AgainstSlot",
+                      "value": {
+                        "quantity": {
+                          "type": "Measure",
+                          "value": "ManaValue"
+                        },
+                        "slot": "target"
+                      }
+                    },
+                    "threshold": {
+                      "type": "Literal",
+                      "value": 2
+                    }
+                  }
+                },
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "activatedAbilities": [
+                              {
+                                "cost": {
+                                  "components": [
+                                    {
+                                      "type": "TapThis"
+                                    },
+                                    {
+                                      "type": "SacrificeThis"
+                                    }
+                                  ],
+                                  "mana": [
+                                    {
+                                      "type": "Generic",
+                                      "value": 2
+                                    }
+                                  ]
+                                },
+                                "modal": {
+                                  "modes": [
+                                    {
+                                      "clauses": [
+                                        {
+                                          "effects": [
+                                            {
+                                              "type": "Search",
+                                              "value": {
+                                                "destination": "BattlefieldTapped",
+                                                "filter": {
+                                                  "type": "And",
+                                                  "value": [
+                                                    {
+                                                      "type": "HasCardType",
+                                                      "value": "Land"
+                                                    },
+                                                    {
+                                                      "type": "HasSupertype",
+                                                      "value": "Basic"
+                                                    }
+                                                  ]
+                                                },
+                                                "owner": {
+                                                  "type": "Relative",
+                                                  "value": "You"
+                                                },
+                                                "quantity": {
+                                                  "type": "Literal",
+                                                  "value": 1
+                                                },
+                                                "searcher": {
+                                                  "type": "Relative",
+                                                  "value": "You"
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "name": "Lander Token",
+                            "typeLine": {
+                              "subtypes": [
+                                "Lander"
+                              ],
+                              "types": [
+                                "Artifact"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "Or",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Artifact"
+                    },
+                    {
+                      "type": "HasCardType",
+                      "value": "Enchantment"
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "Permanents"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

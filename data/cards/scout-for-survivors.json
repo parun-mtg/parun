@@ -1,0 +1,100 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Scout for Survivors",
+      "oracleText": "Return up to three target creature cards with total mana value 3 or less from your graveyard to the battlefield. Put a +1/+1 counter on each of them.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "origin": "Graveyard",
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "slot": "returned",
+                      "zone": "Battlefield"
+                    }
+                  },
+                  {
+                    "type": "PutCounters",
+                    "value": {
+                      "kind": {
+                        "type": "PlusOnePlusOne"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "returned"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "count": {
+                  "type": "Printed",
+                  "value": {
+                    "least": 0,
+                    "most": 3
+                  }
+                },
+                "filter": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "pool": {
+                  "type": "CardsInGraveyard",
+                  "value": {
+                    "type": "Scoped",
+                    "value": {
+                      "type": "You"
+                    }
+                  }
+                },
+                "total": {
+                  "most": {
+                    "type": "Literal",
+                    "value": 3
+                  },
+                  "weight": {
+                    "type": "Measure",
+                    "value": "ManaValue"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

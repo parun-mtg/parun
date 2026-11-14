@@ -6,6 +6,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import qualified Parun.Codec.CostChange as CostChange
 import qualified Parun.Codec.CostSubject as CostSubject
+import qualified Parun.Codec.CountedAgainst as CountedAgainst
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.PerTarget as PerTarget
@@ -18,10 +19,12 @@ import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.CostChange as CostChange.Type
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostSubject as CostSubject.Type
+import qualified Parun.Types.CountedAgainst as CountedAgainst.Type
 
 -- | A bare object keyed by the record's field names. The four Maybe criteria
 -- are DEFAULTED to Nothing, a sentence that names no target, no "for each"
--- and no "first", so a card file writes only the ones it prints.
+-- and no "first", so a card file writes only the ones it prints;
+-- `countedAgainst` to the change's source, and refused beside no `perEach`.
 --
 -- Refused ('Fields.objectWith''s check): `onlyFirst` beside `whichLoyalty`, which no card
 -- exercises -- Scryfall o:"first" o:"loyalty abilit" o:"cost", 2026-10-10,
@@ -36,6 +39,7 @@ codec = Fields.objectWith check $ do
   whichTargets <- Fields.defaulted "whichTargets" Nothing (Common.maybe (Filter.codec Keyword.codec)) CostModifier.whichTargets
   perTarget <- Fields.defaulted "perTarget" Nothing (Common.maybe PerTarget.codec) CostModifier.perTarget
   perEach <- Fields.defaulted "perEach" Nothing (Common.maybe Quantity.codec) CostModifier.perEach
+  countedAgainst <- Fields.defaulted "countedAgainst" CountedAgainst.Type.ChangeSource CountedAgainst.codec CostModifier.countedAgainst
   onlyFirst <- Fields.defaulted "onlyFirst" Nothing (Common.maybe TurnScope.codec) CostModifier.onlyFirst
   change <- Fields.required "change" CostChange.codec CostModifier.change
   pure
@@ -45,11 +49,15 @@ codec = Fields.objectWith check $ do
         CostModifier.whichTargets = whichTargets,
         CostModifier.perTarget = perTarget,
         CostModifier.perEach = perEach,
+        CostModifier.countedAgainst = countedAgainst,
         CostModifier.onlyFirst = onlyFirst,
         CostModifier.change = change
       }
   where
-    check modifier = case (CostModifier.subject modifier, CostModifier.onlyFirst modifier) of
+    check modifier = case (CostModifier.perEach modifier, CostModifier.countedAgainst modifier) of
+      (Nothing, CountedAgainst.Type.PaidFor) -> Left (Text.pack "CostModifier: countedAgainst without perEach counts nothing")
+      _ -> onlyFirstCheck modifier
+    onlyFirstCheck modifier = case (CostModifier.subject modifier, CostModifier.onlyFirst modifier) of
       (_, Nothing) -> additionCheck modifier
       (CostSubject.Type.Spells, Just _) -> additionCheck modifier
       (CostSubject.Type.Activations criteria, Just _)

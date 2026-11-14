@@ -1,0 +1,103 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Scour for Scrap",
+      "oracleText": "Choose one or both —\n• Search your library for an artifact card, reveal it, put it into your hand, then shuffle.\n• Return target artifact card from your graveyard to your hand.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Search",
+                    "value": {
+                      "destination": "RevealThenHand",
+                      "filter": {
+                        "type": "HasCardType",
+                        "value": "Artifact"
+                      },
+                      "owner": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "searcher": {
+                        "type": "Relative",
+                        "value": "You"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "origin": "Graveyard",
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "HasCardType",
+                  "value": "Artifact"
+                },
+                "pool": {
+                  "type": "CardsInGraveyard",
+                  "value": {
+                    "type": "Scoped",
+                    "value": {
+                      "type": "You"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "selection": {
+          "type": "ChooseBetween",
+          "value": {
+            "least": 1,
+            "most": 2
+          }
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

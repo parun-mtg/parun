@@ -1,0 +1,202 @@
+{
+  "faces": [
+    {
+      "additionalCosts": [
+        {
+          "type": "Sacrifice",
+          "value": {
+            "count": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "whichPermanents": {
+              "type": "Or",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Artifact"
+                },
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Scrounge for Eternity",
+      "oracleText": "As an additional cost to cast this spell, sacrifice an artifact or creature.\nReturn target creature or Spacecraft card with mana value 5 or less from your graveyard to the battlefield. Then create a Lander token. (It's an artifact with \"{2}, {T}, Sacrifice this token: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\")",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "origin": "Graveyard",
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      },
+                      "zone": "Battlefield"
+                    }
+                  },
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "activatedAbilities": [
+                              {
+                                "cost": {
+                                  "components": [
+                                    {
+                                      "type": "TapThis"
+                                    },
+                                    {
+                                      "type": "SacrificeThis"
+                                    }
+                                  ],
+                                  "mana": [
+                                    {
+                                      "type": "Generic",
+                                      "value": 2
+                                    }
+                                  ]
+                                },
+                                "modal": {
+                                  "modes": [
+                                    {
+                                      "clauses": [
+                                        {
+                                          "effects": [
+                                            {
+                                              "type": "Search",
+                                              "value": {
+                                                "destination": "BattlefieldTapped",
+                                                "filter": {
+                                                  "type": "And",
+                                                  "value": [
+                                                    {
+                                                      "type": "HasCardType",
+                                                      "value": "Land"
+                                                    },
+                                                    {
+                                                      "type": "HasSupertype",
+                                                      "value": "Basic"
+                                                    }
+                                                  ]
+                                                },
+                                                "owner": {
+                                                  "type": "Relative",
+                                                  "value": "You"
+                                                },
+                                                "quantity": {
+                                                  "type": "Literal",
+                                                  "value": 1
+                                                },
+                                                "searcher": {
+                                                  "type": "Relative",
+                                                  "value": "You"
+                                                }
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              }
+                            ],
+                            "name": "Lander Token",
+                            "typeLine": {
+                              "subtypes": [
+                                "Lander"
+                              ],
+                              "types": [
+                                "Artifact"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HasSubtype",
+                          "value": "Spacecraft"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Measures",
+                      "value": {
+                        "comparison": "AtMost",
+                        "measure": "ManaValue",
+                        "operand": {
+                          "type": "Literal",
+                          "value": 5
+                        }
+                      }
+                    }
+                  ]
+                },
+                "pool": {
+                  "type": "CardsInGraveyard",
+                  "value": {
+                    "type": "Scoped",
+                    "value": {
+                      "type": "You"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

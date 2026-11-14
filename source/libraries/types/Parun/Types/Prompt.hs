@@ -326,8 +326,10 @@ data Prompt r where
   -- players -- this player votes for; the seats are asked one at a time,
   -- starting with the one the effect specifies and proceeding in turn order.
   -- Not raised for one candidate, where rule 701.38a's list holds a single
-  -- choice and voting decides nothing.
-  ChooseVote :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty (BallotChoice.BallotChoice ObjectId.ObjectId) -> Prompt (BallotChoice.BallotChoice ObjectId.ObjectId)
+  -- choice and voting decides nothing. The Bool offers casting no ballot
+  -- (Nothing), Parun.Types.Vote's upToOne, and is then raised for one
+  -- candidate too.
+  ChooseVote :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty (BallotChoice.BallotChoice ObjectId.ObjectId) -> Bool -> Prompt (Maybe (BallotChoice.BallotChoice ObjectId.ObjectId))
   -- | Which one of these counter kinds, the CounterKindFor saying what for: a
   -- CR 122.5 move or a CR 614.1c entry. Not raised for one kind.
   -- Parun.Engine.Replay answers each CounterKindFor with its own Response

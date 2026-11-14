@@ -1,0 +1,126 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Hemosymbic Mite",
+      "oracleText": "Whenever this creature becomes tapped, another target creature you control gets +X/+X until end of turn, where X is this creature's power.",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "BecomesTapState",
+            "value": {
+              "actor": {
+                "type": "Self"
+              },
+              "status": "Tapped"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "NonNegative",
+                                "value": {
+                                  "type": "AgainstSlot",
+                                  "value": {
+                                    "quantity": {
+                                      "type": "Measure",
+                                      "value": "Power"
+                                    },
+                                    "slot": "self"
+                                  }
+                                }
+                              },
+                              "toughness": {
+                                "type": "NonNegative",
+                                "value": {
+                                  "type": "AgainstSlot",
+                                  "value": {
+                                    "quantity": {
+                                      "type": "Measure",
+                                      "value": "Power"
+                                    },
+                                    "slot": "self"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsSource"
+                          }
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Mite"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

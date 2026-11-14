@@ -1,0 +1,178 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Mizzix of the Izmagnus",
+      "oracleText": "Whenever you cast an instant or sorcery spell with mana value greater than the number of experience counters you have, you get an experience counter.\nInstant and sorcery spells you cast cost {1} less to cast for each experience counter you have.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "ModifyCost",
+            "value": {
+              "change": {
+                "type": "Reduce",
+                "value": {
+                  "amount": [
+                    {
+                      "type": "Generic",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              "matching": {
+                "type": "Or",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Instant"
+                  },
+                  {
+                    "type": "HasCardType",
+                    "value": "Sorcery"
+                  }
+                ]
+              },
+              "perEach": {
+                "type": "PlayerCounters",
+                "value": {
+                  "kind": "Experience",
+                  "player": {
+                    "type": "Relative",
+                    "value": "You"
+                  }
+                }
+              },
+              "subject": {
+                "type": "Spells"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Instant"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Sorcery"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Measures",
+                      "value": {
+                        "comparison": "GreaterThan",
+                        "measure": "ManaValue",
+                        "operand": {
+                          "type": "YourCounters",
+                          "value": "Experience"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "GainPlayerCounters",
+                        "value": {
+                          "kind": "Experience",
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Goblin",
+          "Wizard"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
