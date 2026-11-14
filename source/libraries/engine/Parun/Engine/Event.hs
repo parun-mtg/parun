@@ -10279,9 +10279,9 @@ attachAsThoughCreature = attachVia Attach.attachmentAsThoughCreature
 attachVia :: (ObjectId -> Recipient.Recipient -> GameState -> Maybe Recipient.Recipient) -> ObjectId -> Recipient.Recipient -> Game ()
 attachVia legality subject destination = do
   gs <- State.get
-  case legality subject destination gs of
+  case Attach.moveFor legality subject destination gs of
     Nothing -> pure ()
-    Just attachment -> Monad.unless (fmap Object.attachedTo (Game.lookupObject subject gs) == Just (Just attachment)) $ do
+    Just attachment -> do
       -- CR 613.7k: the stickers on it take new timestamps right after this CR
       -- 613.7e one. A regression fence: no test attaches a stickered permanent.
       let (ts, gs1) = Game.freshTimestamp gs
@@ -10298,8 +10298,8 @@ attachVia legality subject destination = do
       -- event recorded ahead of it would be thrown away with the rest of the
       -- pre-move state.
       --
-      -- The equality guard above is what keeps a re-attach to the SAME host from
-      -- reaching here: CR 701.3b makes that "do nothing", so neither event fires.
+      -- Attach.moveFor is what keeps a re-attach to the SAME host from reaching
+      -- here: CR 701.3b makes that "do nothing", so neither event fires.
       Monad.forM_ (Game.lookupObject subject gs >>= Object.attachedTo) (unattach gs subject)
       becameAttached subject attachment
 

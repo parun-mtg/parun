@@ -832,6 +832,25 @@ Entries are ordered by the first rule each cites.
   `nihiloor-taps-for-every-opponent-at-once`.
 - **Issue**: #3886.
 
+## Whether an attach to the host it is already on can be chosen
+
+- **Question**: A "you may attach it to target creature. If you do, ..."
+  whose permanent is already attached to that creature: CR 701.3b says the
+  attach "does nothing". Is it still an option to choose, so a yes applies
+  the riders?
+- **Rules**: CR 608.2d, 701.3b, 118.12; CR of 2026-11-06. Magitek Scythe has
+  no ruling.
+- **Decision**: No. An instruction after which nothing at all has happened is
+  impossible under CR 608.2d, the reading every other opcode takes, so it is
+  not offered and its "if you do" riders never apply.
+- **Rejected**: Offering it, the attach being legal and merely idle. CR
+  701.3b gives it the same result as an illegal attach -- nothing moves --
+  and the riders would then hang on an instruction that changed nothing.
+- **Site**: `Parun.Engine.Resolve.Common.effectIsImpossible`'s attach arms,
+  through `Parun.Engine.Attach.moveFor`. Proved by the scenario
+  `cr-701-3b-magitek-scythe-already-attached-to-its-target-offers-no-attach`.
+- **Issue**: #5416.
+
 ## Which board an entry inside a batch collects replacement effects from
 
 - **Question**: When an entry is contained in a CR 608.2f batch, does its CR
