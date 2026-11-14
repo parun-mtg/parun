@@ -15,7 +15,7 @@
         }
       ],
       "name": "Suplex",
-      "oracleText": "Choose one \u2014\n\u2022 Suplex deals 3 damage to target creature. If that creature would die this turn, exile it instead.\n\u2022 Exile target artifact.",
+      "oracleText": "Choose one —\n• Suplex deals 3 damage to target creature. If that creature would die this turn, exile it instead.\n• Exile target artifact.",
       "spell": {
         "modes": [
           {

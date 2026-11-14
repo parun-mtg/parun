@@ -1,36 +1,8 @@
 {
-  "description": "CR 715.2b, 715.2c, 603.7b, 508.3a, 611.2a: Summon: Leviathan's chapter I returns every creature that isn't a Kraken, Leviathan, Merfolk, Octopus or Serpent to its owner's hand, and its chapter II draws a card for each such creature that attacks until end of turn",
-  "note": "Chapter I keeps one creature of each of the five subtypes, the Saga itself the Leviathan, across three seats, and bounces a non-sea creature from each seat, each to its owner. Alice recasts her Grizzly Bears; on turn 4 chapter II is followed by an attack with the Saga, Slinking Serpent and the Bears, which draws two Islands for the two sea creatures and none for the Bears. In bob's turn the delayed trigger has ended, so his attacking Merfolk draws alice nothing.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "manaPool": "UUUUUU",
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
-        "hand": [
-          {
-            "card": "Summon: Leviathan",
-            "label": "lev"
-          }
-        ],
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -48,27 +20,34 @@
             "card": "Forest",
             "label": "f2"
           }
-        ]
-      },
-      {
-        "name": "bob",
-        "library": [
+        ],
+        "hand": [
           {
-            "card": "Plains"
-          },
-          {
-            "card": "Plains"
-          },
-          {
-            "card": "Plains"
-          },
-          {
-            "card": "Plains"
-          },
-          {
-            "card": "Plains"
+            "card": "Summon: Leviathan",
+            "label": "lev"
           }
         ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UUUUUU",
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
             "card": "Augur of Bolas",
@@ -78,10 +57,7 @@
             "card": "Hill Giant",
             "label": "b-giant"
           }
-        ]
-      },
-      {
-        "name": "carol",
+        ],
         "library": [
           {
             "card": "Plains"
@@ -99,6 +75,9 @@
             "card": "Plains"
           }
         ],
+        "name": "bob"
+      },
+      {
         "battlefield": [
           {
             "card": "Caelorna, Coral Tyrant",
@@ -112,290 +91,311 @@
             "card": "Craw Wurm",
             "label": "c-wurm"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 715.2b, 715.2c, 603.7b, 508.3a, 611.2a: Summon: Leviathan's chapter I returns every creature that isn't a Kraken, Leviathan, Merfolk, Octopus or Serpent to its owner's hand, and its chapter II draws a card for each such creature that attacks until end of turn",
+  "note": "Chapter I keeps one creature of each of the five subtypes, the Saga itself the Leviathan, across three seats, and bounces a non-sea creature from each seat, each to its owner. Alice recasts her Grizzly Bears; on turn 4 chapter II is followed by an attack with the Saga, Slinking Serpent and the Bears, which draws two Islands for the two sea creatures and none for the Bears. In bob's turn the delayed trigger has ended, so his attacking Merfolk draws alice nothing.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$lev",
           "mana": [
             null
-          ]
+          ],
+          "object": "$lev"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Hand",
           "card": "Grizzly Bears",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "bob",
-          "zone": "Hand",
           "card": "Hill Giant",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "Count": {
-          "player": "carol",
-          "zone": "Hand",
-          "card": "Craw Wurm",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
-          "card": "Summon: Leviathan",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
-          "card": "Slinking Serpent",
-          "count": 1
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "Count": {
+          "count": 1,
           "player": "bob",
-          "zone": "Battlefield",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Craw Wurm",
+          "count": 1,
+          "player": "carol",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Summon: Leviathan",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Slinking Serpent",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
           "card": "Augur of Bolas",
-          "count": 1
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "carol",
-          "zone": "Battlefield",
           "card": "Caelorna, Coral Tyrant",
-          "count": 1
+          "count": 1,
+          "player": "carol",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "carol",
-          "zone": "Battlefield",
           "card": "Kraken Hatchling",
-          "count": 1
+          "count": 1,
+          "player": "carol",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "Grizzly Bears",
           "mana": [
             "$f1",
             "$f2"
-          ]
+          ],
+          "object": "Grizzly Bears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Hand",
           "card": "Island",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": [
           "Summon: Leviathan",
           "$a-serpent",
           "Grizzly Bears"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "ChooseAttackTarget": "$bob"
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "ChooseAttackTarget": "$bob"
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "ChooseAttackTarget": "$bob"
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Hand",
           "card": "Island",
-          "count": 3
+          "count": 3,
+          "player": "alice",
+          "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 4
     },
     {
-      "turn": 5,
-      "step": "DeclareAttackers",
-      "player": "bob",
       "do": {
         "Attack": [
           "$b-augur"
         ]
-      }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 5
     },
     {
-      "turn": 5,
-      "step": "DeclareAttackers",
-      "player": "bob",
       "do": {
         "ChooseAttackTarget": "$carol"
-      }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 5
     },
     {
-      "turn": 5,
-      "step": "PostcombatMain",
-      "player": "bob",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Hand",
           "card": "Island",
-          "count": 3
+          "count": 3,
+          "player": "alice",
+          "zone": "Hand"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 5
     },
     {
-      "turn": 2,
-      "step": "DeclareAttackers",
-      "player": "bob",
       "do": {
         "Attack": []
-      }
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
     },
     {
-      "turn": 3,
-      "step": "DeclareAttackers",
-      "player": "carol",
       "do": {
         "Attack": []
-      }
-    },
-    {
-      "turn": 4,
-      "step": "DeclareBlockers",
-      "player": "bob",
-      "do": {
-        "Block": {}
-      }
-    },
-    {
-      "turn": 5,
-      "step": "DeclareBlockers",
+      },
       "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
       "do": {
         "Block": {}
-      }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "carol",
+      "step": "DeclareBlockers",
+      "turn": 5
     }
   ]
 }

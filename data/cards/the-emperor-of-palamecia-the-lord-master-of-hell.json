@@ -242,7 +242,7 @@
         "Red"
       ],
       "name": "The Lord Master of Hell",
-      "oracleText": "Starfall — Whenever The Lord Master of Hell attacks, it deals X damage to each opponent, where X is the number of noncreature, nonland cards in your graveyard.",
+      "oracleText": "Starfall \u2014 Whenever The Lord Master of Hell attacks, it deals X damage to each opponent, where X is the number of noncreature, nonland cards in your graveyard.",
       "power": {
         "type": "Literal",
         "value": 3
@@ -280,13 +280,6 @@
                                   "filter": {
                                     "type": "And",
                                     "value": [
-                                      {
-                                        "type": "Not",
-                                        "value": {
-                                          "type": "HasCardType",
-                                          "value": "Creature"
-                                        }
-                                      },
                                       {
                                         "type": "Not",
                                         "value": {

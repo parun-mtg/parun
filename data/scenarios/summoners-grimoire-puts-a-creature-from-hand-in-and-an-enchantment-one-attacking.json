@@ -1,33 +1,341 @@
 {
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "attached": "bears",
+            "card": "Summoner's Grimoire",
+            "label": "grimoire"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Nyxborn Courser",
+            "label": "courser"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "ogre"
+          },
+          {
+            "card": "Nyxborn Seaguard",
+            "label": "seaguard"
+          },
+          {
+            "card": "Opt",
+            "label": "opt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
   "description": "CR 301.5a / 205.1b / 508.4 / 110.5b: Summoner's Grimoire makes its creature a Shaman with an attack trigger that may put a creature card from hand onto the battlefield, an enchantment one tapped and attacking",
   "note": "Turn 1 puts Nyxborn Courser (an enchantment creature) in tapped and attacking carol while the Bears attack bob; turn 4 puts Hill Giant (not an enchantment) in untapped and not attacking. Two cards of each kind sit in hand so every card choice is asked; the Opt is never offered.",
-  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
-    {"name": "alice", "battlefield": [{"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Summoner's Grimoire", "label": "grimoire", "attached": "bears"}], "hand": [{"card": "Nyxborn Courser", "label": "courser"}, {"card": "Hill Giant", "label": "giant"}, {"card": "Gray Ogre", "label": "ogre"}, {"card": "Nyxborn Seaguard", "label": "seaguard"}, {"card": "Opt", "label": "opt"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
-    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
-    {"name": "carol", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
-  ]},
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "$bears", "subtypes": ["Bear", "Shaman"]}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears"]}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseAttackTarget": "$bob"}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseClause", "with": 1}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseCardInHand", "with": "$giant"}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardInHand", "with": "$courser"}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseAttackTarget": "$carol"}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Tapped": {"object": "Nyxborn Courser", "tapped": true}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Attackers": {"attackers": {"$bears": "$bob", "Nyxborn Courser": "$carol"}}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Hill Giant", "count": 1}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Nyxborn Seaguard", "count": 1}}},
-    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears"]}},
-    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseAttackTarget": "$bob"}},
-    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
-    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseClause", "with": 0}}},
-    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseCardInHand", "with": "$seaguard"}}},
-    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardInHand", "with": "$giant"}}},
-    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
-    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "check": {"Tapped": {"object": "Hill Giant", "tapped": false}}},
-    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "check": {"Attackers": {"attackers": {"$bears": "$bob"}}}},
-    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Gray Ogre", "count": 1}}}
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$bears",
+          "subtypes": [
+            "Bear",
+            "Shaman"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseClause",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardInHand",
+          "with": "$giant"
+        }
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInHand",
+          "with": "$courser"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$carol"
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Nyxborn Courser",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$bears": "$bob",
+            "Nyxborn Courser": "$carol"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Nyxborn Seaguard",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseClause",
+          "with": 0
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardInHand",
+          "with": "$seaguard"
+        }
+      },
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInHand",
+          "with": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "Hill Giant",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$bears": "$bob"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Gray Ogre",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    }
   ]
 }
