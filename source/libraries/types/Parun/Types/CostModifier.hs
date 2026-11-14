@@ -7,7 +7,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.Quantity as Quantity
-import qualified Parun.Types.TurnScope as TurnScope
+import qualified Parun.Types.TurnOrdinal as TurnOrdinal
 
 -- | The payload of Parun.Types.PlayerEffect's ModifyCost arm: CR 601.2f's
 -- increase, reduction or additional cost, applied by a CR 613.11 effect to the
@@ -46,13 +46,14 @@ data CostModifier = MkCostModifier
     -- | What `perEach` is counted against, and whose "you" it reads.
     countedAgainst :: CountedAgainst.CountedAgainst,
     -- | Professor Hojo's "the FIRST activated ability you activate during your
-    -- turn" and Shadow in the Warp's "the first creature spell you cast each
-    -- turn": Just a scope applies the change only in a turn the scope admits,
-    -- and only to the first matching activation or cast the player begins that
-    -- turn -- whether or not that one was changed, and whether or not this
-    -- effect existed yet (Tezzeret, Betrayer of Flesh's and Shadow in the
-    -- Warp's rulings).
-    onlyFirst :: Maybe TurnScope.TurnScope,
+    -- turn", Shadow in the Warp's "the first creature spell you cast each
+    -- turn" and Uthros Psionicist's "the SECOND spell you cast each turn":
+    -- Just applies the change only to the nth matching activation or cast the
+    -- player begins in a turn the scope admits -- whether or not an earlier
+    -- one was changed, and whether or not this effect existed yet (Tezzeret,
+    -- Betrayer of Flesh's, Shadow in the Warp's and Uthros Psionicist's
+    -- rulings).
+    onlyNth :: Maybe TurnOrdinal.TurnOrdinal,
     -- | What it does to the total cost.
     change :: CostChange.CostChange
   }

@@ -34,11 +34,14 @@
               "matching": {
                 "type": "HasActivatedAbility"
               },
-              "onlyFirst": {
-                "type": "PlayersTurn",
-                "value": {
-                  "type": "Relative",
-                  "value": "AnyPlayer"
+              "onlyNth": {
+                "ordinal": 1,
+                "scope": {
+                  "type": "PlayersTurn",
+                  "value": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  }
                 }
               },
               "subject": {
