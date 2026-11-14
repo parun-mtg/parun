@@ -4,6 +4,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.GrantZone as GrantZone
+import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PermissionCost as PermissionCost
@@ -63,6 +64,9 @@ data GrantPlayFromExile = MkGrantPlayFromExile
     -- told -- March of Reckless Joy\'s "you may play up to two of those
     -- cards". Nothing is every one of them.
     upTo :: Maybe Natural.Natural,
+    -- | CR 400.7h / 613.1f: the keywords each spell cast under it has --
+    -- Durnan of the Yawning Portal\'s "that spell has undaunted".
+    keywords :: [Keyword.Keyword],
     -- | CR 601.3: where the covered cards must lie to be granted.
     zone :: GrantZone.GrantZone
   }

@@ -11,6 +11,7 @@ import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantZone as GrantZone
+import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ObjectRef as ObjectRef
@@ -41,6 +42,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
+            GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
@@ -61,6 +63,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
+            GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
@@ -82,6 +85,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
+            GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
@@ -103,6 +107,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
+            GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
@@ -124,6 +129,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
+            GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
@@ -144,6 +150,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
+            GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
@@ -164,6 +171,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
+            GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
@@ -185,6 +193,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 1,
             GrantPlayFromExile.landEnters = TapState.Tapped,
             GrantPlayFromExile.upTo = Nothing,
+            GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
@@ -205,10 +214,32 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Just 2,
+            GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
           }
       )
       " {\"duration\":{\"type\":\"UntilEndOfYourNextTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"upTo\":2} "
+  -- Durnan of the Yawning Portal's: CR 400.7h's "that spell has undaunted".
+  Spec.it s "MkGrantPlayFromExile, a permission giving its spell a keyword" $
+    Common.assertCodec
+      s
+      GrantPlayFromExile.codec
+      ( GrantPlayFromExile.MkGrantPlayFromExile
+          { GrantPlayFromExile.duration = Duration.Indefinite,
+            GrantPlayFromExile.player = PlayerRef.Relative PlayerRelation.You,
+            GrantPlayFromExile.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "exiled")),
+            GrantPlayFromExile.spending = ManaSpending.AsProduced,
+            GrantPlayFromExile.alternativeCost = Nothing,
+            GrantPlayFromExile.condition = Nothing,
+            GrantPlayFromExile.verb = PermissionVerb.Cast,
+            GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.landEnters = TapState.Untapped,
+            GrantPlayFromExile.upTo = Nothing,
+            GrantPlayFromExile.keywords = [Keyword.Undaunted],
+            GrantPlayFromExile.zone = GrantZone.Exile
+          }
+      )
+      " {\"duration\":{\"type\":\"Indefinite\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"exiled\"},\"verb\":\"Cast\",\"keywords\":[{\"type\":\"Undaunted\"}]} "
   -- Jace, Telepath Unbound's: CR 601.3's "from your graveyard" written out.
   Spec.it s "MkGrantPlayFromExile, a graveyard permission" $
     Common.assertCodec
@@ -225,6 +256,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
+            GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Graveyard
           }
       )

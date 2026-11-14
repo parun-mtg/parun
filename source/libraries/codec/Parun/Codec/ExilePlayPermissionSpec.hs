@@ -35,9 +35,10 @@ spec s = Spec.describe s "Parun.Codec.ExilePlayPermission" $ do
           ExilePlayPermission.verb = PermissionVerb.Play,
           ExilePlayPermission.increase = 0,
           ExilePlayPermission.landEnters = TapState.Untapped,
-          ExilePlayPermission.budget = Nothing
+          ExilePlayPermission.budget = Nothing,
+          ExilePlayPermission.keywords = []
         }
-      " {\"player\":1,\"source\":2,\"expiry\":{\"type\":\"Never\"},\"spending\":\"AsProduced\",\"alternativeCost\":null,\"condition\":null,\"origin\":\"Adventure\",\"verb\":\"Play\",\"increase\":0,\"landEnters\":\"Untapped\",\"budget\":null} "
+      " {\"player\":1,\"source\":2,\"expiry\":{\"type\":\"Never\"},\"spending\":\"AsProduced\",\"alternativeCost\":null,\"condition\":null,\"origin\":\"Adventure\",\"verb\":\"Play\",\"increase\":0,\"landEnters\":\"Untapped\",\"budget\":null,\"keywords\":[]} "
   -- CR 601.3 with CR 118.14's rider, the shape Dire Fleet Daredevil writes: a
   -- granted permission lasting until end of turn, mana of any type spendable on
   -- it.
@@ -56,9 +57,10 @@ spec s = Spec.describe s "Parun.Codec.ExilePlayPermission" $ do
           ExilePlayPermission.verb = PermissionVerb.Play,
           ExilePlayPermission.increase = 0,
           ExilePlayPermission.landEnters = TapState.Untapped,
-          ExilePlayPermission.budget = Nothing
+          ExilePlayPermission.budget = Nothing,
+          ExilePlayPermission.keywords = []
         }
-      " {\"player\":3,\"source\":4,\"expiry\":{\"type\":\"AtCleanup\"},\"spending\":\"AnyType\",\"alternativeCost\":null,\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Play\",\"increase\":0,\"landEnters\":\"Untapped\",\"budget\":null} "
+      " {\"player\":3,\"source\":4,\"expiry\":{\"type\":\"AtCleanup\"},\"spending\":\"AnyType\",\"alternativeCost\":null,\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Play\",\"increase\":0,\"landEnters\":\"Untapped\",\"budget\":null,\"keywords\":[]} "
   -- CR 118.9's waiver, the shape Extract Power writes: a granted permission
   -- lasting as long as the card remains exiled, with the mana cost waived -- an
   -- alternative cost of nothing. The two riders are independent, so this one
@@ -78,9 +80,10 @@ spec s = Spec.describe s "Parun.Codec.ExilePlayPermission" $ do
           ExilePlayPermission.verb = PermissionVerb.Play,
           ExilePlayPermission.increase = 0,
           ExilePlayPermission.landEnters = TapState.Untapped,
-          ExilePlayPermission.budget = Nothing
+          ExilePlayPermission.budget = Nothing,
+          ExilePlayPermission.keywords = []
         }
-      " {\"player\":5,\"source\":6,\"expiry\":{\"type\":\"Never\"},\"spending\":\"AsProduced\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Play\",\"increase\":0,\"landEnters\":\"Untapped\",\"budget\":null} "
+      " {\"player\":5,\"source\":6,\"expiry\":{\"type\":\"Never\"},\"spending\":\"AsProduced\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Play\",\"increase\":0,\"landEnters\":\"Untapped\",\"budget\":null,\"keywords\":[]} "
   -- Lightstall Inquisitor's: CR 601.2f's increase and CR 614.1d's tapped entry.
   Spec.it s "a granted permission with Lightstall Inquisitor's riders" $
     Common.assertCodec
@@ -97,8 +100,9 @@ spec s = Spec.describe s "Parun.Codec.ExilePlayPermission" $ do
           ExilePlayPermission.verb = PermissionVerb.Play,
           ExilePlayPermission.increase = 1,
           ExilePlayPermission.landEnters = TapState.Tapped,
-          ExilePlayPermission.budget = Nothing
+          ExilePlayPermission.budget = Nothing,
+          ExilePlayPermission.keywords = []
         }
-      " {\"player\":7,\"source\":8,\"expiry\":{\"type\":\"Never\"},\"spending\":\"AsProduced\",\"alternativeCost\":null,\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Play\",\"increase\":1,\"landEnters\":\"Tapped\",\"budget\":null} "
+      " {\"player\":7,\"source\":8,\"expiry\":{\"type\":\"Never\"},\"spending\":\"AsProduced\",\"alternativeCost\":null,\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Play\",\"increase\":1,\"landEnters\":\"Tapped\",\"budget\":null,\"keywords\":[]} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s ExilePlayPermission.codec

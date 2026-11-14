@@ -5,6 +5,7 @@ module Parun.Codec.GrantPlayFromExile where
 import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.Duration as Duration
 import qualified Parun.Codec.GrantZone as GrantZone
+import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.ManaSpending as ManaSpending
 import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.PermissionCost as PermissionCost
@@ -41,6 +42,7 @@ codec = Fields.object $ do
   increase <- Fields.defaulted "increase" 0 Common.natural GrantPlayFromExile.increase
   landEnters <- Fields.defaulted "landEnters" TapState.Type.Untapped TapState.codec GrantPlayFromExile.landEnters
   upTo <- Fields.defaulted "upTo" Nothing (Common.maybe Common.natural) GrantPlayFromExile.upTo
+  keywords <- Fields.defaulted "keywords" [] (Common.list Keyword.codec) GrantPlayFromExile.keywords
   zone <- Fields.defaulted "zone" GrantZone.Type.Exile GrantZone.codec GrantPlayFromExile.zone
   pure
     GrantPlayFromExile.MkGrantPlayFromExile
@@ -54,5 +56,6 @@ codec = Fields.object $ do
         GrantPlayFromExile.increase = increase,
         GrantPlayFromExile.landEnters = landEnters,
         GrantPlayFromExile.upTo = upTo,
+        GrantPlayFromExile.keywords = keywords,
         GrantPlayFromExile.zone = zone
       }
