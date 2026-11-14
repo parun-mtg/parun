@@ -1923,10 +1923,10 @@ representativeEvents cond =
       resolvedIntoGraveyard = GameEvent.Moved (Moved.moved (ZoneChange.MkZoneChange departed arrived Zone.Stack Zone.Graveyard) S.emptyCharacteristics) {Moved.duringResolution = True}
       combatDamage =
         GameEvent.DamageDealt
-          (DamageEvent.MkDamageEvent departed (Recipient.ToPlayer S.bob) 2 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Combat)
+          (DamageEvent.MkDamageEvent departed (Recipient.ToPlayer S.bob) 2 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty DamageKind.Combat)
       combatDamageToAlice =
         GameEvent.DamageDealt
-          (DamageEvent.MkDamageEvent departed (Recipient.ToPlayer S.alice) 2 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Combat)
+          (DamageEvent.MkDamageEvent departed (Recipient.ToPlayer S.alice) 2 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty DamageKind.Combat)
       -- A row whose arm reads no arrival table, which is every arm but one.
       noTable e = (Map.empty, e)
       one e = noTable e NonEmpty.:| []
@@ -1967,7 +1967,7 @@ representativeEvents cond =
                 DamageRecipient.Permanent CardType.Planeswalker _ -> Recipient.ToPlaneswalker arrived
                 DamageRecipient.Permanent CardType.Battle _ -> Recipient.ToBattle arrived
                 DamageRecipient.Permanent {} -> Recipient.ToCreature arrived
-              events = [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent departed recipient 3 0 False False False 0 Nothing Nothing mempty False mempty Nothing kind)) | kind <- kinds, recipient <- recipients]
+              events = [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent departed recipient 3 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty kind)) | kind <- kinds, recipient <- recipients]
            in case events of
                 event : rest -> event NonEmpty.:| rest
                 [] -> one combatDamage
@@ -1976,18 +1976,18 @@ representativeEvents cond =
         -- condition admits both, as the arm above does: a floor claimed for one
         -- kind and not the other would come apart here.
         TriggerCondition.IsDealtDamage _ ->
-          noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToCreature departed) 2 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Noncombat))
-            NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToCreature departed) 3 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Combat))]
+          noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToCreature departed) 2 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty DamageKind.Noncombat))
+            NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToCreature departed) 3 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty DamageKind.Combat))]
         -- CR 120.3's event pointed at a player, alice being the "you", in both
         -- kinds for the arm above's reason. A reading that admits the player's
         -- planeswalkers admits damage to one too, so its second event names one.
         TriggerCondition.PlayerIsDealtDamage watched
           | PlayerIsDealtDamage.orTheirPlaneswalkers watched ->
-              noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlayer S.alice) 2 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Combat))
-                NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlaneswalker departed) 3 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Combat))]
+              noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlayer S.alice) 2 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty DamageKind.Combat))
+                NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlaneswalker departed) 3 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty DamageKind.Combat))]
         TriggerCondition.PlayerIsDealtDamage _ ->
-          noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlayer S.alice) 2 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Noncombat))
-            NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlayer S.alice) 3 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Combat))]
+          noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlayer S.alice) 2 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty DamageKind.Noncombat))
+            NonEmpty.:| [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent arrived (Recipient.ToPlayer S.alice) 3 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty DamageKind.Combat))]
         -- The same one event, and NOT because the batch reading matches nothing:
         -- Event.matchesTrigger answers alike for both (its batch arm delegates to
         -- DealsDamage's), CR 603.2c's once-per-step scoping living in

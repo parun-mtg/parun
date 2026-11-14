@@ -94,6 +94,11 @@ data DamageEvent = MkDamageEvent
     -- "a ... spell you controlled dealt damage"). Nothing for a source already
     -- gone.
     dealtFromZone :: Maybe Zone.Zone,
+    -- | CR 120.3: the recipient's card types as this damage was dealt
+    -- (Parun.Engine.Projection.damagedCardTypes), so "dealt damage to another
+    -- creature" reads the creature it was. Stamped with `excess` by
+    -- Parun.Engine.Damage.processDamage; empty until then and for a player.
+    recipientCardTypes :: Set.Set CardType.CardType,
     -- | CR 510 vs CR 608: combat damage or not. Set at deal time -- Damage tags
     -- Combat, Resolve's DealDamage tags Noncombat. Read by Replacement.applies's
     -- DamageR arm (CR 615.1's damage pattern).

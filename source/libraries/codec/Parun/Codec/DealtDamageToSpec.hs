@@ -4,6 +4,7 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.DealtDamageTo as DealtDamageTo
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.DamageDealer as DamageDealer
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
@@ -38,4 +39,10 @@ spec s = Spec.describe s "Parun.Codec.DealtDamageTo" $ do
       DealtDamageTo.codec
       DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.HolderOfCandidate Holder.Controller, DealtDamageTo.kind = Just DamageKind.Combat, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = DamageDealer.Source}
       " {\"party\":{\"type\":\"HolderOfCandidate\",\"value\":\"Controller\"},\"kind\":\"Combat\",\"dealer\":\"Source\"} "
+  Spec.it s "another creature" $
+    Common.assertCodec
+      s
+      DealtDamageTo.codec
+      DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Another CardType.Creature, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = DamageDealer.Candidate}
+      " {\"party\":{\"type\":\"Another\",\"value\":\"Creature\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s DealtDamageTo.codec

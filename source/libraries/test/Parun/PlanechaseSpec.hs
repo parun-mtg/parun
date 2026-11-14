@@ -1040,7 +1040,7 @@ raidersSpec s registry = Spec.describe s "Raiders' Allegiance" $ do
                       }
                 }
             )
-        hit target = DamageEvent.MkDamageEvent pikerId (Recipient.ToPlayer target) 1 0 False False False 0 Nothing Nothing mempty False mempty Nothing
+        hit target = DamageEvent.MkDamageEvent pikerId (Recipient.ToPlayer target) 1 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty
         damaged = S.runPure S.identityAnswer (begin Phase.PrecombatMain stocked) (Damage.applyDamage (pure ()) [hit S.bob DamageKind.Combat, hit S.carol DamageKind.Combat, hit S.dave DamageKind.Noncombat])
         raided = S.runPure S.identityAnswer (begin Phase.PostcombatMain damaged) Engine.priorityLoop
     Spec.assertEqWith s "CR 510.2 two players took combat damage: alice has two point counters" (S.playerCounterOf PlayerCounterKind.Point S.alice raided) 2
@@ -1067,7 +1067,7 @@ raidersSpec s registry = Spec.describe s "Raiders' Allegiance" $ do
                       }
                 }
             )
-        hit source target = DamageEvent.MkDamageEvent source (Recipient.ToPlayer target) 1 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Combat
+        hit source target = DamageEvent.MkDamageEvent source (Recipient.ToPlayer target) 1 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty DamageKind.Combat
         damaged = S.runPure S.identityAnswer (begin Phase.PrecombatMain ranged) (Damage.applyDamage (pure ()) [hit alicePiker S.bob, hit davePiker S.carol])
         raided = S.runPure S.identityAnswer (begin Phase.PostcombatMain damaged) Engine.priorityLoop
     Spec.assertEqWith s "CR 801.18 two players took combat damage: alice has two point counters" (S.playerCounterOf PlayerCounterKind.Point S.alice raided) 2
