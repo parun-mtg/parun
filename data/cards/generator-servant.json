@@ -38,7 +38,17 @@
                               "type": "HasCardType",
                               "value": "Creature"
                             },
-                            "effect": "GainsHasteUntilEndOfTurn"
+                            "effect": {
+                              "type": "GainsKeyword",
+                              "value": {
+                                "duration": {
+                                  "type": "UntilEndOfTurn"
+                                },
+                                "keyword": {
+                                  "type": "Haste"
+                                }
+                              }
+                            }
                           }
                         }
                       }

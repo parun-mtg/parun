@@ -19,7 +19,6 @@ import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
-import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
@@ -56,7 +55,7 @@ uncounterable oid gs = case Game.lookupObject oid gs of
   Just object ->
     let stops rider = case ManaRider.effect rider of
           ManaRiderEffect.CantBeCountered -> matchesCondition oid gs rider
-          ManaRiderEffect.GainsHasteUntilEndOfTurn -> False
+          ManaRiderEffect.GainsKeyword {} -> False
      in any (maybe False stops . ManaUnit.rider) (Mana.unwrap (Object.manaSpent object))
 
 -- | CR 106.6a's eager road, and the one CR 611.2 effect in the engine that no
@@ -80,7 +79,7 @@ uncounterable oid gs = case Game.lookupObject oid gs of
 -- `source` is the object being paid for and not the mana's own source, which
 -- Parun.Types.ManaUnit deliberately does not carry -- mana outlives its source
 -- and CR 400.7 mints a fresh id on every zone change, so there is no id left to
--- name. Nothing here reads it: an AtCleanup expiry consults no source
+-- name. Nothing here reads it: an AtCleanup or Never expiry consults no source
 -- (Parun.Engine.Expiry's sweep), and an Affected.TheseObjects set names its
 -- objects without one (Parun.Engine.Projection.affectsGiven).
 --
@@ -88,22 +87,22 @@ uncounterable oid gs = case Game.lookupObject oid gs of
 -- says why.
 granted :: ObjectId.ObjectId -> Mana.Mana -> GameState.GameState -> GameState.GameState
 granted oid spent gs =
-  let keywordOf unit = do
+  let grantOf unit = do
         rider <- ManaUnit.rider unit
-        keyword <- case ManaRider.effect rider of
+        grant <- case ManaRider.effect rider of
           ManaRiderEffect.CantBeCountered -> Nothing
-          ManaRiderEffect.GainsHasteUntilEndOfTurn -> Just Keyword.Haste
+          ManaRiderEffect.GainsKeyword keyword duration -> Just (keyword, duration)
         Monad.guard (matchesCondition oid gs rider)
-        pure keyword
-      mint g keyword = case Projection.controllerOf oid g of
+        pure grant
+      mint g (keyword, duration) = case Projection.controllerOf oid g of
         -- No controller is no CR 109.5 "you" to arm a duration against.
         -- Unreachable on this road -- the paid-for object is on the stack, and
         -- controllerOf falls back to its owner -- and written out because arm is
         -- total over Duration.
         Nothing -> g
-        Just controller -> case Expiry.arm oid Map.empty controller oid Duration.UntilEndOfTurn g of
-          -- UntilEndOfTurn always arms; this branch is written out for the same
-          -- reason, and the payment binds no slot for a duration to have named.
+        Just controller -> case Expiry.arm oid Map.empty controller oid duration g of
+          -- A duration that reads a slot does not arm: the payment binds none,
+          -- and no printed rider names one.
           Nothing -> g
           Just expiry ->
             let (ts, g1) = Game.freshTimestamp g
@@ -116,7 +115,7 @@ granted oid spent gs =
                       ContinuousEffect.affected = Affected.TheseObjects (Set.singleton oid)
                     }
              in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.continuousEffects = effect : StoredEffects.continuousEffects (GameState.stored g1)}}
-   in List.foldl' mint gs (Maybe.mapMaybe keywordOf (Mana.unwrap spent))
+   in List.foldl' mint gs (Maybe.mapMaybe grantOf (Mana.unwrap spent))
 
 -- Both roads' shared half: does this rider's printed "if that mana is spent on
 -- ..." clause hold of the object the mana paid for?

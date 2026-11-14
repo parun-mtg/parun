@@ -878,7 +878,9 @@ manaVisitors asking =
       Children.manaQuantity = Const.Const . quantityNames asking,
       Children.manaPlayer = Const.Const . playerRefNames asking,
       Children.manaSlot = Const.Const . slotNames asking,
-      Children.manaDesignator = Const.Const . keywordDesignatorNames asking
+      Children.manaDesignator = Const.Const . keywordDesignatorNames asking,
+      Children.manaKeyword = Const.Const . keywordNames asking,
+      Children.manaDuration = Const.Const . durationNames asking
     }
 
 measuresNames :: (Monoid r) => Asking r -> Measures.Measures -> r
