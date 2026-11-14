@@ -30,6 +30,7 @@ import qualified Parun.Engine.Keyword as Keyword.Engine
 import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.ManaCount as ManaCount
 import qualified Parun.Engine.ManaFilter as ManaFilter
+import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
@@ -72,7 +73,6 @@ import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DraftNote as DraftNote
-import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.ExiledPile as ExiledPile
 import qualified Parun.Types.Filter as Filter.Type
@@ -114,7 +114,6 @@ import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectCount as ObjectCount
 import Parun.Types.ObjectId (ObjectId)
-import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PendingTrigger as PendingTrigger
 import Parun.Types.PhaseSelector (PhaseSelector)
@@ -128,7 +127,6 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
-import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Sacrifice as Sacrifice
 import Parun.Types.SlotName (SlotName)
@@ -509,7 +507,7 @@ manaRoutesOfGiven pcs oid gs =
       fromSubtypes
         | Subtype.Engine.intrinsicManaAbilityOf pc =
             fmap
-              (\manaType -> (intrinsicManaCost, [], Nothing, [(intrinsicManaClause manaType, [intrinsicManaAddition manaType])]))
+              (\manaType -> (Mint.intrinsicManaCost, [], Nothing, [(Mint.intrinsicManaClause manaType, [Mint.intrinsicManaAddition manaType])]))
               (Maybe.mapMaybe Subtype.Engine.subtypeMana (Set.toList (PC.subtypes pc)))
         | otherwise = []
       context = Projection.sourceContext gs (Projection.controllerOf oid gs) oid
@@ -523,47 +521,6 @@ manaRoutesOfGiven pcs oid gs =
           (Modal.selectionClauses (ActivatedAbility.modal ability))
       fromAbilities = concatMap selectionRoutes (filter ManaAbility.isManaAbility (Projection.abilitiesGiven pcs oid gs))
    in fromSubtypes <> fromAbilities
-
--- CR 305.6's intrinsic mana ability is "{T}: Add [the type]", printed on no card
--- and so minted here rather than read off one: {T} and nothing else. What makes
--- the cost worth carrying at all is that a PRINTED mana ability's need not be
--- (Mana Confluence's is "{T}, Pay 1 life"), and CR 602.2b makes an activation
--- pay whichever it has.
-intrinsicManaCost :: Cost Keyword.Keyword
-intrinsicManaCost =
-  Cost.MkCost
-    { Cost.mana = Just (ManaCost.MkManaCost []),
-      Cost.components = [CostComponent.TapThis]
-    }
-
--- The ability above's one clause, carrying the instruction below and no rider.
-intrinsicManaClause :: ManaType -> Clause.Clause Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
-intrinsicManaClause manaType =
-  Clause.MkClause
-    { Clause.ifTaken = Nothing,
-      Clause.condition = Nothing,
-      Clause.orElse = Nothing,
-      Clause.optionality = Optionality.Mandatory,
-      Clause.payGate = Nothing,
-      Clause.effects = Seq.singleton (Effect.AddMana (intrinsicManaAddition manaType))
-    }
-
--- The instruction the ability above gives: CR 305.6 writes it out as "{T}: Add
--- [mana symbol]" and nothing more, so every field beyond the type takes the
--- value an unwritten clause means -- CR 109.5's "you", CR 106.4's ordinary loss
--- as the step ends, and neither of CR 106.6's two clauses.
-intrinsicManaAddition :: ManaType -> ManaAddition.ManaAddition
-intrinsicManaAddition manaType =
-  ManaAddition.MkManaAddition
-    { ManaAddition.player = PlayerRef.Relative PlayerRelation.You,
-      ManaAddition.production = ManaProduction.OfType manaType,
-      ManaAddition.count = Quantity.Type.Literal 1,
-      ManaAddition.retention = ManaRetention.Ordinary,
-      ManaAddition.restriction = Nothing,
-      ManaAddition.rider = Nothing,
-      ManaAddition.whenSpent = Nothing,
-      ManaAddition.choosesColor = False
-    }
 
 -- What tapping this object for mana could actually put in a pool: every route
 -- above with each ManaProduction resolved to a concrete type, so one entry per
@@ -1197,7 +1154,7 @@ pricedOptionsVisiting visited rewritesOf paid poolBoard pcs oid gs =
         | otherwise = fmap (\(manaType, amount) -> (retype manaType amount offered, retype manaType amount priced)) rewrites
       retype manaType amount option =
         let retypeMana = Mana.MkMana . fmap (\unit -> unit {ManaUnit.manaType = manaType}) . unitsOf
-            reclause clause = maybe (intrinsicManaClause manaType) (const clause) (ManaOption.ability option)
+            reclause clause = maybe (Mint.intrinsicManaClause manaType) (const clause) (ManaOption.ability option)
             steps = fmap (Bifunctor.bimap reclause (fmap retypeMana)) (ManaOption.steps option)
          in case amount of
               Nothing -> option {ManaOption.yield = fmap retypeMana (ManaOption.yield option), ManaOption.steps = steps}

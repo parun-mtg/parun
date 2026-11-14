@@ -33,7 +33,9 @@ import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
+import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
+import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.NameWords as NameWords
 import Parun.Engine.Projection.Rewrite (Modification, composeWordChanges, rewriteActivatedAbility, rewriteAffected, rewriteCharacteristicPT, rewriteCondition, rewriteModification, rewritePlayerStaticAbility, rewritePrintedReplacement, rewriteRuleAbilities, rewriteStaticAbility, rewriteTriggeredAbility)
 import Parun.Engine.Projection.View (ControlGrant, abilitiesFromCharacteristics, abilityFaceOf, abilityFaceOfId, abilitySources, controlGrants, controllerOf, controllerOfGiven, copiableCharacteristics, copiableRuleAbilitiesOf, copiableSnapshotOf, copiableSpecialActionsOf, correspondsTo, countersOf, definesColorless, definesEveryCreatureType, enchantedPlayerOf, functionsFromZone, grantedStaticAbilitiesOf, inSourceRangeGiven, lapsedGrantsOf, lastZoned, retainedThroughCardTypeSet, staticAbilitiesOf, staticTimestampOf, viewOfCard, viewOfCharacteristics, withAnnouncedX)
@@ -48,6 +50,7 @@ import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityFacts as AbilityFacts
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.AbilitySticker as AbilitySticker
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
@@ -328,8 +331,9 @@ applyWordSwaps swaps pc =
 -- side; every other arm ignores it.
 -- `textBoxOf` answers CR 612.5's "the rules text of the other object" as of the
 -- moment this effect applies: layer 3 run over the partner as far as the effects
--- strictly ahead of this one (CR 613.7). Lazy, and only the exchange arm forces
--- it. Every other arm ignores it.
+-- strictly ahead of this one (CR 613.7). Lazy; the exchange arm forces it, and
+-- the battlefield lend reads a lender through it (`resolve`'s running board).
+-- Every other arm ignores it.
 applyModification :: (ObjectId -> ProjectedCharacteristics) -> Count.ViewOf -> ObjectId -> Timestamp -> GameState -> ObjectId -> Set CardType.CardType -> Affected.Affected -> Modification -> ProjectedCharacteristics -> ProjectedCharacteristics
 applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
   let context = SourceContext.sourceContext viewOf gs (controllerOf src gs) src
@@ -525,6 +529,22 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- CR 404 / 108.2: in a graveyard, only a card, never a token awaiting
         -- CR 704.5d (Game.cardsIn).
         --
+        -- CR 403.3 / 613.8a: on the battlefield, each other permanent, lending
+        -- the abilities it has as layer 6 stands rather than its copiable
+        -- values, so the lend waits for an effect changing them (changesGrant).
+        -- The manascape-refractor-* scenarios prove it.
+        --
+        -- CR 305.6: a land with a basic land type lends its intrinsic mana
+        -- ability, in any zone; the scenario
+        -- mairsil-the-pretender-has-a-caged-dryad-arbor-s-intrinsic-mana-ability
+        -- proves one in exile.
+        --
+        -- CR 605.1a: where the payload names one kind of activated ability,
+        -- only that kind (Sharkey, Tyrant of the Shire's "except mana
+        -- abilities"), which
+        -- sharkey-tyrant-of-the-shire-has-opponents-land-abilities-except-mana-abilities
+        -- proves.
+        --
         -- CR 702.1: a keyword's activated ability is one of them (the ruling on
         -- Koh, the Face Stealer), proved by the scenario
         -- koh-the-face-stealer-has-an-activated-keyword-of-the-chosen-card.
@@ -560,23 +580,35 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- prove the triggered and the activated reader, and
         -- koh-the-face-stealer-s-borrowed-delayed-trigger-arms-a-second the
         -- title.
-        Modification.GainCardAbilities (CardAbilities.MkCardAbilities from criterion triggered extra) ->
+        Modification.GainCardAbilities (CardAbilities.MkCardAbilities from criterion triggered only extra) ->
           let (zone, lenders) = case from of
                 LentCards.InExile -> (Zone.Exile, Set.toAscList (GameState.exile gs))
                 LentCards.TopOfYourLibrary -> (Zone.Library, foldMap (\you -> Maybe.maybeToList (Game.shownTop you gs)) (controllerOf src gs))
                 LentCards.InYourGraveyard -> (Zone.Graveyard, foldMap (\you -> Game.cardsIn Zone.Graveyard you gs) (controllerOf src gs))
+                -- Not the receiver, which has its own abilities already.
+                LentCards.OnTheBattlefield -> (Zone.Battlefield, filter (/= oid) (Set.toAscList (GameState.battlefield gs)))
               cards = filter (maybe False (\view -> Filter.matches context view criterion) . viewOf) lenders
+              -- CR 613.8a: a permanent lends the abilities it has as this
+              -- layer stands, off `resolve`'s running board (modificationReads
+              -- sends this layer there); a card elsewhere its copiable values.
+              lenderOf card = case from of
+                LentCards.OnTheBattlefield -> textBoxOf card
+                _ -> copiableCharacteristics card gs
               named card a = a {ActivatedAbility.name = Just (Binding.acquiredFrom card (ActivatedAbility.name a))}
+              -- CR 305.6: a land's intrinsic mana abilities, one per basic land
+              -- type (the ruling on Manascape Refractor).
+              intrinsic copied = if Subtype.intrinsicManaAbilityOf copied then fmap Mint.intrinsicManaAbility (Maybe.mapMaybe Subtype.subtypeMana (Set.toAscList (PC.subtypes copied))) else []
               -- CR 113.6 / 702.178b: a card has, where it is, only the "as long
               -- as" grants that function there (AbilityZone.grantFunctionsIn).
-              lent card = let copied = copiableCharacteristics card gs in filter (AbilityZone.grantFunctionsIn Zone.Battlefield (PC.delayedAbilities copied) zone) (PC.activatedAbilities copied)
+              lent card = let copied = lenderOf card in filter ofKind (intrinsic copied <> filter (AbilityZone.grantFunctionsIn Zone.Battlefield (PC.delayedAbilities copied) zone) (PC.activatedAbilities copied))
+              ofKind a = all (== (if ManaAbility.isManaAbility a then AbilityKind.ManaAbility else AbilityKind.NonManaAbility)) only
               gained = foldMap (\card -> fmap (named card) (lent card)) cards
               restricted a = a {ActivatedAbility.restrictions = ActivatedAbility.restrictions a <> extra}
               titled card t = t {TriggeredAbility.name = Just (Binding.acquiredFrom card (TriggeredAbility.name t))}
-              triggers card = PC.triggeredAbilities (copiableCharacteristics card gs)
-              keywords card = [LentKeyword.MkLentKeyword k n (Binding.acquiredFrom card Nothing) triggered extra | (k, n) <- Map.toAscList (PC.keywords (copiableCharacteristics card gs)), Keyword.lends triggered k n, not (barred (PC.barredKeywords pc) k)]
+              triggers card = PC.triggeredAbilities (lenderOf card)
+              keywords card = [LentKeyword.MkLentKeyword k n (Binding.acquiredFrom card Nothing) triggered extra | (k, n) <- Map.toAscList (PC.keywords (lenderOf card)), Keyword.lends triggered k n, not (barred (PC.barredKeywords pc) k)]
               fired = if triggered then foldMap (\card -> fmap (titled card) (triggers card)) cards else []
-              armable card = Map.mapKeys (Binding.acquiredFrom card . Just) (fmap (titled card) (PC.delayedAbilities (copiableCharacteristics card gs)))
+              armable card = Map.mapKeys (Binding.acquiredFrom card . Just) (fmap (titled card) (PC.delayedAbilities (lenderOf card)))
            in pc {PC.activatedAbilities = PC.activatedAbilities pc <> fmap restricted gained, PC.triggeredAbilities = PC.triggeredAbilities pc <> fired, PC.delayedAbilities = Map.union (PC.delayedAbilities pc) (foldMap armable cards), PC.lentKeywords = PC.lentKeywords pc <> foldMap keywords cards}
         -- CR 613.1f / 123.7a: the abilities printed on the ability stickers on
         -- `src`, read off the stickers and never off src's projection, so a
@@ -4981,7 +5013,11 @@ modificationReads m = case m of
   -- objects its Filter matches, which layer 6 writes: a removal reaching one
   -- of them changes what this grants (changesGrant).
   Modification.GainKeywordsAmong {} -> Set.singleton Keywords
-  Modification.GainCardAbilities _ -> Set.empty
+  -- CR 613.8a: a battlefield lend reads its lenders' abilities, which layer 6
+  -- writes (changesGrant); a card elsewhere lends its copiable values.
+  Modification.GainCardAbilities lend -> case CardAbilities.from lend of
+    LentCards.OnTheBattlefield -> Set.singleton Keywords
+    _ -> Set.empty
   Modification.GainAbilitiesOfStickers -> Set.empty
   Modification.LoseAllAbilities -> Set.empty
   -- Carries a name, which is not a Quantity: a grant and a removal of one
@@ -5820,24 +5856,31 @@ projectDecidingFrom finish seedOf admits cands =
                               (\o (p, d) -> (if appliesTo view o d p b then uApply b view boxes o p else p, d))
                               running
                           -- CR 613.8a clause (b)'s last limb a third time, for an
-                          -- effect that reads the KEYWORDS of objects it does not
-                          -- apply to (CR 702.1c's grant): applying `b` to one of
-                          -- them changes what `a` grants. changesMagnitude's
-                          -- comparison, of the keywords `a` writes rather than the
-                          -- P/T. Screened on the aspect first, so the P/T pairs
-                          -- never build the board; an effect that reads no view
-                          -- answers the same under both and leaves it unforced.
-                          -- The scenario
-                          -- cairn-wanderer-finds-nothing-yixlid-jailer-took proves
-                          -- it.
+                          -- effect that reads the KEYWORDS or ABILITIES of objects
+                          -- it does not apply to (CR 702.1c's grant, CR 613.1f's
+                          -- battlefield lend): applying `b` to one of them changes
+                          -- what `a` grants. changesMagnitude's comparison, of the
+                          -- abilities `a` writes rather than the P/T, against the
+                          -- view and the running board `b` leaves. Screened on the
+                          -- aspect first, so the P/T pairs never build the board;
+                          -- an effect that reads neither answers the same under
+                          -- both and leaves it unforced. The scenarios
+                          -- cairn-wanderer-finds-nothing-yixlid-jailer-took and
+                          -- manascape-refractor-waits-for-joiner-adept-s-grant
+                          -- prove the two.
                           changesGrant (i, a) (_, b) =
                             Set.member Keywords (uReads a)
                               && Set.member Keywords (uWrites b)
-                              && let afterView = viewOfBoard (appliedEverywhere b)
+                              && let after = appliedEverywhere b
+                                     afterView = viewOfBoard after
+                                     afterBoxes o
+                                       | Map.member o (GameState.objects gs) = fmap fst (Map.lookup o after)
+                                       | otherwise = Nothing
+                                     granted p = (PC.keywords p, PC.lentKeywords p, PC.activatedAbilities p, PC.triggeredAbilities p)
                                   in any
                                        ( \(o, p, _, ans) ->
                                            answerFor ans i
-                                             && PC.keywords (uApply a view boxes o p) /= PC.keywords (uApply a afterView boxes o p)
+                                             && granted (uApply a view boxes o p) /= granted (uApply a afterView afterBoxes o p)
                                        )
                                        boards
                           dependsOnOne x@(i, a) y@(j, b) =

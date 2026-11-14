@@ -14,7 +14,7 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Engine as Engine
-import qualified Parun.Engine.Mana as Mana
+import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Monarch as Monarch
 import qualified Parun.Engine.Replay as Replay
 import qualified Parun.Engine.Setup as Setup
@@ -129,12 +129,12 @@ oneMana color =
       -- by "add" (Parun.Codec.ManaAddition.defaultPlayer).
       yield = Map.singleton (PlayerRef.Relative PlayerRelation.You) (Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored color, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}])
    in ManaOption.MkManaOption
-        { ManaOption.cost = Mana.intrinsicManaCost,
+        { ManaOption.cost = Mint.intrinsicManaCost,
           ManaOption.restrictions = [],
           ManaOption.ability = Nothing,
           ManaOption.yield = yield,
           -- CR 305.6's intrinsic ability: one clause, adding the whole yield.
-          ManaOption.steps = [(Mana.intrinsicManaClause (ManaType.Colored color), yield)]
+          ManaOption.steps = [(Mint.intrinsicManaClause (ManaType.Colored color), yield)]
         }
 
 combatReplaySpec :: (Monad m, Monad n) => Spec.Spec m n -> n ()

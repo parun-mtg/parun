@@ -11,4 +11,6 @@ data LentCards
   | -- | CR 404: each card in the graveyard of the effect's controller
     -- (Thranduil, the Elvenking).
     InYourGraveyard
+  | -- | CR 403.3: each permanent on the battlefield (Manascape Refractor).
+    OnTheBattlefield
   deriving (Bounded, Enum, Eq, Ord, Show)

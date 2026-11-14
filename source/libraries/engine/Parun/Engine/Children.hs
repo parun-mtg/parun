@@ -3565,8 +3565,8 @@ modificationChildren c modification = case modification of
   Modification.GainAbilitiesOfSource keywords -> Modification.GainAbilitiesOfSource . Set.fromList <$> traverse (modificationStampedKeyword c) (Set.toList keywords)
   Modification.GainKeywordsAmong designator zone among ->
     (\d -> Modification.GainKeywordsAmong d zone) <$> modificationDesignator c designator <*> modificationFilter c among
-  Modification.GainCardAbilities (CardAbilities.MkCardAbilities from cards triggered restrictions) ->
-    fmap Modification.GainCardAbilities (CardAbilities.MkCardAbilities from <$> modificationFilter c cards <*> pure triggered <*> traverse (modificationRestriction c) restrictions)
+  Modification.GainCardAbilities (CardAbilities.MkCardAbilities from cards triggered only restrictions) ->
+    fmap Modification.GainCardAbilities (CardAbilities.MkCardAbilities from <$> modificationFilter c cards <*> pure triggered <*> pure only <*> traverse (modificationRestriction c) restrictions)
   Modification.GainAbilitiesOfStickers -> pure modification
   Modification.LoseAllAbilities -> pure modification
   Modification.LoseNamedAbility name -> Modification.LoseNamedAbility <$> modificationAbilityName c name

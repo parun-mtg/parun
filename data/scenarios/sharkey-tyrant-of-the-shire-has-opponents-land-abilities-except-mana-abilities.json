@@ -1,0 +1,164 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Sharkey, Tyrant of the Shire",
+            "label": "sharkey",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "a1"
+          },
+          {
+            "card": "Island",
+            "label": "a2"
+          },
+          {
+            "card": "Island",
+            "label": "a3"
+          },
+          {
+            "card": "Island",
+            "label": "a4"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hellion Crucible",
+            "label": "crucible"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.1f / 605.1a: Sharkey, Tyrant of the Shire has the activated abilities of lands its controller's opponents control except mana abilities, paid with mana of any type, and those lands' own can't be activated",
+  "note": "bob controls Hellion Crucible. Sharkey has the Crucible's pressure ability but not its {T}: Add {C}; alice pays the {1}{R} with an Island and a Swamp, and the counter lands on Sharkey. On bob's turn the Crucible taps for mana but its pressure ability is refused.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Activate $sharkey",
+            "ActivateManaAbility $island",
+            "ActivateManaAbility $swamp"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "Activate $sharkey",
+          "mana": [
+            "$island",
+            "$swamp"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Named",
+            "value": "pressure"
+          },
+          "object": "$sharkey"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility $crucible",
+            "ActivateManaAbility $m1",
+            "ActivateManaAbility $m2"
+          ],
+          "of": "Offered",
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$m1",
+            "$m2",
+            null
+          ],
+          "object": "$crucible"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}

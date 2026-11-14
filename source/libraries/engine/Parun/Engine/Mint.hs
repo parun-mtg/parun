@@ -7,15 +7,27 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Types.ActingPermanent as ActingPermanent
+import qualified Parun.Types.ActivatedAbility as ActivatedAbility
+import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Clause as Clause
 import Parun.Types.Condition (Condition)
+import qualified Parun.Types.Copyability as Copyability
+import Parun.Types.Cost (Cost)
+import qualified Parun.Types.Cost as Cost
+import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageTrigger as DamageTrigger
 import Parun.Types.Effect (Effect)
+import qualified Parun.Types.Effect as Effect
 import Parun.Types.Filter (Filter)
 import Parun.Types.Keyword (Keyword)
+import qualified Parun.Types.ManaAddition as ManaAddition
+import qualified Parun.Types.ManaCost as ManaCost
+import qualified Parun.Types.ManaProduction as ManaProduction
+import qualified Parun.Types.ManaRetention as ManaRetention
+import Parun.Types.ManaType (ManaType)
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeMemory as ModeMemory
@@ -26,6 +38,7 @@ import Parun.Types.PayGate (PayGate)
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.Quantity as Quantity
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StepBegins as StepBegins
@@ -127,3 +140,64 @@ dealsCombatDamageToAPlayer =
         DamageTrigger.recipients = Set.singleton (DamageRecipient.Player PlayerRelation.AnyPlayer),
         DamageTrigger.atLeast = 0
       }
+
+-- | CR 305.6's intrinsic mana ability is "{T}: Add [the type]", printed on no card
+-- and so minted rather than read off one: {T} and nothing else. What makes
+-- the cost worth carrying at all is that a PRINTED mana ability's need not be
+-- (Mana Confluence's is "{T}, Pay 1 life"), and CR 602.2b makes an activation
+-- pay whichever it has.
+intrinsicManaCost :: Cost Keyword
+intrinsicManaCost =
+  Cost.MkCost
+    { Cost.mana = Just (ManaCost.MkManaCost []),
+      Cost.components = [CostComponent.TapThis]
+    }
+
+-- | The ability above's one clause, carrying the instruction below and no rider.
+intrinsicManaClause :: ManaType -> Clause.Clause card ability
+intrinsicManaClause manaType =
+  Clause.MkClause
+    { Clause.ifTaken = Nothing,
+      Clause.condition = Nothing,
+      Clause.orElse = Nothing,
+      Clause.optionality = Optionality.Mandatory,
+      Clause.payGate = Nothing,
+      Clause.effects = Seq.singleton (Effect.AddMana (intrinsicManaAddition manaType))
+    }
+
+-- | The instruction the ability gives: CR 305.6 writes it out as "{T}: Add
+-- [mana symbol]" and nothing more, so every field beyond the type takes the
+-- value an unwritten clause means -- CR 109.5's "you", CR 106.4's ordinary loss
+-- as the step ends, and neither of CR 106.6's two clauses.
+intrinsicManaAddition :: ManaType -> ManaAddition.ManaAddition
+intrinsicManaAddition manaType =
+  ManaAddition.MkManaAddition
+    { ManaAddition.player = PlayerRef.Relative PlayerRelation.You,
+      ManaAddition.production = ManaProduction.OfType manaType,
+      ManaAddition.count = Quantity.Literal 1,
+      ManaAddition.retention = ManaRetention.Ordinary,
+      ManaAddition.restriction = Nothing,
+      ManaAddition.rider = Nothing,
+      ManaAddition.whenSpent = Nothing,
+      ManaAddition.choosesColor = False
+    }
+
+-- | The ability `intrinsicManaCost` and `intrinsicManaClause` make, whole, for
+-- an object that has it without being a land with a basic land type
+-- (Manascape Refractor, CR 613.1f).
+intrinsicManaAbility :: ManaType -> ActivatedAbility.ActivatedAbility card ability
+intrinsicManaAbility manaType =
+  ActivatedAbility.MkActivatedAbility
+    { ActivatedAbility.cost = intrinsicManaCost,
+      ActivatedAbility.costChoices = [],
+      ActivatedAbility.maximumX = [],
+      ActivatedAbility.definedX = Nothing,
+      ActivatedAbility.modal = oneModeOf Map.empty (Seq.singleton (intrinsicManaClause manaType)),
+      ActivatedAbility.restrictions = [],
+      ActivatedAbility.activator = Activator.Related PlayerRelation.You,
+      ActivatedAbility.condition = Nothing,
+      ActivatedAbility.name = Nothing,
+      ActivatedAbility.keyword = Nothing,
+      ActivatedAbility.copyability = Copyability.Copyable,
+      ActivatedAbility.chosenPlayer = Nothing
+    }
