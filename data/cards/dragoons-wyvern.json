@@ -1,0 +1,94 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Dragoon's Wyvern",
+      "oracleText": "Flying\nWhen this creature enters, create a 1/1 colorless Hero creature token.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "name": "Hero Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Hero"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Drake"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

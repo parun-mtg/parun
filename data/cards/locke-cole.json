@@ -1,0 +1,116 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Deathtouch"
+        },
+        {
+          "type": "Lifelink"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Locke Cole",
+      "oracleText": "Deathtouch, lifelink\nWhenever Locke Cole deals combat damage to a player, draw a card, then discard a card.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "DealsDamage",
+            "value": {
+              "actor": {
+                "type": "Self"
+              },
+              "kind": "Combat",
+              "recipients": [
+                {
+                  "type": "Player",
+                  "value": "AnyPlayer"
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      },
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Rogue"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

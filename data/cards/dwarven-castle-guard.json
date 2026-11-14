@@ -1,0 +1,96 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Dwarven Castle Guard",
+      "oracleText": "When this creature dies, create a 1/1 colorless Hero creature token.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "name": "Hero Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Hero"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Dwarf",
+          "Soldier"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

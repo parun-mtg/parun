@@ -1,0 +1,51 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colorless"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Wastes",
+      "oracleText": "{T}: Add {C}.",
+      "typeLine": {
+        "supertypes": [
+          "Basic"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}

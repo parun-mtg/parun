@@ -1,0 +1,121 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Seymour Flux",
+      "oracleText": "At the beginning of your upkeep, you may pay 1 life. If you do, draw a card and put a +1/+1 counter on Seymour Flux.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Beginning",
+                "value": "Upkeep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      },
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "components": [
+                          {
+                            "type": "PayLife",
+                            "value": {
+                              "type": "Fixed",
+                              "value": 1
+                            }
+                          }
+                        ],
+                        "mana": []
+                      },
+                      "payer": {
+                        "type": "InSlot",
+                        "value": "you"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Avatar",
+          "Spirit"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Equip",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                }
+              ]
+            },
+            "quality": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        }
+      ],
+      "name": "Lion Heart",
+      "oracleText": "When this Equipment enters, it deals 2 damage to any target.\nEquipped creature gets +2/+1.\nEquip {2}",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 2
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "Literal",
+                                "value": 2
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "AnyTarget"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Equipment"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

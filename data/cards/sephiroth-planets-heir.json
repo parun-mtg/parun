@@ -1,0 +1,173 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Vigilance"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Sephiroth, Planet's Heir",
+      "oracleText": "Vigilance (Attacking doesn't cause this creature to tap.)\nWhen Sephiroth enters, creatures your opponents control get -2/-2 until end of turn.\nWhenever a creature an opponent controls dies, put a +1/+1 counter on Sephiroth.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Literal",
+                                "value": -2
+                              },
+                              "toughness": {
+                                "type": "Literal",
+                                "value": -2
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "Opponent"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ],
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "Opponent"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Avatar",
+          "Human",
+          "Soldier"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

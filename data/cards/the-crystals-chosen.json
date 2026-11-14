@@ -1,0 +1,108 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "The Crystal's Chosen",
+      "oracleText": "Create four 1/1 colorless Hero creature tokens. Then put a +1/+1 counter on each creature you control.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Create",
+                    "value": {
+                      "card": {
+                        "faces": [
+                          {
+                            "name": "Hero Token",
+                            "power": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "toughness": {
+                              "type": "Literal",
+                              "value": 1
+                            },
+                            "typeLine": {
+                              "subtypes": [
+                                "Hero"
+                              ],
+                              "types": [
+                                "Creature"
+                              ]
+                            }
+                          }
+                        ]
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 4
+                      }
+                    }
+                  },
+                  {
+                    "type": "PutCounters",
+                    "value": {
+                      "kind": {
+                        "type": "PlusOnePlusOne"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 1
+                      },
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "You"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
