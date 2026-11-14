@@ -222,7 +222,7 @@ aiming picks p = case p of
 -- FILTERED from the swept members.
 taking :: Set.Set ObjectId.ObjectId -> Set.Set ObjectId.ObjectId -> Prompt.Prompt r -> State.State [[Set.Set ObjectId.ObjectId]] r
 taking takes picks p = case p of
-  Prompt.ChooseLoopMembers _ _ _ swept -> pure (Set.fromList (filter (maybe False (`Set.member` takes) . Recipient.objectOf) swept))
+  Prompt.ChooseLoopMembers _ _ _ _ swept -> pure (Set.fromList (filter (maybe False (`Set.member` takes) . Recipient.objectOf) swept))
   _ -> aiming picks p
 
 objectsOf :: Set.Set Recipient.Recipient -> Set.Set ObjectId.ObjectId

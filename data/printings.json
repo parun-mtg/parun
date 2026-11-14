@@ -9854,6 +9854,9 @@
       "930": {"card":"Windbrisk Heights"},
       "51": {"card":"Wyrm's Crossing Patrol"},
       "211": {"card":"You've Been Caught Stealing"},
+      "296": {"card":"Zevlor, Elturel Exile"},
+      "441": {"card":"Zevlor, Elturel Exile"},
+      "552": {"card":"Zevlor, Elturel Exile"},
       "775": {"card":"Zulaport Cutthroat"}
     },
     "CLU": {
@@ -28273,7 +28276,8 @@
       "324s": {"card":"Mighty Servant of Leuk-o"},
       "250s": {"card":"Raised by Giants"},
       "292s": {"card":"Raphael, Fiendish Savior"},
-      "358s": {"card":"Reflecting Pool"}
+      "358s": {"card":"Reflecting Pool"},
+      "296s": {"card":"Zevlor, Elturel Exile"}
     },
     "PCMP": {
       "1": {"card":"Electrolyze"},

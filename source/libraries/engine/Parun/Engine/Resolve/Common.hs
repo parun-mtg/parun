@@ -2796,9 +2796,9 @@ lastKnownOriginal original gs = case (Game.lookupObject original gs, Map.lookup 
 -- copy does not exist rather than existing and being countered for an illegal
 -- target (CR 608.2b).
 --
--- A PLAYER named here is a regression fence rather than a proven line: Zevlor,
--- Elturel Exile is its producer (#4563), and Ivy, Gleeful Spellthief names an
--- object.
+-- A PLAYER named here is Zevlor, Elturel Exile's, proved by the scenario
+-- cr-707-10e-zevlor-copies-bolt-at-a-chosen-permanent-and-an-unasked-opponent;
+-- Ivy, Gleeful Spellthief names an object.
 --
 -- A ref naming none also answers the empty list: it has said nothing. Ivy, Gleeful
 -- Spellthief's ref is the effect's own source, so a departed source reaches it. A

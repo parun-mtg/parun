@@ -940,14 +940,23 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
   -- and every choice it offers is announced while it is applied. Asked of the
   -- resolving controller; skipped at no candidate and asked at one, where "any
   -- number" leaves two answers. FILTERED, not trusted (#222), which also keeps
-  -- the sweep's order.
+  -- the sweep's order. "Choose one" is asked at two or more, and an answer
+  -- naming anything but one member reads as the first, Game.chooseAmong's
+  -- posture.
   picked <- case membership of
     LoopMembers.Every -> pure swept
     LoopMembers.AnyNumber
       | null swept -> pure []
       | otherwise -> do
-          answer <- Game.choose (Prompt.ChooseLoopMembers (Decide.deciderFor controller gs0) controller resolving swept)
+          answer <- Game.choose (Prompt.ChooseLoopMembers (Decide.deciderFor controller gs0) controller resolving membership swept)
           pure (filter (`Set.member` answer) swept)
+    LoopMembers.One -> case swept of
+      _ : _ : _ -> do
+        answer <- Game.choose (Prompt.ChooseLoopMembers (Decide.deciderFor controller gs0) controller resolving membership swept)
+        pure $ case filter (`Set.member` answer) swept of
+          [one] -> [one]
+          _ -> take 1 swept
+      _ -> pure swept
   ordered <- Common.forEachOrder resolving (startingWith >>= Common.oneSeat legal resolving source controller gs0) (const (Just controller)) picked
   -- CR 118.12a per member: every offer is made before the first body runs.
   members <- maybe (pure ordered) (loopOffers runSubgame resolving source controller slot legal ordered) gate

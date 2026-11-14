@@ -40,6 +40,7 @@ import qualified Parun.Types.GuessAnswer as GuessAnswer
 import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.LandOrNonland as LandOrNonland
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.LoopMembers as LoopMembers
 import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MutateSide as MutateSide
@@ -130,8 +131,11 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseMaterials _ _ _ candidates count orMore
     | orMore -> fmap Set.fromList (atLeast count candidates)
     | otherwise -> fmap (Set.fromList . List.genericTake count) (Generator.shuffle candidates)
-  -- CR 608.2d / 701.34a: any number of the candidates, each equally likely.
-  Prompt.ChooseLoopMembers _ _ _ candidates -> fmap Set.fromList (Monad.filterM (const coin) candidates)
+  -- CR 608.2d / 701.34a: any number of the candidates, each equally likely, or
+  -- one of them where one is chosen.
+  Prompt.ChooseLoopMembers _ _ _ members candidates -> case (members, NonEmpty.nonEmpty candidates) of
+    (LoopMembers.One, Just offered) -> fmap Set.singleton (Generator.pick offered)
+    _ -> fmap Set.fromList (Monad.filterM (const coin) candidates)
   Prompt.ChooseProliferate _ _ objects players -> (,) <$> fmap Set.fromList (Monad.filterM (const coin) objects) <*> fmap Set.fromList (Monad.filterM (const coin) players)
   -- CR 701.56a: each candidate left alone, given a time counter, or losing one.
   Prompt.ChooseTimeTravel _ _ _ candidates ->

@@ -51,6 +51,7 @@ import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.LandOrNonland as LandOrNonland
 import qualified Parun.Types.LearnMode as LearnMode
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.LoopMembers as LoopMembers
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaOption as ManaOption
@@ -950,11 +951,12 @@ data Prompt r where
   -- controller. Groups are asked in APNAP order (CR 101.4), each for two or
   -- more members.
   OrderForEach :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [Recipient.Recipient] -> Prompt [Natural.Natural]
-  -- | CR 608.2d: any number of the members a per-member loop swept, the ones
-  -- its body then runs for (Parun.Types.LoopMembers' AnyNumber); asked at one
-  -- candidate, skipped at zero. ChooseAnyNumber's shape over the
-  -- loop's own member type. Answers as Response.ChoseLoopMembers.
-  ChooseLoopMembers :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> [Recipient.Recipient] -> Prompt (Set.Set Recipient.Recipient)
+  -- | CR 608.2d: the members a per-member loop swept that its body then runs
+  -- for, as many as the Parun.Types.LoopMembers allows: any number (asked at one
+  -- candidate, skipped at zero) or one (asked at two or more). ChooseAnyNumber's
+  -- shape over the loop's own member type. Answers as
+  -- Response.ChoseLoopMembers.
+  ChooseLoopMembers :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> LoopMembers.LoopMembers -> [Recipient.Recipient] -> Prompt (Set.Set Recipient.Recipient)
   -- | CR 608.2d: whether an Effect.Repeat runs its body again; the Natural is how
   -- many times it has run, so two asks of one loop differ. Answers as
   -- Response.ChoseRepeat.

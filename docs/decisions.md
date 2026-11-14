@@ -190,7 +190,10 @@ Entries are ordered by the first rule each cites.
 - **Rules**: CR 115.1, 115.7, 601.2c, 603.2, 608.2h (CR of 2026-11-06); the
   card has no rulings.
 - **Decision**: As cast. "Those creatures" refers back to the trigger event,
-  so the trigger records the spell's object targets when it triggers.
+  so the trigger records the spell's object targets when it triggers. Zevlor,
+  Elturel Exile's "each other opponent" reads the same record, its player
+  targets included: other than the opponent targeted as cast, or than the
+  controller, as the trigger resolves, of the permanent targeted as cast.
 - **Rejected**: As they stand at resolution: CR 608.2h reads current
   information of a specific object, but which objects are meant is fixed by
   the event the ability triggered on, not by a later change to the spell.

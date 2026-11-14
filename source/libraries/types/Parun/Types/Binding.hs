@@ -16,11 +16,12 @@ import qualified Parun.Types.StickerRef as StickerRef
 -- for this slot is Nothing. The record shape is what lets two binding
 -- environments be combined field-by-field (Parun.Engine.Binding.mergeBinding)
 -- without a tag to case on. Each reserved name carries one kind and a target
--- slot only its recipients; two slots fill two fields: a payment of several
+-- slot only its recipients; three slots fill two fields: a payment of several
 -- objects, whose `targets` and `objects` name the same objects
--- (Parun.Engine.Binding.setPaid), and a DealDamage `damaged` slot, whose
+-- (Parun.Engine.Binding.setPaid), a DealDamage `damaged` slot, whose
 -- `objects` are the objects it damaged and `targets` the players
--- (Parun.Engine.Resolve.Arms.Damage.dealDamage). So the merge is total and order-independent by
+-- (Parun.Engine.Resolve.Arms.Damage.dealDamage), and a cast trigger's
+-- castSpellTargets, split the same way (Parun.Engine.Binding.setCastSpellTargets). So the merge is total and order-independent by
 -- construction rather than by luck. Grows a field per future binding (a for-each count).
 --
 -- A CHOICE AN EFFECT OFFERS does not belong here: CR 608.2d has the player
@@ -67,8 +68,9 @@ data Binding = MkBinding
     --
     -- A payment of several objects fills BOTH this and `targets`, with the same
     -- objects (setPaid), so the two cannot disagree. A DealDamage `damaged` slot
-    -- fills both with disjoint recipients, its players in `targets` (dealDamage).
-    -- No other slot carries both.
+    -- fills both with disjoint recipients, its players in `targets` (dealDamage),
+    -- and so does a cast trigger's `castSpellTargets` (setCastSpellTargets). No
+    -- other slot carries both.
     -- mergeBinding would keep both, and Parun.Engine.Engine.placeOne's per-field
     -- join is where two different sets could meet, so that guarantee is a lint
     -- rather than a type: a card reaching it would have to declare a delayed
