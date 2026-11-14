@@ -94,6 +94,7 @@
                           "other": {
                             "type": "FromAnywhere",
                             "value": {
+                              "reach": "AnyZone",
                               "slot": "self"
                             }
                           }
@@ -112,6 +113,7 @@
                               {
                                 "type": "FromAnywhere",
                                 "value": {
+                                  "reach": "AnyZone",
                                   "slot": "self"
                                 }
                               }

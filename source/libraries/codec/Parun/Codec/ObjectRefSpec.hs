@@ -37,6 +37,7 @@ import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RandomCard as RandomCard
 import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
+import qualified Parun.Types.Reach as Reach
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TopOfLibrary as TopOfLibrary
@@ -433,7 +434,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
     Common.assertCodec s ObjectRef.codec (ObjectRef.AttackedBy (SlotName.MkSlotName (Text.pack "self"))) " {\"type\":\"AttackedBy\",\"value\":\"self\"} "
   -- CR 400.7j: the slot whose object is followed, a bare string.
   Spec.it s "FromAnywhere" $
-    Common.assertCodec s ObjectRef.codec (ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere {FromAnywhere.slot = SlotName.MkSlotName (Text.pack "self"), FromAnywhere.among = Nothing})) " {\"type\":\"FromAnywhere\",\"value\":{\"slot\":\"self\"}} "
+    Common.assertCodec s ObjectRef.codec (ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere {FromAnywhere.slot = SlotName.MkSlotName (Text.pack "self"), FromAnywhere.among = Nothing, FromAnywhere.reach = Reach.PublicZone})) " {\"type\":\"FromAnywhere\",\"value\":{\"slot\":\"self\"}} "
   -- CR 608.2f: the refs moved as one action, an array of refs under its own tag.
   Spec.it s "AllOf" $
     Common.assertCodec
