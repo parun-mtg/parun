@@ -1,0 +1,128 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Strength of Will",
+      "oracleText": "Until end of turn, target creature you control gains indestructible and \"Whenever this creature is dealt damage, put that many +1/+1 counters on it.\"",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainKeyword",
+                        "value": {
+                          "type": "Indestructible"
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  },
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "GainAbility",
+                        "value": {
+                          "type": "Triggered",
+                          "value": {
+                            "condition": {
+                              "type": "IsDealtDamage",
+                              "value": {
+                                "dealt": {
+                                  "recipient": {
+                                    "type": "Self"
+                                  }
+                                }
+                              }
+                            },
+                            "modal": {
+                              "modes": [
+                                {
+                                  "clauses": [
+                                    {
+                                      "effects": [
+                                        {
+                                          "type": "PutCounters",
+                                          "value": {
+                                            "kind": {
+                                              "type": "PlusOnePlusOne"
+                                            },
+                                            "quantity": {
+                                              "type": "InSlot",
+                                              "value": "thatMuch"
+                                            },
+                                            "ref": {
+                                              "type": "InSlot",
+                                              "value": "self"
+                                            }
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "target"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

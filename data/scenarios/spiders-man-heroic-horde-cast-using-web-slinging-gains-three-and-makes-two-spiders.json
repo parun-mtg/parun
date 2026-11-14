@@ -1,0 +1,172 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f0",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f3",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f4",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f5",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Spiders-Man, Heroic Horde",
+            "label": "horde"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Spiders-Man, Heroic Horde: cast using web-slinging, they gain their controller 3 life and make two 2/1 green Spider tokens with reach",
+  "final": [
+    {
+      "Life": {
+        "life": 23,
+        "player": "alice"
+      }
+    },
+    {
+      "Count": {
+        "card": "Spider Token",
+        "count": 2,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Hill Giant",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "Spider Token",
+        "power": 2,
+        "toughness": 1
+      }
+    },
+    {
+      "Keywords": {
+        "count": 1,
+        "keyword": {
+          "type": "Reach"
+        },
+        "object": "Spider Token"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "costOffer": {
+            "type": "ByKeyword",
+            "value": {
+              "type": "OfFamily",
+              "value": "WebSlinging"
+            }
+          },
+          "mana": [
+            "$f0",
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4",
+            "$f5"
+          ],
+          "object": "$horde"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
