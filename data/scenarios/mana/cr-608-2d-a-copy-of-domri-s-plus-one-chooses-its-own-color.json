@@ -47,10 +47,7 @@
       "do": {
         "Activate": {
           "object": "$domri",
-          "ability": 0,
-          "modes": [
-            0
-          ]
+          "ability": 0
         }
       }
     },
@@ -137,7 +134,62 @@
         "View": {
           "of": "ManaPool",
           "player": "alice",
-          "is": []
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": {
+                "condition": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "effect": {
+                  "type": "GainsKeyword",
+                  "value": {
+                    "keyword": {
+                      "type": "Riot"
+                    },
+                    "duration": {
+                      "type": "Indefinite"
+                    }
+                  }
+                }
+              },
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Red"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": {
+                "condition": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "effect": {
+                  "type": "GainsKeyword",
+                  "value": {
+                    "keyword": {
+                      "type": "Riot"
+                    },
+                    "duration": {
+                      "type": "Indefinite"
+                    }
+                  }
+                }
+              },
+              "sourceChoices": null
+            }
+          ]
         }
       }
     }
