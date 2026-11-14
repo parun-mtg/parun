@@ -40,7 +40,7 @@ import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Resolve.Common as Common
-import Parun.Engine.Resolve.Slots (battlefieldMatching, conditionSlots, effectContext, effectViewOf, legalOne, objectRefObjects, overRelations, playerRefPlayers, replacementRowSlots, resolvingAbilityName, slotBindings, slotGroup)
+import Parun.Engine.Resolve.Slots (battlefieldMatching, conditionSlots, effectContext, effectViewOf, legalOne, objectRefObjects, overRelations, playerEffectFilterSlots, playerRefPlayers, replacementRowSlots, resolvingAbilityName, slotBindings, slotGroup)
 import qualified Parun.Engine.Room as Room
 import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Turn as Turn
@@ -1533,11 +1533,12 @@ affectPlayers resolving source controller legal (AffectPlayers.MkAffectPlayers d
                     ActivePlayerEffect.scope = scope,
                     ActivePlayerEffect.effect = bakedEffect,
                     ActivePlayerEffect.ability = resolvingAbilityName resolving gs,
-                    -- Filled after this resolution, by the cast that uses a
-                    -- grant beside it (Parun.Engine.Cast.bindUser). Not
-                    -- implemented: capturing a slot this resolution bound
-                    -- (#5706).
-                    ActivePlayerEffect.slots = Map.empty
+                    -- The slots the effect's Filters name, captured now for
+                    -- the Replace arm's reason (CR 601.2c, 608.2b): Vexing
+                    -- Shusher's "target spell". A slot this resolution left
+                    -- unbound is filled later, by the cast that uses a grant
+                    -- beside it (Parun.Engine.Cast.bindUser).
+                    ActivePlayerEffect.slots = Map.restrictKeys (Filter.slotObjects context) (Map.keysSet (playerEffectFilterSlots bakedEffect))
                   }
            in g1 {GameState.stored = (GameState.stored g1) {StoredEffects.playerEffects = active : StoredEffects.playerEffects (GameState.stored g1)}}
      in List.foldl' install gs ((,) <$> armed <*> bakedEffects)

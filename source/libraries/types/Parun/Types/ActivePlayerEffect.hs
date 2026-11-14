@@ -78,11 +78,11 @@ data ActivePlayerEffect = MkActivePlayerEffect
     -- to cards exiled with `source` reads that ability's pair. Nothing for an
     -- unnamed one, a trigger or a spell.
     ability :: Maybe AbilityName.AbilityName,
-    -- | CR 611.2a's "that spell" for a row installed beside a
-    -- Duration.UntilUsed grant naming a slot: the spell whose cast used the
-    -- grant, bound by Parun.Engine.Cast.bindUser and read by a Filter.IsBound
-    -- in `effect` (Savage Summoning's "that spell can't be countered").
-    -- ActiveReplacement.slots' shape. Empty as the row begins.
+    -- | The objects a Filter.IsBound in `effect` names: a slot the resolution
+    -- bound, captured as the row begins (Vexing Shusher's "target spell"), or
+    -- CR 611.2a's "that spell" beside a Duration.UntilUsed grant, bound later
+    -- by Parun.Engine.Cast.bindUser (Savage Summoning). ActiveReplacement.slots'
+    -- shape.
     slots :: Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId)
   }
   deriving (Eq, Ord, Show)

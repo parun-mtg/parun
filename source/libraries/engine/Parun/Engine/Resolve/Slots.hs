@@ -213,6 +213,7 @@ import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PlaneswalkR as PlaneswalkR
 import qualified Parun.Types.PlaneswalkRewrite as PlaneswalkRewrite
 import qualified Parun.Types.PlayerCounters as PlayerCounters
+import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import Parun.Types.PlayerRef (PlayerRef)
@@ -1401,12 +1402,14 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   -- ObjectRef.InSlot's reason: Resolve.bakeDamagePatternRecipient reads the
   -- whole set and stores one effect per recipient, so a slot holding two is not
   -- silently narrowed to one. A third, the numbers the effect fixes as it is
-  -- stored (Mutated Cultist's tallies).
+  -- stored (Mutated Cultist's tallies). A fourth, the slots its Filters name,
+  -- captured into the row (Vexing Shusher's "target spell").
   Effect.AffectPlayers (AffectPlayers.MkAffectPlayers _ affected playerEffect) ->
     joinSlots
       [ affectedPlayersSlots affected,
         joinSlots (fmap (\slot -> Map.singleton slot SlotArity.Many) (PlayerEffect.boundRecipientSlots playerEffect)),
-        joinSlots (fmap quantitySlots (PlayerEffect.resolutionQuantitiesIn playerEffect))
+        joinSlots (fmap quantitySlots (PlayerEffect.resolutionQuantitiesIn playerEffect)),
+        playerEffectFilterSlots playerEffect
       ]
   -- RequireAttack's reading below, for a Matching blocker or class.
   Effect.RequireBlock (RequireBlock.MkRequireBlock duration blocker attacker _) -> joinTwo (durationSlots duration) (joinTwo (matchingSlots blocker) (foldMap matchingSlots attacker))
@@ -1806,6 +1809,13 @@ drawRewriteReads rewrite = case rewrite of
   DrawRewrite.DiscardThenDrawOrMill -> ([], [])
   DrawRewrite.KeepOneOfTopThenDraw quantity -> ([], [quantity])
   DrawRewrite.RunEffects _ _ -> ([], [])
+
+-- The slots a player effect's own Filters read (a Filter.IsBound), through
+-- Parun.Engine.Children's walk: what slotsOf reports for Effect.AffectPlayers and
+-- what Parun.Engine.Resolve.Arms.Objects.affectPlayers captures into the stored
+-- row, replacementRowSlots' posture (Vexing Shusher's "target spell").
+playerEffectFilterSlots :: PlayerEffect.Type.PlayerEffect -> Map.Map SlotName SlotArity
+playerEffectFilterSlots = joinSlots . Functor.getConst . Children.playerEffectChildren Children.playerEffectLeaves {Children.playerFilter = Functor.Const . pure . filterSlotsOf}
 
 -- replacementRowReads as a slot map. Arity One for every FILTER read, a
 -- Filter.IsBound being a membership test rather than a target slot; the QUANTITY
