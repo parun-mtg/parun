@@ -6,6 +6,7 @@ import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.VoteObjects as VoteObjects
 
@@ -15,8 +16,10 @@ codec :: Codec.Codec VoteObjects.VoteObjects
 codec = Fields.object $ do
   filter_ <- Fields.required "filter" (Filter.codec Keyword.codec) VoteObjects.filter
   slot <- Fields.required "slot" SlotName.codec VoteObjects.slot
+  anyVotes <- Fields.defaulted "anyVotes" False Common.boolean VoteObjects.anyVotes
   pure
     VoteObjects.MkVoteObjects
       { VoteObjects.filter = filter_,
-        VoteObjects.slot = slot
+        VoteObjects.slot = slot,
+        VoteObjects.anyVotes = anyVotes
       }

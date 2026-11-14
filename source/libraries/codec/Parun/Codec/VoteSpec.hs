@@ -31,12 +31,30 @@ spec s = Spec.describe s "Parun.Codec.Vote" $ do
               VoteChoices.Objects
                 VoteObjects.MkVoteObjects
                   { VoteObjects.filter = Filter.HasCardType CardType.Creature,
-                    VoteObjects.slot = SlotName.MkSlotName (Text.pack "elected")
+                    VoteObjects.slot = SlotName.MkSlotName (Text.pack "elected"),
+                    VoteObjects.anyVotes = False
                   },
             Vote.secret = False
           }
       )
       " {\"starter\":{\"type\":\"Relative\",\"value\":\"You\"},\"choices\":{\"type\":\"Objects\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"slot\":\"elected\"}}} "
+  Spec.it s "MkVote, Trap the Trespassers' secret object vote binding every voted object" $
+    Common.assertCodec
+      s
+      Vote.codec
+      ( Vote.MkVote
+          { Vote.starter = PlayerRef.Relative PlayerRelation.You,
+            Vote.choices =
+              VoteChoices.Objects
+                VoteObjects.MkVoteObjects
+                  { VoteObjects.filter = Filter.HasCardType CardType.Creature,
+                    VoteObjects.slot = SlotName.MkSlotName (Text.pack "elected"),
+                    VoteObjects.anyVotes = True
+                  },
+            Vote.secret = True
+          }
+      )
+      " {\"starter\":{\"type\":\"Relative\",\"value\":\"You\"},\"choices\":{\"type\":\"Objects\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"slot\":\"elected\",\"anyVotes\":true}},\"secret\":true} "
   Spec.it s "MkVote, Plea for Power's word vote" $
     Common.assertCodec
       s
