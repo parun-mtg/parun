@@ -11,7 +11,8 @@ import qualified Parun.Types.Zone as Zone
 -- SpellCast, which names its own (Parun.Types.CastWindow).
 --
 -- Only the zone changes, GameEvent.LeftTheGame, the cast, the attacker
--- declaration, the counter placement and the sacrifice have a shape: every other GameEvent constructor is recorded in the log with no EventShape arm, so a
+-- declaration, the counter placement, the sacrifice and combat damage to a
+-- player have a shape: every other GameEvent constructor is recorded in the log with no EventShape arm, so a
 -- count cannot fold over any of them (#162).
 --
 -- That is not the same as the log being unreadable for those events, and the
@@ -81,4 +82,8 @@ data EventShape
     -- permanent as it last existed, its controller the player who sacrificed
     -- it (Dargo, the Shipwrecker).
     Sacrificed
+  | -- | CR 510.2 / 608.2i: a source dealt combat damage to a player, each member
+    -- the source as it dealt it (Parun.Engine.Filter.dealtByView), and each
+    -- source a member once however often it connected (Indulge // Excess).
+    DealtCombatDamageToPlayer
   deriving (Eq, Ord, Show)
