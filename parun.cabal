@@ -360,6 +360,8 @@ library codec
     Parun.Codec.CardNameSpec
     Parun.Codec.CardSelection
     Parun.Codec.CardSelectionSpec
+    Parun.Codec.CardsFromHand
+    Parun.Codec.CardsFromHandSpec
     Parun.Codec.CardSpec
     Parun.Codec.CardTally
     Parun.Codec.CardTallySpec
@@ -861,8 +863,6 @@ library codec
     Parun.Codec.ExchangeZonesSpec
     Parun.Codec.ExileCardsFromGraveyard
     Parun.Codec.ExileCardsFromGraveyardSpec
-    Parun.Codec.ExileCardsFromHand
-    Parun.Codec.ExileCardsFromHandSpec
     Parun.Codec.ExileCardsTotalling
     Parun.Codec.ExileCardsTotallingSpec
     Parun.Codec.ExiledPile
@@ -2832,6 +2832,7 @@ library types
     Parun.Types.CardIdentity
     Parun.Types.CardName
     Parun.Types.CardSelection
+    Parun.Types.CardsFromHand
     Parun.Types.CardTally
     Parun.Types.CardType
     Parun.Types.CarryOver
@@ -3110,7 +3111,6 @@ library types
     Parun.Types.ExchangeValues
     Parun.Types.ExchangeZones
     Parun.Types.ExileCardsFromGraveyard
-    Parun.Types.ExileCardsFromHand
     Parun.Types.ExileCardsTotalling
     Parun.Types.ExiledPile
     Parun.Types.ExileFromGraveyard

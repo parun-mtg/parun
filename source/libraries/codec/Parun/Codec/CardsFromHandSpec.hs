@@ -1,33 +1,33 @@
-module Parun.Codec.ExileCardsFromHandSpec where
+module Parun.Codec.CardsFromHandSpec where
 
 import qualified Data.Text as Text
-import qualified Parun.Codec.ExileCardsFromHand as ExileCardsFromHand
+import qualified Parun.Codec.CardsFromHand as CardsFromHand
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.CardsFromHand as CardsFromHand
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CostAmount as CostAmount
-import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.SlotName as SlotName
 
 -- | Instantiated at 'Keyword.Keyword', the only concrete instantiation anywhere
 -- in the pool.
-codec :: Codec.Codec (ExileCardsFromHand.ExileCardsFromHand Keyword.Keyword)
-codec = ExileCardsFromHand.codec Keyword.codec
+codec :: Codec.Codec (CardsFromHand.CardsFromHand Keyword.Keyword)
+codec = CardsFromHand.codec Keyword.codec
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
-spec s = Spec.describe s "Parun.Codec.ExileCardsFromHand" $ do
+spec s = Spec.describe s "Parun.Codec.CardsFromHand" $ do
   -- CR 406.2 as a cost: Cadaverous Bloom exiles one card from your hand.
   Spec.it s "Fixed" $
     Common.assertCodec
       s
       codec
-      ( ExileCardsFromHand.MkExileCardsFromHand
-          { ExileCardsFromHand.count = CostAmount.Fixed 1,
-            ExileCardsFromHand.whichCards = Filter.And []
+      ( CardsFromHand.MkCardsFromHand
+          { CardsFromHand.count = CostAmount.Fixed 1,
+            CardsFromHand.whichCards = Filter.And []
           }
       )
       " {\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichCards\":{\"type\":\"And\",\"value\":[]}} "
@@ -36,9 +36,9 @@ spec s = Spec.describe s "Parun.Codec.ExileCardsFromHand" $ do
     Common.assertCodec
       s
       codec
-      ( ExileCardsFromHand.MkExileCardsFromHand
-          { ExileCardsFromHand.count = CostAmount.Announced (SlotName.MkSlotName (Text.pack "exiled")),
-            ExileCardsFromHand.whichCards = Filter.HasColor Color.Black
+      ( CardsFromHand.MkCardsFromHand
+          { CardsFromHand.count = CostAmount.Announced (SlotName.MkSlotName (Text.pack "exiled")),
+            CardsFromHand.whichCards = Filter.HasColor Color.Black
           }
       )
       " {\"count\":{\"type\":\"Announced\",\"value\":\"exiled\"},\"whichCards\":{\"type\":\"HasColor\",\"value\":\"Black\"}} "

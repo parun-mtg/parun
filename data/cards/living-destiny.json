@@ -3,10 +3,16 @@
     {
       "additionalCosts": [
         {
-          "type": "RevealCardFromHand",
+          "type": "RevealCardsFromHand",
           "value": {
-            "type": "HasCardType",
-            "value": "Creature"
+            "count": {
+              "type": "Fixed",
+              "value": 1
+            },
+            "whichCards": {
+              "type": "HasCardType",
+              "value": "Creature"
+            }
           }
         }
       ],

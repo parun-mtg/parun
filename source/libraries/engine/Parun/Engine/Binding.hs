@@ -804,7 +804,7 @@ tappedForTotalPower :: SlotName
 tappedForTotalPower = SlotName.MkSlotName (Text.pack "thatTappedForTotalPower")
 
 -- CR 601.2h, for the component that CHOOSES a card and moves nothing:
--- the card a CostComponent.RevealCardFromHand payment revealed -- "the revealed
+-- the cards a CostComponent.RevealCardsFromHand payment revealed -- "the revealed
 -- card" in Living Destiny's "you gain life equal to the revealed card's mana
 -- value". Stamped by Parun.Engine.Cast off the payment CR 601.2h makes, which is
 -- sacrificedPermanent's route on the CASTING side rather than the activating one.
@@ -816,8 +816,8 @@ tappedForTotalPower = SlotName.MkSlotName (Text.pack "thatTappedForTotalPower")
 -- is CURRENT information, tappedPermanent's posture rather than
 -- sacrificedPermanent's, and Parun.Engine.Resolve.Slots.effectViewOf needs no arm.
 --
--- SINGULAR: every printing of this cost reveals one card, so Binding.onlyOne
--- answers it.
+-- Every card the payment revealed; Living Destiny reveals one, so Binding.onlyOne
+-- answers its read.
 --
 -- Also bound by Parun.Engine.Event.Binding.eventBindings for CR 607.2h's "that
 -- card" -- the card a TriggerCondition.RevealedThisWay trigger's linked static

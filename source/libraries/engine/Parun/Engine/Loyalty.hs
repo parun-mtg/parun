@@ -98,7 +98,7 @@ loyaltyAmountOf component = case component of
   CostComponent.ExileCardsTotalling _ -> Nothing
   CostComponent.CollectEvidenceOfTargets -> Nothing
   CostComponent.ExileCardsFromHand {} -> Nothing
-  CostComponent.RevealCardFromHand _ -> Nothing
+  CostComponent.RevealCardsFromHand _ -> Nothing
   CostComponent.Behold _ -> Nothing
   CostComponent.BeholdAndExile _ -> Nothing
   CostComponent.MillCards _ -> Nothing

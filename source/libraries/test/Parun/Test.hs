@@ -157,6 +157,7 @@ import qualified Parun.Codec.CardSelectionSpec
 import qualified Parun.Codec.CardSpec
 import qualified Parun.Codec.CardTallySpec
 import qualified Parun.Codec.CardTypeSpec
+import qualified Parun.Codec.CardsFromHandSpec
 import qualified Parun.Codec.CastFromSpec
 import qualified Parun.Codec.CastFromZoneSpec
 import qualified Parun.Codec.CastObligationSpec
@@ -397,7 +398,6 @@ import qualified Parun.Codec.ExchangeValuesSpec
 import qualified Parun.Codec.ExchangeZonesSpec
 import qualified Parun.Codec.ExchangedValueSpec
 import qualified Parun.Codec.ExileCardsFromGraveyardSpec
-import qualified Parun.Codec.ExileCardsFromHandSpec
 import qualified Parun.Codec.ExileCardsTotallingSpec
 import qualified Parun.Codec.ExileFromGraveyardSpec
 import qualified Parun.Codec.ExileHauntingSpec
@@ -1478,7 +1478,7 @@ spec s reference corpus = do
   Parun.Codec.ExchangeZonesSpec.spec s
   Parun.Codec.ExileCardsFromGraveyardSpec.spec s
   Parun.Codec.ExileCardsTotallingSpec.spec s
-  Parun.Codec.ExileCardsFromHandSpec.spec s
+  Parun.Codec.CardsFromHandSpec.spec s
   Parun.Codec.CardAbilitiesSpec.spec s
   Parun.Codec.ExiledPileSpec.spec s
   Parun.Codec.ExileFromGraveyardSpec.spec s

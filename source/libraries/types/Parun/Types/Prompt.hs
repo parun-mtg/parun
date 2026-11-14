@@ -383,7 +383,7 @@ data Prompt r where
   -- takes, asked once per card with what earlier asks did not take; also
   -- CostComponent.PutCardFromHandOntoBattlefield's question while a
   -- CR 118.12 cost is paid, and CostComponent.ExileCardsFromHand's (one card) and
-  -- RevealCardFromHand's while a CR 601.2h one is, where the ObjectId is the
+  -- RevealCardsFromHand's (once per card) while a CR 601.2h one is, where the ObjectId is the
   -- object the cost is on.
   ChooseCardInHand :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ObjectId.ObjectId -> Prompt ObjectId.ObjectId
   -- | CR 608.2d: which card of a bound group a Parun.Types.ObjectRef.ChosenCardFromAmong

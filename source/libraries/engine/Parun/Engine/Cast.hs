@@ -4461,7 +4461,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                         -- carried it.
                         Payment.Paid bound -> do
                           -- CR 601.2h: the slots the PAYMENT bound -- the card
-                          -- a RevealCardFromHand component showed -- folded
+                          -- a RevealCardsFromHand component showed -- folded
                           -- onto the spell, so "the revealed card's mana value"
                           -- has a name to read at resolution (Living Destiny).
                           -- After the payment because that is when the payment

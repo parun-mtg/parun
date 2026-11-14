@@ -1842,7 +1842,7 @@ hatredSpec s registry =
 -- reveal a creature card from your hand. You gain life equal to the revealed
 -- card's mana value." (Oracle checked against Scryfall 2026-09-09.)
 --
--- The gate card for CostComponent.RevealCardFromHand, the first component that
+-- The gate card for CostComponent.RevealCardsFromHand, the first component that
 -- CHOOSES a card out of a zone and moves nothing (CR 701.20b), and the first
 -- spell to read what its own cost bound -- Parun.Engine.Cast folds the payment's
 -- slots onto the spell for it.

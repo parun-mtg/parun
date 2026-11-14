@@ -10,6 +10,7 @@ import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CardsFromHand as CardsFromHand
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ComputedLife as ComputedLife
 import qualified Parun.Types.CostAmount as CostAmount
@@ -23,7 +24,6 @@ import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
-import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
@@ -317,15 +317,15 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand (CostAmount.Fixed 1) (Filter.And [])))
+      (CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand (CostAmount.Fixed 1) (Filter.And [])))
       " {\"type\":\"ExileCardsFromHand\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichCards\":{\"type\":\"And\",\"value\":[]}}} "
-  -- CR 701.20a out of the hand: a bare criterion, one card.
-  Spec.it s "RevealCardFromHand" $
+  -- CR 701.20a out of the hand: ExileCardsFromHand's count and criterion.
+  Spec.it s "RevealCardsFromHand" $
     Common.assertCodec
       s
       codec
-      (CostComponent.RevealCardFromHand (Filter.HasCardType CardType.Creature))
-      " {\"type\":\"RevealCardFromHand\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+      (CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand (CostAmount.Fixed 1) (Filter.HasCardType CardType.Creature)))
+      " {\"type\":\"RevealCardsFromHand\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichCards\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- CR 701.4a over the hand and the battlefield at once: a count and a
   -- criterion.
   Spec.it s "Behold" $
