@@ -49,9 +49,10 @@ inFamily cardTypes subtype =
   Set.fromList cardTypes `Set.isSubsetOf` Subtype.Engine.correlatedCardTypes subtype
     && Set.notMember subtype notInRules
 
--- Printed on a card but in no CR 205.3 list: Clamfolk is an un-card's (Clam-I-Am).
+-- Printed on a card but in no CR 205.3 list: Clamfolk is an un-card's (Clam-I-Am),
+-- Las Vegas an un-plane's (Mojave Desert).
 notInRules :: Set.Set Subtype.Subtype
-notInRules = Set.fromList [Subtype.Clamfolk]
+notInRules = Set.fromList [Subtype.Clamfolk, Subtype.LasVegas]
 
 enumerate :: (Bounded a, Enum a) => [a]
 enumerate = [minBound .. maxBound]

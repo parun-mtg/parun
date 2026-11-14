@@ -567,6 +567,7 @@ data Subtype
   | Kolbahan
   | Kylem
   | Kyneth
+  | LasVegas
   | TheLibrary
   | Lorwyn
   | Luvion

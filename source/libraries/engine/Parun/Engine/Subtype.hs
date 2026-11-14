@@ -709,6 +709,7 @@ correlatedCardTypes subtype
       Subtype.Kolbahan -> Set.singleton CardType.Plane
       Subtype.Kylem -> Set.singleton CardType.Plane
       Subtype.Kyneth -> Set.singleton CardType.Plane
+      Subtype.LasVegas -> Set.singleton CardType.Plane
       Subtype.TheLibrary -> Set.singleton CardType.Plane
       Subtype.Lorwyn -> Set.singleton CardType.Plane
       Subtype.Luvion -> Set.singleton CardType.Plane

@@ -1265,6 +1265,41 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
     Spec.assertEqWith s "and bob's Forest under his control" (fmap (`Projection.controllerOf` left) (filter (\oid -> Projection.controllerOf oid left == Just S.bob) (named "Forest" left))) [Just S.bob]
     Spec.assertEqWith s "no land is left in a graveyard" (zoneNames Zone.Graveyard S.alice left, zoneNames Zone.Graveyard S.bob left) ([], [])
 
+  -- Mojave Desert: "each player searches their library for up to two basic
+  -- land or Desert cards and puts them onto the battlefield tapped ... If a
+  -- Desert entered the battlefield under a player's control this way, they
+  -- create a 1/1 black Snake creature token with deathtouch." alice finds her
+  -- Desert and a Forest, bob two Forests.
+  Spec.it s "CR 608.2c walking to Mojave Desert gives a Snake to the player whose Desert entered, and not to the other" $ do
+    desert <- S.printingOf s registry "Desert"
+    board <- planarBoard s registry ["Academy at Tolaria West", "Mojave Desert"]
+    let (desertId, stocked) = S.addLibraryCard desert S.alice (inMain S.alice board)
+        preferring :: Prompt.Prompt r -> r
+        preferring p = case p of
+          Prompt.Search _ _ offered cap -> List.genericTake cap (filter (== desertId) offered <> filter (/= desertId) offered)
+          _ -> rolling 6 p
+        walked = S.runPure preferring stocked (Planechase.roll S.manaPerformer S.alice >> Engine.priorityLoop)
+        tappedHeldBy name pid = length (filter (\oid -> Projection.controllerOf oid walked == Just pid && Game.isTapped oid walked) (named name walked))
+    Spec.assertEqWith s "Mojave Desert is the face-up plane" (faceUpNames walked) [cardName "Mojave Desert"]
+    Spec.assertEqWith s "CR 701.23 alice's Desert and Forest entered tapped" (tappedHeldBy "Desert" S.alice, tappedHeldBy "Forest" S.alice) (1, 1)
+    Spec.assertEqWith s "and bob's two Forests" (tappedHeldBy "Forest" S.bob) 2
+    Spec.assertEqWith s "only alice, whose Desert entered, made a Snake" (controllersNamed "Snake Token" walked) [Just S.alice]
+
+  -- Mojave Desert's chaos: "create X 1/1 black Snake creature token with
+  -- deathtouch, where X is 1 plus the number of nonbasic land types among lands
+  -- that player controls", that player read as the trigger's controller, alice.
+  -- Her Desert and Scavenger Grounds share one Desert type, Urza's Mine adds
+  -- Urza's and Mine, the Forest's basic type adds nothing, and bob's Cave is
+  -- not hers: X is 1 + 3.
+  Spec.it s "CR 205.3i Mojave Desert's chaos makes one Snake plus one per nonbasic land type among alice's lands" $ do
+    lands <- traverse (S.printingOf s registry) ["Forest", "Desert", "Scavenger Grounds", "Urza's Mine"]
+    tunnel <- S.printingOf s registry "Secret Tunnel"
+    board <- planarBoard s registry ["Mojave Desert"]
+    let alices = List.foldl' (\gs land -> snd (S.addPermanent land S.alice gs)) (inMain S.alice board) lands
+        (_, stocked) = S.addPermanent tunnel S.bob alices
+        chaos = rollAndResolve 5 stocked
+    Spec.assertEqWith s "four Snakes, all alice's" (controllersNamed "Snake Token" chaos) (replicate 4 (Just S.alice))
+
 -- The controllers of the permanents with this name.
 controllersNamed :: String -> GameState.GameState -> [Maybe PlayerId.PlayerId]
 controllersNamed name gs = fmap (`Projection.controllerOf` gs) (named name gs)
