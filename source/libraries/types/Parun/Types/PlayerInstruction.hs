@@ -50,4 +50,7 @@ data PlayerInstruction
   | -- | CR 701.32c: set this many schemes in motion. Raised once per
     -- instruction by Parun.Engine.Archenemy.setInMotion.
     SetInMotion
+  | -- | CR 701.48a: learn this many times. Raised once per instruction by
+    -- Parun.Engine.Learn.learn.
+    Learn
   deriving (Bounded, Enum, Eq, Ord, Show)

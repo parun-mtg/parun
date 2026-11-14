@@ -29,4 +29,8 @@ data InstructionRewrite
   | -- | Plots That Span Centuries' "set three schemes in motion instead" (CR
     -- 614.1a): the instruction stands at this count, whatever it was.
     SetTo Natural.Natural
+  | -- | Retriever Phoenix's "you may instead return this card to the
+    -- battlefield" (CR 614.1a / 614.6): the instruction does not happen, and
+    -- the row's own source moves from its zone to the battlefield.
+    ReturnSourceInstead
   deriving (Eq, Ord, Show)

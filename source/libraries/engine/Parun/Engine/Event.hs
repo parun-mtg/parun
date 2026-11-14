@@ -5334,11 +5334,13 @@ apply settle batch applied batchPrevented candidate event =
         Replacement.consume (ReplacementCandidate.identity candidate)
         gs <- State.get
         pure (Just (ProposedEvent.WouldThrow throw {Throw.units = fmap (Replacement.scale gs candidate scaling) (Throw.units throw)}))
-      -- Unreachable: the same lint admits DrawInstead on a scry alone, and
-      -- DrawFirst and SetTo on an instruction a WouldPerform carries.
+      -- Unreachable: the same lint admits DrawInstead on a scry alone,
+      -- ReturnSourceInstead on a learn alone, and DrawFirst and SetTo on an
+      -- instruction a WouldPerform carries.
       InstructionRewrite.DrawInstead -> pure (Just event)
       InstructionRewrite.DrawFirst -> pure (Just event)
       InstructionRewrite.SetTo _ -> pure (Just event)
+      InstructionRewrite.ReturnSourceInstead -> pure (Just event)
       InstructionRewrite.RollD20Instead -> do
         exercised <- substitutes candidate
         pure . Just $
@@ -7304,16 +7306,27 @@ performRewritten settle candidate event rewrite = case event of
     -- a rewrite the engine cannot carry out" confines RollD20Instead to a
     -- flip, which is a WouldThrow.
     InstructionRewrite.RollD20Instead -> pure (Just event)
+    -- Retriever Phoenix's "you may instead return this card to the
+    -- battlefield" (CR 614.1a / 614.6): the "may" is `substitutes`', and taken,
+    -- the instruction does not happen and the row's source, the card in the
+    -- graveyard it functions from (CR 113.6b), enters.
+    InstructionRewrite.ReturnSourceInstead -> do
+      exercised <- substitutes candidate
+      if exercised
+        then do
+          Monad.void (changeZoneReturning settle (ReplacementCandidate.source candidate) Zone.Battlefield)
+          pure Nothing
+        else pure (Just event)
   _ -> pure (Just event)
   where
     drawInstruction drawer count = do
       outcome <- applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing drawer count)
       Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards) (uncurry (drawSeries settle Set.empty))
 
--- Pokey, the Scallywagg's "you may" (CR 614.1a), asked of the row's controller,
--- whose flip or roll its "you" watches; spent under CR 614.3 when taken. With no
--- controller nobody is asked and the row is not applied, ZoneChangeR's optional
--- posture.
+-- Pokey, the Scallywagg's and Retriever Phoenix's "you may" (CR 614.1a), asked
+-- of the row's controller, whose flip, roll or learn its "you" watches; spent
+-- under CR 614.5 when taken. With no controller nobody is asked and the row is
+-- not applied, ZoneChangeR's optional posture.
 substitutes :: ReplacementCandidate -> Game Bool
 substitutes candidate = case ReplacementCandidate.controller candidate of
   Nothing -> pure False
