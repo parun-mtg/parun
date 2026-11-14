@@ -35,26 +35,30 @@ flag pedantic
   default: False
   manual: True
 
-common library
+common warnings
   build-depends: base ^>={4.20.2, 4.21.1, 4.22.0}
   default-language: Haskell2010
   ghc-options:
     -Weverything
     -Wno-all-missed-specialisations
     -Wno-implicit-prelude
+    -Wno-inferred-safe-imports
     -Wno-missed-specialisations
     -Wno-missing-deriving-strategies
     -Wno-missing-export-lists
     -Wno-missing-kind-signatures
     -Wno-missing-local-signatures
     -Wno-missing-role-annotations
-    -Wno-missing-safe-haskell-mode
     -Wno-prepositive-qualified-module
-    -Wno-safe
-    -Wno-unsafe
 
   if flag(pedantic)
     ghc-options: -Werror
+
+-- Every module is Safe, so the compiler rejects an escape hatch. A module the
+-- compiler cannot check goes through a wrapper in the trustworthy library.
+common library
+  import: warnings
+  default-extensions: Safe
 
 common executable
   import: library
@@ -2120,7 +2124,6 @@ library executable
   build-depends:
     bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
-    directory ^>=1.3.8,
     parun:benchmark,
     parun:codec,
     parun:json,
@@ -2133,6 +2136,7 @@ library executable
     parun:scenario,
     parun:slug,
     parun:test,
+    parun:trustworthy,
     parun:types,
     text ^>=2.1.3,
 
@@ -2357,7 +2361,6 @@ library play
   build-depends:
     bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
-    directory ^>=1.3.8,
     parun:codec,
     parun:engine,
     parun:entropy,
@@ -2369,6 +2372,7 @@ library play
     parun:registry,
     parun:scenario,
     parun:spec,
+    parun:trustworthy,
     parun:types,
     text ^>=2.1.3,
     transformers ^>=0.6.1,
@@ -2396,7 +2400,6 @@ library registry
   build-depends:
     bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
-    directory ^>=1.3.8,
     parun:codec,
     parun:engine,
     parun:exceptions,
@@ -2405,6 +2408,7 @@ library registry
     parun:json-codec,
     parun:oracle,
     parun:slug,
+    parun:trustworthy,
     parun:types,
     text ^>=2.1.3,
 
@@ -2428,13 +2432,13 @@ library scenario
   build-depends:
     bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
-    directory ^>=1.3.8,
     parun:codec,
     parun:engine,
     parun:extra,
     parun:interpreter,
     parun:json-codec,
     parun:registry,
+    parun:trustworthy,
     parun:types,
     text ^>=2.1.3,
     transformers ^>=0.6.1,
@@ -2480,7 +2484,6 @@ library test
   build-depends:
     bytestring ^>=0.12.2,
     containers ^>={0.7, 0.8},
-    directory ^>=1.3.8,
     exceptions ^>=0.10.9,
     parun:benchmark,
     parun:codec,
@@ -2501,6 +2504,7 @@ library test
     parun:scenario,
     parun:slug,
     parun:spec,
+    parun:trustworthy,
     parun:types,
     parun:uri,
     text ^>=2.1.3,
@@ -2682,6 +2686,24 @@ library test
     Parun.ZoneChangeSpec
     Parun.ZoneReplacementSpec
     Parun.ZoneTriggerSpec
+
+-- Trustworthy wrappers, one per external module its package does not mark Safe
+-- or Trustworthy, re-exporting only what Parun uses.
+library trustworthy
+  import: warnings
+  -- A wrapper is inferred Unsafe by design. With -Wsafe off, -Wtrustworthy-safe
+  -- flags one whose module has since turned Safe.
+  ghc-options:
+    -Wno-safe
+    -Wno-unsafe
+
+  build-depends:
+    directory ^>=1.3.8
+
+  hs-source-dirs: source/libraries/trustworthy
+  -- cabal-gild: discover source/libraries/trustworthy
+  exposed-modules:
+    Parun.Trustworthy.Directory
 
 -- All of the type definitions, without any associated behavior.
 library types

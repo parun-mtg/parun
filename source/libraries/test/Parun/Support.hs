@@ -54,6 +54,7 @@ import qualified Parun.Play.Chance as Chance
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Spec as Spec
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.Action as A
 import qualified Parun.Types.Activation as Activation
@@ -169,7 +170,6 @@ import qualified Parun.Types.Uses as Uses
 import qualified Parun.Types.When as When
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
-import qualified System.Directory as Directory
 
 alice, bob, carol, dave :: PlayerId.PlayerId
 alice = PlayerId.MkPlayerId 0

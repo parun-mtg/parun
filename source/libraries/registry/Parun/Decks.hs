@@ -9,8 +9,8 @@ import qualified Data.ByteString as ByteString
 import qualified Data.List as List
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Paths_parun as Paths
-import qualified System.Directory as Directory
 
 -- | The deck corpus's default root, Parun.Registry.defaultRoot's posture.
 defaultRoot :: IO FilePath

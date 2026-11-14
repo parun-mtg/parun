@@ -60,6 +60,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Slug as Slug
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.AbilityAddsMana as AbilityAddsMana
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActingPermanent as ActingPermanent
@@ -506,7 +507,6 @@ import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChangePattern as ZoneChangePattern
 import qualified Parun.Types.ZoneChangeR as ZoneChangeR
 import qualified Parun.Types.ZonePair as ZonePair
-import qualified System.Directory as Directory
 
 -- Not red-specific despite its first callers: just the Maybe wrapper every
 -- printed mana cost needs (CR 202.1).

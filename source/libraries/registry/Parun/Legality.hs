@@ -36,6 +36,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Ingest as Ingest
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -62,7 +63,6 @@ import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TypeLine as TypeLine
 import qualified Parun.Types.Violation as Violation
 import qualified Paths_parun as Paths
-import qualified System.Directory as Directory
 
 -- | Every violation of the format's rules and pool, for a game played with the
 -- settings given, from every rule: none stops at the first failure. A limited
