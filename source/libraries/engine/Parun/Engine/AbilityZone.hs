@@ -149,7 +149,7 @@ zoneOfComponent component = case component of
   CostComponent.ExilePermanents {} -> Nothing
   -- Nothing, and NOT Just Zone.Graveyard: rule 113.6m again, and these move
   -- OTHER cards.
-  CostComponent.ExileCardsFromGraveyard {} -> Nothing
+  CostComponent.MoveCardsFromGraveyard {} -> Nothing
   CostComponent.ExileTopFromGraveyard _ -> Nothing
   CostComponent.PutExiledIntoGraveyard _ -> Nothing
   CostComponent.CollectEvidence _ -> Nothing
@@ -200,7 +200,7 @@ zoneOfComponent component = case component of
   CostComponent.Blight _ -> Nothing
   -- Nothing, and NOT Just Zone.Graveyard: rule 113.6m asks about an ability that
   -- moves THE OBJECT IT'S ON, and CR 701.61a moves OTHER cards -- the
-  -- ExileCardsFromGraveyard arm above's answer, for its reason, and the Food half
+  -- MoveCardsFromGraveyard arm above's answer, for its reason, and the Food half
   -- is Sacrifice's.
   CostComponent.Forage -> Nothing
   CostComponent.FlipCoin -> Nothing

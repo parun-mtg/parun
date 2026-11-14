@@ -96,7 +96,7 @@
                   "cost": {
                     "components": [
                       {
-                        "type": "ExileCardsFromGraveyard",
+                        "type": "MoveCardsFromGraveyard",
                         "value": {
                           "count": {
                             "type": "Fixed",

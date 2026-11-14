@@ -10,7 +10,7 @@ import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 
 -- | A bare object keyed by the record's field names,
--- Parun.Codec.ExileCardsFromGraveyard's shape. The keyword codec is a PARAMETER;
+-- Parun.Codec.MoveCardsFromGraveyard's shape. The keyword codec is a PARAMETER;
 -- see Parun.Codec.Filter's header.
 codec :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (ExileMaterials.ExileMaterials keyword)
 codec keywordCodec = Fields.object $ do

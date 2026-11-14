@@ -257,7 +257,6 @@ import qualified Parun.Types.ExchangeOwnership as ExchangeOwnership
 import qualified Parun.Types.ExchangeValues as ExchangeValues
 import qualified Parun.Types.ExchangeZones as ExchangeZones
 import qualified Parun.Types.ExchangedValue as ExchangedValue
-import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.ExileMaterials as ExileMaterials
@@ -349,6 +348,7 @@ import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.Morph as Morph
+import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.MoveCounters as MoveCounters
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
@@ -3136,7 +3136,7 @@ costComponentFilters component = case component of
   -- CR 406.2 as a cost: Food Chain's "a creature you control".
   CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents _ f) -> [f]
   -- CR 406.2 as a cost: Headless Skaab's "a creature card from your graveyard".
-  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard _ f) -> [f]
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard _ f _) -> [f]
   -- CR 406.2 with a threshold: Baron Helmut Zemo's "black cards".
   CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling _ _ f) -> [f]
   -- CR 702.167a over the battlefield and the graveyard at once: Tithing Blade's

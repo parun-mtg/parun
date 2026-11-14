@@ -16,7 +16,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DiscardCards as DiscardCards
-import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
+import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SlotName as SlotName
@@ -77,7 +77,7 @@ traverseAmount f component = case component of
   CostComponent.VariableAtLeast _ -> pure component
   CostComponent.ExileThisFrom _ -> pure component
   CostComponent.ExileThis -> pure component
-  CostComponent.ExileCardsFromGraveyard exile -> (\amount -> CostComponent.ExileCardsFromGraveyard exile {ExileCardsFromGraveyard.count = amount}) <$> f (ExileCardsFromGraveyard.count exile)
+  CostComponent.MoveCardsFromGraveyard exile -> (\amount -> CostComponent.MoveCardsFromGraveyard exile {MoveCardsFromGraveyard.count = amount}) <$> f (MoveCardsFromGraveyard.count exile)
   CostComponent.ExileMaterials {} -> pure component
   CostComponent.ExileTopFromGraveyard _ -> pure component
   CostComponent.PutExiledIntoGraveyard _ -> pure component

@@ -21,7 +21,6 @@ import qualified Parun.Types.Devour as Devour
 import qualified Parun.Types.DevourCount as DevourCount
 import qualified Parun.Types.Equip as Equip
 import qualified Parun.Types.EquipTarget as EquipTarget
-import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.ForetellCost as ForetellCost
 import qualified Parun.Types.Keyword as Keyword
@@ -30,6 +29,7 @@ import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.MadnessCost as MadnessCost
 import qualified Parun.Types.Morph as Morph
 import qualified Parun.Types.MorphVariant as MorphVariant
+import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.Protection as Protection
 import qualified Parun.Types.Reinforce as Reinforce
 import qualified Parun.Types.Splice as Splice
@@ -593,6 +593,6 @@ numberedCostedKeywords =
 -- than the source.
 otherCards :: CostComponent.CostComponent k -> CostComponent.CostComponent k
 otherCards c = case c of
-  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n f) ->
-    CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n (Filter.Type.And [Filter.Type.Not Filter.Type.IsSource, f]))
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n f end) ->
+    CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard n (Filter.Type.And [Filter.Type.Not Filter.Type.IsSource, f]) end)
   _ -> c

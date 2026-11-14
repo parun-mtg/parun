@@ -9,7 +9,7 @@
                 "type": "TapThis"
               },
               {
-                "type": "ExileCardsFromGraveyard",
+                "type": "MoveCardsFromGraveyard",
                 "value": {
                   "count": {
                     "type": "Fixed",
