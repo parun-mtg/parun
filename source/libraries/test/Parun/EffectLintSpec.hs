@@ -145,6 +145,7 @@ import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
+import qualified Parun.Types.JoinAttack as JoinAttack
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Layer as Layer
 import qualified Parun.Types.Layout as Layout
@@ -1553,6 +1554,7 @@ effectObjectRefs effect =
         Effect.Fight {} -> []
         Effect.RemoveFromCombat payload -> read_ [RemoveFromCombat.removed payload]
         Effect.BlockAttacker ref -> read_ [ref]
+        Effect.JoinAttack payload -> read_ [JoinAttack.creature payload]
         Effect.BecomesBlocked {} -> []
         -- The pair comes out of a target slot, not an ObjectRef.
         Effect.SwitchBlockers {} -> []

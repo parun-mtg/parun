@@ -3664,6 +3664,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
      in not (null named) && not (any turnsUp named)
   Effect.RemoveFromCombat {} -> False
   Effect.BlockAttacker {} -> False
+  Effect.JoinAttack {} -> False
   Effect.BecomesBlocked {} -> False
   Effect.SwitchBlockers {} -> False
   Effect.ExchangeBlocks {} -> False

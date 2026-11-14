@@ -204,6 +204,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.TurnFaceUp _ -> Set.empty
   Effect.RemoveFromCombat _ -> Set.empty
   Effect.BlockAttacker _ -> Set.empty
+  Effect.JoinAttack _ -> Set.empty
   Effect.BecomesBlocked _ -> Set.empty
   Effect.SwitchBlockers _ -> Set.empty
   Effect.ExchangeBlocks _ -> Set.empty

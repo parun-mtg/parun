@@ -135,6 +135,7 @@ import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.InitiativeTarget as InitiativeTarget
+import qualified Parun.Types.JoinAttack as JoinAttack
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
@@ -1942,6 +1943,13 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.BlockAttacker (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
       " {\"type\":\"BlockAttacker\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
+  Spec.it s "JoinAttack" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.JoinAttack (JoinAttack.MkJoinAttack (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))) (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "thatAttackingPlayer")))))
+      " {\"type\":\"JoinAttack\",\"value\":{\"alongside\":{\"type\":\"InSlot\",\"value\":\"thatAttackingPlayer\"},\"creature\":{\"type\":\"InSlot\",\"value\":\"self\"}}} "
   Spec.it s "BecomesBlocked" $
     Common.assertJsonCodec
       s

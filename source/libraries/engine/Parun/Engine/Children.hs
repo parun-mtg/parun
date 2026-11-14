@@ -275,6 +275,7 @@ import qualified Parun.Types.Impending as Impending
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
+import qualified Parun.Types.JoinAttack as JoinAttack
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Types.KeywordCount as KeywordCount
@@ -1179,6 +1180,7 @@ effectChildren c effect = case effect of
   Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat removed unblocking) -> fmap (\rewritten -> Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat rewritten unblocking)) (onObjectRef c removed)
   Effect.BecomesBlocked named -> fmap Effect.BecomesBlocked (onSlot c named)
   Effect.BlockAttacker ref -> fmap Effect.BlockAttacker (onObjectRef c ref)
+  Effect.JoinAttack (JoinAttack.MkJoinAttack creature alongside) -> fmap Effect.JoinAttack (JoinAttack.MkJoinAttack <$> onObjectRef c creature <*> onPlayer c alongside)
   Effect.SwitchBlockers named -> fmap Effect.SwitchBlockers (onSlot c named)
   Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks first second) -> fmap Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks <$> onSlot c first <*> onSlot c second)
   Effect.AddPhases _ -> pure effect

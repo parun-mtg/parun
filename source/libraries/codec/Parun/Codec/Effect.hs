@@ -78,6 +78,7 @@ import qualified Parun.Codec.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Codec.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Codec.Guess as Guess
 import qualified Parun.Codec.InitiativeTarget as InitiativeTarget
+import qualified Parun.Codec.JoinAttack as JoinAttack
 import qualified Parun.Codec.LaterPayment as LaterPayment
 import qualified Parun.Codec.LifeExchange as LifeExchange
 import qualified Parun.Codec.LifeLoss as LifeLoss
@@ -209,6 +210,7 @@ codec cardCodec abilityCodec =
           Arm.payload "RemoveFromCombat" RemoveFromCombat.codec Effect.RemoveFromCombat (\x -> case x of Effect.RemoveFromCombat y -> Just y; _ -> Nothing),
           Arm.payload "BecomesBlocked" SlotName.codec Effect.BecomesBlocked (\x -> case x of Effect.BecomesBlocked y -> Just y; _ -> Nothing),
           Arm.payload "BlockAttacker" ObjectRef.codec Effect.BlockAttacker (\x -> case x of Effect.BlockAttacker y -> Just y; _ -> Nothing),
+          Arm.payload "JoinAttack" JoinAttack.codec Effect.JoinAttack (\x -> case x of Effect.JoinAttack y -> Just y; _ -> Nothing),
           Arm.payload "SwitchBlockers" SlotName.codec Effect.SwitchBlockers (\x -> case x of Effect.SwitchBlockers y -> Just y; _ -> Nothing),
           Arm.payload "ExchangeBlocks" ExchangeBlocks.codec Effect.ExchangeBlocks (\x -> case x of Effect.ExchangeBlocks y -> Just y; _ -> Nothing),
           Arm.payload "Counter" Counter.codec Effect.Counter (\x -> case x of Effect.Counter y -> Just y; _ -> Nothing),
@@ -399,6 +401,7 @@ tagOf x = case x of
   Effect.RemoveFromCombat {} -> "RemoveFromCombat"
   Effect.BecomesBlocked {} -> "BecomesBlocked"
   Effect.BlockAttacker {} -> "BlockAttacker"
+  Effect.JoinAttack {} -> "JoinAttack"
   Effect.SwitchBlockers {} -> "SwitchBlockers"
   Effect.ExchangeBlocks {} -> "ExchangeBlocks"
   Effect.Counter {} -> "Counter"

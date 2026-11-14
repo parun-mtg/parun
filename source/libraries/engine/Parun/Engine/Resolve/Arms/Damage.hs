@@ -91,6 +91,7 @@ import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Grouping as Grouping
 import qualified Parun.Types.HandActionPerformer as HandActionPerformer
 import qualified Parun.Types.Hop as Hop
+import qualified Parun.Types.JoinAttack as JoinAttack
 import qualified Parun.Types.Layer as Layer
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Mana as Mana.Type
@@ -1963,6 +1964,17 @@ blockAttacker :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recip
 blockAttacker resolving source controller legal ref = do
   gs <- State.get
   Monad.mapM_ (Combat.blockAttacker controller) (objectRefObjects legal resolving controller source gs ref)
+
+-- CR 508.4's "an effect states that a creature is attacking", through
+-- Combat.joinAttack, which owns the choice and its candidates. The resolving
+-- controller chooses (Tahngarth, First Mate's "choose"); `alongside` names one
+-- player or nothing happens.
+joinAttack :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> JoinAttack.JoinAttack -> Game ()
+joinAttack resolving source controller legal (JoinAttack.MkJoinAttack ref alongside) = do
+  gs <- State.get
+  case playerRefPlayers legal resolving source controller gs alongside of
+    [attacking] -> Monad.mapM_ (Combat.joinAttack controller attacking) (objectRefObjects legal resolving controller source gs ref)
+    _ -> pure ()
 
 -- CR 509.3b's third producer, through Combat.switchBlockers, which owns the
 -- whole reassignment: General Jarkeld's hypothetical legality test over CR
