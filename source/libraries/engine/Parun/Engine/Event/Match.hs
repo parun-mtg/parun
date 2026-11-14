@@ -544,20 +544,24 @@ stepPlayers gs bearer scope own =
   let named = Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) (Projection.sourceContext gs (Just own) bearer) gs
    in filter (Turn.scopeNames named gs scope own) (Turn.activePlayers gs)
 
--- CR 505.1b: how many main phases have begun this turn, counting the one whose
--- beginning is being matched. TurnRegisters.events is cleared at the turn handoff
--- (Parun.Engine.Engine.handoffTurn), so the log is already scoped to the turn the
--- rule scopes the count to, and a phase CR 500.11 skipped records no beginning
--- and so has not "occurred".
+-- CR 603.2b: how many steps of the wanted kind have begun this turn, counting
+-- the one whose beginning is being matched -- every main phase for a main
+-- phase (CR 505.1b), the step itself for any other (Paradox Haze's "first
+-- upkeep each turn", CR 500.9). TurnRegisters.events is cleared at the turn
+-- handoff (Parun.Engine.Engine.handoffTurn), so the log is already scoped to
+-- the turn, and a step CR 500.11 skipped records no beginning and so has not
+-- "occurred".
 --
 -- Read off the log at SCAN time rather than stamped on the event, which names
--- the right main phase because no two main phases can begin inside one unscanned
--- window: CR 505.6 gives the active player priority in every main phase, and
--- Parun.Engine.Engine.placePendingTriggers scans at every priority boundary.
+-- the right step because no two steps that grant priority can begin inside one
+-- unscanned window: Parun.Engine.Engine.placePendingTriggers scans at every
+-- priority boundary.
 --
 -- Turn.stepsBegun reads the log; `isMainPhase` is exhaustive over Phase.
-mainPhasesBegun :: GameState -> Natural
-mainPhasesBegun = Natural.length . filter isMainPhase . Turn.stepsBegun
+stepsOfKindBegun :: Phase.Phase -> GameState -> Natural
+stepsOfKindBegun wanted =
+  let ofKind phase = if isMainPhase wanted then isMainPhase phase else phase == wanted
+   in Natural.length . filter ofKind . Turn.stepsBegun
 
 -- CR 505.1: the precombat and postcombat main phases, and no step of any other.
 isMainPhase :: Phase.Phase -> Bool
@@ -1040,11 +1044,12 @@ armMatches :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (Battlefield
 armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond event = case cond of
   TriggerCondition.Enters t -> enters bearerContext board gs bearer you t event
   -- CR 603.2b: this step began, on a turn the scope admits, and -- for a card
-  -- that counts main phases rather than naming one -- at CR 505.1b's ordinal.
+  -- that counts its occurrences, "your second main phase" (CR 505.1b) or
+  -- "first upkeep each turn" -- at its ordinal.
   TriggerCondition.StepBegins (StepBegins.MkStepBegins wanted ordinal scope) -> case event of
     GameEvent.StepBegan (StepBegan.MkStepBegan began active) ->
       began == wanted
-        && Maybe.maybe True (== mainPhasesBegun gs) ordinal
+        && Maybe.maybe True (== stepsOfKindBegun wanted gs) ordinal
         && Turn.turnScopeAdmits scopeNamed gs scope active you
     _ -> False
   -- CR 603.8: a state trigger is not an event trigger. It never matches an entry

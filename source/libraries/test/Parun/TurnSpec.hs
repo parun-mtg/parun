@@ -97,16 +97,16 @@ turnSpec s = Spec.describe s "Turn" $ do
       "no priority"
   -- CR 514.3a: "another cleanup step begins" -- at the head, so it runs next,
   -- exactly as CR 510.4's second combat damage step does.
-  Spec.it s "CR 514.3a spliceExtraCleanup puts another cleanup step next" $ do
+  Spec.it s "CR 514.3a spliceStep puts another cleanup step next" $ do
     Spec.assertEqWith
       s
       "the ordinary case: the cleanup step is the last of the turn"
-      (Turn.spliceExtraCleanup Seq.empty)
+      (Turn.spliceStep (Phase.Ending EndingStep.Cleanup) Seq.empty)
       (Seq.singleton (Phase.Ending EndingStep.Cleanup))
     Spec.assertEqWith
       s
       "and it goes IN FRONT of a CR 500.8 phase added after the ending phase"
-      (Turn.spliceExtraCleanup Turn.combatAndMainPhase)
+      (Turn.spliceStep (Phase.Ending EndingStep.Cleanup) Turn.combatAndMainPhase)
       (Phase.Ending EndingStep.Cleanup Seq.<| Turn.combatAndMainPhase)
   Spec.it s "a turn never revisits a phase" $
     Spec.assertEqWith s "no repeats" (ListUtils.nubOrd Turn.allPhases) Turn.allPhases

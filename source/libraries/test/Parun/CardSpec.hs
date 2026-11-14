@@ -5344,6 +5344,7 @@ effectFilters effect = case effect of
   Effect.Meld (Meld.MkMeld ref card) -> frame SourceHostFramed (objectRefFilters ref) <> overFaces cardFilters card
   Effect.PhaseOut ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.AddPhases _ -> []
+  Effect.AddStep _ -> []
   Effect.EndTurn -> []
   Effect.EndCombatPhase -> []
   Effect.GainControl (GainControl.MkGainControl duration ref _ _) -> frame Unframed (durationFilters duration) <> frame SourceHostFramed (objectRefFilters ref)

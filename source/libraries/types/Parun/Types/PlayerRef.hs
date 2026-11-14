@@ -156,6 +156,9 @@ data PlayerRef
     -- slot naming no object, naming several, or naming one the projection cannot
     -- describe leaves the count unanswered rather than aimed at some other seat.
     HolderOfBound Holder.Holder Hop.Hop SlotName.SlotName
+  | -- | CR 303.4b / 303.4m: the player the object a slot names is attached
+    -- to, Paradox Haze's "enchanted player".
+    PlayerHostOfBound SlotName.SlotName
   | -- | HolderOfBound's BAKED half, and runtime-only: the controller or owner of
     -- one particular object, read at each check (CR 611.2b, 108.3, 108.4).
     -- Written by Parun.Engine.Quantity.bakePlayerRef; no card may write it.
