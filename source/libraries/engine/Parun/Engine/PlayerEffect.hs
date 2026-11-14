@@ -1618,8 +1618,8 @@ contextFrom src oid gs = contextFor (Projection.controllerOf oid gs) src gs
 -- either, so no source changes them under a stored row today.
 --
 -- A stored row's bound slots frame it as an ActiveReplacement's do
--- (Parun.Engine.Replacement), so a Filter.IsBound in the row names what
--- Parun.Engine.Cast.bindUser bound.
+-- (Parun.Engine.Replacement), so a Filter.IsBound in the row names what its
+-- resolution captured or Parun.Engine.Cast.bindUser bound.
 contextFor :: Maybe PlayerId -> RowSource -> GameState -> Filter.Context
 contextFor you row gs =
   let src = RowSource.object row
