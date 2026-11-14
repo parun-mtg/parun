@@ -2196,8 +2196,8 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.PlayLandsFrom from -> PlayerEffect.PlayLandsFrom <$> playerZone c from
   PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone from matching) ->
     fmap PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone <$> playerZone c from <*> playerFilter c matching)
-  PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast spells amount from) ->
-    fmap PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast <$> playerFilter c spells <*> traverse (playerQuantity c) amount <*> pure from)
+  PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast spells amount from onlyNth) ->
+    fmap PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast <$> playerFilter c spells <*> traverse (playerQuantity c) amount <*> pure from <*> traverse (onlyNthChildren c HistoryRead.Casts) onlyNth)
   PlayerEffect.CantGetCounters _ -> pure effect
   -- CR 705.3: "the first coin you flip each turn" counts the turn's flips.
   PlayerEffect.StateCoinFlip (StatedFlip.MkStatedFlip _ _ firstEachTurn) -> effect <$ Monad.when firstEachTurn (playerLooksBack c HistoryRead.CoinFlips)

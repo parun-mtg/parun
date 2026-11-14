@@ -586,14 +586,14 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast (Filter.And []) Nothing Nothing))
+      (PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast (Filter.And []) Nothing Nothing Nothing))
       " {\"type\":\"CastWithoutPayingManaCost\",\"value\":{\"spells\":{\"type\":\"And\",\"value\":[]}}} "
   -- The same grant narrowed, which is the axis a second printing would use.
   Spec.it s "CastWithoutPayingManaCost, a filter that names qualities" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast (Filter.HasCardType CardType.Creature) Nothing Nothing))
+      (PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast (Filter.HasCardType CardType.Creature) Nothing Nothing Nothing))
       " {\"type\":\"CastWithoutPayingManaCost\",\"value\":{\"spells\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- Solemnity's first sentence, which names no kind, so the key is null -- the
   -- wire form data/cards/solemnity.json writes.
