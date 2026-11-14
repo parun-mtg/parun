@@ -94,6 +94,7 @@ loyaltyAmountOf component = case component of
   CostComponent.ExileCardsFromGraveyard {} -> Nothing
   CostComponent.ExileMaterials {} -> Nothing
   CostComponent.ExileTopFromGraveyard _ -> Nothing
+  CostComponent.PutExiledIntoGraveyard _ -> Nothing
   CostComponent.CollectEvidence _ -> Nothing
   CostComponent.ExileCardsTotalling _ -> Nothing
   CostComponent.CollectEvidenceOfTargets -> Nothing

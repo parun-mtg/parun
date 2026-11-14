@@ -257,6 +257,7 @@ costMovesLibraryCard component = case component of
   CostComponent.ExileCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
   CostComponent.ExileTopFromGraveyard _ -> False
+  CostComponent.PutExiledIntoGraveyard _ -> False
   CostComponent.CollectEvidence _ -> False
   CostComponent.ExileCardsTotalling _ -> False
   CostComponent.CollectEvidenceOfTargets -> False

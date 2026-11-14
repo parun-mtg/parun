@@ -80,6 +80,7 @@ traverseAmount f component = case component of
   CostComponent.ExileCardsFromGraveyard exile -> (\amount -> CostComponent.ExileCardsFromGraveyard exile {ExileCardsFromGraveyard.count = amount}) <$> f (ExileCardsFromGraveyard.count exile)
   CostComponent.ExileMaterials {} -> pure component
   CostComponent.ExileTopFromGraveyard _ -> pure component
+  CostComponent.PutExiledIntoGraveyard _ -> pure component
   CostComponent.CollectEvidence _ -> pure component
   CostComponent.ExileCardsTotalling _ -> pure component
   -- CR 601.2f's computed amount, not CR 601.2b's X: fixComputed reads it once the

@@ -151,6 +151,7 @@ zoneOfComponent component = case component of
   -- OTHER cards.
   CostComponent.ExileCardsFromGraveyard {} -> Nothing
   CostComponent.ExileTopFromGraveyard _ -> Nothing
+  CostComponent.PutExiledIntoGraveyard _ -> Nothing
   CostComponent.CollectEvidence _ -> Nothing
   CostComponent.ExileCardsTotalling _ -> Nothing
   CostComponent.CollectEvidenceOfTargets -> Nothing

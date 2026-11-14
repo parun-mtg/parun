@@ -17,6 +17,7 @@ module Parun.CostSpec where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -3003,6 +3004,7 @@ spec s registry = Spec.describe s "Parun.Engine.Cost" $ do
   millikinSpec s registry
   evolvingWildsSpec s registry
   randomDiscardSpec s registry
+  pileDrawSpec s registry
   brittleEffigySpec s registry
   trumpetingCarnosaurSpec s registry
   ashnodsAltarSpec s registry
@@ -5138,12 +5140,59 @@ randomDiscardSpec s registry =
     Spec.assertEqWith s "CR 601.2h the choice comes first and nothing is ordered" (fmap (fmap length) asked) [("ChooseDiscard", 3), ("RandomObject", 2)]
     Spec.assertEqWith s "CR 701.9a and both cards were discarded" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 2
 
--- Each question a discard cost asks, by its candidates, in order.
+-- CR 601.2h with CR 406.4: a PutExiledIntoGraveyard component is random only
+-- for a payer who may not look at the pile, so the same component changes pass
+-- with the board. No pool card prints it beside a chosen discard; Coral Helm's
+-- component stands in, randomDiscardSpec's posture.
+pileDrawSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+pileDrawSpec s registry =
+  Spec.it s "CR 601.2h a draw out of a face-down pile is paid after a chosen discard" $ do
+    helm <- S.printingOf s registry "Coral Helm"
+    piker <- S.printingOf s registry "Goblin Piker"
+    giant <- S.printingOf s registry "Hill Giant"
+    let (helmId, g0) = S.addPermanent helm S.alice (Setup.emptyGame S.bothPlayers)
+        withHand = foldr (\_ gs -> snd (S.addHandCard piker S.alice gs)) g0 [1 :: Int, 2, 3]
+        (giantA, g1) = S.addExiledCard giant S.bob withHand
+        (giantB, faceUp) = S.addExiledCard giant S.bob g1
+        turnDown gs oid = gs {GameState.objects = Map.adjust (\obj -> obj {Object.exiledFaceDown = True}) oid (GameState.objects gs)}
+        -- One pile, both cards filed under the first one's stamp (CR 406.4).
+        faceDown =
+          (Foldable.foldl' turnDown faceUp [giantA, giantB])
+            { GameState.exilePiles = Map.fromList [(oid, Object.timestamp obj) | Just obj <- [Game.lookupObject giantA faceUp], oid <- [giantA, giantB]]
+            }
+        discard = CostComponent.DiscardCards (DiscardCards.MkDiscardCards (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.And []) CardSelection.ByChoice)
+        exiled = CostComponent.PutExiledIntoGraveyard (Filter.Type.HeldBy Holder.Owner PlayerRelation.Opponent)
+        payment = Cost.payComponents S.manaPerformer PaymentMoment.OutsideResolution Nothing Map.empty S.alice helmId [exiled, discard]
+        run board = State.runState (Engine.runGame recordingDiscards board payment) []
+        ((_, afterDown), askedDown) = run faceDown
+        ((_, _), askedUp) = run faceUp
+    -- CR 118.3, asked of the component alone: the claim withholds the offer too.
+    Spec.assertBool s (not (Cost.canPayComponent Map.empty S.alice helmId exiled withHand)) "unpayable with nothing in exile"
+    Spec.assertBool s (Cost.canPayComponent Map.empty S.alice helmId exiled faceDown) "and payable out of a face-down pile"
+    Spec.assertEqWith s "CR 601.2h the discard comes first and the pile is drawn from last" (fmap (fmap length) askedDown) [("ChooseDiscard", 3), ("RandomObject", 2)]
+    Spec.assertEqWith s "CR 400.3 and the drawn Giant is in bob's graveyard" (length (Game.zoneMembers Zone.Graveyard S.bob afterDown)) 1
+    Spec.assertEqWith s "CR 406.4 face up, the card is chosen in the first pass" (fmap (fmap length) askedUp) [("OrderCostComponents", 0), ("ChoosePile", 2), ("ChooseDiscard", 3)]
+    -- CR 406.4 draws over the whole pile, so a draw naming alice's own card
+    -- fails "an opponent owns" and the cost is unpaid; the answerer draws the
+    -- pile's first card, hers.
+    let (mine, h1) = S.addExiledCard giant S.alice withHand
+        (theirs, h2) = S.addExiledCard giant S.bob h1
+        mixed =
+          (Foldable.foldl' turnDown h2 [mine, theirs])
+            { GameState.exilePiles = Map.fromList [(oid, Object.timestamp obj) | Just obj <- [Game.lookupObject mine h2], oid <- [mine, theirs]]
+            }
+        ((outcome, afterMixed), _) = State.runState (Engine.runGame recordingDiscards mixed (Cost.payComponents S.manaPerformer PaymentMoment.OutsideResolution Nothing Map.empty S.alice helmId [exiled])) []
+    Spec.assertEqWith s "CR 406.4 a drawn card the criterion refuses leaves the cost unpaid" outcome Payment.Unpaid
+    Spec.assertEqWith s "and alice's graveyard stays empty" (length (Game.zoneMembers Zone.Graveyard S.alice afterMixed)) 0
+
+-- Each question a discard cost asks, by its candidates, in order (a pile by its
+-- first card).
 recordingDiscards :: Prompt.Prompt r -> State.State [(String, [ObjectId.ObjectId])] r
 recordingDiscards p = case p of
   Prompt.OrderCostComponents {} -> State.modify' (<> [("OrderCostComponents", [])]) >> pure (Replay.defaultAnswer p)
   Prompt.ChooseDiscard _ _ held _ _ -> State.modify' (<> [("ChooseDiscard", held)]) >> pure (Replay.defaultAnswer p)
   Prompt.RandomObject candidates -> State.modify' (<> [("RandomObject", NonEmpty.toList candidates)]) >> pure (Replay.defaultAnswer p)
+  Prompt.ChoosePile _ _ _ piles _ -> State.modify' (<> [("ChoosePile", foldMap (Set.toList . Set.take 1) piles)]) >> pure (Replay.defaultAnswer p)
   _ -> pure (S.identityAnswer p)
 
 -- Millikin {2} Artifact Creature -- Construct 0/1, "{T}, Mill a card: Add {C}"

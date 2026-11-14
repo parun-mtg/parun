@@ -291,6 +291,12 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       codec
       (CostComponent.ExileTopFromGraveyard (Filter.HasCardType CardType.Creature))
       " {\"type\":\"ExileTopFromGraveyard\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  Spec.it s "PutExiledIntoGraveyard" $
+    Common.assertCodec
+      s
+      codec
+      (CostComponent.PutExiledIntoGraveyard (Filter.HasCardType CardType.Creature))
+      " {\"type\":\"PutExiledIntoGraveyard\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
   -- CR 701.59a: a bare total mana value, no criterion beside it.
   Spec.it s "CollectEvidence" $
     Common.assertCodec
