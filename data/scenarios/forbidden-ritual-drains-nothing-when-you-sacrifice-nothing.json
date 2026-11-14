@@ -1,0 +1,114 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "goblin",
+            "token": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Forbidden Ritual",
+            "label": "ritual"
+          }
+        ],
+        "manaPool": "BBBB",
+        "name": "alice"
+      },
+      {
+        "hand": [
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 608.2c Forbidden Ritual's \"if you do\": with no nontoken permanent to sacrifice, the target opponent is offered nothing and loses no life",
+  "note": "alice casts from her mana pool and controls only a Goblin token, which the nontoken filter refuses; bob holds a card he could discard, so a stray offer would ask him. She declines to repeat.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$ritual",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseRepeat",
+          "with": "Declines"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forbidden Ritual",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Swamp",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Goblin Piker",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
