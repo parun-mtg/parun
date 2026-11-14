@@ -47,13 +47,13 @@ import qualified Parun.Types.TurnRegisters as TurnRegisters
 --
 -- Nothing where some leaf was written by BOTH sides to two different values,
 -- which is a state this function declines to invent -- except a pool, a life
--- total and a count of counters, whose two changes add up (`pools`,
--- `playerWith`, `tally`). Any other Nothing is CONSERVATIVE rather than a
--- claim of impossibility: Parun.Engine.Cost then leaves the activation
--- standing, or reverses the whole action unasked, so the worst it can cost is
--- the question.
+-- total, a count of counters and a count of activations, whose two changes add
+-- up (`pools`, `playerWith`, `tally`, `nestedTally`). Any other Nothing is
+-- CONSERVATIVE rather than a claim of impossibility: Parun.Engine.Cost then
+-- leaves the activation standing, or reverses the whole action unasked, so the
+-- worst it can cost is the question.
 --
--- Not implemented: summing any other leaf two sides wrote (#4860).
+-- Not implemented: summing any other leaf two sides wrote (#7445).
 --
 -- A TOTAL record construction, one bind per field, never a record update: a new
 -- GameState field is then a `-Wmissing-fields` error here rather than a leaf
@@ -170,7 +170,9 @@ withoutAnnouncement before entry closed = do
   departedThisTurn <- setOf GameState.departedThisTurn
   couldAttackThisTurn <- setOf (TurnRegisters.couldAttackThisTurn . GameState.turn)
   wouldCreateTokens <- setOf (TurnRegisters.wouldCreateTokens . GameState.turn)
-  activatedThisTurn <- mapOfMaps (TurnRegisters.activatedThisTurn . GameState.turn)
+  -- CR 602.5b: Manaforge Cinder's "no more than three times" counts each
+  -- kept activation, so the two sides' counts add up.
+  activatedThisTurn <- tallies (TurnRegisters.activatedThisTurn . GameState.turn)
   -- An append-only log, `events`' shape: the announcement's own activation
   -- goes and the window's mana abilities stand.
   activationsThisTurn <- eventsOf (TurnRegisters.activationsThisTurn . GameState.turn)
@@ -392,6 +394,8 @@ withoutAnnouncement before entry closed = do
     mapOf field = mapWith leaf (field before) (field entry) (field closed)
     mapOfMaps :: (Ord k, Ord j, Eq v) => (GameState -> Map.Map k (Map.Map j v)) -> Maybe (Map.Map k (Map.Map j v))
     mapOfMaps field = mapWith (mapWith leaf) (field before) (field entry) (field closed)
+    tallies :: (Ord k, Ord j) => (GameState -> Map.Map k (Map.Map j Natural)) -> Maybe (Map.Map k (Map.Map j Natural))
+    tallies field = nestedTally (field before) (field entry) (field closed)
     mapOfMapsOfMaps :: (Ord k, Ord j, Ord i, Eq v) => (GameState -> Map.Map k (Map.Map j (Map.Map i v))) -> Maybe (Map.Map k (Map.Map j (Map.Map i v)))
     mapOfMapsOfMaps field = mapWith (mapWith (mapWith leaf)) (field before) (field entry) (field closed)
     mapOfSets :: (Ord k, Ord v) => (GameState -> Map.Map k (Set.Set v)) -> Maybe (Map.Map k (Set.Set v))
@@ -615,6 +619,20 @@ tally before entry closed = case leaf before entry closed of
           Nothing -> fmap (\summed -> (key, if summed == 0 then Nothing else Just summed)) (Integer.toNatural (count key closed + count key before - count key entry))
         keys = Set.unions [Map.keysSet before, Map.keysSet entry, Map.keysSet closed]
      in fmap (Map.fromList . Maybe.mapMaybe (\(key, value) -> fmap ((,) key) value)) (traverse at (Set.toList keys))
+
+-- `tally` one level down, an absent inner map an empty one, so that an
+-- object's first activation and a later one add up too. An emptied inner map
+-- goes.
+nestedTally :: (Ord k, Ord j) => Map.Map k (Map.Map j Natural) -> Map.Map k (Map.Map j Natural) -> Map.Map k (Map.Map j Natural) -> Maybe (Map.Map k (Map.Map j Natural))
+nestedTally before entry closed =
+  let at key =
+        let get = Map.lookup key
+            held = Maybe.fromMaybe Map.empty . get
+         in case leaf (get before) (get entry) (get closed) of
+              Just value -> Just (key, value)
+              Nothing -> fmap (\counts -> (key, if Map.null counts then Nothing else Just counts)) (tally (held before) (held entry) (held closed))
+      keys = Set.unions [Map.keysSet before, Map.keysSet entry, Map.keysSet closed]
+   in fmap (Map.fromList . Maybe.mapMaybe (\(key, value) -> fmap ((,) key) value)) (traverse at (Set.toList keys))
 
 -- CR 106.4's pools, each read as a multiset of units where `leaf` finds both
 -- sides wrote it: what the undone side added comes out of `closed` and what it
