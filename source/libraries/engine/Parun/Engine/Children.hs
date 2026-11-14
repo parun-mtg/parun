@@ -1184,6 +1184,7 @@ effectChildren c effect = case effect of
   Effect.SwitchBlockers named -> fmap Effect.SwitchBlockers (onSlot c named)
   Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks first second) -> fmap Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks <$> onSlot c first <*> onSlot c second)
   Effect.AddPhases _ -> pure effect
+  Effect.AddStep _ -> pure effect
   Effect.EndTurn -> pure effect
   Effect.EndCombatPhase -> pure effect
   Effect.GainControl (GainControl.MkGainControl duration ref named to) -> fmap Effect.GainControl (GainControl.MkGainControl <$> onDuration c duration <*> onObjectRef c ref <*> traverse (onSlot c) named <*> onPlayer c to)

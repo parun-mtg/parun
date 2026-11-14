@@ -1,0 +1,87 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "attached": "alice",
+            "card": "Paradox Haze"
+          },
+          {
+            "attached": "alice",
+            "card": "Paradox Haze"
+          },
+          {
+            "card": "Fountain of Renewal"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Untap"
+  },
+  "description": "CR 500.9: two Paradox Hazes both trigger on the first upkeep only, adding two upkeep steps",
+  "final": [
+    {
+      "Life": {
+        "life": 23,
+        "player": "alice"
+      }
+    }
+  ],
+  "note": "Both Hazes enchant alice, who controls a Fountain of Renewal: three upkeeps gain her 3 life by her draw step. Neither Haze triggers again in an added upkeep, which is the \"first upkeep each turn\" ordinal; were it ignored the turn would never leave its upkeeps.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderTriggers",
+          "with": [
+            0,
+            1,
+            2
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 23,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

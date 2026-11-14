@@ -1609,6 +1609,7 @@ effectObjectRefs effect =
         Effect.Meld (Meld.MkMeld ref _) -> read_ [ref]
         Effect.PhaseOut ref -> read_ [ref]
         Effect.AddPhases {} -> []
+        Effect.AddStep {} -> []
         Effect.EndTurn -> []
         Effect.EndCombatPhase -> []
         Effect.GainControl (GainControl.MkGainControl _ ref _ _) -> read_ [ref]
@@ -2214,6 +2215,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           -- One seat -- InSlot's answer, one indirection out, whichever player
           -- of the object or its host it reads.
           PlayerRef.HolderOfBound {} -> True
+          -- One seat -- the arm above's answer, the host itself a player.
+          PlayerRef.PlayerHostOfBound _ -> True
           -- One seat -- the arm above's answer, baked; unreachable from card
           -- data, Specific's answer.
           PlayerRef.HolderOfObject _ _ -> True

@@ -1830,6 +1830,22 @@ addPhases extras =
             }
       }
 
+-- CR 500.9: add the step directly after the one this is resolving in, which is
+-- the head of `remaining`.
+--
+-- Not implemented: an added end step is read as the ending phase beginning
+-- again (Turn.phaseBeginningAt), so a CR 614.10 ending-phase skip would take it
+-- (#7583).
+addStep :: Phase.Phase -> Game ()
+addStep step =
+  State.modify' $ \gs ->
+    gs
+      { GameState.turn =
+          (GameState.turn gs)
+            { TurnRegisters.remaining = Turn.spliceStep step (TurnRegisters.remaining (GameState.turn gs))
+            }
+      }
+
 -- CR 725.1: end the turn (Time Stop). Rule 725.1's six steps, in its own order,
 -- and deliberately NOT the CR 608 process the fold around this is running.
 endTurn :: (Game Result -> PendingReplacementEffect.PendingReplacementEffect -> Game ()) -> (Game Result -> Game ()) -> Game Result -> Game ()
@@ -1925,7 +1941,7 @@ endTurn runDamageRewriteEffect runReplacementEffects runSubgame = do
           Phase.Ending _ -> cleared
           _ -> maybe cleared (\ending -> Mana.endRetentionAtEndOf ending (Expiry.dropAtEndOf ending cleared)) (Turn.wholePhaseOf phase)
         jumped = case phase of
-          Phase.Ending EndingStep.Cleanup -> Turn.spliceExtraCleanup (TurnRegisters.remaining (GameState.turn gs))
+          Phase.Ending EndingStep.Cleanup -> Turn.spliceStep (Phase.Ending EndingStep.Cleanup) (TurnRegisters.remaining (GameState.turn gs))
           _ -> Turn.jumpToCleanup (TurnRegisters.remaining (GameState.turn gs))
      in expired
           { GameState.turn =

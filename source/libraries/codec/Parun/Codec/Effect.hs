@@ -97,6 +97,7 @@ import qualified Parun.Codec.NextDamageInstance as NextDamageInstance
 import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.OfferCast as OfferCast
 import qualified Parun.Codec.PermanentActed as PermanentActed
+import qualified Parun.Codec.Phase as Phase
 import qualified Parun.Codec.PlayerCounters as PlayerCounters
 import qualified Parun.Codec.PlayerQuantity as PlayerQuantity
 import qualified Parun.Codec.PlayerRef as PlayerRef
@@ -283,6 +284,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Meld" meldCodec Effect.Meld (\x -> case x of Effect.Meld y -> Just y; _ -> Nothing),
           Arm.payload "PhaseOut" ObjectRef.codec Effect.PhaseOut (\x -> case x of Effect.PhaseOut y -> Just y; _ -> Nothing),
           Arm.payload "AddPhases" (Common.list ExtraPhase.codec) Effect.AddPhases (\x -> case x of Effect.AddPhases y -> Just y; _ -> Nothing),
+          Arm.payload "AddStep" Phase.codec Effect.AddStep (\x -> case x of Effect.AddStep y -> Just y; _ -> Nothing),
           Arm.nullary "EndTurn" Effect.EndTurn,
           Arm.nullary "EndCombatPhase" Effect.EndCombatPhase,
           Arm.payload "GainControl" GainControl.codec Effect.GainControl (\x -> case x of Effect.GainControl y -> Just y; _ -> Nothing),
@@ -474,6 +476,7 @@ tagOf x = case x of
   Effect.Meld {} -> "Meld"
   Effect.PhaseOut {} -> "PhaseOut"
   Effect.AddPhases {} -> "AddPhases"
+  Effect.AddStep {} -> "AddStep"
   Effect.EndTurn {} -> "EndTurn"
   Effect.EndCombatPhase {} -> "EndCombatPhase"
   Effect.GainControl {} -> "GainControl"

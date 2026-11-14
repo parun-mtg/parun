@@ -388,22 +388,17 @@ dropSkippedCombatSteps phase remaining =
       (current, rest) = thisPhase phase remaining
    in Seq.filter kept current <> rest
 
--- CR 510.4 / 500.9: a second combat damage step, spliced directly after the
--- current one -- i.e. at the head of the remaining schedule, so it runs next.
--- CR 500.9's "most recently created step occurs first" is exactly cons-at-head.
-spliceSecondDamage :: Seq Phase -> Seq Phase
-spliceSecondDamage remaining = Phase.Combat CombatStep.CombatDamage Seq.<| remaining
-
--- CR 514.3a: another cleanup step, spliced directly after the current one -- at
--- the head of the remaining schedule, so it runs next.
+-- CR 500.9: a step added directly after the current one -- at the head of the
+-- remaining schedule, so it runs next. The rule's "most recently created step
+-- occurs first" is exactly cons-at-head. CR 510.4's second combat damage step,
+-- CR 514.3a's further cleanup step and Effect.AddStep all splice here.
 --
--- The twin of spliceSecondDamage, deliberately built the same way: a step that
--- repeats itself is one more entry at the front of the turn, not a special case
--- inside Engine.advance. Non-empty `remaining` is handled rather than assumed
--- -- CR 500.8 lets an effect add a phase after the ending phase, and the second
--- cleanup step belongs to the ending phase, so it goes in front of those steps.
-spliceExtraCleanup :: Seq Phase -> Seq Phase
-spliceExtraCleanup remaining = Phase.Ending EndingStep.Cleanup Seq.<| remaining
+-- A step that repeats itself is one more entry at the front of the turn, not a
+-- special case inside Engine.advance. Non-empty `remaining` is handled rather
+-- than assumed -- CR 500.8 lets an effect add a phase after this one, and the
+-- added step belongs to this phase, so it goes in front of that phase's steps.
+spliceStep :: Phase -> Seq Phase -> Seq Phase
+spliceStep = (Seq.<|)
 
 -- CR 725.1d: what is left of the turn once an effect ends it -- the cleanup step
 -- and everything scheduled after it, with every phase and step between here and
@@ -419,10 +414,10 @@ spliceExtraCleanup remaining = Phase.Ending EndingStep.Cleanup Seq.<| remaining
 -- to even where Engine.skipWholePhase dropped the ending phase.
 --
 -- The caller handles CR 725.1d's own exception -- ending the turn DURING the
--- cleanup step, where spliceExtraCleanup's new step is what the rule asks for.
+-- cleanup step, where spliceStep's new cleanup step is what the rule asks for.
 jumpToCleanup :: Seq Phase -> Seq Phase
 jumpToCleanup remaining = case Seq.elemIndexL (Phase.Ending EndingStep.Cleanup) remaining of
-  Nothing -> spliceExtraCleanup remaining
+  Nothing -> spliceStep (Phase.Ending EndingStep.Cleanup) remaining
   Just i -> Seq.drop i remaining
 
 -- The steps one added phase expands to. CR 501.1 fixes the beginning phase's

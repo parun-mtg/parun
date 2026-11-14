@@ -629,7 +629,7 @@ runTurnBasedActions phase = do
               gs
                 { GameState.turn =
                     (GameState.turn gs)
-                      { TurnRegisters.remaining = Turn.spliceSecondDamage (TurnRegisters.remaining (GameState.turn gs))
+                      { TurnRegisters.remaining = Turn.spliceStep (Phase.Combat CombatStep.CombatDamage) (TurnRegisters.remaining (GameState.turn gs))
                       }
                 }
           )
@@ -2891,7 +2891,7 @@ cleanupException = do
           gs
             { GameState.turn =
                 (GameState.turn gs)
-                  { TurnRegisters.remaining = Turn.spliceExtraCleanup (TurnRegisters.remaining (GameState.turn gs))
+                  { TurnRegisters.remaining = Turn.spliceStep (Phase.Ending EndingStep.Cleanup) (TurnRegisters.remaining (GameState.turn gs))
                   }
             }
       )

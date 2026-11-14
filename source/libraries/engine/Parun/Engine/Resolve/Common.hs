@@ -3669,6 +3669,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.SwitchBlockers {} -> False
   Effect.ExchangeBlocks {} -> False
   Effect.AddPhases {} -> False
+  Effect.AddStep {} -> False
   Effect.EndTurn {} -> False
   Effect.EndCombatPhase {} -> False
   Effect.GainControl (GainControl.MkGainControl duration ref _ _) -> noneCanBeHeld duration ref

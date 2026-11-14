@@ -294,6 +294,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.Meld {} -> Set.empty
   Effect.PhaseOut _ -> Set.empty
   Effect.AddPhases _ -> Set.empty
+  Effect.AddStep _ -> Set.empty
   Effect.EndTurn -> Set.empty
   Effect.EndCombatPhase -> Set.empty
   Effect.GainControl (GainControl.MkGainControl {}) -> Set.empty

@@ -474,6 +474,8 @@ playerRefSlots ref = case ref of
   -- Read at arity one: a slot naming several objects names no one controller,
   -- owner or host.
   PlayerRef.HolderOfBound _ _ slot -> Map.singleton slot SlotArity.One
+  -- Read at arity one for that arm's reason.
+  PlayerRef.PlayerHostOfBound slot -> Map.singleton slot SlotArity.One
   -- Read at arity one for that arm's reason: a slot naming several objects names
   -- no one chooser.
   PlayerRef.ChosenPlayerOfBound slot _ -> Map.singleton slot SlotArity.One
@@ -906,6 +908,7 @@ effectPlayerRefs effect = case effect of
   Effect.SwitchBlockers {} -> []
   Effect.ExchangeBlocks {} -> []
   Effect.AddPhases {} -> []
+  Effect.AddStep {} -> []
   Effect.EndTurn -> []
   Effect.EndCombatPhase -> []
   Effect.GainControl (GainControl.MkGainControl _ _ _ to) -> [to]
@@ -1393,6 +1396,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.Meld {} -> Map.empty
   Effect.PhaseOut _ -> Map.empty
   Effect.AddPhases _ -> Map.empty
+  Effect.AddStep _ -> Map.empty
   Effect.EndTurn -> Map.empty
   Effect.EndCombatPhase -> Map.empty
   -- Both refs are the generic folds' half, joined at the head.
@@ -2247,6 +2251,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.Meld _ -> True
   Effect.PhaseOut _ -> True
   Effect.AddPhases _ -> True
+  Effect.AddStep _ -> True
   Effect.EndTurn -> True
   Effect.EndCombatPhase -> True
   -- slotsOf's arm drops this Duration, so the slotless test is made here.
@@ -2537,6 +2542,7 @@ hasRead wanted =
         Effect.Meld _ -> False
         Effect.PhaseOut _ -> False
         Effect.AddPhases _ -> False
+        Effect.AddStep _ -> False
         Effect.EndTurn -> False
         Effect.EndCombatPhase -> False
         Effect.GainControl (GainControl.MkGainControl {}) -> False
@@ -2851,6 +2857,7 @@ boundSlots effect = case effect of
   Effect.Meld _ -> Set.empty
   Effect.PhaseOut _ -> Set.empty
   Effect.AddPhases _ -> Set.empty
+  Effect.AddStep _ -> Set.empty
   Effect.EndTurn -> Set.empty
   Effect.EndCombatPhase -> Set.empty
   -- CR 608.2c: the objects whose control this instruction set.
