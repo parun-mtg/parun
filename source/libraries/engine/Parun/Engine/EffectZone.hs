@@ -269,6 +269,8 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.PayAnyEnergy _ -> Set.empty
   Effect.ChooseNumber _ -> Set.empty
   Effect.BindAmount _ -> Set.empty
+  Effect.BindPlayers _ -> Set.empty
+  Effect.BindLeaders _ -> Set.empty
   Effect.Tap _ -> Set.empty
   Effect.Untap _ -> Set.empty
   Effect.Unattach _ -> Set.empty

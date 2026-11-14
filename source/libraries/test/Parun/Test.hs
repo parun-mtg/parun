@@ -130,6 +130,8 @@ import qualified Parun.Codec.BeginningStepSpec
 import qualified Parun.Codec.BeholdSpec
 import qualified Parun.Codec.BidSpec
 import qualified Parun.Codec.BindAmountSpec
+import qualified Parun.Codec.BindLeadersSpec
+import qualified Parun.Codec.BindPlayersSpec
 import qualified Parun.Codec.BindingSpec
 import qualified Parun.Codec.BlockCostSpec
 import qualified Parun.Codec.BlockCountSpec
@@ -1202,6 +1204,8 @@ spec s reference corpus = do
   Parun.Codec.BeholdSpec.spec s
   Parun.Codec.BidSpec.spec s
   Parun.Codec.BindAmountSpec.spec s
+  Parun.Codec.BindLeadersSpec.spec s
+  Parun.Codec.BindPlayersSpec.spec s
   Parun.Codec.BindingSpec.spec s
   Parun.Codec.BlockCostSpec.spec s
   Parun.Codec.BlockersAreSpec.spec s

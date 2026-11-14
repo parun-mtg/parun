@@ -1568,6 +1568,8 @@ effectObjectRefs effect =
         Effect.PayAnyEnergy {} -> []
         Effect.ChooseNumber {} -> []
         Effect.BindAmount {} -> []
+        Effect.BindPlayers {} -> []
+        Effect.BindLeaders {} -> []
         Effect.Tap tap -> read_ [Tap.ref tap]
         Effect.Untap ref -> [(permanentQuestions, ref)]
         Effect.Unattach ref -> [(permanentQuestions, ref)]

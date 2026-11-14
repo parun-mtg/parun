@@ -61,6 +61,8 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Amass as Amass.Type
 import qualified Parun.Types.BindAmount as BindAmount
+import qualified Parun.Types.BindLeaders as BindLeaders
+import qualified Parun.Types.BindPlayers as BindPlayers
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Blight as Blight.Type
 import qualified Parun.Types.Card as Card.Type
@@ -109,6 +111,7 @@ import qualified Parun.Types.NumberFloor as NumberFloor
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ObjectRef (ObjectRef)
+import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
@@ -1619,6 +1622,36 @@ bindAmount resolving source controller legal (BindAmount.MkBindAmount quantity s
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
   Monad.forM_ (Quantity.evaluateFor viewOf context gs resolving source quantity) $ \n ->
     State.modify' (Common.bindAmountSlot resolving source slot (Integer.toNaturalSaturating n))
+
+-- CR 608.2c: the players read once, here, and bound even where they are
+-- nobody, so a later instruction reading the slot names nobody rather than
+-- what an earlier binding left. Timesifter's scenarios prove it.
+bindPlayers :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> BindPlayers.BindPlayers -> Game ()
+bindPlayers resolving source controller legal (BindPlayers.MkBindPlayers who slot) = do
+  gs <- State.get
+  State.modify' (Common.bindPlayerSlot resolving slot (Set.fromList (playerRefPlayers legal resolving source controller gs who)))
+
+-- CR 608.2c: each player's measure is the greatest among the objects the slot
+-- holds that they own (CR 108.3), read off the projection, and the players
+-- whose measure is the greatest of all are bound, ties included. A player
+-- owning none of them has no measure and is not among the leaders, which
+-- Timesifter's ruling ("If a player fails to exile a card, they can't take the
+-- extra turn") forces; nobody is bound where no object is measured. The
+-- scenarios named timesifter prove it.
+bindLeaders :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> BindLeaders.BindLeaders -> Game ()
+bindLeaders resolving source controller legal (BindLeaders.MkBindLeaders among measure slot) = do
+  gs <- State.get
+  let viewOf = effectViewOf resolving source legal gs
+      measured =
+        Map.fromListWith
+          max
+          [ (owner, n)
+          | oid <- objectRefObjects legal resolving controller source gs (ObjectRef.InSlot among),
+            owner <- Maybe.maybeToList (Game.ownerWithLastKnown oid gs),
+            n <- Maybe.maybeToList (Filter.measureOf measure =<< viewOf oid)
+          ]
+      leaders = if Map.null measured then Set.empty else Map.keysSet (Map.filter (== maximum measured) measured)
+  State.modify' (Common.bindPlayerSlot resolving slot leaders)
 
 -- CR 701.26a: turn each named permanent sideways. The victims are enumerated
 -- ONCE (CR 608.2f) and off the board as it stands before any of them is tapped,

@@ -1,0 +1,136 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 5
+        }
+      ],
+      "name": "Timesifter",
+      "oracleText": "At the beginning of each upkeep, each player exiles the top card of their library. The player who exiled the card with the greatest mana value takes an extra turn after this one. If two or more players' cards are tied for greatest, the tied players repeat this process until the tie is broken.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Beginning",
+                "value": "Upkeep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "BindPlayers",
+                        "value": {
+                          "players": {
+                            "type": "Relative",
+                            "value": "AnyPlayer"
+                          },
+                          "slot": "contenders"
+                        }
+                      },
+                      {
+                        "type": "RepeatIf",
+                        "value": {
+                          "condition": {
+                            "type": "Compares",
+                            "value": {
+                              "comparison": "AtLeast",
+                              "measured": {
+                                "type": "BoundCount",
+                                "value": "leaders"
+                              },
+                              "threshold": {
+                                "type": "Literal",
+                                "value": 2
+                              }
+                            }
+                          },
+                          "ifHolds": [
+                            {
+                              "type": "BindPlayers",
+                              "value": {
+                                "players": {
+                                  "type": "EachInSlot",
+                                  "value": "leaders"
+                                },
+                                "slot": "contenders"
+                              }
+                            }
+                          ],
+                          "process": [
+                            {
+                              "type": "MoveToZone",
+                              "value": {
+                                "ref": {
+                                  "type": "TopOfLibrary",
+                                  "value": {
+                                    "count": {
+                                      "type": "Literal",
+                                      "value": 1
+                                    },
+                                    "player": {
+                                      "type": "EachInSlot",
+                                      "value": "contenders"
+                                    }
+                                  }
+                                },
+                                "slot": "exiled",
+                                "zone": "Exile"
+                              }
+                            },
+                            {
+                              "type": "BindLeaders",
+                              "value": {
+                                "among": "exiled",
+                                "measure": "ManaValue",
+                                "slot": "leaders"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "TakeExtraTurn",
+                        "value": {
+                          "player": {
+                            "type": "EachInSlot",
+                            "value": "leaders"
+                          },
+                          "skips": []
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

@@ -65,6 +65,8 @@ import qualified Parun.Types.BecomesTargetedTrigger as BecomesTargetedTrigger
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.Bid as Bid
 import qualified Parun.Types.BindAmount as BindAmount
+import qualified Parun.Types.BindLeaders as BindLeaders
+import qualified Parun.Types.BindPlayers as BindPlayers
 import qualified Parun.Types.Binding as Binding
 import qualified Parun.Types.Blight as Blight
 import qualified Parun.Types.BlockCost as BlockCost
@@ -1153,6 +1155,8 @@ effectChildren c effect = case effect of
   Effect.ChooseNumber (ChooseNumber.MkChooseNumber named upTo chooser) ->
     fmap Effect.ChooseNumber (ChooseNumber.MkChooseNumber <$> onSlot c named <*> traverse (onQuantity c) upTo <*> onPlayer c chooser)
   Effect.BindAmount (BindAmount.MkBindAmount quantity named) -> fmap Effect.BindAmount (BindAmount.MkBindAmount <$> onQuantity c quantity <*> onSlot c named)
+  Effect.BindPlayers (BindPlayers.MkBindPlayers who named) -> fmap Effect.BindPlayers (BindPlayers.MkBindPlayers <$> onPlayer c who <*> onSlot c named)
+  Effect.BindLeaders (BindLeaders.MkBindLeaders among measure named) -> fmap Effect.BindLeaders (BindLeaders.MkBindLeaders <$> onSlot c among <*> pure measure <*> onSlot c named)
   Effect.Tap (Tap.MkTap ref tapped) -> fmap Effect.Tap (Tap.MkTap <$> onObjectRef c ref <*> traverse (onSlot c) tapped)
   Effect.Untap ref -> fmap Effect.Untap (onObjectRef c ref)
   Effect.Detain ref -> fmap Effect.Detain (onObjectRef c ref)

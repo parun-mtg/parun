@@ -13,6 +13,8 @@ import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.Bid as Bid
 import qualified Parun.Types.BindAmount as BindAmount
+import qualified Parun.Types.BindLeaders as BindLeaders
+import qualified Parun.Types.BindPlayers as BindPlayers
 import qualified Parun.Types.Blight as Blight
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CastOffer as CastOffer
@@ -468,6 +470,12 @@ data Effect card ability
   | -- | CR 608.2h: bind the quantity's value, determined once, under the slot
     -- for a later effect to read.
     BindAmount BindAmount.BindAmount
+  | -- | CR 608.2c: bind the players the PlayerRef names under the slot for a
+    -- later effect to read.
+    BindPlayers BindPlayers.BindPlayers
+  | -- | CR 608.2c: bind under the slot the players owning the objects the
+    -- `among` slot holds that measure greatest, ties included.
+    BindLeaders BindLeaders.BindLeaders
   | -- | CR 701.26a: tap the permanents the ObjectRef names, leaving an already
     -- tapped one alone.
     Tap Tap.Tap

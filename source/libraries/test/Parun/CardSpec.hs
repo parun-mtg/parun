@@ -5307,6 +5307,8 @@ effectFilters effect = case effect of
   Effect.PayAnyEnergy _ -> []
   Effect.ChooseNumber number -> frame Unframed (foldMap quantityFilters (ChooseNumber.upTo number))
   Effect.BindAmount payload -> frame Unframed (quantityFilters (BindAmount.quantity payload))
+  Effect.BindPlayers _ -> []
+  Effect.BindLeaders _ -> []
   Effect.Tap tap -> frame SourceHostFramed (objectRefFilters (Tap.ref tap))
   Effect.Untap ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Unattach ref -> frame SourceHostFramed (objectRefFilters ref)
