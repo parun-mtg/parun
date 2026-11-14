@@ -4949,7 +4949,7 @@ chosenQualityFilters quality = case quality of
   ChosenQuality.Colors _ -> []
   ChosenQuality.Subtype _ _ -> []
   ChosenQuality.CardType _ -> []
-  ChosenQuality.Number _ -> []
+  ChosenQuality.Number _ _ -> []
   ChosenQuality.Parity -> []
   ChosenQuality.Word _ -> []
   ChosenQuality.ExiledCard pile cards -> unframed [Filter.Type.IsExiledWithSource pile, cards]

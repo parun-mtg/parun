@@ -2077,7 +2077,8 @@ stubView table oid =
                 Filter.grantsStationToughness = False,
                 -- CR 700.5a: the table registers no player abilities either.
                 Filter.devotionBonus = 0,
-                Filter.loyaltyIsToughness = False
+                Filter.loyaltyIsToughness = False,
+                Filter.printedLoyalty = Nothing
               }
         [] -> Nothing
 

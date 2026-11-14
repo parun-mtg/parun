@@ -31,8 +31,14 @@ spec s = Spec.describe s "Parun.Codec.ChosenQuality" $ do
     Common.assertCodec
       s
       ChosenQuality.codec
-      (ChosenQuality.Number ChooseBetween.MkChooseBetween {ChooseBetween.least = 0, ChooseBetween.most = 7})
+      (ChosenQuality.Number 0 (Just 7))
       " {\"type\":\"Number\",\"value\":{\"least\":0,\"most\":7}} "
+  Spec.it s "Number with no maximum (Fluros of Myra's Marvels)" $
+    Common.assertCodec
+      s
+      ChosenQuality.codec
+      (ChosenQuality.Number 1 Nothing)
+      " {\"type\":\"Number\",\"value\":{\"least\":1}} "
   Spec.it s "Subtype (Deification)" $
     Common.assertCodec
       s

@@ -31,4 +31,6 @@ data Operand
     OfEachOtherCandidate OtherCandidates.OtherCandidates
   | -- | CR 122.1 / 109.5: how many counters of a kind "you" have (Mizzix of the Izmagnus).
     YourCounters PlayerCounterKind.PlayerCounterKind
+  | -- | CR 607.2d: the number the source chose (Fluros of Myra's Marvels).
+    ChosenNumber
   deriving (Eq, Ord, Show)

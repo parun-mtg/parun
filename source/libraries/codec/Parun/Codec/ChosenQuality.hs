@@ -1,6 +1,7 @@
 module Parun.Codec.ChosenQuality where
 
 import qualified Data.List.NonEmpty as NonEmpty
+import qualified Data.Text as Text
 import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.ChooseBetween as ChooseBetween
 import qualified Parun.Codec.ExiledPile as ExiledPile
@@ -21,7 +22,7 @@ codec =
     [ Arm.payload "Colors" ChooseBetween.codec ChosenQuality.Colors (\x -> case x of ChosenQuality.Colors y -> Just y; _ -> Nothing),
       Arm.payload "Subtype" subtype (uncurry ChosenQuality.Subtype) (\x -> case x of ChosenQuality.Subtype family among -> Just (family, among); _ -> Nothing),
       Arm.optionalPayload "CardType" (Common.nonEmpty CardType.codec) (ChosenQuality.CardType . foldMap NonEmpty.toList) (\x -> case x of ChosenQuality.CardType except -> Just (NonEmpty.nonEmpty except); _ -> Nothing),
-      Arm.payload "Number" ChooseBetween.codec ChosenQuality.Number (\x -> case x of ChosenQuality.Number y -> Just y; _ -> Nothing),
+      Arm.payload "Number" number (uncurry ChosenQuality.Number) (\x -> case x of ChosenQuality.Number least most -> Just (least, most); _ -> Nothing),
       Arm.nullary "Parity" ChosenQuality.Parity,
       Arm.payload "Word" (Common.nonEmpty Common.text) ChosenQuality.Word (\x -> case x of ChosenQuality.Word y -> Just y; _ -> Nothing),
       Arm.payload "ExiledCard" exiledCard (uncurry ChosenQuality.ExiledCard) (\x -> case x of ChosenQuality.ExiledCard pile cards -> Just (pile, cards); _ -> Nothing)
@@ -32,6 +33,12 @@ codec =
         (,)
           <$> Fields.required "family" SubtypeFamily.codec fst
           <*> Fields.defaulted "among" Nothing (Common.maybe (Common.nonEmpty Subtype.codec)) snd
+    -- An absent "most" is no maximum ("a number greater than 0").
+    number =
+      Fields.objectWith (\(least, most) -> if maybe False (least >) most then Left (Text.pack "Number: least must not exceed most") else Right (least, most)) $
+        (,)
+          <$> Fields.required "least" Common.natural fst
+          <*> Fields.defaulted "most" Nothing (Common.maybe Common.natural) snd
     exiledCard =
       Fields.object $
         (,)

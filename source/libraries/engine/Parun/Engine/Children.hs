@@ -711,6 +711,7 @@ operandChildren children operand = case operand of
   Operand.EnclosingAmount -> pure operand
   Operand.OfEachOtherCandidate _ -> pure operand
   Operand.YourCounters _ -> pure operand
+  Operand.ChosenNumber -> pure operand
 
 -- | A damage look-back's children: the slot its party reads, at MANY
 -- (membership, IsBound's reading).
@@ -2416,7 +2417,7 @@ chosenQualityChildren onListed onCards quality = case quality of
   ChosenQuality.Colors _ -> pure quality
   ChosenQuality.Subtype family among -> ChosenQuality.Subtype family <$> traverse (traverse onListed) among
   ChosenQuality.CardType _ -> pure quality
-  ChosenQuality.Number _ -> pure quality
+  ChosenQuality.Number _ _ -> pure quality
   ChosenQuality.Parity -> pure quality
   ChosenQuality.Word _ -> pure quality
   ChosenQuality.ExiledCard pile cards -> ChosenQuality.ExiledCard pile <$> onCards cards
