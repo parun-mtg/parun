@@ -392,7 +392,8 @@ condition context c = case c of
   _ -> []
 
 -- | The condition holding exactly when this one fails, where the DSL can say
--- it: a count of at least k and one of at most k - 1, either way. An "unless"
+-- it: a count of at least k and one of at most k - 1, either way, and a count
+-- of exactly zero and one of at least one. An "unless"
 -- (CR 614.1d's "enters tapped unless ...") is held as the condition under
 -- which its rewrite applies, so the words name this one's complement.
 unless :: Condition.Condition -> Maybe Condition.Condition
@@ -401,6 +402,8 @@ unless c = case c of
     | k > 0 -> Just (Condition.Compares (Compares.MkCompares measured Comparison.AtMost (Quantity.Literal (k - 1))))
   Condition.Compares (Compares.MkCompares measured Comparison.AtMost (Quantity.Literal k))
     | k >= 0 -> Just (Condition.Compares (Compares.MkCompares measured Comparison.AtLeast (Quantity.Literal (k + 1))))
+  Condition.Compares (Compares.MkCompares measured@(Quantity.Count _) Comparison.Exactly (Quantity.Literal 0)) ->
+    Just (Condition.Compares (Compares.MkCompares measured Comparison.AtLeast (Quantity.Literal 1)))
   _ -> Nothing
 
 -- | A life tally's predicate after its subject: " lost life last turn".
