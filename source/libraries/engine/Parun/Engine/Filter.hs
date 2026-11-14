@@ -30,6 +30,7 @@ import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockStatus as BlockStatus
 import qualified Parun.Types.BoundMeasure as BoundMeasure
+import qualified Parun.Types.CandidateScope as CandidateScope
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClassLevel as ClassLevel
@@ -73,6 +74,7 @@ import qualified Parun.Types.MovedBetween as MovedBetween
 import qualified Parun.Types.NameChooser as NameChooser
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Operand as Operand
+import qualified Parun.Types.OtherCandidates as OtherCandidates
 import qualified Parun.Types.Pairing as Pairing
 import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.ParityOperand as ParityOperand
@@ -1793,21 +1795,20 @@ data Context = MkContext
     -- (Parun.Engine.Target.slotContext). Nothing for a reader the source has as
     -- its own, which is every static ability, and in contextFor below.
     reader :: Maybe AbilityName.AbilityName,
-    -- CR 608.2d: every candidate the enclosing choice offers, with its
-    -- measures, for the Measures atom's OfEachOtherCandidate operand. Filled by
+    -- CR 608.2d: every candidate the enclosing position offers, by its view,
+    -- for the Measures atom's OfEachOtherCandidate operand. Filled by
     -- amongCandidates, whose callers are an edict's pool
     -- (Parun.Engine.Replacement.sacrificeCandidates), the battlefield's
     -- (Parun.Engine.Resolve.Slots.battlefieldMatching), a target slot's
     -- (Parun.Engine.Target.admittedListGiven), a hand's
-    -- (Parun.Engine.Resolve.Slots.handCardsOf) and the graveyards' its
-    -- controller chooses from (Parun.Engine.Resolve.Common.graveyardCards);
+    -- (Parun.Engine.Resolve.Slots.handCardsOf), the graveyards' its
+    -- controller chooses from (Parun.Engine.Resolve.Common.graveyardCards) and
+    -- a leaves-the-battlefield trigger's (Parun.Engine.Event.Match.leaves);
     -- Nothing everywhere else,
     -- so the operand is vacuously False there, and Parun.FilterPositionLintSpec
     -- keeps a card to those positions. `Just Map.empty` is the pool-gathering
     -- read: with no other candidate to compare against, every comparison holds.
-    --
-    -- Not implemented: the operand in a trigger's filter (#7401).
-    candidateMeasures :: Maybe (Map.Map ObjectId.ObjectId (Map.Map Measure.Measure Integer)),
+    candidateMeasures :: Maybe (Map.Map ObjectId.ObjectId View),
     -- CR 109.2: the projected view of every permanent, for Shares at
     -- Anchor.AnyPermanent. Filled lazily by Parun.Engine.Projection.framedBySlots;
     -- empty in contextFor below, so the atom is vacuously False there, and
@@ -1910,7 +1911,7 @@ slotOneObject slot context = case Set.toList (Map.findWithDefault Set.empty slot
 measuresOf :: View -> Map.Map Measure.Measure Integer
 measuresOf view = Map.fromList [(measure, n) | measure <- [minBound .. maxBound], Just n <- [measureOf measure view]]
 
--- CR 608.2d: the candidates a choice offers for a Filter that may compare each
+-- CR 608.2d: the candidates a choice or a trigger offers for a Filter that may compare each
 -- against every other one (Operand.OfEachOtherCandidate) -- "the greatest power
 -- among creatures that player controls". The pool is what the choice would
 -- offer were the comparison absent, gathered with every such comparison holding
@@ -1922,7 +1923,7 @@ amongCandidates context viewOf filter_ candidates
   | comparesCandidates filter_ =
       let against pool candidate = matches context {candidateMeasures = Just pool} (viewOf candidate) filter_
           pooled = filter (against Map.empty) candidates
-       in filter (against (Map.fromList [(oid, measuresOf view) | candidate <- pooled, let view = viewOf candidate, Just oid <- [identity view]])) pooled
+       in filter (against (Map.fromList [(oid, view) | candidate <- pooled, let view = viewOf candidate, Just oid <- [identity view]])) pooled
   | otherwise = filter (\candidate -> matches context (viewOf candidate) filter_) candidates
 
 -- Does the Filter carry an Operand.OfEachOtherCandidate anywhere, so that
@@ -2184,9 +2185,15 @@ matches context view predicate = case predicate of
   -- OfEachOtherCandidate holds against EVERY other candidate's number, so a tie
   -- for the greatest admits each tied candidate and leaves the choice among them
   -- to the chooser (CR 608.2d); a candidate lacking the operand's measure is not
-  -- compared against.
-  Filter.Measures (Measures.MkMeasures measure comparison (Operand.OfEachOtherCandidate other)) -> case (measureOf measure view, candidateMeasures context) of
-    (Just n, Just pool) -> all (compares comparison n) [t | (oid, measures) <- Map.toList pool, Just oid /= identity view, Just t <- [Map.lookup other measures]]
+  -- compared against. CandidateScope.SameController compares only against
+  -- candidates its controller controls ("among creatures that player
+  -- controls"), never one with no controller.
+  Filter.Measures (Measures.MkMeasures measure comparison (Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates other scope))) -> case (measureOf measure view, candidateMeasures context) of
+    (Just n, Just pool) -> all (compares comparison n) [t | (oid, peer) <- Map.toList pool, Just oid /= identity view, inScope peer, Just t <- [measureOf other peer]]
+      where
+        inScope peer = case scope of
+          CandidateScope.EveryCandidate -> True
+          CandidateScope.SameController -> Maybe.isJust (controller view) && controller peer == controller view
     _ -> False
   Filter.Measures m -> case (measureOf (Measures.measure m) view, operandValue context view (Measures.operand m)) of
     (Just n, Just t) -> compares (Measures.comparison m) n t

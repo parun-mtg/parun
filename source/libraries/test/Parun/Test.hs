@@ -144,6 +144,7 @@ import qualified Parun.Codec.BlocksDeclaredSpec
 import qualified Parun.Codec.BoardSpec
 import qualified Parun.Codec.BoundMeasureSpec
 import qualified Parun.Codec.CandidateIdSpec
+import qualified Parun.Codec.CandidateScopeSpec
 import qualified Parun.Codec.CantAttackPlayerSpec
 import qualified Parun.Codec.CantBeBlockedBySpec
 import qualified Parun.Codec.CantBlockCreaturesSpec
@@ -590,6 +591,7 @@ import qualified Parun.Codec.OperandSpec
 import qualified Parun.Codec.OptionalDecisionSpec
 import qualified Parun.Codec.OptionalitySpec
 import qualified Parun.Codec.OrElseSpec
+import qualified Parun.Codec.OtherCandidatesSpec
 import qualified Parun.Codec.OutsideCardSpec
 import qualified Parun.Codec.OutsideDestinationSpec
 import qualified Parun.Codec.OutsideObjectSpec
@@ -1657,6 +1659,8 @@ spec s reference corpus = do
   Parun.Codec.NumberFloorSpec.spec s
   Parun.Codec.OnsetSpec.spec s
   Parun.Codec.OperandSpec.spec s
+  Parun.Codec.CandidateScopeSpec.spec s
+  Parun.Codec.OtherCandidatesSpec.spec s
   Parun.Codec.OptionalDecisionSpec.spec s
   Parun.Codec.CombatDamageAmountSpec.spec s
   Parun.Codec.CombatDamageOptionSpec.spec s

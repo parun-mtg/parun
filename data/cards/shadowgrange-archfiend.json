@@ -85,7 +85,10 @@
                                   "measure": "Power",
                                   "operand": {
                                     "type": "OfEachOtherCandidate",
-                                    "value": "Power"
+                                    "value": {
+                                      "measure": "Power",
+                                      "scope": "SameController"
+                                    }
                                   }
                                 }
                               }

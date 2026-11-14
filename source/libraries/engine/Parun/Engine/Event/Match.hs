@@ -18,6 +18,7 @@ import qualified Parun.Engine.Count as Count
 import Parun.Engine.Event.Binding (admitsAttacker, admitsDeparture, admittedAt, admittedAttackers, admittedDepartures, admittedPreventedSources, attackedBy, combatDamagerOn, postEventView)
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as ProjectionView
@@ -635,7 +636,12 @@ enters context board gs bearer you t event = case Game.enteredBattlefieldChange 
 --   last-known branch only once that id is gone). A dead permanent has no live
 --   reading, and the graveyard card would answer "you control" for its OWNER
 --   (CR 108.4a). A permanent that filed no last known information matches
---   nothing.
+--   nothing. A Filter comparing against other candidates (CR 608.2d,
+--   Filter.amongCandidates) reads `before` instead, the board immediately
+--   before the event (CR 603.10a), whose every permanent is a candidate: one
+--   that left in the same event is still on it. CR 801.11 cuts the pool to the
+--   range of influence of the bearer's controller first, as a target slot's
+--   is. An event no board was filed before matches nothing.
 -- - Attached reads the departed host's own record of what was attached to it
 --   (LastKnown.attached), filed from the pre-move board: CR 704.5m buries an
 --   Aura and CR 704.5n unattaches an Equipment in the same SBA batch, so the
@@ -651,8 +657,8 @@ enters context board gs bearer you t event = case Game.enteredBattlefieldChange 
 -- Batching.OneOrMore trigger answers True for every member of its CR 704.3 /
 -- 608.2f batch, and `batchScoped` plus eventTriggers' dedup within each
 -- Parun.Types.EventGroup is what fires it once (CR 603.2c).
-leaves :: Map.Map SlotName.SlotName Binding -> Filter.Context -> GameState -> ObjectId -> PlayerId -> LeavesTrigger.LeavesTrigger -> GameEvent -> Bool
-leaves bindings context gs bearer you t event = case event of
+leaves :: Map.Map SlotName.SlotName Binding -> Filter.Context -> Maybe GameState -> GameState -> ObjectId -> PlayerId -> LeavesTrigger.LeavesTrigger -> GameEvent -> Bool
+leaves bindings context before gs bearer you t event = case event of
   GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _) ->
     ZoneChange.from zc == Zone.Battlefield
       && ZoneChange.to zc /= Zone.Battlefield
@@ -667,7 +673,16 @@ leaves bindings context gs bearer you t event = case event of
         && (PlayerRelation.perspectiveFree owner || maybe False (PlayerRelation.holds (Game.teams gs) owner you) (Game.ownerWithLastKnown departed gs))
     watched departed = case LeavesTrigger.permanent t of
       LeavingPermanent.Self -> departed == bearer
-      LeavingPermanent.Matching f -> maybe False (\view -> Filter.matches context view f) (Projection.viewWithLastKnown departed gs departed)
+      LeavingPermanent.Matching f
+        | Filter.comparesCandidates f -> case before of
+            Just filed
+              | Set.member departed (GameState.battlefield filed) ->
+                  let grants = ProjectionView.controlGrants filed
+                      reach = Plane.rangePerspective bearer you gs
+                      pool = filter (\oid -> all (\p -> ProjectionView.objectInRangeGiven grants p oid filed) reach) (Set.toList (GameState.battlefield filed))
+                   in elem departed (Filter.amongCandidates context (Projection.viewsOf filed) f pool)
+            _ -> False
+        | otherwise -> maybe False (\view -> Filter.matches context view f) (Projection.viewWithLastKnown departed gs departed)
       LeavingPermanent.Attached -> maybe False (Set.member bearer . LastKnown.attached) (Game.lastKnownOf departed gs)
       LeavingPermanent.Haunted -> Map.lookup bearer (GameState.haunting gs) == Just departed
       LeavingPermanent.Bound slot -> Map.lookup slot (Binding.objectSlots bindings) == Just departed
@@ -971,17 +986,25 @@ anyTriggerReads event = case event of
 --
 -- `board` is CR 603.10's first sentence: the battlefield immediately after the
 -- event (Event.Trigger.battlefieldAt), for an arm that must not read the live one.
--- `atEvent` is the whole game filed then (`gameAfter`), for a
--- trigger condition's "while" (CR 603.2): CR 704.3's state-based actions run
--- between the event and the gather, so the live game is too late.
-matchesTriggerGiven :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-matchesTriggerGiven bindings board atEvent gs bearer you cond event =
-  anyTriggerReads event && armMatches bindings board atEvent gs bearer you cond event
+-- `group` is the event's: the whole game filed after it (`gameAfter`) is
+-- `atEvent`, for a trigger condition's "while" (CR 603.2), since CR 704.3's
+-- state-based actions run between the event and the gather, so the live game is
+-- too late; the one filed before it (Snapshots.boardBeforeEvent) is a
+-- look-back's (CR 603.10a).
+matchesTriggerGiven :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> EventGroup.EventGroup -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
+matchesTriggerGiven bindings board group gs =
+  matchesAt bindings board (gameAfter group gs) (Map.lookup group (Snapshots.boardBeforeEvent (GameState.snapshots gs))) gs
+
+-- matchesTriggerGiven with the two filed games in hand, which an arm asking it
+-- again of an inner condition passes on.
+matchesAt :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> Maybe GameState -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
+matchesAt bindings board atEvent beforeEvent gs bearer you cond event =
+  anyTriggerReads event && armMatches bindings board atEvent beforeEvent gs bearer you cond event
 
 -- The arm for this condition, which reads the event it watches and falls through
--- on the rest. Past anyTriggerReads, so only matchesTriggerGiven calls it.
-armMatches :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-armMatches bindings board atEvent gs bearer you cond event = case cond of
+-- on the rest. Past anyTriggerReads, so only matchesAt calls it.
+armMatches :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> Maybe GameState -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
+armMatches bindings board atEvent beforeEvent gs bearer you cond event = case cond of
   TriggerCondition.Enters t -> enters bearerContext board gs bearer you t event
   -- CR 603.2b: this step began, on a turn the scope admits, and -- for a card
   -- that counts main phases rather than naming one -- at CR 505.1b's ordinal.
@@ -1190,7 +1213,7 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   TriggerCondition.Attacks t -> attacks bearerContext board atEvent gs bearer you t event
   -- CR 509.3, as a function of Parun.Types.BlockTrigger's fields: blocks.
   TriggerCondition.Blocks t -> blocks bearerContext board gs t event
-  TriggerCondition.Leaves t -> leaves bindings bearerContext gs bearer you t event
+  TriggerCondition.Leaves t -> leaves bindings bearerContext beforeEvent gs bearer you t event
   TriggerCondition.LeavesZone t -> leavesZone board gs bearer you (admitsTurn . LeavesZoneTrigger.scope) t event
   TriggerCondition.PutIntoZone t -> putIntoZone bearerContext board gs bearer you (admitsTurn . PutIntoZoneTrigger.scope) t event
   -- CR 603.2c's batch reading of DealsDamage's damage to a player (Pia Nalaar,
@@ -1201,10 +1224,11 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- and firing once for the CR 510.2 step is `batchScoped` below plus
   -- eventTriggers' dedup, never this arm.
   TriggerCondition.PermanentsDealDamageToPlayer p ->
-    matchesTriggerGiven
+    matchesAt
       bindings
       board
       atEvent
+      beforeEvent
       gs
       bearer
       you
@@ -1966,7 +1990,7 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- the SAME event fire the ability once here, which is also the right answer --
   -- CR 603.2 matches an event against "a triggered ability's trigger event", and
   -- the ability is one ability.
-  TriggerCondition.AnyOf conditions -> any (\c -> matchesTriggerGiven bindings board atEvent gs bearer you c event) conditions
+  TriggerCondition.AnyOf conditions -> any (\c -> matchesAt bindings board atEvent beforeEvent gs bearer you c event) conditions
   -- CR 609.1: the narrowed condition, on an event a spell or ability's effect
   -- caused, that spell or ability's controller related to CR 109.5's "you" the
   -- way a Discarder discard relates the discarder. The controller is the one the
@@ -1974,7 +1998,7 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
   -- control cannot reach back.
   TriggerCondition.CausedBy narrowed ->
     maybe False (causeAdmitted gs bearer you narrowed) (causeOf event)
-      && matchesTriggerGiven bindings board atEvent gs bearer you (CausedBy.condition narrowed) event
+      && matchesAt bindings board atEvent beforeEvent gs bearer you (CausedBy.condition narrowed) event
   -- CR 715.2d's watcher. At ChapterMoment.Triggers it is CR 603.3b's second
   -- class, the one condition in this type whose event is another ability
   -- triggering: "whenever the final chapter ability of a Saga you control
