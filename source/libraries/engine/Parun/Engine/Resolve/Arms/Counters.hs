@@ -1543,17 +1543,16 @@ removePlayerCounters resolving source controller legal (RemovePlayerCounters.MkR
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
       recipients = playerRefPlayers legal resolving source controller gs ref
-  Monad.forM_ recipients $ \pid ->
+  lost <- Monad.forM recipients $ \pid ->
     case Common.evaluateForRecipient viewOf context gs resolving source pid quantity of
-      Just n
-        | n > 0 ->
-            -- CR 122: GainPlayerCounters' mirror, through no funnel for
-            -- Effect.RemoveCounters' reason. The tally is what this player
-            -- lost, Leeches' "that much".
-            do
-              lost <- State.state (Game.removePlayerCounters kind pid (Integer.toNaturalSaturating n))
-              Monad.forM_ mTally $ \slot -> State.modify' (Common.bindAmountSlot resolving source slot lost)
-      _ -> pure ()
+      -- CR 122: GainPlayerCounters' mirror, through no funnel for
+      -- Effect.RemoveCounters' reason.
+      Just n | n > 0 -> State.state (Game.removePlayerCounters kind pid (Integer.toNaturalSaturating n))
+      _ -> pure 0
+  -- The tally is what the players lost, Leeches' "that much", bound even where
+  -- nothing came off, RemoveCountersAmong's posture: Mutated Cultist sums one
+  -- per kind.
+  Monad.forM_ mTally $ \slot -> State.modify' (Common.bindAmountSlot resolving source slot (sum lost))
 
 -- CR 107.14: "you may pay any amount of {E}". The payer is the resolving
 -- controller (CR 109.5's "you"), the amount is theirs to name, and CR 118.3

@@ -38,10 +38,9 @@ data CostModifier = MkCostModifier
     -- | CR 601.2f: when Just, the change applies this many times, read as the
     -- total is determined against the effect's source -- Henzie "Toolbox"
     -- Torre's "{1} less for each time you've cast your commander". Multiplies
-    -- `perTarget`'s count where both are given.
-    --
-    -- Not implemented: baking the slots it reads when a resolving effect stores
-    -- the change, Mutated Cultist's "for each counter removed this way" (#5153).
+    -- `perTarget`'s count where both are given. A resolving effect storing the
+    -- change fixes it then (CR 608.2h), Mutated Cultist's "for each counter
+    -- removed this way"; its scenarios prove it.
     perEach :: Maybe Quantity.Quantity,
     -- | Professor Hojo's "the FIRST activated ability you activate during your
     -- turn" and Shadow in the Warp's "the first creature spell you cast each

@@ -1486,6 +1486,13 @@ affectPlayers resolving source controller legal (AffectPlayers.MkAffectPlayers d
           [pid] -> PlayerRef.Specific pid
           _ -> ref
         withPlayers = PlayerEffect.mapPlayerRefs atResolution playerEffect
+        -- CR 608.2h / 611.2d: a number the stored effect counts with is
+        -- determined once, now. Mutated Cultist's "for each counter removed
+        -- this way" reads tallies that die with this resolution. One that
+        -- cannot be determined is left standing, bakeAmount's posture.
+        context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+        settle quantity = maybe quantity Quantity.Type.Literal (Quantity.evaluateFor (effectViewOf resolving source legal gs) context gs resolving source quantity)
+        withAmounts = Functor.runIdentity (PlayerEffect.overResolutionQuantities (pure . settle) withPlayers)
         -- CR 601.2c / 608.2b again, one payload over: a DamagePattern's
         -- `boundRecipient` names the slot this resolution filled, and the
         -- recipient it named is written into `whichRecipient` here --
@@ -1498,7 +1505,7 @@ affectPlayers resolving source controller legal (AffectPlayers.MkAffectPlayers d
         -- stores one effect apiece and a slot naming none stores nothing at
         -- all, which is rule 608.2b's answer for an illegal target. A
         -- pattern naming no slot yields exactly one effect, unchanged.
-        bakedEffects = PlayerEffect.overDamagePatterns (Common.bakeDamagePatternRecipient legal resolving controller source gs) withPlayers
+        bakedEffects = PlayerEffect.overDamagePatterns (Common.bakeDamagePatternRecipient legal resolving controller source gs) withAmounts
         -- CR 611.2b: a duration that never started stores nothing. A window
         -- naming "that player" (Expiry.perSeat) is one window per affected
         -- player, each its own row over that one seat: Sphinx's Decree's

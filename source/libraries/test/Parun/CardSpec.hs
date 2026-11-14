@@ -178,6 +178,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostKeyword as CostKeyword
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostReduction as CostReduction
+import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CountedDiscard as CountedDiscard
@@ -6638,6 +6639,20 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
           "the dealer slot is read"
           (Map.keysSet (Resolve.slotsOf (Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing)) (Quantity.Type.Literal 3))) (Just ghost) Nothing Nothing Nothing Nothing Nothing))))
           (Set.singleton ghost)
+  -- CR 608.2h: a stored cost change's `perEach` is fixed as it is stored
+  -- (Mutated Cultist's tallies), so what it counts with is read like any other
+  -- quantity, by all three checks.
+  Spec.it s "the lint reaches a stored cost change's per-each count" $ do
+    let ghost = SlotName.MkSlotName (Text.pack "ghost")
+        storing each = Effect.AffectPlayers (AffectPlayers.MkAffectPlayers (Duration.UntilUsed Nothing) (AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)) (PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells (Filter.Type.And []) Nothing Nothing (Just each) Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 1])))))
+    Spec.assertEqWith s "the counted slot is read" (Map.keysSet (Resolve.slotsOf (storing (Quantity.Type.InSlot ghost)))) (Set.singleton ghost)
+    Spec.assertEqWith s "CR 603.3b a count hiding a target slot is not exhaustively reported" (Resolve.slotsAreExhaustive (storing (Quantity.Type.LifeTotal (PlayerRef.InSlot ghost)))) False
+    Spec.assertEqWith s "CR 107.3 a count reading X makes the effect an X reader" (Resolve.hasRead StaticRead.ReadsX [storing (Quantity.Type.InSlot Binding.variableX)]) True
+    Spec.assertEqWith
+      s
+      "and a literal count fires none of the three"
+      (Map.keysSet (Resolve.slotsOf (storing (Quantity.Type.Literal 2))), Resolve.slotsAreExhaustive (storing (Quantity.Type.Literal 2)), Resolve.hasRead StaticRead.ReadsX [storing (Quantity.Type.Literal 2)])
+      (Set.empty, True, False)
   -- The SPELL half of CR 601.2b's contract: what a card's own modes read is
   -- announced against the card's own cost -- mana cost, additional costs and
   -- alternative costs together (`spellCostsOf`), since CR 107.3a names all of them.
