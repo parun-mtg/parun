@@ -56,6 +56,7 @@ import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerPlacement as StickerPlacement
 import qualified Parun.Types.StickerRef as StickerRef
@@ -219,7 +220,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           Object.doesNotUntapFor = 2,
           Object.exertedBy = Set.singleton (PlayerId.MkPlayerId 23),
           Object.activatedOnce = Map.singleton ActivatedAbilitySourceSpec.ability 1,
-          Object.chosenModes = Map.singleton TriggeredAbilitySourceSpec.ability (Map.singleton (ModeIndex.MkModeIndex 2) 3)
+          Object.chosenModes = Map.fromList [(StackedAbility.Activated ActivatedAbilitySourceSpec.ability, Map.singleton (ModeIndex.MkModeIndex 0) 1), (StackedAbility.Triggered TriggeredAbilitySourceSpec.ability, Map.singleton (ModeIndex.MkModeIndex 2) 3)]
         }
       ( " {\"owner\":1,\"identity\":{\"serial\":9,\"startingOwner\":7},\"enteredUnder\":2,\"source\":{\"type\":\"OfToken\",\"value\":3}"
           <> ",\"zone\":\"Battlefield\",\"tapped\":\"Tapped\""
@@ -273,7 +274,8 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"doesNotUntapFor\":2,\"exertedBy\":[23]"
           <> ",\"activatedOnce\":[{\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]}"
           <> ",\"modal\":{\"modes\":[{}]}}]"
-          <> ",\"chosenModes\":[{\"key\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"value\":{\"2\":3}}]} "
+          <> ",\"chosenModes\":[{\"key\":{\"type\":\"Activated\",\"value\":{\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]},\"modal\":{\"modes\":[{}]}}},\"value\":{\"0\":1}}"
+          <> ",{\"key\":{\"type\":\"Triggered\",\"value\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}},\"value\":{\"2\":3}}]} "
       )
   Spec.it s "has a schema" $
     Common.assertHasSchema s Object.codec

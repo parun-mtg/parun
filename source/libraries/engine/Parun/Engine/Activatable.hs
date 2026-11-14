@@ -63,6 +63,7 @@ import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.RowSource (RowSource)
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -740,7 +741,9 @@ activatableGiven pools sources pid srcId ability gs =
         && sicknessOkGiven grants pcs pid srcId ability gs
         && riderOk pid srcId ability gs
         && loyaltyOk pid srcId ability gs
-        && Modal.selectionPossible fillable (Modal.Type.selection modal)
+        -- CR 700.2a: a mode the modal remembers choosing can't be chosen, so
+        -- an ability with too few left is not offered (Activate's `legal`).
+        && Modal.selectionPossible (Set.difference fillable (Target.rememberedModes (StackedAbility.Activated (Projection.printedActivatedAbility srcId gs ability)) modal srcId gs)) (Modal.Type.selection modal)
         -- CR 107.3c: an X its text defines off no card is undefined.
         && not (Cost.undefinedX pid srcId ability gs)
         && any (payableCostAtGiven rows aimable sources (Target.board pools) (leastX pid srcId ability gs) (ActivatedAbility.keyword ability) (ActivatedAbility.name ability) (ActivationRestriction.spendableTypes srcId (ActivatedAbility.restrictions ability) gs) pid srcId gs) (costsFor rows pid ability gs)

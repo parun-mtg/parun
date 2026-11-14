@@ -6,14 +6,12 @@ import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.AttackTarget as AttackTarget
-import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.ControlClock as ControlClock
 import qualified Parun.Types.CounterKind as CounterKind
-import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.Mana as Mana
@@ -23,9 +21,9 @@ import qualified Parun.Types.PlayerChoice as PlayerChoice
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.StickerPlacement as StickerPlacement
 import qualified Parun.Types.Subtype as Subtype
-import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.Zone as Zone
 
 -- | CR 608.2h: what an object WAS, filed under the id it had while it existed.
@@ -249,10 +247,10 @@ data LastKnown = MkLastKnown
     -- | CR 107.3 / 608.2h: Object.manaSpentOnX as it left, `manaSpent`'s
     -- sibling.
     manaSpentOnX :: !(Maybe Mana.Mana),
-    -- | CR 700.2b / 113.7a: the modes its triggered abilities had chosen --
+    -- | CR 700.2b / 113.7a: the modes its abilities had chosen --
     -- Object.chosenModes as it left, so a trigger whose source is gone before
     -- CR 603.3 places it still bars them (Parun.Engine.Engine.placeBorne).
-    chosenModes :: !(Map.Map (TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) (Map.Map ModeIndex.ModeIndex Natural.Natural)),
+    chosenModes :: !(Map.Map StackedAbility.StackedAbility (Map.Map ModeIndex.ModeIndex Natural.Natural)),
     -- | CR 702.30a: how far each player's echo window had run on it --
     -- Object.controlClock as it left. Not a characteristic (CR 109.3's list has
     -- no clock), and per-INCARNATION, so CR 400.7 deletes the only copy of it

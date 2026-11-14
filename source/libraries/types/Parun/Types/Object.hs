@@ -38,12 +38,12 @@ import qualified Parun.Types.RoomIndex as RoomIndex
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.StickerPlacement as StickerPlacement
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
-import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.Zone as Zone
 
 data Object = MkObject
@@ -950,14 +950,14 @@ data Object = MkObject
     -- the copies the object bears. Keyed as printed before any text change (CR
     -- 612.1, Parun.Engine.Projection.printedActivatedAbility).
     activatedOnce :: Map.Map (ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) Natural.Natural,
-    -- | The modes each of this object's triggered abilities has chosen, each
-    -- with the turn (TurnRegisters.turnNumber) it was last chosen, for a
-    -- remembering ModeMemory (CR 700.2b), keyed by the ability
-    -- by value as activatedOnce is, as printed before any text change (CR
-    -- 612.1, Parun.Engine.Projection.printedTriggeredAbility). Written as the
-    -- ability is put on the stack, so a countered instance still counts;
-    -- per-incarnation (CR 400.7).
-    chosenModes :: Map.Map (TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) (Map.Map ModeIndex.ModeIndex Natural.Natural),
+    -- | The modes each of this object's triggered and activated abilities has
+    -- chosen, each with the turn (TurnRegisters.turnNumber) it was last chosen,
+    -- for a remembering ModeMemory (CR 700.2b), keyed by the ability by value as
+    -- activatedOnce is, as printed before any text change (CR 612.1,
+    -- Parun.Engine.Projection.printedAbility). Written as the ability is put
+    -- on the stack, so a countered instance still counts; per-incarnation (CR
+    -- 400.7).
+    chosenModes :: Map.Map StackedAbility.StackedAbility (Map.Map ModeIndex.ModeIndex Natural.Natural),
     -- | CR 702.95b: the creature this one is paired with, and the seat the
     -- soulbond ability that paired them was controlled by; Nothing for every
     -- unpaired creature, which is nearly all of them.

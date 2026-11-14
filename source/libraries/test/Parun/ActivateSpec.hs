@@ -79,6 +79,7 @@ import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
+import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
@@ -105,6 +106,7 @@ import qualified Parun.Types.ScenarioFailure as ScenarioFailure
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
@@ -173,6 +175,7 @@ spec s registry = Spec.describe s "Parun.Engine.Activate" $ do
   groundedSentrySpec s registry
   hushedWardenSpec s registry
   tetheringCharmSpec s registry
+  rememberedModesGateSpec s registry
 
   Spec.it s "CR 602 activating Prodigal Sorcerer's {T} puts an ability on the stack and taps it" $ do
     prodigalSorcerer <- S.printingOf s registry "Prodigal Sorcerer"
@@ -4835,6 +4838,25 @@ tetheringCharmSpec s registry = Spec.describe s "Synthetic Tethering Charm (CR 6
     (_, after) <- S.runScriptOrFail s (S.turn 1 [untethering, attacking, blocking]) built S.combatGame
     Spec.assertEqWith s "CR 613.1f the granted restriction is gone, so the Giant blocked and bob took no damage" (S.lifeOf S.bob after) (Just 20)
     Spec.assertEqWith s "the Charm is still on the battlefield" (length (charmsOf after)) 1
+
+-- CR 700.2a: Three Bowls of Porridge's modes once remembered can't be chosen,
+-- so the gate refuses the ability with none left. No board reaches that: its
+-- last mode sacrifices it. The memory is stamped by hand here, keyed as
+-- Activate keys it; data/scenarios/three-bowls-of-porridge-offers-only-modes-it-hasnt-chosen.json
+-- proves the announcement.
+rememberedModesGateSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+rememberedModesGateSpec s registry = Spec.describe s "Three Bowls of Porridge (CR 700.2a)" $ do
+  Spec.it s "CR 700.2a an activated ability whose every mode is remembered is not offered" $ do
+    porridge <- S.printingOf s registry "Three Bowls of Porridge"
+    mountain <- S.printingOf s registry "Mountain"
+    let ability = theAbility porridge
+        (srcId, g0) = S.addPermanent porridge S.alice (S.landsInPlay mountain 2)
+        remembering n =
+          g0
+            { GameState.objects = Map.adjust (\o -> o {Object.chosenModes = Map.singleton (StackedAbility.Activated ability) (Map.fromList [(ModeIndex.MkModeIndex i, 1) | i <- take n [0 ..]])}) srcId (GameState.objects g0),
+              GameState.turn = (GameState.turn g0) {TurnRegisters.priority = Just S.alice}
+            }
+    Spec.assertEqWith s "offered with a mode left, and not with none" (fmap (Activatable.activatable S.alice srcId ability . remembering) [0, 2, 3]) [True, True, False]
 
 -- CR 602.5c / 113.2c: Gliding Licid's "{U}, {T}: This creature loses this
 -- ability and becomes an Aura enchantment with enchant creature. Attach it to

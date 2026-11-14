@@ -14,11 +14,9 @@ import qualified Parun.Types.ModeSelection as ModeSelection
 data Modal card ability = MkModal
   { modes :: Seq.Seq (Mode.Mode card ability),
     selection :: ModeSelection.ModeSelection,
-    -- | Which earlier choices bar a mode (Demonic Pact's rulings). Read only
-    -- where a triggered ability is put on the stack
-    -- (Parun.Engine.Engine.placeBorne).
-    --
-    -- Not implemented: on an activated ability (#5782), or "this turn" (#5783).
+    -- | Which earlier choices bar a mode (Demonic Pact's rulings). Read where a
+    -- triggered ability is put on the stack and an activated one announced
+    -- (Parun.Engine.Target.rememberedModes); a spell's is read by nothing.
     memory :: ModeMemory.ModeMemory,
     -- | CR 608.2c: the instruction the chosen modes share, run once after them
     -- and reading every chosen mode's targets (Call Damage Control's "Return
