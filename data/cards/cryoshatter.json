@@ -44,58 +44,28 @@
       "triggeredAbilities": [
         {
           "condition": {
-            "type": "AnyOf",
-            "value": [
-              {
-                "type": "BecomesTapState",
+            "type": "BecomesTapState",
+            "value": {
+              "actor": {
+                "type": "Matching",
                 "value": {
-                  "actor": {
-                    "type": "Matching",
-                    "value": {
-                      "type": "And",
-                      "value": [
-                        {
-                          "type": "HasCardType",
-                          "value": "Creature"
-                        },
-                        {
-                          "type": "HasAttached",
-                          "value": {
-                            "type": "IsSource"
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  "status": "Tapped"
-                }
-              },
-              {
-                "type": "IsDealtDamage",
-                "value": {
-                  "dealt": {
-                    "recipient": {
-                      "type": "Matching",
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HasAttached",
                       "value": {
-                        "type": "And",
-                        "value": [
-                          {
-                            "type": "HasCardType",
-                            "value": "Creature"
-                          },
-                          {
-                            "type": "HasAttached",
-                            "value": {
-                              "type": "IsSource"
-                            }
-                          }
-                        ]
+                        "type": "IsSource"
                       }
                     }
-                  }
+                  ]
                 }
-              }
-            ]
+              },
+              "status": "Tapped"
+            }
           },
           "modal": {
             "modes": [
@@ -107,20 +77,57 @@
                         "type": "Destroy",
                         "value": {
                           "ref": {
-                            "type": "EachMatching",
-                            "value": {
-                              "type": "Or",
-                              "value": [
-                                {
-                                  "type": "IsBound",
-                                  "value": "thatTappedPermanent"
-                                },
-                                {
-                                  "type": "IsBound",
-                                  "value": "became"
-                                }
-                              ]
-                            }
+                            "type": "InSlot",
+                            "value": "thatTappedPermanent"
+                          },
+                          "regenerability": "Regenerable"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "IsDealtDamage",
+            "value": {
+              "dealt": {
+                "recipient": {
+                  "type": "Matching",
+                  "value": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "HasAttached",
+                        "value": {
+                          "type": "IsSource"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Destroy",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "became"
                           },
                           "regenerability": "Regenerable"
                         }
