@@ -22,7 +22,6 @@ import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Const as Const
-import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -41,6 +40,7 @@ import qualified Parun.Engine.Claim as Claim
 import qualified Parun.Engine.Coin as Coin
 import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Condition as Condition
+import qualified Parun.Engine.CostAmount as CostAmount.Engine
 import qualified Parun.Engine.CounterRestriction as CounterRestriction
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Detain as Detain
@@ -240,7 +240,7 @@ insteadOfManaCost mana face =
 -- bond-of-agony-cast-free-* prove it.
 fixedXUnlessPaid :: Face.Face card -> Cost Keyword.Type.Keyword -> Cost Keyword.Type.Keyword
 fixedXUnlessPaid face cost
-  | manaHasVariable (Cost.MkCost (Face.manaCost face) []) && not (manaHasVariable cost) = substituteAnnounced Binding.variableX 0 cost
+  | manaHasVariable (Cost.MkCost (Face.manaCost face) []) && not (manaHasVariable cost) = CostAmount.Engine.substituteAnnounced Binding.variableX 0 cost
   | otherwise = cost
 
 -- CR 118.9: the alternative cost a CR 601.3 permission states, settled against
@@ -1868,97 +1868,29 @@ repeated :: Natural -> Cost Keyword.Type.Keyword -> Cost Keyword.Type.Keyword
 repeated n cost = lifeSummed $ foldr plus (Cost.MkCost (fmap (const (ManaCost.MkManaCost [])) (Cost.mana cost)) []) (List.genericReplicate n cost)
 
 -- CR 601.2b: substitute the chosen value of X everywhere in this cost -- the mana
--- part's ManaSymbol.Variable, and every component's X (`substituteAnnounced`).
+-- part's ManaSymbol.Variable, and every component's X
+-- (CostAmount.Engine.substituteAnnounced).
 -- BOTH halves, CR 107.3a giving one announced value to the whole cost, so
 -- Hatred's X is the same X whichever half it sits in (CR 107.3i).
 substituteX :: Natural -> Cost Keyword.Type.Keyword -> Cost Keyword.Type.Keyword
-substituteX x cost = (substituteAnnounced Binding.variableX x cost) {Cost.mana = fmap (Mana.substituteX x) (Cost.mana cost)}
+substituteX x cost = (CostAmount.Engine.substituteAnnounced Binding.variableX x cost) {Cost.mana = fmap (Mana.substituteX x) (Cost.mana cost)}
 
--- CR 601.2b: substitute the value announced for one variable into every
--- component carrying it. X's mana half is `substituteX`'s; a count announced
--- beside it (March of Wretched Sorrow's cards exiled) has no other half.
-substituteAnnounced :: SlotName.SlotName -> Natural -> Cost Keyword.Type.Keyword -> Cost Keyword.Type.Keyword
-substituteAnnounced slot n cost = cost {Cost.components = fmap (Identity.runIdentity . traverseAmount (Identity.Identity . fixAt)) (Cost.components cost)}
-  where
-    fixAt amount = if amount == CostAmount.Announced slot then CostAmount.Fixed n else amount
-
--- `substituteAnnounced` for every count in the map.
+-- CostAmount.Engine.substituteAnnounced for every count in the map.
 substituteCounts :: Map.Map SlotName.SlotName Natural -> Cost Keyword.Type.Keyword -> Cost Keyword.Type.Keyword
-substituteCounts counts cost = Map.foldrWithKey substituteAnnounced cost counts
+substituteCounts counts cost = Map.foldrWithKey CostAmount.Engine.substituteAnnounced cost counts
 
 -- CR 601.2b: the variables OTHER than X this cost's components leave to be
 -- announced, in the order the components name them -- March of Wretched
 -- Sorrow's count of cards exiled. X is `hasVariable`'s, asked by its own prompt.
 announcedCounts :: Cost Keyword.Type.Keyword -> [SlotName.SlotName]
-announcedCounts cost = ListUtils.nubOrd [slot | component <- Cost.components cost, CostAmount.Announced slot <- Const.getConst (traverseAmount (Const.Const . pure) component), slot /= Binding.variableX]
-
--- The CostAmount a component carries, as a traversal: the one place that knows
--- which components CR 107.3a's X can stand in, so `substituteX` and
--- `componentHasVariable` cannot disagree about it.
---
--- EXHAUSTIVE with no wildcard, this module's posture for every CostComponent
--- match: a new component owes an answer here, and -Werror is what makes it.
-traverseAmount :: (Applicative f) => (CostAmount.CostAmount -> f CostAmount.CostAmount) -> CostComponent.CostComponent keyword -> f (CostComponent.CostComponent keyword)
-traverseAmount f component = case component of
-  CostComponent.PayLife amount -> CostComponent.PayLife <$> f amount
-  CostComponent.PayEnergy amount -> CostComponent.PayEnergy <$> f amount
-  CostComponent.RemoveLoyaltyFromThis amount -> CostComponent.RemoveLoyaltyFromThis <$> f amount
-  CostComponent.Blight amount -> CostComponent.Blight <$> f amount
-  -- The announcement fixes CR 701.67b's ceiling exactly as it fixes the {X}
-  -- that licence scopes.
-  CostComponent.Waterbend amount -> CostComponent.Waterbend <$> f amount
-  CostComponent.Sacrifice sacrifice -> (\count -> CostComponent.Sacrifice sacrifice {Sacrifice.count = count}) <$> traverseCount f (Sacrifice.count sacrifice)
-  CostComponent.RemoveCounters remove -> (\amount -> CostComponent.RemoveCounters remove {CountersFromPermanents.count = amount}) <$> traverseCount f (CountersFromPermanents.count remove)
-  CostComponent.PayComputedLife _ -> pure component
-  CostComponent.TapThis -> pure component
-  CostComponent.UntapThis -> pure component
-  CostComponent.SacrificeThis -> pure component
-  CostComponent.ReturnThis -> pure component
-  CostComponent.TapForTotalPower {} -> pure component
-  CostComponent.TapPermanents tap -> (\amount -> CostComponent.TapPermanents tap {TapPermanents.count = amount}) <$> f (TapPermanents.count tap)
-  CostComponent.ReturnPermanents {} -> pure component
-  CostComponent.ExilePermanents {} -> pure component
-  CostComponent.DiscardCards discard -> (\count -> CostComponent.DiscardCards discard {DiscardCards.count = count}) <$> traverseCount f (DiscardCards.count discard)
-  CostComponent.DiscardThis _ -> pure component
-  CostComponent.PutCardFromHandOntoBattlefield _ -> pure component
-  CostComponent.AddLoyaltyToThis _ -> pure component
-  CostComponent.RemoveCountersFromThis counters -> (\amount -> CostComponent.RemoveCountersFromThis counters {CountersOnThis.count = amount}) <$> f (CountersOnThis.count counters)
-  -- Krumar Initiate's "endures X" (CR 107.3a, 701.63a).
-  CostComponent.PutCountersOnThis counters -> (\amount -> CostComponent.PutCountersOnThis counters {CountersOnThis.count = amount}) <$> f (CountersOnThis.count counters)
-  CostComponent.PutCountersOnPayer _ -> pure component
-  -- Nullary: CR 701.61a states no number at all, so there is nothing for CR
-  -- 601.2b to announce.
-  CostComponent.Forage -> pure component
-  CostComponent.FlipCoin -> pure component
-  -- CR 702.174a's cost names no X.
-  CostComponent.ChooseOpponent _ -> pure component
-  CostComponent.ChooseSubtype _ -> pure component
-  CostComponent.WaterbendInstead _ -> pure component
-  CostComponent.TapInsteadOfMana _ -> pure component
-  CostComponent.VariableAtLeast _ -> pure component
-  CostComponent.ExileThisFrom _ -> pure component
-  CostComponent.ExileThis -> pure component
-  CostComponent.ExileCardsFromGraveyard {} -> pure component
-  CostComponent.ExileMaterials {} -> pure component
-  CostComponent.ExileTopFromGraveyard _ -> pure component
-  CostComponent.CollectEvidence _ -> pure component
-  CostComponent.ExileCardsTotalling _ -> pure component
-  -- CR 601.2f's computed amount, not CR 601.2b's X: fixComputed reads it once the
-  -- targets exist.
-  CostComponent.CollectEvidenceOfTargets -> pure component
-  CostComponent.ExileCardsFromHand exile -> (\amount -> CostComponent.ExileCardsFromHand exile {CardsFromHand.count = amount}) <$> f (CardsFromHand.count exile)
-  CostComponent.RevealCardsFromHand reveal -> (\amount -> CostComponent.RevealCardsFromHand reveal {CardsFromHand.count = amount}) <$> f (CardsFromHand.count reveal)
-  CostComponent.Behold _ -> pure component
-  CostComponent.BeholdAndExile _ -> pure component
-  CostComponent.MillCards _ -> pure component
-  CostComponent.RevealTopOfLibrary _ -> pure component
+announcedCounts cost = ListUtils.nubOrd [slot | component <- Cost.components cost, CostAmount.Announced slot <- Const.getConst (CostAmount.Engine.traverseAmount (Const.Const . pure) component), slot /= Binding.variableX]
 
 -- Does this cost contain an X (CR 107.3)? What decides whether the caster is
 -- asked for a value at CR 601.2b. BOTH HALVES: CR 601.2b names the mana cost as
 -- an EXAMPLE and CR 107.3a lists the additional cost beside it, so Hatred, whose
 -- only X is in "pay X life", is asked exactly as Blaze is.
 hasVariable :: Cost Keyword.Type.Keyword -> Bool
-hasVariable cost = manaHasVariable cost || any componentHasVariable (Cost.components cost)
+hasVariable cost = manaHasVariable cost || any CostAmount.Engine.componentHasVariable (Cost.components cost)
 
 -- CR 107.3b, asked of ONE of CR 601.2b's candidates: whether announcing this
 -- cost leaves X the caster's to name or fixes it at 0. The same predicate
@@ -1974,21 +1906,10 @@ manaHasVariable cost = case Cost.mana cost of
   Nothing -> False
   Just (ManaCost.MkManaCost symbols) -> elem ManaSymbol.Variable symbols
 
--- `traverseAmount` into an ObjectCount: Every names no amount to announce.
-traverseCount :: (Applicative f) => (CostAmount.CostAmount -> f CostAmount.CostAmount) -> ObjectCount.ObjectCount -> f ObjectCount.ObjectCount
-traverseCount f count = case count of
-  ObjectCount.Exactly amount -> ObjectCount.Exactly <$> f amount
-  ObjectCount.Every -> pure ObjectCount.Every
-
--- `substituteX`'s predicate half, read off the same traversal: a component this
--- answers False for is one no announcement will ever substitute.
-componentHasVariable :: CostComponent.CostComponent Keyword.Type.Keyword -> Bool
-componentHasVariable = Monoid.getAny . Const.getConst . traverseAmount (Const.Const . Monoid.Any . (== CostAmount.Announced Binding.variableX))
-
 -- Does this component still carry ANY unannounced amount, X or another
 -- variable? Such a component names nothing to pay yet (`payableAnnounced`).
 componentUnannounced :: CostComponent.CostComponent Keyword.Type.Keyword -> Bool
-componentUnannounced = Monoid.getAny . Const.getConst . traverseAmount (Const.Const . Monoid.Any . isAnnounced)
+componentUnannounced = Monoid.getAny . Const.getConst . CostAmount.Engine.traverseAmount (Const.Const . Monoid.Any . isAnnounced)
   where
     isAnnounced amount = case amount of
       CostAmount.Announced _ -> True
@@ -2035,8 +1956,9 @@ greatestPayableX mCeiling payableAt cost =
 demandGrowsWithX :: Cost Keyword.Type.Keyword -> Bool
 demandGrowsWithX cost = manaHasVariable cost || any (componentDemandGrowsWith Binding.variableX) (Cost.components cost)
 
--- `componentHasVariable`'s question sharpened, and exhaustive for its reason: a
--- new X-carrying component owes an answer here as well as there. Asked of the
+-- CostAmount.Engine.componentHasVariable's question sharpened, and exhaustive
+-- for its reason: a new X-carrying component owes an answer here as well as
+-- there. Asked of the
 -- variable named, X or a count announced beside it.
 componentDemandGrowsWith :: SlotName.SlotName -> CostComponent.CostComponent Keyword.Type.Keyword -> Bool
 componentDemandGrowsWith slot component = case component of
@@ -3449,7 +3371,7 @@ manaActivationsOn grants rows effects measure pcs pid oid printedCost restrictio
       -- charges less than. Springjack Pasture's "Sacrifice X Goats" is offered
       -- beside no Goat
       -- (data/scenarios/mana/cr-107-3a-405-6c-springjack-pasture-*).
-      cost = plusComponents adjustments (substituteAnnounced Binding.variableX 0 printedCost)
+      cost = plusComponents adjustments (CostAmount.Engine.substituteAnnounced Binding.variableX 0 printedCost)
       -- CR 118.3 asked of the route's OWN mana part, which is the one conjunct
       -- the two readers differ on. Mana.ForSupply models that mana as a DEMAND
       -- instead (Mana.payableResolutionsGiven), so asking it here would both

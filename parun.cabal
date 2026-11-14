@@ -1936,6 +1936,7 @@ library engine
     Parun.Engine.Conspiracy
     Parun.Engine.Contraption
     Parun.Engine.Cost
+    Parun.Engine.CostAmount
     Parun.Engine.Count
     Parun.Engine.CounterLimit
     Parun.Engine.CounterRestriction

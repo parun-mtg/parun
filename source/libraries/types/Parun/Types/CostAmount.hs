@@ -4,8 +4,8 @@ import qualified Numeric.Natural as Natural
 import qualified Parun.Types.SlotName as SlotName
 
 -- | How much of a resource one Parun.Types.CostComponent asks for: a printed
--- number, or a value CR 601.2b announces and Parun.Engine.Cost.substituteAnnounced
--- fixes.
+-- number, or a value CR 601.2b announces and
+-- Parun.Engine.CostAmount.substituteAnnounced fixes.
 data CostAmount
   = -- | A number printed on the card, or one an announcement already fixed.
     Fixed Natural.Natural

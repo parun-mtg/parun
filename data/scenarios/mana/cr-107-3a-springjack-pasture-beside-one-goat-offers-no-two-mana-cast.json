@@ -1,0 +1,61 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Springjack Pasture",
+            "label": "pasture",
+            "ready": true
+          },
+          {
+            "card": "Mountain Goat",
+            "label": "g1",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 107.3a / 601.2g Springjack Pasture beside one Goat supplies one mana, so no two-mana cast is offered",
+  "final": [
+    {
+      "Count": {
+        "card": "Mountain Goat",
+        "count": 1,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "X is at most the one Mountain Goat there is to sacrifice, and the Pasture taps once, so it supplies one mana and Grizzly Bears' {1}{G} is not offered.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility $pasture"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
