@@ -2145,12 +2145,13 @@ decreaseSpeed resolving source controller legal d = do
 -- first, in APNAP order, and only then does anything leave the battlefield.
 -- The candidate lists are read off ONE `gs` for the same reason.
 playerSacrifices :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerSacrifices.PlayerSacrifices -> Game ()
-playerSacrifices settle resolving source controller legal (PlayerSacrifices.MkPlayerSacrifices players filter_ quantity mPermanents) = do
+playerSacrifices settle resolving source controller legal (PlayerSacrifices.MkPlayerSacrifices players who filter_ quantity mPermanents) = do
   gs <- State.get
   let viewOf = effectViewOf resolving source legal gs
       context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-      -- Every player the reference names, in APNAP order.
-      named = playerRefPlayers legal resolving source controller gs players
+      -- Every player the reference names and the `who` filter admits, read
+      -- once as the effect begins (CR 608.2h), in APNAP order.
+      named = Common.playersWho viewOf context gs who (playerRefPlayers legal resolving source controller gs players)
       victims = filter (\pid -> List.elem pid named) (Game.apnapOrder gs)
       -- `made` is every earlier victim's pick, which CR 101.4b lets a later
       -- victim know.

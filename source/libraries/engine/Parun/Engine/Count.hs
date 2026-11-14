@@ -95,6 +95,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.SpellWasCast as SpellWasCast
 import qualified Parun.Types.Subtype as Subtype.Type
+import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TypeLine as TypeLine
@@ -490,6 +491,10 @@ bakePerspective viewOf context gs candidate predicate =
         -- from this side.
         Filter.Type.HasAttached f ->
           truth (any (\view -> Filter.matches context view f) (Maybe.mapMaybe viewOf (attachersOfPlayer gs candidate)))
+        -- CR 106.12: a question about the turn's log rather than about the
+        -- candidate's characteristics, so baked for CardsInGraveyardAtLeast's
+        -- reason; tappedForManaThisTurn below answers it.
+        Filter.Type.TappedForManaThisTurn f -> truth (tappedForManaThisTurn viewOf context gs f candidate)
         -- Descended into through the connectives alone. Every nest describes
         -- some other OBJECT -- a target, a host, a source, a represented card,
         -- an anchored permanent -- and never this PLAYER candidate (the sole
@@ -499,6 +504,28 @@ bakePerspective viewOf context gs candidate predicate =
         -- rather than attached, so most of those atoms answer False for a
         -- player whatever the nest says.
         _ -> Identity.runIdentity (Children.filterChildren Children.leaves {Children.connective = Identity.Identity . recur} predicate)
+
+-- CR 106.12 / 106.12a: did this player tap for mana, earlier this turn, a
+-- permanent the filter admits? Each GameEvent.TappedForMana the player wrote is
+-- asked of the permanent as its snapshot shows it (asSnapshotted), over its view
+-- now or as it last was, so "a land" is asked of what was tapped: Llanowar
+-- Elves never counts, and a land sacrificed since still does. The log is
+-- cleared at the turn change, which is the rule's "this turn". The filter is
+-- matched under the unchanged context, Controls' posture.
+--
+-- `player` is the tapper (TappedForMana.player), not the permanent's
+-- controller, so a land tapped under Piracy counts for Piracy's controller.
+-- Proved by the scenarios in data/scenarios/desolation.
+tappedForManaThisTurn :: ViewOf -> Filter.Context -> GameState -> Filter.Type.Filter Keyword.Type.Keyword -> PlayerId -> Bool
+tappedForManaThisTurn viewOf context gs inner candidate =
+  let admits tapped =
+        let snapshot = TappedForMana.snapshot tapped
+            -- The snapshot's own view where no object or record answers for the
+            -- id: a fence, since a permanent that left files a record.
+            alone = viewOfSnapshot (deployIn gs (ObjectSnapshot.zone snapshot)) (ObjectSnapshot.controller snapshot) (Just (ObjectSnapshot.owner snapshot)) False Map.empty (ObjectSnapshot.zone snapshot) (ObjectSnapshot.home snapshot) (ObjectSnapshot.lapsedGrants snapshot) (ObjectSnapshot.characteristics snapshot)
+            live = Maybe.fromMaybe alone (orLastKnown viewOf gs (ObjectSnapshot.object snapshot))
+         in TappedForMana.player tapped == candidate && Filter.matches context (asSnapshotted gs snapshot live) inner
+   in any admits (Maybe.mapMaybe (Game.tappedForManaOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
 -- A baked answer as a Filter. `And []` is the trivial predicate by
 -- Parun.Types.Filter's own note, so its negation is the trivially false one --

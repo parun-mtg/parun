@@ -12,6 +12,9 @@ import qualified Parun.Types.SlotName as SlotName
 -- sacrificed, which is that rule's own worked example.
 data PlayerSacrifices = MkPlayerSacrifices
   { players :: PlayerRef.PlayerRef,
+    -- | The player Filter narrowing `players`, Parun.Types.PlayersWho's `who`
+    -- -- Desolation's "each player who tapped a land for mana this turn".
+    who :: Maybe (Filter.Filter Keyword.Keyword),
     filter :: Filter.Filter Keyword.Keyword,
     quantity :: Quantity.Quantity,
     -- | Where the PERMANENTS CR 701.21a sacrificed are written as a group, under

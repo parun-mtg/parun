@@ -2241,7 +2241,7 @@ representativeEvents cond =
         -- CR 106.12a's own event, on `departed` under either subject: the arm
         -- stamps the tapped permanent under every relation it admits, so the floor
         -- is the same whether the pair matches.
-        TriggerCondition.TappedForMana _ -> one (GameEvent.TappedForMana (TappedForMana.MkTappedForMana {TappedForMana.permanent = departed, TappedForMana.mana = Set.singleton (ManaType.Colored Color.Green), TappedForMana.player = S.alice}))
+        TriggerCondition.TappedForMana _ -> one (GameEvent.TappedForMana (TappedForMana.MkTappedForMana {TappedForMana.permanent = departed, TappedForMana.mana = Set.singleton (ManaType.Colored Color.Green), TappedForMana.player = S.alice, TappedForMana.snapshot = S.permanentSnapshot departed S.alice 0}))
         -- CR 605.1b's mana-added event, on `departed` for the arm above's
         -- reason; the arm binds nothing either way.
         TriggerCondition.AbilityAddsMana {} -> one (GameEvent.ManaAdded (ManaAdded.MkManaAdded {ManaAdded.player = S.alice, ManaAdded.source = departed, ManaAdded.mana = Set.singleton (ManaType.Colored Color.Green), ManaAdded.cause = ManaAddedCause.ManaAbility}))

@@ -7,6 +7,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.PlayerRef as PlayerRef
+import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
@@ -22,6 +23,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerSacrifices" $ do
       PlayerSacrifices.codec
       ( PlayerSacrifices.MkPlayerSacrifices
           { PlayerSacrifices.players = PlayerRef.EachInSlot (SlotName.MkSlotName (Text.pack "player")),
+            PlayerSacrifices.who = Nothing,
             PlayerSacrifices.filter = Filter.HasCardType CardType.Creature,
             PlayerSacrifices.quantity = Quantity.Literal 1,
             PlayerSacrifices.permanents = Nothing
@@ -35,10 +37,25 @@ spec s = Spec.describe s "Parun.Codec.PlayerSacrifices" $ do
       PlayerSacrifices.codec
       ( PlayerSacrifices.MkPlayerSacrifices
           { PlayerSacrifices.players = PlayerRef.EachInSlot (SlotName.MkSlotName (Text.pack "player")),
+            PlayerSacrifices.who = Nothing,
             PlayerSacrifices.filter = Filter.HasCardType CardType.Creature,
             PlayerSacrifices.quantity = Quantity.Literal 1,
             PlayerSacrifices.permanents = Just (SlotName.MkSlotName (Text.pack "sacrificed"))
           }
       )
       " {\"players\":{\"type\":\"EachInSlot\",\"value\":\"player\"},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"permanents\":\"sacrificed\"} "
+  -- The players narrowed by a player Filter (Desolation).
+  Spec.it s "MkPlayerSacrifices, with who" $
+    Common.assertCodec
+      s
+      PlayerSacrifices.codec
+      ( PlayerSacrifices.MkPlayerSacrifices
+          { PlayerSacrifices.players = PlayerRef.Relative PlayerRelation.AnyPlayer,
+            PlayerSacrifices.who = Just (Filter.TappedForManaThisTurn (Filter.HasCardType CardType.Land)),
+            PlayerSacrifices.filter = Filter.HasCardType CardType.Land,
+            PlayerSacrifices.quantity = Quantity.Literal 1,
+            PlayerSacrifices.permanents = Nothing
+          }
+      )
+      " {\"players\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"},\"who\":{\"type\":\"TappedForManaThisTurn\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Land\"},\"quantity\":{\"type\":\"Literal\",\"value\":1}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s PlayerSacrifices.codec

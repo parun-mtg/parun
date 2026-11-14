@@ -865,8 +865,9 @@ triggeredYields watch pid chosen oid option share gs =
   let made = yieldUnits option
       types = Set.fromList (fmap ManaUnit.manaType (made <> unitsOf share))
       tapped =
-        [ GameEvent.TappedForMana (TappedForMana.MkTappedForMana {TappedForMana.permanent = oid, TappedForMana.mana = types, TappedForMana.player = pid})
-        | List.elem CostComponent.TapThis (Cost.components (ManaOption.cost option)) && not (Set.null types)
+        [ GameEvent.TappedForMana (TappedForMana.MkTappedForMana {TappedForMana.permanent = oid, TappedForMana.mana = types, TappedForMana.player = pid, TappedForMana.snapshot = snapshot})
+        | List.elem CostComponent.TapThis (Cost.components (ManaOption.cost option)) && not (Set.null types),
+          snapshot <- Maybe.maybeToList (Projection.objectSnapshot oid gs)
         ]
       added =
         [ GameEvent.ManaAdded (ManaAdded.MkManaAdded {ManaAdded.player = recipient, ManaAdded.source = oid, ManaAdded.mana = Set.fromList (typesOf mana), ManaAdded.cause = ManaAddedCause.ManaAbility})

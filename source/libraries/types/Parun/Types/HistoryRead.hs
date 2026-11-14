@@ -64,6 +64,8 @@ data HistoryRead
     StepBegins
   | -- | Permanents that became tapped (CR 701.26a).
     Taps
+  | -- | Permanents tapped for mana (CR 106.12a).
+    TapsForMana
   | -- | Abilities that triggered (CR 603.2).
     Triggers
   deriving (Eq, Ord, Show)

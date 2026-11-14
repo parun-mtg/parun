@@ -3,6 +3,7 @@ module Parun.Types.TappedForMana where
 import qualified Data.Set as Set
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ObjectId as ObjectId
+import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PlayerId as PlayerId
 
 -- | CR 106.12a's event: which permanent was tapped for mana, and which types of
@@ -21,12 +22,18 @@ import qualified Parun.Types.PlayerId as PlayerId
 -- amount is nothing CR 106.12a's trigger reads. CR 106.12b's replacement is the
 -- rule that reads an amount ("tapped for mana of a specific type and/or
 -- amount"), and it is a different sentence about a different kind of effect.
+--
+-- The SNAPSHOT is the permanent as the activation began, for the types' reason:
+-- "each player who tapped a land for mana this turn" (Desolation) asks whether
+-- it was a land when it was tapped, and a cost such as Crystal Vein's sacrifice
+-- may already have removed it (CR 608.2i's posture).
 data TappedForMana = MkTappedForMana
   { permanent :: ObjectId.ObjectId,
     mana :: Set.Set ManaType.ManaType,
     -- | The player who tapped it: the mana ability's controller (CR 113.8), who
     -- differs from the permanent's where an effect lets another player tap it
     -- (Piracy).
-    player :: PlayerId.PlayerId
+    player :: PlayerId.PlayerId,
+    snapshot :: ObjectSnapshot.ObjectSnapshot
   }
   deriving (Eq, Ord, Show)
