@@ -1,0 +1,36 @@
+{
+  "description": "CR 701.20a / 400.3: Parker Luck's two target players each lose life equal to the mana value of the card the OTHER one revealed, then each puts their own revealed card into their hand",
+  "note": "Bob reveals Hill Giant (4), Carol Grizzly Bears (2), so Bob loses 2 and Carol 4; reading each player's own card would swap them. Alice, untargeted, reveals Craw Wurm (6) and nothing of hers moves or is counted.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Parker Luck", "label": "luck"}],
+        "library": [{"card": "Craw Wurm", "label": "a1"}, {"card": "Island", "label": "a2"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Hill Giant", "label": "b1"}, {"card": "Island", "label": "b2"}]
+      },
+      {
+        "name": "carol",
+        "library": [{"card": "Grizzly Bears", "label": "c1"}, {"card": "Island", "label": "c2"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": {"ChooseTargets": {"players": ["$bob", "$carol"]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "carol", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Witnessed", "player": "alice", "is": ["Hill Giant", "Grizzly Bears"]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Life": {"player": "carol", "life": 16}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Life": {"player": "alice", "life": 20}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Hand", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Craw Wurm", "count": 1}}}
+  ]
+}

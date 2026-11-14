@@ -59,12 +59,12 @@ data PlayerRef
     -- the slot was filled by targeting (CR 601.2c).
     InSlot SlotName.SlotName
   | -- | InSlot's PLURAL twin: EVERY player a slot names, rather than the one it
-    -- names alone. Jungle Wayfinder's "each player may search THEIR library" is
-    -- one producer -- the searchers are the seats that took CR 603.5's "may",
-    -- bound under Binding.mayPlayers, and at three seats there are two of them.
-    -- Bellowing Mauler's "each player loses 4 life unless they sacrifice a
-    -- nontoken creature of their choice" is the other, over the seats a CR
-    -- 118.12 gate's answer put in Binding.gatePlayers.
+    -- names alone. Jungle Wayfinder's "each player may search THEIR library"
+    -- reads the seats that took CR 603.5's "may", bound under
+    -- Binding.mayPlayers; Bellowing Mauler's "each player loses 4 life unless
+    -- they sacrifice a nontoken creature of their choice" the seats a CR 118.12
+    -- gate's answer put in Binding.gatePlayers; and Parker Luck's "two target
+    -- players each" a target slot (CR 115.3).
     --
     -- Not a widening of InSlot, deliberately. That arm's contract is the printed
     -- "that player" (Sudden Impact) and it reads through Binding.onlyOne, so a
