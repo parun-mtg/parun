@@ -15,17 +15,20 @@ import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamag
 -- are required: a card that qualifies only the damagers writes AnyPlayer for
 -- the recipient, which is what "deal damage to a player" says. `kind` defaults
 -- to any damage and `oneOrMorePlayers` to that same "to a player", DamageTrigger's
--- defaults.
+-- defaults, and `anyController` to the split per controller every printing
+-- naming one wants.
 codec :: Codec.Codec PermanentsDealDamageToPlayer.PermanentsDealDamageToPlayer
 codec = Fields.object $ do
   filter_ <- Fields.required "filter" (Filter.codec Keyword.codec) PermanentsDealDamageToPlayer.filter
   kind <- Fields.defaulted "kind" Nothing (Common.maybe DamageKind.codec) PermanentsDealDamageToPlayer.kind
   recipient <- Fields.required "recipient" PlayerRelation.codec PermanentsDealDamageToPlayer.recipient
   oneOrMorePlayers <- Fields.defaulted "oneOrMorePlayers" False Common.boolean PermanentsDealDamageToPlayer.oneOrMorePlayers
+  anyController <- Fields.defaulted "anyController" False Common.boolean PermanentsDealDamageToPlayer.anyController
   pure
     PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer
       { PermanentsDealDamageToPlayer.filter = filter_,
         PermanentsDealDamageToPlayer.kind = kind,
         PermanentsDealDamageToPlayer.recipient = recipient,
-        PermanentsDealDamageToPlayer.oneOrMorePlayers = oneOrMorePlayers
+        PermanentsDealDamageToPlayer.oneOrMorePlayers = oneOrMorePlayers,
+        PermanentsDealDamageToPlayer.anyController = anyController
       }

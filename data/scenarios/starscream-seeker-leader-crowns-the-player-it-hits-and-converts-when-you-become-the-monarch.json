@@ -1,0 +1,37 @@
+{
+  "description": "Starscream, Seeker Leader makes the player it hits the monarch while there is none, and converts when its controller becomes the monarch",
+  "note": "Living metal makes it a creature on alice's turn. Its hit crowns bob; Court of Locthwain then makes alice the monarch, which converts Starscream back to Power Hungry.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Starscream, Power Hungry", "face": "Starscream, Seeker Leader", "label": "starscream", "ready": true },
+          { "card": "Swamp", "label": "s0" },
+          { "card": "Swamp", "label": "s1" },
+          { "card": "Swamp", "label": "s2" },
+          { "card": "Swamp", "label": "s3" }
+        ],
+        "hand": [{ "card": "Court of Locthwain", "label": "court" }],
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$starscream"] } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Monarch": { "player": "bob" } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Names": { "object": "$starscream", "names": ["Starscream, Seeker Leader"] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Cast": { "object": "$court", "mana": ["$s0", "$s1", "$s2", "$s3"] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Monarch": { "player": "alice" } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Names": { "object": "$starscream", "names": ["Starscream, Power Hungry"] } } }
+  ]
+}

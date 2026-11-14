@@ -7585,7 +7585,9 @@
     },
     "BOT": {
       "17": {"card":"Ratchet, Field Medic // Ratchet, Rescue Racer"},
-      "2": {"card":"Ratchet, Field Medic // Ratchet, Rescue Racer"}
+      "2": {"card":"Ratchet, Field Medic // Ratchet, Rescue Racer"},
+      "20": {"card":"Starscream, Power Hungry // Starscream, Seeker Leader"},
+      "5": {"card":"Starscream, Power Hungry // Starscream, Seeker Leader"}
     },
     "BRB": {
       "1": {"card":"Abyssal Specter"},

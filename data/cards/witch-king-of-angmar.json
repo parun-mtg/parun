@@ -102,6 +102,7 @@
           "condition": {
             "type": "PermanentsDealDamageToPlayer",
             "value": {
+              "anyController": true,
               "filter": {
                 "type": "HasCardType",
                 "value": "Creature"

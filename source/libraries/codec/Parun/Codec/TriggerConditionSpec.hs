@@ -172,7 +172,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer (Filter.And [Filter.HasCardType CardType.Artifact, Filter.HeldBy Holder.Controller PlayerRelation.You]) (Just DamageKind.Combat) PlayerRelation.AnyPlayer False))
+      (TriggerCondition.PermanentsDealDamageToPlayer (PermanentsDealDamageToPlayer.MkPermanentsDealDamageToPlayer (Filter.And [Filter.HasCardType CardType.Artifact, Filter.HeldBy Holder.Controller PlayerRelation.You]) (Just DamageKind.Combat) PlayerRelation.AnyPlayer False False))
       " {\"type\":\"PermanentsDealDamageToPlayer\",\"value\":{\"filter\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Artifact\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]},\"kind\":\"Combat\",\"recipient\":\"AnyPlayer\"}} "
   -- CR 726.2: a creature dealt combat damage to the monarch.
   Spec.it s "CreatureDealtCombatDamageToMonarch" $

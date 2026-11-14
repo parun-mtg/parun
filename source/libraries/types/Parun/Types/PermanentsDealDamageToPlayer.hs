@@ -20,6 +20,10 @@ data PermanentsDealDamageToPlayer = MkPermanentsDealDamageToPlayer
     -- | CR 603.2c: "to ONE OR MORE PLAYERS" (Forth Eorlingas!), one occurrence
     -- however many players the step damaged, where False is "to a player", one
     -- occurrence per damaged player.
-    oneOrMorePlayers :: Bool
+    oneOrMorePlayers :: Bool,
+    -- | CR 603.2c: a damagers' filter naming no controller (Witch-king of
+    -- Angmar's "one or more creatures deal combat damage to you"), one
+    -- occurrence whoever controls them, where False is one per controller.
+    anyController :: Bool
   }
   deriving (Eq, Ord, Show)

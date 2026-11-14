@@ -1,0 +1,36 @@
+{
+  "description": "Starscream, Power Hungry drains a target opponent for each card alice draws as the monarch, and converts when one or more creatures deal combat damage to her",
+  "note": "alice starts as the monarch: her draw step and her end step's monarch draw each drain bob 2. On bob's turn his two attackers hit her together, which is one occurrence, so Starscream converts once and stays Seeker Leader; the monarch passes to bob.",
+  "board": {
+    "active": "alice",
+    "step": "Upkeep",
+    "turn": 2,
+    "monarch": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Starscream, Power Hungry", "label": "starscream", "ready": true }],
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bears", "ready": true },
+          { "card": "Goblin Piker", "label": "piker", "ready": true }
+        ],
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }, { "card": "Swamp" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
+    { "turn": 3, "step": "Upkeep", "player": "bob", "check": { "Life": { "player": "bob", "life": 16 } } },
+    { "turn": 3, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": ["$bears", "$piker"] } },
+    { "turn": 3, "step": "DeclareBlockers", "player": "alice", "do": { "Block": {} } },
+    { "turn": 3, "step": "CombatDamage", "player": "alice", "do": { "OrderTriggers": ["$starscream", null, null] } },
+    { "turn": 3, "step": "EndOfCombat", "player": "bob", "check": { "Life": { "player": "alice", "life": 16 } } },
+    { "turn": 3, "step": "EndOfCombat", "player": "bob", "check": { "Names": { "object": "$starscream", "names": ["Starscream, Seeker Leader"] } } },
+    { "turn": 3, "step": "EndOfCombat", "player": "bob", "check": { "Monarch": { "player": "bob" } } }
+  ]
+}
