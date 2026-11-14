@@ -50,7 +50,6 @@ import qualified Parun.Types.CardIdentity as CardIdentity
 import qualified Parun.Types.Combat as Combat
 import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
-import qualified Parun.Types.Convoking as Convoking
 import qualified Parun.Types.CopyCoverage as CopyCoverage
 import qualified Parun.Types.CounterLink as CounterLink
 import qualified Parun.Types.Crewing as Crewing
@@ -247,7 +246,7 @@ actedOnBy oid gs =
         Set.fromList [DamageEvent.source dealt | event@(GameEvent.DamageDealt dealt) <- events, (Game.damageRecipient event >>= Recipient.objectOf) == Just oid]
           <> Set.fromList [DamageEvent.source dealt | dealt <- Foldable.toList (Game.damageBeforeThisTurn gs), Recipient.objectOf (DamageEvent.target dealt) == Just oid]
       crewers = Set.unions [Crewing.crewedBy crewed | GameEvent.Crewed crewed <- events, Crewing.vehicle crewed == oid]
-      convokers = Set.unions [Convoking.convokedBy convoked | GameEvent.Convoked convoked <- events, let spell = Convoking.spell convoked, spell == oid || elem oid (Count.becamePermanents spell events)]
+      convokers = Count.convokersOf oid events
       saddlers = Set.unions [Saddling.saddledBy saddled | GameEvent.Saddled saddled <- events, Saddling.mount saddled == oid]
    in (damagers, crewers, convokers, saddlers)
 
