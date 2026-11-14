@@ -1,0 +1,78 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Flying"
+        },
+        {
+          "type": "Lifelink"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Hushbringer",
+      "oracleText": "Flying, lifelink\nCreatures entering or dying don't cause abilities to trigger.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "EntriesTrigger",
+            "value": {
+              "entrants": {
+                "type": "HasCardType",
+                "value": "Creature"
+              },
+              "triggering": "NoTrigger"
+            }
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        },
+        {
+          "effect": {
+            "type": "EntriesTrigger",
+            "value": {
+              "entrants": {
+                "type": "HasCardType",
+                "value": "Creature"
+              },
+              "move": "Dying",
+              "triggering": "NoTrigger"
+            }
+          },
+          "scope": {
+            "type": "AnyPlayer"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Faerie"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

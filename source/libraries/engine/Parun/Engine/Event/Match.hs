@@ -664,6 +664,7 @@ leaves bindings context before gs bearer you t event = case event of
     ZoneChange.from zc == Zone.Battlefield
       && ZoneChange.to zc /= Zone.Battlefield
       && (Set.null destinations || any (reaches (ZoneChange.to zc) (ZoneChange.departed zc)) destinations)
+      && deathTriggers before before you zc
       && watched (ZoneChange.departed zc)
   GameEvent.LeftTheGame l -> Set.null destinations && LeftTheGame.from l == Zone.Battlefield && watched (LeftTheGame.object l)
   _ -> False
@@ -717,8 +718,8 @@ leaves bindings context before gs bearer you t event = case event of
 -- no zone. Parun.OutsideTheGameSpec's Spirit Mascot case proves it.
 --
 -- Batching is not read here, `leaves`' reason.
-leavesZone :: Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> (LeavesZoneTrigger.LeavesZoneTrigger -> Bool) -> LeavesZoneTrigger.LeavesZoneTrigger -> GameEvent -> Bool
-leavesZone board gs bearer you admitsTurn t event = case event of
+leavesZone :: Maybe GameState -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> (LeavesZoneTrigger.LeavesZoneTrigger -> Bool) -> LeavesZoneTrigger.LeavesZoneTrigger -> GameEvent -> Bool
+leavesZone before board gs bearer you admitsTurn t event = case event of
   GameEvent.Moved m
     | ZoneChange.from (Moved.change m) == LeavesZoneTrigger.from t,
       Game.leftOrigin (Moved.change m),
@@ -727,6 +728,7 @@ leavesZone board gs bearer you admitsTurn t event = case event of
           && seen (Moved.revealed m)
           && not (Seq.null (admittedDepartures gs bearer you t m))
           && entryTriggers gs you (Moved.change m)
+          && deathTriggers before before you (Moved.change m)
   GameEvent.LeftTheGame l
     | LeftTheGame.from l == LeavesZoneTrigger.from t,
       Maybe.isNothing (LeavesZoneTrigger.to t) ->
@@ -778,8 +780,8 @@ leavesZone board gs bearer you admitsTurn t event = case event of
 -- it, CR 400.7 having minted the arrival a fresh id.
 --
 -- Batching is not read here, `leaves`' reason.
-putIntoZone :: Filter.Context -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> (PutIntoZoneTrigger.PutIntoZoneTrigger -> Bool) -> PutIntoZoneTrigger.PutIntoZoneTrigger -> GameEvent -> Bool
-putIntoZone context board gs bearer you admitsTurn t event = case event of
+putIntoZone :: Filter.Context -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> Maybe GameState -> GameState -> ObjectId -> PlayerId -> (PutIntoZoneTrigger.PutIntoZoneTrigger -> Bool) -> PutIntoZoneTrigger.PutIntoZoneTrigger -> GameEvent -> Bool
+putIntoZone context board atEvent before gs bearer you admitsTurn t event = case event of
   GameEvent.Moved m -> admits (Moved.revealed m) (Moved.duringResolution m) (Moved.change m)
   GameEvent.CardArrived zc -> admits True False zc
   _ -> False
@@ -791,7 +793,15 @@ putIntoZone context board gs bearer you admitsTurn t event = case event of
         && (duringResolution || not (PutIntoZoneTrigger.duringResolution t))
         && admitsTurn t
         && entryTriggers gs you zc
+        && dyingTriggers zc
         && watched revealed zc
+    -- Hushbringer's ruling on "from anywhere": no look-back, so the silencer
+    -- is read after the death, and the dying card's own such ability fires.
+    dyingTriggers zc
+      | putIntoZoneLooksBack t = deathTriggers before before you zc
+      | otherwise = case PutIntoZoneTrigger.card t of
+          ActingPermanent.Self -> True
+          ActingPermanent.Matching _ -> deathTriggers (Just atEvent) before you zc
     watched revealed zc = case PutIntoZoneTrigger.card t of
       ActingPermanent.Self -> ZoneChange.object zc == bearer
       ActingPermanent.Matching f ->
@@ -851,6 +861,26 @@ entryTriggers :: GameState -> PlayerId -> ZoneChange.ZoneChange -> Bool
 entryTriggers gs you zc =
   ZoneChange.to zc /= Zone.Battlefield
     || not (PlayerEffect.silencesEntry you (ZoneChange.object zc) (atEntry gs (ZoneChange.object zc)))
+
+-- CR 700.4 / 603.10a / 613.11: may this zone change trigger `you`'s
+-- abilities, or is it a permanent dying that an effect applying to them in
+-- `effects` (Hushbringer) silences? The permanent is read off `before`, the
+-- game filed immediately before the death (Snapshots.boardBeforeEvent), as it
+-- last existed on the battlefield. Every arm a death can satisfy asks: `leaves`,
+-- LeavesZone and PutIntoZone, CausedBy through them; a sacrifice is its own
+-- event (PermanentSacrificed) and is not asked (Hushbringer's rulings). A
+-- look-back ability passes `before` as `effects` too, so a silencer dying beside
+-- the permanent, or being it, counts. Any other move, or a death with no board
+-- filed before it, answers True. LeavesZone's gate and PutIntoZone's look-back
+-- one are regression fences: no card in data/cards watches a graveyard arrival
+-- from the battlefield through either (grep, 2026-11-14).
+deathTriggers :: Maybe GameState -> Maybe GameState -> PlayerId -> ZoneChange.ZoneChange -> Bool
+deathTriggers effects before you zc =
+  ZoneChange.from zc /= Zone.Battlefield
+    || ZoneChange.to zc /= Zone.Graveyard
+    || case (effects, before) of
+      (Just silencers, Just board) -> not (PlayerEffect.silencesDeath you (ZoneChange.departed zc) silencers board)
+      _ -> True
 
 -- CR 603.2d: how many additional times an ability of `you`'s that this zone
 -- change caused to trigger triggers -- none unless it is a move onto the
@@ -1221,8 +1251,8 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- CR 509.3, as a function of Parun.Types.BlockTrigger's fields: blocks.
   TriggerCondition.Blocks t -> blocks bearerContext board gs t event
   TriggerCondition.Leaves t -> leaves bindings bearerContext beforeEvent gs bearer you t event
-  TriggerCondition.LeavesZone t -> leavesZone board gs bearer you (admitsTurn . LeavesZoneTrigger.scope) t event
-  TriggerCondition.PutIntoZone t -> putIntoZone bearerContext board gs bearer you (admitsTurn . PutIntoZoneTrigger.scope) t event
+  TriggerCondition.LeavesZone t -> leavesZone beforeEvent board gs bearer you (admitsTurn . LeavesZoneTrigger.scope) t event
+  TriggerCondition.PutIntoZone t -> putIntoZone bearerContext board atEvent beforeEvent gs bearer you (admitsTurn . PutIntoZoneTrigger.scope) t event
   -- CR 603.2c's batch reading of DealsDamage's damage to a player (Pia Nalaar,
   -- Chief Mechanic's "whenever ONE OR MORE artifact creatures you control deal
   -- combat damage to a player"), delegated because which

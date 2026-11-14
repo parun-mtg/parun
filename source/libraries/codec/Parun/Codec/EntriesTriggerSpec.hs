@@ -7,6 +7,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.EntriesTrigger as EntriesTrigger
 import qualified Parun.Types.EntryTriggering as EntryTriggering
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.TriggeringMove as TriggeringMove
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.EntriesTrigger" $ do
@@ -17,9 +18,22 @@ spec s = Spec.describe s "Parun.Codec.EntriesTrigger" $ do
       EntriesTrigger.codec
       ( EntriesTrigger.MkEntriesTrigger
           { EntriesTrigger.entrants = Filter.HasCardType CardType.Creature,
+            EntriesTrigger.move = TriggeringMove.Entering,
             EntriesTrigger.triggering = EntryTriggering.NoTrigger
           }
       )
       " {\"entrants\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"triggering\":\"NoTrigger\"} "
+  -- Hushbringer's "creatures ... dying don't cause abilities to trigger".
+  Spec.it s "MkEntriesTrigger dying" $
+    Common.assertCodec
+      s
+      EntriesTrigger.codec
+      ( EntriesTrigger.MkEntriesTrigger
+          { EntriesTrigger.entrants = Filter.HasCardType CardType.Creature,
+            EntriesTrigger.move = TriggeringMove.Dying,
+            EntriesTrigger.triggering = EntryTriggering.NoTrigger
+          }
+      )
+      " {\"entrants\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"move\":\"Dying\",\"triggering\":\"NoTrigger\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s EntriesTrigger.codec
