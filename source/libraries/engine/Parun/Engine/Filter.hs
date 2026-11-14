@@ -143,6 +143,12 @@ data View = MkView
     -- every other characteristic-reading quantity, and CR 702.100a's evolve is
     -- the pool's one reader.
     toughness :: Maybe Integer,
+    -- CR 208.4b: `power` and `toughness` as layer 7b left them, read off
+    -- the projection's stamp (ProjectedCharacteristics.basePower), or a printed
+    -- face's boxes, and Nothing wherever `power` is. Read by Measure.BasePower
+    -- and Measure.BaseToughness.
+    basePower :: Maybe Integer,
+    baseToughness :: Maybe Integer,
     -- Alchemy's intensity (Parun.Types.ProjectedCharacteristics.intensity), read
     -- off the projection in every zone. No Filter atom consults it: it is here
     -- for Parun.Engine.Quantity's Intensity arm.
@@ -966,6 +972,8 @@ playerView pid =
       keywords = Set.empty,
       power = Nothing,
       toughness = Nothing,
+      basePower = Nothing,
+      baseToughness = Nothing,
       intensity = Nothing,
       -- CR 202.3 reads a mana cost, which is printed on an OBJECT (CR 202.1); a
       -- player has none.
@@ -1941,6 +1949,8 @@ measureOf measure = case measure of
   Measure.Power -> power
   Measure.Toughness -> toughness
   Measure.TotalPowerAndToughness -> \view -> (+) <$> power view <*> toughness view
+  Measure.BasePower -> basePower
+  Measure.BaseToughness -> baseToughness
   Measure.ManaValue -> manaValue
   Measure.ColorCount -> Just . toInteger . Set.size . colors
   Measure.CreatureTypeCount -> Just . toInteger . Set.size . Set.filter Subtype.Engine.isCreatureType . subtypes
@@ -3123,6 +3133,8 @@ manaValueThresholds predicate = case predicate of
       Measure.Power -> []
       Measure.Toughness -> []
       Measure.TotalPowerAndToughness -> []
+      Measure.BasePower -> []
+      Measure.BaseToughness -> []
     -- No literal to report, whatever the measure -- and an Own ManaValue
     -- operand reads the candidate's mana value from the other side. Position is
     -- what keeps the caller's argument whole: CR 601.3a's lookahead reads a

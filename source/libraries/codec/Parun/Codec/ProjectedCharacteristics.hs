@@ -64,6 +64,8 @@ codec = Fields.object $ do
   manaValue <- Fields.defaulted "manaValue" Nothing (Common.maybe Common.integer) PC.manaValue
   power <- Fields.defaulted "power" Nothing (Common.maybe Common.integer) PC.power
   toughness <- Fields.defaulted "toughness" Nothing (Common.maybe Common.integer) PC.toughness
+  basePower <- Fields.defaulted "basePower" Nothing (Common.maybe Common.integer) PC.basePower
+  baseToughness <- Fields.defaulted "baseToughness" Nothing (Common.maybe Common.integer) PC.baseToughness
   loyalty <- Fields.defaulted "loyalty" Nothing (Common.maybe Loyalty.codec) PC.loyalty
   defense <- Fields.defaulted "defense" Nothing (Common.maybe Defense.codec) PC.defense
   intensity <- Fields.defaulted "intensity" Nothing (Common.maybe Common.integer) PC.intensity
@@ -122,6 +124,8 @@ codec = Fields.object $ do
         PC.manaValue = manaValue,
         PC.power = power,
         PC.toughness = toughness,
+        PC.basePower = basePower,
+        PC.baseToughness = baseToughness,
         PC.loyalty = loyalty,
         PC.defense = defense,
         PC.intensity = intensity,

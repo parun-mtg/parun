@@ -10,6 +10,10 @@ data Measure
     Toughness
   | -- | CR 208.1: power plus toughness, where the object has both.
     TotalPowerAndToughness
+  | -- | CR 208.4b: power through layer 7b, before what modifies it.
+    BasePower
+  | -- | CR 208.4b: toughness through layer 7b, before what modifies it.
+    BaseToughness
   | -- | CR 202.3: mana value.
     ManaValue
   | -- | CR 105.2: how many of the five colours the object is.

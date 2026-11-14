@@ -134,6 +134,11 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     manaValue :: Maybe Integer,
     power :: Maybe Integer,
     toughness :: Maybe Integer,
+    -- | CR 208.4b: power as the fold left layer 7b, stamped by
+    -- Parun.Engine.Projection's projectDecidingFrom.
+    basePower :: Maybe Integer,
+    -- | CR 208.4b: toughness, stamped beside basePower.
+    baseToughness :: Maybe Integer,
     -- | CR 306.5 / 109.3: the object's PRINTED loyalty, copiable (CR 707.2) -- so
     -- a Clone entering as a copy of a planeswalker has the copy's loyalty here.
     --

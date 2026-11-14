@@ -212,6 +212,8 @@ measure m = case m of
   Measure.Power -> [Text.pack "power"]
   Measure.Toughness -> [Text.pack "toughness"]
   Measure.TotalPowerAndToughness -> []
+  Measure.BasePower -> [Text.pack "base power"]
+  Measure.BaseToughness -> [Text.pack "base toughness"]
   Measure.ManaValue -> [Text.pack "mana value"]
   Measure.ColorCount -> []
   Measure.CreatureTypeCount -> []

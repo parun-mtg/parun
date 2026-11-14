@@ -1486,6 +1486,8 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.keywords = Keyword.heldBy snapshot,
       Filter.power = PC.power snapshot,
       Filter.toughness = PC.toughness snapshot,
+      Filter.basePower = PC.basePower snapshot,
+      Filter.baseToughness = PC.baseToughness snapshot,
       Filter.intensity = PC.intensity snapshot,
       -- CR 202.3 off the snapshot, which carries the number: a
       -- ProjectedCharacteristics records a mana value, so this reads what the
@@ -1749,6 +1751,8 @@ overlaySnapshot deploy zone home lapsed snapshot live =
           Filter.keywords = Filter.keywords sampled,
           Filter.power = Filter.power sampled,
           Filter.toughness = Filter.toughness sampled,
+          Filter.basePower = Filter.basePower sampled,
+          Filter.baseToughness = Filter.baseToughness sampled,
           Filter.intensity = Filter.intensity sampled,
           Filter.manaValue = Filter.manaValue sampled,
           Filter.manaCost = Filter.manaCost sampled,

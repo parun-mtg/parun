@@ -3662,6 +3662,19 @@ spec s registry = Spec.describe s "Parun.Engine.Projection" $ do
     Spec.assertEqWith s "power 2 + 1 + 3" (Projection.powerOf oid gs) (Just 6)
     Spec.assertEqWith s "toughness 1 + 1 + 3" (Projection.toughnessOf oid gs) (Just 5)
 
+  Spec.it s "CR 208.4b base power and toughness are layer 7b's, under a counter and a pump" $ do
+    forest <- S.printingOf s registry "Forest"
+    piker <- S.printingOf s registry "Goblin Piker"
+    let base = S.landsInPlay forest 0
+        (oid, gs0) = S.addPermanent piker S.bob base
+        gs1 = S.withEffectAt oid (Timestamp.MkTimestamp 8) (Modification.SetBasePowerToughness (SetBasePowerToughness.MkSetBasePowerToughness (Just (Quantity.Literal 1)) (Just (Quantity.Literal 1)))) gs0
+        gs2 = S.addCounter CounterKind.PlusOnePlusOne 1 oid gs1
+        gs = S.withEffectAt oid (Timestamp.MkTimestamp 9) (Modification.ModifyPowerToughness (ModifyPowerToughness.MkModifyPowerToughness (Quantity.Literal 3) (Quantity.Literal 3))) gs2
+        view = Projection.viewOfObject oid gs
+    Spec.assertEqWith s "power 1 + 1 + 3" (Projection.powerOf oid gs) (Just 5)
+    Spec.assertEqWith s "base power 1" (Filter.measureOf Measure.BasePower view) (Just 1)
+    Spec.assertEqWith s "base toughness 1" (Filter.measureOf Measure.BaseToughness view) (Just 1)
+
   Spec.it s "CR 108.4 a SetController effect overrides owner; last timestamp wins" $ do
     piker <- S.printingOf s registry "Goblin Piker"
     let (oid, base) = S.addPermanent piker S.bob (Setup.emptyGame S.bothPlayers)

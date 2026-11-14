@@ -81,6 +81,8 @@ testCharacteristics =
       PC.manaValue = Just 3,
       PC.power = Just 1,
       PC.toughness = Just 2,
+      PC.basePower = Just 1,
+      PC.baseToughness = Just 2,
       PC.loyalty = Nothing,
       PC.defense = Nothing,
       PC.intensity = Nothing,
@@ -161,7 +163,7 @@ testCharacteristicsJson =
   "{\"names\":[\"Test Creature\"],\"supertypes\":[\"Legendary\"],\"keywords\":[{\"key\":{\"type\":\"Flying\"},\"value\":1}],"
     <> "\"colors\":[\"Blue\"],"
     <> "\"manaCost\":[{\"type\":\"Generic\",\"value\":2},{\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Blue\"}}],"
-    <> "\"manaValue\":3,\"power\":1,\"toughness\":2,"
+    <> "\"manaValue\":3,\"power\":1,\"toughness\":2,\"basePower\":1,\"baseToughness\":2,"
     <> "\"cardTypes\":[\"Creature\"],\"subtypes\":[\"Human\"],"
     <> "\"staticAbilities\":[{\"affected\":{\"type\":\"Attached\"},\"modifications\":[{\"type\":\"GainKeyword\",\"value\":{\"type\":\"Flying\"}}]}],"
     <> "\"playerAbilities\":[{\"scope\":{\"type\":\"AnyPlayer\"},\"effect\":{\"type\":\"CantCastMoreThan\",\"value\":1}}],"
@@ -221,6 +223,8 @@ minimalCharacteristics =
       PC.manaValue = Nothing,
       PC.power = Nothing,
       PC.toughness = Nothing,
+      PC.basePower = Nothing,
+      PC.baseToughness = Nothing,
       PC.loyalty = Nothing,
       PC.defense = Nothing,
       PC.intensity = Nothing,

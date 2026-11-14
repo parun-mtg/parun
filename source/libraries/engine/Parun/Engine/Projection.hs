@@ -1115,6 +1115,8 @@ fullTextFrom from pc =
       PC.subtypes = PC.subtypes from,
       PC.power = PC.power from,
       PC.toughness = PC.toughness from,
+      PC.basePower = PC.basePower from,
+      PC.baseToughness = PC.baseToughness from,
       PC.loyalty = PC.loyalty from,
       PC.defense = PC.defense from,
       PC.hasFullText = True
@@ -4169,6 +4171,10 @@ measureReads measure = case measure of
   Measure.Power -> Set.singleton PowerA
   Measure.Toughness -> Set.singleton PowerA
   Measure.TotalPowerAndToughness -> Set.singleton PowerA
+  -- Layers 7a and 7b write it, and PowerA is all of layer 7: over-declared,
+  -- which costs CR 613.8's general path and never an answer.
+  Measure.BasePower -> Set.singleton PowerA
+  Measure.BaseToughness -> Set.singleton PowerA
   Measure.ManaValue -> Set.empty
   Measure.ColorCount -> Set.singleton Colors
   -- CR 205.3m's creature types are layer 4's (CR 613.1d). A regression fence
@@ -5307,6 +5313,10 @@ projectDecidingFrom finish seedOf admits cands =
   let -- Layers 4, 5 and 7a are always visited, even with no gathered effect there:
       -- an object's own CDAs are not gathered candidates.
       layers = filter admits (Set.toAscList (Set.insert Layer.Type (Set.insert Layer.Color (Set.insert Layer.CharacteristicPT (Set.fromList (fmap gLayer cands))))))
+      -- CR 208.4b: base power and toughness are what the layers through 7b
+      -- leave, so the fold stamps them between the two halves. A projection
+      -- bounded below 7c stamps its own numbers, which is that bound's answer.
+      (throughSetPT, fromModify) = span (< Layer.ModifyPT) layers
       -- The layers CR 613.8 could reorder anything in: those holding an effect
       -- whose affected set another can move, and those holding an effect whose
       -- MAGNITUDE another can move. Deliberately coarser than the fold's own test,
@@ -5825,9 +5835,16 @@ projectDecidingFrom finish seedOf admits cands =
                             Just k -> Map.findWithDefault False k decided2
                           ordered = effectUnits (List.sortOn gTimestamp (filter applies here))
                        in (List.foldl' (applyUnit bounded (const Nothing) oid) seeded ordered, decided2)
-            (folded, decisions) = List.foldl' applyLayer (seedOf oid gs, Map.empty) layers
+            (folded, decisions) = List.foldl' applyLayer (stampBase (List.foldl' applyLayer (seedOf oid gs, Map.empty) throughSetPT)) fromModify
          in (withAnnouncedX oid gs (finish oid gs folded), decisions)
    in forObject
+
+-- CR 208.4b: the accumulator's power and toughness as its base, at CR 208.5's
+-- gate for layer 7c, so a creature with no value there has a base of 0.
+stampBase :: (ProjectedCharacteristics, a) -> (ProjectedCharacteristics, a)
+stampBase (pc, decided) =
+  let gated = noValueAt Layer.ModifyPT pc
+   in (pc {PC.basePower = PC.power gated, PC.baseToughness = PC.toughness gated}, decided)
 
 -- CR 208.3: a noncreature permanent has no power or toughness, and only on the
 -- battlefield -- a Vehicle in a graveyard keeps its printed numbers. Applied to
@@ -5841,7 +5858,7 @@ noncreaturePT :: ObjectId -> GameState -> ProjectedCharacteristics -> ProjectedC
 noncreaturePT oid gs pc
   | Set.member CardType.Creature (PC.cardTypes pc) = pc
   | not (Set.member oid (GameState.battlefield gs)) = pc
-  | otherwise = pc {PC.power = Nothing, PC.toughness = Nothing}
+  | otherwise = pc {PC.power = Nothing, PC.toughness = Nothing, PC.basePower = Nothing, PC.baseToughness = Nothing}
 
 -- CR 208.5: a creature with no value for its power has 0, likewise toughness --
 -- reached by a card that strips a characteristic-defining ability (CR 305.7).
