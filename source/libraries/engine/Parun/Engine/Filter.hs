@@ -79,6 +79,7 @@ import qualified Parun.Types.Pairing as Pairing
 import qualified Parun.Types.Parity as Parity
 import qualified Parun.Types.ParityOperand as ParityOperand
 import qualified Parun.Types.Player as Player
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
@@ -1756,6 +1757,10 @@ data Context = MkContext
     -- CR 607.2n: GameState.exiledBeforeGame, for IsExiledWithSource's
     -- WithCardsNamed pile. Filled by contextIn; empty in contextFor.
     exiledBeforeGame :: Map.Map ObjectId.ObjectId CardName.CardName,
+    -- CR 122.1: each player's counters (Player.counters), for the Measures
+    -- atom's YourCounters operand, which asks the perspective player's. Filled
+    -- by contextIn; empty in contextFor, where the operand reads nothing.
+    playerCounters :: Map.Map PlayerId.PlayerId (Map.Map PlayerCounterKind.PlayerCounterKind Natural.Natural),
     -- CR 205.3: the subtype the SOURCE chose as it entered (CR 614.1c), for the
     -- one atom that asks whether a candidate wears it (HasChosenSubtype). Filled
     -- where sourceChosenColors above is, and read the same way (Obelisk of Urd,
@@ -1891,13 +1896,14 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
--- 805.4a), its draft notes (CR 905.2b) and what was exiled before it (CR
--- 607.2n) filled from the state, the facts about the table a match may ask.
+-- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
+-- 607.2n) and its players' counters (CR 122.1) filled from the state, the
+-- facts about the table a match may ask.
 contextIn :: GameState -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextIn gs p s = (contextFor (GameSettings.teams (MatchScope.settings (GameState.match gs))) p s) {activePlayers = Turn.activePlayers gs, draftNotes = fmap Player.draftNotes (GameState.players gs), exiledBeforeGame = GameState.exiledBeforeGame gs}
+contextIn gs p s = (contextFor (GameSettings.teams (MatchScope.settings (GameState.match gs))) p s) {activePlayers = Turn.activePlayers gs, draftNotes = fmap Player.draftNotes (GameState.players gs), exiledBeforeGame = GameState.exiledBeforeGame gs, playerCounters = fmap Player.counters (GameState.players gs)}
 
 -- The ONE object a slot names, for the readers that can take no more than one --
 -- Quantity.AgainstSlot's evaluation, Count's IsControllerOfBound. Nothing where
@@ -1981,6 +1987,8 @@ operandValue context view operand = case operand of
   -- Not one number but one per other candidate, which the Measures arm of
   -- `matches` reads itself.
   Operand.OfEachOtherCandidate _ -> Nothing
+  -- A perspective player absent from the map is an unfilled Context, not 0.
+  Operand.YourCounters kind -> toInteger . Map.findWithDefault 0 kind <$> (perspective context >>= (`Map.lookup` playerCounters context))
 
 -- Does the measured number relate thus to the threshold? Parun.Types.Comparison's
 -- one reader: this module's Measures atom and Parun.Engine.Condition's Compares.
@@ -3159,6 +3167,7 @@ manaValueThresholds predicate = case predicate of
     Operand.AmountInSlot _ -> []
     Operand.EnclosingAmount -> []
     Operand.OfEachOtherCandidate _ -> []
+    Operand.YourCounters _ -> []
   Filter.And fs -> concatMap manaValueThresholds fs
   Filter.Or fs -> concatMap manaValueThresholds fs
   Filter.Not f -> manaValueThresholds f
@@ -3520,6 +3529,7 @@ readsSourceValues predicate = case predicate of
     Operand.AmountInSlot _ -> False
     Operand.EnclosingAmount -> False
     Operand.OfEachOtherCandidate _ -> False
+    Operand.YourCounters _ -> False
   Filter.ManaValueParity operand -> case operand of
     ParityOperand.Printed _ -> False
     ParityOperand.ChosenParity -> True

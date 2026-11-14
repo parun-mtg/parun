@@ -3,6 +3,7 @@ module Parun.Types.Operand where
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.OtherCandidates as OtherCandidates
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.SlotName as SlotName
 
 -- | What a Parun.Types.Measures comparison compares the candidate's measure
@@ -28,4 +29,6 @@ data Operand
     EnclosingAmount
   | -- | CR 608.2d: a measure of every other candidate the enclosing position offers, within a scope (Crackling Doom).
     OfEachOtherCandidate OtherCandidates.OtherCandidates
+  | -- | CR 122.1 / 109.5: how many counters of a kind "you" have (Mizzix of the Izmagnus).
+    YourCounters PlayerCounterKind.PlayerCounterKind
   deriving (Eq, Ord, Show)
