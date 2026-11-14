@@ -1852,7 +1852,7 @@ gainLife settle resolving source controller legal (PlayerQuantity.MkPlayerQuanti
 -- The tally (Mister Negative) is how far the exchange lowered the controller's
 -- total, CR 614.1's replacements included (a gain Tainted Remedy turns into a
 -- loss counts), and 0 where the exchange did not happen or did not lower it.
--- Bound even at 0, LoseLife's tally's posture. The mister-negative-exchanges
+-- Bound even at 0, LoseLife's tally's posture. The four mister-negative-*
 -- scenarios are the proof.
 exchangeLifeTotals :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> LifeExchange.LifeExchange -> Game ()
 exchangeLifeTotals settle resolving source controller legal (LifeExchange.MkLifeExchange sides mTally) = do
