@@ -215,6 +215,7 @@ printed self keyword = case keyword of
   Keyword.Tribute n -> [numbered "Tribute" n]
   Keyword.Dethrone -> [Text.pack "Dethrone"]
   Keyword.HiddenAgenda -> [Text.pack "Hidden agenda"]
+  Keyword.DoubleAgenda -> [Text.pack "Double agenda"]
   Keyword.Outlast c -> Cost.keyworded self (keywordWord self) (Text.pack "Outlast") c
   Keyword.Prowess -> [Text.pack "Prowess"]
   Keyword.Dash c -> Cost.keyworded self (keywordWord self) (Text.pack "Dash") c
@@ -427,6 +428,7 @@ standalone =
     Keyword.Fuse,
     Keyword.Dethrone,
     Keyword.HiddenAgenda,
+    Keyword.DoubleAgenda,
     Keyword.Prowess,
     Keyword.Exploit,
     Keyword.Menace,

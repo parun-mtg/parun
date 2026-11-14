@@ -1221,6 +1221,13 @@ spec s = Spec.describe s "Parun.Codec.Keyword" $ do
       Keyword.codec
       Keyword.HiddenAgenda
       " {\"type\":\"HiddenAgenda\"} "
+  -- CR 702.106f's double agenda likewise: both names are the object's.
+  Spec.it s "DoubleAgenda" $
+    Common.assertCodec
+      s
+      Keyword.codec
+      Keyword.DoubleAgenda
+      " {\"type\":\"DoubleAgenda\"} "
   -- CR 702.102a's fuse is nullary too: the rule states a permission and names no
   -- value, so the arm carries no payload.
   Spec.it s "Fuse" $

@@ -71,7 +71,7 @@ spec s = Spec.describe s "Parun.Codec.ActivePlayerEffect" $ do
       ActivePlayerEffect.MkActivePlayerEffect
         { ActivePlayerEffect.source = ObjectId.MkObjectId 9,
           ActivePlayerEffect.controller = PlayerId.MkPlayerId 10,
-          ActivePlayerEffect.choices = SourceChoices.MkSourceChoices {SourceChoices.names = Map.singleton (PlayerId.MkPlayerId 12) (CardName.MkCardName (Text.pack "Shock")), SourceChoices.colors = Set.empty, SourceChoices.subtype = Nothing, SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own},
+          ActivePlayerEffect.choices = SourceChoices.MkSourceChoices {SourceChoices.names = Map.singleton (PlayerId.MkPlayerId 12) (Set.singleton (CardName.MkCardName (Text.pack "Shock"))), SourceChoices.colors = Set.empty, SourceChoices.subtype = Nothing, SourceChoices.cardType = Nothing, SourceChoices.number = Nothing, SourceChoices.acquisition = Acquisition.Own},
           ActivePlayerEffect.timestamp = Timestamp.MkTimestamp 11,
           ActivePlayerEffect.expiry = Expiry.AtCleanup,
           ActivePlayerEffect.scope = AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.AnyPlayer),
@@ -79,7 +79,7 @@ spec s = Spec.describe s "Parun.Codec.ActivePlayerEffect" $ do
           ActivePlayerEffect.ability = Just (AbilityName.MkAbilityName (Text.pack "thatExiledCard13")),
           ActivePlayerEffect.slots = Map.empty
         }
-      " {\"source\":9,\"controller\":10,\"choices\":{\"names\":{\"12\":\"Shock\"}},\"timestamp\":11,\"expiry\":{\"type\":\"AtCleanup\"},\"scope\":{\"type\":\"Scoped\",\"value\":{\"type\":\"AnyPlayer\"}},\"effect\":{\"type\":\"CantCastSpells\"},\"ability\":\"thatExiledCard13\"} "
+      " {\"source\":9,\"controller\":10,\"choices\":{\"names\":{\"12\":[\"Shock\"]}},\"timestamp\":11,\"expiry\":{\"type\":\"AtCleanup\"},\"scope\":{\"type\":\"Scoped\",\"value\":{\"type\":\"AnyPlayer\"}},\"effect\":{\"type\":\"CantCastSpells\"},\"ability\":\"thatExiledCard13\"} "
   -- CR 611.2a: the slot Parun.Engine.Cast.bindUser bound, Savage Summoning's
   -- "that spell can't be countered".
   Spec.it s "an effect carrying the spell its slot was bound to" $

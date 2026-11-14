@@ -2975,6 +2975,7 @@ keywordPayloadFilters keyword = case keyword of
   -- ability compares is life totals, which no Filter reaches.
   Keyword.Dethrone -> []
   Keyword.HiddenAgenda -> []
+  Keyword.DoubleAgenda -> []
   -- CR 702.102a is payload-free: the permission names no quality, and the halves
   -- it fuses are the CARD's own faces rather than anything this value carries.
   Keyword.Fuse -> []

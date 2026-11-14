@@ -35,13 +35,13 @@ spec s = Spec.describe s "Parun.Codec.SourceChoices" $ do
       s
       SourceChoices.codec
       SourceChoices.MkSourceChoices
-        { SourceChoices.names = Map.singleton (PlayerId.MkPlayerId 4) (CardName.MkCardName (Text.pack "Shock")),
+        { SourceChoices.names = Map.singleton (PlayerId.MkPlayerId 4) (Set.fromList [CardName.MkCardName (Text.pack "Shock"), CardName.MkCardName (Text.pack "Lightning Bolt")]),
           SourceChoices.colors = Set.singleton Color.Red,
           SourceChoices.subtype = Just Subtype.Goblin,
           SourceChoices.cardType = Just CardType.Creature,
           SourceChoices.number = Just 5,
           SourceChoices.acquisition = Acquisition.Copied (Timestamp.MkTimestamp 3)
         }
-      " {\"names\":{\"4\":\"Shock\"},\"colors\":[\"Red\"],\"subtype\":\"Goblin\",\"cardType\":\"Creature\",\"number\":5,\"acquisition\":{\"type\":\"Copied\",\"value\":3}} "
+      " {\"names\":{\"4\":[\"Lightning Bolt\",\"Shock\"]},\"colors\":[\"Red\"],\"subtype\":\"Goblin\",\"cardType\":\"Creature\",\"number\":5,\"acquisition\":{\"type\":\"Copied\",\"value\":3}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s SourceChoices.codec

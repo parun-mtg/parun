@@ -14,7 +14,7 @@ import qualified Parun.Types.Subtype as Subtype
 -- begins (CR 608.2h, Parun.Types.ActivePlayerEffect.choices).
 data SourceChoices = MkSourceChoices
   { -- | CR 201.4: the chosen card names, keyed by who chose each.
-    names :: Map.Map PlayerId.PlayerId CardName.CardName,
+    names :: Map.Map PlayerId.PlayerId (Set.Set CardName.CardName),
     -- | CR 105.2: the chosen colours.
     colors :: Set.Set Color.Color,
     -- | CR 205.3: the chosen subtype.

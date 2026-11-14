@@ -1836,6 +1836,7 @@ keywordChildren c keyword_ = case keyword_ of
   Keyword.Tribute _natural -> pure keyword_
   Keyword.Dethrone -> pure keyword_
   Keyword.HiddenAgenda -> pure keyword_
+  Keyword.DoubleAgenda -> pure keyword_
   Keyword.Outlast cost -> fmap Keyword.Outlast (keywordCost c cost)
   Keyword.Prowess -> pure keyword_
   Keyword.Dash cost -> fmap Keyword.Dash (keywordCost c cost)

@@ -1017,6 +1017,7 @@ expansionOf keyword = case keyword of
         KeywordExpansion.triggered = perInstance [dethrone]
       }
   Keyword.HiddenAgenda -> mempty
+  Keyword.DoubleAgenda -> mempty
   Keyword.Outlast cost -> mempty {KeywordExpansion.onBattlefield = perInstance [outlast cost]}
   Keyword.Prowess -> mempty {KeywordExpansion.triggered = perInstance [prowess]}
   Keyword.Dash _ ->
@@ -5128,12 +5129,13 @@ functionsOnBattlefield keyword = case keyword of
   Keyword.Transmute _ -> False
   Keyword.Unearth _ -> False
   -- CR 113.6n: deck construction, before the game begins, but for Companion,
-  -- which functions outside the game (CR 702.139a), and HiddenAgenda, as its
-  -- card is put into the command zone (CR 702.106a).
+  -- which functions outside the game (CR 702.139a), and HiddenAgenda and
+  -- DoubleAgenda, as its card is put into the command zone (CR 702.106a / 702.106f).
   Keyword.ChooseABackground -> False
   Keyword.Companion _ -> False
   Keyword.DoctorsCompanion -> False
   Keyword.HiddenAgenda -> False
+  Keyword.DoubleAgenda -> False
   Keyword.Partner -> False
   Keyword.PartnerText _ -> False
 
@@ -5338,6 +5340,7 @@ familyOf keyword = case keyword of
   Keyword.Tribute _ -> Just KeywordFamily.Tribute
   Keyword.Dethrone -> Nothing
   Keyword.HiddenAgenda -> Nothing
+  Keyword.DoubleAgenda -> Nothing
   Keyword.Fuse -> Nothing
   Keyword.LevelUp _ -> Just KeywordFamily.LevelUp
   Keyword.Outlast _ -> Just KeywordFamily.Outlast

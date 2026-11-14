@@ -1029,8 +1029,8 @@ nullChamberSpec s registry =
             let cast = snd (Engine.runGamePure (echoing hers) board (S.cast S.alice oid))
                 after = snd (Engine.runGamePure (echoing hers) cast Stack.resolveTop)
              in fmap (Map.findWithDefault Map.empty Acquisition.Own . Object.chosenNames) (enteredOne board after >>= \chamber -> Game.lookupObject chamber after)
-      Spec.assertEqWith s "CR 101.4b told alice named Goblin Piker, bob named it too" (run (S.printingName piker)) (Just (Map.fromList [(S.alice, S.printingName piker), (S.bob, S.printingName piker)]))
-      Spec.assertEqWith s "CR 101.4b told alice named Hill Giant, bob named it too" (run (S.printingName giant)) (Just (Map.fromList [(S.alice, S.printingName giant), (S.bob, S.printingName giant)]))
+      Spec.assertEqWith s "CR 101.4b told alice named Goblin Piker, bob named it too" (run (S.printingName piker)) (Just (fmap Set.singleton (Map.fromList [(S.alice, S.printingName piker), (S.bob, S.printingName piker)])))
+      Spec.assertEqWith s "CR 101.4b told alice named Hill Giant, bob named it too" (run (S.printingName giant)) (Just (fmap Set.singleton (Map.fromList [(S.alice, S.printingName giant), (S.bob, S.printingName giant)])))
 
     -- CR 201.4: "the player must choose the name of a card in the Oracle card
     -- reference." Parun.Registry is that reference, and it sits on the far side of
@@ -1058,7 +1058,7 @@ nullChamberSpec s registry =
             s
             "the two legal names, and not the name no card has"
             (Map.findWithDefault Map.empty Acquisition.Own (Object.chosenNames chamber))
-            (Map.fromList [(S.alice, S.printingName piker), (S.bob, S.printingName cancel)])
+            (fmap Set.singleton (Map.fromList [(S.alice, S.printingName piker), (S.bob, S.printingName cancel)]))
           Spec.assertEqWith s "every queued answer was drawn, so alice was asked twice" left []
 
     -- CR 201.4's OTHER refusal, which the case above cannot reach: a string the
@@ -1088,7 +1088,7 @@ nullChamberSpec s registry =
             s
             "the card's own name, and not the slug that fetches it"
             (Map.findWithDefault Map.empty Acquisition.Own (Object.chosenNames chamber))
-            (Map.fromList [(S.alice, S.printingName piker), (S.bob, S.printingName cancel)])
+            (fmap Set.singleton (Map.fromList [(S.alice, S.printingName piker), (S.bob, S.printingName cancel)]))
           Spec.assertEqWith s "every queued answer was drawn, so alice was asked twice" left []
       Spec.assertBool s (either (const False) Maybe.isJust fetched) "the registry does answer to the slug"
 
@@ -1118,7 +1118,7 @@ nullChamberSpec s registry =
             s
             "the two legal names, and not the basic land the card forbids"
             (Map.findWithDefault Map.empty Acquisition.Own (Object.chosenNames chamber))
-            (Map.fromList [(S.alice, S.printingName piker), (S.bob, S.printingName cancel)])
+            (fmap Set.singleton (Map.fromList [(S.alice, S.printingName piker), (S.bob, S.printingName cancel)]))
           Spec.assertEqWith s "every queued answer was drawn, so alice was asked twice" left []
       Spec.assertBool s unrestricted "Island is a name the reference has"
       Spec.assertBool s (not restricted) "and the restriction is the only thing refusing it"

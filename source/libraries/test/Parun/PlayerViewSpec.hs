@@ -147,14 +147,23 @@ spec s registry = Spec.describe s "PlayerView" $ do
     Spec.assertGtWith s "questions checked" (length results) 100
     Spec.assertEqWith s "views that moved" (concatMap snd results) []
     Spec.assertGtWith s "cards changed" (sum (fmap fst results)) 0
-  Spec.it s "CR 702.106b a hidden agenda's name reaches no seat but its owner's" $ do
+  -- CR 702.106f: perturbed renames every name it may not see to one name, so
+  -- Summoner's Bond's two collapse into one, and bob's view must not move.
+  Spec.it s "CR 702.106b / 702.106f a hidden agenda's names, and how many, reach no seat but its owner's" $ do
     action <- S.printingOf s registry "Immediate Action"
+    bond <- S.printingOf s registry "Summoner's Bond"
     other <- S.printingOf s registry "Mindslaver"
-    let (oid, placed) = S.addObjectIn Zone.Command action S.alice (Setup.emptyGame S.bothPlayers)
-        named = Map.singleton Acquisition.Own (Map.singleton S.alice (CardName.MkCardName (Text.pack "Grizzly Bears")))
-        gs = placed {GameState.objects = Map.adjust (\o -> o {Object.facing = Facing.faceDown FaceDownReason.HiddenAgenda, Object.chosenNames = named}) oid (GameState.objects placed)}
-    Spec.assertEqWith s "bob's view does not move" (snd (leaks other gs)) []
-    Spec.assertGtWith s "the agenda changed for bob" (fst (leaks other gs)) 0
+    let named = CardName.MkCardName . Text.pack
+        hidden printing names =
+          let (oid, placed) = S.addObjectIn Zone.Command printing S.alice (Setup.emptyGame S.bothPlayers)
+              chosen = Map.singleton Acquisition.Own (Map.singleton S.alice (Set.fromList (fmap named names)))
+           in placed {GameState.objects = Map.adjust (\o -> o {Object.facing = Facing.faceDown FaceDownReason.HiddenAgenda, Object.chosenNames = chosen}) oid (GameState.objects placed)}
+        single = hidden action ["Grizzly Bears"]
+        double = hidden bond ["Grizzly Bears", "Runeclaw Bear"]
+    Spec.assertEqWith s "bob's view does not move" (snd (leaks other single)) []
+    Spec.assertGtWith s "the agenda changed for bob" (fst (leaks other single)) 0
+    Spec.assertEqWith s "nor when two names become one" (snd (leaks other double)) []
+    Spec.assertGtWith s "the double agenda changed for bob" (fst (leaks other double)) 0
   Spec.it s "an opponent's hand and library show only their sizes" $ do
     gs <- started s registry
     case seatOf S.alice (PlayerView.viewFor S.bob gs) of
@@ -715,7 +724,7 @@ perturbed other pid gs =
               { Object.source = case Object.source obj of
                   Source.OfCard _ -> Source.OfCard printingId
                   source -> source,
-                Object.chosenNames = fmap (fmap (const renamed)) (Object.chosenNames obj)
+                Object.chosenNames = fmap (fmap (Set.map (const renamed))) (Object.chosenNames obj)
               }
    in interned {GameState.objects = Map.mapWithKey swap (GameState.objects interned)}
 

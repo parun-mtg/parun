@@ -3344,7 +3344,7 @@ apply settle batch applied batchPrevented candidate event =
                 ask made pid = do
                   name <- Game.choose (Prompt.ChooseCardName (Decide.deciderFor pid gs) pid oid restriction made) >>= Game.lookUpChosenName
                   pure (made Seq.|> (pid, name))
-            fmap (Map.fromList . Foldable.toList) (Monad.foldM ask Seq.empty choosers)
+            fmap (Map.fromList . fmap (fmap Set.singleton) . Foldable.toList) (Monad.foldM ask Seq.empty choosers)
         Replacement.consume (ReplacementCandidate.identity candidate)
         State.modify' $ \g -> Game.recordChoice Chosen.Names (Game.acquisitionOf oid g) (const (Just picked)) oid g
         pure (Just event)
@@ -3359,7 +3359,7 @@ apply settle batch applied batchPrevented candidate event =
           -- Oracle card reference.
           Nothing -> pure Map.empty
           Just controller ->
-            fmap (Map.singleton controller) (Game.choose (Prompt.ChooseCardName (Decide.deciderFor controller gs) controller oid restriction Seq.empty) >>= Game.lookUpChosenName)
+            fmap (Map.singleton controller . Set.singleton) (Game.choose (Prompt.ChooseCardName (Decide.deciderFor controller gs) controller oid restriction Seq.empty) >>= Game.lookUpChosenName)
         Replacement.consume (ReplacementCandidate.identity candidate)
         State.modify' $ \g -> Game.recordChoice Chosen.Names (Game.acquisitionOf oid g) (const (Just picked)) oid g
         pure (Just event)

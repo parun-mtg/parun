@@ -429,7 +429,7 @@ chooseCardName resolving source controller legal (ChooseCardName.MkChooseCardNam
           Nothing -> fmap Just (Game.choose (Prompt.ChooseCardName (Decide.deciderFor chooser g) chooser source restriction made) >>= Game.lookUpChosenName)
           Just names -> Common.chooseNameAmong chooser source made names
         pure (maybe made (\name -> made Seq.|> (chooser, name)) picked)
-  picked <- fmap (Map.fromList . Foldable.toList) (Monad.foldM ask Seq.empty (Common.apnapDecidersOf ref legal resolving source controller gs))
+  picked <- fmap (Map.fromList . fmap (fmap Set.singleton) . Foldable.toList) (Monad.foldM ask Seq.empty (Common.apnapDecidersOf ref legal resolving source controller gs))
   -- CR 101.3: a reference naming NOBODY leaves nothing to do, so the write is
   -- skipped rather than assigning the empty set -- which would clear a name an
   -- earlier instruction chose, and the assignment above is the whole reason

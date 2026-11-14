@@ -148,7 +148,7 @@ data LastKnown = MkLastKnown
     -- not recoverable from `characteristics` or `copiable`, since choosing a name
     -- changes nothing the projection folds. So it sits beside them for
     -- `controller`'s reason.
-    chosenNames :: !(Map.Map Acquisition.Acquisition (Map.Map PlayerId.PlayerId CardName.CardName)),
+    chosenNames :: !(Map.Map Acquisition.Acquisition (Map.Map PlayerId.PlayerId (Set.Set CardName.CardName))),
     -- | CR 614.1c / 702.174a: the players chosen for it -- the same
     -- Object.chosenPlayers the live object carried. What CR 608.2h answers for a
     -- gift trigger whose permanent has left (Parun.CastSpec's Scrapshooter killed
