@@ -2111,6 +2111,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("Highcliff Felidar", 1),
             ("Juxtapose", 2),
             ("Myrkul's Edict", 1),
+            ("Papalymo Totolymo", 1),
             ("Penregon Besieged", 1),
             ("Porphyry Nodes", 1),
             ("Professor Onyx", 1),

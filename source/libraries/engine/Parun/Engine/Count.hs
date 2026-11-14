@@ -70,6 +70,7 @@ import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LeftTheGame as LeftTheGame
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
+import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
@@ -385,7 +386,7 @@ departedAs gs oid =
    in Maybe.listToMaybe (Maybe.mapMaybe departure (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
 -- CR 109.1 / 120.1: THE player candidate's view -- Parun.Engine.Filter.playerView
--- with the one field a bare PlayerId cannot answer filled from the board.
+-- with the fields a bare PlayerId cannot answer filled from the board.
 -- Parun.Engine.Projection.View.viewOfCharacteristics fills Filter.dealtDamageThisTurn
 -- for an object off Game.damagedObject; this is its player half, off
 -- Game.wasDealtDamage, so CR 120.1's four recipients are read back
@@ -407,6 +408,9 @@ playerView :: GameState -> PlayerId -> Filter.View
 playerView gs pid =
   (Filter.playerView pid)
     { Filter.dealtDamageThisTurn = Game.wasDealtDamage WhichTurn.ThisTurn Nothing Nothing gs pid,
+      -- CR 119.3 / 608.2i: the same division for a life total. Damage reaches
+      -- the log as its own life loss (CR 120.3a), so no damage read is needed.
+      Filter.lostLifeThisTurn = Game.lifeChangedIn LifeDirection.Lost (TurnRegisters.events (GameState.turn gs)) pid > 0,
       -- CR 508.3b: the same division, one record over -- a player IS one of that
       -- rule's three subjects, and Parun.Engine.Filter.playerView holds no combat
       -- record to read the answer from.
@@ -1187,6 +1191,8 @@ lastKnownView peers oid gs lastKnown =
           Filter.declaredBlockerThisCombat = declaredBlockerThisCombat oid gs,
           Filter.leftLibraryThisTurn = leftLibraryThisTurn oid gs,
           Filter.dealtDamageThisTurn = dealtDamageThisTurn oid gs,
+          -- CR 119.3: only a player loses life.
+          Filter.lostLifeThisTurn = False,
           Filter.activatedThisTurn = activatedThisTurn oid gs,
           Filter.arrivalThisTurn = Game.arrivalThisTurn oid gs,
           Filter.arrivalSinceOwnLastTurn = Game.arrivalSinceOwnLastTurn oid gs,
@@ -1532,6 +1538,8 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- CR 120.1 damages an OBJECT, and this view describes a snapshot rather
       -- than one -- there is no id here for the turn's damage to have named.
       Filter.dealtDamageThisTurn = False,
+      -- CR 119.3: only a player loses life.
+      Filter.lostLifeThisTurn = False,
       -- CR 700.10 names an OBJECT as a source, and this view describes a
       -- snapshot rather than one -- `dealtDamageThisTurn` above's reason.
       Filter.activatedThisTurn = False,

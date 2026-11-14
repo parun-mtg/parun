@@ -207,6 +207,8 @@ viewOfCardLapsed lapsed face =
           -- a permanent. viewOfCharacteristics is the view that holds an id and
           -- answers.
           Filter.dealtDamageThisTurn = False,
+          -- CR 119.3: only a player loses life.
+          Filter.lostLifeThisTurn = False,
           -- CR 700.10 asks after an OBJECT; this builder describes a printed
           -- FACE -- `leftLibraryThisTurn` above's reason.
           Filter.activatedThisTurn = False,
@@ -694,6 +696,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.declaredBlockerThisCombat = Count.declaredBlockerThisCombat oid gs,
       Filter.leftLibraryThisTurn = Count.leftLibraryThisTurn oid gs,
       Filter.dealtDamageThisTurn = Count.dealtDamageThisTurn oid gs,
+      -- CR 119.3: only a player loses life.
+      Filter.lostLifeThisTurn = False,
       Filter.activatedThisTurn = Count.activatedThisTurn oid gs,
       Filter.arrivalThisTurn = Game.arrivalThisTurn oid gs,
       Filter.arrivalSinceOwnLastTurn = Game.arrivalSinceOwnLastTurn oid gs,

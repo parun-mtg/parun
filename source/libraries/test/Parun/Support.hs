@@ -2003,6 +2003,7 @@ stubView table oid =
                 Filter.declaredBlockerThisCombat = False,
                 Filter.leftLibraryThisTurn = Set.empty,
                 Filter.dealtDamageThisTurn = False,
+                Filter.lostLifeThisTurn = False,
                 Filter.activatedThisTurn = False,
                 Filter.arrivalThisTurn = Nothing,
                 Filter.arrivalSinceOwnLastTurn = Map.empty,

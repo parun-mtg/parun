@@ -123,6 +123,7 @@ blackCreature =
       Filter.declaredBlockerThisCombat = False,
       Filter.leftLibraryThisTurn = Set.empty,
       Filter.dealtDamageThisTurn = False,
+      Filter.lostLifeThisTurn = False,
       Filter.activatedThisTurn = False,
       Filter.arrivalThisTurn = Nothing,
       Filter.arrivalSinceOwnLastTurn = Map.empty,
@@ -221,6 +222,7 @@ devoidBigCreature =
       Filter.declaredBlockerThisCombat = False,
       Filter.leftLibraryThisTurn = Set.empty,
       Filter.dealtDamageThisTurn = False,
+      Filter.lostLifeThisTurn = False,
       Filter.activatedThisTurn = False,
       Filter.arrivalThisTurn = Nothing,
       Filter.arrivalSinceOwnLastTurn = Map.empty,
@@ -1974,6 +1976,16 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.it s "reads the same field for a player candidate" $ do
       Spec.assertBool s (Filter.matches self (aPlayer {Filter.dealtDamageThisTurn = True}) Filter.Type.DealtDamageThisTurn) "a damaged player"
       Spec.assertBool s (not (Filter.matches self aPlayer Filter.Type.DealtDamageThisTurn)) "and an undamaged one"
+
+  -- CR 119.3: the field Parun.Engine.Count.playerView fills; the Rix Maadi
+  -- Guildmage and Papalymo Totolymo scenarios are where a real board fills it.
+  Spec.describe s "LostLifeThisTurn" $ do
+    Spec.it s "reads the player view's field" $ do
+      Spec.assertBool s (Filter.matches self (aPlayer {Filter.lostLifeThisTurn = True}) Filter.Type.LostLifeThisTurn) "a player who lost life"
+      Spec.assertBool s (not (Filter.matches self aPlayer Filter.Type.LostLifeThisTurn)) "and one who did not"
+
+    Spec.it s "is not implied by being dealt damage" $ do
+      Spec.assertBool s (not (Filter.matches self (aPlayer {Filter.dealtDamageThisTurn = True}) Filter.Type.LostLifeThisTurn)) "dealt damage"
 
   -- CR 120.1, the CrewedSourceThisTurn group's split: object 31 is the source,
   -- player 0 the perspective, and player 1 someone else. Parun.DamageSpec's
