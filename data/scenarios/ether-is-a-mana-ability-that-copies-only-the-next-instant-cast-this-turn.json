@@ -1,0 +1,53 @@
+{
+  "description": "CR 605.1a / 603.7b / 707.10c: Ether is a mana ability, adding {U} without using the stack; the next instant alice casts that turn is copied and the copy aimed at carol, and the instant after it is not copied",
+  "note": "Shock is paid from a Mountain, not Ether's {U}: the copy does not depend on the mana being spent. Bob loses 2 from Shock and 3 from Bolt; carol loses 2 from the copy only.",
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {"card": "Ether", "label": "ether"},
+          {"card": "Mountain", "label": "m1"},
+          {"card": "Mountain", "label": "m2"}
+        ],
+        "hand": [
+          {"card": "Shock", "label": "shock"},
+          {"card": "Lightning Bolt", "label": "bolt"}
+        ],
+        "library": [{"card": "Island"}, {"card": "Island"}],
+        "name": "alice"
+      },
+      {
+        "library": [{"card": "Island"}, {"card": "Island"}],
+        "name": "bob"
+      },
+      {
+        "library": [{"card": "Island"}, {"card": "Island"}],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Offered", "player": "alice", "is": ["Pass", "Cast $shock", "Cast $bolt", "ActivateManaAbility $ether", "ActivateManaAbility $m1", "ActivateManaAbility $m2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $ether"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Blue"}, "tags": ["Artifact"], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Ether", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$shock", "targets": ["$bob"], "mana": ["$m1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $ether", "Shock"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$carol"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Shock#2", "Shock"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "carol", "life": 18}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt", "targets": ["$bob"], "mana": ["$m2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Lightning Bolt"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 15}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "carol", "life": 18}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "alice", "life": 20}}}
+  ]
+}

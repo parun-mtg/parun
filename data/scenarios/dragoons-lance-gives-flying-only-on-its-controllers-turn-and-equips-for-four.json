@@ -1,0 +1,21 @@
+{
+  "description":"CR 604.2, 702.9a, 702.6a: Dragoon's Lance gives its creature flying only during its controller's turn, and equips for {4}",
+  "note":"The +1/+0 and Knight hold on both turns; flying only on alice's. Four Plains pay the equip with nothing left floating.",
+  "board":{"active":"alice","step":"PrecombatMain","seats":[{"name":"alice","battlefield":[{"card":"Grizzly Bears","label":"bears"},{"card":"Dragoon's Lance","label":"lance","attached":"bears"},{"card":"Hill Giant","label":"giant"},{"card":"Plains","label":"p1"},{"card":"Plains","label":"p2"},{"card":"Plains","label":"p3"},{"card":"Plains","label":"p4"}],"library":[{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"}]},{"name":"bob","library":[{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"}]}]},
+  "timeline": [
+    {"turn":1,"step":"PrecombatMain","player":"alice","check":{"PowerToughness":{"object":"$bears","power":3,"toughness":2}}},
+    {"turn":1,"step":"PrecombatMain","player":"alice","check":{"Keywords":{"object":"$bears","keyword":{"type":"Flying"},"count":1}}},
+    {"turn":1,"step":"PrecombatMain","player":"alice","check":{"Subtypes":{"object":"$bears","subtypes":["Bear","Knight"]}}},
+    {"turn":1,"step":"PrecombatMain","player":"alice","check":{"Keywords":{"object":"$giant","keyword":{"type":"Flying"},"count":0}}},
+    {"turn":2,"step":"PrecombatMain","player":"bob","check":{"PowerToughness":{"object":"$bears","power":3,"toughness":2}}},
+    {"turn":2,"step":"PrecombatMain","player":"bob","check":{"Keywords":{"object":"$bears","keyword":{"type":"Flying"},"count":0}}},
+    {"turn":2,"step":"PrecombatMain","player":"bob","check":{"Subtypes":{"object":"$bears","subtypes":["Bear","Knight"]}}},
+    {"turn":3,"step":"PrecombatMain","player":"alice","do":{"Activate":{"object":"$lance","targets":["$giant"],"mana":["$p1","$p2","$p3","$p4"]}}},
+    {"turn":3,"step":"PrecombatMain","player":"alice","check":{"View":{"of":"ManaPool","is":[],"player":"alice"}}},
+    {"turn":3,"step":"PrecombatMain","player":"alice","do":"Pass"},
+    {"turn":3,"step":"PrecombatMain","player":"alice","check":{"View":{"of":"AttachedTo","object":"$lance","is":"$giant"}}},
+    {"turn":3,"step":"PrecombatMain","player":"alice","check":{"PowerToughness":{"object":"$giant","power":4,"toughness":3}}},
+    {"turn":3,"step":"PrecombatMain","player":"alice","check":{"Keywords":{"object":"$giant","keyword":{"type":"Flying"},"count":1}}},
+    {"turn":3,"step":"PrecombatMain","player":"alice","check":{"Keywords":{"object":"$bears","keyword":{"type":"Flying"},"count":0}}}
+  ]
+}
