@@ -1,0 +1,29 @@
+{
+  "description": "CR 400.7h / 702.125a: Durnan of the Yawning Portal exiles a creature card it looked at, and that spell has undaunted, so alice casts Centaur Courser for {1}{G} off two Forests",
+  "note": "One opponent, so undaunted takes {1}; without it the Courser's {2}{G} is more than the two Forests make.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Durnan of the Yawning Portal", "label": "durnan", "ready": true}, {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}],
+        "library": [{"card": "Island", "label": "i1"}, {"card": "Centaur Courser", "label": "courser"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$durnan"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ArrangeLibraryArrivals", "with": [0, 1, 2]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Centaur Courser", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Cast": {"object": "Centaur Courser", "mana": ["$f1", "$f2"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Centaur Courser", "count": 1}}}
+  ]
+}

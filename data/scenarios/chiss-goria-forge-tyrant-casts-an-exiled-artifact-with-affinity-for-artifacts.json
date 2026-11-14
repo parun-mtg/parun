@@ -1,0 +1,27 @@
+{
+  "description": "CR 400.7h / 702.41a: Chiss-Goria, Forge Tyrant exiles its top five and the artifact spell cast from among them has affinity for artifacts, so alice casts Juggernaut for {2} with two Ornithopters out",
+  "note": "Without affinity Juggernaut's {4} is more than the two Mountains make; the Plains among the five is no artifact, so it is not castable.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{"card": "Chiss-Goria, Forge Tyrant", "label": "dragon"}, {"card": "Ornithopter"}, {"card": "Ornithopter"}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}],
+        "library": [{"card": "Plains"}, {"card": "Juggernaut", "label": "juggernaut"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$dragon"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Juggernaut", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Cast": {"object": "Juggernaut", "mana": ["$m1", "$m2"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Juggernaut", "count": 1}}}
+  ]
+}

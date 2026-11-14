@@ -804,7 +804,7 @@ offerNotedCopy offerOutsideCopy runSubgame resolving source controller legal off
 -- Peace exiled is still "that card"; proven by
 -- ark-of-hunger-plays-a-milled-card-rest-in-peace-exiled.
 grantPlayFromExile :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> GrantPlayFromExile.GrantPlayFromExile -> Game ()
-grantPlayFromExile resolving source controller legal (GrantPlayFromExile.MkGrantPlayFromExile duration player ref spending alternativeCost condition verb increase landEnters upTo zone) =
+grantPlayFromExile resolving source controller legal (GrantPlayFromExile.MkGrantPlayFromExile duration player ref spending alternativeCost condition verb increase landEnters upTo keywords zone) =
   State.modify' $ \gs ->
     -- The sweep every ObjectRef-taking opcode shares: a player recipient, an
     -- illegal slot (CR 608.2b) and a set that matched nothing all arrive empty.
@@ -844,7 +844,10 @@ grantPlayFromExile resolving source controller legal (GrantPlayFromExile.MkGrant
                       -- CR 601.3: one budget over every object granted,
                       -- so a play of any of them spends it for all, told
                       -- from another grant's by its stamp.
-                      ExilePlayPermission.budget = fmap (\n -> PlayBudget.MkPlayBudget n (Set.fromList targets) stamp) upTo
+                      ExilePlayPermission.budget = fmap (\n -> PlayBudget.MkPlayBudget n (Set.fromList targets) stamp) upTo,
+                      -- CR 400.7h, carried from the opcode unread;
+                      -- Parun.Engine.Cast.castGrantsOf acts on it.
+                      ExilePlayPermission.keywords = keywords
                     }
                 -- CR 601.3: beside any permission the card already holds,
                 -- each grant being a permission of its own.

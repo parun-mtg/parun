@@ -1247,12 +1247,24 @@ spellAdjustments aiming pid oid gs =
 -- gate here and Parun.Engine.Cast.castSpellWith folds it into the candidates
 -- before CR 601.2a's move (raiseCandidate).
 permissionIncrease :: PlayerId -> ObjectId -> GameState -> Natural
-permissionIncrease pid oid gs = case Game.lookupObject oid gs of
+permissionIncrease pid oid gs = maybe 0 ExilePlayPermission.increase (castPermission pid oid gs)
+
+-- CR 400.7h: the keywords the CR 601.3 permission an exiled `oid` carries gives
+-- `pid`'s spell of it -- Durnan of the Yawning Portal's "that spell has
+-- undaunted". Scoped and asked of the pre-move card for permissionIncrease's
+-- reasons; Parun.Engine.Cast.castGrantsOf stamps them on the spell.
+permissionKeywords :: PlayerId -> ObjectId -> GameState -> [Keyword.Type.Keyword]
+permissionKeywords pid oid gs = foldMap ExilePlayPermission.keywords (castPermission pid oid gs)
+
+-- The open CR 601.3 permission `pid`'s cast of an exiled `oid` is priced under,
+-- the first of them; Nothing for a card anywhere else.
+castPermission :: PlayerId -> ObjectId -> GameState -> Maybe ExilePlayPermission.ExilePlayPermission
+castPermission pid oid gs = case Game.lookupObject oid gs of
   Just obj
     | Object.zone obj == Zone.Exile,
       permission : _ <- Expiry.openPermissions pid oid gs ->
-        ExilePlayPermission.increase permission
-  _ -> 0
+        Just permission
+  _ -> Nothing
 
 -- CR 601.2f: permissionIncrease added to one candidate's mana part,
 -- Commander.taxCandidates' shape and reason. A cost with no mana part stays

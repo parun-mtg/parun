@@ -848,6 +848,9 @@ data Object = MkObject
     -- gives the spell spending it (Wand of the Worldsoul's convoke), which
     -- begin to apply as it is put on the stack and so have to be here for CR
     -- 601.2h's payment. A list, so two Dark Apostles' rows give two cascades.
+    -- So do CR 400.7h's keywords the exile permission it was cast under gives
+    -- it (ExilePlayPermission.keywords, Durnan of the Yawning Portal's
+    -- undaunted).
     --
     -- Only a GRANTED one: a printed permission projects off the face in every
     -- zone, and stamping it here would report two instances of one keyword (CR

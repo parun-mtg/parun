@@ -3,6 +3,7 @@ module Parun.Types.ExilePlayPermission where
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Expiry as Expiry
+import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PermissionCost as PermissionCost
@@ -111,13 +112,17 @@ data ExilePlayPermission = MkExilePlayPermission
     -- each of their permissions -- March of Reckless Joy\'s "up to two of
     -- those cards". Nothing is no limit. Spent by
     -- Parun.Engine.Cast.spendPlayBudget.
-    budget :: Maybe PlayBudget.PlayBudget
+    budget :: Maybe PlayBudget.PlayBudget,
+    -- | CR 400.7h / 613.1f: the keywords a spell cast under it has from the
+    -- move on, stamped by Parun.Engine.Cast.castGrantsOf -- Durnan of the
+    -- Yawning Portal\'s "that spell has undaunted".
+    keywords :: [Keyword.Keyword]
   }
   deriving (Eq, Ord, Show)
 
 -- | CR 601.3: the permission `player` holds from `source` that states nothing
 -- but the play -- no duration (CR 611.2a), no rider (CR 118.14), no cost (CR
--- 118.9), no condition, increase, entry or budget. Each grant writes over it
+-- 118.9), no condition, increase, entry, budget or keyword. Each grant writes over it
 -- what its own rule says.
 defaultValue :: PlayerId.PlayerId -> ObjectId.ObjectId -> ExilePlayPermission
 defaultValue p s =
@@ -132,5 +137,6 @@ defaultValue p s =
       verb = PermissionVerb.Play,
       increase = 0,
       landEnters = TapState.Untapped,
-      budget = Nothing
+      budget = Nothing,
+      keywords = []
     }
