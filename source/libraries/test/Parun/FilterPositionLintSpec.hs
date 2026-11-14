@@ -843,7 +843,7 @@ chosenValueCounts admitted answers tag card =
       abilityModals = fmap TriggeredAbility.modal (Face.triggeredAbilities (surveyedFace card)) <> fmap ActivatedAbility.modal (Face.activatedAbilities (surveyedFace card))
       -- A keyword's own filter is read off the keyword long after the
       -- resolution, so the choice answers it only where it is baked
-      -- (grantedChosenColors).
+      -- (grantedChosen).
       inAbility = total (\framing -> not (admitted framing) && framing /= KeywordFramed) (concatMap (afterChoice answers) abilityModals)
       -- Unframed alone, where an ability admits more: a spell that has
       -- resolved leaves no source for a stored position to read later.
@@ -914,38 +914,55 @@ writesCardType quality = case quality of
 
 -- CR 105.2's chosen colour is answerable only where Filter.Context.sourceChosenColors
 -- is filled: every source-framed position (sourceFramed), plus a static grant's
--- bare protection quality (grantedChosenColors) and CR 106.6's mana
+-- bare protection quality (grantedChosen) and CR 106.6's mana
 -- restriction, which Parun.Engine.Mana.admitsUnder fills off the mana unit
 -- (Throne of Eldraine). Everywhere else it is a silent False.
 hasChosenColorCounts :: Surveyed -> (Int, Int)
 hasChosenColorCounts card =
   let (framed, elsewhere) = chosenValueCounts (\framing -> framing == ManaRestrictionFramed || sourceFramed framing) writesColors hasChosenColorTag card
-      granted = grantedChosenColors (surveyedFace card)
+      granted = grantedChosen bareColor (surveyedFace card)
    in (framed + granted, elsewhere - granted)
 
 -- CR 607.2d's "protection from the chosen color", or CR 702.11d's hexproof
 -- from it, granted by a STATIC ability
 -- or by a resolution's ModifyTarget: the keyword positions the colour is
--- answered at, since Parun.Engine.Keyword.withChosenColors bakes the choice
+-- answered at, since Parun.Engine.Keyword.withChoices bakes the choice
 -- into a BARE quality -- as Parun.Engine.Projection applies a static grant
 -- (Cho-Manno's Blessing), and as freezeQuantities stores a resolution's (CR
 -- 608.2h, Stave Off). The atom buried in a quality stays an offence.
-grantedChosenColors :: Face.Face Card.Type.Card -> Int
-grantedChosenColors card =
+-- CR 702.14a's "landwalk of the chosen type" likewise (Traveler's Cloak), the
+-- bare criterion its subtype twin.
+grantedChosen :: (Keyword.Keyword -> Bool) -> Face.Face Card.Type.Card -> Int
+grantedChosen bareKeyword card =
   let bare m = case m of
-        Modification.GainKeyword (Keyword.Protection protection) -> Protection.quality protection == Filter.Type.HasChosenColor
-        Modification.GainKeyword (Keyword.Hexproof quality) -> quality == Just Filter.Type.HasChosenColor
+        Modification.GainKeyword k -> bareKeyword k
         _ -> False
    in length
         ( [() | ability <- Face.staticAbilities card, m <- NonEmpty.toList (StaticAbility.modifications ability), bare m]
             <> [() | Effect.ModifyTarget modify <- cardResolutionEffects card, bare (ModifyTarget.modification modify)]
         )
 
+-- grantedChosen's colour atoms: a bare protection or hexproof quality.
+bareColor :: Keyword.Keyword -> Bool
+bareColor k = case k of
+  Keyword.Protection protection -> Protection.quality protection == Filter.Type.HasChosenColor
+  Keyword.Hexproof quality -> quality == Just Filter.Type.HasChosenColor
+  _ -> False
+
+-- grantedChosen's subtype atom: a bare landwalk criterion.
+bareSubtype :: Keyword.Keyword -> Bool
+bareSubtype k = case k of
+  Keyword.Landwalk criterion -> criterion == Filter.Type.HasChosenSubtype
+  _ -> False
+
 -- CR 205.3's chosen subtype in the same positions, plus CR 106.6's restriction,
 -- which Parun.Engine.Mana.admitsUnder answers off the mana unit (Pillar of
 -- Origins). The colour has no such reading, so the two lists differ.
 hasChosenSubtypeCounts :: Surveyed -> (Int, Int)
-hasChosenSubtypeCounts = chosenValueCounts (\framing -> framing == ManaRestrictionFramed || sourceFramed framing) writesSubtype hasChosenSubtypeTag
+hasChosenSubtypeCounts card =
+  let (framed, elsewhere) = chosenValueCounts (\framing -> framing == ManaRestrictionFramed || sourceFramed framing) writesSubtype hasChosenSubtypeTag card
+      granted = grantedChosen bareSubtype (surveyedFace card)
+   in (framed + granted, elsewhere - granted)
 
 -- CR 205.2a's chosen card type in the source-framed positions alone: no mana
 -- unit bakes it (Parun.Engine.Mana.sourceChoicesOf), so a restriction cannot

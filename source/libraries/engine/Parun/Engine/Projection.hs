@@ -339,7 +339,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
             chosen = Maybe.fromMaybe Set.empty (Game.currentChoice Chosen.Colors src gs)
             stampedBy limit attacher = maybe False ((<= limit) . Object.timestamp) (Game.lookupObject attacher gs)
             already = foldMap (\g -> filter (stampedBy (Object.timestamp g)) (Set.toList (Game.attachments oid gs))) granter
-            baked = Keyword.grantedBy src chosen (controllerOf src gs) already k
+            baked = Keyword.grantedBy src chosen (Game.currentChoice Chosen.Subtype src gs) (controllerOf src gs) already k
          in -- CR 113.11: no effect or keyword counter adds a keyword the
             -- object can't have, whichever came first. The scenarios under
             -- data/scenarios/archetype-of-courage prove the static grant, the
@@ -350,10 +350,12 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
    in case m of
         -- CR 613.1f layer 6: a grant adds an ability, so two grants of the same
         -- keyword count twice. Keyword.grantedBy bakes the granter into CR
-        -- 702.16n's "this Aura", its entry choice into CR 607.2d's "the chosen
-        -- color", and its controller and the attachments stamped no later than
-        -- it into CR 702.16p's spare; Parun.AuraSpec's White Ward, Cho-Manno's
-        -- Blessing and Benevolent Blessing cases prove them.
+        -- 702.16n's "this Aura", its entry choices into CR 607.2d's "the chosen
+        -- color" and CR 702.14a's "landwalk of the chosen type", and its
+        -- controller and the attachments stamped no later than it into CR
+        -- 702.16p's spare; Parun.AuraSpec's White Ward, Cho-Manno's
+        -- Blessing and Benevolent Blessing cases and data/scenarios/'s
+        -- Traveler's Cloak scenario prove them.
         Modification.GainKeyword k -> granting k
         -- CR 613.1f layer 6 / CR 202.1a: the same grant, with the keyword's
         -- [cost] read off the RECEIVING object rather than written on the granter
@@ -1928,12 +1930,16 @@ freezeQuantities viewOf gs announcedOn source context m =
         -- below -- the spell is in a graveyard by the time the grant is
         -- projected (Stave Off). data/scenarios/'s Stave Off scenario proves it.
         --
+        -- CR 702.14a: "landwalk of the chosen type" is locked in likewise.
+        --
         -- CR 702.16i / 109.5: "each of your opponents" is locked in likewise,
         -- as the players relating thus to the resolving ability's controller,
         -- the context's perspective (Figure of Fable).
         Modification.GainKeyword k ->
           let related relation = [q | you <- Foldable.toList (Filter.perspective context), q <- Game.stillPlaying gs, PlayerRelation.holds (Filter.teams context) relation you q]
-           in Just (Modification.GainKeyword (Keyword.withRelatedPlayers related (Keyword.withChosenColors (Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Colors (Game.readingAcquisition announcedOn source gs source) source gs)) k)))
+              acquisition = Game.readingAcquisition announcedOn source gs source
+              chosen = Maybe.fromMaybe Set.empty (Game.choiceWithLastKnown Chosen.Colors acquisition source gs)
+           in Just (Modification.GainKeyword (Keyword.withRelatedPlayers related (Keyword.withChoices chosen (Game.choiceWithLastKnown Chosen.Subtype acquisition source gs) k)))
         -- Its cost is derived at projection time, not evaluated from a Quantity,
         -- so there is nothing here to freeze.
         Modification.GainKeywordAtManaCost _ -> Just m
@@ -2123,6 +2129,7 @@ referenceQueries gs = Set.fromList (Maybe.mapMaybe (referenceQuery . gModificati
 chosenSubtypeAs :: ChangeMode.ChangeMode -> SubtypeFamily.SubtypeFamily -> Subtype.Type.Subtype -> Modification.Modification ability
 chosenSubtypeAs mode family s = case family of
   SubtypeFamily.BasicLandType -> Modification.LandSubtype mode s
+  SubtypeFamily.LandType -> Modification.LandSubtype mode s
   SubtypeFamily.CreatureType -> Modification.CreatureSubtype mode s
   SubtypeFamily.PlaneswalkerType -> Modification.Subtype mode s
 
@@ -2141,6 +2148,7 @@ setsLandSubtype m = case m of
   -- creature type is CreatureSubtype's answer below.
   Modification.ChosenSubtype mode family -> case family of
     SubtypeFamily.BasicLandType -> setsLandSubtype (Modification.LandSubtype mode Subtype.Type.Forest)
+    SubtypeFamily.LandType -> setsLandSubtype (Modification.LandSubtype mode Subtype.Type.Forest)
     SubtypeFamily.CreatureType -> False
     SubtypeFamily.PlaneswalkerType -> False
   -- An ability grant is layer 6 and sets no subtype at all.

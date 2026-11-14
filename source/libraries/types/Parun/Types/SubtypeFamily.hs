@@ -6,6 +6,8 @@ module Parun.Types.SubtypeFamily where
 data SubtypeFamily
   = -- | CR 305.6 / 305.7: a basic land type (Convincing Mirage).
     BasicLandType
+  | -- | CR 205.3i: any land type, basic or not (Shimmer).
+    LandType
   | -- | CR 205.3m: a creature type (Adaptive Automaton).
     CreatureType
   | -- | CR 205.3j: a planeswalker type (Deification).
