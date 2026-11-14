@@ -34,6 +34,7 @@
         }
       ],
       "name": "Astrologian's Planisphere",
+      "oracleText": "Job select (When this Equipment enters, create a 1/1 colorless Hero creature token, then attach this to it.)\nEquipped creature is a Wizard in addition to its other types and has \"Whenever you cast a noncreature spell and whenever you draw your third card each turn, put a +1/+1 counter on this creature.\"\nDiana — Equip {2}",
       "staticAbilities": [
         {
           "affected": {

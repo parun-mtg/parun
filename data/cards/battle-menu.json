@@ -15,6 +15,7 @@
         }
       ],
       "name": "Battle Menu",
+      "oracleText": "Choose one —\n• Attack — Create a 2/2 white Knight creature token.\n• Ability — Target creature gets +0/+4 until end of turn.\n• Magic — Destroy target creature with power 4 or greater.\n• Item — You gain 4 life.",
       "spell": {
         "modes": [
           {
@@ -85,7 +86,7 @@
                       },
                       "ref": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "pumped"
                       }
                     }
                   }
@@ -93,7 +94,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "pumped": {
                 "pool": {
                   "type": "Creatures"
                 }
@@ -109,7 +110,7 @@
                     "value": {
                       "ref": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "victim"
                       },
                       "regenerability": "Regenerable"
                     }
@@ -118,7 +119,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "victim": {
                 "filter": {
                   "type": "Measures",
                   "value": {

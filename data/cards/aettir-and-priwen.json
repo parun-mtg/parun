@@ -24,6 +24,7 @@
         }
       ],
       "name": "Aettir and Priwen",
+      "oracleText": "Equipped creature has base power and toughness X/X, where X is your life total.\nEquip {5}",
       "staticAbilities": [
         {
           "affected": {

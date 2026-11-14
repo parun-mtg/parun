@@ -107,6 +107,7 @@
         }
       ],
       "name": "Balamb Garden, SeeD Academy",
+      "oracleText": "This land enters tapped.\n{T}: Add {G} or {U}.\n{5}{G}{U}, {T}: Transform this land. This ability costs {1} less to activate for each other Town you control.",
       "playerAbilities": [
         {
           "effect": {
@@ -214,6 +215,7 @@
         }
       ],
       "name": "Balamb Garden, Airborne",
+      "oracleText": "Flying\nWhenever Balamb Garden attacks, draw a card.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
       "power": {
         "type": "Literal",
         "value": 5
