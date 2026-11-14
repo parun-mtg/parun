@@ -616,6 +616,7 @@ filterChildren children predicate = case predicate of
   Filter.ConvokedSourceThisTurn -> pure predicate
   Filter.SaddledSourceThisTurn -> pure predicate
   Filter.DealtDamageThisTurn -> pure predicate
+  Filter.LostLifeThisTurn -> pure predicate
   Filter.ActivatedThisTurn -> pure predicate
   Filter.DealtDamageTo asked -> fmap Filter.DealtDamageTo (dealtDamageToChildren children asked)
   Filter.EnteredThisTurn _ -> pure predicate

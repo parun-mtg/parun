@@ -180,6 +180,7 @@ objects pcs gs a b =
           Filter.Engine.couldAttackThisTurn view,
           Filter.Engine.leftLibraryThisTurn view,
           Filter.Engine.dealtDamageThisTurn view,
+          Filter.Engine.lostLifeThisTurn view,
           Filter.Engine.activatedThisTurn view,
           Filter.Engine.arrivalThisTurn view,
           Filter.Engine.arrivalSinceOwnLastTurn view,

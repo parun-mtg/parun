@@ -401,6 +401,9 @@ data Filter keyword
     -- (GameEvent.DamageDealt), and not Object.damage being positive: a wither or
     -- infect source marks nothing at all (CR 120.3d).
     DealtDamageThisTurn
+  | -- | CR 119.3 / 608.2i: the candidate PLAYER lost life earlier this turn --
+    -- Rix Maadi Guildmage's "target player who lost life this turn".
+    LostLifeThisTurn
   | -- | CR 700.10: the candidate was the source of an ability activated this
     -- turn, read off TurnRegisters.activationsThisTurn.
     ActivatedThisTurn

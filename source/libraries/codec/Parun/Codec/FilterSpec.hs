@@ -477,6 +477,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.DealtDamageThisTurn
       " {\"type\":\"DealtDamageThisTurn\"} "
+  Spec.it s "LostLifeThisTurn" $
+    Common.assertCodec
+      s
+      codec
+      Filter.LostLifeThisTurn
+      " {\"type\":\"LostLifeThisTurn\"} "
   Spec.it s "ActivatedThisTurn" $
     Common.assertCodec
       s

@@ -39,8 +39,9 @@ data Scope
     --
     -- The Filter runs over the players, and the atoms that answer for one split
     -- in two. Filter.IsPlayer is answered off the VIEW, relating the candidate to
-    -- the perspective, as is Filter.DealtDamageThisTurn, which Count.playerView
-    -- fills from the board (CR 120.1).
+    -- the perspective, as are Filter.DealtDamageThisTurn and
+    -- Filter.LostLifeThisTurn, which Count.playerView fills from the board (CR
+    -- 120.1, 119.3).
     -- Filter.Controls (Oreskos Explorer's "players who control more
     -- lands than you"), Filter.IsControllerOfBound (Spikeshell Harrier's "each
     -- other player"), Filter.CardsInGraveyardAtLeast (The Master of
