@@ -1,0 +1,317 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "a-wurm"
+          },
+          {
+            "card": "Prodigal Sorcerer",
+            "label": "a-sorcerer"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "a-bears"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Lightning Bolt"
+          },
+          {
+            "card": "Shock"
+          },
+          {
+            "card": "Divination"
+          },
+          {
+            "card": "Mind Stone"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Dryad Arbor"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Summon: Esper Ramuh",
+            "label": "ramuh"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "RRRR",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "b-maw"
+          },
+          {
+            "card": "Prodigal Sorcerer",
+            "label": "b-sorcerer"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "c-giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 715.2b / 120.3: Summon: Esper Ramuh's chapter I deals damage equal to the noncreature, nonland cards in your graveyard to target creature an opponent controls; chapter II gives Wizards you control +1/+0 until end of turn",
+  "note": "Alice's graveyard holds four noncreature, nonland cards (Lightning Bolt, Shock, Divination, Mind Stone) beside a creature (Grizzly Bears), a land (Mountain) and a land creature (Dryad Arbor), so the bolt is 4, not 5, 6 or 7, and Bob's Colossal Dreadmaw survives to show it. Alice's own Craw Wurm is no candidate. On turn 4 the second lore counter makes Alice's Prodigal Sorcerer and Esper Ramuh itself (a Wizard) +1/+0; Bob's Prodigal Sorcerer and Alice's Grizzly Bears stay; on turn 5 the pump has ended.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$ramuh"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "victim": [
+            "$a-wurm"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "victim": [
+            "$b-maw"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 4,
+          "object": "$b-maw"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Colossal Dreadmaw",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 0,
+          "object": "$c-giant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "Lore"
+          },
+          "object": "Summon: Esper Ramuh"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$a-sorcerer",
+          "power": 2,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Summon: Esper Ramuh",
+          "power": 4,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$b-sorcerer",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$a-bears",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$a-sorcerer",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 5
+    }
+  ]
+}
