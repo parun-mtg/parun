@@ -809,7 +809,7 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
         you = PlayerRef.Relative PlayerRelation.You
         positions =
           [ ("quantity", \n -> Effect.Draw (Draw.MkDraw you (Quantity.Type.AgainstExiledPile (AgainstExiledPile.MkAgainstExiledPile (pileOf n) (Quantity.Type.Literal 1))) Nothing)),
-            ("filter", \n -> Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices you (Filter.Type.IsExiledWithSource (pileOf n)) (Quantity.Type.Literal 1) Nothing)),
+            ("filter", \n -> Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices you Nothing (Filter.Type.IsExiledWithSource (pileOf n)) (Quantity.Type.Literal 1) Nothing)),
             ("permission pool", \n -> Effect.AffectPlayers (AffectPlayers.MkAffectPlayers Duration.UntilEndOfTurn (AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.You)) (PlayerEffect.CastFrom (CastFromZone.MkCastFromZone (InZone.MkInZone Zone.Exile (PlayerRef.Relative PlayerRelation.AnyPlayer)) (Filter.Type.And []) PermissionLimit.Unlimited PermissionVerb.Cast (PermissionPool.InExiledPile (pileOf n)) [] 0 ManaSpending.AsProduced Nothing Nothing Nothing))))
           ]
         fixture effect = (vanillaFace "Synthetic Dangling Pile" instantLine) {Face.activatedAbilities = [(oneEffectActivated Nothing effect) {ActivatedAbility.name = Just (named "warden")}]}

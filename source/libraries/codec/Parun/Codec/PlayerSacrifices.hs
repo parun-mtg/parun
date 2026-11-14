@@ -17,12 +17,14 @@ import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 codec :: Codec.Codec PlayerSacrifices.PlayerSacrifices
 codec = Fields.object $ do
   players <- Fields.required "players" PlayerRef.codec PlayerSacrifices.players
+  who <- Fields.defaulted "who" Nothing (Common.maybe (Filter.codec Keyword.codec)) PlayerSacrifices.who
   filter_ <- Fields.required "filter" (Filter.codec Keyword.codec) PlayerSacrifices.filter
   quantity <- Fields.required "quantity" Quantity.codec PlayerSacrifices.quantity
   permanents <- Fields.defaulted "permanents" Nothing (Common.maybe SlotName.codec) PlayerSacrifices.permanents
   pure
     PlayerSacrifices.MkPlayerSacrifices
       { PlayerSacrifices.players = players,
+        PlayerSacrifices.who = who,
         PlayerSacrifices.filter = filter_,
         PlayerSacrifices.quantity = quantity,
         PlayerSacrifices.permanents = permanents

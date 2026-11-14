@@ -130,6 +130,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TappedForMana as TappedForMana
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Timestamp as Timestamp
@@ -4527,6 +4528,12 @@ timesTappedThisTurn gs oid = toInteger (length (Seq.filter ((== Just oid) . tapp
 tappedOf :: GameEvent -> Maybe ObjectId
 tappedOf event = case event of
   GameEvent.BecameTapped oid -> Just oid
+  _ -> Nothing
+
+-- The tap for mana an event records (CR 106.12a).
+tappedForManaOf :: GameEvent -> Maybe TappedForMana.TappedForMana
+tappedForManaOf event = case event of
+  GameEvent.TappedForMana tapped -> Just tapped
   _ -> Nothing
 
 -- The attacker an event records BECOMING blocked (CR 509.1h).

@@ -2820,7 +2820,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices (PlayerRef.EachInSlot (SlotName.MkSlotName (Text.pack "t"))) (Filter.HasCardType CardType.Creature) (Quantity.Literal 1) Nothing))
+      (Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices (PlayerRef.EachInSlot (SlotName.MkSlotName (Text.pack "t"))) Nothing (Filter.HasCardType CardType.Creature) (Quantity.Literal 1) Nothing))
       " {\"type\":\"PlayerSacrifices\",\"value\":{\"players\":{\"type\":\"EachInSlot\",\"value\":\"t\"},\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"quantity\":{\"type\":\"Literal\",\"value\":1}}} "
   Spec.it s "Vote" $
     Common.assertJsonCodec

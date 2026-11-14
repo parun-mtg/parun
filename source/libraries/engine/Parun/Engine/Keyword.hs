@@ -5705,6 +5705,7 @@ annihilator n =
         Effect.PlayerSacrifices
           ( PlayerSacrifices.MkPlayerSacrifices
               (PlayerRef.EachInSlot Binding.triggerPlayer)
+              Nothing
               (Filter.And [])
               (Quantity.Literal (toInteger n))
               Nothing

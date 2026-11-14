@@ -598,6 +598,7 @@ filterChildren children predicate = case predicate of
   Filter.Controls margin f -> fmap (Filter.Controls margin) (nest children f)
   Filter.CardsInGraveyardAtLeast _ -> pure predicate
   Filter.OwnsBoundAtLeast n name f -> liftA2 (Filter.OwnsBoundAtLeast n) (slot children SlotArity.Many name) (nest children f)
+  Filter.TappedForManaThisTurn f -> fmap Filter.TappedForManaThisTurn (nest children f)
   Filter.IsAttacking _ -> pure predicate
   Filter.IsAttackingPlayer _ -> pure predicate
   Filter.IsAttackingPlaneswalker _ -> pure predicate
@@ -1251,8 +1252,8 @@ effectChildren c effect = case effect of
   Effect.Cloak (Cloak.MkCloak who library) -> fmap Effect.Cloak (Cloak.MkCloak <$> onPlayer c who <*> traverse (onPlayer c) library)
   Effect.ManifestDread who -> fmap Effect.ManifestDread (onPlayer c who)
   Effect.Venture _ -> pure effect
-  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices players filter_ quantity permanents) ->
-    fmap Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices <$> onPlayer c players <*> onFilter c filter_ <*> onQuantity c quantity <*> traverse (onSlot c) permanents)
+  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices players who filter_ quantity permanents) ->
+    fmap Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices <$> onPlayer c players <*> traverse (onFilter c) who <*> onFilter c filter_ <*> onQuantity c quantity <*> traverse (onSlot c) permanents)
   Effect.Vote (Vote.MkVote starter choices secret) -> fmap Effect.Vote (Vote.MkVote <$> onPlayer c starter <*> voteChoicesChildren c choices <*> pure secret)
   Effect.Bid (Bid.MkBid opening highBid highBidder) -> fmap Effect.Bid (Bid.MkBid <$> onQuantity c opening <*> onSlot c highBid <*> onSlot c highBidder)
   Effect.TakeExtraTurn (TakeExtraTurn.MkTakeExtraTurn who skips count) -> fmap Effect.TakeExtraTurn (TakeExtraTurn.MkTakeExtraTurn <$> onPlayer c who <*> pure skips <*> onQuantity c count)

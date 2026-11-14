@@ -290,6 +290,10 @@ data Filter keyword
   | -- | CR 400.3 / 701.9a: the candidate PLAYER owns at least this many of the
     -- slot's objects the filter admits; baked like the three above.
     OwnsBoundAtLeast Natural.Natural SlotName.SlotName (Filter keyword)
+  | -- | CR 106.12: the candidate PLAYER tapped a permanent the nested Filter
+    -- admits, as it was then, for mana earlier this turn -- Desolation's "each
+    -- player who tapped a land for mana this turn"; baked like the four above.
+    TappedForManaThisTurn (Filter keyword)
   | -- | CR 508.1k: the candidate is an ATTACKING creature, not since removed from
     -- combat (CR 506.4), and with Just, attacking alone among the attackers the
     -- AloneAmong names (CR 506.5 / 506.6). Reading combat status breaches

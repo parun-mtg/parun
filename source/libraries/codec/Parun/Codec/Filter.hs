@@ -108,6 +108,7 @@ codec keywordCodec =
       -- zone holds no negative number of cards.
       Arm.payload "CardsInGraveyardAtLeast" Common.natural Filter.CardsInGraveyardAtLeast (\x -> case x of Filter.CardsInGraveyardAtLeast y -> Just y; _ -> Nothing),
       Arm.payload "OwnsBoundAtLeast" (ownsBound keywordCodec) (\(n, y, f) -> Filter.OwnsBoundAtLeast n y f) (\x -> case x of Filter.OwnsBoundAtLeast n y f -> Just (n, y, f); _ -> Nothing),
+      Arm.payload "TappedForManaThisTurn" (codec keywordCodec) Filter.TappedForManaThisTurn (\x -> case x of Filter.TappedForManaThisTurn y -> Just y; _ -> Nothing),
       Arm.nullary "IsSource" Filter.IsSource,
       Arm.payload "IsObject" ObjectId.codec Filter.IsObject (\x -> case x of Filter.IsObject y -> Just y; _ -> Nothing),
       Arm.nullary "TargetsSource" Filter.TargetsSource,
@@ -313,6 +314,7 @@ tagOf x = case x of
   Filter.Controls {} -> "Controls"
   Filter.CardsInGraveyardAtLeast {} -> "CardsInGraveyardAtLeast"
   Filter.OwnsBoundAtLeast {} -> "OwnsBoundAtLeast"
+  Filter.TappedForManaThisTurn {} -> "TappedForManaThisTurn"
   Filter.IsSource {} -> "IsSource"
   Filter.IsObject {} -> "IsObject"
   Filter.TargetsSource {} -> "TargetsSource"

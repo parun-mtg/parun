@@ -978,7 +978,7 @@ effectPlayerRefs effect = case effect of
   -- CR 701.62a's: whose library the two cards come off.
   Effect.ManifestDread ref -> [ref]
   Effect.Venture {} -> []
-  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices players _ _ _) -> [players]
+  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices players _ _ _ _) -> [players]
   -- CR 701.38a's specified player, the seat the vote starts with.
   Effect.Vote (Vote.MkVote starter _ _) -> [starter]
   -- The bidders are every player, CR 109.5's "you" opening.
@@ -1184,7 +1184,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.ExileHandThenDraw -> Map.empty
   Effect.NoteManaSpent -> Map.empty
   -- The players are effectPlayerRefs' half, joined at the head above.
-  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ _ quantity _) -> quantitySlots quantity
+  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ _ _ quantity _) -> quantitySlots quantity
   -- The object vote's listed choices are a Filter and nothing else: the starter
   -- is effectPlayerRefs' half, joined at the head above, and the slot this
   -- WRITES is boundSlots' half. A word vote reads no slot at all -- its words
@@ -2089,7 +2089,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.Venture {} -> True
   Effect.ExileHandThenDraw -> True
   Effect.NoteManaSpent -> True
-  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ _ quantity _) -> Quantity.slotsAreExhaustive quantity
+  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ _ _ quantity _) -> Quantity.slotsAreExhaustive quantity
   Effect.Vote {} -> True
   Effect.Bid bid -> Quantity.slotsAreExhaustive (Bid.opening bid)
   Effect.RestartGame _ -> True
@@ -2398,7 +2398,7 @@ hasRead wanted =
         Effect.Venture {} -> False
         Effect.ExileHandThenDraw -> False
         Effect.NoteManaSpent -> False
-        Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ _ quantity _) -> Quantity.hasRead wanted quantity
+        Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices _ _ _ quantity _) -> Quantity.hasRead wanted quantity
         Effect.Vote {} -> False
         Effect.Bid bid -> Quantity.hasRead wanted (Bid.opening bid)
         Effect.RestartGame _ -> False

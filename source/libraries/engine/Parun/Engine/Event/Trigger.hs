@@ -4047,6 +4047,8 @@ resnapshot gs without event =
         GameEvent.BecameTapped {} -> Just event
         GameEvent.TappedToPay {} -> Just event
         GameEvent.BecameUntapped {} -> Just event
+        -- Kept, snapshot and all, CountersPut's reason: no trigger's match reads
+        -- the snapshot, only Count.tappedForManaThisTurn's look-back.
         GameEvent.TappedForMana {} -> Just event
         GameEvent.ManaAdded {} -> Just event
         GameEvent.ManaAbilityResolved {} -> Just event

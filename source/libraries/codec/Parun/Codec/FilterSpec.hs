@@ -534,6 +534,13 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.HasAttached (Filter.HasSubtype Subtype.Aura))
       " {\"type\":\"HasAttached\",\"value\":{\"type\":\"HasSubtype\",\"value\":\"Aura\"}} "
+  -- CR 106.12: Desolation's "tapped a land for mana this turn".
+  Spec.it s "TappedForManaThisTurn" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.TappedForManaThisTurn (Filter.HasCardType CardType.Land))
+      " {\"type\":\"TappedForManaThisTurn\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}} "
   Spec.it s "BeforeMove" $
     Common.assertCodec
       s

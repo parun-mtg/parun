@@ -6912,9 +6912,14 @@ tapForManaWith perform window inFlight refused activator oid = do
               -- Every unit produced and not the payer's share: CR 106.12a asks
               -- whether the activation PRODUCED mana, which it did whoever's
               -- pool it went to.
+              --
+              -- The snapshot is off `gs`, the board the activation began on, for
+              -- the history's reason above: a land its own cost sacrificed
+              -- (Crystal Vein) was still a land tapped for mana.
               let tappedForMana =
-                    [ GameEvent.TappedForMana (TappedForMana.MkTappedForMana {TappedForMana.permanent = oid, TappedForMana.mana = Set.fromList (fmap ManaUnit.manaType producedUnits), TappedForMana.player = controller})
-                    | List.elem CostComponent.TapThis (Cost.components (ManaOption.cost chosen)) && not (null producedUnits)
+                    [ GameEvent.TappedForMana (TappedForMana.MkTappedForMana {TappedForMana.permanent = oid, TappedForMana.mana = Set.fromList (fmap ManaUnit.manaType producedUnits), TappedForMana.player = controller, TappedForMana.snapshot = snapshot})
+                    | List.elem CostComponent.TapThis (Cost.components (ManaOption.cost chosen)) && not (null producedUnits),
+                      snapshot <- Maybe.maybeToList (Projection.objectSnapshot oid gs)
                     ]
                   -- CR 605.1b's other event, whether or not {T} was paid, and
                   -- recorded at the same moment for the same CR 605.4a reason.

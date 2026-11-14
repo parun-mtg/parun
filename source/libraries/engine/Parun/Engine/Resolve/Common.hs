@@ -1218,6 +1218,12 @@ settleArrivals chooserOf depthOf zone placement targets =
         -- the position it is handed.
         _ -> pure (fmap (\oid -> (oid, (LibraryPosition.defaultValue, 0))) targets)
 
+-- CR 608.2h: the players a player Filter admits, in the order given, read as
+-- the effect executes through Count.playerMatches; Nothing admits every one.
+-- The `who` of Parun.Types.PlayersWho and of Parun.Types.PlayerSacrifices.
+playersWho :: Count.ViewOf -> Filter.Context -> GameState -> Maybe (Filter.Type.Filter Keyword.Type.Keyword) -> [PlayerId] -> [PlayerId]
+playersWho viewOf context gs who = filter (\pid -> all (\f -> Count.playerMatches viewOf context gs f pid) who)
+
 -- The same sweep as objectRefObjects, one step earlier: what an ObjectRef names
 -- as RECIPIENTS. It exists because CR 115.4's "any target" includes a player and
 -- CR 120.1 lets damage go to one, so DealDamage's InSlot arm must name something
@@ -1256,8 +1262,7 @@ objectRefRecipients legal resolving controller source gs ref = case ref of
   -- cr-608-2c-disorder-deals-damage-to-each-player-who-controls-a-white-creature.
   ObjectRef.Players (PlayersWho.MkPlayersWho playerRef who) ->
     let context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-        kept pid = all (\f -> Count.playerMatches (effectViewOf resolving source legal gs) context gs f pid) who
-     in fmap Recipient.ToPlayer (filter kept (apnapPlayersOf playerRef legal resolving source controller gs))
+     in fmap Recipient.ToPlayer (playersWho (effectViewOf resolving source legal gs) context gs who (apnapPlayersOf playerRef legal resolving source controller gs))
   -- No recipients: the answer needs the chooser asked, which askingObjects does.
   ObjectRef.ChosenCardInGraveyard {} -> []
   ObjectRef.ChosenCardInHand {} -> []
@@ -3697,8 +3702,8 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   -- the pool here exactly as it does in the executing arm, and the amount is read
   -- per victim there too. Parun.ResolveSpec's "CR 608.2d Giant Opportunity's
   -- sacrifice of two Foods is not offered with one Food" proves the count.
-  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices players filter_ quantity _) ->
-    let victims = playerRefPlayers legal resolving source controller gs players
+  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices players who filter_ quantity _) ->
+    let victims = playersWho viewOf context gs who (playerRefPlayers legal resolving source controller gs players)
         tooFewToGive victim = case evaluateForRecipient viewOf context gs resolving source victim quantity of
           Just n | n > 0 -> n > List.genericLength (Replacement.sacrificeCandidates (Filter.perspective context) (Binding.recipientsBySlot legal (slotBindings resolving gs)) victim (Just source) filter_ gs)
           _ -> False

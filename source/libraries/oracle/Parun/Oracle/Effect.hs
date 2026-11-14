@@ -860,7 +860,7 @@ effect context e = case e of
   -- stated number of permanents a player a slot names chooses. Free: "of their
   -- choice" or not, Oracle wording edicts both ways. A player named otherwise
   -- is not spelled out here.
-  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices who f (Quantity.Literal n) Nothing)
+  Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices who Nothing f (Quantity.Literal n) Nothing)
     | slotted who -> do
         p <- Filter.phrase f (Target.keyword context)
         noun <- Cost.some n (Filter.MkNoun (Text.pack "permanent") (Just (Text.pack "permanents"))) p
