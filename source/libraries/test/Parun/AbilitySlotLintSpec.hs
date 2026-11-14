@@ -67,6 +67,7 @@ import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.BoundMeasure as BoundMeasure
 import qualified Parun.Types.BoundReading as BoundReading
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastingPermission as CastingPermission
@@ -790,7 +791,10 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
   --
   -- ActivationCriteria.whichAbility is the fourth (namedActivationCriteria),
   -- and must name an ACTIVATED ability too: a CR 601.2f cost reduction or a CR
-  -- 602.2 count naming anything else finds nothing.
+  -- 602.2 count naming anything else finds nothing. A GRANTED cost reduction
+  -- (namedGrantedActivationCriteria) must name an activated ability the SAME
+  -- static ability grants, since both land on the grantee (CR 613.1f): The
+  -- Dominion Bracelet's "This ability costs {X} less to activate".
   --
   -- A removal may name any carrier, the rule and player abilities CR 116.2d's
   -- ignore names included (Synthetic Grounded Sentry, Synthetic Hushed Warden),
@@ -821,6 +825,39 @@ abilitySlotLintSpec s registry corpus = Spec.describe s "Lint" $ do
       "each position's own name is accepted and a dangling one rejected"
       (fmap verdict positions)
       (fmap (\(label, _) -> (label, False, True)) positions)
+  -- The granted half (namedGrantedActivationCriteria) on The Dominion Bracelet,
+  -- whose one static ability grants "dominate" and the cost reduction naming
+  -- it. Renaming either side dangles; so does splitting the grant across two
+  -- static abilities, which only the same-grant check sees, since the face
+  -- still declares and reads "dominate".
+  Spec.it s "CR 601.2f a granted cost reduction names an ability the same grant declares" $ do
+    ps <- S.allPrintings s corpus
+    let bracelets = [face | p <- ps, S.nameOf (Printing.card p) == CardName.MkCardName (Text.pack "The Dominion Bracelet"), face <- Foldable.toList (Card.Type.faces (Printing.card p))]
+        nobody = AbilityName.MkAbilityName (Text.pack "nobody")
+        onGrants f face = face {Face.staticAbilities = fmap (\a -> a {StaticAbility.modifications = fmap f (StaticAbility.modifications a)}) (Face.staticAbilities face)}
+        renameAbility m = case m of
+          Modification.GainAbility (GrantedAbility.Activated ability) -> Modification.GainAbility (GrantedAbility.Activated ability {ActivatedAbility.name = Just nobody})
+          _ -> m
+        renameModifier m = case m of
+          Modification.GainAbility (GrantedAbility.Player ability)
+            | PlayerEffect.ModifyCost modifier <- PlayerStaticAbility.effect ability,
+              CostSubject.Activations criteria <- CostModifier.subject modifier ->
+                Modification.GainAbility (GrantedAbility.Player ability {PlayerStaticAbility.effect = PlayerEffect.ModifyCost modifier {CostModifier.subject = CostSubject.Activations criteria {ActivationCriteria.whichAbility = Just nobody}}})
+          _ -> m
+        isPlayerGrant m = case m of
+          Modification.GainAbility (GrantedAbility.Player _) -> True
+          _ -> False
+        split face =
+          face
+            { Face.staticAbilities =
+                concat
+                  [ [a {StaticAbility.modifications = ms} | Just ms <- [NonEmpty.nonEmpty part]]
+                  | a <- Face.staticAbilities face,
+                    part <- [NonEmpty.filter (not . isPlayerGrant) (StaticAbility.modifications a), NonEmpty.filter isPlayerGrant (StaticAbility.modifications a)]
+                  ]
+            }
+        verdict face = (abilityNameOffends face, abilityNameOffends (onGrants renameAbility face), abilityNameOffends (onGrants renameModifier face), abilityNameOffends (split face))
+    Spec.assertEqWith s "the printed grant is accepted and each doctored one rejected" (fmap verdict bracelets) [(False, True, True, True)]
   -- CR 116.2d's join, the same shape one rule over: an ignore naming an ability
   -- its face does not declare as ignorable is a payment that suppresses
   -- nothing. Whether every named ability is read is the case above's question,
@@ -1721,10 +1758,31 @@ abilityNameOffends :: Face.Face Card.Type.Card -> Bool
 abilityNameOffends face =
   let declared = Set.union (declaredAbilityNames face) (declaredIgnorableAbilityNames face)
       activatedOnly = Set.union (namedExileReferences face) (namedActivationCriteria face)
-      readNames = Set.unions [namedRemovals face, activatedOnly, ignoredAbilityNames face]
+      readNames = Set.unions [namedRemovals face, activatedOnly, ignoredAbilityNames face, namedGrantedActivationCriteria face]
+      grantOffends ability =
+        let granted = [activated | Modification.GainAbility (GrantedAbility.Activated activated) <- NonEmpty.toList (StaticAbility.modifications ability)]
+         in not (Set.isSubsetOf (grantedActivationCriteria ability) (Set.fromList (Maybe.mapMaybe ActivatedAbility.name granted)))
    in not (Set.isSubsetOf (Set.union (namedRemovals face) activatedOnly) declared)
         || declared /= readNames
         || not (Set.isSubsetOf activatedOnly (Set.fromList (Maybe.mapMaybe ActivatedAbility.name (Face.activatedAbilities face))))
+        || any grantOffends (Face.staticAbilities face)
+
+-- Every AbilityName a static ability's GRANTED cost modifier narrows to through
+-- ActivationCriteria.whichAbility: The Dominion Bracelet's "This ability costs
+-- {X} less to activate", granted beside the ability it reduces.
+grantedActivationCriteria :: StaticAbility.StaticAbility (GrantedAbility.GrantedAbility Card.Type.Card) -> Set.Set AbilityName.AbilityName
+grantedActivationCriteria ability =
+  Set.fromList
+    [ name
+    | Modification.GainAbility (GrantedAbility.Player granted) <- NonEmpty.toList (StaticAbility.modifications ability),
+      PlayerEffect.ModifyCost modifier <- [PlayerStaticAbility.effect granted],
+      CostSubject.Activations criteria <- [CostModifier.subject modifier],
+      Just name <- [ActivationCriteria.whichAbility criteria]
+    ]
+
+-- grantedActivationCriteria over every static ability of a face.
+namedGrantedActivationCriteria :: Face.Face Card.Type.Card -> Set.Set AbilityName.AbilityName
+namedGrantedActivationCriteria face = Set.unions (fmap grantedActivationCriteria (Face.staticAbilities face))
 
 -- Every AbilityName a face narrows to through ActivationCriteria.whichAbility:
 -- a printed cost modifier's, Sanctum of Tranquil Light's "this ability costs {1}
@@ -1780,8 +1838,11 @@ declaredAbilityNames face =
     )
   where
     -- A rule or player ability the face's static ability GRANTS carries its own
-    -- name, which the same face's removal reads (Synthetic Tethering Charm).
+    -- name, which the same face's removal reads (Synthetic Tethering Charm); a
+    -- granted activated ability's, which a granted cost modifier reads (The
+    -- Dominion Bracelet).
     grantedNames m = case m of
+      Modification.GainAbility (GrantedAbility.Activated ability) -> Maybe.maybeToList (ActivatedAbility.name ability)
       Modification.GainAbility (GrantedAbility.Rules rules) ->
         Maybe.mapMaybe RuleAbilities.Engine.nameOf (RuleAbilities.combatRestrictions rules)
           <> Maybe.mapMaybe ActivationProhibition.name (RuleAbilities.activationProhibitions rules)
