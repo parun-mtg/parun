@@ -144,6 +144,21 @@ Entries are ordered by the first rule each cites.
   offered again".
 - **Issue**: none.
 
+## Whether an added draw step on the first turn is skipped
+
+- **Question**: CR 103.8a skips "the draw step" of the starting player's first
+  turn. Is a draw step an effect adds to that turn (Sphinx of the Second Sun)
+  skipped too?
+- **Rules**: CR 103.8a, 500.8, 500.11, 501.1; CR of 2026-11-06.
+- **Decision**: Yes: every draw step of that turn is skipped.
+- **Rejected**: Only the turn's first draw step, which reads "the" as naming one
+  step by position, though the rule names it only by the turn it is in. The
+  card's rulings do not reach the first turn.
+- **Site**: `Parun.Engine.Engine.skipsDraw`, proved by the scenario
+  "CR 103.8a: the starting player skips the draw step Sphinx of the Second Sun
+  adds to their first turn too".
+- **Issue**: #4782.
+
 ## A rider ability regained from one granter stays spent
 
 - **Question**: A permanent loses a "triggers only once each turn" or "activate

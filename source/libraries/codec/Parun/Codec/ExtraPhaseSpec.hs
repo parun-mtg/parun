@@ -7,6 +7,12 @@ import qualified Parun.Types.ExtraPhase as ExtraPhase
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ExtraPhase" $ do
+  Spec.it s "ExtraBeginning" $
+    Common.assertCodec
+      s
+      ExtraPhase.codec
+      ExtraPhase.ExtraBeginning
+      " \"ExtraBeginning\" "
   Spec.it s "ExtraCombat" $
     Common.assertCodec
       s

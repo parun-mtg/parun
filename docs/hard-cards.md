@@ -28,7 +28,7 @@ issue; an expressible card not yet in the pool is a plain card add.
 | Burning Wish | Cards from outside the game, including the main game from inside a subgame (CR 400.11, 730.4a) | Proven: `OutsideTheGameSpec`, with meld and merge via Living Wish |
 | Word of Command | Controlling another player for one resolution, mid-spell (CR 724.2, 724.7) | Proven: `data/scenarios/game/cr-723-*` |
 | Time Stop | Ending the turn: exiling the stack, skipping to cleanup (CR 725.1) | Proven: `TurnSpec` `endTurnSpec`; a trigger during the process is untested (#4785) |
-| Sphinx of the Second Sun | An extra beginning phase: a second untap, upkeep and draw in one turn (CR 500.8, 302.6, 305.2) | Gap (#4782) |
+| Sphinx of the Second Sun | An extra beginning phase: a second untap, upkeep and draw in one turn (CR 500.8, 302.6, 305.2) | Proven: `data/scenarios/sphinx-of-the-second-sun-*` |
 | Gemstone Caverns | A pregame action from the opening hand, gated on the starting player (CR 103.6) | Proven: `MulliganSpec`, `ManaSpec` |
 | Serum Powder | An action taken inside the mulligan procedure, any time a player could mulligan (CR 103.5b) | Proven: `MulliganSpec` CR 103.5b cases |
 | Tovolar, Dire Overlord | Day and night: a game designation switched at untap, forced by a card, transforming daybound permanents (CR 732, 702.145) | Proven: `DaytimeSpec`, `data/scenarios/daytime/` |
