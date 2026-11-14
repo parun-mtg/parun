@@ -4347,18 +4347,24 @@ bindAmountSlot resolving source slot n gs =
 --
 -- `settle` is Event.drawSeries', for the draws Lich makes in a gain's place.
 --
--- Answers the SETTLED signed change, for Effect.ExchangeLifeTotals' tally.
+-- Answers the signed change the player's total actually made, for
+-- Effect.ExchangeLifeTotals' tally: read off the total rather than the funnel's
+-- answer, since a CR 614.6 arm writing the replacing event itself (Tainted
+-- Remedy's loss in a gain's place) leaves the funnel answering 0.
 changeLifeByDelta :: Game () -> PlayerId -> Integer -> Game Integer
-changeLifeByDelta settle pid delta =
+changeLifeByDelta settle pid delta = do
+  before <- State.gets lifeNow
   if delta < 0
     then do
       settled <- Event.resolveLifeLoss settle LifeLossCause.ByEffect pid (Integer.toNaturalSaturating (negate delta))
       Event.changeLife pid (negate (toInteger settled))
-      pure (negate (toInteger settled))
     else do
       settled <- Event.resolveLifeGain settle pid (Integer.toNaturalSaturating delta)
       Event.changeLife pid (toInteger settled)
-      pure (toInteger settled)
+  after <- State.gets lifeNow
+  pure (after - before)
+  where
+    lifeNow = maybe 0 Player.life . Map.lookup pid . GameState.players
 
 -- CR 701.23: do to a found card what the search said -- a move, a CR 701.20a
 -- reveal, or both, every move through the CR 400.7 funnel.
