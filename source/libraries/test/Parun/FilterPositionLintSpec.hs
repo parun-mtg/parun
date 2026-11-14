@@ -875,7 +875,7 @@ writesColors :: ChosenQuality.ChosenQuality -> Bool
 writesColors quality = case quality of
   ChosenQuality.Colors _ -> True
   ChosenQuality.Subtype _ _ -> False
-  ChosenQuality.CardType -> False
+  ChosenQuality.CardType _ -> False
   ChosenQuality.Number _ -> False
   ChosenQuality.Parity -> False
   ChosenQuality.Word _ -> False
@@ -886,7 +886,7 @@ writesSubtype :: ChosenQuality.ChosenQuality -> Bool
 writesSubtype quality = case quality of
   ChosenQuality.Colors _ -> False
   ChosenQuality.Subtype _ _ -> True
-  ChosenQuality.CardType -> False
+  ChosenQuality.CardType _ -> False
   ChosenQuality.Number _ -> False
   ChosenQuality.Parity -> False
   ChosenQuality.Word _ -> False
@@ -897,7 +897,7 @@ writesCardType :: ChosenQuality.ChosenQuality -> Bool
 writesCardType quality = case quality of
   ChosenQuality.Colors _ -> False
   ChosenQuality.Subtype _ _ -> False
-  ChosenQuality.CardType -> True
+  ChosenQuality.CardType _ -> True
   ChosenQuality.Number _ -> False
   ChosenQuality.Parity -> False
   ChosenQuality.Word _ -> False
@@ -3817,7 +3817,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Monad.forM_
       [ (Filter.Type.HasChosenColor, ChosenQuality.Colors (ChooseBetween.MkChooseBetween 1 1), hasChosenColorCounts, hasChosenColorTag),
         (Filter.Type.HasChosenSubtype, ChosenQuality.Subtype SubtypeFamily.BasicLandType Nothing, hasChosenSubtypeCounts, hasChosenSubtypeTag),
-        (Filter.Type.HasChosenCardType, ChosenQuality.CardType, hasChosenCardTypeCounts, hasChosenCardTypeTag)
+        (Filter.Type.HasChosenCardType, ChosenQuality.CardType [], hasChosenCardTypeCounts, hasChosenCardTypeTag)
       ]
       $ \(atom, quality, counts, tag) -> do
         let buried = Filter.Type.And [Filter.Type.Or [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not atom]]
