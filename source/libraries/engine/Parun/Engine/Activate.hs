@@ -411,12 +411,12 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
           -- CR 601.2b leaves to the payer rather than to the fallback.
           let totalledCost = Cost.plusComponents gathered announcedAtX
           (announcedCost, _) <- Cost.announce (PaymentSubject.Activating srcId stamp spendable) ManaSpending.AsProduced pid srcId (Cost.substitutedManas (Cost.statedSubstitutions (Cost.Type.components totalledCost) Map.empty pid srcId gs) (Cost.totalManas gathered)) totalledCost
-          (chosen, drawn) <- Target.chooseTargets (ActivatedAbility.name ability) pid abilId srcId seed (Maybe.fromMaybe 0 mAmount) slots sets
+          (chosen, drawn, seats) <- Target.chooseTargets (ActivatedAbility.name ability) pid abilId srcId seed (Maybe.fromMaybe 0 mAmount) slots sets
           if not (Target.selectionLegal StackObjectKind.ActivatedAbility (ActivatedAbility.name ability) (Just pid) seed srcId (Maybe.fromMaybe 0 mAmount) slots sets chosen gs)
             then reject -- the whole activation is a no-op
             else do
               -- CR 602.2b / 601.2d: the division among the targets just fixed.
-              divisions <- Target.announceDivision (ActivatedAbility.name ability) pid abilId srcId seed slots chosen
+              divisions <- Target.announceDivision (ActivatedAbility.name ability) pid abilId srcId seed slots seats chosen
               -- CR 113.7: bind the source permanent under the reserved self slot, so
               -- an activated ability that refers to "this creature" (Longtusk Cub)
               -- resolves the reference as a slot read -- exactly as

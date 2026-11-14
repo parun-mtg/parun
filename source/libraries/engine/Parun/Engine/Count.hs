@@ -253,12 +253,15 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
         -- Flood of Tears' "nontoken permanents you control" returned to a hand,
         -- whatever zone a CR 614 redirect put one in instead (its 2019-07-12
         -- ruling). A member no move arrived as is already its own departure.
+        -- orLastKnown is what reads a departure's record: Grand Ossuary's
+        -- "total power of the creatures they exiled this way" (Parun.PlanechaseSpec's
+        -- "CR 311.7 Grand Ossuary's chaos ...").
         Scope.OverBound reading slot ->
           let bound = Set.toList (Map.findWithDefault Set.empty slot (Filter.slotObjects context))
               ids = case reading of
                 BoundReading.AsBound -> bound
                 BoundReading.BeforeMove -> fmap (\oid -> Maybe.fromMaybe oid (departedAs gs oid)) bound
-              kept = Maybe.mapMaybe (\oid -> if boundMember gs aggregation predicate oid then fmap ((,) (Just oid)) (keep predicate context (viewOf oid)) else Nothing) ids
+              kept = Maybe.mapMaybe (\oid -> if boundMember gs aggregation predicate oid then fmap ((,) (Just oid)) (keep predicate context (orLastKnown viewOf gs oid)) else Nothing) ids
            in pure (aggregate quantityOf aggregation kept)
         -- CR 500.12: the record of the board before this turn's untap step. Its
         -- members are objectless, as InHistory's are: some have since left.

@@ -1752,6 +1752,11 @@ zoneScopeSlot scope = case scope of
 -- beside the targets (Binding.objectsBySlot). Proved by Miasma Demon's
 -- scenario, "CR 603.12 whole card".
 --
+-- An id that has left the battlefield reads its last known information (CR
+-- 608.2h), as slotContext's bound does: Grand Ossuary's division counts the
+-- dead creature's power (Parun.PlanechaseSpec's "CR 801.18 Grand Ossuary's
+-- dying creature's controller ...").
+--
 -- A number the board cannot supply reads zero, SlotCount.at's posture: an "up to"
 -- count of zero is a slot answered with no targets, which is what CR 601.2c gives
 -- a count nobody can name.
@@ -1767,7 +1772,7 @@ countingBy :: Maybe AbilityName.AbilityName -> Maybe PlayerId -> Map SlotName Bi
 countingBy reader perspective seed source gs =
   Integer.toNaturalSaturating
     . Maybe.fromMaybe 0
-    . Quantity.evaluate (Projection.fullView gs) (slotContext reader perspective False seed (Game.acquisitionFor reader source gs) source Nothing gs) gs source
+    . Quantity.evaluate (Projection.viewWithLastKnownAnywhere gs) (slotContext reader perspective False seed (Game.acquisitionFor reader source gs) source Nothing gs) gs source
 
 -- CR 601.2c: the number of targets a slot's own text fixes ("in some cases, the
 -- number of targets will be defined by the spell's text"), for a slot that
@@ -1933,24 +1938,25 @@ slotCapacities counting x slots sets gs =
 -- the offer and at the check -- see countingBy.
 --
 -- Beside the announcement, the cards CR 406.4's draws picked out of piles,
--- which the caller reveals once paid for (drawFromPiles).
-chooseTargets :: Maybe AbilityName.AbilityName -> PlayerId -> ObjectId -> ObjectId -> Map SlotName Binding.Type.Binding -> Natural -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> Game (Map SlotName (Set Recipient), Set ObjectId)
+-- which the caller reveals once paid for (drawFromPiles), and the seat that
+-- announced each slot, which announceDivision asks.
+chooseTargets :: Maybe AbilityName.AbilityName -> PlayerId -> ObjectId -> ObjectId -> Map SlotName Binding.Type.Binding -> Natural -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> Game (Map SlotName (Set Recipient), Set ObjectId, Map SlotName PlayerId)
 chooseTargets reader pid oid source seed x slots sets = do
   let groups = Map.fromListWith Set.union [(TargetSlot.chooser slot, Set.singleton name) | (name, slot) <- Map.toList slots]
   Monad.foldM
-    ( \(chosen, drawn) (named, mine) -> do
+    ( \(chosen, drawn, seats) (named, mine) -> do
         seat <- chooserOf pid oid source (Map.unionWith Binding.mergeBinding (fmap Binding.toRecipients chosen) seed) named
         case seat of
           -- CR 601.2c has nobody to announce with, where a game of one seat has no
           -- opponent under an "of an opponent's choice" slot. The slots go unanswered,
           -- which the callers' own gate then refuses (CR 601.2e, CR 602.2, CR
           -- 603.3d's removal).
-          Nothing -> pure (chosen, drawn)
+          Nothing -> pure (chosen, drawn, seats)
           Just chooser -> do
             (answer, cards) <- askChooser reader pid chooser oid source seed x slots sets mine
-            pure (Map.union chosen answer, Set.union drawn cards)
+            pure (Map.union chosen answer, Set.union drawn cards, Map.union seats (Map.fromSet (const chooser) mine))
     )
-    (Map.empty, Set.empty)
+    (Map.empty, Set.empty, Map.empty)
     (Map.toAscList groups)
 
 -- CR 115.1 with CR 601.2c: which seat announces the slots a chooser names.
@@ -1971,8 +1977,8 @@ chooseTargets reader pid oid source seed x slots sets = do
 -- where nobody in the relation is in range. Either way a seat that has left (CR
 -- 104.3a) neither chooses nor is counted towards eliding the question. The
 -- range is Plane.rangePerspective of `source` (CR 113.7's, not the stack object
--- `oid`), so a planar source's reaches the whole table (CR 801.18); unobserved
--- until Grand Ossuary is in the pool (see #5201).
+-- `oid`), so a planar source's reaches the whole table (CR 801.18), proved by
+-- data/scenarios/planechase/grand-ossuary-a-seat-outside-the-planar-controller-s-range-chooses-and-divides.json.
 chooserOf :: PlayerId -> ObjectId -> ObjectId -> Map SlotName Binding.Type.Binding -> Maybe PlayerRef.PlayerRef -> Game (Maybe PlayerId)
 chooserOf controller oid source seed chooser = do
   gs <- State.get
@@ -2040,31 +2046,33 @@ askChooser reader controller chooser oid source seed x slots sets mine = do
       drawn <- traverse (drawFromPiles (Just chooser)) answer
       pure (fmap fst drawn, foldMap snd drawn)
 
--- CR 601.2d: each divided slot's announced division, asked of the controller
--- once CR 601.2c's targets are fixed, every target getting at least one.
--- Asked of the controller whoever chose the targets (CR 115.1), the rule's
--- "the player" being the one casting or activating. Not raised where only one
--- division exists -- one target, or a total equal to the targets -- the options
--- being indistinguishable.
+-- CR 601.2d: each divided slot's announced division, asked once CR 601.2c's
+-- targets are fixed, every target getting at least one. Asked of the seat that
+-- chose the slot's targets (`seats`, from chooseTargets; the controller where
+-- it names none): Grand Ossuary's "its controller distributes", proved by
+-- data/scenarios/planechase/grand-ossuary-a-seat-outside-the-planar-controller-s-range-chooses-and-divides.json.
+-- The total still counts from the controller's perspective (CR 109.5). Not
+-- raised where only one division exists -- one target, or a total equal to the
+-- targets -- the options being indistinguishable.
 --
 -- An answer that does not divide the total among exactly those targets takes
 -- the replay default rather than a repair. A regression fence, not a proved
 -- behaviour: the scenario runner refuses such an answer before it reaches here.
-announceDivision :: Maybe AbilityName.AbilityName -> PlayerId -> ObjectId -> ObjectId -> Map SlotName Binding.Type.Binding -> Map SlotName TargetSlot -> Map SlotName (Set Recipient) -> Game (Map SlotName (Map Recipient Natural))
-announceDivision reader pid oid source seed slots chosen = do
+announceDivision :: Maybe AbilityName.AbilityName -> PlayerId -> ObjectId -> ObjectId -> Map SlotName Binding.Type.Binding -> Map SlotName TargetSlot -> Map SlotName PlayerId -> Map SlotName (Set Recipient) -> Game (Map SlotName (Map Recipient Natural))
+announceDivision reader pid oid source seed slots seats chosen = do
   gs <- State.get
   let counting = countingBy reader (Just pid) seed source gs
-      divide total targets
+      divide divider total targets
         | Natural.length (NonEmpty.tail targets) + 1 == total = pure (Map.fromList (fmap (\r -> (r, 1)) (NonEmpty.toList targets)))
         | null (NonEmpty.tail targets) = pure (Map.singleton (NonEmpty.head targets) total)
         | otherwise = do
             let dividing = Dividing.Total total
-            answer <- Game.choose (Prompt.ChooseDivision (Decide.deciderFor pid gs) pid oid dividing targets)
+            answer <- Game.choose (Prompt.ChooseDivision (Decide.deciderFor divider gs) divider oid dividing targets)
             pure (if divides dividing targets answer then answer else defaultDivision dividing targets)
   Map.traverseMaybeWithKey
     ( \slot quantity -> case NonEmpty.nonEmpty (Set.toList (Map.findWithDefault Set.empty slot chosen)) of
         Nothing -> pure Nothing
-        Just targets -> fmap Just (divide (counting quantity) targets)
+        Just targets -> fmap Just (divide (Map.findWithDefault pid slot seats) (counting quantity) targets)
     )
     (Map.mapMaybe TargetSlot.divided slots)
 

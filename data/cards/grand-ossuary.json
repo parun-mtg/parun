@@ -1,0 +1,222 @@
+{
+  "faces": [
+    {
+      "name": "Grand Ossuary",
+      "oracleText": "Whenever a creature dies, its controller distributes a number of +1/+1 counters equal to its power among any number of target creatures they control.\nWhenever chaos ensues, each player exiles all creatures they control and creates X 1/1 green Saproling creature tokens, where X is the total power of the creatures they exiled this way. Then planeswalk.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ],
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Share",
+                            "value": "targets"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "targets"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "targets": {
+                    "chooser": {
+                      "type": "HolderOfBound",
+                      "value": {
+                        "holder": "Controller",
+                        "hop": "Itself",
+                        "slot": "thatDepartedPermanent"
+                      }
+                    },
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0
+                      }
+                    },
+                    "divided": {
+                      "type": "AgainstSlot",
+                      "value": {
+                        "quantity": {
+                          "type": "Measure",
+                          "value": "Power"
+                        },
+                        "slot": "thatDepartedPermanent"
+                      }
+                    },
+                    "filter": {
+                      "type": "ControllerRelatesToBound",
+                      "value": {
+                        "hop": "Itself",
+                        "relation": "You",
+                        "slot": "thatDepartedPermanent"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "ChaosEnsues"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "MoveToZone",
+                              "value": {
+                                "ref": {
+                                  "type": "EachMatching",
+                                  "value": {
+                                    "type": "And",
+                                    "value": [
+                                      {
+                                        "type": "HasCardType",
+                                        "value": "Creature"
+                                      },
+                                      {
+                                        "type": "HeldByBound",
+                                        "value": {
+                                          "holder": "Controller",
+                                          "slot": "player"
+                                        }
+                                      }
+                                    ]
+                                  }
+                                },
+                                "slot": "exiled",
+                                "zone": "Exile"
+                              }
+                            },
+                            {
+                              "type": "Create",
+                              "value": {
+                                "card": {
+                                  "faces": [
+                                    {
+                                      "colorIndicator": [
+                                        "Green"
+                                      ],
+                                      "name": "Saproling Token",
+                                      "power": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      },
+                                      "toughness": {
+                                        "type": "Literal",
+                                        "value": 1
+                                      },
+                                      "typeLine": {
+                                        "subtypes": [
+                                          "Saproling"
+                                        ],
+                                        "types": [
+                                          "Creature"
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                },
+                                "creator": {
+                                  "type": "InSlot",
+                                  "value": "player"
+                                },
+                                "quantity": {
+                                  "type": "Count",
+                                  "value": {
+                                    "aggregation": {
+                                      "type": "Total",
+                                      "value": {
+                                        "type": "Measure",
+                                        "value": "Power"
+                                      }
+                                    },
+                                    "filter": {
+                                      "type": "And",
+                                      "value": []
+                                    },
+                                    "scope": {
+                                      "type": "OverBoundBeforeMove",
+                                      "value": "exiled"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              }
+                            }
+                          },
+                          "slot": "player"
+                        }
+                      },
+                      {
+                        "type": "Planeswalk"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Ravnica"
+        ],
+        "types": [
+          "Plane"
+        ]
+      }
+    }
+  ]
+}

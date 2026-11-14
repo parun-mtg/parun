@@ -4326,12 +4326,12 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                   -- against the announced X" is what proves the two agree.
                   let seed = Binding.fromChoices Map.empty mAmount Seq.empty
                       sets = Target.legalSets StackObjectKind.Spell Nothing (Just pid) False seed sid slots bestowedGs
-                  (chosen, drawn) <- Target.chooseTargets Nothing pid sid sid seed (Maybe.fromMaybe 0 mAmount) slots sets
+                  (chosen, drawn, seats) <- Target.chooseTargets Nothing pid sid sid seed (Maybe.fromMaybe 0 mAmount) slots sets
                   if not (Target.selectionLegal StackObjectKind.Spell Nothing (Just pid) seed sid (Maybe.fromMaybe 0 mAmount) slots sets chosen bestowedGs)
                     then reject
                     else do
                       -- CR 601.2d: the division among the targets just fixed.
-                      divisions <- Target.announceDivision Nothing pid sid sid seed slots chosen
+                      divisions <- Target.announceDivision Nothing pid sid sid seed slots seats chosen
                       -- CR 601.2c's RECORD, stamped on `sid` itself -- the
                       -- incarnation CR 601.2a put on the stack, rather than
                       -- whatever is on top of it now -- and written before CR

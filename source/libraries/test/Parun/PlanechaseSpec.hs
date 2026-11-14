@@ -47,6 +47,7 @@ import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Cost as Cost.Type
+import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Deck as Deck
@@ -242,6 +243,51 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
     Spec.assertEqWith s "CR 801.18 carol's Piker was destroyed and bob's was not" (fmap (\pid -> length (Game.zoneMembers Zone.Graveyard pid chaos)) [S.bob, S.carol]) [0, 1]
     Spec.assertBool s (List.elem bobs (Game.zoneMembers Zone.Battlefield S.bob chaos)) "bob's Piker is still on the battlefield"
     Spec.assertBool s (not (Game.inRangeOf S.alice S.carol ranged)) "carol is outside alice's range"
+
+  -- CR 801.18 / 901.13 with CR 601.2c-d: the same four seats at range 1, alice's
+  -- Grand Ossuary ("Whenever a creature dies, its controller distributes a
+  -- number of +1/+1 counters equal to its power among any number of target
+  -- creatures they control.") face up, and carol's Hill Giant dying beside two
+  -- of her Goblin Pikers, bob holding a third. carol, outside alice's range,
+  -- names her two Pikers and divides the three counters, two to the first; a
+  -- division asked of alice would split them the other way.
+  Spec.it s "CR 801.18 Grand Ossuary's dying creature's controller outside the planar controller's range chooses and divides" $ do
+    giant <- S.printingOf s registry "Hill Giant"
+    piker <- S.printingOf s registry "Goblin Piker"
+    board <- seatedPlanarBoard s registry S.alice [(S.alice, ["Grand Ossuary"]), (S.bob, []), (S.carol, []), (S.dave, [])]
+    let (dying, withGiant) = S.addPermanent giant S.carol board
+        (first, withFirst) = S.addPermanent piker S.carol withGiant
+        (second, withSecond) = S.addPermanent piker S.carol withFirst
+        (bobs, withBobs) = S.addPermanent piker S.bob withSecond
+        ranged = S.withRange 1 (inMain S.alice (S.markDamage dying 3 withBobs))
+        share :: PlayerId.PlayerId -> Recipient.Recipient -> Natural
+        share pid r = if (pid == S.carol) == (Recipient.objectOf r == Just first) then 2 else 1
+        answer :: Prompt.Prompt r -> r
+        answer p = case p of
+          Prompt.AnnounceTargets _ _ _ offers -> fmap (const 2) offers
+          Prompt.ChooseTargets _ _ _ sets -> fmap snd sets
+          Prompt.ChooseDivision _ pid _ _ targets -> Map.fromList (fmap (\r -> (r, share pid r)) (NonEmpty.toList targets))
+          _ -> S.identityAnswer p
+        grown = S.runPure answer ranged (Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
+    Spec.assertBool s (not (Game.inRangeOf S.alice S.carol ranged)) "carol is outside alice's range"
+    Spec.assertEqWith s "CR 601.2d carol's division stands: two counters on her first Piker, one on her second, none on bob's" (fmap (\oid -> S.counterOf CounterKind.PlusOnePlusOne oid grown) [first, second, bobs]) [2, 1, 0]
+
+  -- CR 311.7 with Grand Ossuary's chaos ability and its ruling: alice's Hill
+  -- Giant carries a +1/+1 counter and bob holds a Goblin Piker. Each exiles
+  -- their own, and the Saprolings count each player's own creatures' last known
+  -- power: four for alice, two for bob. Then alice planeswalks to Academy at
+  -- Tolaria West.
+  Spec.it s "CR 311.7 Grand Ossuary's chaos makes each player Saprolings for the power they exiled, then planeswalks" $ do
+    giant <- S.printingOf s registry "Hill Giant"
+    piker <- S.printingOf s registry "Goblin Piker"
+    board <- planarBoard s registry ["Grand Ossuary", "Academy at Tolaria West"]
+    let (alices, withGiant) = S.addPermanent giant S.alice board
+        (bobs, withPiker) = S.addPermanent piker S.bob (S.addCounter CounterKind.PlusOnePlusOne 1 alices withGiant)
+        chaos = rollAndResolve 5 (inMain S.alice withPiker)
+        saprolings pid = length (filter (`elem` S.tokensOf chaos) (Game.zoneMembers Zone.Battlefield pid chaos))
+    Spec.assertEqWith s "both creatures are in exile" (fmap (`S.onBattlefield` chaos) [alices, bobs], fmap (\pid -> length (Game.zoneMembers Zone.Exile pid chaos)) [S.alice, S.bob]) ([False, False], [1, 1])
+    Spec.assertEqWith s "alice made four Saprolings and bob two" (fmap saprolings [S.alice, S.bob]) [4, 2]
+    Spec.assertEqWith s "CR 701.31 then alice planeswalked" (faceUpNames chaos) [cardName "Academy at Tolaria West"]
 
   -- CR 801.18 for an ability whose plane has left: on bob's turn alice's Akoum
   -- is face up, and bob rolls chaos and aims at dave's Goblin Piker, two seats
