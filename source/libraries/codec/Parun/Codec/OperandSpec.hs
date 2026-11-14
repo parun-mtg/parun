@@ -62,4 +62,10 @@ spec s = Spec.describe s "Parun.Codec.Operand" $ do
       Operand.codec
       (Operand.YourCounters PlayerCounterKind.Experience)
       " {\"type\":\"YourCounters\",\"value\":\"Experience\"} "
+  Spec.it s "ChosenNumber" $
+    Common.assertCodec
+      s
+      Operand.codec
+      Operand.ChosenNumber
+      " {\"type\":\"ChosenNumber\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Operand.codec

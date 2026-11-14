@@ -21,7 +21,8 @@ codec =
       Arm.payload "AmountInSlot" SlotName.codec Operand.AmountInSlot (\x -> case x of Operand.AmountInSlot y -> Just y; _ -> Nothing),
       Arm.nullary "EnclosingAmount" Operand.EnclosingAmount,
       Arm.payload "OfEachOtherCandidate" OtherCandidates.codec Operand.OfEachOtherCandidate (\x -> case x of Operand.OfEachOtherCandidate y -> Just y; _ -> Nothing),
-      Arm.payload "YourCounters" PlayerCounterKind.codec Operand.YourCounters (\x -> case x of Operand.YourCounters y -> Just y; _ -> Nothing)
+      Arm.payload "YourCounters" PlayerCounterKind.codec Operand.YourCounters (\x -> case x of Operand.YourCounters y -> Just y; _ -> Nothing),
+      Arm.nullary "ChosenNumber" Operand.ChosenNumber
     ]
 
 tagOf :: Operand.Operand -> String
@@ -34,3 +35,4 @@ tagOf x = case x of
   Operand.EnclosingAmount {} -> "EnclosingAmount"
   Operand.OfEachOtherCandidate {} -> "OfEachOtherCandidate"
   Operand.YourCounters {} -> "YourCounters"
+  Operand.ChosenNumber {} -> "ChosenNumber"

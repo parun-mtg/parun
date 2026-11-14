@@ -954,6 +954,8 @@ operandNames asking x = case x of
   Operand.OfEachOtherCandidate _measure -> mempty
   -- A player's counters, the same for every candidate.
   Operand.YourCounters _kind -> mempty
+  -- The source's choice, the same for every candidate.
+  Operand.ChosenNumber -> mempty
 
 payGateNames :: (Monoid r) => Asking r -> PayGate.PayGate -> r
 payGateNames asking = Const.getConst . Children.payGateChildren (countVisitors asking)

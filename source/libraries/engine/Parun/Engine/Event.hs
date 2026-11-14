@@ -5935,12 +5935,10 @@ chooseQuality quality chooser reader acquisition oid = case quality of
   ChosenQuality.CardType except -> do
     picked <- Game.chooseAmong (\decider who offered -> Prompt.ChooseCardType decider who oid offered) chooser (filter (`notElem` except) [minBound .. maxBound])
     Foldable.for_ picked $ \cardType -> State.modify' (Game.recordChoice Chosen.CardType acquisition (const (Just cardType)) oid)
-  ChosenQuality.Number range -> do
+  ChosenQuality.Number least most -> do
     gs <- State.get
-    let least = ChooseBetween.least range
-        most = ChooseBetween.most range
-    answer <- Game.choose (Prompt.ChooseNumber (Decide.deciderFor chooser gs) chooser oid least NumberFloor.Least (Just most))
-    State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just (max least (min most answer)))) oid)
+    answer <- Game.choose (Prompt.ChooseNumber (Decide.deciderFor chooser gs) chooser oid least NumberFloor.Least most)
+    State.modify' (Game.recordChoice Chosen.Number acquisition (const (Just (max least (maybe id min most answer)))) oid)
   ChosenQuality.Parity -> do
     gs <- State.get
     picked <- Game.choose (Prompt.ChooseParity (Decide.deciderFor chooser gs) chooser oid)
@@ -5969,7 +5967,7 @@ restoreQuality quality acquisition oid before = case quality of
   ChosenQuality.Colors _ -> Game.restoreChoice Chosen.Colors acquisition oid before
   ChosenQuality.Subtype _ _ -> Game.restoreChoice Chosen.Subtype acquisition oid before
   ChosenQuality.CardType _ -> Game.restoreChoice Chosen.CardType acquisition oid before
-  ChosenQuality.Number _ -> Game.restoreChoice Chosen.Number acquisition oid before
+  ChosenQuality.Number _ _ -> Game.restoreChoice Chosen.Number acquisition oid before
   ChosenQuality.Parity -> Game.restoreChoice Chosen.Number acquisition oid before
   ChosenQuality.Word _ -> Game.restoreChoice Chosen.Number acquisition oid before
   -- Every card `oid` exiled under the acquisition, whichever pile was offered.

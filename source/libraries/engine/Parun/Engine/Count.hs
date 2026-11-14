@@ -1758,7 +1758,9 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.grantsStationToughness = PC.grantsStationToughness snapshot,
       -- CR 700.5a off the snapshot's copiable list, as the live builder reads it.
       Filter.devotionBonus = Devotion.bonusOf (PC.playerAbilities snapshot),
-      Filter.loyaltyIsToughness = PC.loyaltyIsToughness snapshot
+      Filter.loyaltyIsToughness = PC.loyaltyIsToughness snapshot,
+      -- CR 306.5a off the snapshot, in the zone it was taken in.
+      Filter.printedLoyalty = Filter.loyaltyOffBattlefield (Just zone) (PC.loyalty snapshot)
     }
 
 -- CR 604.2: a snapshot's activated abilities less those whose "as long as"
@@ -1860,7 +1862,8 @@ overlaySnapshot deploy zone home lapsed snapshot live =
           Filter.hasAbility = Filter.hasAbility sampled,
           Filter.grantsStationToughness = Filter.grantsStationToughness sampled,
           Filter.devotionBonus = Filter.devotionBonus sampled,
-          Filter.loyaltyIsToughness = Filter.loyaltyIsToughness sampled
+          Filter.loyaltyIsToughness = Filter.loyaltyIsToughness sampled,
+          Filter.printedLoyalty = Filter.printedLoyalty sampled
         }
 
 -- CR 608.2i: an object an event snapshotted, as the snapshot shows it -- its

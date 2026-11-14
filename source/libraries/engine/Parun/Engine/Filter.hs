@@ -65,6 +65,7 @@ import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.LibraryDeparture as LibraryDeparture
 import qualified Parun.Types.Lookback as Lookback
+import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaUnit as ManaUnit
@@ -941,7 +942,12 @@ data View = MkView
     devotionBonus :: Natural.Natural,
     -- The projected mirror of ProjectedCharacteristics.loyaltyIsToughness, read
     -- by Measure.Loyalty; False wherever no projection stands behind the view.
-    loyaltyIsToughness :: Bool
+    loyaltyIsToughness :: Bool,
+    -- CR 306.5a: a planeswalker's loyalty off the battlefield, the printed
+    -- number (`loyaltyOffBattlefield`), read by Measure.Loyalty. Nothing on the
+    -- battlefield, where CR 306.5c's counters answer, and wherever no loyalty
+    -- is printed.
+    printedLoyalty :: Maybe Integer
   }
 
 -- CR 400.7d / 107.4h: `manaSpentTagColors` of a mana-spent record, for the
@@ -1202,7 +1208,8 @@ nobodyView =
       grantsStationToughness = False,
       -- CR 109.1: a player has no abilities to raise anyone's devotion.
       devotionBonus = 0,
-      loyaltyIsToughness = False
+      loyaltyIsToughness = False,
+      printedLoyalty = Nothing
     }
 
 -- The perspective the match is relative to: who counts as "you" (CR 109.5), and
@@ -2004,19 +2011,29 @@ measureOf measure = case measure of
   Measure.ManaValue -> manaValue
   Measure.ColorCount -> Just . toInteger . Set.size . colors
   Measure.CreatureTypeCount -> Just . toInteger . Set.size . Set.filter Subtype.Engine.isCreatureType . subtypes
-  -- CR 306.5: only a planeswalker has loyalty, and CR 306.5c's counters are its
-  -- loyalty on the battlefield (Drain Life's target), its toughness under
+  -- CR 306.5: only a planeswalker has loyalty. Off the battlefield it is the
+  -- printed number (CR 306.5a, Fluros of Myra's Marvels' cast trigger); on it,
+  -- CR 306.5c's counters (Drain Life's target), its toughness under
   -- Modification.LoyaltyIsToughness, as Projection.loyaltyOf answers.
-  --
-  -- A planeswalker card's printed loyalty off the battlefield (CR 306.5a) is not
-  -- implemented (#5972).
   Measure.Loyalty -> \view ->
     if Set.member CardType.Planeswalker (cardTypes view)
-      then
-        if loyaltyIsToughness view
-          then Just (maybe 0 (max 0) (toughness view))
-          else Just (toInteger (Map.findWithDefault 0 CounterKind.Loyalty (counters view)))
+      then Just $ case printedLoyalty view of
+        Just n -> n
+        Nothing
+          | loyaltyIsToughness view -> maybe 0 (max 0) (toughness view)
+          | otherwise -> toInteger (Map.findWithDefault 0 CounterKind.Loyalty (counters view))
       else Nothing
+
+-- CR 306.5a: the printed loyalty a view carries for an object in zone `at`, Nothing
+-- on the battlefield (CR 306.5c). A printed X is 0 (CR 107.2) unless the stack
+-- object's projection settled it (Projection.View.withAnnouncedX, CR 107.3i).
+loyaltyOffBattlefield :: Maybe Zone.Zone -> Maybe Loyalty.Loyalty -> Maybe Integer
+loyaltyOffBattlefield at printed
+  | at == Just Zone.Battlefield = Nothing
+  | otherwise =
+      flip fmap printed $ \loyalty -> case loyalty of
+        Loyalty.Literal n -> toInteger n
+        Loyalty.Variable -> 0
 
 -- What a Measures atom's operand reads: a literal, the candidate's own view, or
 -- a number the Context carries, Nothing where the Context carries none.
@@ -2033,6 +2050,7 @@ operandValue context view operand = case operand of
   Operand.OfEachOtherCandidate _ -> Nothing
   -- A perspective player absent from the map is an unfilled Context, not 0.
   Operand.YourCounters kind -> toInteger . Map.findWithDefault 0 kind <$> (perspective context >>= (`Map.lookup` playerCounters context))
+  Operand.ChosenNumber -> toInteger <$> sourceChosenNumber context
 
 -- Does the measured number relate thus to the threshold? Parun.Types.Comparison's
 -- one reader: this module's Measures atom and Parun.Engine.Condition's Compares.
@@ -3227,6 +3245,7 @@ manaValueThresholds predicate = case predicate of
     Operand.EnclosingAmount -> []
     Operand.OfEachOtherCandidate _ -> []
     Operand.YourCounters _ -> []
+    Operand.ChosenNumber -> []
   Filter.And fs -> concatMap manaValueThresholds fs
   Filter.Or fs -> concatMap manaValueThresholds fs
   Filter.Not f -> manaValueThresholds f
@@ -3593,6 +3612,7 @@ readsSourceValues predicate = case predicate of
     Operand.EnclosingAmount -> False
     Operand.OfEachOtherCandidate _ -> False
     Operand.YourCounters _ -> False
+    Operand.ChosenNumber -> True
   Filter.ManaValueParity operand -> case operand of
     ParityOperand.Printed _ -> False
     ParityOperand.ChosenParity -> True

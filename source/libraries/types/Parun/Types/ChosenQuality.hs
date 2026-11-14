@@ -2,6 +2,7 @@ module Parun.Types.ChosenQuality where
 
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Text as Text
+import qualified Numeric.Natural as Natural
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ExiledPile as ExiledPile
@@ -22,8 +23,8 @@ data ChosenQuality
     Subtype SubtypeFamily.SubtypeFamily (Maybe (NonEmpty.NonEmpty Subtype.Subtype))
   | -- | CR 205.2a: one card type other than the listed ones, written to Object.chosenCardType (Umori, the Collector; Arachne, Psionic Weaver).
     CardType [CardType.CardType]
-  | -- | CR 607.2d: one number in the range, replacing the last, written to Object.chosenNumber (Shapeshifter).
-    Number ChooseBetween.ChooseBetween
+  | -- | CR 607.2d: one number from the least through the most, unbounded above where Nothing, replacing the last, written to Object.chosenNumber (Shapeshifter; Fluros of Myra's Marvels).
+    Number Natural.Natural (Maybe Natural.Natural)
   | -- | CR 607.2d: odd or even, written to Object.chosenNumber as 0 or 1 for Filter.ManaValueParity to read (Gollum, Riddle Master).
     Parity
   | -- | CR 607.2f / 614.12c: one of the card's words, written to Object.chosenNumber as its 1-based position for a Quantity.ChosenNumber condition to read (Citadel Siege).

@@ -30,5 +30,7 @@ data Loyalty
     -- of Nissa, a Nissa put onto the battlefield by an effect rather than cast,
     -- and CR 107.3g's card in any zone but the stack. Such a planeswalker enters
     -- with no loyalty counters and CR 704.5i puts it into its owner's graveyard.
+    -- On the stack it is the spell's X (CR 107.3i), which the projection reads
+    -- (Projection.View.withAnnouncedX).
     Variable
   deriving (Eq, Ord, Show)

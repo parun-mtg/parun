@@ -183,7 +183,8 @@ blackCreature =
       Filter.hasAbility = False,
       Filter.grantsStationToughness = False,
       Filter.devotionBonus = 0,
-      Filter.loyaltyIsToughness = False
+      Filter.loyaltyIsToughness = False,
+      Filter.printedLoyalty = Nothing
     }
 
 -- A colourless (devoid) creature with power 5, no controller recorded.
@@ -284,7 +285,8 @@ devoidBigCreature =
       Filter.hasAbility = False,
       Filter.grantsStationToughness = False,
       Filter.devotionBonus = 0,
-      Filter.loyaltyIsToughness = False
+      Filter.loyaltyIsToughness = False,
+      Filter.printedLoyalty = Nothing
     }
 
 -- A creature whose only ability is the given keyword -- the toxic N and landwalk

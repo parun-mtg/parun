@@ -2575,7 +2575,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Number (ChooseBetween.MkChooseBetween 0 7)) True))
+      (Effect.ChooseQuality (ChooseQuality.MkChooseQuality (ChosenQuality.Number 0 (Just 7)) True))
       " {\"type\":\"ChooseQuality\",\"value\":{\"linked\":true,\"quality\":{\"type\":\"Number\",\"value\":{\"least\":0,\"most\":7}}}} "
   -- CR 400.11c: the filter and CR 701.20a's reveal, Burning Wish's "reveal a
   -- sorcery card". Everything else about the sentence is the rule's -- the pool is

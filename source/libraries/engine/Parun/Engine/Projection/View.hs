@@ -70,6 +70,7 @@ import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import Parun.Types.Keyword (Keyword)
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LastKnown as LastKnown
+import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.MatchScope as MatchScope
@@ -356,7 +357,9 @@ viewOfCardLapsed lapsed face =
           Filter.grantsStationToughness = False,
           -- CR 700.5a off the printed face, which no text change reaches.
           Filter.devotionBonus = Devotion.bonusOf (Face.playerAbilities face),
-          Filter.loyaltyIsToughness = False
+          Filter.loyaltyIsToughness = False,
+          -- CR 306.5a off the printed face, in no zone and so off the battlefield.
+          Filter.printedLoyalty = Filter.loyaltyOffBattlefield Nothing (Face.loyalty face)
         }
 
 -- CR 113.1a / 113.3: does a printed face have any ability at all, given the
@@ -961,7 +964,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- CR 700.5a off the copiable list `pc` carries, rewritten by layer 3 and
       -- emptied by no layer-6 removal (see the field's own comment).
       Filter.devotionBonus = Devotion.bonusOf (PC.playerAbilities pc),
-      Filter.loyaltyIsToughness = PC.loyaltyIsToughness pc
+      Filter.loyaltyIsToughness = PC.loyaltyIsToughness pc,
+      -- CR 306.5a off the PROJECTION, loyalty being copiable (CR 707.2).
+      Filter.printedLoyalty = Filter.loyaltyOffBattlefield (Game.zoneOf oid gs) (PC.loyalty pc)
     }
 
 -- CR 506.5 / 506.6: the AloneAmong groups among which this attacker is alone
@@ -1966,7 +1971,8 @@ noCharacteristics =
     }
 
 -- CR 202.3e's second half: on the stack each {X} in the mana cost counts the
--- announced X (CR 107.3a), where baseCharacteristics counted 0. Applied to the
+-- announced X (CR 107.3a), where baseCharacteristics counted 0, and so does a
+-- printed loyalty of X (CR 107.3i). Applied to the
 -- FINISHED fold rather than the seed, so a layer-1 copiable snapshot holds no X:
 -- a spell copy counts the X it copied into its own bindings (CR 707.10), and a
 -- permanent counts none. A spell cast paying neither its mana cost nor an
@@ -1981,7 +1987,11 @@ withAnnouncedX oid gs pc = case Game.lookupObject oid gs of
   Just object
     | Game.zoneOf oid gs == Just Zone.Stack,
       Just x <- Binding.amountOf Binding.variableX (Object.bindings object) ->
-        pc {PC.manaValue = fmap (+ toInteger x * maybe 0 Quantity.variablesOf (PC.manaCost pc)) (PC.manaValue pc)}
+        pc
+          { PC.manaValue = fmap (+ toInteger x * maybe 0 Quantity.variablesOf (PC.manaCost pc)) (PC.manaValue pc),
+            -- CR 107.3i: a printed loyalty of X is the spell's X (Nissa, Steward of Elements).
+            PC.loyalty = fmap (\loyalty -> case loyalty of Loyalty.Variable -> Loyalty.Literal x; Loyalty.Literal n -> Loyalty.Literal n) (PC.loyalty pc)
+          }
   _ -> pc
 
 -- Printed characteristics before any effect: CR 613.1's starting point.

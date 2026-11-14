@@ -146,8 +146,10 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- Seeded from the card and touched by NO layer, unlike power/toughness above:
     -- the CR 613 layer system has no sublayer for loyalty. What a permanent's
     -- loyalty actually is comes from CR 306.5c -- its CounterKind.Loyalty
-    -- counters -- so this field answers only CR 306.5a's question, and the one
-    -- reader is CR 306.5b's intrinsic enters-with replacement.
+    -- counters -- so this field answers only CR 306.5a's question, read by CR
+    -- 306.5b's intrinsic enters-with replacement and, off the battlefield, by
+    -- Filter.View.printedLoyalty. On the stack a printed X is the spell's (CR
+    -- 107.3i, Projection.View.withAnnouncedX).
     loyalty :: Maybe Loyalty.Loyalty,
     -- | CR 310.4 / 109.3: the object's PRINTED defense -- so a Clone entering as a
     -- copy of a battle has the copy's defense here. The loyalty field above in

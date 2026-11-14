@@ -885,7 +885,7 @@ writesColors quality = case quality of
   ChosenQuality.Colors _ -> True
   ChosenQuality.Subtype _ _ -> False
   ChosenQuality.CardType _ -> False
-  ChosenQuality.Number _ -> False
+  ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
   ChosenQuality.Word _ -> False
   ChosenQuality.ExiledCard _ _ -> False
@@ -896,7 +896,7 @@ writesSubtype quality = case quality of
   ChosenQuality.Colors _ -> False
   ChosenQuality.Subtype _ _ -> True
   ChosenQuality.CardType _ -> False
-  ChosenQuality.Number _ -> False
+  ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
   ChosenQuality.Word _ -> False
   ChosenQuality.ExiledCard _ _ -> False
@@ -907,7 +907,7 @@ writesCardType quality = case quality of
   ChosenQuality.Colors _ -> False
   ChosenQuality.Subtype _ _ -> False
   ChosenQuality.CardType _ -> True
-  ChosenQuality.Number _ -> False
+  ChosenQuality.Number _ _ -> False
   ChosenQuality.Parity -> False
   ChosenQuality.Word _ -> False
   ChosenQuality.ExiledCard _ _ -> False
