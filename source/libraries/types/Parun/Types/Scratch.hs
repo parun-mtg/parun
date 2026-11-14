@@ -44,9 +44,9 @@ data Scratch = MkScratch
     -- move those effects make of one asks its controller which of the two
     -- happens (Event.contestedKept). Empty outside that window.
     contested :: !(Map.Map ObjectId.ObjectId (Maybe ObjectId.ObjectId)),
-    -- | CR 615.5's amount channel: the amount bindings a prevention rider can
-    -- read outside any object's environment, its recipient possibly being a
-    -- player. Empty at every priority window.
+    -- | The amount bindings read outside any object's environment: CR 615.5's
+    -- prevention rider, its recipient possibly being a player, and what a
+    -- mana ability's cost paid (CR 605.3b). Empty at every priority window.
     ambientAmounts :: !(Map.Map SlotName.SlotName Natural.Natural),
     -- | CR 113.6 / 614.12: the permanents entering beside the one whose entry
     -- loop is running -- materialized but not yet entered, so their static

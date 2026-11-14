@@ -543,7 +543,8 @@ fallShort = State.modify' (\gs -> gs {GameState.bookkeeping = (GameState.bookkee
 --
 -- Compared, as no instruction changes them without an act: damagePreventedBy
 -- (Damage.tallyPrevention runs only beside a DamagePrevented event),
--- Scratch.ambientAmounts (runPreventionRider restores it before returning) and
+-- Scratch.ambientAmounts (runPreventionRider and Cost.tapForManaWith restore it
+-- before returning) and
 -- CR 701.24a's Object.exposed (a settle exposes the top cards a seat sees, and
 -- the one before the instruction exposed every card seen then).
 --

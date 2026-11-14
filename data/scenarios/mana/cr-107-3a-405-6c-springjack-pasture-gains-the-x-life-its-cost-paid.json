@@ -1,0 +1,148 @@
+{
+  "description": "CR 107.3a / 405.6c Springjack Pasture gains the X life its cost's X Goats paid",
+  "note": "alice sacrifices both Mountain Goats for X = 2 and takes green: two green mana and 2 life, the life gain reading the X the payment bound.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Springjack Pasture",
+            "label": "pasture",
+            "ready": true
+          },
+          {
+            "card": "Mountain Goat",
+            "label": "g1",
+            "ready": true
+          },
+          {
+            "card": "Mountain Goat",
+            "label": "g2",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $pasture",
+          "mana": [],
+          "x": 2,
+          "yields": [
+            [],
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              }
+            ]
+          ],
+          "costOrder": [
+            0,
+            1
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ],
+          "of": "ManaPool",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 22
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ],
+  "final": [
+    {
+      "Count": {
+        "card": "Mountain Goat",
+        "count": 2,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Mountain Goat",
+        "count": 0,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$pasture",
+        "tapped": true
+      }
+    }
+  ]
+}

@@ -1334,12 +1334,12 @@ performTriggeredManaAbility runSubgame pending = case PendingTrigger.source pend
 -- the effect defines (boundSlots) is cleared there first and read back after:
 -- a slot an earlier activation left behind is never mistaken for this one's.
 --
--- Not implemented: an object of the ability's own to carry slots the bindings
--- below do not. A slot read that misses them falls through to the source
--- PERMANENT's bindings instead. CR 605.1a leaves a mana ability no targets to
--- have bound; the other slots Parun.AbilitySlotLintSpec's activatedAbilityOffends
--- admits a read of are the ones its cost's payment binds, which reach the yield
--- (Cost.tapForManaWith) and not these effects (#4850).
+-- The amounts its cost's payment bound arrive on Scratch.ambientAmounts
+-- (Cost.tapForManaWith); CR 605.1a leaves it no targets to have bound.
+--
+-- Not implemented: an object of the ability's own to carry the OBJECTS that
+-- payment bound. A read of one falls through to the source PERMANENT's
+-- bindings instead (#7447).
 --
 -- CR 113.7a / 613.1f: nor has it an object to freeze its source's delayed
 -- abilities on, so each arm carries the one its name means to the ability

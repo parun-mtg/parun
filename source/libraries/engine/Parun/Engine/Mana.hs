@@ -746,6 +746,9 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
       -- proof is data/scenarios/mana's
       -- cr-601-2b-wizard-s-rockets-colour-fixing-offers-the-cast, and its
       -- sibling cr-601-2b-wizard-s-rockets-x-is-charged-so-two-islands-offer-no-three-mana-cast.
+      --
+      -- Not implemented: an X only a cost COMPONENT announces, Springjack
+      -- Pasture's "Sacrifice X Goats", which is supplied as offered (#7448).
       announcing option =
         any (any (Set.member Binding.variableX . QuantitySlot.slots . ManaAddition.count) . Maybe.mapMaybe ManaAbility.manaProduced . Foldable.toList . Clause.effects . fst) (ManaOption.steps option)
           && List.elem ManaSymbol.Variable (foldMap ManaCost.unwrap (Cost.mana (ManaOption.cost option)))

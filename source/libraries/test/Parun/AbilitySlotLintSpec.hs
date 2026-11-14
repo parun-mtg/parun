@@ -370,9 +370,11 @@ triggeredAbilityOffendsGiven armed inherited ability =
 -- is activated" -- so Cost.tapForManaWith pays the route's cost, adds the mana
 -- and runs the rest through Resolve.performManaAbility (CR 405.6c). The
 -- payment's bound slots price the YIELD -- Priest of Yawgmoth's "the sacrificed
--- artifact's mana value" -- but the rest sees only Binding.triggerSource and
--- Binding.you, so an exemption this lint grants is wider than a mana ability's
--- other effects get (#4850).
+-- artifact's mana value" -- and their amounts reach the rest beside
+-- Binding.triggerSource and Binding.you -- Springjack Pasture's "You gain X
+-- life". Not implemented: the objects they name reaching the rest, so an object
+-- exemption this lint grants is wider than a mana ability's other effects get
+-- (#7447).
 activatedAbilityOffends :: ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 activatedAbilityOffends = activatedAbilityOffendsGiven (const Set.empty)
 

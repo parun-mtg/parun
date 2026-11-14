@@ -191,6 +191,7 @@ import qualified Parun.Types.RevealWindow as RevealWindow
 import Parun.Types.RowSource (RowSource)
 import qualified Parun.Types.RuleWaiver as RuleWaiver
 import qualified Parun.Types.Sacrifice as Sacrifice
+import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpendTrigger as SpendTrigger
@@ -3432,7 +3433,14 @@ manaActivationsOn grants rows effects measure pcs pid oid printedCost restrictio
       -- choices inside it that nobody has made yet: `manaPartPayable` asks
       -- whether SOME total is payable, `totalManas`' shape and
       -- canPaySomeCompletionGiven's posture.
-      cost = plusComponents adjustments printedCost
+      --
+      -- CR 107.3a: an X in a COMPONENT is announced only as the ability is
+      -- activated (tapForManaWith's Prompt.ChooseX), so the gate asks whether
+      -- SOME activation is payable, measuring it at X = 0, which no larger X
+      -- charges less than. Springjack Pasture's "Sacrifice X Goats" is offered
+      -- beside no Goat
+      -- (data/scenarios/mana/cr-107-3a-405-6c-springjack-pasture-*).
+      cost = plusComponents adjustments (substituteAnnounced Binding.variableX 0 printedCost)
       -- CR 118.3 asked of the route's OWN mana part, which is the one conjunct
       -- the two readers differ on. Mana.ForSupply models that mana as a DEMAND
       -- instead (Mana.payableResolutionsGiven), so asking it here would both
@@ -6793,10 +6801,11 @@ tapForManaWith perform window inFlight refused activator oid = do
               -- group) -- and a yield the slots leave unchanged asks nothing.
               -- Its pools are read off gsPaid, the pool the payment LEFT, which
               -- is what CR 701.10f's doubling reads: Doubling Cube's {3} paid
-              -- from the pool shrinks what it doubles.
+              -- from the pool shrinks what it doubles. Their amounts reach CR
+              -- 405.6c's other effects through the clause fold below.
               --
-              -- Not implemented: the slots reaching CR 405.6c's other effects,
-              -- which run with none of them -- see `perform` below (#4850).
+              -- Not implemented: the objects they name reaching those effects,
+              -- which run with none of them (#7447).
               gsPaid <- State.get
               let paid = if printedX then Map.insert Binding.variableX (Binding.toAmount x) paidSlots else paidSlots
                   pricedAlike = [priced | (offered, priced) <- Mana.manaRepricingsGiven paid gsPaid Map.empty oid gs, List.elem offered alike]
@@ -6926,7 +6935,17 @@ tapForManaWith perform window inFlight refused activator oid = do
               -- CR 602.2b / 605.3b: the activation, at the same moment and for
               -- the same reason, with no stack object to name.
               State.modify' (Event.recordEvent (GameEvent.AbilityActivated AbilityWasActivated.MkAbilityWasActivated {AbilityWasActivated.player = controller, AbilityWasActivated.ability = Nothing, AbilityWasActivated.source = oid, AbilityWasActivated.facts = Game.abilityFacts AbilityKind.ManaAbility (ManaOption.ability chosen), AbilityWasActivated.activationCost = Cost.mana . ActivatedAbility.cost =<< ManaOption.ability chosen}))
+              -- CR 107.3a / 608.2h: the other effects read the amounts the cost
+              -- paid, as the yield does -- Springjack Pasture's "You gain X
+              -- life" (data/scenarios/mana/cr-107-3a-405-6c-springjack-pasture-*).
+              -- CR 605.3b leaves no ability object to bind them on, so they are
+              -- published on Scratch.ambientAmounts for the fold's span and
+              -- restored after it, Resolve.runPreventionRider's posture.
+              ambientBefore <- State.gets (Scratch.ambientAmounts . GameState.scratch)
+              let setAmbient amounts = State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.ambientAmounts = amounts}})
+              setAmbient (Map.union (Map.mapMaybe Binding.Type.amount paid) ambientBefore)
               (_, _, shares, producedUnits) <- Monad.foldM step (Map.empty, Map.empty, [], []) (zip (fmap ClauseIndex.MkClauseIndex [0 ..]) (zip [0 :: Int ..] (ManaOption.steps pricedChosen)))
+              setAmbient ambientBefore
               -- CR 605.1b's "mana being added to a player's mana pool", one event
               -- per player whose pool this activation filled, and CR 106.12a's
               -- "produced": what the clauses that happened added, whoever's pool.
