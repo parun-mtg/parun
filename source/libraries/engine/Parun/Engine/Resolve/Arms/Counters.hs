@@ -99,6 +99,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.ManaAddition as ManaAddition
+import qualified Parun.Types.ManifestDread as ManifestDread.Type
 import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.MoveCounters as MoveCounters
@@ -117,7 +118,6 @@ import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerCounters as PlayerCounters
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
-import Parun.Types.PlayerRef (PlayerRef)
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.PutCounters as PutCounters
@@ -1492,14 +1492,25 @@ cloak settle resolving source controller legal (Cloak.Type.MkCloak who library) 
   Monad.forM_ (inApnapOrder who) $ \cloaker ->
     Monad.mapM_ (Cloak.cloak settle cloaker) (maybe [cloaker] inApnapOrder library)
 
--- CR 701.62a: the named players each manifest dread, the keyword action being
--- Parun.Engine.ManifestDread.manifestDread's, choice and event alike. APNAP
--- orders the several, the Cloak arm's reason.
-manifestDread :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PlayerRef -> Game ()
-manifestDread settle resolving source controller legal ref = do
+-- CR 701.62a: the named players each manifest dread this many times, the
+-- keyword action being Parun.Engine.ManifestDread.manifestDread's, choice and
+-- event alike. APNAP orders the several, the Cloak arm's reason.
+--
+-- Each time is its own action and its own event, never one CR 608.2f batch:
+-- CR 701.62b's trigger fires for each, and Valgavoth's Onslaught's ruling has a
+-- "one or more creatures enter" trigger fire for each manifest. The slot
+-- gathers every permanent manifested, the Blight arm's one/many split.
+manifestDread :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ManifestDread.Type.ManifestDread -> Game ()
+manifestDread settle resolving source controller legal (ManifestDread.Type.MkManifestDread ref quantity mSlot) = do
   gs <- State.get
-  let named = Set.fromList (playerRefPlayers legal resolving source controller gs ref)
-  Monad.mapM_ (ManifestDread.manifestDread settle source) (filter (`Set.member` named) (Game.apnapOrder gs))
+  let viewOf = effectViewOf resolving source legal gs
+      context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+      named = Set.fromList (playerRefPlayers legal resolving source controller gs ref)
+  manifested <- Monad.forM (filter (`Set.member` named) (Game.apnapOrder gs)) $ \pid ->
+    case Common.evaluateForRecipient viewOf context gs resolving source pid quantity of
+      Nothing -> pure [] -- unevaluable quantity: no-op (the powerOf posture)
+      Just n -> concat <$> Monad.replicateM (Integer.toIntSaturating (max 0 n)) (ManifestDread.manifestDread settle source pid)
+  Common.bindObjects resolving mSlot (concat manifested)
 
 -- CR 701.49: the whole keyword action, which Parun.Engine.Dungeon owns.
 venture :: PlayerId -> Maybe Subtype.Subtype -> Game ()

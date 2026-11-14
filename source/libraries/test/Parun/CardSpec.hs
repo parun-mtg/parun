@@ -331,6 +331,7 @@ import qualified Parun.Types.ManaRiderEffect as ManaRiderEffect
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.ManifestDread as ManifestDread
 import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.MillTally as MillTally
@@ -903,7 +904,7 @@ playerRefPositions =
         ("shuffle", Effect.Shuffle (plantedPlayer "sh"), [plantedPlayer "sh"]),
         ("divide", Effect.Divide (Divide.MkDivide one (plantedRef "dv") (plantedPlayer "dv") (SlotName.MkSlotName (Text.pack "split"))), [plantedPlayer "dv"]),
         ("cloak", Effect.Cloak (Cloak.MkCloak (plantedPlayer "ck") (Just (plantedPlayer "ck-library"))), [plantedPlayer "ck", plantedPlayer "ck-library"]),
-        ("manifestDread", Effect.ManifestDread (plantedPlayer "md"), [plantedPlayer "md"]),
+        ("manifestDread", Effect.ManifestDread (ManifestDread.MkManifestDread (plantedPlayer "md") one Nothing), [plantedPlayer "md"]),
         ("choose-permanents", Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") (HowMany.UpTo Nothing) Nothing Zone.Battlefield) (SlotName.MkSlotName (Text.pack "cp")) (Just (plantedPlayer "cp-piles")) Nothing), [plantedPlayer "cp", plantedPlayer "cp-piles"]),
         ("discard-counted", Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard (plantedPlayer "dc") one Nothing)), [plantedPlayer "dc"]),
         ("discard-any-number", Effect.Discard (Discard.AnyNumber (AnyNumberDiscard.MkAnyNumberDiscard (plantedPlayer "da") (AnyNumberMatching.MkAnyNumberMatching (Filter.Type.And []) Nothing) Nothing)), [plantedPlayer "da"]),
@@ -5129,7 +5130,8 @@ effectFilters effect = case effect of
   Effect.Discover quantity -> frame Unframed (quantityFilters quantity)
   Effect.Learn -> []
   Effect.Cloak {} -> []
-  Effect.ManifestDread {} -> []
+  -- Blight's answer: the count's Filters only.
+  Effect.ManifestDread (ManifestDread.MkManifestDread _ quantity _) -> frame Unframed (quantityFilters quantity)
   Effect.Venture {} -> []
   Effect.ExileHandThenDraw -> []
   Effect.NoteManaSpent -> []

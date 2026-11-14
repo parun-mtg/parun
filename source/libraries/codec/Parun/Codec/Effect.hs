@@ -82,6 +82,7 @@ import qualified Parun.Codec.LifeLoss as LifeLoss
 import qualified Parun.Codec.LookAt as LookAt
 import qualified Parun.Codec.MakeForetold as MakeForetold
 import qualified Parun.Codec.ManaAddition as ManaAddition
+import qualified Parun.Codec.ManifestDread as ManifestDread
 import qualified Parun.Codec.Meld as Meld
 import qualified Parun.Codec.Mill as Mill
 import qualified Parun.Codec.ModifyTarget as ModifyTarget
@@ -188,7 +189,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Discover" Quantity.codec Effect.Discover (\x -> case x of Effect.Discover y -> Just y; _ -> Nothing),
           Arm.nullary "Learn" Effect.Learn,
           Arm.payload "Cloak" Cloak.codec Effect.Cloak (\x -> case x of Effect.Cloak y -> Just y; _ -> Nothing),
-          Arm.payload "ManifestDread" PlayerRef.codec Effect.ManifestDread (\x -> case x of Effect.ManifestDread y -> Just y; _ -> Nothing),
+          Arm.payload "ManifestDread" ManifestDread.codec Effect.ManifestDread (\x -> case x of Effect.ManifestDread y -> Just y; _ -> Nothing),
           Arm.optionalPayload "Venture" Subtype.codec Effect.Venture (\x -> case x of Effect.Venture y -> Just y; _ -> Nothing),
           Arm.nullary "ExileHandThenDraw" Effect.ExileHandThenDraw,
           Arm.nullary "NoteManaSpent" Effect.NoteManaSpent,

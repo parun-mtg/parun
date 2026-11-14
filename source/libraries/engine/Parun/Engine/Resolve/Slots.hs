@@ -179,6 +179,7 @@ import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaProduction as ManaProduction
 import qualified Parun.Types.ManaR as ManaR
+import qualified Parun.Types.ManifestDread as ManifestDread.Type
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.MillTally as MillTally
 import qualified Parun.Types.Modal as Modal
@@ -978,7 +979,7 @@ effectPlayerRefs effect = case effect of
   -- card comes off where it is not their own.
   Effect.Cloak (Cloak.MkCloak who library) -> who : Foldable.toList library
   -- CR 701.62a's: whose library the two cards come off.
-  Effect.ManifestDread ref -> [ref]
+  Effect.ManifestDread (ManifestDread.Type.MkManifestDread ref _ _) -> [ref]
   Effect.Venture {} -> []
   Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices players _ _ _ _) -> [players]
   -- CR 701.38a's specified player, the seat the vote starts with.
@@ -1183,7 +1184,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.Discover quantity -> quantitySlots quantity
   Effect.Learn -> Map.empty
   Effect.Cloak {} -> Map.empty
-  Effect.ManifestDread {} -> Map.empty
+  Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ quantity _) -> quantitySlots quantity
   Effect.Venture {} -> Map.empty
   Effect.ExileHandThenDraw -> Map.empty
   Effect.NoteManaSpent -> Map.empty
@@ -2091,7 +2092,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.Discover quantity -> Quantity.slotsAreExhaustive quantity
   Effect.Learn -> True
   Effect.Cloak {} -> True
-  Effect.ManifestDread {} -> True
+  Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ quantity _) -> Quantity.slotsAreExhaustive quantity
   Effect.Venture {} -> True
   Effect.ExileHandThenDraw -> True
   Effect.NoteManaSpent -> True
@@ -2400,7 +2401,7 @@ hasRead wanted =
         Effect.Discover quantity -> Quantity.hasRead wanted quantity
         Effect.Learn -> False
         Effect.Cloak {} -> False
-        Effect.ManifestDread {} -> False
+        Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ quantity _) -> Quantity.hasRead wanted quantity
         Effect.Venture {} -> False
         Effect.ExileHandThenDraw -> False
         Effect.NoteManaSpent -> False
@@ -2706,7 +2707,9 @@ boundSlots effect = case effect of
   Effect.Discover _ -> Set.empty
   Effect.Learn -> Set.empty
   Effect.Cloak {} -> Set.empty
-  Effect.ManifestDread {} -> Set.empty
+  -- The permanents the manifests put onto the battlefield (CR 701.62a), for
+  -- Valgavoth's Onslaught's "those creatures".
+  Effect.ManifestDread (ManifestDread.Type.MkManifestDread _ _ mSlot) -> foldMap Set.singleton mSlot
   Effect.Venture {} -> Set.empty
   Effect.ExileHandThenDraw -> Set.empty
   Effect.NoteManaSpent -> Set.empty

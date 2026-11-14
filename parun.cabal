@@ -1152,6 +1152,7 @@ library codec
     Parun.Codec.ManaTypeSpec
     Parun.Codec.ManaUnit
     Parun.Codec.ManaUnitSpec
+    Parun.Codec.ManifestDread
     Parun.Codec.ManifestedDread
     Parun.Codec.ManifestedDreadSpec
     Parun.Codec.Measure
@@ -3284,6 +3285,7 @@ library types
     Parun.Types.ManaType
     Parun.Types.ManaUnit
     Parun.Types.ManaWindow
+    Parun.Types.ManifestDread
     Parun.Types.ManifestedDread
     Parun.Types.MatchOptions
     Parun.Types.MatchScope

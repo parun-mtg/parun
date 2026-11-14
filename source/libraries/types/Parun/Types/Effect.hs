@@ -70,6 +70,7 @@ import qualified Parun.Types.LifeLoss as LifeLoss
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.MakeForetold as MakeForetold
 import qualified Parun.Types.ManaAddition as ManaAddition
+import qualified Parun.Types.ManifestDread as ManifestDread
 import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.ModifyTarget as ModifyTarget
@@ -802,9 +803,10 @@ data Effect card ability
   | -- | CR 701.58a: the instructed players each cloak the top card of a
     -- library, performed by Parun.Engine.Cloak.cloak as one procedure.
     Cloak Cloak.Cloak
-  | -- | CR 701.62a: the players the PlayerRef names each manifest dread,
-    -- performed by Parun.Engine.ManifestDread.manifestDread as one procedure.
-    ManifestDread PlayerRef.PlayerRef
+  | -- | CR 701.62a: the players the payload names each manifest dread this many
+    -- times, each performed by Parun.Engine.ManifestDread.manifestDread as one
+    -- procedure.
+    ManifestDread ManifestDread.ManifestDread
   | -- | CR 701.49: the resolving controller ventures into the dungeon,
     -- performed by Parun.Engine.Dungeon.venture. The payload is CR 701.49d's
     -- "[quality]", a CR 205.3p dungeon type rather than a Filter.
