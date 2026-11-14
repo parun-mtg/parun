@@ -1,0 +1,122 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Teysa Karlov"
+          },
+          {
+            "card": "Zulaport Cutthroat"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Wrath of God",
+            "label": "wrath"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.10a / 603.2d: Teysa Karlov dying beside a creature still makes its dies abilities trigger an additional time",
+  "final": [
+    {
+      "Life": {
+        "life": 24,
+        "player": "alice"
+      }
+    },
+    {
+      "Life": {
+        "life": 16,
+        "player": "bob"
+      }
+    }
+  ],
+  "note": "alice's Wrath of God destroys Teysa and Zulaport Cutthroat at once. The Cutthroat sees both deaths on the board before them, which holds Teysa (its ruling), so it triggers four times.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4"
+          ],
+          "object": "$wrath"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Zulaport Cutthroat",
+            "trigger of Zulaport Cutthroat",
+            "trigger of Zulaport Cutthroat",
+            "trigger of Zulaport Cutthroat"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

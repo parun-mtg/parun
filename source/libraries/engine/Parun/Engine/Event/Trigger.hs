@@ -22,7 +22,7 @@ import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.EffectZone as EffectZone
 import Parun.Engine.Event.Binding (batchBindings, batchPartition, countersMovedOn, eventBindingsOver)
-import Parun.Engine.Event.Match (additionalEntryTriggers, additionalTriggers, gameAfter, leavesZoneLooksBack, matchesTriggerGiven, putIntoZoneLooksBack, stepPlayers)
+import Parun.Engine.Event.Match (additionalMoveTriggers, additionalTriggers, gameAfter, leavesZoneLooksBack, matchesTriggerGiven, putIntoZoneLooksBack, stepPlayers)
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
@@ -2384,9 +2384,11 @@ eventTriggersGiven scope standing events gs =
             -- whichever side of the move its condition names (docs/decisions.md,
             -- "A silenced entry silences its departure"), but not an event
             -- riding the entry (docs/decisions.md, "An entry's own triggers are
-            -- the zone change's"). Only a bearer on the battlefield is a
-            -- permanent (CR 110.1): not a card in a graveyard watching lands
-            -- enter (Bloodghast), nor an emblem. A "triggers only
+            -- the zone change's"); so may a creature dying (Teysa Karlov), but
+            -- not an event causing the death, a sacrifice being its own
+            -- (GameEvent.PermanentSacrificed, Teysa's ruling). Only a bearer on
+            -- the battlefield is a permanent (CR 110.1): not a card in a
+            -- graveyard watching lands enter (Bloodghast), nor an emblem. A "triggers only
             -- once" limit still caps the instances: the additional instance is a
             -- second triggering (Yarok's ruling of 2019-07-12), and CR 101.2 puts
             -- the limit over it. Delayed and reflexive triggers
@@ -2395,8 +2397,8 @@ eventTriggersGiven scope standing events gs =
             -- of All) adds to one that names the entry.
             additional cond =
               additionalTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) + case Game.enteredBattlefieldChange event of
-                Just zc | Map.member oid board -> additionalEntryTriggers gs (controllerFor cond) zc
-                _ -> 0
+                Just zc | Map.member oid board -> additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) zc
+                _ -> maybe 0 (additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond)) (Game.diedChange event)
             -- CR 805.4d: one trigger per player whose step this is (stepCopies).
             -- Each paired with which of CR 603.2d's instances it is.
             pends (cond, ab) =

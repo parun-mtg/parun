@@ -181,6 +181,7 @@ import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerSource as TriggerSource
+import qualified Parun.Types.TriggeringMove as TriggeringMove
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnedFaceUp as TurnedFaceUp
@@ -888,12 +889,26 @@ deathTriggers effects before you zc =
 
 -- CR 603.2d: how many additional times an ability of `you`'s that this zone
 -- change caused to trigger triggers -- none unless it is a move onto the
--- battlefield (Yarok, the Desecrated), with the scope `entryTriggers` has.
--- Read off the same filed game as `entryTriggers`, so a Yarok entering beside
--- the entrant, or being it, counts (its ruling).
-additionalEntryTriggers :: GameState -> PlayerId -> ZoneChange.ZoneChange -> Natural
-additionalEntryTriggers gs you zc
-  | ZoneChange.to zc == Zone.Battlefield = PlayerEffect.additionalEntryTriggers you (ZoneChange.object zc) (atEntry gs (ZoneChange.object zc))
+-- battlefield (Yarok, the Desecrated), with the scope `entryTriggers` has, or a
+-- death (CR 700.4, Teysa Karlov), with the scope `deathTriggers` has.
+--
+-- An entry is read off the same filed game as `entryTriggers`, so a Yarok
+-- entering beside the entrant, or being it, counts (its ruling); the caller
+-- asks only for a bearer on the board after it. A death is read off the board
+-- before it (Snapshots.boardBeforeEvent), the dying permanent as it last
+-- existed and the doubler too, so a Teysa dying beside it, or being it,
+-- counts (its rulings), whether or not the ability looks back. Its bearer is a
+-- permanent on the board the ability reads (`additionalTriggers`' choice);
+-- a death with no board filed before it counts none.
+additionalMoveTriggers :: GameState -> PlayerId -> ObjectId -> EventGroup.EventGroup -> Bool -> ZoneChange.ZoneChange -> Natural
+additionalMoveTriggers gs you bearer group looksBack zc
+  | ZoneChange.to zc == Zone.Battlefield =
+      let atIt = atEntry gs (ZoneChange.object zc)
+       in PlayerEffect.additionalMoveTriggers TriggeringMove.Entering you (ZoneChange.object zc) atIt atIt
+  | ZoneChange.from zc == Zone.Battlefield && ZoneChange.to zc == Zone.Graveyard,
+    Just before <- Map.lookup group (Snapshots.boardBeforeEvent (GameState.snapshots gs)),
+    any (Set.member bearer . GameState.battlefield) ([before | looksBack] <> [gameAfter group gs]) =
+      PlayerEffect.additionalMoveTriggers TriggeringMove.Dying you (ZoneChange.departed zc) before before
   | otherwise = 0
 
 -- CR 603.2d: how many additional times `bearer`'s triggered ability triggers on

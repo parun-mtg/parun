@@ -1,0 +1,125 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Teysa Karlov"
+          },
+          {
+            "card": "Zulaport Cutthroat"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Pyroclasm",
+            "label": "sweep"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Zulaport Cutthroat"
+          },
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.2d / 700.4: under Teysa Karlov each of your abilities a creature dying causes to trigger triggers an additional time, an opponent's once",
+  "final": [
+    {
+      "Life": {
+        "life": 22,
+        "player": "alice"
+      }
+    },
+    {
+      "Life": {
+        "life": 18,
+        "player": "bob"
+      }
+    }
+  ],
+  "note": "alice's Pyroclasm kills both Zulaport Cutthroats and both Grizzly Bears, Teysa surviving. alice's Cutthroat sees its own death and her Bears', each twice (4); bob's sees his two creatures, once each (2).",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2"
+          ],
+          "object": "$sweep"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Zulaport Cutthroat",
+            "trigger of Zulaport Cutthroat",
+            "trigger of Zulaport Cutthroat",
+            "trigger of Zulaport Cutthroat",
+            "trigger of Zulaport Cutthroat",
+            "trigger of Zulaport Cutthroat"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
