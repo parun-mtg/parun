@@ -145,8 +145,8 @@ data ObjectRef
     -- (Hanweir Battlements, Wormfang Crab; Tovolar, Dire Overlord, Teferi, Hero
     -- of Dominaria). Parun.Engine.Resolve.Common.chosenPermanents asks it.
     ChosenPermanents ChosenPermanents.ChosenPermanents
-  | -- | CR 303.4b / 301.5a / 608.2h: the permanents attached to the object a slot holds,
-    -- or attached as it left (Rhuk, Hexgold Nabber; Fumble).
+  | -- | CR 303.4b / 301.5a / 608.2h / 400.7f: the permanents attached to the object a slot holds,
+    -- or attached as it left, or the Aura cards those became (Rhuk, Hexgold Nabber; Fumble; Cass, Hand of Vengeance).
     AttachedToBound AttachedToBound.AttachedToBound
   | -- | CR 508.1b / 608.2h: the player, planeswalker or battle the creature a slot
     -- holds is attacking, or was attacking as it left (Scorch Spitter).

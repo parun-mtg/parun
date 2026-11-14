@@ -620,7 +620,7 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   ObjectRef.ChosenPermanents choice -> joinSlots (filterSlotsOf (ChosenPermanents.filter choice) : fmap quantitySlots (chosenPermanentsQuantities choice))
   -- The host is read out of the slot, and the Filter over what is attached to
   -- it may name slots of its own.
-  ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound slot filter_) -> joinTwo (Map.singleton slot SlotArity.Many) (filterSlotsOf filter_)
+  ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound slot filter_ _) -> joinTwo (Map.singleton slot SlotArity.Many) (filterSlotsOf filter_)
   -- The attacker is read out of the slot.
   ObjectRef.AttackedBy slot -> Map.singleton slot SlotArity.Many
   -- Every ref's own reads; the PlayerRefs are objectRefPlayerRefs', which recurses.
@@ -3082,13 +3082,28 @@ objectRefObjects legal resolving controller source gs ref = case ref of
   -- creature that died before its dies trigger resolves (Rhuk, Hexgold Nabber),
   -- and Fumble asks in the same resolution that bounced the host. Through
   -- battlefieldMatching, so the Filter and the APNAP order are EachMatching's.
-  ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound slot filter_) ->
+  --
+  -- In the graveyard instead, CR 400.7f's finding: what each id attached to a
+  -- DEPARTED host became where its one logged move put it into a graveyard,
+  -- which CR 400.3 makes its owner's; a host still here has buried nothing. One
+  -- move and no further, as Game.publicIncarnations reads CR 400.7j. Proved by
+  -- the Cass, Hand of Vengeance scenarios.
+  ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound slot filter_ zone) ->
     let hosts = objectRefObjects legal resolving controller source gs (ObjectRef.InSlot slot)
+        departedWith host
+          | Set.member host (GameState.battlefield gs) = Set.empty
+          | otherwise = maybe Set.empty LastKnown.attached (Game.lastKnownOf host gs)
         attachedTo host
           | Set.member host (GameState.battlefield gs) = Game.attachments host gs
-          | otherwise = maybe Set.empty LastKnown.attached (Game.lastKnownOf host gs)
+          | otherwise = departedWith host
         attached = foldMap attachedTo hosts
-     in filter (`Set.member` attached) (battlefieldMatching legal resolving controller source gs filter_)
+     in case zone of
+          Zone.Graveyard ->
+            let context = effectContext gs resolving controller source legal (slotBindings resolving gs)
+                viewOf = Projection.viewsOf gs
+                buried arrival = Game.zoneOf arrival gs == Just Zone.Graveyard && Filter.matches context (viewOf arrival) filter_
+             in concatMap (\oid -> filter buried (Game.arrivalsOf oid gs)) (Set.toList (foldMap departedWith hosts))
+          _ -> filter (`Set.member` attached) (battlefieldMatching legal resolving controller source gs filter_)
   -- The attacked planeswalkers and battles; an attacked player is no object, so
   -- only objectRefRecipients names one.
   ObjectRef.AttackedBy slot ->

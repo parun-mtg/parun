@@ -3318,7 +3318,7 @@ objectRefChildren c ref = case ref of
   ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard players filter_ count) -> fmap ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard <$> refZones c players <*> refFilter c filter_ <*> refQuantity c count)
   ObjectRef.AtRandom inner -> ObjectRef.AtRandom <$> refNested c inner
   ObjectRef.ChosenPermanents choice -> ObjectRef.ChosenPermanents <$> chosenPermanentsChildren c choice
-  ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound bound filter_) -> fmap ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound <$> refSlot c bound <*> refFilter c filter_)
+  ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound bound filter_ zone) -> fmap ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound <$> refSlot c bound <*> refFilter c filter_ <*> pure zone)
   ObjectRef.AttackedBy bound -> ObjectRef.AttackedBy <$> refSlot c bound
   -- CR 400.7j: which object the slot's card became is read off the zone moves.
   ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere bound among reach) -> refLooksBack c HistoryRead.Moves *> fmap ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere <$> refSlot c bound <*> traverse (refSlot c) among <*> pure reach)
