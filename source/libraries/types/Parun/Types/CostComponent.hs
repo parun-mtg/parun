@@ -18,6 +18,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Sacrifice as Sacrifice
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.Zone as Zone
@@ -241,6 +242,11 @@ data CostComponent keyword
     -- Unpayable only where the payer has no opponent left (CR 102.2, CR 104.2a),
     -- which is what keeps it a cost rather than a no-op.
     ChooseOpponent Gift.Gift
+  | -- | CR 601.2h / Caller of the Hunt: the paying player chooses a subtype of
+    -- this family, recorded on the object the cost is on in Object.chosenSubtype
+    -- so that CR 400.7d carries it to the permanent the spell becomes. A cast
+    -- cost's alone, Behold.chosenType's reason.
+    ChooseSubtype SubtypeFamily.SubtypeFamily
   | -- | CR 701.67a as a cost / Geyser Leaper: this much of the cost's generic
     -- mana is a waterbend cost, so the payer may tap an untapped artifact or
     -- creature they control rather than pay each of it.

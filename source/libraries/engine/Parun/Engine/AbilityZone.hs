@@ -204,6 +204,7 @@ zoneOfComponent component = case component of
   CostComponent.Forage -> Nothing
   CostComponent.FlipCoin -> Nothing
   CostComponent.ChooseOpponent _ -> Nothing
+  CostComponent.ChooseSubtype _ -> Nothing
   CostComponent.Waterbend _ -> Nothing
   CostComponent.WaterbendInstead _ -> Nothing
   CostComponent.TapInsteadOfMana _ -> Nothing

@@ -3172,6 +3172,7 @@ costComponentFilters component = case component of
   -- CR 702.174a names an opponent rather than an object, so this component
   -- carries no Filter either.
   CostComponent.ChooseOpponent _ -> []
+  CostComponent.ChooseSubtype _ -> []
   CostComponent.Waterbend _ -> []
   CostComponent.WaterbendInstead _ -> []
   -- Heirloom Epic's "an untapped creature you control".
@@ -4562,7 +4563,8 @@ blockPermissionFilters permission =
 --     affected set, matched by Parun.Engine.Projection.affectsWith through
 --     affectedContext, which fills Filter.Context.sourceChosenColors and
 --     sourceChosenSubtype (CR 607.2d, Gauntlet of Power, Obelisk of Urd,
---     Teferi's Moat).
+--     Teferi's Moat), and a characteristic-defining ability's Counts, read in
+--     that context (CR 604.3, Caller of the Hunt).
 --   * ActivationCostFramed -- an activated ability's own cost, whose pools in
 --     Parun.Engine.Cost and Parun.Engine.Replacement.matchesPermanent fill the
 --     same two fields off the source (SourceContext.framedBy, Doom Cannon).
@@ -5740,7 +5742,6 @@ cardFilters card =
   frame
     Unframed
     ( concatMap keywordFilters (Set.toList (Face.keywordSet card))
-        <> concatMap quantityFilters (characteristicQuantities card)
         <> concatMap quantityFilters (Face.maximumX card)
         <> concatMap (\(Power.MkPower quantity) -> quantityFilters quantity) (Maybe.maybeToList (Face.power card))
         <> concatMap (\(Toughness.MkToughness quantity) -> quantityFilters quantity) (Maybe.maybeToList (Face.toughness card))
@@ -5770,6 +5771,11 @@ cardFilters card =
         <> [(Unframed, matching) | CommanderDeckRule.ChosenExtraColor matching <- Set.toList (Face.commanderDeckRules card)]
         <> [(Unframed, PregameExile.filter exile) | exile <- Maybe.maybeToList (Face.pregameExile card)]
     )
+    -- AffectedSetFramed: CR 604.3's characteristic-defining ability is a static
+    -- ability whose Counts Parun.Engine.Projection.applyCharacteristicPT reads
+    -- through SourceContext.sourceContext, an affected set's context (Caller of
+    -- the Hunt's chosen type).
+    <> frame AffectedSetFramed (concatMap quantityFilters (characteristicQuantities card))
     <> concatMap printedReplacementFilters (Face.replacementEffects card)
     <> concatMap staticAbilityFilters (Face.staticAbilities card)
     -- SOURCE-HOSTED for staticAbilityFilters' reason: a clause on a static

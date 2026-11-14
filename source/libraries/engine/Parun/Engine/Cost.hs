@@ -94,6 +94,7 @@ import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.Chosen as Chosen
+import qualified Parun.Types.ChosenQuality as ChosenQuality
 import Parun.Types.Claim (Claim)
 import qualified Parun.Types.Claim as Claim.Type
 import qualified Parun.Types.ClaimAxis as ClaimAxis
@@ -1909,6 +1910,7 @@ traverseAmount f component = case component of
   CostComponent.FlipCoin -> pure component
   -- CR 702.174a's cost names no X.
   CostComponent.ChooseOpponent _ -> pure component
+  CostComponent.ChooseSubtype _ -> pure component
   CostComponent.WaterbendInstead _ -> pure component
   CostComponent.TapInsteadOfMana _ -> pure component
   CostComponent.VariableAtLeast _ -> pure component
@@ -2060,6 +2062,7 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.Forage -> False
   CostComponent.FlipCoin -> False
   CostComponent.ChooseOpponent _ -> False
+  CostComponent.ChooseSubtype _ -> False
   -- False even when announced: the licence itself demands nothing, and the
   -- mana the announcement grows is the cost's own mana part, which
   -- `manaHasVariable` answers for.
@@ -2467,6 +2470,7 @@ componentStatesHiddenQuality component = case component of
   CostComponent.Forage -> False
   CostComponent.FlipCoin -> False
   CostComponent.ChooseOpponent _ -> False
+  CostComponent.ChooseSubtype _ -> False
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
@@ -3197,6 +3201,8 @@ claimOfGiven board slots pid oid component gs =
         CostComponent.FlipCoin -> Nothing
         -- CR 702.174a's choice spends nothing, FlipCoin's answer just above.
         CostComponent.ChooseOpponent _ -> Nothing
+        -- CR 205.3's choice spends nothing either.
+        CostComponent.ChooseSubtype _ -> Nothing
         -- No claim: rule 701.67a's taps are a component of their own once the
         -- payer takes the offer (`manaSubstitutions`), and that one claims them.
         CostComponent.Waterbend _ -> Nothing
@@ -3718,6 +3724,8 @@ uncountedCeiling pid oid claims gs component = case component of
   -- 702.174a's cost is offered once per gift ability
   -- (Parun.Engine.Keyword.optionalCost).
   CostComponent.ChooseOpponent _ -> Just 1
+  -- 1: `claimOf` states no claim, and Caller of the Hunt prints the cost once.
+  CostComponent.ChooseSubtype _ -> Just 1
   -- 1, and counted by none of the four totals: rule 701.67a's licence spends
   -- nothing, so `objectCeiling` has no pool to divide. Unreachable -- a
   -- waterbend cost carries the mana it licenses, so `repeatsOf` answers 1
@@ -4056,6 +4064,7 @@ targetComputed component = case component of
   CostComponent.MillCards _ -> False
   CostComponent.RevealTopOfLibrary _ -> False
   CostComponent.ChooseOpponent _ -> False
+  CostComponent.ChooseSubtype _ -> False
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
@@ -4110,6 +4119,7 @@ announcedRecord component = case component of
   CostComponent.MillCards _ -> Nothing
   CostComponent.RevealTopOfLibrary _ -> Nothing
   CostComponent.ChooseOpponent _ -> Nothing
+  CostComponent.ChooseSubtype _ -> Nothing
   CostComponent.Waterbend _ -> Just Binding.waterbendCost
   CostComponent.WaterbendInstead _ -> Nothing
   CostComponent.TapInsteadOfMana _ -> Nothing
@@ -4160,6 +4170,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.Forage -> 0
   CostComponent.FlipCoin -> 0
   CostComponent.ChooseOpponent _ -> 0
+  CostComponent.ChooseSubtype _ -> 0
   CostComponent.Waterbend _ -> 0
   CostComponent.WaterbendInstead _ -> 0
   CostComponent.TapInsteadOfMana _ -> 0
@@ -4215,6 +4226,7 @@ energyOwedByComponent component = case component of
   CostComponent.Forage -> 0
   CostComponent.FlipCoin -> 0
   CostComponent.ChooseOpponent _ -> 0
+  CostComponent.ChooseSubtype _ -> 0
   CostComponent.Waterbend _ -> 0
   CostComponent.WaterbendInstead _ -> 0
   CostComponent.TapInsteadOfMana _ -> 0
@@ -4280,6 +4292,7 @@ countersOwedByComponent component = case component of
   CostComponent.Forage -> []
   CostComponent.FlipCoin -> []
   CostComponent.ChooseOpponent _ -> []
+  CostComponent.ChooseSubtype _ -> []
   CostComponent.Waterbend _ -> []
   CostComponent.WaterbendInstead _ -> []
   CostComponent.TapInsteadOfMana _ -> []
@@ -4607,6 +4620,9 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- arm's own offer. Nothing about `oid`: the choice is about the table, not
   -- about the object the cost is on.
   CostComponent.ChooseOpponent _ -> not (null (Players.offer pid gs PlayerRelation.Opponent))
+  -- Always payable: the family's closed list (CR 205.3m, 205.3j, 305.6) is
+  -- never empty, and naming a type spends nothing.
+  CostComponent.ChooseSubtype _ -> True
   -- Always payable once announced: rule 701.67a's licence spends nothing of
   -- its own, and the mana it scopes is the cost's own mana part, which the mana
   -- half gates.
@@ -4851,6 +4867,7 @@ criteriaOf component = case component of
   CostComponent.Forage -> []
   CostComponent.FlipCoin -> []
   CostComponent.ChooseOpponent _ -> []
+  CostComponent.ChooseSubtype _ -> []
   -- The criterion the licence leads to is MINTED by `waterbendSubstitute` from
   -- rule 701.67a's own words rather than printed, `manaSubstitutesFor`'s posture:
   -- no word of a card's is in it, so CR 612.2 has nothing to swap.
@@ -5940,6 +5957,7 @@ paidInSecondPass component = case component of
   -- CR 702.174a's choice moves no object and involves no random element, so
   -- neither half of rule 601.2h's first criterion reaches it.
   CostComponent.ChooseOpponent _ -> False
+  CostComponent.ChooseSubtype _ -> False
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
@@ -6061,6 +6079,7 @@ sourceOnly component = case component of
   CostComponent.Forage -> Nothing
   CostComponent.FlipCoin -> Nothing
   CostComponent.ChooseOpponent _ -> Nothing
+  CostComponent.ChooseSubtype _ -> Nothing
   CostComponent.Waterbend _ -> Nothing
   CostComponent.WaterbendInstead _ -> Nothing
   CostComponent.TapInsteadOfMana _ -> Nothing
@@ -6148,8 +6167,10 @@ orderSensitive component = case component of
   -- False: rule 702.174a's choice spends nothing another part of the same cost
   -- could have spent, FlipCoin's answer just above.
   CostComponent.ChooseOpponent _ -> False
+  -- False, ChooseOpponent's answer and for its reason.
+  CostComponent.ChooseSubtype _ -> False
   -- False: rule 701.67a's licence spends nothing another part of the same cost
-  -- could have spent, ChooseOpponent's answer just above.
+  -- could have spent, ChooseOpponent's answer above.
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
@@ -7835,6 +7856,16 @@ payPayable perform moment paidFor slots pid oid component = case component of
       Just opponent -> do
         State.modify' $ \g -> Game.recordChoice Chosen.Players (Game.acquisitionOf oid g) (Just . Map.insert promise opponent . Maybe.fromMaybe Map.empty) oid g
         pure bindsNothing
+  -- CR 601.2h: the payer names a type of the family, every one legal, through
+  -- Event.chooseQuality as a resolution's choice is made, written to `oid`
+  -- under its acquisition. Event.changeZoneWithCause carries it to the
+  -- permanent under CR 400.7d. The scenarios under data/scenarios/cost named
+  -- for Caller of the Hunt are the proof. ALWAYS PAID, naming a type spending
+  -- nothing that could run out.
+  CostComponent.ChooseSubtype family -> do
+    gs <- State.get
+    Event.chooseQuality (ChosenQuality.Subtype family Nothing) pid Nothing (Game.acquisitionOf oid gs) oid
+    pure bindsNothing
   -- NOTHING TO PAY. Rule 701.67a's waterbend cost is the mana this component
   -- scopes, and that mana is in the cost's own mana part, paid by `payMana`
   -- like every other symbol; what the component states is the licence to

@@ -8697,6 +8697,12 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
                     -- 400.7d speaks about a permanent, and a countered gift spell
                     -- becomes a card whose enters trigger never fires.
                     Object.chosenPlayers = if resolvedOnto then Object.chosenPlayers obj else Map.empty,
+                    -- CR 400.7d a seventh time: the type a cost chose
+                    -- (CostComponent.ChooseSubtype), which Caller of the Hunt's
+                    -- characteristic-defining ability reads on the permanent.
+                    -- `chosenPlayers`' gate, and an entry rewrite's choice is
+                    -- written after it, as there.
+                    Object.chosenSubtype = if resolvedOnto then Object.chosenSubtype obj else Map.empty,
                     -- CR 123.5 / 400.7m: stickers stay on an object moving to
                     -- a public zone and apply to the new object; a hidden zone
                     -- drops them. Restamped after placeObject (CR 613.7k).

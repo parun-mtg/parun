@@ -2018,6 +2018,7 @@ costComponentChildren c component = case component of
   CostComponent.MillCards _ -> pure component
   CostComponent.RevealTopOfLibrary _ -> pure component
   CostComponent.ChooseOpponent _ -> pure component
+  CostComponent.ChooseSubtype _ -> pure component
   CostComponent.Waterbend amount -> CostComponent.Waterbend <$> costAmountChildren c amount
   CostComponent.WaterbendInstead _ -> pure component
   CostComponent.TapInsteadOfMana criterion -> CostComponent.TapInsteadOfMana <$> costFilter c criterion

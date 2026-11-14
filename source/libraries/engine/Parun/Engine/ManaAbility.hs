@@ -288,6 +288,7 @@ costMovesLibraryCard component = case component of
   CostComponent.FlipCoin -> False
   -- CR 702.174a names a player and no card, the arm above's answer.
   CostComponent.ChooseOpponent _ -> False
+  CostComponent.ChooseSubtype _ -> False
   CostComponent.Waterbend _ -> False
   CostComponent.WaterbendInstead _ -> False
   CostComponent.TapInsteadOfMana _ -> False
