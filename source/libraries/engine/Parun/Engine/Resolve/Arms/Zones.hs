@@ -1021,21 +1021,8 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
           (\now before -> if now == before then Nothing else Just now)
           (Map.restrictKeys (bindingsOf gs) bodyDefined)
           beforeLoop
-      -- The union across the whole loop, over the fields a body-defined name
-      -- can hold: bindSlot's ONE object lands in `targets` and
-      -- bindObjectsSlot's batch in `objects`, both of them definitions rather
-      -- than targets (CR 115.10a), so nothing here is subject to CR 608.2b.
-      -- Set union for the one and append for the other, which keeps the mint
-      -- order `objects` is documented to carry. An `amount` is kept member by
-      -- member in `perMember`, for a later loop's `inherited`. mergeBinding's
-      -- `<|>` is what the remaining fields take, and no body-defined name
-      -- populates them.
-      joinAcross a b =
-        (Binding.mergeBinding a b)
-          { Binding.Type.targets = Binding.Type.targets a <> Binding.Type.targets b,
-            Binding.Type.objects = Binding.Type.objects a <> Binding.Type.objects b,
-            Binding.Type.perMember = Binding.Type.perMember a <> Binding.Type.perMember b
-          }
+      -- An `amount` is kept member by member in `perMember`, for a later
+      -- loop's `inherited`.
       ofMember member binding = binding {Binding.Type.perMember = fmap (Map.singleton member) (Binding.Type.amount binding)}
       -- CR 608.2c: an instruction AFTER the loop names everything the body
       -- produced, across every member -- Mirror Match's "exile those tokens",
@@ -1115,7 +1102,7 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
           state0
           (Common.loopActions (Foldable.toList body))
   (made, _) <- (if individually then memberMajor else actionMajor) (Map.empty, Map.empty)
-  let accumulated = List.foldl' (\acc member -> Map.unionWith joinAcross acc (fmap (ofMember member) (Map.findWithDefault Map.empty member made))) Map.empty members
+  let accumulated = List.foldl' (\acc member -> Map.unionWith Common.joinAcross acc (fmap (ofMember member) (Map.findWithDefault Map.empty member made))) Map.empty members
   State.modify' (bindAcross accumulated . rescope Map.empty . onSource (\bindings -> Map.union sourceBefore (Map.withoutKeys bindings (Map.keysSet earlier))))
   Monad.when opened (State.modify' (\gs -> gs {GameState.scratch = (GameState.scratch gs) {Scratch.loopPicks = Nothing}}))
 
@@ -1124,15 +1111,29 @@ forEach applyEffectWith loopOffers runSubgame resolving source controller legal 
 -- read. One action, so ForEach's bracket: one event group, and one CR 613.7m
 -- batch for everything the loop puts onto the battlefield. Parun.RestampSpec's
 -- Ornate Imitations board proves the batch.
+--
+-- What the body binds is rescoped per number and joined across them as the
+-- loop ends, ForEach's CR 608.2c reading: Elrond of the White Council's "each
+-- creature chosen this way" names every vote's pick, and the scenario
+-- cr-701-38d-elrond-s-two-fellowship-votes-by-one-voter-are-two-picks proves
+-- it.
 forEachNumber :: (Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Set SlotName -> Seq.Seq (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> ForEachNumber.ForEachNumber (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()
 forEachNumber applyLoopBody runSubgame resolving source controller legal chosen (ForEachNumber.MkForEachNumber upTo slot body) = do
   gs0 <- State.get
   let viewOf = effectViewOf resolving source legal gs0
       context = effectContext gs0 resolving controller source legal (slotBindings resolving gs0)
       count = maybe 0 Integer.toNaturalSaturating (Common.evaluateForRecipient viewOf context gs0 resolving source controller upTo)
-  Event.simultaneously . Event.together . Monad.forM_ [1 .. count] $ \n -> do
-    State.modify' (Common.bindAmountSlot resolving source slot n)
-    applyLoopBody runSubgame resolving source controller legal chosen (foldMap boundSlots body) body
+      bodyDefined = foldMap boundSlots body
+      bindingsOf gs = maybe Map.empty Object.bindings (Game.lookupObject resolving gs)
+      beforeLoop = Map.restrictKeys (bindingsOf gs0) bodyDefined
+      rescope = Common.rescopeRun resolving bodyDefined gs0
+      -- What this number's run bound, against what the loop started from.
+      produced gs = Map.differenceWith (\now before -> if now == before then Nothing else Just now) (Map.restrictKeys (bindingsOf gs) bodyDefined) beforeLoop
+  runs <- Event.simultaneously . Event.together . Monad.forM [1 .. count] $ \n -> do
+    State.modify' (Common.bindAmountSlot resolving source slot n . rescope)
+    applyLoopBody runSubgame resolving source controller legal chosen bodyDefined body
+    State.gets produced
+  State.modify' (Common.overHolderBindings resolving (Map.union (Map.unionsWith Common.joinAcross runs)) . rescope)
 
 -- CR 608.2d: the body in written order, then the chooser's "may repeat",
 -- asked after each run and never in advance. No event bracket: each run is its
@@ -2284,13 +2285,13 @@ vote resolving source controller legal (Vote.MkVote starter choices secret) = do
       ballotAmong = Game.chooseAmong (\decider who -> Prompt.ChooseVote decider who resolving)
       -- Each ballot is logged as it is cast, an object snapshotted as it is
       -- voted for, and a secret vote's are revealed together once the last
-      -- is in, in voting order.
+      -- is in, in voting order. Answered beside its voter.
       cast ask = do
         let logged voter = do
               picked <- ask voter
               let ballot = fmap (Ballot.MkBallot voter) (picked >>= traverse (`Projection.objectSnapshot` gs))
               Monad.forM_ ballot (Common.logBallot secret)
-              pure (picked, ballot)
+              pure ((voter, picked), ballot)
         ballots <- fmap concat (Monad.forM voters (ballotsOf logged))
         Monad.when secret (State.modify' (Event.recordEvent (GameEvent.VotesRevealed (Seq.fromList (Maybe.mapMaybe snd ballots)))))
         pure (fmap fst ballots)
@@ -2306,7 +2307,7 @@ vote resolving source controller legal (Vote.MkVote starter choices secret) = do
         -- CR 101.3: an empty list of choices, so nobody votes and nothing is bound.
         [] -> pure ()
         _ : _ -> do
-          ballots <- cast $ \voter -> ballotAmong voter (fmap BallotChoice.ForObject (candidatesFor voter))
+          ballots <- fmap (fmap snd) . cast $ \voter -> ballotAmong voter (fmap BallotChoice.ForObject (candidatesFor voter))
           let tallyOf oid = List.length (filter (== Just (BallotChoice.ForObject oid)) ballots)
               best = List.maximum (0 : fmap tallyOf candidates)
               -- Every candidate on the winning tally, and none at all where nobody
@@ -2330,8 +2331,19 @@ vote resolving source controller legal (Vote.MkVote starter choices secret) = do
       --
       -- A printed tie-break is arithmetic and not an outcome of its own,
       -- which is why no tie is recorded anywhere.
-      Foldable.for_ voteWords $ \word ->
-        State.modify' (Common.bindAmountSlot resolving source word (Natural.length (filter (== Just (BallotChoice.ForWord word)) ballots)))
+      --
+      -- Each voter's own count rides beside the tally as Binding.perMember,
+      -- every voter keyed, zeros included, so a later Effect.ForEach over the
+      -- players reads "the voter"'s ballots as the same InSlot: Elrond of the
+      -- White Council's "for each fellowship vote, the voter chooses". On the
+      -- resolving object, where that loop reads it. The scenario
+      -- cr-701-38d-elrond-s-two-fellowship-votes-by-one-voter-are-two-picks
+      -- proves it.
+      Foldable.for_ voteWords $ \word -> do
+        let votedFor = [voter | (voter, Just (BallotChoice.ForWord chosen)) <- ballots, chosen == word]
+            perVoter = Map.fromList [(Recipient.ToPlayer voter, Natural.length (filter (== voter) votedFor)) | voter <- voters]
+        State.modify' (Common.bindAmountSlot resolving source word (Natural.length votedFor))
+        State.modify' (Common.overHolderBindings resolving (Map.adjust (\binding -> binding {Binding.Type.perMember = Just perVoter}) word))
     -- CR 701.38b's players: every player still in the game, less the voter
     -- for Mob Verdict's "another player". A voter left with no candidate casts
     -- no ballot, Objects' CR 101.3 answer.
@@ -2347,7 +2359,7 @@ vote resolving source controller legal (Vote.MkVote starter choices secret) = do
     VoteChoices.Players (VotePlayers.MkVotePlayers another slot) -> do
       let table = Players.table (Plane.rangePerspective source controller gs) gs
           candidatesFor voter = filter (\pid -> not (another && pid == voter) && List.elem pid (Players.table (Plane.rangePerspective source voter gs) gs)) table
-      picks <- cast $ \voter -> ballotAmong voter (fmap BallotChoice.ForPlayer (candidatesFor voter))
+      picks <- fmap (fmap snd) . cast $ \voter -> ballotAmong voter (fmap BallotChoice.ForPlayer (candidatesFor voter))
       let tally = Map.fromList (fmap (\pid -> (pid, Natural.length (filter (== Just (BallotChoice.ForPlayer pid)) picks))) (concatMap candidatesFor voters))
       Monad.when (any Maybe.isJust picks) (State.modify' (Common.overHolderBindings resolving (Map.insert slot (Binding.toVotes tally))))
 

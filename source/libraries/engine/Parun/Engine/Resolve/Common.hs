@@ -4331,6 +4331,22 @@ distributes total offered answer =
 carrying :: GameState -> CounterKind.CounterKind Keyword.Type.Keyword -> [ObjectId] -> Map.Map ObjectId Natural
 carrying gs kind candidates = Map.filter (> 0) (Map.fromList [(candidate, Replacement.countersOn kind candidate gs) | candidate <- candidates])
 
+-- CR 608.2c: a loop's bindings joined across its runs, for an instruction
+-- after it to name everything the body produced, over the fields a
+-- body-defined name can hold: bindSlot's ONE object lands in `targets` and
+-- bindObjectsSlot's batch in `objects`, both of them definitions rather than
+-- targets (CR 115.10a), so nothing here is subject to CR 608.2b. Set union for
+-- the one and append for the other, which keeps the mint order `objects` is
+-- documented to carry, and `perMember` unioned. mergeBinding's `<|>` is what
+-- the remaining fields take, and no body-defined name populates them.
+joinAcross :: Binding.Type.Binding -> Binding.Type.Binding -> Binding.Type.Binding
+joinAcross a b =
+  (Binding.mergeBinding a b)
+    { Binding.Type.targets = Binding.Type.targets a <> Binding.Type.targets b,
+      Binding.Type.objects = Binding.Type.objects a <> Binding.Type.objects b,
+      Binding.Type.perMember = Binding.Type.perMember a <> Binding.Type.perMember b
+    }
+
 -- A loop's per-run scope: the slots its body defines put back to
 -- what the resolving object held before the first run, so a run that binds
 -- nothing does not read what the previous run bound. Takes the pre-loop state

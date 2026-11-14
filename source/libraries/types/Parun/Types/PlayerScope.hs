@@ -58,4 +58,6 @@ data PlayerScope
     -- Trap's "the chosen player reveals each card they draw". Nobody where the
     -- carrier has no source to read, or the source chose nobody.
     ChosenPlayer
+  | -- | CR 108.3: the source's owner, nobody where the carrier has no source.
+    SourceOwner
   deriving (Eq, Ord, Show)

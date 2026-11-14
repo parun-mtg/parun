@@ -57,5 +57,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerScope" $ do
       PlayerScope.codec
       PlayerScope.ChosenPlayer
       " {\"type\":\"ChosenPlayer\"} "
+  -- Elrond of the White Council's "its owner" (CR 108.3).
+  Spec.it s "SourceOwner" $
+    Common.assertCodec
+      s
+      PlayerScope.codec
+      PlayerScope.SourceOwner
+      " {\"type\":\"SourceOwner\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PlayerScope.codec
