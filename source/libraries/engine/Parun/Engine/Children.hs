@@ -2158,7 +2158,7 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.DamageCantBeRedirected damage -> PlayerEffect.DamageCantBeRedirected <$> playerDamage c damage
   PlayerEffect.CantSearchLibraries _ -> pure effect
   PlayerEffect.SearchesTopOfLibraries _ -> pure effect
-  PlayerEffect.StateBasedActionDoesntApply _ -> pure effect
+  PlayerEffect.StateBasedActionDoesntApply action exempted -> PlayerEffect.StateBasedActionDoesntApply action <$> playerFilter c exempted
   PlayerEffect.CantSetSchemesInMotion -> pure effect
   PlayerEffect.EntriesTrigger (EntriesTrigger.MkEntriesTrigger entrants triggering) ->
     fmap PlayerEffect.EntriesTrigger (EntriesTrigger.MkEntriesTrigger <$> playerFilter c entrants <*> pure triggering)

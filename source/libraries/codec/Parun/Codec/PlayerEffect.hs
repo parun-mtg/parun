@@ -78,6 +78,12 @@ codec =
           (,)
             <$> Fields.required "matching" filterCodec fst
             <*> Fields.defaulted "keywords" [] (Common.list Keyword.codec) snd
+      -- The filter absent is every permanent the player controls.
+      sbaExemption =
+        Fields.object $
+          (,)
+            <$> Fields.required "action" StateBasedAction.codec fst
+            <*> Fields.defaulted "matching" (Filter.Type.And []) filterCodec snd
       -- The quality absent is every spell and ability the scope's players control.
       targetingBan =
         Fields.object $
@@ -116,7 +122,7 @@ codec =
           Arm.payload "CantSearchLibraries" CantSearchLibraries.codec PlayerEffect.CantSearchLibraries (\x -> case x of PlayerEffect.CantSearchLibraries y -> Just y; _ -> Nothing),
           Arm.payload "SearchesTopOfLibraries" Common.natural PlayerEffect.SearchesTopOfLibraries (\x -> case x of PlayerEffect.SearchesTopOfLibraries y -> Just y; _ -> Nothing),
           Arm.payload "HasProtectionFrom" filterCodec PlayerEffect.HasProtectionFrom (\x -> case x of PlayerEffect.HasProtectionFrom y -> Just y; _ -> Nothing),
-          Arm.payload "StateBasedActionDoesntApply" StateBasedAction.codec PlayerEffect.StateBasedActionDoesntApply (\x -> case x of PlayerEffect.StateBasedActionDoesntApply y -> Just y; _ -> Nothing),
+          Arm.payload "StateBasedActionDoesntApply" sbaExemption (uncurry PlayerEffect.StateBasedActionDoesntApply) (\x -> case x of PlayerEffect.StateBasedActionDoesntApply y z -> Just (y, z); _ -> Nothing),
           Arm.nullary "CantSetSchemesInMotion" PlayerEffect.CantSetSchemesInMotion,
           Arm.payload "EntriesTrigger" EntriesTrigger.codec PlayerEffect.EntriesTrigger (\x -> case x of PlayerEffect.EntriesTrigger y -> Just y; _ -> Nothing),
           Arm.payload "AdditionalTriggers" filterCodec PlayerEffect.AdditionalTriggers (\x -> case x of PlayerEffect.AdditionalTriggers y -> Just y; _ -> Nothing),

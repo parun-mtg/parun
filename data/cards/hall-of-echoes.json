@@ -79,7 +79,9 @@
                           },
                           "effect": {
                             "type": "StateBasedActionDoesntApply",
-                            "value": "LegendRule"
+                            "value": {
+                              "action": "LegendRule"
+                            }
                           },
                           "players": {
                             "type": "Scoped",

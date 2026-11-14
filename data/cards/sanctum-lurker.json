@@ -20,7 +20,9 @@
         {
           "effect": {
             "type": "StateBasedActionDoesntApply",
-            "value": "ZeroLoyalty"
+            "value": {
+              "action": "ZeroLoyalty"
+            }
           },
           "scope": {
             "type": "You"
