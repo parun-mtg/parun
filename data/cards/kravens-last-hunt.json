@@ -45,7 +45,7 @@
                               },
                               "ref": {
                                 "type": "InSlot",
-                                "value": "target"
+                                "value": "victim"
                               }
                             }
                           ]
@@ -55,7 +55,7 @@
                   }
                 ],
                 "targetSlots": {
-                  "target": {
+                  "victim": {
                     "pool": {
                       "type": "Creatures"
                     }

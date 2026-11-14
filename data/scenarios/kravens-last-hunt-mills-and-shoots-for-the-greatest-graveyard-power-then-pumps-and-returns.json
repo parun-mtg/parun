@@ -195,7 +195,7 @@
     {
       "do": {
         "ChooseTargets": {
-          "target": [
+          "victim": [
             "$dreadmaw"
           ]
         }
