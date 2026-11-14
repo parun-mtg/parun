@@ -2191,3 +2191,25 @@ Entries are ordered by the first rule each cites.
   by `Parun.PlanechaseSpec`'s "CR 205.3i Mojave Desert's chaos makes one Snake
   plus one per nonbasic land type among alice's lands" (bob's Cave adds none).
 - **Issue**: #5088.
+
+## Whether a warp granted to a card in a hand carries onto the spell
+
+- **Question**: Tannuk, Steadfast Second gives "artifact cards and red creature
+  cards in your hand" warp. The grant ends as the card leaves the hand, while
+  both of warp's abilities function on the stack (CR 113.6d, 702.185a). Is the
+  warp cost offered, and does a spell cast for it get rule 702.185a's exile?
+- **Rules**: CR 113.6d, 400.7g, 601.2a, 601.2b, 702.185a; CR of 2026-11-06.
+  Scryfall lists no ruling for the card.
+- **Decision**: Yes to both. Warp's first ability, "you may cast this card from
+  your hand by paying [cost]", is an ability that allows the card to be cast,
+  so CR 400.7g keeps the granted warp on the spell and its second ability arms
+  the exile.
+- **Rejected**: Reading CR 400.7g as only a permission without which the card
+  could not be cast (a hand needs none), which leaves the spell without warp on
+  the stack: then either no warp cost is offered and the grant does nothing, or
+  it is offered and the spell stays on the battlefield, against the card's own
+  reminder text.
+- **Site**: `Parun.Engine.Cost`'s `warped` and `Parun.Engine.Cast`'s
+  `grantedCastKeyword`, proved by the scenario
+  `tannuk-steadfast-second-warps-a-red-creature-card-that-is-exiled-at-the-next-end-step`.
+- **Issue**: #7508.

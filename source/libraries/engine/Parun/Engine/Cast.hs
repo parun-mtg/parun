@@ -1202,6 +1202,13 @@ castGrantsOf held castFor sid spent gs = Maybe.maybeToList (grantedCastKeyword c
 -- whole suite green (2026-09-16), no card in data/cards/ reading the keywords of
 -- a spell cast for an alternative cost that grants no permission.
 --
+-- Warp passes it too: rule 702.185a's "you may cast this card from your hand"
+-- names the zone it allows the cast from, flashback's shape, though a hand
+-- needs no permission (docs/decisions.md, "Whether a warp granted to a card in
+-- a hand carries onto the spell"). The scenario
+-- tannuk-steadfast-second-warps-a-red-creature-card-that-is-exiled-at-the-next-end-step
+-- proves it.
+--
 -- The second is the difference between the keywords the object HAS and its
 -- copiable ones (CR 707.2). A printed flashback is in the seed of every
 -- projection of the spell already, so carrying it would report CR 113.2c's two
@@ -1214,7 +1221,7 @@ grantedCastKeyword :: Maybe Keyword -> ObjectId -> GameState -> Maybe Keyword
 grantedCastKeyword castFor oid gs = do
   keyword <- castFor
   let copiable = Projection.copiableCharacteristics oid gs
-  Monad.guard (not (null (Keyword.permissionsFor (PC.cardTypes copiable) keyword)))
+  Monad.guard (not (null (Keyword.permissionsFor (PC.cardTypes copiable) keyword)) || not (null (Keyword.warpCosts (Set.singleton keyword))))
   Monad.guard (not (Map.member keyword (PC.keywords copiable)))
   pure keyword
 

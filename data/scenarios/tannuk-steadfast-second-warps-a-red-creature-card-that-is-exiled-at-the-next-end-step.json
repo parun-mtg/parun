@@ -1,0 +1,25 @@
+{
+  "description": "CR 702.185a / 400.7g: a Hill Giant cast for the warp {2}{R} Tannuk grants it in alice's hand attacks with haste and is exiled at the beginning of the next end step; a green creature card is granted no warp and an artifact card is",
+  "note": "Tannuk's grant ends as the card leaves the hand; CR 400.7g carries it onto the spell (docs/decisions.md, \"Whether a warp granted to a card in a hand carries onto the spell\"), so rule 702.185a's exile is armed.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "manaPool": "RRR", "battlefield": [{"card": "Tannuk, Steadfast Second"}], "hand": [{"card": "Hill Giant", "label": "giant"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Bronze Sable", "label": "sable"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Warp", "value": {"mana": [{"type": "Generic", "value": 2}, {"type": "OfType", "value": {"type": "Colored", "value": "Red"}}]}}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$sable", "keyword": {"type": "Warp", "value": {"mana": [{"type": "Generic", "value": 2}, {"type": "OfType", "value": {"type": "Colored", "value": "Red"}}]}}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$giant"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["Hill Giant"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 0}}}
+  ]
+}
