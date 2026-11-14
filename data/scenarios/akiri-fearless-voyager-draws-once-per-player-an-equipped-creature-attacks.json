@@ -1,0 +1,166 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Akiri, Fearless Voyager",
+            "label": "akiri",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "attached": "bears",
+            "card": "Bonesplitter",
+            "label": "split"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-1",
+            "ready": true
+          },
+          {
+            "attached": "giant-1",
+            "card": "Short Sword",
+            "label": "sword"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant-2",
+            "ready": true
+          },
+          {
+            "attached": "giant-2",
+            "card": "Leonin Scimitar",
+            "label": "scimitar"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Jace Beleren",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 3
+              }
+            ],
+            "label": "jace"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "dave"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 508.3e: Akiri, Fearless Voyager draws once for each player you attack with one or more equipped creatures",
+  "note": "alice sends equipped Bears at bob, equipped Hill Giants at carol and at dave's Jace, and unequipped Akiri at dave: two draws, none for dave, whose only equipped attacker attacks his planeswalker.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$bears",
+          "$giant-1",
+          "$giant-2",
+          "$akiri"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$bears",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$carol"
+      },
+      "player": "alice",
+      "source": "$giant-1",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$jace"
+      },
+      "player": "alice",
+      "source": "$giant-2",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$dave"
+      },
+      "player": "alice",
+      "source": "$akiri",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 2,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}
