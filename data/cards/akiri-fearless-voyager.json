@@ -1,0 +1,231 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                },
+                                {
+                                  "type": "HasAttached",
+                                  "value": {
+                                    "type": "HasSubtype",
+                                    "value": "Equipment"
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "creature"
+                        }
+                      },
+                      {
+                        "type": "ChoosePermanents",
+                        "value": {
+                          "permanents": {
+                            "filter": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasSubtype",
+                                  "value": "Equipment"
+                                },
+                                {
+                                  "type": "IsAttachedTo",
+                                  "value": {
+                                    "type": "Bound",
+                                    "value": {
+                                      "slot": "creature"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          },
+                          "slot": "equipment"
+                        }
+                      },
+                      {
+                        "type": "Unattach",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "equipment"
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Tap",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "creature"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Indestructible"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "creature"
+                          }
+                        }
+                      }
+                    ],
+                    "ifTaken": {
+                      "type": "AnyTaken",
+                      "value": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Akiri, Fearless Voyager",
+      "oracleText": "Whenever you attack a player with one or more equipped creatures, draw a card.\n{W}: You may unattach an Equipment from a creature you control. If you do, tap that creature and it gains indestructible until end of turn.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacked",
+              "value": {
+                "attacked": {
+                  "type": "Related",
+                  "value": "AnyPlayer"
+                },
+                "attacker": "You",
+                "attackers": {
+                  "filter": {
+                    "type": "HasAttached",
+                    "value": {
+                      "type": "HasSubtype",
+                      "value": "Equipment"
+                    }
+                  },
+                  "floor": 1
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Kor",
+          "Warrior"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
