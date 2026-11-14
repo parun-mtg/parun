@@ -2684,14 +2684,21 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (Effect.SetInMotion (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "became"))))
       " {\"type\":\"SetInMotion\",\"value\":{\"type\":\"InSlot\",\"value\":\"became\"}} "
-  -- CR 701.31: nullary, the rule fixing whose deck and which card.
-  Spec.it s "Planeswalk" $
+  -- CR 701.31: null for the top card, or the cards to planeswalk to (Spatial
+  -- Merging).
+  Spec.it s "Planeswalk" $ do
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      Effect.Planeswalk
-      " {\"type\":\"Planeswalk\"} "
+      (Effect.Planeswalk Nothing)
+      " {\"type\":\"Planeswalk\",\"value\":null} "
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.Planeswalk (Just (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "revealed")))))
+      " {\"type\":\"Planeswalk\",\"value\":{\"type\":\"InSlot\",\"value\":\"revealed\"}} "
   Spec.it s "ChaosEnsues" $
     Common.assertJsonCodec
       s

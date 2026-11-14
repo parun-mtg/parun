@@ -1197,5 +1197,5 @@ checkOnce instead boards = do
   -- the rest of the pass has applied.
   Monad.unless (null spentPhenomena) $ do
     settled <- State.get
-    Planechase.planeswalk PlaneswalkCause.Phenomenon (Plane.planarController settled)
+    Planechase.planeswalk PlaneswalkCause.Phenomenon Nothing (Plane.planarController settled)
   pure (acted, thenExile)

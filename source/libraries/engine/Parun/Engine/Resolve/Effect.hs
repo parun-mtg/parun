@@ -698,7 +698,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.TemptWithTheRing -> Counters.temptWithTheRing controller
   Effect.OpenAttraction -> Counters.openAttraction (runReplacementEffects runSubgame) controller
   Effect.Assemble payload -> Counters.assemble (runReplacementEffects runSubgame) resolving source controller legal payload
-  Effect.Planeswalk -> Counters.planeswalk resolving controller
+  Effect.Planeswalk ref -> Counters.planeswalk resolving source controller legal ref
   Effect.ChaosEnsues ref -> Counters.chaosEnsues resolving source controller legal ref
   Effect.Abandon -> Counters.abandon source
   Effect.SetInMotion ref -> Counters.setInMotion resolving source controller legal ref

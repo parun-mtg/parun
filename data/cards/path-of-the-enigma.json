@@ -79,7 +79,8 @@
                 },
                 "effects": [
                   {
-                    "type": "Planeswalk"
+                    "type": "Planeswalk",
+                    "value": null
                   }
                 ]
               },
