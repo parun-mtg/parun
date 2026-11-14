@@ -1565,9 +1565,12 @@ toAmount n = Binding.empty {Binding.amount = Just n}
 toSticker :: StickerRef.StickerRef -> Binding
 toSticker ref = Binding.empty {Binding.sticker = Just ref}
 
--- | A binding that holds one player vote's tally and nothing else (CR 701.38a).
+-- | A binding that holds one player vote's tally (CR 701.38a), naming the
+-- players who received a vote as its players, so PlayerRef.EachPlayerExcept
+-- over the slot is Círdan the Shipwright's "each player who received no
+-- votes". Not a target, so CR 608.2b re-validates nothing (`gatePlayers`).
 toVotes :: Map PlayerId Natural -> Binding
-toVotes tally = Binding.empty {Binding.votes = Just tally}
+toVotes tally = (toPlayers (Map.keysSet (Map.filter (> 0) tally))) {Binding.votes = Just tally}
 
 -- Bind an object under the reserved triggerSource slot. Dedicated and
 -- single-purpose, so the insert cannot clobber another binding -- as below.
