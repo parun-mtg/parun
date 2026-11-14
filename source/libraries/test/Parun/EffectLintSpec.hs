@@ -837,6 +837,8 @@ riderWithoutPreventionOffends replacement = case replacement of
   ReplacementEffect.DamageR (DamageR.MkDamageR _ rewrite riders) -> not (null riders) && not (preventsDamage rewrite)
   ReplacementEffect.CounterR {} -> False
   ReplacementEffect.CounterLossR {} -> False
+  -- CR 614.1a's "instead exile it and ...": a redirect's riders are part of
+  -- the modified event (CR 614.6), not CR 615.5's additional effect.
   ReplacementEffect.ZoneChangeR {} -> False
   ReplacementEffect.EntryR {} -> False
   ReplacementEffect.DestructionR _ -> False
@@ -890,7 +892,7 @@ hasRider = not . null . replacementEffectRiders
 -- 615.5's rider is one lint up.
 shufflingOutsideLibraryOffends :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
 shufflingOutsideLibraryOffends replacement = case replacement of
-  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR _ destination _ shuffling _ _ _ _) -> shuffling && destination /= Zone.Library
+  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR _ destination _ shuffling _ _ _ _ _) -> shuffling && destination /= Zone.Library
   ReplacementEffect.DamageR {} -> False
   ReplacementEffect.CounterR {} -> False
   ReplacementEffect.CounterLossR {} -> False
@@ -915,7 +917,7 @@ shufflingOutsideLibraryOffends replacement = case replacement of
 -- The non-vacuity half of shufflingOutsideLibraryOffends' lint, isPhaseR's shape.
 hasZoneChangeRider :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
 hasZoneChangeRider replacement = case replacement of
-  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR _ _ revealing shuffling _ _ _ _) -> revealing || shuffling
+  ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR _ _ revealing shuffling _ _ _ _ _) -> revealing || shuffling
   _ -> False
 
 -- The non-vacuity half of engineOnlyOffends' lint, isPhaseR's shape.
@@ -3470,7 +3472,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     nexus <- S.printingOf s registry "Nexus of Fate"
     let printed = cardReplacementEffects (S.combinedFace nexus)
         toExile replacement = case replacement of
-          ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR zoneChangePattern _ revealing shuffling position optional counters whenYouDo) -> ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR zoneChangePattern Zone.Exile revealing shuffling position optional counters whenYouDo)
+          ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR zoneChangePattern _ revealing shuffling position optional counters whenYouDo riders) -> ReplacementEffect.ZoneChangeR (ZoneChangeR.MkZoneChangeR zoneChangePattern Zone.Exile revealing shuffling position optional counters whenYouDo riders)
           other -> other
     Spec.assertBool s (any hasZoneChangeRider printed) "setup: the Nexus prints both riders to move"
     Spec.assertBool s (not (any shufflingOutsideLibraryOffends printed)) "the real Nexus shuffles into a library"

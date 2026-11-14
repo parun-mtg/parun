@@ -2065,8 +2065,8 @@ drawGame source controller = do
 -- gain or loss of the necessary amount. The roster is CR 102.1's players IN the
 -- game, not the keys of GameState.players, which keep a departed seat's row,
 -- within the controller's range but for CR 801.18's planar source
--- (Plane.rangePerspective). That exemption is unobserved: The Doctor's Tomb,
--- the plane that redistributes, is not yet expressible (gap #5196).
+-- (Plane.rangePerspective). Parun.PlanechaseSpec's "CR 801.18 The Doctor's
+-- Tomb's chaos redistributes ..." proves that exemption.
 -- Every total is read ONCE, before the prompt and before any life moves (CR
 -- 608.2h); a rotation would otherwise leave two seats on one number.
 --
