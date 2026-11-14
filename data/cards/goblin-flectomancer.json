@@ -1,0 +1,104 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "SacrificeThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ChangeTargets",
+                        "value": {
+                          "objects": {
+                            "type": "InSlot",
+                            "value": "spell"
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ],
+                "targetSlots": {
+                  "spell": {
+                    "filter": {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Instant"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Sorcery"
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Spells"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Goblin Flectomancer",
+      "oracleText": "Sacrifice this creature: You may change the targets of target instant or sorcery spell.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Goblin",
+          "Wizard"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

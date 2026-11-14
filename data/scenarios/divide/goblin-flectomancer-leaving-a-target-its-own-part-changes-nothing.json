@@ -1,0 +1,240 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "mountain1"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain2"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain3"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain4"
+          },
+          {
+            "card": "Goblin Flectomancer",
+            "label": "flectomancer"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Forked Lightning",
+            "label": "lightning"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm-a"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm-b"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm-c"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm-d"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 115.7a / 115.7f Goblin Flectomancer's change leaving the first Wurm its own part of Forked Lightning changes nothing",
+  "note": "Alice divides 4 damage 2, 1 and 1 onto three Wurms, then changes the targets to the first, second and fourth. Only the first held a 2, so handing the first the 2 again leaves it unchanged, which CR 115.7a forbids: the whole change is refused and the damage lands as first divided.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain1",
+            "$mountain2",
+            "$mountain3",
+            "$mountain4"
+          ],
+          "object": "$lightning",
+          "targets": [
+            "$wurm-a",
+            "$wurm-b",
+            "$wurm-c"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDivision",
+          "with": [
+            [
+              [
+                "Creature",
+                "$wurm-a"
+              ],
+              2
+            ],
+            [
+              [
+                "Creature",
+                "$wurm-b"
+              ],
+              1
+            ],
+            [
+              [
+                "Creature",
+                "$wurm-c"
+              ],
+              1
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$flectomancer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "creatures": [
+            "$wurm-a",
+            "$wurm-b",
+            "$wurm-d"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDivision",
+          "with": [
+            [
+              [
+                "Creature",
+                "$wurm-a"
+              ],
+              2
+            ],
+            [
+              [
+                "Creature",
+                "$wurm-b"
+              ],
+              1
+            ],
+            [
+              [
+                "Creature",
+                "$wurm-d"
+              ],
+              1
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 2,
+          "object": "$wurm-a"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 1,
+          "object": "$wurm-b"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 1,
+          "object": "$wurm-c"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 0,
+          "object": "$wurm-d"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

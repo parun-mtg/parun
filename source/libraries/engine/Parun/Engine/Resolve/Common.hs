@@ -3082,16 +3082,16 @@ retargetEach reaim legal resolving controller source ref = do
 -- chooseNewTargetsFor's two seats and range cut: `chooser` is asked,
 -- `controller` -- the object's own -- is who legality is judged from.
 --
--- Per slot, the OFFER is the recipients legal now less what that slot already
--- targets ("another"), and the count is what the slot holds. A slot offering
--- fewer leaves every target unchanged, unasked -- a REGRESSION FENCE, since the
--- rejection below would refuse every answer anyway. No "may": unlike CR 115.7d
--- the current targets are not offered, so leaving them is no answer. Not raised
--- when every slot's offer is exactly its count, the options being
--- indistinguishable.
---
--- Not implemented: a multi-target slot reusing one of its own current targets
--- for another of them, which CR 115.7e allows (#4659).
+-- Per slot, the count is what the slot holds. A one-target slot's OFFER is the
+-- recipients legal now less its target ("another"). A slot of more offers every
+-- legal recipient, its own targets included: CR 115.7e judges only the final
+-- set, and any such set has an assignment moving every target (Goblin
+-- Flectomancer's ruling of 2006-02-01: "Each target is treated individually").
+-- Parun.TargetSpec's "CR 115.7e Goblin Flectomancer moves Frost Breath's first
+-- target onto its second" proves it. A slot offering fewer than its count
+-- leaves every target unchanged, unasked -- a REGRESSION FENCE, since the
+-- rejection below would refuse every answer anyway. Not raised when every
+-- slot's offer is exactly its count, the options being indistinguishable.
 --
 -- Reject-not-repair, chooseNewTargetsFor's posture and for its reason: an
 -- answer outside the offer, a CR 406.4 draw landing on a refused or current
@@ -3111,8 +3111,8 @@ changeTargetsFor onto source chooser controller oid = do
         aimer = Maybe.fromMaybe oid (Game.abilitySourceOf oid gs)
         fresh = Target.legalSets (resolvingKind oid gs) (resolvingAbilityName oid gs) (Just controller) False seed aimer slots gs
         another old = Set.filter (\r -> not (any (Recipient.sameReferent r) old))
-        rebind picked = do
-          rebound <- reaimDivisions chooser oid Map.empty (Object.bindings obj) picked
+        rebind divide picked = do
+          rebound <- divide (Object.bindings obj) picked
           Monad.forM_ rebound $ \bindings -> do
             let write o = o {Object.bindings = Map.union bindings (Object.bindings o)}
             State.modify' (\g -> g {GameState.objects = Map.adjust write oid (GameState.objects g)})
@@ -3152,14 +3152,15 @@ changeTargetsFor onto source chooser controller oid = do
             asked = Map.mapWithKey (\slot olds -> (Natural.length olds, Set.union olds (swapsIn slot olds))) current
         case options of
           [] -> pure ()
-          [only] -> rebind only
+          [only] -> rebind (reaimDivisions chooser oid Map.empty) only
           first : _ -> do
             answer <- Game.choose (Prompt.ChooseTargets (Decide.deciderFor chooser gs) chooser oid asked)
-            rebind (if answer `elem` options then answer else first)
+            rebind (reaimDivisions chooser oid Map.empty) (if answer `elem` options then answer else first)
       Nothing -> do
         let -- CR 406.4's draws capped at the slot's count, chooseNewTargetsFor's
             -- cap. A REGRESSION FENCE: no test drives a pile through this road.
-            offer slot old = (Natural.length old, Target.piledOffer (Just (Natural.length old)) (Just chooser) gs (Target.inChooserRange source chooser gs (another old (Map.findWithDefault Set.empty slot fresh))))
+            offer slot old = (Natural.length old, Target.piledOffer (Just (Natural.length old)) (Just chooser) gs (Target.inChooserRange source chooser gs (candidates old (Map.findWithDefault Set.empty slot fresh))))
+            candidates old = if Set.size old > 1 then id else another old
             asked = Map.mapWithKey offer current
             enough (n, offered) = Natural.length offered >= n
             settled (n, offered) = Natural.length offered == n
@@ -3177,9 +3178,9 @@ changeTargetsFor onto source chooser controller oid = do
             drawn <- traverse (fmap fst . Target.drawFromPiles (Just chooser)) answer
             let stands slot picked =
                   Set.isSubsetOf picked (Map.findWithDefault Set.empty slot fresh)
-                    && another (Map.findWithDefault Set.empty slot current) picked == picked
+                    && candidates (Map.findWithDefault Set.empty slot current) picked == picked
                 coherent = all Set.null (Target.jointlyIllegal (resolvingKind oid gs) (resolvingAbilityName oid gs) (Just controller) seed aimer slots drawn gs)
-            Monad.when (and (Map.elems (Map.mapWithKey stands drawn)) && coherent) (rebind drawn)
+            Monad.when (and (Map.elems (Map.mapWithKey stands drawn)) && coherent) (rebind (changeDivisions chooser oid) drawn)
 
 -- CR 115.7f: each re-aimed slot's new binding, "the original division can't be
 -- changed": a target left standing keeps its part, and the parts of the
@@ -3215,6 +3216,55 @@ reaimDivisions chooser oid movable bindings picked =
                 pure (if Target.divides dividing added answer then dividedAs answer else Nothing)
             | otherwise -> pure (dividedAs (Map.fromList (fmap (\r -> (r, NonEmpty.head parts)) (NonEmpty.toList added))))
           _ -> pure (dividedAs Map.empty)
+
+-- CR 115.7a / 115.7f: each re-aimed slot's new binding under a change of all
+-- its targets. Every target moves to a different one and takes its part along,
+-- so the new division is the old parts carried by a bijection from the old
+-- targets to the new that fixes none (Goblin Flectomancer's ruling of
+-- 2006-02-01: "Each target is treated individually ... changed to a different
+-- legal target"). A target still in the final set therefore takes another's
+-- part, never its own.
+--
+-- Which part each new target CAN take is read off directly: the part of any
+-- old target other than itself, unless the two left over would then be one
+-- target fixed in place. Where every new target can take just one, the division
+-- is forced and taken unasked; otherwise Prompt.ChooseDivision hands out the
+-- parts, and an answer no such bijection carries leaves every target unchanged,
+-- reaimDivisions' reject-not-repair. Within one part's size the bijection is
+-- free, so an answer is carried unless some size is held by one old target and
+-- handed to that same target alone. An undivided slot binds its targets alone.
+-- data/scenarios/divide's "goblin-flectomancer-hands-forked-lightning-s-first-
+-- part-to-its-second-target" proves the forced division.
+changeDivisions :: PlayerId -> ObjectId -> Map.Map SlotName Binding.Type.Binding -> Map.Map SlotName (Set Recipient) -> Game (Maybe (Map.Map SlotName Binding.Type.Binding))
+changeDivisions chooser oid bindings picked =
+  fmap sequence . flip Map.traverseWithKey picked $ \slot new ->
+    case Binding.Type.division =<< Map.lookup slot bindings of
+      Nothing -> pure (Just (Binding.toRecipients new))
+      Just division -> do
+        let olds = Map.toList division
+            news = Set.toList new
+            dividedAs parts = Just ((Binding.toRecipients new) {Binding.Type.division = Just parts})
+            leftOver x y = case (filter (/= x) (fmap fst olds), filter (/= y) news) of
+              ([o], [m]) -> Recipient.sameReferent o m
+              _ -> False
+            canTake y = Set.fromList [part | (x, part) <- olds, not (Recipient.sameReferent x y), not (leftOver x y)]
+            single s = case Set.toList s of
+              [part] -> Just part
+              _ -> Nothing
+            lone answer part = case (Map.keys (Map.filter (== part) division), Map.keys (Map.filter (== part) answer)) of
+              ([x], [y]) -> Recipient.sameReferent x y
+              _ -> False
+            carried answer = not (any (lone answer) (Map.elems division))
+        case (length olds == length news, traverse (single . canTake) news) of
+          (False, _) -> pure Nothing
+          (True, Just forced) -> pure (dividedAs (Map.fromList (zip news forced)))
+          (True, Nothing) -> case (NonEmpty.nonEmpty (List.sort (Map.elems division)), NonEmpty.nonEmpty news) of
+            (Just parts, Just added) | not (any (Set.null . canTake) news) -> do
+              gs <- State.get
+              let dividing = Dividing.Parts parts
+              answer <- Game.choose (Prompt.ChooseDivision (Decide.deciderFor chooser gs) chooser oid dividing added)
+              pure (if Target.divides dividing added answer && carried answer then dividedAs answer else Nothing)
+            _ -> pure Nothing
 
 -- Whether CR 115.7e lets `slot`'s parts change hands among the targets it
 -- already holds: two `movable` targets with different parts.

@@ -2693,6 +2693,8 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
   redirectBioshiftSpec s registry
   -- And CR 115.7a's stricter "change the target", over Deflection.
   deflectionSpec s registry
+  -- And a slot of two reusing one of its own targets, over Goblin Flectomancer.
+  flectomancerSpec s registry
   -- CR 601.2c with one legal answer: bound unasked.
   forcedTargetSpec s registry
 
@@ -3467,6 +3469,45 @@ deflectionSpec s registry =
         Spec.it s "CR 601.2c a spell targeting one object through two instances of target does not have a single target" $ do
           fealtyCast <- traverse (deflectFealty s registry) [False, True]
           Spec.assertEqWith s "CR 601.2c Deflection reaches the stack over the single-target Fealty only" fealtyCast [2, 1]
+
+-- CR 115.7a / 115.7e over Frost Breath: alice aims it at bob's Hill Giant and
+-- Grizzly Bears, then sacrifices Goblin Flectomancer to change its targets to
+-- the Bears and Llanowar Elves, the only other creature. Her answer names the
+-- Bears whether or not they are offered, so a re-aim offering only recipients
+-- outside the slot leaves the Giant tapped.
+flectomancerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+flectomancerSpec s registry =
+  Spec.it s "CR 115.7e Goblin Flectomancer moves Frost Breath's first target onto its second" $ do
+    island <- S.printingOf s registry "Island"
+    breath <- S.printingOf s registry "Frost Breath"
+    flectomancer <- S.printingOf s registry "Goblin Flectomancer"
+    giant <- S.printingOf s registry "Hill Giant"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    elves <- S.printingOf s registry "Llanowar Elves"
+    let (withBreath, breathId) = S.handOne breath (S.landsFor island S.alice 3 S.threePlayerGame)
+        (flectomancerId, g1) = S.addPermanent flectomancer S.alice withBreath
+        (giantId, g2) = S.addPermanent giant S.bob g1
+        (bearsId, g3) = S.addPermanent bears S.bob g2
+        (elvesId, board) = S.addPermanent elves S.bob g3
+        cast = S.runPure (namingCreatures [giantId, bearsId]) board (S.cast S.alice breathId)
+        tapped oid gs = fmap ((== TapState.Tapped) . Object.tapped) (Game.lookupObject oid gs)
+    case (topOfStack cast, Activatable.abilitiesFor flectomancerId cast) of
+      (Just spell, [ability]) -> do
+        let activated = S.runPure (aimingAs S.alice (Recipient.ToObject spell)) cast (Activate.activateAbility S.alice flectomancerId ability)
+            changed = S.runPure (namingCreatures [bearsId, elvesId]) activated Stack.resolveTop
+            after = S.runPure S.identityAnswer changed Stack.resolveTop
+        -- THE GAMEPLAY ASSERTION.
+        Spec.assertEqWith s "CR 115.7e Frost Breath tapped the Bears and the Elves, not the Giant" (traverse (`tapped` after) [giantId, bearsId, elvesId]) (Just [False, True, True])
+      _ -> Spec.assertFailure s "Frost Breath should be on the stack and Goblin Flectomancer hold one ability"
+
+-- Every target slot answered with exactly `ids`' creatures, offered or not, and
+-- every "may" taken.
+namingCreatures :: [ObjectId.ObjectId] -> Prompt.Prompt r -> r
+namingCreatures ids p = case p of
+  Prompt.AnnounceTargets _ _ _ offers -> fmap (const (Natural.length ids)) offers
+  Prompt.ChooseTargets _ _ _ asked -> fmap (const (Set.fromList (fmap Recipient.ToCreature ids))) asked
+  Prompt.ChooseOptional {} -> OptionalDecision.Exercises
+  _ -> S.identityAnswer p
 
 -- bob's answer to Deflection's re-aim: the Piker back whenever it is offered,
 -- otherwise the SECOND other creature (carol's Elves), filtered out of the offer.
