@@ -1206,7 +1206,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
   -- two sides are set intersection, so CR 201.4g's interchangeable names and CR
   -- 709.4a's two-named objects each fall out.
   Spec.describe s "HasChosenName" $ do
-    let byChooser ns = self {Filter.sourceChosenNames = Map.fromList (zip (fmap PlayerId.MkPlayerId [0 ..]) (fmap (CardName.MkCardName . Text.pack) ns))}
+    let byChooser ns = self {Filter.sourceChosenNames = Map.fromList (zip (fmap PlayerId.MkPlayerId [0 ..]) (fmap (Set.singleton . CardName.MkCardName . Text.pack) ns))}
         named n = byChooser [n]
         called ns = blackCreature {Filter.names = Set.fromList (fmap (CardName.MkCardName . Text.pack) ns)}
         anyone = Filter.Type.HasChosenName NameChooser.AnyChooser

@@ -1,0 +1,120 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "DoubleAgenda"
+        }
+      ],
+      "name": "Summoner's Bond",
+      "oracleText": "Double agenda (Start the game with this conspiracy face down in the command zone and secretly choose two different card names. You may turn this conspiracy face up any time and reveal those names.)\nWhenever you cast a creature spell with one of the chosen names, you may search your library for a creature card with the other chosen name, reveal it, put it into your hand, then shuffle.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    {
+                      "type": "HasChosenName",
+                      "value": "AnyChooser"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Search",
+                        "value": {
+                          "destination": "RevealThenHand",
+                          "filter": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "HasChosenName",
+                                "value": "AnyChooser"
+                              },
+                              {
+                                "type": "Not",
+                                "value": {
+                                  "type": "Shares",
+                                  "value": {
+                                    "anchor": {
+                                      "type": "Bound",
+                                      "value": {
+                                        "slot": "thatSpell"
+                                      }
+                                    },
+                                    "trait": {
+                                      "type": "Name"
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "owner": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "searcher": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Conspiracy"
+        ]
+      }
+    }
+  ]
+}

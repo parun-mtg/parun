@@ -33,6 +33,14 @@
 -- name. You may turn this conspiracy face up any time and reveal that name.)
 -- Creatures you control with the chosen name have haste." -- checked against
 -- api.scryfall.com 2026-10-11, paper printing `cns`) is CR 702.106's card.
+--
+-- Summoner's Bond (Conspiracy, no mana cost; "Double agenda (Start the game
+-- with this conspiracy face down in the command zone and secretly choose two
+-- different card names. You may turn this conspiracy face up any time and
+-- reveal those names.) Whenever you cast a creature spell with one of the chosen
+-- names, you may search your library for a creature card with the other chosen
+-- name, reveal it, put it into your hand, then shuffle." -- checked against
+-- api.scryfall.com 2026-11-14, paper printing `cn2`) is CR 702.106f's card.
 module Parun.ConspiracySpec where
 
 import qualified Control.Monad.Trans.State.Strict as State
@@ -66,11 +74,14 @@ import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Facing as Facing
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
@@ -108,8 +119,8 @@ keepAnswer p = case p of
   Prompt.DeclareMulligan {} -> MulliganDecision.Keep
   _ -> S.identityAnswer p
 
-commandNames :: PlayerId.PlayerId -> GameState.GameState -> [CardName.CardName]
-commandNames pid gs = fmap (\oid -> maybe (CardName.MkCardName (Text.pack "?")) S.nameOf (Game.cardOf oid gs)) (Game.zoneMembers Zone.Command pid gs)
+zoneNames :: Zone.Zone -> PlayerId.PlayerId -> GameState.GameState -> [CardName.CardName]
+zoneNames zone pid gs = fmap (\oid -> maybe (CardName.MkCardName (Text.pack "?")) S.nameOf (Game.cardOf oid gs)) (Game.zoneMembers zone pid gs)
 
 -- What a whole-setup run asked: who declared a mulligan, in order, and the
 -- candidates of each CR 103.1c random draw.
@@ -213,7 +224,7 @@ spec s registry = Spec.describe s "Conspiracy" $ do
     mountain <- S.printingOf s registry "Mountain"
     dispatch <- S.printingOf s registry "Sentinel Dispatch"
     let with = built mountain [dispatch]
-    Spec.assertEqWith s "the conspiracy is in bob's command zone" (commandNames S.bob with) [CardName.MkCardName (Text.pack "Sentinel Dispatch")]
+    Spec.assertEqWith s "the conspiracy is in bob's command zone" (zoneNames Zone.Command S.bob with) [CardName.MkCardName (Text.pack "Sentinel Dispatch")]
     Spec.assertEqWith s "face up" (fmap (\oid -> fmap Object.facing (Game.lookupObject oid with)) (Game.zoneMembers Zone.Command S.bob with)) [Just Facing.FaceUp]
     Spec.assertEqWith s "and not among the thirty cards of his library and hand" (length (Game.zoneMembers Zone.Library S.bob with) + length (Game.zoneMembers Zone.Hand S.bob with)) 30
     Spec.assertEqWith s "alice, who brought none, has an empty command zone" (Game.zoneMembers Zone.Command S.alice with) []
@@ -240,7 +251,7 @@ spec s registry = Spec.describe s "Conspiracy" $ do
     dispatch <- S.printingOf s registry "Sentinel Dispatch"
     let played = upkeep S.bob 2 (upkeep S.alice 1 (built mountain [dispatch]))
         restarted = S.runPure keepAnswer played (Setup.restartGame S.performer Set.empty S.alice)
-    Spec.assertEqWith s "still in bob's command zone" (commandNames S.bob restarted) [CardName.MkCardName (Text.pack "Sentinel Dispatch")]
+    Spec.assertEqWith s "still in bob's command zone" (zoneNames Zone.Command S.bob restarted) [CardName.MkCardName (Text.pack "Sentinel Dispatch")]
     Spec.assertEqWith s "not shuffled into his thirty-card library" (length (Game.zoneMembers Zone.Library S.bob restarted) + length (Game.zoneMembers Zone.Hand S.bob restarted)) 30
     Spec.assertEqWith s "and the new game's first upkeep makes a Construct again" (constructsControlledBy S.bob (upkeep S.alice 1 restarted)) 1
 
@@ -363,7 +374,7 @@ spec s registry = Spec.describe s "Conspiracy" $ do
         Just agenda -> do
           Spec.assertEqWith s "CR 702.106a alice names a card for it before the first mulligan declaration (CR 315.2, 103.5)" asked [NamedBy S.alice agenda, DeclaredBy S.alice, DeclaredBy S.bob]
           Spec.assertEqWith s "it lies face down" (isFaceDown agenda gs) True
-          Spec.assertEqWith s "with her name noted (CR 702.106b)" (fmap (Map.findWithDefault Map.empty Acquisition.Own . Object.chosenNames) (Game.lookupObject agenda gs)) (Just (Map.singleton S.alice bears))
+          Spec.assertEqWith s "with her name noted (CR 702.106b)" (fmap (Map.findWithDefault Map.empty Acquisition.Own . Object.chosenNames) (Game.lookupObject agenda gs)) (Just (Map.singleton S.alice (Set.singleton bears)))
           let pc = Projection.Full.project agenda gs
           Spec.assertEqWith s "CR 315.5b it has no name" (PC.names pc) Set.empty
           Spec.assertEqWith s "and no card type" (PC.cardTypes pc) Set.empty
@@ -450,7 +461,7 @@ spec s registry = Spec.describe s "Conspiracy" $ do
               restarted = S.runPure renaming up (Setup.restartGame S.performer Set.empty S.alice)
           Spec.assertEqWith s "setup: alice turned it face up before the restart" (isFaceDown agenda up) False
           Spec.assertEqWith s "it is face down again" (isFaceDown agenda restarted) True
-          Spec.assertEqWith s "naming the new game's choice, Runeclaw Bear" (fmap (Map.findWithDefault Map.empty Acquisition.Own . Object.chosenNames) (Game.lookupObject agenda restarted)) (Just (Map.singleton S.alice runeclawName))
+          Spec.assertEqWith s "naming the new game's choice, Runeclaw Bear" (fmap (Map.findWithDefault Map.empty Acquisition.Own . Object.chosenNames) (Game.lookupObject agenda restarted)) (Just (Map.singleton S.alice (Set.singleton runeclawName)))
 
     -- CR 613.7j: turned face up, the conspiracy takes a new timestamp, so its
     -- grant is later than a Humility that entered after the game began, and the
@@ -475,6 +486,99 @@ spec s registry = Spec.describe s "Conspiracy" $ do
               }
       Spec.assertEqWith s "CR 613.7j the 1/1 Grizzly Bears attack the turn they arrive" (S.lifeOf S.bob (attackingWithAll (withFlip main))) (Just 19)
       Spec.assertEqWith s "and without the action they do not" (S.lifeOf S.bob (attackingWithAll (S.runPure S.identityAnswer main Engine.priorityLoop))) (Just 20)
+
+  -- CR 702.106f: alice brings Summoner's Bond and names Grizzly Bears, then
+  -- Runeclaw Bear, as it goes into her command zone. Every board is the whole
+  -- of Setup.newGame, with Forests for her deck.
+  Spec.describe s "Summoner's Bond" $ do
+    Spec.it s "CR 702.106f double agenda asks for two different names before any mulligan" $ do
+      forest <- S.printingOf s registry "Forest"
+      bond <- S.printingOf s registry "Summoner's Bond"
+      let (gs, restrictions) = bonded forest bond
+      case commandCard S.alice gs of
+        Nothing -> Spec.assertFailure s "setup: Summoner's Bond is not alone in alice's command zone"
+        Just agenda -> do
+          Spec.assertEqWith s "it lies face down" (isFaceDown agenda gs) True
+          Spec.assertEqWith s "alice was asked twice, the second time refusing her first name" restrictions [Filter.And [], Filter.And [Filter.Not (Filter.HasName bears)]]
+          Spec.assertEqWith s "with both names noted under her (CR 702.106b)" (fmap (Map.findWithDefault Map.empty Acquisition.Own . Object.chosenNames) (Game.lookupObject agenda gs)) (Just (Map.singleton S.alice (Set.fromList [bears, runeclawName])))
+
+    -- The plan's proof. Alice's library holds a Grizzly Bears, a Runeclaw Bear
+    -- and a Llanowar Elves; she casts one creature from her hand, and the search
+    -- offers only a card with the other chosen name.
+    Spec.it s "CR 702.106f casting a creature with one chosen name finds a creature with the other" $ do
+      forest <- S.printingOf s registry "Forest"
+      bond <- S.printingOf s registry "Summoner's Bond"
+      grizzly <- S.printingOf s registry "Grizzly Bears"
+      runeclaw <- S.printingOf s registry "Runeclaw Bear"
+      elves <- S.printingOf s registry "Llanowar Elves"
+      let (setUp, _) = bonded forest bond
+          (libGrizzly, g1) = S.addObjectIn Zone.Library grizzly S.alice setUp
+          (libRuneclaw, g2) = S.addObjectIn Zone.Library runeclaw S.alice g1
+          (_, g3) = S.addObjectIn Zone.Library elves S.alice g2
+          (_, g4) = S.addPermanent forest S.alice g3
+          (_, g5) = S.addPermanent forest S.alice g4
+          (handGrizzly, g6) = S.addObjectIn Zone.Hand grizzly S.alice g5
+          (handRuneclaw, g7) = S.addObjectIn Zone.Hand runeclaw S.alice g6
+          (handElves, board) = S.addObjectIn Zone.Hand elves S.alice g7
+          main =
+            board
+              { GameState.turn =
+                  (GameState.turn board)
+                    { TurnRegisters.activePlayer = S.alice,
+                      TurnRegisters.phase = Phase.PrecombatMain,
+                      TurnRegisters.priority = Just S.alice,
+                      TurnRegisters.passed = Set.empty
+                    },
+                GameState.restartSignal = RestartSignal.Playing
+              }
+      case commandCard S.alice setUp of
+        Nothing -> Spec.assertFailure s "setup: Summoner's Bond is not alone in alice's command zone"
+        Just agenda -> do
+          let up = S.runPure S.identityAnswer main (Conspiracy.turnFaceUp S.alice agenda)
+              -- CR 400.7: the card found is a new object in her hand.
+              inHand name gs = length (filter (== name) (zoneNames Zone.Hand S.alice gs))
+              (searchedGrizzly, afterGrizzly) = casting handGrizzly up
+              (searchedRuneclaw, afterRuneclaw) = casting handRuneclaw up
+              (searchedElves, _) = casting handElves up
+              (searchedDown, afterDown) = casting handGrizzly main
+          Spec.assertEqWith s "casting Grizzly Bears offers the Runeclaw Bear alone" searchedGrizzly [[libRuneclaw]]
+          Spec.assertEqWith s "which joins the Runeclaw Bear in her hand" (inHand runeclawName afterGrizzly) 2
+          Spec.assertEqWith s "casting Runeclaw Bear offers the Grizzly Bears alone" searchedRuneclaw [[libGrizzly]]
+          Spec.assertEqWith s "which joins the Grizzly Bears in her hand" (inHand bears afterRuneclaw) 2
+          Spec.assertEqWith s "casting Llanowar Elves, no chosen name, searches nothing" searchedElves []
+          Spec.assertEqWith s "CR 315.5b left face down, it has no ability and searches nothing" searchedDown []
+          Spec.assertEqWith s "and the Runeclaw Bear stays in her library" (inHand runeclawName afterDown) 1
+
+-- Setup.newGame with alice bringing Summoner's Bond and a deck of this land,
+-- bob a deck of it alone, naming Grizzly Bears then Runeclaw Bear for CR
+-- 702.106f's choices, with each choice's restriction in order.
+bonded :: Printing.Printing -> Printing.Printing -> (GameState.GameState, [Filter.Filter Keyword.Keyword])
+bonded land bond =
+  let naming :: Prompt.Prompt r -> State.State [Filter.Filter Keyword.Keyword] r
+      naming p = case p of
+        Prompt.ChooseCardName _ _ _ restriction _ -> do
+          asked <- State.get
+          State.put (asked <> [restriction])
+          pure (if null asked then bears else runeclawName)
+        _ -> pure (keepAnswer p)
+      matchup = (S.alice, deckOf land [bond]) NonEmpty.:| [(S.bob, deckOf land [])]
+      ((_, gs), restrictions) = State.runState (Engine.runGame naming (Setup.emptyGame (fmap fst matchup)) (Setup.newGame S.performer matchup)) []
+   in (gs, restrictions)
+
+-- Alice casts this card off her hand and both players pass until the stack is
+-- empty, taking every optional and the first card each search offers; with
+-- what each search offered.
+casting :: ObjectId -> GameState.GameState -> ([[ObjectId]], GameState.GameState)
+casting oid gs =
+  let answer :: Prompt.Prompt r -> State.State [[ObjectId]] r
+      answer p = case p of
+        Prompt.ChooseOptional {} -> pure OptionalDecision.Exercises
+        Prompt.Search _ _ offered cap -> do
+          State.modify' (<> [offered])
+          pure (List.genericTake cap offered)
+        _ -> pure (S.identityAnswer p)
+      ((_, after), searched) = State.runState (Engine.runGame answer gs (S.cast S.alice oid >> Engine.priorityLoop)) []
+   in (searched, after)
 
 runeclawName :: CardName.CardName
 runeclawName = CardName.MkCardName (Text.pack "Runeclaw Bear")

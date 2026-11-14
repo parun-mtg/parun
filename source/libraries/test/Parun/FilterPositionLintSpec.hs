@@ -741,8 +741,8 @@ hasChosenNameTag = Text.pack "HasChosenName"
 -- Parun.Engine.Event.Match reads through Projection.sourceContext -- and how many
 -- anywhere else. The second number is the offence; the first is what Ancient
 -- Vendetta, Predict, Petra Sphinx, Conundrum Sphinx, Vexing Arcanix, Null
--- Chamber, Conjurer's Ban, Runed Halo, Declaration of Naught, Immediate Action
--- and Booby Trap legitimately have.
+-- Chamber, Conjurer's Ban, Runed Halo, Declaration of Naught, Immediate Action,
+-- Booby Trap and Summoner's Bond legitimately have.
 --
 -- SourceHostFramed and not `hostFramed`: since #3320 that tag means an effect's
 -- ObjectRef and nothing else, which is what makes it admissible here. The
@@ -1638,6 +1638,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Alpine Moon", 1), -- its static ability's affected set
         ("Vexing Arcanix", 3), -- its two moves' ObjectRefs and its damage clause's gate
         ("Booby Trap", 1), -- its trigger condition
+        ("Summoner's Bond", 2), -- its trigger condition and its own search
         ("The Clone Saga", 1), -- its delayed trigger's condition, read after the Saga is gone
         ("Pithing Needle", 1), -- its activation prohibition's affected set
         ("Phyrexian Revoker", 1), -- its activation prohibition's affected set
@@ -1750,6 +1751,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Hour of Glory", 1), -- its hand sweep's filter
         ("Grim Reminder", 1), -- its life loss amount's Count filter
         ("Haunting Echoes", 1), -- its search's filter
+        ("Summoner's Bond", 1), -- its search's filter, against its trigger's spell
         ("Doubling Chant", 1), -- its search's filter, against its loop's member
         ("Shimian Specter", 1), -- its search's filter, against its loop's member
         ("Legion's End", 3), -- its battlefield and graveyard exiles' objects and its hand sweep's filter

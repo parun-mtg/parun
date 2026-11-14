@@ -87,7 +87,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.copiable = ProjectedCharacteristicsSpec.minimalCharacteristics,
           LastKnown.attached = Set.singleton (ObjectId.MkObjectId 9),
           LastKnown.host = Just (ObjectId.MkObjectId 11),
-          LastKnown.chosenNames = Map.singleton Acquisition.Own (Map.singleton (PlayerId.MkPlayerId 8) (CardName.MkCardName (Text.pack "Goblin Piker"))),
+          LastKnown.chosenNames = Map.singleton Acquisition.Own (Map.singleton (PlayerId.MkPlayerId 8) (Set.singleton (CardName.MkCardName (Text.pack "Goblin Piker")))),
           LastKnown.chosenPlayers = Map.singleton (Acquisition.Copied (Timestamp.MkTimestamp 5)) (Map.singleton (PlayerChoice.Promised Gift.Food (KeywordInstance.Own 1)) (PlayerId.MkPlayerId 3)),
           LastKnown.chosenColors = Map.singleton Acquisition.Own (Set.singleton Color.Green),
           LastKnown.chosenSubtype = Map.singleton (Acquisition.Copied (Timestamp.MkTimestamp 6)) Subtype.Goblin,
@@ -121,7 +121,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           <> ",\"copiable\":"
           <> minimalJson
           <> ",\"attached\":[9],\"host\":11"
-          <> ",\"chosenNames\":[{\"key\":{\"type\":\"Own\"},\"value\":{\"8\":\"Goblin Piker\"}}],\"chosenPlayers\":[{\"key\":{\"type\":\"Copied\",\"value\":5},\"value\":[{\"key\":{\"type\":\"Promised\",\"value\":[{\"type\":\"Food\"},{\"type\":\"Own\",\"value\":1}]},\"value\":3}]}],\"chosenColors\":[{\"key\":{\"type\":\"Own\"},\"value\":[\"Green\"]}],\"chosenSubtype\":[{\"key\":{\"type\":\"Copied\",\"value\":6},\"value\":\"Goblin\"}],\"chosenCardType\":[{\"key\":{\"type\":\"Own\"},\"value\":\"Creature\"}],\"chosenNumber\":[{\"key\":{\"type\":\"Own\"},\"value\":5}],\"acquisition\":{\"type\":\"Copied\",\"value\":5},\"attacking\":false,\"attackTarget\":null,\"blocking\":true,\"protector\":7"
+          <> ",\"chosenNames\":[{\"key\":{\"type\":\"Own\"},\"value\":{\"8\":[\"Goblin Piker\"]}}],\"chosenPlayers\":[{\"key\":{\"type\":\"Copied\",\"value\":5},\"value\":[{\"key\":{\"type\":\"Promised\",\"value\":[{\"type\":\"Food\"},{\"type\":\"Own\",\"value\":1}]},\"value\":3}]}],\"chosenColors\":[{\"key\":{\"type\":\"Own\"},\"value\":[\"Green\"]}],\"chosenSubtype\":[{\"key\":{\"type\":\"Copied\",\"value\":6},\"value\":\"Goblin\"}],\"chosenCardType\":[{\"key\":{\"type\":\"Own\"},\"value\":\"Creature\"}],\"chosenNumber\":[{\"key\":{\"type\":\"Own\"},\"value\":5}],\"acquisition\":{\"type\":\"Copied\",\"value\":5},\"attacking\":false,\"attackTarget\":null,\"blocking\":true,\"protector\":7"
           <> ",\"paidCosts\":[{\"key\":{\"type\":\"Offspring\",\"value\":{\"mana\":[{\"type\":\"Generic\",\"value\":2}]}},\"value\":[{\"key\":{\"type\":\"Own\",\"value\":1},\"value\":1}]}]"
           <> ",\"castUsing\":{\"type\":\"Flash\"}"
           <> ",\"prototyped\":true"

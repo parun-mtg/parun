@@ -1669,7 +1669,7 @@ data Context = MkContext
     -- position but a static ability's affected set (Immediate Action), which is
     -- what Parun.CardSpec's StandingHostFramed exists to keep apart from an
     -- effect's own ObjectRef.
-    sourceChosenNames :: Map.Map PlayerId.PlayerId CardName.CardName,
+    sourceChosenNames :: Map.Map PlayerId.PlayerId (Set.Set CardName.CardName),
     -- CR 702.16k: the player chosen (CR 614.1c) by the permanent whose
     -- PROTECTION ability wrote the filter being matched, for the one atom that
     -- asks after them (OfChosenPlayer, True-Name Nemesis). Supplied by the
@@ -2409,9 +2409,9 @@ matches context view predicate = case predicate of
   -- no owner, or whose owner chose nothing, answers False the same way.
   Filter.HasChosenName chooser ->
     let chosen = case chooser of
-          NameChooser.AnyChooser -> Map.elems (sourceChosenNames context)
-          NameChooser.CandidateOwner -> Maybe.maybeToList (owner view >>= \pid -> Map.lookup pid (sourceChosenNames context))
-     in any (`Set.member` names view) chosen
+          NameChooser.AnyChooser -> Set.unions (Map.elems (sourceChosenNames context))
+          NameChooser.CandidateOwner -> Maybe.fromMaybe Set.empty (owner view >>= \pid -> Map.lookup pid (sourceChosenNames context))
+     in not (Set.disjoint chosen (names view))
   -- CR 105.2 read off the PROJECTION, the HasColor arm above with the colour
   -- arriving on the Context: whatever layer 5 left the candidate wearing is what
   -- CR 607.2d's link is compared against, so Painter's Servant's blue reaches this

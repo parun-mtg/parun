@@ -49,7 +49,7 @@ codec = Fields.object $ do
   copiable <- Fields.required "copiable" ProjectedCharacteristics.codec LastKnown.copiable
   attached <- Fields.required "attached" (Common.set ObjectId.codec) LastKnown.attached
   host <- Fields.defaulted "host" Nothing (Common.maybe ObjectId.codec) LastKnown.host
-  chosenNames <- Fields.required "chosenNames" (Common.keyedList (Common.keyValue Acquisition.codec (Common.naturalMap PlayerId.codec CardName.codec))) LastKnown.chosenNames
+  chosenNames <- Fields.required "chosenNames" (Common.keyedList (Common.keyValue Acquisition.codec (Common.naturalMap PlayerId.codec (Common.set CardName.codec)))) LastKnown.chosenNames
   chosenPlayers <- Fields.defaulted "chosenPlayers" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.keyedList (Common.keyValue PlayerChoice.codec PlayerId.codec)))) LastKnown.chosenPlayers
   chosenColors <- Fields.defaulted "chosenColors" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec (Common.set Color.codec))) LastKnown.chosenColors
   chosenSubtype <- Fields.defaulted "chosenSubtype" Map.empty (Common.keyedList (Common.keyValue Acquisition.codec Subtype.codec)) LastKnown.chosenSubtype

@@ -1,15 +1,11 @@
 -- | CR 315, conspiracy cards: which objects and faces are conspiracies, the
 -- classification CR 315.2's placement, CR 315.3's hold on the command zone and
 -- CR 113.6p's functioning there all read; and CR 702.106's hidden agenda, which
--- puts one there face down.
+-- puts one there face down, with CR 702.106f's double agenda.
 --
 -- A card type and not a format, Parun.Engine.Vanguard's posture: every rule in
 -- CR 315 is stated of a conspiracy CARD, so no GameSettings field says "this is a
 -- Conspiracy Draft game".
---
--- WHAT IS NOT IMPLEMENTED:
---
---   * CR 702.106f's double agenda (#5014).
 module Parun.Engine.Conspiracy where
 
 import qualified Control.Monad as Monad
@@ -68,19 +64,36 @@ isFaceDownConspiracy oid gs =
 
 -- | CR 702.106a / 702.106b: "as you put this conspiracy card into the command
 -- zone, turn it face down and secretly choose a card name", for a conspiracy
--- its owner has just put there (CR 315.2). The name is written to
+-- its owner has just put there (CR 315.2); CR 702.106f's double agenda chooses
+-- two different names the same way. The names are written to
 -- Object.chosenNames, which Filter.HasChosenName reads off the source, so CR
 -- 702.106d's linked ability sees this choice and no other.
 --
--- The name is in no seat's view (Parun.Engine.Driver.seated), so a later chooser's
--- answerer cannot read an earlier player's.
+-- The names are in no seat's view (Parun.Engine.Driver.seated), so a later
+-- chooser's answerer cannot read an earlier player's, nor any seat how many
+-- there are (CR 702.106f; Parun.PlayerViewSpec).
 hideAgenda :: PlayerId -> ObjectId -> Game ()
 hideAgenda pid oid = do
   gs <- State.get
-  Monad.when (maybe False (Map.member Keyword.HiddenAgenda . Face.keywords) (Game.faceOf oid gs)) $ do
-    State.modify' (Game.turnFacing (Facing.faceDown FaceDownReason.HiddenAgenda) oid)
-    name <- Game.choose (Prompt.ChooseCardName (Decide.deciderFor pid gs) pid oid (Filter.And []) Seq.empty) >>= Game.lookUpChosenName
-    State.modify' $ \g -> Game.recordChoice Chosen.Names (Game.acquisitionOf oid g) (const (Just (Map.singleton pid name))) oid g
+  case Game.faceOf oid gs >>= agendaNames . Face.keywords of
+    Nothing -> pure ()
+    Just count -> do
+      State.modify' (Game.turnFacing (Facing.faceDown FaceDownReason.HiddenAgenda) oid)
+      let decider = Decide.deciderFor pid gs
+          -- CR 702.106f's "two different": each later name excludes the earlier.
+          ask chosen _ = do
+            name <- Game.choose (Prompt.ChooseCardName decider pid oid (Filter.And (fmap (Filter.Not . Filter.HasName) (Set.toList chosen))) Seq.empty) >>= Game.lookUpChosenName
+            pure (Set.insert name chosen)
+      names <- Monad.foldM ask Set.empty [1 .. count]
+      State.modify' $ \g -> Game.recordChoice Chosen.Names (Game.acquisitionOf oid g) (const (Just (Map.singleton pid names))) oid g
+
+-- | How many names a face's agenda chooses: one for hidden agenda (CR
+-- 702.106a), two for double agenda (CR 702.106f), Nothing for neither.
+agendaNames :: Map.Map Keyword.Keyword a -> Maybe Natural
+agendaNames keywords
+  | Map.member Keyword.DoubleAgenda keywords = Just 2
+  | Map.member Keyword.HiddenAgenda keywords = Just 1
+  | otherwise = Nothing
 
 -- | CR 702.106c / 116.2j: the face-down conspiracies this player may turn face
 -- up now. CR 315.6 makes the owner the controller, so the owner-indexed command

@@ -269,9 +269,10 @@ data Object = MkObject
     -- (Immediate Action) -- and every reader asks the effect's SOURCE,
     -- chosenColors's direction.
     --
-    -- A name PER CHOOSER: Null Chamber's prohibition asks whether a name is any
+    -- Names PER CHOOSER: Null Chamber's prohibition asks whether a name is any
     -- chooser's, Conundrum Sphinx's "the name they chose" asks after one
-    -- player's (Filter.HasChosenName's NameChooser). Empty for everything that
+    -- player's (Filter.HasChosenName's NameChooser). One each, but two for CR
+    -- 702.106f's double agenda (Summoner's Bond). Empty for everything that
     -- never chose, which matches no card at all (CR 201.2a). Not a copiable value
     -- and per-incarnation, for chosenColors's reasons.
     --
@@ -279,7 +280,7 @@ data Object = MkObject
     -- for a PERMANENT that chooses on two separate resolutions: the later one is
     -- the whole of what "the chosen name" then means (Petra Sphinx activated
     -- twice, Parun.ResolveSpec).
-    chosenNames :: Map.Map Acquisition.Acquisition (Map.Map PlayerId.PlayerId CardName.CardName),
+    chosenNames :: Map.Map Acquisition.Acquisition (Map.Map PlayerId.PlayerId (Set.Set CardName.CardName)),
     -- | CR 614.1c / 702.174a: the players chosen for this object, keyed by which
     -- choice -- the one its controller made as it entered (Stuffy Doll), and the
     -- opponent each gift instance's cost promised (Scrapshooter), one per paid

@@ -1216,11 +1216,11 @@ spec s registry = Spec.describe s "Client" $ do
           Left _ -> Nothing
         runs = fmap chosen [1 .. 32 :: Word.Word32]
         allowed = Set.fromList (fmap CardName.MkCardName [Text.pack "Goblin Piker", Text.pack "Cancel"])
-        namedBy pid = Set.fromList [name | Just (names, _) <- runs, Just name <- [Map.lookup pid names]]
+        namedBy pid = Set.unions [name | Just (names, _) <- runs, Just name <- [Map.lookup pid names]]
     Spec.assertBool s (all Maybe.isJust runs) "Null Chamber reached the battlefield every time"
     Spec.assertEqWith s "alice named each allowed name, and only those" (namedBy S.alice) allowed
     Spec.assertEqWith s "bob named each allowed name, and only those" (namedBy S.bob) allowed
-    Spec.assertBool s (and [all (`Map.member` faces) (Map.elems names) | Just (names, faces) <- runs]) "CR 108.1 each name was looked up in the reference"
+    Spec.assertBool s (and [all (`Map.member` faces) (Set.unions (Map.elems names)) | Just (names, faces) <- runs]) "CR 108.1 each name was looked up in the reference"
 
   Spec.it s "CR 701.21a a sacrifice cost is offered through the client as a numbered list, and the number picks what is sacrificed" $ do
     gs <- started s registry

@@ -18,7 +18,7 @@ import qualified Parun.Types.SourceChoices as SourceChoices
 
 codec :: Codec.Codec SourceChoices.SourceChoices
 codec = Fields.object $ do
-  names <- Fields.defaulted "names" Map.empty (Common.naturalMap PlayerId.codec CardName.codec) SourceChoices.names
+  names <- Fields.defaulted "names" Map.empty (Common.naturalMap PlayerId.codec (Common.set CardName.codec)) SourceChoices.names
   colors <- Fields.defaulted "colors" Set.empty (Common.set Color.codec) SourceChoices.colors
   subtype <- Fields.defaulted "subtype" Nothing (Common.maybe Subtype.codec) SourceChoices.subtype
   cardType <- Fields.defaulted "cardType" Nothing (Common.maybe CardType.codec) SourceChoices.cardType

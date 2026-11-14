@@ -1331,7 +1331,7 @@ offerSpec s registry = Spec.describe s "Offer" $ do
 -- Put chosen card names, keyed by chooser, onto a permanent (CR 201.4 / 614.1c).
 withChosenNames :: ObjectId.ObjectId -> Map.Map PlayerId.PlayerId CardName.CardName -> GameState.GameState -> GameState.GameState
 withChosenNames oid names gs =
-  gs {GameState.objects = Map.adjust (\o -> o {Object.chosenNames = Map.singleton Acquisition.Own names}) oid (GameState.objects gs)}
+  gs {GameState.objects = Map.adjust (\o -> o {Object.chosenNames = Map.singleton Acquisition.Own (fmap Set.singleton names)}) oid (GameState.objects gs)}
 
 -- CR 708.2a / 708.4: what the face-down spell and the permanent it becomes are.
 castSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

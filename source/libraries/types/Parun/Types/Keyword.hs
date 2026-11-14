@@ -498,6 +498,9 @@ data Keyword
     -- it face down and secretly choose a card name", read by
     -- Parun.Engine.Setup.createDeck.
     HiddenAgenda
+  | -- | 702.106f: hidden agenda choosing two different card names rather than
+    -- one, read by Parun.Engine.Conspiracy.hideAgenda.
+    DoubleAgenda
   | -- | 702.107a: "[Cost], {T}: Put a +1/+1 counter on this creature. Activate
     -- only as a sorcery."
     Outlast (Cost.Cost Keyword)

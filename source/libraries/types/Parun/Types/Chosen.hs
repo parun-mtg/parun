@@ -22,8 +22,8 @@ data Chosen a where
   Subtype :: Chosen Subtype.Subtype
   -- | CR 205.2a: the chosen card type (Object.chosenCardType).
   CardType :: Chosen CardType.CardType
-  -- | CR 201.4: the chosen card names, by chooser (Object.chosenNames).
-  Names :: Chosen (Map.Map PlayerId.PlayerId CardName.CardName)
+  -- | CR 201.4 / 702.106f: the chosen card names, by chooser (Object.chosenNames).
+  Names :: Chosen (Map.Map PlayerId.PlayerId (Set.Set CardName.CardName))
   -- | CR 614.1c / 702.174a: the chosen players, by choice (Object.chosenPlayers).
   Players :: Chosen (Map.Map PlayerChoice.PlayerChoice PlayerId.PlayerId)
   -- | CR 607.2d / 607.2g: the last chosen number, or the life paid as it entered (Object.chosenNumber).
