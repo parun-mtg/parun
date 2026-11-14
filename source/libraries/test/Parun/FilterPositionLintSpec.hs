@@ -50,6 +50,8 @@ import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.AttachTarget as AttachTarget
 import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCostScope as AttackCostScope
+import qualified Parun.Types.AttackTrigger as AttackTrigger
+import qualified Parun.Types.AttackerTrigger as AttackerTrigger
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BoundMeasure as BoundMeasure
@@ -2933,21 +2935,25 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- player, and three callers fill Filter.Context.defendingPlayers:
   -- Parun.Engine.Target.admittedGiven for a target slot (CR 702.39a's provoke,
   -- Sensational Spider-Man, Yare), Parun.Engine.CombatRestriction.inForce for a
-  -- CR 508.1c gate (Armored Galleon) and Parun.Engine.SourceContext.framedWith,
+  -- CR 508.1c gate (Armored Galleon) and Parun.Engine.SourceContext.withDefendingPlayer,
   -- which answers only for a source that is itself attacking or was removed from
-  -- combat, so a static ability affecting just its source (Gaea's Liege). Any OTHER
-  -- position -- an Aura's or anthem's static, a search filter, a triggered
-  -- ability's condition -- goes unproved and may be a silent False. This is the lint
+  -- combat, so a static ability affecting just its source (Gaea's Liege) and the
+  -- source's own "whenever this creature attacks" ability (Swathcutter Giant). Any
+  -- OTHER position -- an Aura's or anthem's static, a search filter, another
+  -- triggered ability -- goes unproved and may be a silent False. This is the lint
   -- that keeps that true: what it sweeps is the atom outside a combat restriction
-  -- and such a static, by re-encoding each face with those dropped, and outside a
+  -- and those abilities, by re-encoding each face with those dropped, and outside a
   -- mode's target slot, by subtracting what cardFilters finds there.
-  Spec.it s "CR 508.5 no card writes ControlledByRole Defending outside a combat restriction, a static ability on its own source or a target slot" $ do
+  Spec.it s "CR 508.5 no card writes ControlledByRole Defending outside a combat restriction, an ability of its own attacking source or a target slot" $ do
     ps <- S.allPrintings s corpus
     let needle = atomJson (Filter.Type.ControlledByRole TurnRole.Defending)
         atoms c = occurrences needle (Codec.encode (Face.Codec.codec Card.codec) c)
         inSlots c = sum [occurrences needle (atomJson f) | (InTargetSlot, f) <- cardFilters c]
         onItsSource ability = StaticAbility.affected ability == Affected.Matching Filter.Type.IsSource
-        elsewhere c = let bare = c {Face.combatRestrictions = [], Face.staticAbilities = filter (not . onItsSource) (Face.staticAbilities c)} in atoms bare - inSlots bare
+        onItsAttack ability = case TriggeredAbility.condition ability of
+          TriggerCondition.Attacks (AttackTrigger.Attacker trigger) -> AttackerTrigger.creature trigger == Filter.Type.IsSource
+          _ -> False
+        elsewhere c = let bare = c {Face.combatRestrictions = [], Face.staticAbilities = filter (not . onItsSource) (Face.staticAbilities c), Face.triggeredAbilities = filter (not . onItsAttack) (Face.triggeredAbilities c)} in atoms bare - inSlots bare
         offenders = filter (anyFace ((/= 0) . elsewhere) . Printing.card) ps
     Spec.assertEqWith s "the atom is the engine's alone outside a gate" (fmap (S.nameOf . Printing.card) offenders) []
     -- Four legs of anti-vacuity, because the narrowing above could hide a real
@@ -2984,6 +2990,17 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (atoms liegeFace /= 0) "the Liege's statics carry the atom"
     Spec.assertEqWith s "and on their source they are accepted" (elsewhere liegeFace) 0
     Spec.assertEqWith s "and as an anthem they are not" (elsewhere anthem) (atoms liegeFace)
+    -- Five: Swathcutter Giant's attack trigger carries the atom and is accepted,
+    -- and the same ability on any creature's attack is not.
+    giant <- S.printingOf s registry "Swathcutter Giant"
+    let giantFace = S.combinedFace giant
+        anyAttacker ability = case TriggeredAbility.condition ability of
+          TriggerCondition.Attacks (AttackTrigger.Attacker trigger) -> ability {TriggeredAbility.condition = TriggerCondition.Attacks (AttackTrigger.Attacker trigger {AttackerTrigger.creature = Filter.Type.HasCardType CardType.Creature})}
+          _ -> ability
+        watcher = giantFace {Face.triggeredAbilities = fmap anyAttacker (Face.triggeredAbilities giantFace)}
+    Spec.assertBool s (atoms giantFace /= 0) "the Giant's trigger carries the atom"
+    Spec.assertEqWith s "and on its own attack it is accepted" (elsewhere giantFace) 0
+    Spec.assertEqWith s "and on any creature's attack it is not" (elsewhere watcher) (atoms giantFace)
   -- CR 603.2's baked half is in Modification.SetController's position rather
   -- than CR 702.39a's: a PlayerId that only a resolution can know, round-tripped
   -- by a total codec, so nothing but this keeps card JSON from naming a seat

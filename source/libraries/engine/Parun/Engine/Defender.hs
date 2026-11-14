@@ -77,8 +77,9 @@ designatedPlayers = Turn.roleHolders TurnRole.Defending
 -- Projection.viewWithLastKnownAnywhere, which is what CR 608.2h's last known
 -- information asks for once CR 704.5i has buried the planeswalker: reading the
 -- object itself would answer nobody, and reading its owner the wrong seat.
--- Parun.Engine.SourceContext.framedWith, below Projection, passes no lookup and
--- reads the seat a declared attack records (playerOfAttacker).
+-- So does Projection.framedBy for a source's own ability; the CR 613 layer fold,
+-- below Projection, frames through Parun.Engine.SourceContext.framedWith with no
+-- lookup and reads the seat a declared attack records (playerOfAttacker).
 -- Parun.CombatEffectSpec's LastKnownDefendingPlayer group is those two falsifiers.
 --
 -- CR 506.4 is why the lookup serves CR 802.2a's PRESENT tense on its own: a

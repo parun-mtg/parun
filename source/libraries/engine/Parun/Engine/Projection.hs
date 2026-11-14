@@ -1566,14 +1566,19 @@ sourceContext :: GameState -> Maybe PlayerId.PlayerId -> ObjectId -> Filter.Cont
 sourceContext gs perspective source =
   framedBy source gs (Filter.contextIn gs perspective (Just source))
 
--- SourceContext.framedBy plus withCharacteristicsOf: every source-derived field.
+-- SourceContext.framedBy plus withCharacteristicsOf and the defending player
+-- through the projection (SourceContext.withDefendingPlayer): every
+-- source-derived field.
 framedBy :: ObjectId -> GameState -> Filter.Context -> Filter.Context
-framedBy source gs = withCharacteristicsOf source gs . SourceContext.framedBy source gs
+framedBy source gs = framedWith (SourceContext.choicesOf (Game.acquisitionOf source gs) source gs) source gs
 
--- SourceContext.framedWith plus withCharacteristicsOf: the choices supplied (a
--- stored effect's, CR 608.2h), everything else read off the board.
+-- framedBy with the choices supplied (a stored effect's, CR 608.2h),
+-- everything else read off the board.
 framedWith :: SourceChoices.SourceChoices -> ObjectId -> GameState -> Filter.Context -> Filter.Context
-framedWith choices source gs = withCharacteristicsOf source gs . SourceContext.framedWith choices source gs
+framedWith choices source gs =
+  withCharacteristicsOf source gs
+    . SourceContext.withDefendingPlayer viewWithLastKnownAnywhere source gs
+    . SourceContext.framedWith choices source gs
 
 -- `context` with `object`'s projected power, toughness, mana value, colours and
 -- names as the source's (CR 613), through its last known information once it
