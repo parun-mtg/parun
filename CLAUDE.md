@@ -116,6 +116,11 @@ to agents as written. What it doesn't say:
 - Mention no one: everything is posted as the owner, the only person on the
   project. Put any `@` or `#` not meant to link in a code span.
 
+- A change under `data/cards/` runs `script/with-build-lock.sh cabal run -v0
+  parun -- oracle`, which syncs the `data/oracle-unrendered/` markers, then the
+  tests `-p Parun.Ingest -p Parun.Engine.Card.Lint` before the push: the
+  pool-wide checks no scenario reaches, which turn CI red most often.
+
 - Mark the PR ready once the self-review's fixes are pushed and the tests
   your change reaches are green, report it, and stop: don't wait for CI,
   don't start the next unit.

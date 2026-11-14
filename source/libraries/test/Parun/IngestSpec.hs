@@ -56,7 +56,8 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
   -- The check above passes over a card that does not render, so each card
   -- that does not has an empty marker, data/oracle-unrendered/SLUG.txt, one
   -- path per card so that parallel branches cannot conflict: a card that
-  -- stops rendering fails here, and one that starts loses its marker. Not
+  -- stops rendering fails here, and one that starts loses its marker;
+  -- `parun oracle` syncs them. Not
   -- implemented: checking the abilities that do render on a listed card
   -- (#5488).
   Spec.it s "the cards that do not render are exactly those listed" $ do
@@ -64,8 +65,8 @@ spec s corpus = Spec.describe s "Parun.Ingest" $ do
     markers <- Directory.listDirectory (root <> "/../oracle-unrendered")
     let listed = Set.fromList [Text.unpack (Maybe.fromMaybe name (Text.stripSuffix (Text.pack ".txt") name)) | name <- fmap Text.pack markers]
     let unrendered = Set.fromList [Text.unpack (Slug.unwrap (Registry.filedAs card)) | entry@(_, Right card) <- corpus, Maybe.isJust (Registry.referenceCard entry), Maybe.isNothing (Oracle.render card)]
-    Spec.assertEqWith s "listed, but renders or is no pool card" (Set.toList (Set.difference listed unrendered)) []
-    Spec.assertEqWith s "does not render, but unlisted" (Set.toList (Set.difference unrendered listed)) []
+    Spec.assertEqWith s "listed, but renders or is no pool card (run `parun oracle`)" (Set.toList (Set.difference listed unrendered)) []
+    Spec.assertEqWith s "does not render, but unlisted (run `parun oracle`)" (Set.toList (Set.difference unrendered listed)) []
 
   -- `parun ingest` stamps the text on every card MTGJSON has; a dungeon (CR
   -- 309) is not among them, since MTGJSON files dungeons with the tokens.
