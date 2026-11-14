@@ -1,0 +1,310 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "w0",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w2",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w3",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w4",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w5",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "countered",
+            "ready": true
+          },
+          {
+            "card": "Runeclaw Bear",
+            "label": "equipped",
+            "ready": true
+          },
+          {
+            "attached": "equipped",
+            "card": "Short Sword"
+          },
+          {
+            "card": "Balduvian Bears",
+            "label": "foreign",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "plain",
+            "ready": true
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "enchanted",
+            "ready": true
+          },
+          {
+            "attached": "enchanted",
+            "card": "Holy Strength"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Costume Closet",
+            "label": "closet"
+          },
+          {
+            "card": "Wrath of God",
+            "label": "wrath"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "attached": "foreign",
+            "card": "Unholy Strength"
+          },
+          {
+            "card": "Grizzly Bears",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ],
+            "label": "bobs",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 700.9, 122.5: Costume Closet enters with two +1/+1 counters, moves one onto a creature you control, and gets a counter for each modified creature you control that leaves: one with a counter, an equipped one, one wearing its controller's Aura, not one wearing an opponent's Aura, a plain one or an opponent's creature with a counter",
+  "note": "Wrath of God takes all six creatures at once; the Closet ends on one counter plus three.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$w0",
+            "$w1",
+            null
+          ],
+          "object": "$closet"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Costume Closet"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "object": "Costume Closet",
+          "targets": [
+            "$bobs"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "object": "Costume Closet",
+          "targets": [
+            "$countered"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$countered"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Costume Closet"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$w2",
+            "$w3",
+            "$w4",
+            "$w5"
+          ],
+          "object": "$wrath"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "Costume Closet",
+          "Costume Closet",
+          "Costume Closet"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 4,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "Costume Closet"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
