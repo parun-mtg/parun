@@ -765,6 +765,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.HasActivatedAbility (Just AbilityKind.NonManaAbility))
       " {\"type\":\"HasActivatedAbility\",\"value\":\"NonManaAbility\"} "
+  Spec.it s "HasAbility" $
+    Common.assertCodec
+      s
+      codec
+      Filter.HasAbility
+      " {\"type\":\"HasAbility\"} "
   Spec.it s "IsInZone Graveyard" $
     Common.assertCodec
       s
