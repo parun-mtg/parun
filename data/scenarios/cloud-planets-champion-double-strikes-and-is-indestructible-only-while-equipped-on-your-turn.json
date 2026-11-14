@@ -1,0 +1,272 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Cloud, Planet's Champion",
+            "label": "cloud"
+          },
+          {
+            "card": "War Mammoth",
+            "label": "mammoth"
+          },
+          {
+            "card": "Aegis of the Legion",
+            "label": "aegis"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Adventuring Gear",
+            "label": "gear",
+            "attached": "mammoth"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "CR 301.5a, 611.3a, 613.1f, 702.6a, 602.2b, 601.2f, 118.7a: Cloud, Planet's Champion has double strike and indestructible only while equipped during its controller's turn, and Aegis of the Legion's Equip {3} costs {1} only when it targets Cloud",
+  "note": "Unequipped on alice's turn Cloud has neither keyword, though War Mammoth beside it wears Adventuring Gear; the one Mountain cannot pay Aegis of the Legion's equip onto the Mammoth but pays it onto Cloud; equipped on alice's turn Cloud has both; still equipped on bob's turn it has neither. Each negative differs from the positive in one thing.",
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Keywords": {
+          "object": "$cloud",
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Keywords": {
+          "object": "$cloud",
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "refuse": {
+        "Activate": {
+          "object": "$aegis",
+          "targets": [
+            "$mammoth"
+          ],
+          "mana": [
+            "$m1"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Tapped": {
+          "object": "$m1",
+          "tapped": false
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "Activate": {
+          "object": "$aegis",
+          "targets": [
+            "$cloud"
+          ],
+          "mana": [
+            "$m1"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Tapped": {
+          "object": "$m1",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "AttachedTo",
+          "object": "$aegis",
+          "is": "$cloud"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Keywords": {
+          "object": "$cloud",
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Keywords": {
+          "object": "$cloud",
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "PowerToughness": {
+          "object": "$cloud",
+          "power": 5,
+          "toughness": 5
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "View": {
+          "of": "AttachedTo",
+          "object": "$aegis",
+          "is": "$cloud"
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Keywords": {
+          "object": "$cloud",
+          "keyword": {
+            "type": "DoubleStrike"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Keywords": {
+          "object": "$cloud",
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "count": 0
+        }
+      }
+    }
+  ]
+}

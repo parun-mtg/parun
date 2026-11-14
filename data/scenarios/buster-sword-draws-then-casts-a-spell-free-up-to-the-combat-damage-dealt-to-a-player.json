@@ -1,0 +1,313 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Charging Badger",
+            "label": "badger",
+            "ready": true
+          },
+          {
+            "card": "Buster Sword",
+            "label": "sword",
+            "attached": "badger"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Shock",
+            "label": "shock"
+          }
+        ],
+        "library": [
+          {
+            "card": "Centaur Courser"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "life": 17,
+        "battlefield": [
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "life": 19,
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "CR 510.2, 603.2, 608.2c, 118.9: Buster Sword's trigger reads the combat damage its creature dealt to the player, not its power: alice draws Centaur Courser, then casts it free (mana value 3 = 3 trampled through), and Hill Giant (mana value 4 = the equipped Badger's power) is not offered",
+  "note": "Charging Badger 1/1 trample is 4/3 with the Sword; bob's Llanowar Elves blocks and takes 1, so bob is dealt 3. The only mana value 3 card starts on top of the library, so the cast proves the draw came first; Grizzly Bears and Shock keep the offer a real prompt without it, and refusing Hill Giant tells the damage from the power.",
+  "timeline": [
+    {
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "PowerToughness": {
+          "object": "$badger",
+          "power": 4,
+          "toughness": 3
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1,
+      "do": {
+        "Attack": [
+          "$badger"
+        ]
+      }
+    },
+    {
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1,
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      }
+    },
+    {
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1,
+      "do": {
+        "Block": {
+          "$elves": [
+            "$badger"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1,
+      "do": {
+        "AssignDamage": {
+          "$bob": 3,
+          "$elves": 1
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1,
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseOfferedCastSpell",
+          "with": [
+            "$giant",
+            "Hill Giant"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOfferedCastSpell",
+          "with": [
+            "Centaur Courser",
+            "Centaur Courser"
+          ]
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1,
+      "do": {
+        "Answer": {
+          "prompt": "OfferedCast",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1,
+      "check": {
+        "View": {
+          "is": [
+            "Centaur Courser"
+          ],
+          "of": "Stack"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1,
+      "check": {
+        "Life": {
+          "life": 14,
+          "player": "bob"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Centaur Courser",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1,
+      "check": {
+        "Count": {
+          "card": "Shock",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,470 @@
+{
+  "description": "CR 700.2 / 701.14a / 122.6 / 715.2b: Clash of the Eikons fights, removes a lore counter from a Saga you control without a chapter triggering, and puts one on a Saga you control, which fires the chapter the count reaches",
+  "note": "History of Benalia sits at two lore counters beside a second at one, so each Saga slot has two candidates and the refusals are the filter's. All three modes then fight (Hill Giant kills Bob's Grizzly Bears), remove a counter (two to one) and put one back (one to two), so chapter II triggers again and makes a Knight; the second Clash only removes (two to one): no trigger, still one Knight. Refused: Bob's Saga and a non-Saga as either Saga target, Alice's own creature as the opponent's, and Bob's as hers. Llanowar Elves and Carol's Goblin Piker give the creature slots their second candidates. Postcombat, so no main-phase lore counter intervenes.",
+  "board": {
+    "active": "alice",
+    "step": "PostcombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
+          },
+          {
+            "card": "History of Benalia",
+            "label": "benalia",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "card": "History of Benalia",
+            "label": "benalia2",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Clash of the Eikons",
+            "label": "clash1"
+          },
+          {
+            "card": "Clash of the Eikons",
+            "label": "clash2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "History of Benalia",
+            "label": "bob-benalia",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 1
+              }
+            ]
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$clash1",
+          "modes": [
+            2
+          ],
+          "targetsBySlot": {
+            "waxing": [
+              "$bob-benalia"
+            ]
+          },
+          "mana": [
+            "$f1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$clash1",
+          "modes": [
+            2
+          ],
+          "targetsBySlot": {
+            "waxing": [
+              "$giant"
+            ]
+          },
+          "mana": [
+            "$f1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$clash1",
+          "modes": [
+            0
+          ],
+          "targetsBySlot": {
+            "mine": [
+              "$giant"
+            ],
+            "theirs": [
+              "$giant"
+            ]
+          },
+          "mana": [
+            "$f1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$clash1",
+          "modes": [
+            1
+          ],
+          "targetsBySlot": {
+            "waning": [
+              "$bob-benalia"
+            ]
+          },
+          "mana": [
+            "$f1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$clash1",
+          "modes": [
+            1
+          ],
+          "targetsBySlot": {
+            "waning": [
+              "$giant"
+            ]
+          },
+          "mana": [
+            "$f1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$clash1",
+          "modes": [
+            0
+          ],
+          "targetsBySlot": {
+            "mine": [
+              "$bears"
+            ],
+            "theirs": [
+              "$piker"
+            ]
+          },
+          "mana": [
+            "$f1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$clash1",
+          "modes": [
+            0,
+            1,
+            2
+          ],
+          "targetsBySlot": {
+            "mine": [
+              "$giant"
+            ],
+            "theirs": [
+              "$bears"
+            ],
+            "waning": [
+              "$benalia"
+            ],
+            "waxing": [
+              "$benalia"
+            ]
+          },
+          "mana": [
+            "$f1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $benalia"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Graveyard",
+          "card": "Grizzly Bears",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$giant",
+          "damage": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Knight Token",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$benalia",
+          "kind": {
+            "type": "Lore"
+          },
+          "count": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$clash2",
+          "modes": [
+            1
+          ],
+          "targetsBySlot": {
+            "waning": [
+              "$benalia"
+            ]
+          },
+          "mana": [
+            "$f2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$benalia",
+          "kind": {
+            "type": "Lore"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Knight Token",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$bob-benalia",
+          "kind": {
+            "type": "Lore"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$benalia2",
+          "kind": {
+            "type": "Lore"
+          },
+          "count": 1
+        }
+      }
+    }
+  ]
+}
