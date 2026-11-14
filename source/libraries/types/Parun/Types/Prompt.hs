@@ -717,9 +717,10 @@ data Prompt r where
   -- resolution for CR 701.29a's fateseal, for a resolving
   -- Parun.Types.Effect.ChoosePlayer whose scope leaves the chooser out
   -- (Skullwinder), or at CR 601.2c for which opponent ANNOUNCES a slot the
-  -- controller does not (CR 801.5a, Cuombajj Witches); the chooser is CR 109.5's
-  -- "you" at entry, the rule's actor at the fateseal, and the ability's
-  -- controller at the announcement.
+  -- controller does not (CR 801.5a, Cuombajj Witches), or which chosen opponent
+  -- a proliferate gives their team's shared counter (CR 701.34b); the chooser
+  -- is CR 109.5's "you" at entry, the rule's actor at the fateseal and the
+  -- proliferate, and the ability's controller at the announcement.
   --
   -- The PlayerChoice is the record the answer is written to, where it is one:
   -- CR 702.174a's promise of one gift instance as its cost is paid, which tells
@@ -736,8 +737,9 @@ data Prompt r where
   -- active player a banding creature's controller names under CR 805.9
   -- (Parun.Engine.Damage.blockerChooser), or which winner takes an ante card
   -- after a team's win (CR 407.2 / 104.2c, Parun.Engine.Ante.payOut), or which
-  -- member a team chooses for a "set each player's life total" (CR 810.9d) --
-  -- the ObjectId is the entering permanent, the resolving source, the banding
+  -- member a team chooses for a "set each player's life total" (CR 810.9d), or
+  -- which chosen teammate a proliferate gives the team's shared counter (CR
+  -- 701.34b) -- the ObjectId is the entering permanent, the resolving source, the banding
   -- creature, or the ante card. The candidates
   -- come from the caller, and this constructor rather than ChooseOpponent above
   -- is the one raised exactly when they include the chooser.
