@@ -1,0 +1,29 @@
+{
+  "description": "CR 701.14a / 603.7c: Foe-Razer Regent grows each creature you control that fought, at the next end step",
+  "note": "The Regent fights bob's Hill Giant as it enters, and Prey Upon has alice's Bears fight bob's Wall of Stone. Each of alice's fighters gets two +1/+1 counters at the end step; bob's Wall, which fought too, gets none.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "battlefield": [{"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}, {"card": "Forest", "label": "f3"}, {"card": "Forest", "label": "f4"}, {"card": "Forest", "label": "f5"}, {"card": "Forest", "label": "f6"}, {"card": "Forest", "label": "f7"}, {"card": "Forest", "label": "f8"}], "hand": [{"card": "Foe-Razer Regent", "label": "regent"}, {"card": "Prey Upon", "label": "prey"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant"}, {"card": "Wall of Stone", "label": "wall"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$regent", "mana": ["$f1", "$f2", "$f3", "$f4", "$f5", "$f6", "$f7", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Foe-Razer Regent"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$prey", "mana": ["$f8"], "targetsBySlot": {"mine": ["$bears"], "theirs": ["$wall"]}}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$wall", "damage": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Foe-Razer Regent"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": {"OrderTriggers": ["Foe-Razer Regent", "Foe-Razer Regent"]}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Counters": {"object": "Foe-Razer Regent", "kind": {"type": "PlusOnePlusOne"}, "count": 2}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 2}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Counters": {"object": "$wall", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}}
+  ]
+}

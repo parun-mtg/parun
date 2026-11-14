@@ -1,0 +1,24 @@
+{
+  "description": "CR 701.14b: Foe-Razer Regent's fight trigger needs a fight, so declining one or losing a target grows nothing",
+  "note": "Alice's Prey Upon targets her Bears and bob's Llanowar Elves, and bob Shocks his own Elves in response: neither creature fights. Then alice declines the Regent's fight with bob's Hill Giant as it enters. Nothing triggers, so no counters arrive at the end step.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [{"name": "alice", "battlefield": [{"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}, {"card": "Forest", "label": "f3"}, {"card": "Forest", "label": "f4"}, {"card": "Forest", "label": "f5"}, {"card": "Forest", "label": "f6"}, {"card": "Forest", "label": "f7"}, {"card": "Forest", "label": "f8"}], "hand": [{"card": "Foe-Razer Regent", "label": "regent"}, {"card": "Prey Upon", "label": "prey"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}, {"name": "bob", "manaPool": "R", "battlefield": [{"card": "Llanowar Elves", "label": "elves"}, {"card": "Hill Giant", "label": "giant"}], "hand": [{"card": "Shock", "label": "shock"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$prey", "mana": ["$f1", null], "targetsBySlot": {"mine": ["$bears"], "theirs": ["$elves"]}}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$shock", "targets": ["$elves"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Llanowar Elves", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$bears", "damage": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$regent", "mana": ["$f2", "$f3", "$f4", "$f5", "$f6", "$f7", "$f8"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Declines"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Counters": {"object": "Foe-Razer Regent", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Counters": {"object": "$bears", "kind": {"type": "PlusOnePlusOne"}, "count": 0}}}
+  ]
+}

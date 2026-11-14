@@ -31,4 +31,7 @@ data PermanentAction
   | -- | CR 702.30a: its echo cost was paid, however it was paid (Shah of Naar
     -- Isle's ruling).
     PayEcho
+  | -- | CR 701.14a, only where CR 701.14b let the fight happen; a self-fight
+    -- (CR 701.14c) is one act.
+    Fight
   deriving (Bounded, Enum, Eq, Ord, Show)
