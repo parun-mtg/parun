@@ -3660,6 +3660,7 @@ manaAdditionChildren c (ManaAddition.MkManaAddition adder production count reten
 manaProductionChildren :: (Applicative f) => ManaChildren f -> ManaProduction.ManaProduction -> f ManaProduction.ManaProduction
 manaProductionChildren c production = case production of
   ManaProduction.OfType _ -> pure production
+  ManaProduction.OneOf _ -> pure production
   ManaProduction.AnyColor _ -> pure production
   ManaProduction.Chosen -> pure production
   ManaProduction.SnowSymbol -> pure production

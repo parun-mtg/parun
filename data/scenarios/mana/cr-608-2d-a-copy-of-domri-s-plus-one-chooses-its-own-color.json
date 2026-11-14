@@ -1,0 +1,197 @@
+{
+  "description": "CR 608.2d / 707.10: Rings of Brighthearth's copy of Domri, Chaos Bringer's +1 chooses its colour as it resolves, apart from the original's",
+  "note": "Alice activates Domri's +1 and pays the Rings' {2} with both Mountains. The copy resolves first and she takes {G}; the original then resolves and she takes {R}. Activation fixed no colour, so the copy had none to copy.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Domri, Chaos Bringer",
+            "label": "domri",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 5
+              }
+            ]
+          },
+          {
+            "card": "Rings of Brighthearth",
+            "label": "rings"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$domri",
+          "ability": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseToPay": {
+          "decision": "Pays",
+          "mana": [
+            "$m1",
+            "$m2"
+          ]
+        }
+      },
+      "source": "$rings"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "ability of $domri",
+            "ability of $domri"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaType",
+          "with": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaType",
+          "with": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Green"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": {
+                "condition": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "effect": {
+                  "type": "GainsKeyword",
+                  "value": {
+                    "keyword": {
+                      "type": "Riot"
+                    },
+                    "duration": {
+                      "type": "Indefinite"
+                    }
+                  }
+                }
+              },
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "Red"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": {
+                "condition": {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                "effect": {
+                  "type": "GainsKeyword",
+                  "value": {
+                    "keyword": {
+                      "type": "Riot"
+                    },
+                    "duration": {
+                      "type": "Indefinite"
+                    }
+                  }
+                }
+              },
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 module Parun.Codec.ManaProductionSpec where
 
+import qualified Data.Set as Set
 import qualified Parun.Codec.ManaProduction as ManaProduction
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
@@ -23,6 +24,12 @@ spec s = Spec.describe s "Parun.Codec.ManaProduction" $ do
       ManaProduction.codec
       (ManaProduction.OfType (ManaType.Colored Color.Green))
       " {\"type\":\"OfType\",\"value\":{\"type\":\"Colored\",\"value\":\"Green\"}} "
+  Spec.it s "OneOf" $
+    Common.assertCodec
+      s
+      ManaProduction.codec
+      (ManaProduction.OneOf (Set.fromList [ManaType.Colored Color.Red, ManaType.Colored Color.Green]))
+      " {\"type\":\"OneOf\",\"value\":[{\"type\":\"Colored\",\"value\":\"Red\"},{\"type\":\"Colored\",\"value\":\"Green\"}]} "
   Spec.it s "AnyColor" $
     Common.assertCodec
       s

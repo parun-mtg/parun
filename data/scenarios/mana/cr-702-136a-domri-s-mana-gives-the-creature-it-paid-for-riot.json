@@ -64,15 +64,12 @@
     "step": "PrecombatMain"
   },
   "description": "CR 106.6a / 702.136a: the creature Domri, Chaos Bringer's mana paid for enters with riot, which it keeps, and the haste it took outlasts the turn",
-  "note": "Domri's +1 adds {R}; alice spends it and a Mountain on Goblin Piker, which enters with riot's choice. She takes haste, so the Piker attacks the turn it entered; Domri's ruling says the haste lasts indefinitely, so the Piker still has it on her next turn. The riot itself has no duration either (CR 611.2a).",
+  "note": "Domri's +1 adds {R}, chosen as it resolves; alice spends it and a Mountain on Goblin Piker, which enters with riot's choice. She takes haste, so the Piker attacks the turn it entered; Domri's ruling says the haste lasts indefinitely, so the Piker still has it on her next turn. The riot itself has no duration either (CR 611.2a).",
   "timeline": [
     {
       "do": {
         "Activate": {
           "ability": 0,
-          "modes": [
-            0
-          ],
           "object": "$domri"
         }
       },
@@ -82,6 +79,20 @@
     },
     {
       "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaType",
+          "with": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      },
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 1
