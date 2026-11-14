@@ -10,22 +10,14 @@
             "ready": true
           },
           {
-            "card": "Adventurer's Inn",
-            "label": "inn",
+            "card": "Balamb Garden, SeeD Academy",
+            "label": "sibG",
             "ready": true
           },
           {
-            "card": "Gohn, Town of Ruin",
-            "label": "gohn",
+            "card": "Balamb Garden, SeeD Academy",
+            "label": "sibU",
             "ready": true
-          },
-          {
-            "card": "Forest",
-            "label": "f1"
-          },
-          {
-            "card": "Island",
-            "label": "i1"
           },
           {
             "card": "Mountain",
@@ -106,21 +98,49 @@
     "step": "PrecombatMain"
   },
   "description": "CR 602.2b / 601.2f / 701.27a / 712.6d / 702.122a / 508.1m: Balamb Garden's transform costs {1} less per other Town you control, becomes a colourless legendary Vehicle that is not a creature until crewed, and draws when it attacks",
-  "note": "Two other Towns of alice's (Adventurer's Inn, Gohn) make {5}{G}{U} cost {3}{G}{U}, paid by exactly five named basics; Balamb itself and bob's Treno are Towns that must not count, either would leave a named land unspent. Ornithopter (power 0) is refused as crew. Its {T} cost leaves it tapped, so it only crews here; its attack is the Airborne scenario's. A second copy played from hand shows the front enters tapped.",
+  "note": "Two other Balamb Gardens of alice's make {5}{G}{U} cost {3}{G}{U}, and pay its {G} and {U} with their own mana abilities, the rest by three Mountains; the source itself and bob's Treno are Towns that must not count, either would leave a Mountain's mana floating. Ornithopter (power 0) is refused as crew. Its {T} cost leaves it tapped, so it only crews here; its attack is the Airborne scenario's. A copy played from hand shows the front enters tapped.",
   "timeline": [
     {
       "do": {
         "Activate": {
           "ability": 1,
           "mana": [
-            "$f1",
-            "$i1",
+            "$sibG",
+            "$sibU",
             "$m1",
             "$m2",
             "$m3",
             null
           ],
-          "object": "$garden"
+          "object": "$garden",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ],
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Blue"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ]
+          ]
         }
       },
       "player": "alice",
@@ -324,7 +344,7 @@
     {
       "check": {
         "Tapped": {
-          "object": "Balamb Garden, SeeD Academy#2",
+          "object": "Balamb Garden, SeeD Academy#4",
           "tapped": true
         }
       },
