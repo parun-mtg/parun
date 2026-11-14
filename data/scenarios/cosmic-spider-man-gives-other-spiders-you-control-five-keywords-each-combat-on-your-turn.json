@@ -1,0 +1,46 @@
+{
+  "description": "CR 603.2b, 113.10, 611.2a, 611.2c, 205.3m, 702.10b, 702.15b: at the beginning of combat on its controller's turn, Cosmic Spider-Man gives each other Spider they control flying, first strike, trample, lifelink and haste until end of turn, and nothing to a non-Spider, an opponent's Spider or itself",
+  "note": "Alice's Giant Spider and Grizzly Bears both entered this turn: the Spider attacks on the haste it was given and its lifelink gains alice 2, while the Bears may not attack. Cosmic's own flying stays one instance. Bob's Mammoth Spider gains nothing, and by bob's upkeep alice's Spider has lost what it gained.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "life": 13,
+        "library": [{ "card": "Island" }, { "card": "Island" }],
+        "battlefield": [
+          { "card": "Cosmic Spider-Man", "label": "cosmic", "ready": true },
+          { "card": "Giant Spider", "label": "spider" },
+          { "card": "Grizzly Bears", "label": "bears" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }],
+        "battlefield": [{ "card": "Mammoth Spider", "label": "mammoth", "ready": true }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$spider", "keyword": { "type": "Haste" }, "count": 0 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": { "Attack": ["$spider", "$bears"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$spider"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Keywords": { "object": "$spider", "keyword": { "type": "Flying" }, "count": 1 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Keywords": { "object": "$spider", "keyword": { "type": "FirstStrike" }, "count": 1 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Keywords": { "object": "$spider", "keyword": { "type": "Trample" }, "count": 1 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Keywords": { "object": "$spider", "keyword": { "type": "Lifelink" }, "count": 1 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Keywords": { "object": "$spider", "keyword": { "type": "Haste" }, "count": 1 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Keywords": { "object": "$bears", "keyword": { "type": "Haste" }, "count": 0 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Keywords": { "object": "$cosmic", "keyword": { "type": "Flying" }, "count": 1 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Keywords": { "object": "$mammoth", "keyword": { "type": "Flying" }, "count": 0 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Keywords": { "object": "$mammoth", "keyword": { "type": "Haste" }, "count": 0 } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "do": { "Block": {} } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 15 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Keywords": { "object": "$spider", "keyword": { "type": "Flying" }, "count": 0 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Keywords": { "object": "$spider", "keyword": { "type": "Lifelink" }, "count": 0 } } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } },
+    { "turn": 2, "step": "PostcombatMain", "player": "bob", "check": { "Keywords": { "object": "$spider", "keyword": { "type": "Flying" }, "count": 0 } } }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "description": "CR 602.2, 602.5d, 701.21a, 601.2c, 122.1a, 121.1, 119.3: Bagel and Schmear's Share sacrifices it to put a +1/+1 counter on up to one target creature, any player's, and draw, only as a sorcery; its Nosh sacrifices it to gain 3 life and draw at instant speed",
+  "note": "Share targets bob's Hill Giant, so a counter on alice's own Bears would read differently; a second Share names no target and must still draw. In the beginning of combat step Share is refused with an untapped Plains to pay for it, and Nosh, paid from two other Plains, is taken.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "life": 14,
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }],
+        "battlefield": [
+          { "card": "Bagel and Schmear", "label": "b1" },
+          { "card": "Bagel and Schmear", "label": "b2" },
+          { "card": "Bagel and Schmear", "label": "b3" },
+          { "card": "Plains", "label": "p1" },
+          { "card": "Plains", "label": "p2" },
+          { "card": "Plains", "label": "p3" },
+          { "card": "Plains", "label": "p4" },
+          { "card": "Grizzly Bears", "label": "bears" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }],
+        "battlefield": [{ "card": "Hill Giant", "label": "giant" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$b1", "ability": 0, "targets": ["$giant"], "mana": ["$p1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Bagel and Schmear", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$giant", "kind": { "type": "PlusOnePlusOne" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$giant", "power": 4, "toughness": 4 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$bears", "kind": { "type": "PlusOnePlusOne" }, "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 14 } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "refuse": { "Activate": { "object": "$b3", "ability": 0, "targets": ["$bears"], "mana": ["$p2", null] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": { "Activate": { "object": "$b2", "ability": 1, "mana": ["$p2", "$p3", null] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Bagel and Schmear", "count": 2 } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Life": { "player": "alice", "life": 17 } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 2 } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Tapped": { "object": "$p4", "tapped": false } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": { "Activate": { "object": "$b3", "ability": 0, "targets": [], "mana": ["$p4"] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Island", "count": 3 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Bagel and Schmear", "count": 3 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Counters": { "object": "$giant", "kind": { "type": "PlusOnePlusOne" }, "count": 1 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Counters": { "object": "$bears", "kind": { "type": "PlusOnePlusOne" }, "count": 0 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 17 } } }
+  ]
+}

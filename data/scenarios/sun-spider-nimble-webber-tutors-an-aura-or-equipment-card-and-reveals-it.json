@@ -1,0 +1,27 @@
+{
+  "description": "CR 603.6a, 701.23a, 701.20a: Sun-Spider, Nimble Webber's enters trigger searches its controller's library for an Aura or Equipment card, reveals it, and puts it into their hand",
+  "note": "Alice's search refuses Grizzly Bears and a Forest and takes Accorder's Shield; bob's own Sun-Spider refuses Hill Giant and takes Pacifism, so each half of the Aura-or-Equipment filter is taken once. Each reveal is witnessed by the other seat.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "WWWW", "hand": [{"card": "Sun-Spider, Nimble Webber", "label": "aspider"}], "library": [{"card": "Grizzly Bears", "label": "abears"}, {"card": "Accorder's Shield", "label": "shield"}, {"card": "Forest", "label": "aforest"}, {"card": "Island", "label": "aisland"}]},
+    {"name": "bob", "hand": [{"card": "Sun-Spider, Nimble Webber", "label": "bspider"}], "battlefield": [{"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}, {"card": "Plains", "label": "p4"}], "library": [{"card": "Island", "label": "bdraw"}, {"card": "Hill Giant", "label": "bgiant"}, {"card": "Pacifism", "label": "aura"}, {"card": "Forest", "label": "bforest"}, {"card": "Island", "label": "bisland"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$aspider"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "Search", "with": ["$abears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "Search", "with": ["$aforest"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Search", "with": ["$shield"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$abears", "$aforest", "$aisland"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Accorder's Shield", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Witnessed", "player": "bob", "is": ["Accorder's Shield"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$bspider", "mana": ["$p1", "$p2", "$p3", "$p4"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "refuse": {"Answer": {"prompt": "Search", "with": ["$bgiant"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Answer": {"prompt": "Search", "with": ["$aura"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Answer": {"prompt": "Shuffle", "with": ["$bgiant", "$bforest", "$bisland"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Pacifism", "count": 1}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "Witnessed", "player": "alice", "is": ["Pacifism"]}}}
+  ]
+}

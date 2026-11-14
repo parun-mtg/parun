@@ -1,0 +1,39 @@
+{
+  "description": "CR 602.2, 102.3, 120.3a, 702.15b, 119.3: Merciless Enforcers pays {3}{B} to deal 1 damage to each of its controller's opponents and none to them, gaining them a life for each through lifelink",
+  "note": "Three seats at distinct life totals, so 'each opponent' is told from 'target opponent'. Alice's own life cannot tell 'each player' apart (1 damage and 3 lifelinked reads as 2 lifelinked), so Sanguine Bond turns the amount alice gains into carol's loss. Alice's pool holds exactly {B}{B}{B}{B}.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "life": 10,
+        "manaPool": "BBBB",
+        "library": [{ "card": "Island" }, { "card": "Island" }],
+        "battlefield": [{ "card": "Merciless Enforcers", "label": "enforcers" }, { "card": "Sanguine Bond", "label": "bond" }]
+      },
+      {
+        "name": "bob",
+        "life": 14,
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "carol",
+        "life": 17,
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$enforcers", "ability": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseTargets": { "target": ["$carol"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $bond"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 13 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 16 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 12 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "carol", "life": 14 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 13 } } }
+  ]
+}

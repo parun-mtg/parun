@@ -1,0 +1,48 @@
+{
+  "description": "CR 602.2, 602.5d, 115.1, 205.4a, 113.10, 611.2a, 702.111b, 509.1b: Daily Bugle Building's Smear Campaign pays {1} and taps to give target legendary creature menace until end of turn, never a nonlegendary one, and only as a sorcery",
+  "note": "Smear Campaign is refused on the nonlegendary Bears, then taken on the legendary Isamaru; bob's tapped legendary Tobias Andrion makes it a choice, and leaves him out of blocking. A second Building, with an untapped Plains to pay, is refused in the beginning of combat step. Bob's lone Hill Giant may not block Isamaru but may block the Bears, and Isamaru's menace is gone by bob's upkeep.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [{ "card": "Island" }, { "card": "Island" }],
+        "battlefield": [
+          { "card": "Daily Bugle Building", "label": "d1" },
+          { "card": "Daily Bugle Building", "label": "d2" },
+          { "card": "Plains", "label": "p1" },
+          { "card": "Plains", "label": "p2" },
+          { "card": "Isamaru, Hound of Konda", "label": "isamaru", "ready": true },
+          { "card": "Grizzly Bears", "label": "bears", "ready": true }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }],
+        "battlefield": [
+          { "card": "Hill Giant", "label": "giant", "ready": true },
+          { "card": "Tobias Andrion", "label": "tobias", "tapped": true }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Activate": { "object": "$d1", "ability": 2, "targets": ["$bears"], "mana": ["$p1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$d1", "ability": 2, "targets": ["$isamaru"], "mana": ["$p1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$isamaru", "keyword": { "type": "Menace" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$bears", "keyword": { "type": "Menace" }, "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$tobias", "keyword": { "type": "Menace" }, "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$d1", "tapped": true } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$p1", "tapped": true } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "refuse": { "Activate": { "object": "$d2", "ability": 2, "targets": ["$isamaru"], "mana": ["$p2", null] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Tapped": { "object": "$d2", "tapped": false } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$isamaru", "$bears"] } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "refuse": { "Block": { "$giant": ["$isamaru"] } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "do": { "Block": { "$giant": ["$bears"] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "Keywords": { "object": "$isamaru", "keyword": { "type": "Menace" }, "count": 0 } } }
+  ]
+}

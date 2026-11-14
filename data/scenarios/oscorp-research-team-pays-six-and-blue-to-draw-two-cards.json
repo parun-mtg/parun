@@ -1,0 +1,31 @@
+{
+  "description": "CR 602.2, 118.3, 121.2: Oscorp Research Team's {6}{U} ability draws its controller exactly two cards, and can't be paid with seven non-blue mana or with six mana including blue",
+  "note": "Alice has seven Mountains and one Island. Seven Mountains lack the blue; five Mountains and the Island are one short. Six Mountains and the Island pay it. The third card of her library stays put, and bob draws nothing.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Oscorp Research Team", "label": "team"}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}, {"card": "Mountain", "label": "m3"}, {"card": "Mountain", "label": "m4"}, {"card": "Mountain", "label": "m5"}, {"card": "Mountain", "label": "m6"}, {"card": "Mountain", "label": "m7"}, {"card": "Island", "label": "i1"}], "library": [{"card": "Hill Giant", "label": "giant"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Goblin Piker", "label": "piker"}, {"card": "Shock", "label": "shock"}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$team", "mana": ["$m1", "$m2", "$m3", "$m4", "$m5", "$m6", "$m7", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Activate": {"object": "$team", "mana": ["$m1", "$m2", "$m3", "$m4", "$m5", "$i1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$team", "mana": ["$m1", "$m2", "$m3", "$m4", "$m5", "$m6", "$i1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Hand", "is": ["Hill Giant", "Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Library", "is": ["$piker", "$shock"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Island", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$m7", "tapped": false}}}
+  ]
+}
