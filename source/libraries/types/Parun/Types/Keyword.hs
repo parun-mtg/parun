@@ -791,9 +791,6 @@ data Keyword
     -- through Parun.Types.ActivatedAbility.keyword, which is what lets Boom
     -- Scholar's "exhaust abilities of other permanents you control" name it; the
     -- rider is Parun.Engine.Keyword.printedRiders'.
-    --
-    -- Not implemented: CR 702.177b's "as long as you haven't activated an
-    -- exhaust ability this turn" (#4368).
     Exhaust
   | -- | 702.142a: boast adds rules to the activated ability printed AFTER it --
     -- "Boast -- [Cost]: [Effect]" means "[Cost]: [Effect]. Activate only if this

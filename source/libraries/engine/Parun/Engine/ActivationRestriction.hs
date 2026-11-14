@@ -21,6 +21,7 @@
 -- classification, not an effect's identity.
 module Parun.Engine.ActivationRestriction where
 
+import qualified Control.Monad as Monad
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
@@ -243,32 +244,56 @@ onlyIfHolds pid srcId board =
 -- sets CR 602.5b's per-turn count, so a second grant adds nothing and none
 -- lowers a count, as Oath of Teferi's ruling reads the same words. Wonder Man's
 -- "an additional time" adds one to the once-only count, each grant its own
--- (docs/decisions.md, "Whether two "an additional time" grants stack").
+-- (docs/decisions.md, "Whether two "an additional time" grants stack"), and
+-- Elvish Refueler's "as though they haven't been activated" lifts it: Nothing.
 -- Exhaustive, so a new clause is named here by -Werror.
-relaxedBy :: RiderClause.RiderClause -> ActivationRestriction.ActivationRestriction -> ActivationRestriction.ActivationRestriction
+relaxedBy :: RiderClause.RiderClause -> ActivationRestriction.ActivationRestriction -> Maybe ActivationRestriction.ActivationRestriction
 relaxedBy clause restriction = case restriction of
   ActivationRestriction.SorcerySpeed -> case clause of
-    RiderClause.InstantSpeed -> ActivationRestriction.InstantSpeed
-    RiderClause.TimesEachTurn _ -> restriction
-    RiderClause.AdditionalTime -> restriction
-  ActivationRestriction.DuringPhase _ -> restriction
-  ActivationRestriction.DuringTurn _ -> restriction
-  ActivationRestriction.AttackedThisStep -> restriction
-  ActivationRestriction.AfterBlockersDeclared -> restriction
-  ActivationRestriction.DuringCombatBefore _ -> restriction
-  ActivationRestriction.BeforeStep _ -> restriction
-  ActivationRestriction.OnlyIf _ -> restriction
+    RiderClause.InstantSpeed -> Just ActivationRestriction.InstantSpeed
+    RiderClause.TimesEachTurn _ -> Just restriction
+    RiderClause.AdditionalTime -> Just restriction
+    RiderClause.AsThoughNotActivated -> Just restriction
+  ActivationRestriction.DuringPhase _ -> Just restriction
+  ActivationRestriction.DuringTurn _ -> Just restriction
+  ActivationRestriction.AttackedThisStep -> Just restriction
+  ActivationRestriction.AfterBlockersDeclared -> Just restriction
+  ActivationRestriction.DuringCombatBefore _ -> Just restriction
+  ActivationRestriction.BeforeStep _ -> Just restriction
+  ActivationRestriction.OnlyIf _ -> Just restriction
   ActivationRestriction.TimesEver limit -> case clause of
-    RiderClause.AdditionalTime -> ActivationRestriction.TimesEver (limit + 1)
-    RiderClause.InstantSpeed -> restriction
-    RiderClause.TimesEachTurn _ -> restriction
+    RiderClause.AdditionalTime -> Just (ActivationRestriction.TimesEver (limit + 1))
+    RiderClause.AsThoughNotActivated -> Nothing
+    RiderClause.InstantSpeed -> Just restriction
+    RiderClause.TimesEachTurn _ -> Just restriction
   ActivationRestriction.TimesEachTurn limit -> case clause of
-    RiderClause.InstantSpeed -> restriction
-    RiderClause.TimesEachTurn raised -> ActivationRestriction.TimesEachTurn (max limit raised)
-    RiderClause.AdditionalTime -> restriction
-  ActivationRestriction.DuringThrow -> restriction
-  ActivationRestriction.SpendOnly _ -> restriction
-  ActivationRestriction.InstantSpeed -> restriction
+    RiderClause.InstantSpeed -> Just restriction
+    RiderClause.TimesEachTurn raised -> Just (ActivationRestriction.TimesEachTurn (max limit raised))
+    RiderClause.AdditionalTime -> Just restriction
+    RiderClause.AsThoughNotActivated -> Just restriction
+  ActivationRestriction.DuringThrow -> Just restriction
+  ActivationRestriction.SpendOnly _ -> Just restriction
+  ActivationRestriction.InstantSpeed -> Just restriction
+
+-- CR 602.5: the ability's printed rider holds, or holds once every grant
+-- reaching it has relaxed its clause. Each relaxation only widens, so applying
+-- all of them at once admits whatever any subset would. `grants` is forced only
+-- when the rider as printed refuses, so a board without one pays nothing for
+-- them. Asked at both of CR 605.3a's windows: Parun.Engine.Activatable for an
+-- ability the stack takes, Parun.Engine.Cost.manaActivations for a mana ability.
+--
+-- A grant's own "as long as" clause is its PlayerStaticAbility.condition, asked
+-- by Parun.Engine.PlayerEffect.applying on this board. CR 702.177b's "haven't
+-- begun to activate" therefore reads CR 602.2's log, which
+-- Parun.Engine.Activate writes before the payment, so Loot, the Pathfinder's
+-- exhaust mana ability is no longer granted once Elvish Refueler's has begun --
+-- data/scenarios' elvish-refueler case proves it at the next priority.
+riderOk :: PlayerId -> ObjectId -> Maybe (ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card)) -> [ActivationRestriction.ActivationRestriction] -> [RiderClause.RiderClause] -> GameState -> Bool
+riderOk pid srcId ability printed grants gs =
+  restrictionsOk pid srcId ability printed gs
+    || ( not (null grants)
+           && restrictionsOk pid srcId ability (Maybe.mapMaybe (\r -> Monad.foldM (flip relaxedBy) r grants) printed) gs
+       )
 
 -- CR 602.5b / 602.5c: does `srcId` bear a copy of `this` activated fewer than
 -- `limit` times? Each identically worded copy (CR 113.2c) is its own ability to

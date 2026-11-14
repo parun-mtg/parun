@@ -13,4 +13,7 @@ data RiderClause
     TimesEachTurn Natural
   | -- | CR 602.5b's once-only limit raised by one (Wonder Man, Hollywood Hero).
     AdditionalTime
+  | -- | CR 602.5b's once-only limit lifted, as though the ability hadn't been
+    -- activated (Elvish Refueler).
+    AsThoughNotActivated
   deriving (Eq, Ord, Show)
