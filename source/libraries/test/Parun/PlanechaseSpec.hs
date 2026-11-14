@@ -69,6 +69,7 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
@@ -1008,6 +1009,28 @@ rolling n p = case p of
   Prompt.RollDie _ -> n
   _ -> S.identityAnswer p
 
+-- Spatial Merging's board: alice on Tazeem rolls the Planeswalker symbol and
+-- encounters Spatial Merging, answering its bottom arrangement of the two
+-- revealed phenomena reversed.
+spatialMerging :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m GameState.GameState
+spatialMerging s registry = do
+  board <- planarBoard s registry ["Tazeem", "Spatial Merging", "Mutual Epiphany", "Panopticon", "Fixed Point in Time", "The Dining Car", "Orzhova"]
+  let answer :: Prompt.Prompt r -> r
+      answer p = case p of
+        Prompt.ArrangeLibraryArrivals _ _ _ batch -> reverse (zipWith const [0 ..] batch)
+        _ -> rolling 6 p
+  pure (S.runPure answer (inMain S.alice board) (Planechase.roll S.manaPerformer S.alice >> Engine.priorityLoop))
+
+-- Answer a bottom arrangement with the card named on `gs` bottommost, the rest
+-- as given, and everything else by identity.
+bottomFirst :: GameState.GameState -> String -> Prompt.Prompt r -> r
+bottomFirst gs bottommost p = case p of
+  Prompt.ArrangeLibraryArrivals _ _ _ batch ->
+    let names = fmap (\oid -> fmap Face.name (Game.faceOf oid gs)) batch
+        (first, rest) = List.partition ((== cardName bottommost) . snd) (zip [0 ..] names)
+     in fmap fst (first <> rest)
+  _ -> S.identityAnswer p
+
 -- alice rolls the planar die showing `n`, and whatever it triggers resolves.
 rollAndResolve :: Natural -> GameState.GameState -> GameState.GameState
 rollAndResolve n gs = S.runPure (rolling n) gs (Planechase.roll S.manaPerformer S.alice >> Engine.priorityLoop)
@@ -1198,7 +1221,7 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
   -- CR 901.11c on the CR 901.10 road: bob's Orzhova and carol's Sanctum of
   -- Serra ("When you planeswalk away from Sanctum of Serra, destroy all nonland
   -- permanents.") are both face up -- Spatial Merging's board, turned up here by
-  -- hand (#5206) -- and bob concedes. carol turns up her Tazeem, and that
+  -- hand -- and bob concedes. carol turns up her Tazeem, and that
   -- planeswalk walks away from every face-up plane, Sanctum too, though it
   -- stays face up. alice's Sol Ring is destroyed.
   Spec.it s "CR 901.11c a departing owner's planeswalk walks away from the plane left face up" $ do
@@ -1211,6 +1234,31 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
     Spec.assertEqWith s "CR 901.11c Sanctum of Serra's trigger destroyed alice's Sol Ring" (zoneNames Zone.Graveyard S.alice gone) [cardName "Sol Ring"]
     Spec.assertBool s (Maybe.isNothing (Game.lookupObject ringId gone) || notElem ringId (Set.toList (GameState.battlefield gone))) "and it is off the battlefield"
     Spec.assertEqWith s "CR 901.10 Sanctum stays face up beside carol's Tazeem" (List.sort (faceUpNames gone)) [cardName "Sanctum of Serra", cardName "Tazeem"]
+
+  -- CR 701.31d and Spatial Merging's ruling: alice rolls the Planeswalker
+  -- symbol off Tazeem and encounters Spatial Merging, which reveals Mutual
+  -- Epiphany, Panopticon ("When you planeswalk to Panopticon, draw a card."),
+  -- Fixed Point in Time and The Dining Car ("When you planeswalk to The Dining
+  -- Car, each player creates a Food token."), and planeswalks to both planes at
+  -- once. Both "planeswalk to" abilities trigger; the revealed phenomena are
+  -- not encountered, so alice draws one card, not five, and they go to the
+  -- bottom in the order she states, beneath Spatial Merging.
+  Spec.it s "CR 701.31d Spatial Merging planeswalks to two planes at once" $ do
+    merged <- spatialMerging s registry
+    Spec.assertEqWith s "both planes are face up, and Spatial Merging is not" (List.sort (faceUpNames merged)) [cardName "Panopticon", cardName "The Dining Car"]
+    Spec.assertEqWith s "CR 701.31d Panopticon drew alice one card" (S.handSize S.alice merged) 1
+    Spec.assertEqWith s "CR 701.31d The Dining Car made each player a Food" (Set.size (GameState.battlefield merged)) 2
+    Spec.assertEqWith s "the other revealed cards are on the bottom in the stated order" (deckNames S.alice merged) (fmap cardName ["Orzhova", "Tazeem", "Spatial Merging", "Fixed Point in Time", "Mutual Epiphany"])
+
+  -- Spatial Merging's ruling: the next planeswalk leaves both planes, and
+  -- their owner chooses their order on the bottom -- each way round, so the
+  -- order is alice's answer and not the engine's.
+  Spec.it s "CR 401.4 the owner orders the planes a planeswalk leaves together" $ do
+    merged <- spatialMerging s registry
+    let leaving bottommost = S.runPure (bottomFirst merged bottommost) merged (Planechase.planeswalk PlaneswalkCause.Instruction Nothing S.alice >> Engine.priorityLoop)
+    Spec.assertEqWith s "the walk reaches Orzhova" (faceUpNames (leaving "Panopticon")) [cardName "Orzhova"]
+    Spec.assertEqWith s "Panopticon bottommost when alice says so" (deckNames S.alice (leaving "Panopticon")) (fmap cardName ["Tazeem", "Spatial Merging", "Fixed Point in Time", "Mutual Epiphany", "The Dining Car", "Panopticon"])
+    Spec.assertEqWith s "The Dining Car bottommost when alice says so" (deckNames S.alice (leaving "The Dining Car")) (fmap cardName ["Tazeem", "Spatial Merging", "Fixed Point in Time", "Mutual Epiphany", "Panopticon", "The Dining Car"])
 
   -- Sanctum of Serra on the planar die's road: alice planeswalks away and every
   -- nonland permanent is destroyed, whoever controls it; the Forest stays. Its

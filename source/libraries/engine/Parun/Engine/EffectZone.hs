@@ -176,7 +176,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.Assimilate _ -> Set.empty
   Effect.TemptWithTheRing -> Set.empty
   Effect.OpenAttraction -> Set.empty
-  Effect.Planeswalk -> Set.empty
+  Effect.Planeswalk {} -> Set.empty
   Effect.ChaosEnsues {} -> Set.empty
   Effect.Abandon -> Set.empty
   Effect.SetInMotion _ -> Set.empty

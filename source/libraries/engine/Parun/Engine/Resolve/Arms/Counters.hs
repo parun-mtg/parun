@@ -1430,10 +1430,11 @@ assemble settle resolving source controller legal ref = do
 
 -- CR 701.31c: the cause is the planar die's exactly when this is CR 901.8's
 -- planeswalking ability resolving.
-planeswalk :: ObjectId -> PlayerId -> Game ()
-planeswalk resolving controller = do
+planeswalk :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Maybe ObjectRef -> Game ()
+planeswalk resolving source controller legal ref = do
   gs <- State.get
-  Planechase.planeswalk (if Planechase.isPlaneswalkingAbility resolving gs then PlaneswalkCause.PlanarDie else PlaneswalkCause.Instruction) controller
+  let cause = if Planechase.isPlaneswalkingAbility resolving gs then PlaneswalkCause.PlanarDie else PlaneswalkCause.Instruction
+  Planechase.planeswalk cause (fmap (objectRefObjects legal resolving controller source gs) ref) controller
 
 -- CR 311.7: chaos ensues, or ensues for each object the ObjectRef names as
 -- this instruction is reached (CR 608.2c), one event each.

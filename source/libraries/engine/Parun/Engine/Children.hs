@@ -1254,7 +1254,7 @@ effectChildren c effect = case effect of
   Effect.TemptWithTheRing -> pure effect
   Effect.OpenAttraction -> pure effect
   Effect.Assemble ref -> fmap Effect.Assemble (traverse (onObjectRef c) ref)
-  Effect.Planeswalk -> pure effect
+  Effect.Planeswalk ref -> fmap Effect.Planeswalk (traverse (onObjectRef c) ref)
   Effect.ChaosEnsues ref -> fmap Effect.ChaosEnsues (traverse (onObjectRef c) ref)
   Effect.Abandon -> pure effect
   Effect.SetInMotion ref -> fmap Effect.SetInMotion (onObjectRef c ref)

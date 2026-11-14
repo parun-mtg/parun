@@ -771,8 +771,10 @@ data Effect card ability
     -- assembles"), Nothing where the player does (First Pick).
     Assemble (Maybe ObjectRef.ObjectRef)
   | -- | CR 701.31: the resolving controller planeswalks, performed by
-    -- Parun.Engine.Planechase.planeswalk.
-    Planeswalk
+    -- Parun.Engine.Planechase.planeswalk; to the cards the ObjectRef names
+    -- still in their planar deck, at once (Spatial Merging), or Nothing for its
+    -- top card.
+    Planeswalk (Maybe ObjectRef.ObjectRef)
   | -- | CR 311.7: chaos ensues, which a face-up plane's chaos ability triggers
     -- on; for each object the ObjectRef names, where it ensues for a
     -- particular object (Pools of Becoming).

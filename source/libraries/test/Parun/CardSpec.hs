@@ -787,6 +787,7 @@ objectRefPositions =
         ("guess", Effect.Guess Guess.MkGuess {Guess.subject = plantedRef "gu", Guess.slot = SlotName.MkSlotName (Text.pack "gs"), Guess.guesser = PlayerRef.Relative PlayerRelation.You, Guess.proposition = Filter.Type.And [], Guess.right = SlotName.MkSlotName (Text.pack "gr")}, [plantedRef "gu"]),
         ("explore", Effect.Explore (plantedRef "ex"), [plantedRef "ex"]),
         ("assemble", Effect.Assemble (Just (plantedRef "as")), [plantedRef "as"]),
+        ("planeswalk", Effect.Planeswalk (Just (plantedRef "pw")), [plantedRef "pw"]),
         ("arrange-in-library", Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (plantedRef "al") (PlayerRef.Relative PlayerRelation.You) Nothing), [plantedRef "al"]),
         ("connive", Effect.Connive (Connive.MkConnive (Quantity.Type.Literal 1) (plantedRef "cn")), [plantedRef "cn"]),
         ("set-x", Effect.SetX (SetX.MkSetX (NewX.Becomes (Quantity.Type.Literal 5)) (plantedRef "sx")), [plantedRef "sx"]),
@@ -5133,7 +5134,7 @@ effectFilters effect = case effect of
   Effect.Assimilate ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.TemptWithTheRing -> []
   Effect.OpenAttraction -> []
-  Effect.Planeswalk -> []
+  Effect.Planeswalk ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
   Effect.ChaosEnsues ref -> foldMap (frame SourceHostFramed . objectRefFilters) ref
   Effect.Abandon -> []
   Effect.SetInMotion ref -> frame SourceHostFramed (objectRefFilters ref)

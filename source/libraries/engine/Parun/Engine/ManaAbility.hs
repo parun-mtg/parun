@@ -353,7 +353,7 @@ manaProduced effect = case effect of
   Effect.Assimilate _ -> Nothing
   Effect.TemptWithTheRing -> Nothing
   Effect.OpenAttraction -> Nothing
-  Effect.Planeswalk -> Nothing
+  Effect.Planeswalk {} -> Nothing
   Effect.ChaosEnsues {} -> Nothing
   Effect.Abandon -> Nothing
   Effect.SetInMotion _ -> Nothing
@@ -564,7 +564,7 @@ playerChoice effect = case effect of
   Effect.Assimilate _ -> Nothing
   Effect.TemptWithTheRing -> Nothing
   Effect.OpenAttraction -> Nothing
-  Effect.Planeswalk -> Nothing
+  Effect.Planeswalk {} -> Nothing
   Effect.ChaosEnsues {} -> Nothing
   Effect.Abandon -> Nothing
   Effect.SetInMotion _ -> Nothing
@@ -827,7 +827,7 @@ movesLibraryCard effect = case effect of
   Effect.TemptWithTheRing -> False
   Effect.OpenAttraction -> False
   Effect.Assemble {} -> False
-  Effect.Planeswalk -> False
+  Effect.Planeswalk {} -> False
   Effect.ChaosEnsues {} -> False
   Effect.Abandon -> False
   Effect.SetInMotion _ -> False

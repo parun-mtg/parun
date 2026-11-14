@@ -3736,7 +3736,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   -- The Unstable FAQ: assembling from an empty Contraption deck does nothing.
   Effect.Assemble _ -> null (Game.sideDeckOf SideDeck.Contraption controller gs)
   -- CR 701.31a: only the planar controller of a Planechase game planeswalks.
-  Effect.Planeswalk -> not (Planechase.canPlaneswalk controller gs)
+  Effect.Planeswalk _ -> not (Planechase.canPlaneswalk controller gs)
   Effect.ChaosEnsues {} -> False
   -- CR 701.33a: only a face-up ongoing scheme may be abandoned.
   Effect.Abandon -> not (Archenemy.canAbandon source gs)

@@ -1448,7 +1448,7 @@ effectObjectRefs effect =
         Effect.Assimilate ref -> [(movedQuestions, ref)]
         Effect.TemptWithTheRing -> []
         Effect.OpenAttraction -> []
-        Effect.Planeswalk -> []
+        Effect.Planeswalk ref -> read_ (Maybe.maybeToList ref)
         Effect.ChaosEnsues ref -> read_ (Maybe.maybeToList ref)
         Effect.Abandon -> []
         Effect.SetInMotion ref -> read_ [ref]

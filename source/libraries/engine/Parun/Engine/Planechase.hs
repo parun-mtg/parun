@@ -15,13 +15,16 @@ module Parun.Engine.Planechase where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
+import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Cost as Cost
+import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Game as Game
@@ -42,6 +45,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.InherentTriggerSource as InherentTriggerSource
 import Parun.Types.Keyword (Keyword)
+import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.ManaAbilityPerformer as ManaAbilityPerformer
 import qualified Parun.Types.ManaCost as ManaCost
@@ -110,15 +114,18 @@ canPlaneswalk pid gs = isPlanechase gs && pid == Plane.planarController gs
 
 -- | CR 701.31b: put each face-up plane and phenomenon card on the bottom of its
 -- owner's planar deck, then turn the top card of this player's planar deck
--- face up. Nothing for a player CR 701.31a does not let planeswalk. Proposed
--- first as WouldPlaneswalk for this cause (CR 701.31c), so CR 614's
--- replacements see it.
-planeswalk :: PlaneswalkCause.PlaneswalkCause -> PlayerId -> Game ()
-planeswalk cause pid = proposed cause pid $ do
+-- face up -- or, given `to`, each of those cards still in that deck at once,
+-- Spatial Merging's "Simultaneously planeswalk to both of them". Nothing for a
+-- player CR 701.31a does not let planeswalk. Proposed first as WouldPlaneswalk
+-- for this cause (CR 701.31c), so CR 614's replacements see it once.
+planeswalk :: PlaneswalkCause.PlaneswalkCause -> Maybe [ObjectId] -> PlayerId -> Game ()
+planeswalk cause to pid = proposed cause pid $ do
   now <- State.get
   let away = faceUp now
-  Monad.mapM_ toBottom away
-  encounterTop pid (Set.fromList away)
+  bottomAll away
+  case to of
+    Nothing -> encounterTop pid (Set.fromList away)
+    Just cards -> encounterAll pid cards (Set.fromList away)
 
 -- CR 614.1a: propose this player's planeswalk for this cause, and perform it
 -- unless a replacement took its place. Nothing for a player CR 701.31a does not
@@ -202,6 +209,20 @@ encounterTop pid away = do
     State.modify' (Event.recordEvent (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Planar pid oid away)))
     State.modify' (Expiry.sweep Expiry.Planeswalked)
 
+-- CR 901.11 for several cards at once: turn each of `cards` still in this
+-- player's planar deck face up, then record a GameEvent.TurnedUpOffDeck for
+-- each -- so CR 312.5's and CR 701.31d's "planeswalk to" trigger for every one
+-- with all of them face up -- the first alone naming `away`, so CR 701.31d's
+-- "away from" triggers once. Effects lasting "until a player planeswalks" end
+-- once. Parun.PlanechaseSpec's "CR 701.31d Spatial Merging planeswalks to two
+-- planes at once" proves it.
+encounterAll :: PlayerId -> [ObjectId] -> Set.Set ObjectId -> Game ()
+encounterAll pid cards away = do
+  turned <- Monad.filterM (turnUp pid) cards
+  Monad.forM_ (zip turned (away : repeat Set.empty)) $ \(oid, from) ->
+    State.modify' (Event.recordEvent (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Planar pid oid from)))
+  Monad.unless (null turned) (State.modify' (Expiry.sweep Expiry.Planeswalked))
+
 -- | CR 704.6f / 312.7: the face-up phenomena that make the planar controller
 -- planeswalk, each the source of no triggered ability on the stack or among
 -- `waiting`, the abilities triggered on events not yet scanned
@@ -226,18 +247,45 @@ spentPhenomena waiting gs =
 turnUpTop :: PlayerId -> Game (Maybe ObjectId)
 turnUpTop pid = do
   gs <- State.get
-  let holder = Plane.planarDeckHolder pid gs
-      owned o = if GameSettings.singlePlanarDeck (MatchScope.settings (GameState.match gs)) then o {Object.owner = pid} else o
   case deckOf pid gs of
     [] -> pure Nothing
-    top : rest -> do
+    top : _ -> (\moved -> if moved then Just top else Nothing) <$> turnUp pid top
+
+-- turnUpTop for a card anywhere in this player's planar deck (Spatial
+-- Merging's revealed planes). False, and nothing done, for a card not in it.
+turnUp :: PlayerId -> ObjectId -> Game Bool
+turnUp pid card = do
+  gs <- State.get
+  let holder = Plane.planarDeckHolder pid gs
+      owned o = if GameSettings.singlePlanarDeck (MatchScope.settings (GameState.match gs)) then o {Object.owner = pid} else o
+  if List.notElem card (deckOf pid gs)
+    then pure False
+    else do
       ts <- State.state Game.freshTimestamp
       State.modify' $ \g ->
-        (Game.overSideDecks SideDeck.Planar (Map.insert holder (Seq.fromList rest)) g)
-          { GameState.command = Set.insert top (GameState.command g),
-            GameState.objects = Map.adjust (\o -> owned o {Object.timestamp = ts}) top (GameState.objects g)
+        (Game.overSideDecks SideDeck.Planar (Map.insert holder (Seq.fromList (List.delete card (deckOf pid g)))) g)
+          { GameState.command = Set.insert card (GameState.command g),
+            GameState.objects = Map.adjust (\o -> owned o {Object.timestamp = ts}) card (GameState.objects g)
           }
-      pure (Just top)
+      pure True
+
+-- CR 701.31b's first half for every face-up card at once: each owner puts
+-- theirs on the bottom in the order they choose (CR 401.4, and Spatial
+-- Merging's ruling of 2012-06-01), asked at two or more, the answer read from
+-- the bottom inward as Prompt.ArrangeLibraryArrivals says.
+bottomAll :: [ObjectId] -> Game ()
+bottomAll away = do
+  gs <- State.get
+  let owners = ListUtils.nubOrd (Maybe.mapMaybe (fmap Object.owner . (`Game.lookupObject` gs)) away)
+      ownedBy pid = filter (\oid -> fmap Object.owner (Game.lookupObject oid gs) == Just pid) away
+  Monad.forM_ owners $ \owner -> do
+    let batch = ownedBy owner
+    ordered <- case batch of
+      _ : _ : _ -> do
+        g <- State.get
+        Game.permute batch <$> Game.choose (Prompt.ArrangeLibraryArrivals (Decide.deciderFor owner g) owner LibraryPosition.Bottom batch)
+      _ -> pure batch
+    Monad.mapM_ toBottom (reverse ordered)
 
 -- CR 701.31b's first half: a face-up card goes to the bottom of its owner's
 -- planar deck (CR 901.15c: the communal one) face down, and CR 311.6 / 312.6
@@ -316,4 +364,4 @@ abilities gs = if isPlanechase gs then fmap (\pid -> (pid, planeswalkingAbility)
 -- die, planeswalk."
 planeswalkingAbility :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 planeswalkingAbility =
-  Mint.trigger (TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.You) (Seq.singleton Effect.Planeswalk)
+  Mint.trigger (TriggerCondition.PlayerRollsPlaneswalker PlayerRelation.You) (Seq.singleton (Effect.Planeswalk Nothing))
