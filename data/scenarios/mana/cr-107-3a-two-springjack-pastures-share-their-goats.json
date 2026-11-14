@@ -1,0 +1,77 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Springjack Pasture",
+            "label": "p1",
+            "ready": true
+          },
+          {
+            "card": "Springjack Pasture",
+            "label": "p2",
+            "ready": true
+          },
+          {
+            "card": "Mountain Goat",
+            "label": "g1",
+            "ready": true
+          },
+          {
+            "card": "Mountain Goat",
+            "label": "g2",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Centaur Courser",
+            "label": "courser"
+          },
+          {
+            "card": "Rumbling Baloth",
+            "label": "baloth"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 107.3a / 118.3 two Springjack Pastures share two Goats, so their X mana is three at most",
+  "final": [
+    {
+      "Count": {
+        "card": "Mountain Goat",
+        "count": 2,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "Each Pasture's X Goats are sacrificed out of the same two, so the most the pair makes is X = 2 on one and {C} from the other: Centaur Courser's {2}{G} is offered and Rumbling Baloth's {2}{G}{G} is not.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $courser",
+            "ActivateManaAbility $p1",
+            "ActivateManaAbility $p2"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

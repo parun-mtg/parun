@@ -18,6 +18,7 @@ import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Claim as Claim
 import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Condition as Condition
+import qualified Parun.Engine.CostAmount as CostAmount.Engine
 import qualified Parun.Engine.Count as Count
 import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
@@ -714,7 +715,8 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
       -- Priest of Yawgmoth group casts off this supply.
       --
       -- A yield reading how many counters its cost removed is `removable`'s,
-      -- below, and one reading its own X `announcing`'s.
+      -- below, and one reading its own X `announcing`'s or
+      -- `announcedByComponent`'s.
       --
       -- Not implemented: a yield reading any other slot its cost binds, which
       -- is supplied as the offer prices it (#6152).
@@ -743,6 +745,12 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
                     not (null (unitsOf yield))
                   ]
                 Nothing
+                  | announcedByComponent option ->
+                      [ (activations, plainYield yield, manaCost, fixed)
+                      | (x, fixed) <- takeWhile ((> 0) . Activations.times . snd) [(x, measuredAt x option) | x <- [1 .. Natural.length (GameState.battlefield gs)]],
+                        yield <- ListUtils.nubOrd [shareOf priced | (offered, priced) <- manaRepricingsGiven (Map.singleton Binding.variableX (Binding.toAmount x)) gs pcs oid gs, offered == option],
+                        not (null (unitsOf yield))
+                      ]
                   | announcing option ->
                       [ (activations, yield {yieldX = Just x}, manaCost, activations)
                       | x <- [0 .. xCeiling],
@@ -759,12 +767,24 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
       -- proof is data/scenarios/mana's
       -- cr-601-2b-wizard-s-rockets-colour-fixing-offers-the-cast, and its
       -- sibling cr-601-2b-wizard-s-rockets-x-is-charged-so-two-islands-offer-no-three-mana-cast.
-      --
-      -- Not implemented: an X only a cost COMPONENT announces, Springjack
-      -- Pasture's "Sacrifice X Goats", which is supplied as offered (#7448).
-      announcing option =
-        any (any (Set.member Binding.variableX . QuantitySlot.slots . ManaAddition.count) . Maybe.mapMaybe ManaAbility.manaProduced . Foldable.toList . Clause.effects . fst) (ManaOption.steps option)
-          && List.elem ManaSymbol.Variable (foldMap ManaCost.unwrap (Cost.mana (ManaOption.cost option)))
+      announcing option = readsX option && List.elem ManaSymbol.Variable (foldMap ManaCost.unwrap (Cost.mana (ManaOption.cost option)))
+      readsX option = any (any (Set.member Binding.variableX . QuantitySlot.slots . ManaAddition.count) . Maybe.mapMaybe ManaAbility.manaProduced . Foldable.toList . Clause.effects . fst) (ManaOption.steps option)
+      -- CR 107.3a / 601.2b on the supply side: a yield reading an X only a
+      -- cost COMPONENT announces -- Springjack Pasture's "Sacrifice X Goats:
+      -- Add X mana of any one color" -- is one supply per X from 1 while the
+      -- component at that X is payable, each priced with X bound and claiming
+      -- what the activation at that X spends, so the walk takes X Goats for X
+      -- mana. Its mana part announces none, so nothing is charged per X; X =
+      -- 0 adds nothing and is no supply. Bounded by the battlefield's size,
+      -- past which no count of permanents is payable; a bound short of another
+      -- kind of count only understates supply. The proof is
+      -- data/scenarios/mana's
+      -- cr-107-3a-springjack-pasture-sacrifice-x-goats-offers-the-cast, with
+      -- cr-107-3a-springjack-pasture-beside-one-goat-offers-no-two-mana-cast
+      -- for the bound and cr-107-3a-two-springjack-pastures-share-their-goats
+      -- for the claim.
+      announcedByComponent option = readsX option && not (announcing option) && any CostAmount.Engine.componentHasVariable (Cost.components (ManaOption.cost option))
+      measuredAt x option = supply ForOffer pcs pid oid (CostAmount.Engine.substituteAnnounced Binding.variableX x (ManaOption.cost option)) (ManaOption.restrictions option) (ManaOption.ability option) gs
       -- CR 601.2h / 118.1 on the supply side: a yield reading how many counters
       -- its cost removed -- Mana Battery's "an additional {R} for each charge
       -- counter removed this way" -- is one supply per number the cost could
