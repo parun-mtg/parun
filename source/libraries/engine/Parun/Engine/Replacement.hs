@@ -124,6 +124,7 @@ import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.LifeGainCause as LifeGainCause
 import qualified Parun.Types.LifeGainR as LifeGainR
 import qualified Parun.Types.LifeGainRewrite as LifeGainRewrite
 import qualified Parun.Types.LifeLossPattern as LifeLossPattern
@@ -820,7 +821,7 @@ affected event = case event of
   ProposedEvent.WouldBecomeAttached oid -> ([oid], [])
   ProposedEvent.WouldUntap oid -> ([oid], [])
   ProposedEvent.WouldLoseLife _ pid _ -> ([], [pid])
-  ProposedEvent.WouldGainLife pid _ -> ([], [pid])
+  ProposedEvent.WouldGainLife _ pid _ -> ([], [pid])
   ProposedEvent.WouldDraw pid _ -> ([], [pid])
   ProposedEvent.WouldPerform _ performer pid _ -> (Maybe.maybeToList performer, [pid])
   ProposedEvent.WouldThrow throw -> ([], [Throw.thrower throw])
@@ -1107,12 +1108,13 @@ matchesPrinted viewOf gs event candidate =
             && matchesFiltered viewOf gs candidate (CounterLossR.onWhat row) oid
             && Natural.minusSaturating (countersOn kind oid gs) n < CounterLossR.leaveAtLeast row
         -- CR 614.1a / 119.10: whose life total the row watches (CR 109.5's
-        -- "your"), and whether the rewrite would actually resize the gain. That
-        -- second conjunct is LifeLossR's third above, and for its reason: a gain
-        -- the row would leave alone never reaches CR 616.1's choice and is never
-        -- spent under CR 614.5.
-        (ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR whose rewrite), ProposedEvent.WouldGainLife pid n) ->
+        -- "your"), what caused the gain (CR 609.1), and whether the rewrite
+        -- would actually resize the gain. That last conjunct is LifeLossR's
+        -- third above, and for its reason: a gain the row would leave alone
+        -- never reaches CR 616.1's choice and is never spent under CR 614.5.
+        (ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR whose whichCause rewrite), ProposedEvent.WouldGainLife cause pid n) ->
           matchesPlayer gs candidate whose pid
+            && gainCaused whichCause cause pid
             && resizes gs candidate rewrite n
         -- CR 121.6 / 614.11: whose card draws the row watches (CR 109.5's "you",
         -- or Plagiarize's target player, baked by CR 601.2c's resolution).
@@ -1320,6 +1322,17 @@ breaches gs candidate rewrite pid n = case rewrite of
   -- removes it whatever the board says. Event.resolveLifeLoss never proposes a
   -- loss of 0, so there is no zero case to refuse.
   LifeLossRewrite.GainInstead -> True
+
+-- CR 609.1: whether a gain's cause is the one a row's pattern names. Rain of
+-- Gore's "a spell or ability would cause its controller to gain life" is the
+-- gaining player controlling the spell or ability; a gain no spell or ability
+-- causes (combat damage's lifelink) is not one.
+gainCaused :: LifeGainCause.LifeGainCause -> Maybe Cause.Cause -> PlayerId -> Bool
+gainCaused whichCause cause pid = case whichCause of
+  LifeGainCause.AnyCause -> True
+  LifeGainCause.ByOwnSpellOrAbility -> case cause of
+    Just c -> Cause.controller c == pid
+    Nothing -> False
 
 -- CR 614.1a: would this rewrite actually change the gain? `breaches` above, for
 -- the gain class -- and simpler, since no arm of Parun.Types.LifeGainRewrite
@@ -2527,13 +2540,13 @@ readsApplier re = case re of
   -- The gain side's whole rewrite sum, and the two resizing loss arms' answer:
   -- the scaling is the effect's own field and the player is the one the event
   -- named. Cased on the inner sum, LifeLossR's discipline above for its reason.
-  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ (LifeGainRewrite.Scaled scaling)) -> computedScaling scaling
+  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ _ (LifeGainRewrite.Scaled scaling)) -> computedScaling scaling
   -- The drawer is the player the EVENT named and the count is the event's own,
   -- the arm above's answer.
-  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ LifeGainRewrite.DrawInstead) -> False
+  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ _ LifeGainRewrite.DrawInstead) -> False
   -- The loser and the amount are the event's own, the arm above's answer; the
   -- two-tainted-remedies scenario in data/scenarios/life-replacement proves it.
-  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ LifeGainRewrite.LoseInstead) -> False
+  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ _ LifeGainRewrite.LoseInstead) -> False
   -- The player who gains the life is the one the EVENT named, and the amount is
   -- the effect's own field, so two rows alike in `effect` gain the same seat the
   -- same life whoever holds them. CR 109.5's "you" is read in `applies` rather
@@ -2802,7 +2815,7 @@ readsSource effect = case effect of
   ReplacementEffect.UntapR _ -> False
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled scaling)) -> computedScaling scaling
   ReplacementEffect.LifeLossR {} -> False
-  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ (LifeGainRewrite.Scaled scaling)) -> computedScaling scaling
+  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ _ (LifeGainRewrite.Scaled scaling)) -> computedScaling scaling
   ReplacementEffect.LifeGainR {} -> False
   ReplacementEffect.DrawCountR {} -> False
   ReplacementEffect.InstructionR r -> instructionRewriteReadsSource (InstructionR.rewrite r)
@@ -3108,7 +3121,7 @@ affectedChooserOf gs event = case event of
   -- gain is the player gaining it -- WouldLoseLife's answer one direction over.
   -- Not the source causing the gain: CR 119.10 reads the clause as "if a source
   -- would cause [a player] to gain life", and the player is who it happens to.
-  ProposedEvent.WouldGainLife pid _ -> Just pid
+  ProposedEvent.WouldGainLife _ pid _ -> Just pid
   -- CR 616.1's affected player is the one the event happens to, which for a draw
   -- is the player who would draw the card -- WouldLoseLife's answer, and for its
   -- reason. There is no affected OBJECT: CR 121.1's card is not chosen until the
@@ -4873,7 +4886,7 @@ countersOn kind oid gs = maybe 0 (Map.findWithDefault 0 kind . Object.counters) 
 -- the gain has survived, or Nothing when a replacement took the event outright.
 asLifeGain :: ProposedEvent -> Maybe (PlayerId, Natural)
 asLifeGain event = case event of
-  ProposedEvent.WouldGainLife pid n -> Just (pid, n)
+  ProposedEvent.WouldGainLife _ pid n -> Just (pid, n)
   ProposedEvent.WouldLoseLife {} -> Nothing
   ProposedEvent.WouldChangeZone {} -> Nothing
   ProposedEvent.WouldEnter _ -> Nothing

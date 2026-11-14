@@ -45,6 +45,7 @@ import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.LifeGainCause as LifeGainCause
 import qualified Parun.Types.LifeGainR as LifeGainR
 import qualified Parun.Types.LifeGainRewrite as LifeGainRewrite
 import qualified Parun.Types.LifeLossCause as LifeLossCause
@@ -241,6 +242,7 @@ spec s =
             ( ReplacementEffect.LifeGainR
                 ( LifeGainR.MkLifeGainR
                     (ControllerRelation.Related PlayerRelation.You)
+                    LifeGainCause.AnyCause
                     (LifeGainRewrite.Scaled (Scaling.Multiply 2))
                 )
             )

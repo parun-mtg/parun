@@ -500,6 +500,7 @@ import qualified Parun.Codec.LibraryPositionSpec
 import qualified Parun.Codec.LifeChangeSpec
 import qualified Parun.Codec.LifeDirectionSpec
 import qualified Parun.Codec.LifeExchangeSpec
+import qualified Parun.Codec.LifeGainCauseSpec
 import qualified Parun.Codec.LifeGainRSpec
 import qualified Parun.Codec.LifeGainRewriteSpec
 import qualified Parun.Codec.LifeIsSpec
@@ -1578,6 +1579,7 @@ spec s reference corpus = do
   Parun.Codec.LibraryPositionSpec.spec s
   Parun.Codec.GraveyardCostDestinationSpec.spec s
   Parun.Codec.LifeChangeSpec.spec s
+  Parun.Codec.LifeGainCauseSpec.spec s
   Parun.Codec.LifeGainRewriteSpec.spec s
   Parun.Codec.LifeGainRSpec.spec s
   Parun.Codec.LifeIsSpec.spec s

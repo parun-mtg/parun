@@ -2,6 +2,7 @@ module Parun.Types.ProposedEvent where
 
 import qualified Data.Sequence as Seq
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterKind as CounterKind
@@ -173,13 +174,14 @@ data ProposedEvent
     -- CR 120.3f's lifelink gain, and the gain a DrawRewrite substitutes for a
     -- draw.
     --
-    -- NO cause, where WouldLoseLife carries one: the loss side needs the grain
-    -- because Worship's clause is scoped to damage. Not implemented: the cause
-    -- and causing controller Rain of Gore's clause reads (#5810).
+    -- The Cause is CR 609.1's spell or ability whose effect causes the gain,
+    -- WouldLoseLife's LifeLossCause and for its reason: Rain of Gore's clause
+    -- reads it. Nothing where no spell or ability does, as for combat damage's
+    -- lifelink gain.
     --
     -- The Natural is the life that WOULD be gained, never the resulting total,
     -- WouldLoseLife's currency and for its reason.
-    WouldGainLife PlayerId.PlayerId Natural.Natural
+    WouldGainLife (Maybe Cause.Cause) PlayerId.PlayerId Natural.Natural
   | -- | CR 121.1 / 614.11: a player would draw a card. Raised by
     -- Parun.Engine.Event.drawCardSpentReturning, the one funnel CR 121.1's turn-based
     -- draw, an opening hand and an Effect.Draw all go through -- and raised

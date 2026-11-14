@@ -1,0 +1,64 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Vampire Nighthawk",
+            "label": "hawk",
+            "ready": true
+          }
+        ],
+        "life": 15,
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Rain of Gore",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.15b / 510.2 Rain of Gore leaves a combat damage lifelink gain alone",
+  "note": "Alice's Vampire Nighthawk deals bob 2 combat damage; no spell or ability causes her lifelink gain (Rain of Gore's ruling), so she goes from 15 to 17 under bob's Rain of Gore.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$hawk"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

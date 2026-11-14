@@ -1,0 +1,45 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Rain of Gore",
+      "oracleText": "If a spell or ability would cause its controller to gain life, that player loses that much life instead.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "LifeGainR",
+            "value": {
+              "rewrite": {
+                "type": "LoseInstead"
+              },
+              "whichCause": "ByOwnSpellOrAbility",
+              "whose": {
+                "type": "AnyPlayer"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

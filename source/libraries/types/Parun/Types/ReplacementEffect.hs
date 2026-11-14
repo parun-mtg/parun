@@ -152,9 +152,6 @@ data ReplacementEffect card ability effect
     -- 119.3's two directions are two event classes: rule 119.10 reads a gain
     -- clause as "if a source would cause you to gain life", and no life loss is
     -- a life gain however the amounts are signed.
-    --
-    -- Its pattern is barer than LifeLossR's. Not implemented: narrowing by
-    -- cause, Rain of Gore's (#5810).
     LifeGainR LifeGainR.LifeGainR
   | -- | CR 614.1a / 120.4c: damage that would remove a permanent's counters
     -- leaves some on it (Deification). Its own arm beside CounterR, whose event
