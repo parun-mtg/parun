@@ -156,7 +156,7 @@
                 "value": {
                   "count": {
                     "type": "Fixed",
-                    "value": 1
+                    "value": 2
                   },
                   "whichPermanents": {
                     "type": "HasCardType",

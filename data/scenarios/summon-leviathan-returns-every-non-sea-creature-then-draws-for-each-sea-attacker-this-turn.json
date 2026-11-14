@@ -380,6 +380,22 @@
       "do": {
         "Attack": []
       }
+    },
+    {
+      "turn": 4,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Block": {}
+      }
+    },
+    {
+      "turn": 5,
+      "step": "DeclareBlockers",
+      "player": "carol",
+      "do": {
+        "Block": {}
+      }
     }
   ]
 }

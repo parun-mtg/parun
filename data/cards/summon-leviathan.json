@@ -9,29 +9,8 @@
               "type": "Attacker",
               "value": {
                 "creature": {
-                  "type": "Or",
-                  "value": [
-                    {
-                      "type": "HasSubtype",
-                      "value": "Kraken"
-                    },
-                    {
-                      "type": "HasSubtype",
-                      "value": "Leviathan"
-                    },
-                    {
-                      "type": "HasSubtype",
-                      "value": "Merfolk"
-                    },
-                    {
-                      "type": "HasSubtype",
-                      "value": "Octopus"
-                    },
-                    {
-                      "type": "HasSubtype",
-                      "value": "Serpent"
-                    }
-                  ]
+                  "type": "HasCardType",
+                  "value": "Creature"
                 }
               }
             }
