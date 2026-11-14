@@ -127,6 +127,25 @@ spec s registry = Spec.describe s "Learn" $ do
     -- CR 701.48a's third sentence is conditioned on NOT discarding, so the pool
     -- is untouched.
     Spec.assertEqWith s "CR 701.48a nothing came in from outside the game" (poolOf S.alice after) (poolOf S.alice before)
+  -- CR 121.2a: the first branch's draw is an instruction to draw a card, so
+  -- Quantum Riddler's "if you would draw one or more cards" reaches it once the
+  -- discard has left alice's hand empty. Drawing through Event.drawCard, around
+  -- the instruction, draws the Plains alone and the assertion reddens.
+  Spec.it s "CR 121.2a Quantum Riddler makes the first branch's draw two cards" $ do
+    swamp <- S.printingOf s registry "Swamp"
+    cram <- S.printingOf s registry "Cram Session"
+    giant <- S.printingOf s registry "Hill Giant"
+    plains <- S.printingOf s registry "Plains"
+    island <- S.printingOf s registry "Island"
+    lesson <- S.printingOf s registry "Airbending Lesson"
+    sorcery <- S.printingOf s registry "Sign in Blood"
+    riddler <- S.printingOf s registry "Quantum Riddler"
+    let (spell, bare) = board swamp cram giant plains lesson sorcery
+        (_, stocked) = S.addLibraryCard island S.alice bare
+        (_, before) = S.addPermanent riddler S.alice stocked
+        after = learned (Just LearnMode.DiscardAndDraw) spell before
+    Spec.assertEqWith s "she drew both library cards" (List.sort (printingsIn Zone.Hand S.alice after)) (List.sort [plains, island])
+    Spec.assertEqWith s "after discarding the Hill Giant" (discardedBy cram after) [giant]
   Spec.it s "CR 701.48a the second branch takes the Lesson from outside the game, and leaves the non-Lesson there" $ do
     swamp <- S.printingOf s registry "Swamp"
     cram <- S.printingOf s registry "Cram Session"

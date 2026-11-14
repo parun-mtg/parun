@@ -76,6 +76,7 @@ import qualified Parun.Types.DealDamage as DealDamage
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DiceReading as DiceReading
+import qualified Parun.Types.DrawKind as DrawKind
 import qualified Parun.Types.ExchangeBlocks as ExchangeBlocks
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.FaceDownState as FaceDownState
@@ -1195,7 +1196,7 @@ exileHandThenDraw settle controller = do
   gs <- State.get
   let handIds = Game.zoneMembers Zone.Hand controller gs
   Monad.void (Event.changeZonesTogether settle (fmap (\oid -> (oid, Zone.Exile)) handIds))
-  got <- Event.drawSeries settle Set.empty controller (Natural.length handIds)
+  got <- Event.drawSeries DrawKind.Other settle Set.empty controller (Natural.length handIds)
   -- CR 603.12: the Draw arm's shortfall. A REGRESSION FENCE: nothing arms a
   -- reflexive after it.
   Monad.when (length got < length handIds) Common.fallShort

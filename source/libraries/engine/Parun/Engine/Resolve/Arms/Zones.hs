@@ -1288,7 +1288,7 @@ draw settle resolving source controller legal (Draw.MkDraw ref quantity mSlot) =
       -- re-reads the library top and the CR 104.3c empty-library loss is
       -- preserved; CR 614.11a: what a replacement queued in one draw's
       -- place lands before the next.
-      Just (drawer, settled) -> Event.drawSeries settle Set.empty drawer settled
+      Just (drawer, settled) -> Event.drawSeries DrawKind.Other settle Set.empty drawer settled
     -- CR 603.12: fewer cards drawn than the instruction named, against
     -- the count BEFORE any replacement -- The Royal Scions' 2019-10-04
     -- rulings, fewer than four does not trigger and five or more does.

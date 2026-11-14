@@ -3260,7 +3260,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offenders = filter (anyFace (any instructionRowOffends . cardReplacementEffects) . Printing.card) ps
     -- Guards against a vacuous sweep: these cards printing an InstructionR are
     -- all swept.
-    Spec.assertEqWith s "the pool's instruction rows include these" (filter (`notElem` fmap (S.nameOf . Printing.card) (filter rowsOf ps)) (fmap (CardName.MkCardName . Text.pack) ["Bruvac the Grandiloquent", "Eligeth, Crossroads Augur", "Kenessos, Priest of Thassa", "Krark's Thumb", "Leader, Super-Genius", "Pokey, the Scallywagg", "Retriever Phoenix", "Steamflogger Boss", "Tekuthal, Inquiry Dominus", "The Valeyard", "Twinning Staff"])) []
+    Spec.assertEqWith s "the pool's instruction rows include these" (filter (`notElem` fmap (S.nameOf . Printing.card) (filter rowsOf ps)) (fmap (CardName.MkCardName . Text.pack) ["Bruvac the Grandiloquent", "Eligeth, Crossroads Augur", "Kenessos, Priest of Thassa", "Krark's Thumb", "Leader, Super-Genius", "Pokey, the Scallywagg", "Quantum Riddler", "Retriever Phoenix", "Steamflogger Boss", "Tekuthal, Inquiry Dominus", "The Valeyard", "Twinning Staff"])) []
     Spec.assertEqWith s "every instruction row is one its funnel carries out" (fmap (S.nameOf . Printing.card) offenders) []
   -- The rejecting direction, against Eligeth's and Krark's Thumb's real rows with
   -- one field changed, never a card file -- Eon Hub's posture below.

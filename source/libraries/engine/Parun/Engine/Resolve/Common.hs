@@ -117,6 +117,7 @@ import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.Draw as Draw
+import qualified Parun.Types.DrawKind as DrawKind
 import qualified Parun.Types.Duration as Duration
 import Parun.Types.Effect (Effect)
 import qualified Parun.Types.Effect as Effect
@@ -5016,10 +5017,9 @@ conniveOne settle proposed oid = Monad.when (proposed > 0) $ do
     Event.applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.Connive (Just oid) controller proposed)
   Monad.forM_ (Monad.join settled >>= Replacement.asPerformed PlayerInstruction.Connive) $ \(pid, n) -> Monad.when (n > 0) $ do
     -- CR 121.2a: the N-card draw is one replaceable instruction, settled before
-    -- any of CR 121.2's individual draws -- Effect.Draw's arm, line for line,
-    -- `settle` included (CR 614.11a).
-    outcome <- Event.applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid n)
-    Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards) (uncurry (Event.drawSeries settle Set.empty))
+    -- any of CR 121.2's individual draws, `settle` run between them (CR
+    -- 614.11a).
+    Event.drawInstruction settle DrawKind.Other Set.empty pid n
     drawn <- State.get
     let held = Game.cardsIn Zone.Hand pid drawn
     -- The discard is N however many cards the draw actually delivered (CR

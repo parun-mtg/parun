@@ -132,6 +132,7 @@ import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.PlayerControl as PlayerControl
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.PriorityWindow as PriorityWindow
 import qualified Parun.Types.Program as Program
 import qualified Parun.Types.ProjectedCharacteristics as PC
@@ -600,7 +601,7 @@ runTurnBasedActions phase = do
     -- it takes the CR 800.4j guard.
     Phase.Beginning BeginningStep.Upkeep -> Monad.mapM_ Contraption.crank live
     Phase.Beginning BeginningStep.DrawStep ->
-      Monad.void (Event.inDrawOrder (\pid -> [ProposedEvent.WouldDraw pid (DrawKind.TurnBased pid)]) live (Event.drawForTurn (Resolve.runReplacementEffects playSubgame)))
+      Monad.void (Event.inDrawOrder (\pid -> [ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid 1, ProposedEvent.WouldDraw pid (DrawKind.TurnBased pid)]) live (Event.drawForTurn (Resolve.runReplacementEffects playSubgame)))
     -- CR 703.4h: choose the defending player. The active player's action (CR
     -- 507.1), and the one item on the list CR 800.4h hands to another seat rather
     -- than dropping, so it is NOT guarded here -- designateDefenders asks
