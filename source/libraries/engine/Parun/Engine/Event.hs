@@ -4471,9 +4471,10 @@ apply settle batch applied batchPrevented candidate event =
       -- CR 615.6: a prevented event never happens -- it is not marked, not
       -- drained, and never recorded, so no deathtouch bit exists for the CR
       -- 704.5h SBA to read.
-      DamageRewrite.PreventAll -> do
-        Replacement.consume (ReplacementCandidate.identity candidate)
-        pure Nothing
+      --
+      -- NOT `consume`: a one-use row is spent at the batch's end, by
+      -- resolveDamageBatch, so it meets the rest of its source's instance.
+      DamageRewrite.PreventAll -> pure Nothing
       -- CR 122.1c: "prevent that damage and remove a shield counter from it". The
       -- WHOLE event goes, whatever its amount -- "if a permanent that would be
       -- dealt damage has more than one shield counter on it, that damage is
@@ -4543,10 +4544,11 @@ apply settle batch applied batchPrevented candidate event =
       --
       -- A one-use row (Forcefield's next instance) is spent only when it
       -- shrank the event: CR 609.7b, "if for any reason the shield prevents no
-      -- damage ... the shield isn't used up". A static row has no use to spend.
+      -- damage ... the shield isn't used up". That spend waits for the batch's
+      -- end, PreventAll's, and reads the shrinkage `preventionBy` records. A
+      -- static row has no use to spend.
       DamageRewrite.PreventAllBut surviving -> do
         let left = min (Maybe.fromMaybe surviving (Replacement.floorLeft batchPrevented candidate event)) (DamageEvent.amount de)
-        Monad.when (left < DamageEvent.amount de) (Replacement.consume (ReplacementCandidate.identity candidate))
         if left == 0
           then pure Nothing
           else pure (Just (ProposedEvent.WouldDealDamage de {DamageEvent.amount = left}))
@@ -6571,8 +6573,8 @@ resolveDamage allowances spent earlier de = do
 -- Halves that come back together are joined earlier, in settleThreads.
 --
 -- Each event still runs its OWN CR 616.1 loop and the loop's unit is still one
--- event, which is what CR 614.5 and CR 615.10 both describe. Three things this
--- adds over calling resolveDamage per event, and all three are rules the BATCH is
+-- event, which is what CR 614.5 and CR 615.10 both describe. Four things this
+-- adds over calling resolveDamage per event, and all four are rules the BATCH is
 -- the only place to state:
 --
 --   * CR 616.1's APNAP clause, because a lone event has one affected object and
@@ -6587,10 +6589,15 @@ resolveDamage allowances spent earlier de = do
 --     prevention effect is applied to one or more simultaneous damage events",
 --     so one instance reaching three of this batch's events is ONE prevention of
 --     the total rather than three.
+--   * CR 615.8's INSTANCE, because "the next time a specific source would
+--     deal damage" is every event that source deals at that time (CR 510.2),
+--     so a one-use prevention row is spent once the batch is settled rather
+--     than by its first event (Replacement.spendPrevented).
 resolveDamageBatch :: [DamageEvent.DamageEvent] -> Game ([DamageEvent.DamageEvent], [Prevention])
 resolveDamageBatch events = do
   before <- State.get
   (dealt, (prevented, _)) <- settleThreads mempty (fmap (\de -> (de, Set.empty)) events)
+  Replacement.spendPrevented prevented
   after <- State.get
   pure (Replacement.oneEventPerRecipient (fmap (asDealt before after) dealt), Replacement.groupPreventions prevented)
 

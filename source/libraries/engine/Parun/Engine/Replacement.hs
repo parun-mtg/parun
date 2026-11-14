@@ -3337,6 +3337,21 @@ consume identity_ = case identity_ of
               && ActiveReplacement.uses active == Uses.Once
        in gs {GameState.stored = (GameState.stored gs) {StoredEffects.replacements = filter (not . spent) (StoredEffects.replacements (GameState.stored gs))}}
 
+-- CR 615.8: spend each one-use prevention row a settled damage batch applied.
+-- "The next time a specific source would deal damage" is every event that
+-- source deals at that time -- CR 510.2's combat damage is dealt
+-- simultaneously, and CR 120.4's Awe Strike example treats it as one damage
+-- event -- so the row stays standing for the whole batch and is spent here,
+-- after it, rather than by its first event: a trampler's damage to its blocker
+-- and to the player is one instance. Proved by the scenario
+-- awe-strike-prevents-a-tramplers-damage-to-its-blocker-and-the-player.
+--
+-- Only a prevention that prevented some damage spends the row: CR 609.7b /
+-- 615.12's shield preventing none is not used up, and `preventionBy` records
+-- that application at 0. `consume` is a no-op for a row with no use count.
+spendPrevented :: [Prevention] -> Game ()
+spendPrevented = mapM_ (consume . Prevention.by) . filter (any (any (> 0)) . Prevention.amounts)
+
 -- CR 615.7: write back what is left of a shield after it prevented some damage,
 -- and drop the row entirely once nothing is -- a row that can prevent nothing is
 -- not a prevention effect (`unspent` above refuses it either way).

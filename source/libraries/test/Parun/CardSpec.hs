@@ -5251,7 +5251,7 @@ effectFilters effect = case effect of
   Effect.PreventAllDamage (PreventAllDamage.MkPreventAllDamage duration _ ref whatRecipient _ _ chosenSource whatSource rider) ->
     frame Unframed (durationFilters duration) <> fmap ((,) ChosenSourceFramed) (Maybe.maybeToList chosenSource) <> unframed (Maybe.maybeToList whatRecipient) <> [(ReplacementRowFramed, whatSource)] <> frame SourceHostFramed (foldMap objectRefFilters ref) <> concatMap effectFilters rider
   -- The two arms above's reads over the fields CR 615.8's shield carries.
-  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance duration _ ref chosenSource rider _) ->
+  Effect.NextDamageInstance (NextDamageInstance.MkNextDamageInstance duration _ ref _ chosenSource rider _) ->
     frame Unframed (durationFilters duration) <> [(ChosenSourceFramed, chosenSource)] <> frame SourceHostFramed (objectRefFilters ref) <> concatMap effectFilters rider
   -- BOTH refs, or a Filter inside a redirect's destination escapes this lint.
   -- The chosen source, the recipient description and the property-named source

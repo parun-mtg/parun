@@ -1262,30 +1262,31 @@ preventAllDamage resolving source controller legal chosen (PreventAllDamage.MkPr
           _ -> State.modify' $ \g0 -> List.foldl' (Common.installDamageRow resolving legal (Filter.slotObjects context) controller source duration kind DamageRewrite.PreventAll Uses.Unlimited rider printedSource (whatRecipient, whoRecipient)) g0 (fmap (\recipient -> (recipient, sourceChoice)) rows)
 
 nextDamageInstance :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> NextDamageInstance.NextDamageInstance (Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Game ()
-nextDamageInstance resolving source controller legal chosen (NextDamageInstance.MkNextDamageInstance duration kind ref sourceFilter riderEffects outcome) = do
-  -- CR 615.8: install a shield over ONE instance of damage from the chosen
-  -- source. Preventing it, the rewrite is PreventAll -- "regardless of how much damage
-  -- that is", which is the whole event and never CR 615.7's arithmetic -- and
-  -- what makes it the NEXT instance rather than every one is Uses.Once, CR
-  -- 614.3's use count, the same spelling CR 701.19a's "the next time this
-  -- permanent would be destroyed this turn" already takes.
+nextDamageInstance resolving source controller legal chosen (NextDamageInstance.MkNextDamageInstance duration kind ref direction sourceFilter riderEffects outcome) = do
+  -- CR 615.8: install a shield over ONE instance of damage from one source,
+  -- chosen or targeted. Preventing it, the rewrite is PreventAll -- "regardless
+  -- of how much damage that is", which is the whole event and never CR 615.7's
+  -- arithmetic -- and what makes it the NEXT instance rather than every one is
+  -- Uses.Once, CR 614.3's use count, the same spelling CR 701.19a's "the next
+  -- time this permanent would be destroyed this turn" already takes.
   --
-  -- CR 609.7b falls out of that reading rather than needing an arm: a use is
-  -- spent by Event.apply, which runs only where the shield actually prevented
-  -- the damage, so a shield that prevented none -- CR 615.12's unpreventable
-  -- damage, a source whose properties stopped matching -- is not used up.
-  -- Forcefield's floor is applied to an instance already at or under it, and
-  -- spends its use only when it shrank the instance (Event.apply's
-  -- PreventAllBut arm), proved by the scenario
+  -- CR 609.7b falls out of that reading rather than needing an arm: a
+  -- prevention's use is spent by Replacement.spendPrevented, once the batch is
+  -- settled, and only where the shield actually prevented some damage, so a
+  -- shield that prevented none -- CR 615.12's unpreventable damage, a source
+  -- whose properties stopped matching -- is not used up. Forcefield's floor is
+  -- applied to an instance already at or under it, and spends its use only when
+  -- it shrank the instance, proved by the scenario
   -- forcefield-is-not-used-up-by-a-hit-it-prevents-none-of.
   --
-  -- ONE ROW PER NAMED RECIPIENT, PreventNextDamage's split, and a fold rather
+  -- ONE ROW PER NAMED OBJECT, PreventNextDamage's split, and a fold rather
   -- than a single row because an ObjectRef may name several. Every printing of
-  -- this rule names exactly one -- Deflecting Palm's "to you", Honorable
-  -- Passage's "to any target" -- so one row is what is installed today.
+  -- this rule names exactly one -- Deflecting Palm's "to you", Awe Strike's
+  -- "target creature" -- so one row is what is installed today.
   gs <- State.get
   let context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-      recipients = Maybe.mapMaybe (Damage.damageRecipient gs) (Common.objectRefRecipients legal resolving controller source gs ref)
+      named = Common.objectRefRecipients legal resolving controller source gs ref
+      recipients = Maybe.mapMaybe (Damage.damageRecipient gs) named
       -- CR 615.5's additional effect, run as part of the prevention rather
       -- than put on the stack: Reverse Damage's life, Deflecting Palm's damage
       -- back.
@@ -1297,19 +1298,30 @@ nextDamageInstance resolving source controller legal chosen (NextDamageInstance.
         -- instance.
         NextDamageOutcome.PreventedAllBut surviving -> DamageRewrite.PreventAllBut surviving
         NextDamageOutcome.AlsoToSourceController -> DamageRewrite.AlsoToSourceController
-  -- No recipient is CR 608.2b's gone target, so there is nothing to shield and
-  -- CR 609.7a's choice -- a choice existing only to be baked into a row -- is
-  -- not raised either. The sibling shields' posture.
-  Monad.unless (null recipients) $ do
-    -- CR 609.7a: "the source is chosen when the effect is created", so the
-    -- choice is made ONCE here.
-    sourceChoice <- Common.chooseDamageSource controller resolving context gs (Just sourceFilter)
-    case sourceChoice of
-      -- CR 609.7a's pool was empty, so there is nothing to shield and no row is
-      -- installed -- stricter than printed rather than weaker, which a row
-      -- watching every source would be.
-      Nothing -> pure ()
-      Just _ -> State.modify' $ \g0 -> List.foldl' (Common.installDamageRow resolving legal (Filter.slotObjects context) controller source duration kind rewrite Uses.Once rider (Filter.Type.And []) (Nothing, Nothing)) g0 (fmap (\recipient -> (Just recipient, sourceChoice)) recipients)
+      install rows = State.modify' (\g0 -> List.foldl' (Common.installDamageRow resolving legal (Filter.slotObjects context) controller source duration kind rewrite Uses.Once rider (Filter.Type.And []) (Nothing, Nothing)) g0 rows)
+  case direction of
+    -- Awe Strike's "the next time target creature would deal damage": the ref
+    -- names CR 120.1's source, always an object, and the row names no
+    -- recipient, so it watches that source's damage to anyone. The source is
+    -- CR 601.2c's target, so CR 609.7a's choice is not asked and the id gets
+    -- the trivial predicate, PreventAllDamage's DealtBy branch exactly. A gone
+    -- target names nothing, so nothing is installed (CR 608.2b).
+    DamageDirection.DealtBy ->
+      install (fmap (\oid -> (Nothing, Just (Filter.Type.And [], oid))) (Maybe.mapMaybe Recipient.objectOf named))
+    -- No recipient is CR 608.2b's gone target, so there is nothing to shield and
+    -- CR 609.7a's choice -- a choice existing only to be baked into a row -- is
+    -- not raised either. The sibling shields' posture.
+    DamageDirection.DealtTo ->
+      Monad.unless (null recipients) $ do
+        -- CR 609.7a: "the source is chosen when the effect is created", so the
+        -- choice is made ONCE here.
+        sourceChoice <- Common.chooseDamageSource controller resolving context gs (Just sourceFilter)
+        case sourceChoice of
+          -- CR 609.7a's pool was empty, so there is nothing to shield and no row
+          -- is installed -- stricter than printed rather than weaker, which a
+          -- row watching every source would be.
+          Nothing -> pure ()
+          Just _ -> install (fmap (\recipient -> (Just recipient, sourceChoice)) recipients)
 
 redirectDamage :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RedirectDamage.RedirectDamage -> Game ()
 redirectDamage resolving source controller legal (RedirectDamage.MkRedirectDamage duration kind amount srcRef whatRecipient whoRecipient destRef sourceFilter uses whatSource) = do

@@ -1,0 +1,19 @@
+{
+  "description": "CR 615.8 / 510.2: Awe Strike on a blocked trampler prevents its damage to the blocker and to the player, one instance, and gains that much life once",
+  "note": "Argothian Swine assigns 2 to Grizzly Bears and 1 to alice in one combat damage step: both are prevented, alice gains 3 in one event (Ajani's Pridemate takes one counter), and the Bears' damage to the Swine is dealt.",
+  "board": {"active": "bob", "step": "BeginningOfCombat", "seats": [
+    {"name": "bob", "battlefield": [{"card": "Argothian Swine", "label": "swine", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "alice", "battlefield": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Ajani's Pridemate", "label": "mate"}, {"card": "Plains", "label": "plains"}], "hand": [{"card": "Awe Strike", "label": "awe"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": ["$swine"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Block": {"$bears": ["$swine"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Cast": {"object": "$awe", "targets": ["$swine"], "mana": ["$plains"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "CombatDamage", "player": "bob", "do": {"Answer": {"prompt": "AssignCombatDamage", "with": [[["Creature", "$bears"], 2], [["Player", "alice"], 1]]}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"Life": {"player": "alice", "life": 23}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"Damage": {"object": "$bears", "damage": 0}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"Damage": {"object": "$swine", "damage": 2}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"Counters": {"object": "$mate", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}}
+  ]
+}

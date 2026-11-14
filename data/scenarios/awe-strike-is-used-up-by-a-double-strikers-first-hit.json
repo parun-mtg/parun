@@ -1,0 +1,16 @@
+{
+  "description": "CR 615.8: Awe Strike prevents only a double striker's first-strike damage, and its regular damage is dealt",
+  "note": "Boros Swiftblade attacks unblocked: the first-strike 1 is prevented and alice gains 1, then the regular 1 is dealt, so alice ends at 20 with one life gain.",
+  "board": {"active": "bob", "step": "BeginningOfCombat", "seats": [
+    {"name": "bob", "battlefield": [{"card": "Boros Swiftblade", "label": "blade", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "alice", "battlefield": [{"card": "Ajani's Pridemate", "label": "mate"}, {"card": "Plains", "label": "plains"}], "hand": [{"card": "Awe Strike", "label": "awe"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": ["$blade"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Block": {}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Cast": {"object": "$awe", "targets": ["$blade"], "mana": ["$plains"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"Life": {"player": "alice", "life": 20}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"Counters": {"object": "$mate", "kind": {"type": "PlusOnePlusOne"}, "count": 1}}}
+  ]
+}
