@@ -37,6 +37,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Source as Source
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.StickerKind as StickerKind
 import qualified Parun.Types.StickerPlacement as StickerPlacement
 import qualified Parun.Types.StickerRef as StickerRef
@@ -104,7 +105,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           LastKnown.announcedX = Just 4,
           LastKnown.manaSpent = Mana.MkMana [greenUnit],
           LastKnown.manaSpentOnX = Just (Mana.MkMana [greenUnit]),
-          LastKnown.chosenModes = Map.singleton TriggeredAbilitySourceSpec.ability (Map.singleton (ModeIndex.MkModeIndex 2) 3),
+          LastKnown.chosenModes = Map.singleton (StackedAbility.Triggered TriggeredAbilitySourceSpec.ability) (Map.singleton (ModeIndex.MkModeIndex 2) 3),
           LastKnown.controlClock = Map.singleton (PlayerId.MkPlayerId 1) ControlClock.SinceLastUpkeep,
           LastKnown.zone = Zone.Battlefield,
           LastKnown.home = Zone.Command,
@@ -131,7 +132,7 @@ spec s = Spec.describe s "Parun.Codec.LastKnown" $ do
           <> "],\"manaSpentOnX\":["
           <> greenUnitJson
           <> "]"
-          <> ",\"chosenModes\":[{\"key\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}},\"value\":{\"2\":3}}]"
+          <> ",\"chosenModes\":[{\"key\":{\"type\":\"Triggered\",\"value\":{\"condition\":{\"type\":\"Enters\",\"value\":{}},\"modal\":{\"modes\":[{}]}}},\"value\":{\"2\":3}}]"
           <> ",\"controlClock\":[{\"player\":1,\"clock\":\"SinceLastUpkeep\"}]"
           <> ",\"zone\":\"Battlefield\",\"home\":\"Command\",\"pile\":6"
           <> ",\"lapsedGrants\":[{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Literal\",\"value\":3},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":5}}}],\"tapped\":true,\"faceDown\":true} "

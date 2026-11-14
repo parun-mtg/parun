@@ -18,6 +18,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
+import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Ingest as Ingest
@@ -312,12 +313,12 @@ rule face n = case Node.tag n of
   "SpellActions" -> do
     Monad.unless (Face.spell face == Face.defaultSpell) (Node.untranslated n)
     v <- Node.argument n
-    m <- modal outermost v >>= forgetful v
+    m <- modal outermost v >>= forgetful True v
     pure face {Face.spell = m}
   "Activated" -> do
     (costValue, actionsValue) <- pair n
     c <- costOf costValue
-    m <- modal outermost actionsValue >>= forgetful actionsValue
+    m <- modal outermost actionsValue >>= \candidate -> forgetful (ManaAbility.isManaAbility (activatedAbility c candidate)) actionsValue candidate
     pure face {Face.activatedAbilities = Face.activatedAbilities face <> [activatedAbility c m]}
   -- "Activate only ..." (CR 602.5).
   "ActivatedWithModifiers" -> do
@@ -325,7 +326,7 @@ rule face n = case Node.tag n of
     case as of
       [costValue, actionsValue, modifierValue] -> do
         c <- costOf costValue
-        m <- modal outermost actionsValue >>= forgetful actionsValue
+        m <- modal outermost actionsValue >>= \candidate -> forgetful (ManaAbility.isManaAbility (activatedAbility c candidate)) actionsValue candidate
         rs <- Node.node modifierValue >>= activationRestrictions
         pure face {Face.activatedAbilities = Face.activatedAbilities face <> [(activatedAbility c m) {ActivatedAbility.restrictions = rs}]}
       _ -> Node.untranslated n
@@ -994,13 +995,12 @@ modal context value = do
   let memory = if Node.tag n == "Modal_ChooseOneThatHasntBeenChosen" then ModeMemory.ObjectLifetime else ModeMemory.NoMemory
   pure Modal.MkModal {Modal.modes = Seq.fromList modes, Modal.selection = ModeSelection.ChooseExactly 1, Modal.memory = memory, Modal.shared = Seq.empty}
 
--- | A spell's or activated ability's modal, refused where it remembers its
--- modes.
---
--- Not implemented: a mode memory outside a triggered ability (#5782).
-forgetful :: Value.Value -> Modal -> Translated Modal
-forgetful value m
-  | Modal.memory m == ModeMemory.NoMemory = pure m
+-- | A modal nothing reads the memory of -- a spell's, or a mana ability's (CR
+-- 605.3b) -- refused where it remembers its modes (Parun.CardSpec's
+-- cardRemembersUnread).
+forgetful :: Bool -> Value.Value -> Modal -> Translated Modal
+forgetful unread value m
+  | not unread || Modal.memory m == ModeMemory.NoMemory = pure m
   | otherwise = Node.node value >>= Node.untranslated
 
 -- | How many kinds of mana each "or" of mana in the value chooses among.

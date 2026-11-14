@@ -7,14 +7,12 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Codec.Acquisition as Acquisition
 import qualified Parun.Codec.AttackTarget as AttackTarget
-import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.CardType as CardType
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.Condition as Condition
 import qualified Parun.Codec.ControlClock as ControlClock
 import qualified Parun.Codec.CounterKind as CounterKind
-import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.KeywordInstance as KeywordInstance
 import qualified Parun.Codec.Mana as Mana
@@ -24,9 +22,9 @@ import qualified Parun.Codec.PlayerChoice as PlayerChoice
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.ProjectedCharacteristics as ProjectedCharacteristics
 import qualified Parun.Codec.Source as Source
+import qualified Parun.Codec.StackedAbility as StackedAbility
 import qualified Parun.Codec.StickerPlacement as StickerPlacement
 import qualified Parun.Codec.Subtype as Subtype
-import qualified Parun.Codec.TriggeredAbility as TriggeredAbility
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -66,7 +64,7 @@ codec = Fields.object $ do
   announcedX <- Fields.defaulted "announcedX" Nothing (Common.maybe Common.natural) LastKnown.announcedX
   manaSpent <- Fields.defaulted "manaSpent" (Mana.MkMana []) Mana.codec LastKnown.manaSpent
   manaSpentOnX <- Fields.defaulted "manaSpentOnX" Nothing (Common.maybe Mana.codec) LastKnown.manaSpentOnX
-  chosenModes <- Fields.defaulted "chosenModes" Map.empty (Common.keyedList (Common.keyValue (TriggeredAbility.codec Card.codec (GrantedAbility.codec Card.codec)) (Common.naturalMap ModeIndex.codec Common.natural))) LastKnown.chosenModes
+  chosenModes <- Fields.defaulted "chosenModes" Map.empty (Common.keyedList (Common.keyValue StackedAbility.codec (Common.naturalMap ModeIndex.codec Common.natural))) LastKnown.chosenModes
   controlClock <- Fields.defaulted "controlClock" Map.empty (Common.keyedList ControlClock.entry) LastKnown.controlClock
   zone <- Fields.required "zone" Zone.codec LastKnown.zone
   home <- Fields.defaulted "home" Zone.Battlefield Zone.codec LastKnown.home

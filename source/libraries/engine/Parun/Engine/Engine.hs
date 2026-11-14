@@ -120,7 +120,6 @@ import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
-import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
@@ -149,6 +148,7 @@ import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
@@ -1057,13 +1057,9 @@ placeBorne srcId pending = do
       -- cleanup step's trigger (CR 514.3a) still sees it, as data/scenarios'
       -- monument-to-endurance-offers-each-mode-once-a-turn-and-again-next-turn
       -- proves.
-      remembered = case Modal.Type.memory modal of
-        ModeMemory.NoMemory -> Set.empty
-        ModeMemory.ObjectLifetime -> Map.keysSet chosenBefore
-        ModeMemory.ThisTurn -> Map.keysSet (Map.filter (== TurnRegisters.turnNumber (GameState.turn gs)) chosenBefore)
-      chosenBefore = maybe Map.empty (Map.findWithDefault Map.empty memoryKey) (Game.liveOrLastKnown Object.chosenModes LastKnown.chosenModes srcId gs)
+      remembered = Target.rememberedModes memoryKey modal srcId gs
       -- CR 612.1: a text change rewrites the ability, not which ability it is.
-      memoryKey = Projection.printedTriggeredAbility srcId gs ability
+      memoryKey = StackedAbility.Triggered (Projection.printedTriggeredAbility srcId gs ability)
       legal = Set.difference (Target.fillableModes StackObjectKind.TriggeredAbility Nothing (Just controller) bound srcId Map.empty modal gs) remembered
       -- CR 603.3c: the instruction as the modes are announced, with its
       -- condition and its computed ceiling read then (Modal.settle). The ceiling
@@ -1138,8 +1134,7 @@ placeBorne srcId pending = do
       -- that never resolves still counts (Demonic Pact's rulings), which
       -- data/scenarios' demonic-pact-counts-a-mode-chosen-for-a-countered-trigger
       -- proves.
-      Monad.when (Modal.Type.memory modal /= ModeMemory.NoMemory) $
-        State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.chosenModes = Map.insertWith Map.union memoryKey (Map.fromList [(mi, TurnRegisters.turnNumber (GameState.turn g)) | mi <- Foldable.toList chosenModes]) (Object.chosenModes o)}) srcId (GameState.objects g)})
+      State.modify' (Target.rememberModes memoryKey modal srcId chosenModes)
       -- CR 603.3d: targets for the chosen mode(s) only, chosen as the ability is
       -- placed. A mode with no target slots asks nothing.
       let slots = Target.announcedSlots controller srcId gs (Modal.modesTargetSlots chosenModes modal)

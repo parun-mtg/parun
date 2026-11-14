@@ -1803,12 +1803,15 @@ faceModals card =
       <> fmap TriggeredAbility.modal (delayedDeclarations card)
       <> fmap DungeonRoom.ability (Foldable.toList (Face.rooms card))
 
--- Does a spell or an activated ability, printed or granted, carry a mode memory?
-cardRemembersUntriggered :: Face.Face Card.Type.Card -> Bool
-cardRemembersUntriggered card =
+-- Does a spell or a mana ability, printed or granted, carry a mode memory?
+-- Only a triggered ability's placement and an activation's announcement read
+-- one (Parun.Engine.Target.rememberedModes), and a mana ability is never
+-- announced (CR 605.3b).
+cardRemembersUnread :: Face.Face Card.Type.Card -> Bool
+cardRemembersUnread card =
   any
     ((/= ModeMemory.NoMemory) . Modal.memory)
-    (Face.spell card : fmap ActivatedAbility.modal (Face.activatedAbilities card <> grantedActivatedAbilities card))
+    (Face.spell card : fmap ActivatedAbility.modal (filter ManaAbility.isManaAbility (Face.activatedAbilities card <> grantedActivatedAbilities card)))
 
 -- CR 608.2d: does any clause's either-or name a sibling that does not name it
 -- and the rest of its group back? Clause.orElse is SYMMETRIC by design -- the
@@ -6316,20 +6319,24 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (not (cardDivisionsDangle face)) "Forked Lightning reads its division, and is accepted"
     Spec.assertBool s (cardDivisionsDangle (rewrite undivided)) "a part read off an undivided slot is rejected"
     Spec.assertBool s (cardDivisionsDangle (rewrite unread)) "a division nothing reads is rejected"
-  -- Demonic Pact's "that hasn't been chosen" outside a triggered ability is
+  -- Demonic Pact's "that hasn't been chosen" on a spell or a mana ability is
   -- read by nothing, so a chosen mode would be offered again.
-  --
-  -- Not implemented: a mode memory outside a triggered ability (#5782).
-  Spec.it s "only a triggered ability remembers its chosen modes" $ do
+  Spec.it s "only a triggered or a non-mana activated ability remembers its chosen modes" $ do
     ps <- S.allPrintings s corpus
     pact <- S.printingOf s registry "Demonic Pact"
+    porridge <- S.printingOf s registry "Three Bowls of Porridge"
+    elves <- S.printingOf s registry "Llanowar Elves"
     let face = S.combinedFace pact
         remembering = any ((/= ModeMemory.NoMemory) . Modal.memory . TriggeredAbility.modal) . Face.triggeredAbilities
-        offenders = filter (anyFace cardRemembersUntriggered . Printing.card) ps
-        moved = face {Face.activatedAbilities = [(modalActivated []) {ActivatedAbility.modal = TriggeredAbility.modal ability} | ability <- Face.triggeredAbilities face]}
-    Spec.assertBool s (remembering face && not (cardRemembersUntriggered face)) "Demonic Pact's trigger remembers, and is accepted"
-    Spec.assertBool s (cardRemembersUntriggered moved) "its modal on an activated ability is rejected"
-    Spec.assertEqWith s "no spell or activated ability remembers" (fmap (S.nameOf . Printing.card) offenders) []
+        offenders = filter (anyFace cardRemembersUnread . Printing.card) ps
+        onSpell = face {Face.spell = (Face.spell face) {Modal.memory = ModeMemory.ObjectLifetime}}
+        elvesFace = S.combinedFace elves
+        onMana = elvesFace {Face.activatedAbilities = [ability {ActivatedAbility.modal = (ActivatedAbility.modal ability) {Modal.memory = ModeMemory.ObjectLifetime}} | ability <- Face.activatedAbilities elvesFace]}
+    Spec.assertBool s (remembering face && not (cardRemembersUnread face)) "Demonic Pact's trigger remembers, and is accepted"
+    Spec.assertBool s (not (cardRemembersUnread (S.combinedFace porridge))) "Three Bowls of Porridge's activated ability remembers, and is accepted"
+    Spec.assertBool s (cardRemembersUnread onSpell) "a spell's memory is rejected"
+    Spec.assertBool s (any ManaAbility.isManaAbility (Face.activatedAbilities elvesFace) && cardRemembersUnread onMana) "a mana ability's memory is rejected"
+    Spec.assertEqWith s "no spell or mana ability remembers" (fmap (S.nameOf . Printing.card) offenders) []
   -- CR 603.2h's qualified clause, by ordinal: the corpus half, and the rejecting
   -- direction against Planetarium of Wan Shi Tong misauthored on purpose.
   Spec.it s "no card's 'Do this only once each turn' names a clause its ability lacks" $ do

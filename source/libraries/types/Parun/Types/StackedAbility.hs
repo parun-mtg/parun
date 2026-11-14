@@ -12,4 +12,4 @@ data StackedAbility
     Activated (ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card))
   | -- | CR 603.3: a triggered ability.
     Triggered (TriggeredAbility.TriggeredAbility Card.Card (GrantedAbility.GrantedAbility Card.Card))
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)

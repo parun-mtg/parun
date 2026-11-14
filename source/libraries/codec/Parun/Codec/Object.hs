@@ -36,12 +36,12 @@ import qualified Parun.Codec.RoomHalf as RoomHalf
 import qualified Parun.Codec.RoomIndex as RoomIndex
 import qualified Parun.Codec.Sickness as Sickness
 import qualified Parun.Codec.Source as Source
+import qualified Parun.Codec.StackedAbility as StackedAbility
 import qualified Parun.Codec.StickerPlacement as StickerPlacement
 import qualified Parun.Codec.StoredResult as StoredResult
 import qualified Parun.Codec.Subtype as Subtype
 import qualified Parun.Codec.TapState as TapState
 import qualified Parun.Codec.Timestamp as Timestamp
-import qualified Parun.Codec.TriggeredAbility as TriggeredAbility
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -169,7 +169,7 @@ codec = Fields.object $ do
   -- Common.repeats rather than multiset: a spend count never falls to zero,
   -- and one entry per spend is the array this field was before it counted.
   activatedOnce <- Fields.defaulted "activatedOnce" (Object.activatedOnce defaults) (Common.repeats (ActivatedAbility.codec Card.codec (GrantedAbility.codec Card.codec))) Object.activatedOnce
-  chosenModes <- Fields.defaulted "chosenModes" (Object.chosenModes defaults) (Common.keyedList (Common.keyValue (TriggeredAbility.codec Card.codec (GrantedAbility.codec Card.codec)) (Common.naturalMap ModeIndex.codec Common.natural))) Object.chosenModes
+  chosenModes <- Fields.defaulted "chosenModes" (Object.chosenModes defaults) (Common.keyedList (Common.keyValue StackedAbility.codec (Common.naturalMap ModeIndex.codec Common.natural))) Object.chosenModes
   pure
     Object.MkObject
       { Object.owner = owner,

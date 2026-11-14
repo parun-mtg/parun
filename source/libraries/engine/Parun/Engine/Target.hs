@@ -54,10 +54,12 @@ import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import Parun.Types.ModeIndex (ModeIndex)
 import qualified Parun.Types.ModeIndex as ModeIndex
+import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.Pile as Pile
@@ -82,6 +84,7 @@ import qualified Parun.Types.SlotCount as SlotCount
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.TargetCount as TargetCount
 import Parun.Types.TargetSlot (TargetSlot)
 import qualified Parun.Types.TargetSlot as TargetSlot
@@ -2527,6 +2530,27 @@ subsetsOfSize n xs
   | otherwise = case Set.minView xs of
       Nothing -> []
       Just (h, t) -> fmap (Set.insert h) (subsetsOfSize (n - 1) t) <> subsetsOfSize n t
+
+-- CR 700.2a/b: the modes an earlier choice bars `ability` of `source` from
+-- choosing again, which "can't be chosen" exactly as an unfillable mode can't.
+-- A source gone answers from its last known information (CR 113.7a), and
+-- ThisTurn bars only a mode stamped with this turn's number.
+rememberedModes :: StackedAbility.StackedAbility -> Modal.Modal Card (GrantedAbility.GrantedAbility Card) -> ObjectId -> GameState -> Set ModeIndex
+rememberedModes ability modal source gs =
+  let chosenBefore = maybe Map.empty (Map.findWithDefault Map.empty ability) (Game.liveOrLastKnown Object.chosenModes LastKnown.chosenModes source gs)
+   in case Modal.memory modal of
+        ModeMemory.NoMemory -> Set.empty
+        ModeMemory.ObjectLifetime -> Map.keysSet chosenBefore
+        ModeMemory.ThisTurn -> Map.keysSet (Map.filter (== TurnRegisters.turnNumber (GameState.turn gs)) chosenBefore)
+
+-- CR 700.2a/b: rememberedModes' writer, stamping `chosen` with this turn's
+-- number on `source`. Nothing for a modal that remembers nothing.
+rememberModes :: StackedAbility.StackedAbility -> Modal.Modal Card (GrantedAbility.GrantedAbility Card) -> ObjectId -> Seq.Seq ModeIndex -> GameState -> GameState
+rememberModes ability modal source chosen gs
+  | Modal.memory modal == ModeMemory.NoMemory = gs
+  | otherwise =
+      let stamped = Map.fromList [(mi, TurnRegisters.turnNumber (GameState.turn gs)) | mi <- Foldable.toList chosen]
+       in gs {GameState.objects = Map.adjust (\o -> o {Object.chosenModes = Map.insertWith Map.union ability stamped (Object.chosenModes o)}) source (GameState.objects gs)}
 
 -- CR 700.2a: the mode indices every one of whose target slots can be filled --
 -- that is, has at least as many legal recipients as its count demands (a mode

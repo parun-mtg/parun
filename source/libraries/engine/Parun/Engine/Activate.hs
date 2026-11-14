@@ -63,6 +63,7 @@ import qualified Parun.Types.RevealWindow as RevealWindow
 import qualified Parun.Types.Saddling as Saddling
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackObjectKind as StackObjectKind
+import qualified Parun.Types.StackedAbility as StackedAbility
 import qualified Parun.Types.StaticRead as StaticRead
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Undoing as Undoing
@@ -167,7 +168,13 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
       -- one answer is FORCED, unprompted -- every single-mode ability is exactly
       -- {ModeIndex 0}. A real choice issues ChooseModes. Modal.forcedSelection is
       -- what tells the two apart, CR 700.2d's exception included.
-      legal = Target.fillableModes StackObjectKind.ActivatedAbility (ActivatedAbility.name ability) (Just pid) Map.empty srcId Map.empty (ActivatedAbility.modal ability) gs
+      --
+      -- CR 700.2a: a mode an earlier activation chose and the modal remembers
+      -- can't be chosen, as an unfillable one can't. Keyed as printed (CR
+      -- 612.1), as Engine.placeBorne keys a trigger's. data/scenarios'
+      -- three-bowls-of-porridge-offers-only-modes-it-hasnt-chosen proves it.
+      legal = Set.difference (Target.fillableModes StackObjectKind.ActivatedAbility (ActivatedAbility.name ability) (Just pid) Map.empty srcId Map.empty (ActivatedAbility.modal ability) gs) (Target.rememberedModes memoryKey (ActivatedAbility.modal ability) srcId gs)
+      memoryKey = StackedAbility.Activated (Projection.printedActivatedAbility srcId gs ability)
       selection = Modal.Type.selection (ActivatedAbility.modal ability)
       -- CR 601.2e via CR 602.2b: an illegal proposal returns to `before`.
       reject = Nothing <$ (State.put before >> Game.noteUndoing pid Undoing.IllegalProposal)
@@ -199,6 +206,9 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
       -- of the activation by a rejection below.
       Monad.when (Modal.facesDilemma chosenModes (ActivatedAbility.modal ability)) $
         State.modify' (Event.recordEvent (GameEvent.FacedDilemma (FacedDilemma.MkFacedDilemma pid abilId)))
+      -- CR 700.2a: remembered as chosen once announced, so an activation
+      -- countered later still bars its modes; a rejection below rewinds it.
+      State.modify' (Target.rememberModes memoryKey (ActivatedAbility.modal ability) srcId chosenModes)
       -- CR 115.10a through CR 602.2b: the player the ability chooses as it is
       -- announced -- Lodestone Bauble's "a player", which is not a target, so
       -- hexproof and shroud do not refuse it (Players.chooseOne). Asked after
