@@ -1,0 +1,39 @@
+{
+  "description": "CR 510.2, 603.2, 111.1, 707.2, 707.9b: Impostor Syndrome makes a token copy, not legendary, of each nontoken creature alice controls that deals combat damage to a player: her Isamaru and her Hill Giant, not her blocked Grizzly Bears, her token Savannah Lions, or bob's Goblin Piker hitting her",
+  "note": "Isamaru hits bob and the Giant carol, so 'a player' is any opponent; the Bears are blocked by bob's Wall of Earth and deal damage to no player; the Lions token hits bob for nothing copied. Two Isamarus survive state-based actions only because the copy is not legendary (CR 704.5j would otherwise ask alice to choose). On turn 2 bob's Goblin Piker hits alice and is not copied for either player.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [
+      {"card": "Impostor Syndrome", "label": "impostor"},
+      {"card": "Isamaru, Hound of Konda", "label": "isamaru", "ready": true},
+      {"card": "Hill Giant", "label": "giant", "ready": true},
+      {"card": "Grizzly Bears", "label": "bears", "ready": true},
+      {"card": "Savannah Lions", "label": "lions", "ready": true, "token": true}],
+     "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Wall of Earth", "label": "wall", "ready": true}, {"card": "Goblin Piker", "label": "piker", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "carol", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$isamaru", "$giant", "$bears", "$lions"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$isamaru", "do": {"ChooseAttackTarget": "$bob"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$giant", "do": {"ChooseAttackTarget": "$carol"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$bears", "do": {"ChooseAttackTarget": "$bob"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$lions", "do": {"ChooseAttackTarget": "$bob"}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$wall": ["$bears"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": {"OrderTriggers": ["$impostor", "$impostor"]}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 16}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "carol", "life": 17}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Isamaru, Hound of Konda", "count": 2}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 2}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Savannah Lions", "count": 1}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"View": {"of": "Supertypes", "object": "Isamaru, Hound of Konda#2", "is": []}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"View": {"of": "Supertypes", "object": "$isamaru", "is": ["Legendary"]}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"PowerToughness": {"object": "Hill Giant#2", "power": 3, "toughness": 3}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": ["$piker"]}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "source": "$piker", "do": {"ChooseAttackTarget": "$alice"}},
+    {"turn": 2, "step": "DeclareBlockers", "player": "alice", "do": {"Block": {}}},
+    {"turn": 2, "step": "EndOfCombat", "player": "bob", "check": {"Life": {"player": "alice", "life": 18}}},
+    {"turn": 2, "step": "EndOfCombat", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Goblin Piker", "count": 1}}},
+    {"turn": 2, "step": "EndOfCombat", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Goblin Piker", "count": 0}}}
+  ]
+}

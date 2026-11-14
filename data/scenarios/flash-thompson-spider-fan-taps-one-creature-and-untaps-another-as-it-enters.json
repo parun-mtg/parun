@@ -1,0 +1,25 @@
+{
+  "description": "CR 603.6a, 700.2b, 700.2d, 700.2f, 701.26a, 701.26b, 207.2d: when Flash Thompson enters, its controller chooses both modes, Heckle tapping one target creature and Hero Worship untapping another",
+  "note": "Bob's Hill Giant starts untapped and alice's Grizzly Bears tapped, so each mode's result is the opposite of the board; bob's Savannah Lions, untapped, and Flash Thompson itself keep each slot's prompt from binding unasked, and the Lions stays untapped.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice",
+     "battlefield": [{"card": "Plains", "label": "plains"}, {"card": "Swamp", "label": "swamp"}, {"card": "Grizzly Bears", "label": "bears", "tapped": true}],
+     "hand": [{"card": "Flash Thompson, Spider-Fan", "label": "flash"}],
+     "library": [{"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob",
+     "battlefield": [{"card": "Hill Giant", "label": "giant"}, {"card": "Savannah Lions", "label": "lions"}],
+     "library": [{"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$flash", "mana": ["$plains", "$swamp"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseModes", "with": [0, 1]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"heckled": ["$giant"], "worshipped": ["$bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Flash Thompson, Spider-Fan"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$giant", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$giant", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$bears", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$lions", "tapped": false}}}
+  ]
+}

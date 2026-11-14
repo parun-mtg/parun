@@ -1,0 +1,23 @@
+{
+  "description": "CR 601.2c, 601.2f, 205.3m, 611.2a: Grow Extra Arms costs {1} less when its target is a Spider, and the target gets +4/+4 until end of turn",
+  "note": "Alice has a Forest and a Plains: with one land tapped the spell is refused against her Grizzly Bears, a creature but not a Spider, and cast against bob's Canopy Spider, which leaves the Plains untapped. The Spider is bob's so the reduction reads the target's subtype, not its controller.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice",
+     "battlefield": [{"card": "Forest", "label": "forest"}, {"card": "Plains", "label": "plains"}, {"card": "Grizzly Bears", "label": "bears"}],
+     "hand": [{"card": "Grow Extra Arms", "label": "arms"}],
+     "library": [{"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob",
+     "battlefield": [{"card": "Canopy Spider", "label": "spider"}],
+     "library": [{"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Cast": {"object": "$arms", "targets": ["$bears"], "mana": ["$forest", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ReverseManaAbilities", "with": "Exercises"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$arms", "targets": ["$spider"], "mana": ["$forest", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$plains", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$spider", "power": 5, "toughness": 7}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$plains", "tapped": false}}}
+  ]
+}

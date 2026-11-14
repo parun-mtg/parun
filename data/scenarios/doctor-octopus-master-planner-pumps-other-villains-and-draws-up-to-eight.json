@@ -1,0 +1,41 @@
+{
+  "description": "CR 604.2, 613.4c, 603.4, 402.2, 514.1: Doctor Octopus gives other Villains its controller controls +2/+2, draws its controller up to eight at the beginning of their end step if they hold fewer, and makes their maximum hand size eight",
+  "note": "Alice's Flying Octobot grows; her Grizzly Bears (no Villain), bob's Flying Octobot and Doctor Octopus himself do not. Bob's end step, with alice on five cards, draws her nothing. Turn 2 alice ends on six and draws exactly two, keeping all eight at cleanup (a seven-card maximum would ask a discard). Turn 4 she holds exactly eight at her end step, so nothing triggers; Inspiration then takes her to nine and cleanup discards exactly one, down to eight rather than seven or nine.",
+  "board": {"active": "bob", "step": "PrecombatMain", "seats": [
+    {"name": "alice",
+      "battlefield": [{"card": "Doctor Octopus, Master Planner", "label": "doc"}, {"card": "Flying Octobot", "label": "octobot"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Island", "label": "u1", "ready": true}, {"card": "Island", "label": "u2", "ready": true}, {"card": "Island", "label": "u3", "ready": true}],
+      "hand": [{"card": "Inspiration", "label": "inspiration"}, {"card": "Plains", "label": "spare"}, {"card": "Plains", "label": "land"}, {"card": "Plains"}, {"card": "Plains"}],
+      "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob",
+      "battlefield": [{"card": "Flying Octobot", "label": "bobs-octobot"}],
+      "hand": [{"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}],
+      "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"PowerToughness": {"object": "$octobot", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"PowerToughness": {"object": "$bears", "power": 2, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"PowerToughness": {"object": "$bobs-octobot", "power": 1, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"PowerToughness": {"object": "$doc", "power": 4, "toughness": 8}}},
+    {"turn": 1, "step": "EndStep", "player": "bob", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 0}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 2, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $doc"]}}},
+    {"turn": 2, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 3}}},
+    {"turn": 3, "step": "Upkeep", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 3}}},
+    {"turn": 3, "step": "Upkeep", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Plains", "count": 4}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "$land"}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Plains", "count": 1}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 4}}},
+    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 4, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 4, "step": "EndStep", "player": "alice", "do": {"Cast": {"object": "$inspiration", "targets": ["$alice"], "mana": ["$u1", "$u2", "$u3", "Plains#4"]}}},
+    {"turn": 4, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 4, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 6}}},
+    {"turn": 4, "step": "Cleanup", "player": "alice", "do": {"Answer": {"prompt": "ChooseDiscard", "with": ["$spare"]}}},
+    {"turn": 5, "step": "Upkeep", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 6}}},
+    {"turn": 5, "step": "Upkeep", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Plains", "count": 2}}},
+    {"turn": 5, "step": "Upkeep", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Plains", "count": 1}}}
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "description": "CR 604.2, 611.3a, 613.4b, 702.11b: Doc Ock has base power and toughness 8/8 while his controller's graveyard holds eight or more cards, and hexproof while they control another Villain",
+  "note": "Seven cards in alice's graveyard and eight in bob's: Doc Ock stays 4/5 until alice's own eighth card (her Shock) lands. Bob's Villain does not grant hexproof, nor does Doc Ock himself; alice's Flying Octobot does, and bob's Shock at Doc Ock is then refused with an untapped Mountain.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "RUC",
+      "battlefield": [{"card": "Doc Ock, Sinister Scientist", "label": "doc"}],
+      "hand": [{"card": "Shock", "label": "shock"}, {"card": "Flying Octobot", "label": "octobot"}],
+      "graveyard": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}],
+      "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob",
+      "battlefield": [{"card": "Flying Octobot", "label": "bobs-octobot"}, {"card": "Mountain", "label": "bobs-mountain", "ready": true}],
+      "hand": [{"card": "Shock", "label": "bobs-shock"}],
+      "graveyard": [{"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}],
+      "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$doc", "power": 4, "toughness": 5}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$doc", "keyword": {"type": "Hexproof"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$shock", "targets": ["$bob"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Shock", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$doc", "power": 8, "toughness": 8}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$doc", "keyword": {"type": "Hexproof"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$octobot"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Flying Octobot", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$doc", "keyword": {"type": "Hexproof"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$doc", "power": 8, "toughness": 8}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "refuse": {"Cast": {"object": "$bobs-shock", "targets": ["$doc"], "mana": ["$bobs-mountain"]}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Shock", "count": 1}}}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "description": "CR 603.2, 106.4, 500.5: Electro, Assaulting Battery's cast trigger adds {R} when alice casts an instant, and only her red mana survives the main phase's end",
+  "note": "alice starts with {G} floating and pays Shock with her Mountain, and first casts Memnite, a creature spell that adds nothing, so the {R} in her pool after Shock resolves is Electro's alone; at beginning of combat the {G} is gone and the {R} stays. Bob's Lightning Bolt on carol adds nothing to either pool. Three seats so Shock's target is not the only opponent.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "G", "battlefield": [{"card": "Electro, Assaulting Battery", "label": "electro"}, {"card": "Mountain", "label": "m1"}], "hand": [{"card": "Memnite", "label": "memnite"}, {"card": "Shock", "label": "shock"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Mountain", "label": "bm"}], "hand": [{"card": "Lightning Bolt", "label": "bolt"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "carol", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$memnite"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [
+      {"manaType": {"type": "Colored", "value": "Green"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}
+    ]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Memnite", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$shock", "targets": ["$bob"], "mana": ["$m1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $electro", "Shock"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Shock"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [
+      {"manaType": {"type": "Colored", "value": "Green"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null},
+      {"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}
+    ]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [
+      {"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}
+    ]}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "do": {"Cast": {"object": "$bolt", "targets": ["$carol"], "mana": ["$bm"]}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [
+      {"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}
+    ]}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "check": {"Life": {"player": "carol", "life": 17}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "check": {"View": {"of": "ManaPool", "player": "bob", "is": []}}}
+  ]
+}
