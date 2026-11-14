@@ -6861,10 +6861,16 @@ putOwnCounters oid kind n = do
 -- Projection.replacementsOf's does and for its reason. Parun.ReplacementSpec's
 -- Squad Captain pair proves it, over a Rise of the Dark Realms sweep: mutating
 -- this call back to the live board reddens "no +1/+1 counter".
+--
+-- The view answers a GONE object from last known information (CR 608.2h), since
+-- a slot can name one: web-slinging's returned creature, a new object in a hand
+-- (CR 400.7). The scenario
+-- scarlet-spider-ben-reilly-web-slung-enters-with-counters-equal-to-the-returned-creatures-mana-value
+-- proves it.
 placeEntryCounters :: ReplacementCandidate -> ObjectId -> Map (CounterKind.CounterKind Keyword.Type.Keyword) Quantity.Type.Quantity -> Game ()
 placeEntryCounters candidate oid counters = do
   gs <- State.get
-  let viewOf = Projection.viewWithLastKnown oid gs
+  let viewOf = Projection.viewWithLastKnownAnywhere gs
       context = Replacement.candidateContext gs candidate
       announcedX = Game.announcedXOf oid gs
   Foldable.for_ (Map.toList counters) $ \(kind, quantity) ->

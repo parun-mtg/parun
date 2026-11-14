@@ -1,0 +1,109 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m0",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f0",
+            "ready": true
+          },
+          {
+            "card": "Gray Ogre",
+            "label": "ogre",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Scarlet Spider, Ben Reilly",
+            "label": "spider"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Scarlet Spider, Ben Reilly: cast using web-slinging returning a tapped Gray Ogre (mana value 3), he enters with three +1/+1 counters",
+  "final": [
+    {
+      "Counters": {
+        "count": 3,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "Scarlet Spider, Ben Reilly"
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "Scarlet Spider, Ben Reilly",
+        "power": 7,
+        "toughness": 6
+      }
+    },
+    {
+      "Count": {
+        "card": "Gray Ogre",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m0",
+            "$f0"
+          ],
+          "object": "$spider"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

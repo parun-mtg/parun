@@ -289,14 +289,18 @@ collect sources floating =
             -- printed on the ability (DamageR.riders) and the environment it
             -- runs in is read off the live board (see `printedRider`).
             ReplacementCandidate.rider = printedRider src (Projection.controllerOf src sources) re,
-            -- No resolution installed this segment, so there is nothing it could
-            -- have bound: a printed static ability is re-derived from the board,
-            -- and Filter.IsBound is vacuously False in it.
-            ReplacementCandidate.slots = Map.empty,
+            -- No resolution installed this segment, so the only slots it knows
+            -- are CR 400.7d's: the cost record of the spell its source was
+            -- (Binding.paidCostRecord), Scarlet Spider, Ben Reilly's "the
+            -- returned creature". Empty for every other source.
+            ReplacementCandidate.slots = maybe Map.empty (costRecordObjects . Object.bindings) (Game.lookupObject src sources),
             -- A static ability's row reads its source's choices live (CR
             -- 611.3a).
             ReplacementCandidate.choices = Nothing
           }
+      costRecordObjects bindings =
+        let record = Binding.paidCostRecord bindings
+         in Binding.objectsBySlot (Binding.targetsOf record) record
       fromFloating active =
         ReplacementCandidate.MkReplacementCandidate
           { ReplacementCandidate.identity =
