@@ -2986,6 +2986,7 @@ spec s registry = Spec.describe s "Parun.Engine.Cost" $ do
   morcantSpec s registry
   unerringSlingSpec s registry
   kopalaSpec s registry
+  humOfTheRadixSpec s registry
   battlefieldThaumaturgeSpec s registry
   animarSpec s registry
   magnusSpec s registry
@@ -6982,6 +6983,41 @@ targetCostSpec s registry =
           Spec.assertEqWith s "the Giant is destroyed when tapped, and survives untapped" (onBattlefield target (run (tapAll gs)), onBattlefield target (run gs)) (False, True)
           Spec.assertEqWith s "offered at the tapped Giant, refused at the untapped one" (S.castable S.alice seizedId (tapAll gs), S.castable S.alice seizedId gs) (True, False)
         _ -> Spec.assertFailure s "one Giant"
+
+-- Hum of the Radix {2}{G}{G} Enchantment (Oracle text checked against Scryfall
+-- 2026-11-14): "Each artifact spell costs {1} more to cast for each artifact its
+-- controller controls." CostModifier's PaidFor: the count reads the CASTER's
+-- artifacts (CR 109.5's "you" is the spell's controller), not Hum's controller's.
+--
+-- alice controls Hum and one Ornithopter, bob two Ornithopters, carol none;
+-- each casts a Memnite ({0}) from seven Plains. Every cost is read off the
+-- caster's tapped Plains.
+humOfTheRadixSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+humOfTheRadixSpec s registry = Spec.describe s "Hum of the Radix" $ do
+  let board = do
+        hum <- S.printingOf s registry "Hum of the Radix"
+        ornithopter <- S.printingOf s registry "Ornithopter"
+        memnite <- S.printingOf s registry "Memnite"
+        plains <- S.printingOf s registry "Plains"
+        let lands = S.landsFor plains S.alice 7 (S.landsFor plains S.bob 7 (S.landsFor plains S.carol 7 (Setup.emptyGame S.threePlayers)))
+            (_, g1) = S.addPermanent hum S.alice lands
+            (_, g2) = S.addPermanent ornithopter S.alice g1
+            (_, g3) = S.addPermanent ornithopter S.bob g2
+            (_, g4) = S.addPermanent ornithopter S.bob g3
+            (aliceMemnite, g5) = S.addHandCard memnite S.alice g4
+            (bobMemnite, g6) = S.addHandCard memnite S.bob g5
+            (carolMemnite, g7) = S.addHandCard memnite S.carol g6
+        pure (aliceMemnite, bobMemnite, carolMemnite, g7)
+  Spec.it s "CR 109.5 / 601.2f an artifact spell costs {1} more for each artifact ITS CONTROLLER controls" $ do
+    (aliceMemnite, bobMemnite, carolMemnite, gs) <- board
+    let castBy pid oid = S.runPure S.identityAnswer gs (S.cast pid oid)
+        bobs = castBy S.bob bobMemnite
+        alices = castBy S.alice aliceMemnite
+        carols = castBy S.carol carolMemnite
+    Spec.assertEqWith s "CR 109.5 bob's two artifacts, not alice's one: {2}" (S.tappedCount S.bob bobs) 2
+    Spec.assertEqWith s "alice's own one: {1}" (S.tappedCount S.alice alices) 1
+    Spec.assertEqWith s "carol controls none: {0}" (S.tappedCount S.carol carols) 0
+    Spec.assertEqWith s "and all three casts were made" (fmap (length . (TurnRegisters.stack . GameState.turn)) [bobs, alices, carols]) [1, 1, 1]
 
 -- Kopala, Warden of Waves {1}{U}{U} Legendary Creature -- Merfolk Wizard 2/2
 -- (Oracle text checked against Scryfall 2026-10-10): "Spells your opponents cast

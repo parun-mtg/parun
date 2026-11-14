@@ -87,6 +87,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.Count as Count.Type
+import qualified Parun.Types.CountedAgainst as CountedAgainst
 import qualified Parun.Types.CounterGrouping as CounterGrouping
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
@@ -3253,7 +3254,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ( "CR 613.11's spell-cost modifier",
               base
                 { Face.playerAbilities =
-                    [PlayerStaticAbility.MkPlayerStaticAbility {PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.You, PlayerStaticAbility.condition = Nothing, PlayerStaticAbility.name = Nothing, PlayerStaticAbility.effect = PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells buried Nothing Nothing Nothing Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 1])))}]
+                    [PlayerStaticAbility.MkPlayerStaticAbility {PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.You, PlayerStaticAbility.condition = Nothing, PlayerStaticAbility.name = Nothing, PlayerStaticAbility.effect = PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells buried Nothing Nothing Nothing CountedAgainst.ChangeSource Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 1])))}]
                 }
             ),
             ( "CR 508.1c's combat restriction",
