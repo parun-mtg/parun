@@ -2213,3 +2213,22 @@ Entries are ordered by the first rule each cites.
   `grantedCastKeyword`, proved by the scenario
   `tannuk-steadfast-second-warps-a-red-creature-card-that-is-exiled-at-the-next-end-step`.
 - **Issue**: #7508.
+
+## One opponent losing exactly the amount is enough
+
+- **Question**: Ob Nixilis, Captive Kingpin triggers "whenever one or more
+  opponents each lose exactly 1 life". In one combat damage step one opponent
+  loses 1 and another loses 2. Does it trigger?
+- **Rules**: CR 603.2, 603.2c, 510.2, 119.3; CR of 2026-11-06. The card's
+  rulings (2023-05-12) total each opponent's combat damage and say nothing of
+  two opponents losing different amounts.
+- **Decision**: Yes, once. The trigger event is the batch, and it holds when
+  any opponent's total loss in it is exactly 1.
+- **Rejected**: Requiring every opponent who lost life in the batch to lose
+  exactly 1, which reads "each" as a condition on the whole batch rather than
+  on the opponents it names; the opponent who lost 1 is still "one or more
+  opponents" who each lost exactly 1.
+- **Site**: `Parun.Engine.Event.Match`'s `LifeChanges` arm, proved by the
+  scenario
+  `cr-603-2c-ob-nixilis-triggers-on-one-opponent-at-exactly-1-when-another-loses-2`.
+- **Issue**: #5302.
