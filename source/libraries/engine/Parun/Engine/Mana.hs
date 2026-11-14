@@ -634,7 +634,7 @@ plainYield mana = MkYield {yieldMana = mana, yieldDoubling = Map.empty, yieldX =
 -- `watch` is `watchOf gs` and `rewritesOf` is Replacement.manaRewrites of it,
 -- handed in so a sweep samples the board and gathers its replacements once
 -- rather than per source.
-manaSuppliesGiven :: Natural -> Capacity -> Watch -> (ObjectId -> [ManaType]) -> Map.Map ObjectId PC.ProjectedCharacteristics -> PlayerId -> [Maybe ManaRestriction.ManaRestriction] -> ObjectId -> GameState -> [(Activations.Activations, Yield, ManaCost, Activations.Activations)]
+manaSuppliesGiven :: Natural -> Capacity -> Watch -> (ObjectId -> [(ManaType, Maybe Natural)]) -> Map.Map ObjectId PC.ProjectedCharacteristics -> PlayerId -> [Maybe ManaRestriction.ManaRestriction] -> ObjectId -> GameState -> [(Activations.Activations, Yield, ManaCost, Activations.Activations)]
 manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
   let -- Applied HERE and not left to the caller: this is the one reader of a
       -- route's yield on the supply side, so wrapping it once is what makes the
@@ -1029,7 +1029,7 @@ manaOptionsOfGiven pcs oid gs = manaOptionsVisiting Set.empty (Replacement.manaR
 -- The same options, worked out while the sources in `visited` are being asked
 -- what they could produce (`produced`). `rewritesOf` is
 -- Replacement.manaRewrites of `gs`, which a sweep gathers once.
-manaOptionsVisiting :: Set.Set ObjectId -> (ObjectId -> [ManaType]) -> Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> [ManaOption]
+manaOptionsVisiting :: Set.Set ObjectId -> (ObjectId -> [(ManaType, Maybe Natural)]) -> Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> [ManaOption]
 manaOptionsVisiting visited rewritesOf pcs oid gs = ListUtils.nubOrd (fmap fst (pricedOptionsVisiting visited rewritesOf Map.empty gs pcs oid gs))
 
 -- CR 601.2h / 608.2h: each option as OFFERED beside the same option priced with
@@ -1050,7 +1050,7 @@ manaRepricingsGiven paid poolBoard pcs oid gs = ListUtils.nubOrd (pricedOptionsV
 
 -- Both prices off ONE traversal of the colour choices, so a pair's halves are
 -- the same choice. Unshared: manaOptionsOfGiven forces the offered half alone.
-pricedOptionsVisiting :: Set.Set ObjectId -> (ObjectId -> [ManaType]) -> Map.Map SlotName.SlotName Binding.Type.Binding -> GameState -> Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> [(ManaOption, ManaOption)]
+pricedOptionsVisiting :: Set.Set ObjectId -> (ObjectId -> [(ManaType, Maybe Natural)]) -> Map.Map SlotName.SlotName Binding.Type.Binding -> GameState -> Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> [(ManaOption, ManaOption)]
 pricedOptionsVisiting visited rewritesOf paid poolBoard pcs oid gs =
   let tags = productionTagsGiven pcs oid gs
       choices = sourceChoicesOf oid gs
@@ -1151,11 +1151,10 @@ pricedOptionsVisiting visited rewritesOf paid poolBoard pcs oid gs =
               (\picks -> retyped cost (build fst picks, build snd picks))
               (traverse (\(i, addition) -> fmap ((,) i . (,) addition) (additionRuns (ActivatedAbility.name =<< ability) addition)) [(i, addition) | (i, (_, additions)) <- indexed, addition <- additions])
       -- CR 106.12b: a route tapping the permanent (CR 106.12) produces the
-      -- type each ManaR row applying to it names instead of any other, one
-      -- option per type (Replacement.manaRewrites), both halves alike. Every
-      -- unit is retyped and nothing else, so the amount and every stamp stand.
-      -- Read here, so CR 106.7's "could produce", the offer and the payment
-      -- all see it.
+      -- type, and where replaced the amount, of each outcome of the ManaR rows
+      -- applying to it, one option per outcome (Replacement.manaRewrites),
+      -- both halves alike. Read here, so CR 106.7's "could produce", the offer
+      -- and the payment all see it.
       --
       -- The {T} gate is CR 106.12's and a regression fence: Scryfall t:land
       -- o:": add" -o:"{T}", 2026-10-27, finds no land, and every ManaR in
@@ -1168,11 +1167,14 @@ pricedOptionsVisiting visited rewritesOf paid poolBoard pcs oid gs =
       rewrites = ListUtils.nubOrd (rewritesOf oid)
       retyped cost (offered, priced)
         | notElem CostComponent.TapThis (Cost.components cost) || null rewrites = [(offered, priced)]
-        | otherwise = fmap (\manaType -> (retype manaType offered, retype manaType priced)) rewrites
-      retype manaType option =
+        | otherwise = fmap (\(manaType, amount) -> (retype manaType amount offered, retype manaType amount priced)) rewrites
+      retype manaType amount option =
         let retypeMana = Mana.MkMana . fmap (\unit -> unit {ManaUnit.manaType = manaType}) . unitsOf
             reclause clause = maybe (intrinsicManaClause manaType) (const clause) (ManaOption.ability option)
-         in option {ManaOption.yield = fmap retypeMana (ManaOption.yield option), ManaOption.steps = fmap (Bifunctor.bimap reclause (fmap retypeMana)) (ManaOption.steps option)}
+            steps = fmap (Bifunctor.bimap reclause (fmap retypeMana)) (ManaOption.steps option)
+         in case amount of
+              Nothing -> option {ManaOption.yield = fmap retypeMana (ManaOption.yield option), ManaOption.steps = steps}
+              Just n -> resized n option {ManaOption.steps = steps}
       -- CR 106.5: an addition of an undefined type -- CR 607.2d's chosen colour
       -- with none chosen -- adds no mana, and the activation is still one the
       -- player may make. Resolve.Effect's AddMana arm answers the same. A
@@ -1216,6 +1218,25 @@ pricedOptionsVisiting visited rewritesOf paid poolBoard pcs oid gs =
 -- recipientsOf's question, and only the payment and the supply model ask it.
 yieldUnits :: ManaOption -> [ManaUnit]
 yieldUnits option = concatMap unitsOf (Map.elems (ManaOption.yield option))
+
+-- CR 106.12b's "instead of any other ... amount": the option's units, in
+-- clause order, cut or extended to `n`, its yield rebuilt from its steps. An
+-- extension repeats the last unit, stamps and all, which is CR 106.6a's
+-- reading of an increase. A clause keeps a recipient whose share went, empty,
+-- and an option producing nothing stays so: the rule modifies only an event
+-- producing mana.
+resized :: Natural -> ManaOption -> ManaOption
+resized n option =
+  let tagged = [((i, ref), unit) | (i, (_, shares)) <- zip [0 :: Int ..] (ManaOption.steps option), (ref, mana) <- Map.toList shares, unit <- unitsOf mana]
+      kept = case reverse tagged of
+        [] -> []
+        final : _ -> take (Natural.toIntSaturating n) (tagged <> repeat final)
+      shareOf i ref = Mana.MkMana [unit | (at, unit) <- kept, at == (i, ref)]
+      steps = [(clause, Map.mapWithKey (\ref _ -> shareOf i ref) shares) | (i, (clause, shares)) <- zip [0 ..] (ManaOption.steps option)]
+   in option
+        { ManaOption.steps = steps,
+          ManaOption.yield = Map.unionsWith (\old new -> Mana.MkMana (unitsOf old <> unitsOf new)) (fmap snd steps)
+        }
 
 -- CR 106.4: which players one AddMana's recipient reference names, for a mana
 -- ability activated OFF THE STACK -- CR 605.3b's road, where the ability has no
@@ -3538,7 +3559,7 @@ data Sources = MkSources
     -- What every supply's triggeredYields reads of the board, taken once.
     sourceWatch :: Watch,
     -- Replacement.manaRewrites of the board, its replacements gathered once.
-    sourceRewrites :: ObjectId -> [ManaType],
+    sourceRewrites :: ObjectId -> [(ManaType, Maybe Natural)],
     -- Each of `sourceIds`' supplies at X = 0, in the same order.
     sourceSupplies :: [[(Activations.Activations, Yield, ManaCost, Activations.Activations)]],
     sourceBorrowed :: ObjectId -> [Maybe ManaRestriction.ManaRestriction],

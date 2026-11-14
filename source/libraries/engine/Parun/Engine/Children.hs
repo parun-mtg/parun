@@ -2357,7 +2357,7 @@ replacementEffectChildren c replacement = case replacement of
   ReplacementEffect.GameLossR (GameLossR.MkGameLossR whose instead) -> fmap ReplacementEffect.GameLossR (GameLossR.MkGameLossR <$> replacementWhose c whose <*> traverse (replacementEffect c) instead)
   ReplacementEffect.PlaneswalkR (PlaneswalkR.MkPlaneswalkR whose cause rewrite) ->
     fmap ReplacementEffect.PlaneswalkR (PlaneswalkR.MkPlaneswalkR <$> replacementWhose c whose <*> pure cause <*> planeswalkRewriteChildren c rewrite)
-  ReplacementEffect.ManaR (ManaR.MkManaR matching produces) -> fmap ReplacementEffect.ManaR (ManaR.MkManaR <$> replacementFilter c matching <*> pure produces)
+  ReplacementEffect.ManaR (ManaR.MkManaR matching produces amount) -> fmap ReplacementEffect.ManaR (ManaR.MkManaR <$> replacementFilter c matching <*> pure produces <*> pure amount)
   ReplacementEffect.PhaseR (PhaseR.MkPhaseR (PhasePattern.MkPhasePattern which whose) rewrite) ->
     fmap ReplacementEffect.PhaseR (PhaseR.MkPhaseR . PhasePattern.MkPhasePattern which <$> replacementWhose c whose <*> phaseRewriteChildren c rewrite)
 

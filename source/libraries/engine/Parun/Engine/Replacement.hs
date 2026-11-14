@@ -592,23 +592,36 @@ changesLoss gs event candidate = case (ReplacementCandidate.effect candidate, ev
     breaches gs candidate rewrite pid n
   _ -> True
 
--- CR 106.12b: the type each ManaR row applying to this permanent being tapped
--- for mana makes it produce, one entry per row. CR 616.1 lets the player order
--- the rows, and as every one replaces the whole type, the row applied last
--- decides it; so the outcomes are exactly these types, which
--- Parun.Engine.Mana offers as a choice. The player tapping it chooses, per
--- Naked Singularity's ruling of 2013-04-15.
+-- CR 106.12b: what this permanent being tapped for mana produces under the
+-- ManaR rows applying to it, one entry per outcome CR 616.1's ordering can
+-- reach: the type and, where it is replaced too, the amount (Nothing keeps
+-- it). Every row replaces the whole type, so the row applied last decides it;
+-- the amount is that row's if it fixes one, else that of whichever other
+-- fixing row the player applies last before it. CR 616.1f never drops a row
+-- here, as each row's filter reads the permanent and not the mana.
+-- Parun.Engine.Mana offers these as a choice, the player tapping it choosing
+-- per Naked Singularity's ruling of 2013-04-15.
 --
 -- A floating row is never spent here: Pale Moon's lasts the turn, and no
 -- printing spends one per use.
 --
 -- The rows are gathered before `oid` is taken, so a caller asking of every
 -- source binds `manaRewrites gs` once and gathers once.
-manaRewrites :: GameState -> ObjectId -> [ManaType.ManaType]
+manaRewrites :: GameState -> ObjectId -> [(ManaType.ManaType, Maybe Natural)]
 manaRewrites gs =
   let viewOf = Projection.viewsOf gs
       rows = [(candidate, row) | candidate <- collect gs (StoredEffects.replacements (GameState.stored gs)), ReplacementEffect.ManaR row <- [ReplacementCandidate.effect candidate]]
-   in \oid -> [ManaR.produces row | (candidate, row) <- rows, matchesFiltered viewOf gs candidate (ManaR.matching row) oid]
+      outcomes applying =
+        let indexed = zip [0 :: Int ..] applying
+            fixedBefore i = [n | (j, row) <- indexed, j /= i, Just n <- [ManaR.amount row]]
+         in ListUtils.nubOrd
+              [ (ManaR.produces row, amount)
+              | (i, row) <- indexed,
+                amount <- case ManaR.amount row of
+                  Just n -> [Just n]
+                  Nothing -> if null (fixedBefore i) then [Nothing] else fmap Just (fixedBefore i)
+              ]
+   in \oid -> outcomes [row | (candidate, row) <- rows, matchesFiltered viewOf gs candidate (ManaR.matching row) oid]
 
 -- CR 614.1: does this instance apply to this proposed event? The arms must agree
 -- on the EVENT CLASS -- which the type already rules out for the impossible

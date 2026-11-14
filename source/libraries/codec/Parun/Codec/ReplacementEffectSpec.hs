@@ -286,7 +286,7 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.ManaR (ManaR.MkManaR (Filter.HasSubtype Subtype.Plains) (ManaType.Colored Color.Red)))
+            (ReplacementEffect.ManaR (ManaR.MkManaR (Filter.HasSubtype Subtype.Plains) (ManaType.Colored Color.Red) Nothing))
             " {\"type\":\"ManaR\",\"value\":{\"matching\":{\"type\":\"HasSubtype\",\"value\":\"Plains\"},\"produces\":{\"type\":\"Colored\",\"value\":\"Red\"}}} "
         -- CR 701.31 / 614.1a: Susan Foreman.
         Spec.it s "PlaneswalkR (Susan Foreman)" $
