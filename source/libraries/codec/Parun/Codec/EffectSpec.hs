@@ -150,6 +150,7 @@ import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.ManifestDread as ManifestDread
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
@@ -2795,8 +2796,17 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ManifestDread (PlayerRef.Relative PlayerRelation.You))
-      " {\"type\":\"ManifestDread\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
+      (Effect.ManifestDread (ManifestDread.MkManifestDread (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))
+      " {\"type\":\"ManifestDread\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":1}}} "
+  -- Valgavoth's Onslaught's "manifest dread X times, then put X +1/+1 counters
+  -- on each of those creatures".
+  Spec.it s "ManifestDread, several times, binding the manifested" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (Effect.ManifestDread (ManifestDread.MkManifestDread (PlayerRef.Relative PlayerRelation.You) (Quantity.InSlot (SlotName.MkSlotName (Text.pack "X"))) (Just (SlotName.MkSlotName (Text.pack "manifested")))))
+      " {\"type\":\"ManifestDread\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"InSlot\",\"value\":\"X\"},\"slot\":\"manifested\"}} "
   -- CR 701.49: the plain keyword action, whose payload is absent -- rule 701.49
   -- fixes the venturer, and CR 701.49a lets the player choose from every dungeon
   -- card they own, leaving an author nothing to write.

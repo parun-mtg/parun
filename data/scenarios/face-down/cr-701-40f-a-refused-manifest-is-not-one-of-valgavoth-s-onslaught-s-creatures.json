@@ -1,0 +1,181 @@
+{
+  "description": "CR 701.40f a manifest Grafdigger's Cage refuses is not one of Valgavoth's Onslaught's creatures",
+  "note": "Both manifests are refused, so the four looked-at cards are binned and nothing gets counters; the face-down Grizzly Bears manifested earlier stays a 2/2.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest-1",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-3",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-4",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-5",
+            "ready": true
+          },
+          {
+            "card": "Grafdigger's Cage",
+            "label": "cage",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "old",
+            "ready": true,
+            "faceDown": "Manifested"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Valgavoth's Onslaught",
+            "label": "onslaught",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Thragtusk"
+          },
+          {
+            "card": "Ainok Tracker",
+            "label": "ainok"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Runeclaw Bear"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "$ainok"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardFromAmong",
+          "with": "$piker"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$onslaught",
+          "mana": [
+            "$forest-1",
+            "$forest-2",
+            "$forest-3",
+            "$forest-4",
+            "$forest-5"
+          ],
+          "x": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Battlefield",
+          "is": [
+            "$forest-1",
+            "$forest-2",
+            "$forest-3",
+            "$forest-4",
+            "$forest-5",
+            "$cage",
+            "$old"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$old",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard",
+          "is": [
+            "Thragtusk",
+            "Ainok Tracker",
+            "Goblin Piker",
+            "Runeclaw Bear",
+            "Valgavoth's Onslaught"
+          ]
+        }
+      }
+    }
+  ],
+  "final": []
+}

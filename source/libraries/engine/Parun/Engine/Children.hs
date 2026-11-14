@@ -311,6 +311,7 @@ import qualified Parun.Types.ManaRider as ManaRider
 import qualified Parun.Types.ManaRiderEffect as ManaRiderEffect
 import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.ManifestDread as ManifestDread
 import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
@@ -1255,7 +1256,7 @@ effectChildren c effect = case effect of
   Effect.Recruit -> pure effect
   Effect.Discover quantity -> fmap Effect.Discover (onQuantity c quantity)
   Effect.Cloak (Cloak.MkCloak who library) -> fmap Effect.Cloak (Cloak.MkCloak <$> onPlayer c who <*> traverse (onPlayer c) library)
-  Effect.ManifestDread who -> fmap Effect.ManifestDread (onPlayer c who)
+  Effect.ManifestDread (ManifestDread.MkManifestDread who quantity named) -> fmap Effect.ManifestDread (ManifestDread.MkManifestDread <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)
   Effect.Venture _ -> pure effect
   Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices players who filter_ quantity permanents) ->
     fmap Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices <$> onPlayer c players <*> traverse (onFilter c) who <*> onFilter c filter_ <*> onQuantity c quantity <*> traverse (onSlot c) permanents)

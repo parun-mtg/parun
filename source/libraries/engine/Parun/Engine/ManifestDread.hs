@@ -69,15 +69,22 @@ riders =
 -- The event is recorded unconditionally, CR 701.62b, carrying the cards the
 -- graveyard move left IN a graveyard -- a replacement that sends one elsewhere
 -- (Leyline of the Void) leaves it out, since it was not put there.
-manifestDread :: Game () -> ObjectId -> PlayerId -> Game ()
+--
+-- The answer is the permanent the manifest put onto the battlefield, read off
+-- the move and never off the choice: CR 701.40f's refused manifest (Grafdigger's
+-- Cage) answers nothing, so Valgavoth's Onslaught's "those creatures" leaves the
+-- card out.
+manifestDread :: Game () -> ObjectId -> PlayerId -> Game [ObjectId]
 manifestDread settle source pid = do
   gs <- State.get
   let looked = take 2 (Game.cardsIn Zone.Library pid gs)
   Monad.mapM_ (Event.look pid) looked
   chosen <- Game.chooseAmong (\decider asked -> Prompt.ChooseCardFromAmong decider asked source) pid looked
-  Monad.forM_ chosen $ \card ->
-    Event.simultaneously (Monad.void (Event.changeZoneEntering settle card Zone.Battlefield LibraryPosition.defaultValue riders (Just pid)))
+  entered <- Monad.forM chosen $ \card ->
+    Event.simultaneously (Event.changeZoneEntering settle card Zone.Battlefield LibraryPosition.defaultValue riders (Just pid))
   after <- State.get
+  let onBattlefield oid = fmap Object.zone (Game.lookupObject oid after) == Just Zone.Battlefield
+      manifested = concatMap (filter onBattlefield . Foldable.toList) entered
   let stillInLibrary oid = fmap Object.zone (Game.lookupObject oid after) == Just Zone.Library
       rest = filter stillInLibrary looked
   arrived <- if null rest then pure [] else Event.changeZonesTogether settle (fmap (\oid -> (oid, Zone.Graveyard)) rest)
@@ -85,3 +92,4 @@ manifestDread settle source pid = do
   let inGraveyard oid = fmap Object.zone (Game.lookupObject oid landed) == Just Zone.Graveyard
       binned = Seq.fromList (concatMap (filter inGraveyard . Foldable.toList) arrived)
   State.modify' (Event.recordEvent (GameEvent.ManifestedDread (ManifestedDread.MkManifestedDread pid binned)))
+  pure manifested

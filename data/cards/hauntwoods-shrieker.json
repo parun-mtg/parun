@@ -154,8 +154,14 @@
                       {
                         "type": "ManifestDread",
                         "value": {
-                          "type": "Relative",
-                          "value": "You"
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
                         }
                       }
                     ]
