@@ -29,6 +29,7 @@ import qualified Control.Applicative as Applicative
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Containers.ListUtils as ListUtils
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -1500,6 +1501,9 @@ admitsEntry gs oid rewrite = case rewrite of
   EntryRewrite.EntersTransformed ->
     GameState.daytime gs == Just Daytime.Night
       && Maybe.isJust (Game.cardOf oid gs >>= Card.backFace)
+  -- One ability, so one applicability: every member's rule condition. The
+  -- conditional arms above are keyword-minted, and no printed sequence holds one.
+  EntryRewrite.InOrder rewrites -> all (admitsEntry gs oid) rewrites
 
 -- CR 614.16 versus CR 614.1: does this placement's PROVENANCE satisfy the
 -- pattern's subject?
@@ -1555,6 +1559,7 @@ entryCostOf rewrite = case rewrite of
   EntryRewrite.PayAnyLife _ -> Nothing
   EntryRewrite.EntersTransformed -> Nothing
   EntryRewrite.RunEffects _ -> Nothing
+  EntryRewrite.InOrder rewrites -> Foldable.asum (fmap entryCostOf rewrites)
 
 -- Every way to take exactly `n` of the candidates, in their order.
 subsetsOf :: Natural -> [a] -> [[a]]
@@ -2219,6 +2224,8 @@ bucketOfEffect re = case re of
   -- not a copy and shows no other face -- so it falls to the catch-all bucket
   -- with every other entry rewrite that merely does something.
   ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.RunEffects _)) -> ReplacementBucket.Other
+  -- CR 616.1: one effect, so it ranks where its most-favoured member would.
+  ReplacementEffect.EntryR (EntryR.MkEntryR matching (EntryRewrite.InOrder rewrites)) -> minimum (fmap (bucketOfEffect . ReplacementEffect.EntryR . EntryR.MkEntryR matching) rewrites)
   ReplacementEffect.DamageR {} -> ReplacementBucket.Other
   ReplacementEffect.DestructionR _ -> ReplacementBucket.Other
   ReplacementEffect.CounterR {} -> ReplacementBucket.Other
@@ -2422,6 +2429,8 @@ readsApplier re = case re of
   -- ENTERING object rather than off the candidate, so two rows alike in `effect`
   -- run the same effects for the same player whoever holds the row.
   ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.RunEffects _)) -> False
+  -- Reads the applier when any member does.
+  ReplacementEffect.EntryR (EntryR.MkEntryR matching (EntryRewrite.InOrder rewrites)) -> any (readsApplier . ReplacementEffect.EntryR . EntryR.MkEntryR matching) rewrites
   -- The rewritten amount is the effect's (Galvanic Blast, Furnace of Rath), and
   -- a prevention prevents the same event whoever's row it is (Fog). CR 615.7's
   -- shield is no exception: what makes two shields differ is how much each has
@@ -2759,6 +2768,7 @@ readsSource effect = case effect of
   -- two such rows on different sources make different copies and the entering
   -- creature's controller is asked which applies last.
   ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.AsCopy _)) -> True
+  ReplacementEffect.EntryR (EntryR.MkEntryR matching (EntryRewrite.InOrder rewrites)) -> any (readsSource . ReplacementEffect.EntryR . EntryR.MkEntryR matching) rewrites
   ReplacementEffect.EntryR {} -> False
   -- A computed scaling reads the source (computedScaling); nothing else here does.
   ReplacementEffect.DamageR (DamageR.MkDamageR _ (DamageRewrite.Scale scaling) _) -> computedScaling scaling
@@ -2931,6 +2941,7 @@ oneSentenceOfChoices candidates = case candidates of
 placesCounters :: ReplacementEffect Card (GrantedAbility.GrantedAbility Card) (Effect.Effect Card (GrantedAbility.GrantedAbility Card)) -> Bool
 placesCounters effect = case effect of
   ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.WithCounters {})) -> True
+  ReplacementEffect.EntryR (EntryR.MkEntryR matching (EntryRewrite.InOrder rewrites)) -> all (placesCounters . ReplacementEffect.EntryR . EntryR.MkEntryR matching) rewrites
   _ -> False
 
 -- Whether a row's whole work is a choice its entering object's controller alone
@@ -2938,7 +2949,7 @@ placesCounters effect = case effect of
 -- chosenCardType, chosenPlayers, chosenNames, chosenNumber) -- `oneSentenceOfChoices`' question.
 recordsAChoice :: ReplacementEffect Card (GrantedAbility.GrantedAbility Card) (Effect.Effect Card (GrantedAbility.GrantedAbility Card)) -> Bool
 recordsAChoice effect = case effect of
-  ReplacementEffect.EntryR (EntryR.MkEntryR _ rewrite) -> case rewrite of
+  ReplacementEffect.EntryR (EntryR.MkEntryR matching rewrite) -> case rewrite of
     EntryRewrite.ChooseQuality _ -> True
     EntryRewrite.ChoosePlayer _ -> True
     EntryRewrite.ChooseCardName _ -> True
@@ -2971,6 +2982,7 @@ recordsAChoice effect = case effect of
     EntryRewrite.PayAnyLife _ -> False
     EntryRewrite.EntersTransformed -> False
     EntryRewrite.RunEffects _ -> False
+    EntryRewrite.InOrder rewrites -> all (recordsAChoice . ReplacementEffect.EntryR . EntryR.MkEntryR matching) rewrites
   ReplacementEffect.ZoneChangeR {} -> False
   ReplacementEffect.DamageR {} -> False
   ReplacementEffect.DestructionR {} -> False

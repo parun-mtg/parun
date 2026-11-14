@@ -1,5 +1,6 @@
 module Parun.Codec.EntryRewriteSpec where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Codec.Card as Card
@@ -37,6 +38,7 @@ import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.SetPowerToughness as SetPowerToughness
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
@@ -351,4 +353,12 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
       (EntryRewrite.RunEffects (Seq.fromList [Effect.Type.Mill (Mill.MkMill (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 4) Nothing Nothing)]))
       " {\"type\":\"RunEffects\",\"value\":[{\"type\":\"Mill\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"quantity\":{\"type\":\"Literal\",\"value\":4}}}]} "
+  -- CR 614.1c: one ability's rewrites in printed order, Multiversal Passage's
+  -- choice and then its life payment.
+  Spec.it s "InOrder (Multiversal Passage)" $
+    Common.assertCodec
+      s
+      (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
+      (EntryRewrite.InOrder (EntryRewrite.ChooseQuality (ChosenQuality.Subtype SubtypeFamily.BasicLandType Nothing) NonEmpty.:| [EntryRewrite.OrTapped (EntryPrice.PayLife 2)]))
+      " {\"type\":\"InOrder\",\"value\":[{\"type\":\"ChooseQuality\",\"value\":{\"type\":\"Subtype\",\"value\":{\"family\":\"BasicLandType\"}}},{\"type\":\"OrTapped\",\"value\":{\"type\":\"PayLife\",\"value\":2}}]} "
   Spec.it s "has a schema" $ Common.assertHasSchema s (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))

@@ -1,5 +1,6 @@
 module Parun.Types.EntryRewrite where
 
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Sequence as Seq
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AsCopy as AsCopy
@@ -184,6 +185,10 @@ data EntryRewrite ability effect
     -- melded permanent that entered with its back face up is still not one" reach
     -- it from exile.
     EntersTransformed
+  | -- | CR 614.1c / Multiversal Passage: one ability's several entry rewrites
+    -- ("choose a basic land type. Then you may pay 2 life"), applied in printed
+    -- order as ONE replacement effect, so the first cannot remove the rest.
+    InOrder (NonEmpty.NonEmpty (EntryRewrite ability effect))
   | -- | CR 614.1c / Monstrous War-Leech: "As [this permanent] enters, [do
     -- something]" -- the one arm that RUNS effects, in printed order, deferred onto
     -- StoredEffects.pendingEntryEffects for Parun.Engine.Resolve.Effect.runEntryEffects to

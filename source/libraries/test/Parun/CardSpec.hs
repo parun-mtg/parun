@@ -1690,6 +1690,7 @@ replacementRewriteEffects replacement = case replacement of
   -- CR 707.9g's linked trigger runs these when a copy is made, so a card
   -- authored them on this row.
   ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.AsCopy asCopy)) -> Foldable.toList (AsCopy.whenYouDo asCopy)
+  ReplacementEffect.EntryR (EntryR.MkEntryR matching (EntryRewrite.InOrder rewrites)) -> foldMap (replacementRewriteEffects . ReplacementEffect.EntryR . EntryR.MkEntryR matching) rewrites
   ReplacementEffect.EntryR {} -> []
   ReplacementEffect.DamageR (DamageR.MkDamageR _ (DamageRewrite.RunEffects effects) _) -> Foldable.toList effects
   ReplacementEffect.DamageR {} -> []
@@ -4210,6 +4211,14 @@ entryRewriteFilters entryRewrite = case entryRewrite of
   -- CR 614.1c's as-enters effects hold no Filter of their own; the ones inside
   -- them are reached as ordinary effect filters, through cardResolutionEffects.
   EntryRewrite.RunEffects _ -> []
+  EntryRewrite.InOrder rewrites -> foldMap entryRewriteFilters rewrites
+
+-- A row with CR 614.1c's sequence of rewrites, as one row per member, for a
+-- reader asking what any member holds.
+entryMembers :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> [ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))]
+entryMembers replacement = case replacement of
+  ReplacementEffect.EntryR (EntryR.MkEntryR matching (EntryRewrite.InOrder rewrites)) -> concatMap (entryMembers . ReplacementEffect.EntryR . EntryR.MkEntryR matching) (NonEmpty.toList rewrites)
+  _ -> [replacement]
 
 -- The Filter a TurnUpRewrite carries. CR 303.4k's destination text -- Gift of
 -- Doom's "you may attach it to a creature" -- and NOT framed, even though an
@@ -6699,9 +6708,9 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         readsX c =
           Resolve.hasRead StaticRead.ReadsX (Card.allEffects c)
             || Face.loyalty c == Just Loyalty.Variable
-            || entryCountersReadX (fmap PrintedReplacement.effect (Face.replacementEffects c))
-            || entryEffectsReadX (fmap PrintedReplacement.effect (Face.replacementEffects c))
-            || entryExileReadsX (fmap PrintedReplacement.effect (Face.replacementEffects c))
+            || entryCountersReadX (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
+            || entryEffectsReadX (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
+            || entryExileReadsX (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
             || mintedCountersReadX c
             || any declaresVariable (announcedGateCostsOf (Face.spell c))
             || modalReadsAnnouncedX (Face.spell c)

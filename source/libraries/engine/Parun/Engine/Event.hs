@@ -3139,7 +3139,7 @@ apply settle batch applied batchPrevented candidate event =
     -- what carries the exhaustiveness obligation -- a wildcard-bound `_` on the
     -- outer pattern would let a new EntryRewrite constructor fall through
     -- silently whenever it happened to pair with WouldEnter.
-    (ReplacementEffect.EntryR (EntryR.MkEntryR _ rewrite), ProposedEvent.WouldEnter oid) -> case rewrite of
+    (ReplacementEffect.EntryR (EntryR.MkEntryR entryMatching rewrite), ProposedEvent.WouldEnter oid) -> case rewrite of
       EntryRewrite.AsCopy asCopy -> do
         -- Read HERE, at CR 614.12a's moment, so an entry replacement applied
         -- earlier in the same batch is already visible.
@@ -4450,6 +4450,21 @@ apply settle batch applied batchPrevented candidate event =
                       }
                 }
             pure (Just event)
+      -- CR 614.1c / 614.12: one ability's rewrites, each applied to what the
+      -- one before left, inside this one application. CR 614.12's re-check
+      -- runs only between applications, so a member that changes the
+      -- permanent's characteristics (a land type, CR 305.7) cannot remove the
+      -- members after it. A member ending the entry ends the sequence.
+      -- multiversal-passage-is-the-chosen-basic-land-type-and-enters-untapped-only-for-2-life
+      -- proves it.
+      EntryRewrite.InOrder rewrites ->
+        Monad.foldM
+          ( \proposed member -> case proposed of
+              Nothing -> pure Nothing
+              Just current -> apply settle batch applied batchPrevented candidate {ReplacementCandidate.effect = ReplacementEffect.EntryR (EntryR.MkEntryR entryMatching member)} current
+          )
+          (Just event)
+          rewrites
     -- Unreachable: `applies` admits EntryR only against WouldEnter.
     (ReplacementEffect.EntryR {}, _) -> pure (Just event)
     (ReplacementEffect.DamageR damageR@(DamageR.MkDamageR _ rewrite _), ProposedEvent.WouldDealDamage de) -> case rewrite of

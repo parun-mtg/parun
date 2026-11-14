@@ -66,7 +66,8 @@ codec abilityCodec effectCodec =
       Arm.payload "SacrificeToEnter" SacrificeToEnter.codec EntryRewrite.SacrificeToEnter (\x -> case x of EntryRewrite.SacrificeToEnter y -> Just y; _ -> Nothing),
       Arm.payload "ExileFromGraveyard" ExileFromGraveyard.codec EntryRewrite.ExileFromGraveyard (\x -> case x of EntryRewrite.ExileFromGraveyard y -> Just y; _ -> Nothing),
       Arm.payload "EntersAttachedTo" (Filter.codec Keyword.codec) EntryRewrite.EntersAttachedTo (\x -> case x of EntryRewrite.EntersAttachedTo y -> Just y; _ -> Nothing),
-      Arm.payload "RunEffects" (Common.seq effectCodec) EntryRewrite.RunEffects (\x -> case x of EntryRewrite.RunEffects y -> Just y; _ -> Nothing)
+      Arm.payload "RunEffects" (Common.seq effectCodec) EntryRewrite.RunEffects (\x -> case x of EntryRewrite.RunEffects y -> Just y; _ -> Nothing),
+      Arm.payload "InOrder" (Common.nonEmpty (codec abilityCodec effectCodec)) EntryRewrite.InOrder (\x -> case x of EntryRewrite.InOrder y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: EntryRewrite.EntryRewrite ability effect -> String
@@ -100,3 +101,4 @@ tagOf x = case x of
   EntryRewrite.ExileFromGraveyard {} -> "ExileFromGraveyard"
   EntryRewrite.EntersAttachedTo {} -> "EntersAttachedTo"
   EntryRewrite.RunEffects {} -> "RunEffects"
+  EntryRewrite.InOrder {} -> "InOrder"
