@@ -314,6 +314,10 @@ dropRestOfPhase phase = snd . thisPhase phase
 -- The first steps come from CR 501.1, CR 506.1 and CR 512.1. A CR 500.8
 -- additional combat phase begins at the same step, since expandExtraPhase
 -- builds it from CR 506.1's list.
+--
+-- Not implemented: a CR 500.10 beginning phase holding only an upkeep step
+-- (ExtraPhase.ExtraUpkeep) is not seen to begin here or to end at
+-- phaseEndingAt (#7601).
 phaseBeginningAt :: Phase -> Maybe PhaseSelector
 phaseBeginningAt phase = case phase of
   Phase.Beginning BeginningStep.Untap -> Just PhaseSelector.BeginningPhase
@@ -432,6 +436,8 @@ expandExtraPhase extra = case extra of
         Phase.Beginning BeginningStep.Upkeep,
         Phase.Beginning BeginningStep.DrawStep
       ]
+  -- CR 500.10: the phase that holds the added step, its other steps skipped.
+  ExtraPhase.ExtraUpkeep -> Seq.singleton (Phase.Beginning BeginningStep.Upkeep)
   ExtraPhase.ExtraCombat ->
     Seq.fromList
       [ Phase.Combat CombatStep.BeginningOfCombat,

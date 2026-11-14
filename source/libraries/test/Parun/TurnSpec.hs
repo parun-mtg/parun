@@ -537,6 +537,18 @@ extraPhaseSpec s registry = Spec.describe s "ExtraPhase" $ do
           "ahead of the phase already scheduled"
           (Turn.splicePhases (Phase.Combat CombatStep.EndOfCombat) [ExtraPhase.ExtraMain] remaining)
           (Seq.fromList [Phase.PostcombatMain] <> remaining)
+  Spec.it s "CR 500.8 / 500.10 splicePhases from a lone upkeep goes at the head, ahead of a later beginning phase" $
+    -- Obeka, Splitter of Seconds' added upkeep is a phase of its own with no
+    -- draw step, so the draw step still scheduled is a later phase's.
+    let remaining =
+          Turn.expandExtraPhase ExtraPhase.ExtraUpkeep
+            <> Turn.expandExtraPhase ExtraPhase.ExtraBeginning
+            <> Seq.fromList [Phase.PostcombatMain]
+     in Spec.assertEqWith
+          s
+          "directly after the lone upkeep"
+          (Turn.splicePhases (Phase.Beginning BeginningStep.Upkeep) [ExtraPhase.ExtraMain] remaining)
+          (Seq.fromList [Phase.PostcombatMain] <> remaining)
   Spec.it s "CR 500.8 splicePhases inserts a multi-phase list in written order" $
     -- Full Throttle's "there are two additional combat phases": two whole
     -- combat phases, back to back, and no main phase between them.

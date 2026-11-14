@@ -13,6 +13,12 @@ spec s = Spec.describe s "Parun.Codec.ExtraPhase" $ do
       ExtraPhase.codec
       ExtraPhase.ExtraBeginning
       " \"ExtraBeginning\" "
+  Spec.it s "ExtraUpkeep" $
+    Common.assertCodec
+      s
+      ExtraPhase.codec
+      ExtraPhase.ExtraUpkeep
+      " \"ExtraUpkeep\" "
   Spec.it s "ExtraCombat" $
     Common.assertCodec
       s
