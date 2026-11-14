@@ -1,0 +1,102 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "ready": true
+          },
+          {
+            "card": "Bonesplitter"
+          },
+          {
+            "card": "Short Sword"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Leonin Scimitar"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Slash of Light",
+            "label": "slash"
+          }
+        ],
+        "manaPool": "WW",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Colossal Dreadmaw",
+            "label": "dreadmaw",
+            "ready": true
+          },
+          {
+            "card": "Craw Wurm",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "ready": true
+          },
+          {
+            "card": "Leonin Scimitar"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Slash of Light deals damage equal to the number of creatures you control plus the number of Equipment you control",
+  "note": "Alice controls three creatures and two Equipment, so Slash of Light deals 5 to bob's Colossal Dreadmaw (6/6). Bob's own four creatures and one Equipment do not count, nor does the Equipment in alice's graveyard.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$slash",
+          "targets": [
+            "$dreadmaw"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 5,
+          "object": "$dreadmaw"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

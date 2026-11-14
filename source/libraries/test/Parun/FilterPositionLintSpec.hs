@@ -2273,7 +2273,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Gilt-Leaf's Embrace", 2), -- two keywords in the entering trigger, as Super Speed's pump
         ("Aquitect's Defenses", 1), -- hexproof in the entering trigger, as Super Speed's first strike
         ("Path to Redemption", 1), -- Spiral into Solitude's wording
-        ("Watery Grasp", 1) -- an activated ability shuffling it into its owner's library
+        ("Watery Grasp", 1), -- an activated ability shuffling it into its owner's library
+        ("Sleep Magic", 1), -- Claustrophobia's entering tap
+        ("Stuck in Summoner's Sanctum", 1) -- Tractor Beam's entering tap
       ]
     -- The rejected side, which the sweep above cannot show while the pool has no
     -- offender: the same atom planted in a SPELL's target slot -- the position a
