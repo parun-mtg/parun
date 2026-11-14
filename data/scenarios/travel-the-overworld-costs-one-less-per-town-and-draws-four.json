@@ -1,0 +1,43 @@
+{
+  "description": "Travel the Overworld costs {1} less for each of three Towns alice controls, cast for four Islands, and draws four",
+  "note": "Every land alice could tap besides the four Islands is a tapped Town, so the cast is payable only if affinity takes three off. The library holds five cards so the draw count is visible.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Adventurer's Inn", "tapped": true },
+          { "card": "Gohn, Town of Ruin", "tapped": true },
+          { "card": "Treno, Dark City", "tapped": true },
+          { "card": "Island", "label": "island-1", "ready": true },
+          { "card": "Island", "label": "island-2", "ready": true },
+          { "card": "Island", "label": "island-3", "ready": true },
+          { "card": "Island", "label": "island-4", "ready": true }
+        ],
+        "hand": [{ "card": "Travel the Overworld", "label": "travel" }],
+        "library": [
+          { "card": "Wastes" },
+          { "card": "Wastes" },
+          { "card": "Wastes" },
+          { "card": "Wastes" },
+          { "card": "Wastes" }
+        ]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": { "Cast": { "object": "$travel", "mana": ["$island-1", "$island-2", "$island-3", "$island-4"] } }
+    }
+  ],
+  "final": [
+    { "Count": { "player": "alice", "zone": "Hand", "card": "Wastes", "count": 4 } },
+    { "Count": { "player": "alice", "zone": "Library", "card": "Wastes", "count": 1 } }
+  ]
+}

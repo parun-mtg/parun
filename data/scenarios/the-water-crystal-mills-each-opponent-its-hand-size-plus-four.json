@@ -1,0 +1,207 @@
+{
+  "description": "The Water Crystal's activation mills each opponent three, the number of cards in alice's hand, plus four from its replacement",
+  "note": "Three seats, so each opponent is two players; each library is a different size so each remainder shows its own mill of seven. Alice's hand of three Plains is the count; without the replacement each would mill three.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "The Water Crystal",
+            "label": "crystal",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-4",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-5",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-6",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "library": [
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "library": [
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          },
+          {
+            "card": "Wastes"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$crystal",
+          "mana": [
+            "$island-1",
+            "$island-2",
+            "$island-3",
+            "$island-4",
+            "$island-5",
+            "$island-6"
+          ]
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "Count": {
+        "player": "bob",
+        "zone": "Graveyard",
+        "card": "Wastes",
+        "count": 7
+      }
+    },
+    {
+      "Count": {
+        "player": "bob",
+        "zone": "Library",
+        "card": "Wastes",
+        "count": 2
+      }
+    },
+    {
+      "Count": {
+        "player": "carol",
+        "zone": "Graveyard",
+        "card": "Wastes",
+        "count": 7
+      }
+    },
+    {
+      "Count": {
+        "player": "carol",
+        "zone": "Library",
+        "card": "Wastes",
+        "count": 3
+      }
+    },
+    {
+      "Count": {
+        "player": "alice",
+        "zone": "Library",
+        "card": "Wastes",
+        "count": 5
+      }
+    }
+  ]
+}

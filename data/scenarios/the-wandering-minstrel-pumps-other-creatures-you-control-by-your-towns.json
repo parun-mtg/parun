@@ -1,0 +1,151 @@
+{
+  "description": "The Wandering Minstrel's activation gives other creatures alice controls +3/+3, one for each of her three Towns",
+  "note": "The Towns are tapped so they pay nothing; the Minstrel itself and bob's Hill Giant stay as printed, so the filter is other creatures alice controls.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "The Wandering Minstrel",
+            "label": "minstrel",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Adventurer's Inn",
+            "tapped": true
+          },
+          {
+            "card": "Adventurer's Inn",
+            "tapped": true
+          },
+          {
+            "card": "Adventurer's Inn",
+            "tapped": true
+          },
+          {
+            "card": "Plains",
+            "label": "p",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "w1",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "w2",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "w3",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$minstrel",
+          "mana": [
+            "$p",
+            "$i",
+            "$s",
+            "$m",
+            "$f",
+            "$w1",
+            "$w2",
+            "$w3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 5,
+          "toughness": 5
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$minstrel",
+          "power": 1,
+          "toughness": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$giant",
+          "power": 3,
+          "toughness": 3
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "description": "Thief's Knife gives +1/+1 and the Rogue type, and the equipped creature draws its controller a card when it deals combat damage to a player",
+  "note": "Grizzly Bears wears the Knife: a 3/3 Bear Rogue. It attacks bob unblocked, deals 3, and alice draws the Island on top of her library; her hand was empty.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bears", "ready": true },
+          { "card": "Thief's Knife", "label": "knife", "attached": "bears" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Forest" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": { "PowerToughness": { "object": "$bears", "power": 3, "toughness": 3 } }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": { "Subtypes": { "object": "$bears", "subtypes": ["Bear", "Rogue"] } }
+    },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$bears"] } },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": { "Life": { "player": "bob", "life": 17 } }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": { "Count": { "card": "Island", "player": "alice", "zone": "Hand", "count": 1 } }
+    }
+  ]
+}
