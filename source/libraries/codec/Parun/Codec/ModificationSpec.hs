@@ -284,6 +284,13 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
       codec
       (Modification.ChangeWord (ChangeWord.MkChangeWord (TextWord.SubtypeWord Subtype.Mountain) (TextWord.SubtypeWord Subtype.Island)))
       " {\"type\":\"ChangeWord\",\"value\":{\"from\":{\"type\":\"Mountain\"},\"to\":{\"type\":\"Island\"}}} "
+  -- layer 3, CR 612.1 (Swirl the Mists: every colour word -> the chosen one).
+  Spec.it s "ChosenColorWord" $
+    Common.assertCodec
+      s
+      codec
+      Modification.ChosenColorWord
+      " {\"type\":\"ChosenColorWord\"} "
   -- layer 2, CR 613.1b: the PlayerId is BAKED at effect creation, unlike
   -- SetControllerToSource below.
   Spec.it s "SetController carries its baked PlayerId" $

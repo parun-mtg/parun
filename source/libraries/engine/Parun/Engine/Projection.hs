@@ -230,6 +230,7 @@ layer m = case m of
   Modification.AddSupertype _ -> Layer.Type
   Modification.RemoveSupertype _ -> Layer.Type
   Modification.ChangeWord {} -> Layer.Text
+  Modification.ChosenColorWord -> Layer.Text
   -- CR 613.1c: CR 612.5 is a text-changing effect, so it shares layer 3 with
   -- the word swap above. Answering any other layer leaves the suite
   -- green, since nothing else in this unit reads the layer directly.
@@ -267,6 +268,46 @@ admitting :: GameState -> Modification.Modification ability -> [ObjectId] -> [Ob
 admitting gs m oids = case m of
   Modification.GainKeyword k -> filter (\oid -> not (barred (PC.barredKeywords (project oid gs)) k)) oids
   _ -> oids
+
+-- CR 612.1: the word swaps a modification makes, read off its SOURCE where the
+-- word written is that source's choice. ChosenColorWord is every other colour
+-- word mapped to the chosen one (CR 612.2's family), so one swap's result is
+-- never another's word and the list may apply in any order.
+wordSwapsOf :: ObjectId -> GameState -> Modification.Modification ability -> [ChangeWord.ChangeWord]
+wordSwapsOf src gs m = case m of
+  Modification.ChangeWord swap -> [swap]
+  Modification.ChosenColorWord -> case fmap Set.toList (Game.currentChoice Chosen.Colors src gs) of
+    Just [chosen] -> [ChangeWord.MkChangeWord (TextWord.ColorWord c) (TextWord.ColorWord chosen) | c <- [minBound .. maxBound], c /= chosen]
+    _ -> []
+  _ -> []
+
+-- CR 612.1 / 612.2: a text-changing effect's swaps, applied to the subtype words
+-- in the type line, the rules text, the keywords (CR 702.14a) and the CDA (CR
+-- 208.2a / 604.3), and to the colour words in the rules text and keywords.
+-- applyModification's two word-swap arms, where the rest of the story is told.
+applyWordSwaps :: [ChangeWord.ChangeWord] -> ProjectedCharacteristics -> ProjectedCharacteristics
+applyWordSwaps swaps pc =
+  let pairs = fmap (\c -> (ChangeWord.from c, ChangeWord.to c)) swaps
+      keywords = Map.mapKeysWith (+) (Filter.rewriteKeyword pairs) (PC.keywords pc)
+      pc2 =
+        pc
+          { PC.keywords = keywords,
+            PC.activatedAbilities = fmap (rewriteActivatedAbility pairs) (PC.activatedAbilities pc),
+            PC.triggeredAbilities = fmap (rewriteTriggeredAbility pairs) (PC.triggeredAbilities pc),
+            PC.delayedAbilities = fmap (rewriteTriggeredAbility pairs) (PC.delayedAbilities pc),
+            PC.replacementEffects = fmap (rewritePrintedReplacement pairs) (PC.replacementEffects pc),
+            PC.characteristicPT = fmap (rewriteCharacteristicPT pairs) (PC.characteristicPT pc),
+            PC.staticAbilities = fmap (rewriteStaticAbility pairs) (PC.staticAbilities pc),
+            PC.playerAbilities = fmap (rewritePlayerStaticAbility pairs) (PC.playerAbilities pc),
+            PC.ruleAbilities = rewriteRuleAbilities pairs (PC.ruleAbilities pc),
+            PC.wordChanges = PC.wordChanges pc <> swaps,
+            PC.textChangedKeywords = keywords
+          }
+      swapSubtype types (from, to) = case (from, to) of
+        (TextWord.SubtypeWord old, TextWord.SubtypeWord new)
+          | Set.member old types -> Set.insert new (Set.delete old types)
+        _ -> types
+   in pc2 {PC.subtypes = List.foldl' swapSubtype (PC.subtypes pc2) pairs}
 
 -- Apply one modification to characteristics-in-progress. P/T quantities are
 -- evaluated against the CURRENT state (CR 611.3a); Resolve freezes a
@@ -795,27 +836,10 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- Galleon sibling prove the first and the last; the player list is a
         -- regression fence, no card in data/cards/ pairing a player ability's
         -- word with a second text box that prints it.
-        Modification.ChangeWord (ChangeWord.MkChangeWord from to) ->
-          let pairs = [(from, to)]
-              keywords = Map.mapKeysWith (+) (Filter.rewriteKeyword pairs) (PC.keywords pc)
-              pc2 =
-                pc
-                  { PC.keywords = keywords,
-                    PC.activatedAbilities = fmap (rewriteActivatedAbility pairs) (PC.activatedAbilities pc),
-                    PC.triggeredAbilities = fmap (rewriteTriggeredAbility pairs) (PC.triggeredAbilities pc),
-                    PC.delayedAbilities = fmap (rewriteTriggeredAbility pairs) (PC.delayedAbilities pc),
-                    PC.replacementEffects = fmap (rewritePrintedReplacement pairs) (PC.replacementEffects pc),
-                    PC.characteristicPT = fmap (rewriteCharacteristicPT pairs) (PC.characteristicPT pc),
-                    PC.staticAbilities = fmap (rewriteStaticAbility pairs) (PC.staticAbilities pc),
-                    PC.playerAbilities = fmap (rewritePlayerStaticAbility pairs) (PC.playerAbilities pc),
-                    PC.ruleAbilities = rewriteRuleAbilities pairs (PC.ruleAbilities pc),
-                    PC.wordChanges = PC.wordChanges pc <> [ChangeWord.MkChangeWord from to],
-                    PC.textChangedKeywords = keywords
-                  }
-           in case (from, to) of
-                (TextWord.SubtypeWord old, TextWord.SubtypeWord new)
-                  | Set.member old (PC.subtypes pc2) -> pc2 {PC.subtypes = Set.insert new (Set.delete old (PC.subtypes pc2))}
-                _ -> pc2
+        Modification.ChangeWord swap -> applyWordSwaps [swap] pc
+        -- CR 612.1 / 612.2, the colour word read off the source's choice
+        -- (wordSwapsOf). An unchosen source changes nothing.
+        Modification.ChosenColorWord -> applyWordSwaps (wordSwapsOf src gs m) pc
         -- CR 612.5: the two objects in this effect's affected set exchange their
         -- text boxes. Each side's incoming text is the OTHER side's, read by
         -- textBoxOf as CR 613.7 leaves it at this effect's own position in layer
@@ -1016,6 +1040,7 @@ cardTypesAfter m types = case m of
   Modification.Subtype {} -> types
   Modification.RemoveSubtype _ -> types
   Modification.ChangeWord {} -> types
+  Modification.ChosenColorWord -> types
   -- CR 612.1 / 612.5: the text box moves and the type line does not.
   Modification.ExchangeTextBoxes -> types
   Modification.AddNamesMatching _ -> types
@@ -1945,6 +1970,8 @@ freezeQuantities viewOf gs announcedOn source context m =
         Modification.AddSupertype _ -> Just m
         Modification.RemoveSupertype _ -> Just m
         Modification.ChangeWord {} -> Just m
+        -- Nothing frozen: no resolution stores this arm.
+        Modification.ChosenColorWord -> Just m
         Modification.SetController _ -> Just m
         Modification.SetControllerToSource -> Just m
         Modification.Colors {} -> Just m
@@ -2012,6 +2039,7 @@ quantitiesOf m = case m of
   Modification.AddSupertype _ -> []
   Modification.RemoveSupertype _ -> []
   Modification.ChangeWord {} -> []
+  Modification.ChosenColorWord -> []
   Modification.SetController _ -> []
   Modification.SetControllerToSource -> []
   Modification.Colors {} -> []
@@ -2068,6 +2096,7 @@ referenceQuery m = case m of
   Modification.AddSupertype _ -> Nothing
   Modification.RemoveSupertype _ -> Nothing
   Modification.ChangeWord {} -> Nothing
+  Modification.ChosenColorWord -> Nothing
   Modification.SetController _ -> Nothing
   Modification.SetControllerToSource -> Nothing
   Modification.Colors {} -> Nothing
@@ -2147,6 +2176,7 @@ setsLandSubtype m = case m of
   Modification.RemoveSupertype _ -> False
   -- CR 612 swaps one word for another inside rules text; it sets no subtype.
   Modification.ChangeWord {} -> False
+  Modification.ChosenColorWord -> False
   Modification.LoseAllAbilities -> False
   Modification.LoseNamedAbility _ -> False
   Modification.LoseKeyword _ -> False
@@ -2494,7 +2524,7 @@ setterPartsOf src aff gs =
 -- CR 612.5 / 613.7 / 613.8: under an exchange that text box is not the one
 -- `oid` was printed with, and the swaps it has taken are the ones layer 3
 -- applied to it wherever it was when each applied. So the answer is read off
--- layer 3 itself (textLayerOf), where exchangeTextBoxFrom carries
+-- layer 3 itself (textChangesGiven's `carried`), where exchangeTextBoxFrom carries
 -- PC.wordChanges with the text and CR 613.8's dependency order is the
 -- fold's own. Parun.ProjectionSpec's "CR 612.5 a Hack made before the exchange
 -- moves with Kird Ape's text" proves the carry.
@@ -2504,27 +2534,31 @@ setterPartsOf src aff gs =
 -- Swamp is Forest -> Swamp. Parun.ProjectionSpec's "CR 613.7 two Hacks on Kird
 -- Ape compose" proves it.
 --
--- Stored resolution effects only, so the gather may ask it: a board where no
--- exchange touches `oid` and at most one swap does needs no fold at all.
+-- Stored resolution effects and the static abilities textChangeStatics walks,
+-- so the gather may ask it: a board where no exchange touches `oid` and at most
+-- one effect swaps its words needs no fold at all.
 textChangesAffecting :: ObjectId -> GameState -> [(TextWord.TextWord, TextWord.TextWord)]
-textChangesAffecting oid gs =
-  let stored = StoredEffects.continuousEffects (GameState.stored gs)
-      pairOf eff = case ContinuousEffect.modification eff of
-        Modification.ChangeWord (ChangeWord.MkChangeWord from to) ->
-          if affectsGiven (baseView gs) (ContinuousEffect.source eff) oid (ContinuousEffect.affected eff) (copiableCharacteristics oid gs) gs
-            then Just (from, to)
-            else Nothing
-        _ -> Nothing
-      exchanges eff = case (ContinuousEffect.modification eff, ContinuousEffect.affected eff) of
+textChangesAffecting oid gs = textChangesGiven (textChangeStatics gs) oid gs
+
+-- textChangesAffecting with textChangeStatics' answer passed in, so a walk asking
+-- it of every permanent (permanentParts) walks the board's static abilities once.
+textChangesGiven :: [Gathered] -> ObjectId -> GameState -> [(TextWord.TextWord, TextWord.TextWord)]
+textChangesGiven statics oid gs =
+  let candidates = storedTextCandidates gs <> statics
+      swapsOf c = wordSwapsOf (gSource c) gs (gModification c)
+      reaches c = affectsGiven (baseView gs) (gSource c) oid (gAffected c) (copiableCharacteristics oid gs) gs
+      swapping = filter (\c -> not (null (swapsOf c)) && reaches c) candidates
+      exchanges c = case (gModification c, gAffected c) of
         (Modification.ExchangeTextBoxes, Affected.TheseObjects pair) -> Set.member oid pair
         _ -> False
-      own = Maybe.mapMaybe pairOf stored
-      carried = fmap (\c -> (ChangeWord.from c, ChangeWord.to c)) (PC.wordChanges (textLayerOf oid gs))
-   in case own of
+      pairsOf :: [ChangeWord.ChangeWord] -> [(TextWord.TextWord, TextWord.TextWord)]
+      pairsOf = fmap (\c -> (ChangeWord.from c, ChangeWord.to c))
+      carried = pairsOf (PC.wordChanges (fst (projectDeciding (<= Layer.Text) candidates oid gs)))
+   in case swapping of
         _ : _ : _ -> composeWordChanges carried
         _
-          | any exchanges stored -> composeWordChanges carried
-          | otherwise -> own
+          | any exchanges candidates -> composeWordChanges carried
+          | otherwise -> foldMap (pairsOf . swapsOf) swapping
 
 -- CR 612.1: an ability of `oid` as its copiable values print it, before the
 -- text changes affecting `oid` rewrote it -- the same ability under either
@@ -2547,13 +2581,10 @@ printedTriggeredAbility = printedAbility rewriteTriggeredAbility PC.triggeredAbi
 printedActivatedAbility :: ObjectId -> GameState -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 printedActivatedAbility = printedAbility rewriteActivatedAbility PC.activatedAbilities
 
--- Layer 3 alone over `oid`, from the stored effects alone: textChangesAffecting's
--- fold. Stored effects only, the posture of the pair list it replaced, which is
--- what lets the gather ask it: a static ability's layer-3 effect is not walked.
--- A grep of data/cards/ for ChangeWord and ExchangeTextBoxes (2026-09-24)
--- finds only resolution effects.
-textLayerOf :: ObjectId -> GameState -> ProjectedCharacteristics
-textLayerOf oid gs =
+-- CR 613.1c: the stored resolution effects' layer-3 parts, gathered WITHOUT
+-- gather, which asks textChangesAffecting.
+storedTextCandidates :: GameState -> [Gathered]
+storedTextCandidates gs =
   let candidate eff =
         let m = ContinuousEffect.modification eff
          in if layer m == Layer.Text
@@ -2569,7 +2600,36 @@ textLayerOf oid gs =
                       gModification = m
                     }
               else Nothing
-   in fst (projectDeciding (<= Layer.Text) (Maybe.mapMaybe candidate (StoredEffects.continuousEffects (GameState.stored gs))) oid gs)
+   in Maybe.mapMaybe candidate (StoredEffects.continuousEffects (GameState.stored gs))
+
+-- CR 612.1 / 613.1c: the word swaps permanents' static abilities make (Swirl
+-- the Mists), each at CR 613.7a's timestamp. Projection-free, controlGrants'
+-- walk: the abilities are read as printed, before any text change rewrites
+-- them, and no layer-6 removal is asked, which applies after layer 3 (CR
+-- 613.1c, 613.1f).
+--
+-- Not implemented: a static text change's "as long as" clause is not read
+-- here, and a granted static ability is not walked (gap #7547).
+textChangeStatics :: GameState -> [Gathered]
+textChangeStatics gs =
+  let partsOf permId = case Game.lookupObject permId gs of
+        Nothing -> []
+        Just permObj ->
+          [ MkGathered
+              { gEffect = Nothing,
+                gSource = permId,
+                gAffected = StaticAbility.affected sa,
+                gLayer = Layer.Text,
+                gLowest = Layer.Text,
+                gTimestamp = staticTimestampOf permId permObj gs,
+                gModification = m
+              }
+          | sa <- staticAbilitiesOf permId gs,
+            functionsFromZone Zone.Battlefield sa,
+            m <- NonEmpty.toList (StaticAbility.modifications sa),
+            not (null (wordSwapsOf permId gs m))
+          ]
+   in concatMap partsOf (abilitySources gs)
 
 -- The CR 612 word swap a modification makes, for CR 613.8a's exact test between
 -- two of them (projectDecidingFrom's changesText).
@@ -2803,7 +2863,9 @@ gatherGiven stripped waited functioning seed gs =
                 }
          in fmap one (NonEmpty.toList (grantedDefiningParts (ContinuousEffect.modification eff)))
       stored = concatMap fromStored (StoredEffects.continuousEffects (GameState.stored gs))
-      static = concatMap (fmap snd . permanentParts stripped waited functioning setEffs setStripped gs) (abilitySources gs)
+      -- Walked once here rather than once per permanent (textChangesGiven).
+      statics = textChangeStatics gs
+      static = concatMap (fmap snd . permanentParts statics stripped waited functioning setEffs setStripped gs) (abilitySources gs)
       fromCommandZone commandId = case Game.lookupObject commandId gs of
         Nothing -> []
         Just commandObj -> case abilityFaceOf commandId commandObj gs of
@@ -3147,8 +3209,8 @@ spellStaticTypes = Set.fromList [CardType.Instant, CardType.Sorcery]
 -- carrying `name`, counting only the removers `keep` admits
 -- (abilitiesRemovedBy): every one for a printed ability, and for a granted one
 -- only those applied after the grant.
-permanentParts :: (Maybe AbilityName.AbilityName -> (Gathered -> Bool) -> ObjectId -> Bool) -> ((ObjectId, Natural) -> Bool) -> (ObjectId -> Layer -> Condition.Type.Condition -> Bool) -> [SetEffect] -> (ObjectId -> Bool) -> GameState -> ObjectId -> [(Natural, Gathered)]
-permanentParts stripped waited functioning setEffs setStripped gs permId = case Game.lookupObject permId gs of
+permanentParts :: [Gathered] -> (Maybe AbilityName.AbilityName -> (Gathered -> Bool) -> ObjectId -> Bool) -> ((ObjectId, Natural) -> Bool) -> (ObjectId -> Layer -> Condition.Type.Condition -> Bool) -> [SetEffect] -> (ObjectId -> Bool) -> GameState -> ObjectId -> [(Natural, Gathered)]
+permanentParts statics stripped waited functioning setEffs setStripped gs permId = case Game.lookupObject permId gs of
   Nothing -> []
   Just permObj ->
     let printed = staticAbilitiesOf permId gs
@@ -3183,7 +3245,7 @@ permanentParts stripped waited functioning setEffs setStripped gs permId = case 
           -- CR 612: rewrite each static ability's subtype words by the text
           -- changes the text box THIS source carries has taken, before its
           -- effect is folded on.
-          changes = textChangesAffecting permId gs
+          changes = textChangesGiven statics permId gs
           -- CR 613.1f's layer-6 removal and CR 305.7's layer-4 strip, asked
           -- of ONE ability at CR 613.6's decision point rather than of the
           -- permanent as a whole. Each spares an ability whose effect had
@@ -3238,7 +3300,7 @@ frozenStaticParts src gs =
       functioning = conditionHolds ungated gs
       setEffs = setLandSubtypeEffectsGiven functioning gs
       (stripped, waited) = layerSixGate ungated gs
-      parts = permanentParts stripped waited functioning setEffs (setSubtypeStripped ungated setEffs gs) gs src
+      parts = permanentParts (textChangeStatics gs) stripped waited functioning setEffs (setSubtypeStripped ungated setEffs gs) gs src
       grants = controlGrants gs
       applies c oid =
         let lyr = gLowest c
@@ -3476,6 +3538,7 @@ removesAbilities m = case m of
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
   Modification.ChangeWord {} -> False
+  Modification.ChosenColorWord -> False
   -- CR 205.1a's card-type set has no ability clause: Song of the Dryads strips
   -- rules text through the LandSubtype Replace it carries beside this.
   Modification.CardType {} -> False
@@ -4826,6 +4889,8 @@ modificationWrites m = case m of
   -- comes with its becoming a creature, so Dan Lewis's set already excludes it.
   Modification.RemoveSubtype _ -> Set.singleton Subtypes
   Modification.ChangeWord {} -> Set.fromList [Subtypes, Keywords]
+  -- Colour words alone, never a subtype.
+  Modification.ChosenColorWord -> Set.singleton Keywords
   -- CR 612.5 writes the ability lists and PC.keywords with them, which Aspect
   -- has no finer grain for than Keywords. Not Subtypes: the type line stays
   -- where it was (CR 612.5).
@@ -4950,6 +5015,7 @@ modificationReads m = case m of
   -- Parun.ProjectionSpec's "CR 613.8b an earlier text change waits for the later
   -- one it depends on".
   Modification.ChangeWord {} -> Set.fromList [Subtypes, Keywords]
+  Modification.ChosenColorWord -> Set.singleton Keywords
   Modification.CardType {} -> Set.empty
   Modification.LoseCardType _ -> Set.empty
   Modification.AddSupertype _ -> Set.empty
@@ -6918,6 +6984,7 @@ grantsKeywordWhere p m = case m of
   Modification.AddSupertype _ -> False
   Modification.RemoveSupertype _ -> False
   Modification.ChangeWord {} -> False
+  Modification.ChosenColorWord -> False
   Modification.SetController _ -> False
   Modification.SetControllerToSource -> False
   Modification.Colors {} -> False
@@ -6970,6 +7037,8 @@ grantsMintingType m = case m of
   -- The removal grants nothing, LoseCardType's reason below.
   Modification.RemoveSubtype _ -> False
   Modification.ChangeWord (ChangeWord.MkChangeWord _ to) -> to == TextWord.SubtypeWord Subtype.Type.Saga
+  -- Every word it writes is a colour word.
+  Modification.ChosenColorWord -> False
   Modification.CardType _ cardType -> mintingCardType cardType
   -- The REMOVAL grants nothing, so it mints no CR 614.1c row however minting the
   -- type it takes away is.
@@ -7074,6 +7143,7 @@ grantsAbilityWhere p m = case m of
   Modification.Subtype {} -> False
   Modification.RemoveSubtype _ -> False
   Modification.ChangeWord _ -> False
+  Modification.ChosenColorWord -> False
   Modification.CardType {} -> False
   Modification.LoseCardType _ -> False
   Modification.GainKeyword _ -> False

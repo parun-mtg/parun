@@ -3675,6 +3675,7 @@ modificationFilters modification = case modification of
   Modification.AddSupertype _ -> []
   Modification.RemoveSupertype _ -> []
   Modification.ChangeWord {} -> []
+  Modification.ChosenColorWord -> []
   Modification.SetController _ -> []
   Modification.SetControllerToSource -> []
   Modification.Colors {} -> []
