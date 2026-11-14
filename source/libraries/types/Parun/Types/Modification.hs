@@ -378,6 +378,8 @@ data Modification ability
     -- survive, and neither its card types nor its subtypes move.
     RemoveSupertype Supertype.Supertype
   | ChangeWord ChangeWord.ChangeWord -- layer 3, CR 612 (Magical Hack, Sleight of Mind: from -> to)
+  | -- | layer 3, CR 612.2: every colour word becomes the one chosen for this effect's source (Swirl the Mists).
+    ChosenColorWord
   | -- | layer 3, CR 613.1c / 612.5: the two objects in this effect's affected set
     -- exchange their text boxes (Exchange of Words, which CR 612.5 names as the
     -- only card that does it).

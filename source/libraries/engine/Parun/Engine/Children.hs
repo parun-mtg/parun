@@ -3570,6 +3570,7 @@ modificationChildren c modification = case modification of
   Modification.AddSupertype _ -> pure modification
   Modification.RemoveSupertype _ -> pure modification
   Modification.ChangeWord _ -> pure modification
+  Modification.ChosenColorWord -> pure modification
   Modification.ExchangeTextBoxes -> pure modification
   Modification.AddNamesMatching filter_ -> Modification.AddNamesMatching <$> modificationFilter c filter_
   Modification.HasFullText (FullText.MkFullText graveyard alsoHas) ->

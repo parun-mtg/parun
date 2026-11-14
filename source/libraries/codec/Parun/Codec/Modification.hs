@@ -100,6 +100,7 @@ codec abilityCodec =
           Arm.payload "AddSupertype" Supertype.codec Modification.AddSupertype (\x -> case x of Modification.AddSupertype y -> Just y; _ -> Nothing),
           Arm.payload "RemoveSupertype" Supertype.codec Modification.RemoveSupertype (\x -> case x of Modification.RemoveSupertype y -> Just y; _ -> Nothing),
           Arm.payload "ChangeWord" ChangeWord.codec Modification.ChangeWord (\x -> case x of Modification.ChangeWord y -> Just y; _ -> Nothing),
+          Arm.nullary "ChosenColorWord" Modification.ChosenColorWord,
           Arm.payload "SetController" PlayerId.codec Modification.SetController (\x -> case x of Modification.SetController y -> Just y; _ -> Nothing),
           Arm.nullary "SetControllerToSource" Modification.SetControllerToSource,
           Arm.payload "Colors" colors (uncurry Modification.Colors) (\x -> case x of Modification.Colors mode cs -> Just (mode, cs); _ -> Nothing),
@@ -149,6 +150,7 @@ tagOf x = case x of
   Modification.AddSupertype {} -> "AddSupertype"
   Modification.RemoveSupertype {} -> "RemoveSupertype"
   Modification.ChangeWord {} -> "ChangeWord"
+  Modification.ChosenColorWord {} -> "ChosenColorWord"
   Modification.SetController {} -> "SetController"
   Modification.SetControllerToSource {} -> "SetControllerToSource"
   Modification.Colors {} -> "Colors"

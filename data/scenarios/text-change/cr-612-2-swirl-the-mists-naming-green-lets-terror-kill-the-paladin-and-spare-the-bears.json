@@ -1,0 +1,45 @@
+{
+  "description": "CR 612.2 / 613.1c Swirl the Mists naming green turns the Paladin's protection from black into green and Terror's \"nonblack\" into \"nongreen\", so Terror kills the Paladin and cannot target the Bears",
+  "note": "alice casts Swirl the Mists and chooses green. Its static ability changes every colour word in the text of spells and permanents to green: Paladin en-Vec's protection from black and from red become protection from green, and the Terror alice casts afterwards reads \"destroy target nonartifact, nongreen creature\". bob's Grizzly Bears are green, so the Paladin is Terror's only legal target and it takes the Paladin unasked.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "i1" },
+          { "card": "Island", "label": "i2" },
+          { "card": "Island", "label": "i3" },
+          { "card": "Island", "label": "i4" },
+          { "card": "Swamp", "label": "s1" },
+          { "card": "Swamp", "label": "s2" }
+        ],
+        "hand": [
+          { "card": "Swirl the Mists", "label": "swirl" },
+          { "card": "Terror", "label": "terror" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Paladin en-Vec", "label": "paladin" },
+          { "card": "Grizzly Bears", "label": "bears" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$swirl", "mana": ["$i1", "$i2", "$i3", "$i4", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseColor", "with": "Green" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$paladin", "keyword": { "type": "Protection", "value": { "quality": { "type": "HasColor", "value": "Black" }, "spares": null } }, "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Keywords": { "object": "$paladin", "keyword": { "type": "Protection", "value": { "quality": { "type": "HasColor", "value": "Green" }, "spares": null } }, "count": 2 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$terror", "mana": ["$s1", "$s2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" }
+  ],
+  "final": [
+    { "Count": { "player": "bob", "zone": "Graveyard", "card": "Paladin en-Vec", "count": 1 } },
+    { "Count": { "player": "bob", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1 } }
+  ]
+}

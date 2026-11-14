@@ -32,6 +32,7 @@ import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Players as Players
 import qualified Parun.Engine.Prepare as Prepare
 import qualified Parun.Engine.Projection as Projection
+import qualified Parun.Engine.Projection.Rewrite as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.Resolve.Slots as Slots
@@ -3670,6 +3671,16 @@ trimModal pid sid gs = trimModalBy (clauseAppliesAt pid sid gs)
 trimModalForCandidate :: Maybe Keyword -> Integer -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Modal.Type.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 trimModalForCandidate castFor paid = trimModalBy (clauseAppliesForCandidate castFor paid)
 
+-- CR 612.1: the face a spell's announcement reads, its spell text rewritten by
+-- the text changes reaching `oid` -- after CR 601.2a's move, where a static
+-- text change reaches the spell (Swirl the Mists). Not implemented: the gate,
+-- asked before the move, reads the card in its zone, which no such change
+-- reaches (gap #7546).
+textChangedSpell :: ObjectId -> GameState -> Face.Face Card.Type.Card -> Face.Face Card.Type.Card
+textChangedSpell oid gs face = case Projection.textChangesAffecting oid gs of
+  [] -> face
+  changes -> face {Face.spell = Projection.rewriteModal changes (Face.spell face)}
+
 -- CR 601.2b-i for a spell already on the stack -- castSpell's body once its CR
 -- 601.2a move has happened. `oid` is the card before that move, named only to
 -- record the play. `sid` is the stack incarnation (CR 400.7), the object
@@ -3712,8 +3723,9 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
   -- spell, so every step below reads the face as that player's "that player"
   -- leaves it (chosenBy). Nobody to choose rejects the cast below.
   answeredChooser <- Players.chooseOne pid sid Nothing =<< State.gets (modeChoosers pid printedFace)
+  moved <- State.get
   let modeChooser = Maybe.fromMaybe pid answeredChooser
-      face = chosenBy modeChooser printedFace
+      face = textChangedSpell sid moved (chosenBy modeChooser printedFace)
       stampChooser = case Face.modeChooser printedFace of
         PlayerRelation.You -> id
         _ -> Binding.setModeChooser modeChooser
