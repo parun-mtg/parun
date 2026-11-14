@@ -506,7 +506,7 @@ spec s registry = Spec.describe s "Bot" $ do
   -- CR 615.7: a shield with 3 left over hits of 2 and 3 spends all 3, each
   -- hit taking at most its own damage.
   Spec.it s "allocates a shield every way that spends it" $ do
-    let hit n = DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.alice) n 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Noncombat
+    let hit n = DamageEvent.MkDamageEvent oid (Recipient.ToPlayer S.alice) n 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty DamageKind.Noncombat
     Spec.assertEqWith s "shares" (drawn (Prompt.AllocateDamage decider S.alice [hit 2, hit 3] 3)) (Set.fromList [[0, 3], [1, 2], [2, 1]])
 
   -- Each candidate the caller found legal, CR 118.13's payable routes included.

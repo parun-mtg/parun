@@ -1,5 +1,6 @@
 module Parun.Types.DamagedParty where
 
+import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.SlotName as SlotName
@@ -20,4 +21,7 @@ data DamagedParty
   | -- | The candidate's controller or owner, as it is now -- Steel Hellkite's
     -- "whose controller was dealt combat damage".
     HolderOfCandidate Holder.Holder
+  | -- | An object other than the dealer, of this card type as it was dealt the
+    -- damage (CR 120.3) -- Wolverine, Best There Is's "another creature".
+    Another CardType.CardType
   deriving (Eq, Ord, Show)

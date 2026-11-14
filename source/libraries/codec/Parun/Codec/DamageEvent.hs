@@ -38,6 +38,7 @@ codec = Fields.object $ do
   dealtByCommander <- Fields.defaulted "dealtByCommander" False Common.boolean DamageEvent.dealtByCommander
   dealtByCardTypes <- Fields.defaulted "dealtByCardTypes" Set.empty (Common.set CardType.codec) DamageEvent.dealtByCardTypes
   dealtFromZone <- Fields.defaulted "dealtFromZone" Nothing (Common.maybe Zone.codec) DamageEvent.dealtFromZone
+  recipientCardTypes <- Fields.defaulted "recipientCardTypes" Set.empty (Common.set CardType.codec) DamageEvent.recipientCardTypes
   kind <- Fields.required "kind" DamageKind.codec DamageEvent.kind
   pure
     DamageEvent.MkDamageEvent
@@ -55,5 +56,6 @@ codec = Fields.object $ do
         DamageEvent.dealtByCommander = dealtByCommander,
         DamageEvent.dealtByCardTypes = dealtByCardTypes,
         DamageEvent.dealtFromZone = dealtFromZone,
+        DamageEvent.recipientCardTypes = recipientCardTypes,
         DamageEvent.kind = kind
       }

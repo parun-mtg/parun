@@ -106,7 +106,7 @@ commandNames gs = fmap (\oid -> maybe (CardName.MkCardName (Text.pack "?")) S.na
 
 -- One noncombat hit, the shape Parun.Engine.Damage.applyDamage takes.
 hit :: ObjectId.ObjectId -> Recipient.Recipient -> Natural -> DamageEvent.DamageEvent
-hit src recipient n = DamageEvent.MkDamageEvent src recipient n 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Noncombat
+hit src recipient n = DamageEvent.MkDamageEvent src recipient n 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty DamageKind.Noncombat
 
 -- How much life `pid` lost between the two boards. A difference rather than a
 -- total, because the vanguard's own CR 902.4 modifier moves the starting number

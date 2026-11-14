@@ -39,12 +39,14 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByCommander = True,
           DamageEvent.dealtByCardTypes = Set.singleton CardType.Artifact,
           DamageEvent.dealtFromZone = Nothing,
+          DamageEvent.recipientCardTypes = Set.empty,
           DamageEvent.kind = DamageKind.Combat
         }
       " {\"source\":1,\"target\":{\"type\":\"ToPlayer\",\"value\":2},\"amount\":3,\"dealtByDeathtouch\":true,\"dealtByWither\":true,\"dealtByToxic\":2,\"dealtByController\":4,\"dealtByCreatureTypes\":[\"Rogue\"],\"dealtByCommander\":true,\"dealtByCardTypes\":[\"Artifact\"],\"kind\":\"Combat\"} "
   -- CR 120.3c's recipient tag and CR 608's noncombat damage are each the other
   -- arm of their type. CR 702.15b's lifelink payee is a concrete PlayerId, and
-  -- CR 120.10's excess and CR 400.1's zone are away from their defaults.
+  -- CR 120.10's excess, CR 400.1's zone and CR 120.3's recipient card types
+  -- are away from their defaults.
   Spec.it s "MkDamageEvent, dealt to a planeswalker, with lifelink" $
     Common.assertCodec
       s
@@ -64,9 +66,10 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByCommander = False,
           DamageEvent.dealtByCardTypes = Set.empty,
           DamageEvent.dealtFromZone = Just Zone.Stack,
+          DamageEvent.recipientCardTypes = Set.singleton CardType.Planeswalker,
           DamageEvent.kind = DamageKind.Noncombat
         }
-      " {\"source\":1,\"target\":{\"type\":\"ToPlaneswalker\",\"value\":5},\"amount\":4,\"excess\":1,\"dealtByInfect\":true,\"dealtByLifelink\":2,\"dealtFromZone\":\"Stack\",\"kind\":\"Noncombat\"} "
+      " {\"source\":1,\"target\":{\"type\":\"ToPlaneswalker\",\"value\":5},\"amount\":4,\"excess\":1,\"dealtByInfect\":true,\"dealtByLifelink\":2,\"dealtFromZone\":\"Stack\",\"recipientCardTypes\":[\"Planeswalker\"],\"kind\":\"Noncombat\"} "
   -- Every dealtBy* rider at its default, which is what an event carrying none
   -- of them means.
   Spec.it s "an all-default value omits every optional key" $
@@ -88,6 +91,7 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByCommander = False,
           DamageEvent.dealtByCardTypes = Set.empty,
           DamageEvent.dealtFromZone = Nothing,
+          DamageEvent.recipientCardTypes = Set.empty,
           DamageEvent.kind = DamageKind.Combat
         }
       " {\"source\":1,\"target\":{\"type\":\"ToPlayer\",\"value\":2},\"amount\":3,\"kind\":\"Combat\"} "

@@ -1385,19 +1385,19 @@ countersPutThisTurn oid gs =
 -- recipient is the one the damage was finally dealt to, so CR 614.9's
 -- redirection counts against where it landed. Each recipient rides beside the
 -- event's kind (CR 510 / 608), for a card that asks about combat damage alone.
-dealtDamageTo :: ObjectId -> GameState -> Set.Set (Recipient.Recipient, DamageKind.DamageKind)
+dealtDamageTo :: ObjectId -> GameState -> Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType)
 dealtDamageTo oid gs =
   let byIt event = case event of
-        GameEvent.DamageDealt ev | DamageEvent.source ev == oid -> fmap (\recipient -> (recipient, DamageEvent.kind ev)) (Game.damageRecipient event)
+        GameEvent.DamageDealt ev | DamageEvent.source ev == oid -> fmap (\recipient -> (recipient, DamageEvent.kind ev, DamageEvent.recipientCardTypes ev)) (Game.damageRecipient event)
         _ -> Nothing
    in Set.fromList (Maybe.mapMaybe (byIt . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))
 
 -- CR 120.1 / 400.7: the same answer for every earlier turn of the game. An id
 -- names one object for its whole life, so the earlier turns' damage by this id
 -- is damage by this object.
-dealtDamageEarlier :: ObjectId -> GameState -> Set.Set (Recipient.Recipient, DamageKind.DamageKind)
+dealtDamageEarlier :: ObjectId -> GameState -> Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType)
 dealtDamageEarlier oid gs =
-  Set.fromList [(DamageEvent.target ev, DamageEvent.kind ev) | ev <- Foldable.toList (Game.damageBeforeThisTurn gs), DamageEvent.source ev == oid]
+  Set.fromList [(DamageEvent.target ev, DamageEvent.kind ev, DamageEvent.recipientCardTypes ev) | ev <- Foldable.toList (Game.damageBeforeThisTurn gs), DamageEvent.source ev == oid]
 
 -- CR 702.51c: which spells did this object convoke, and which permanents did
 -- those spells become? GameEvent.Convoked is written as the cast's cost is paid

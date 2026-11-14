@@ -1106,7 +1106,9 @@ processDamage settle events = do
   -- event in the batch may disturb for the next.
   board <- State.get
   let -- The events CR 120.4b deals, each carrying its CR 120.10 excess.
-      survivors = settleExcess board resolved
+      -- CR 120.3's recipient card types stamped too, read off the same board,
+      -- so a later "dealt damage to another creature" reads what it was.
+      survivors = fmap (\ev -> ev {DamageEvent.recipientCardTypes = Projection.damagedCardTypes board (DamageEvent.target ev)}) (settleExcess board resolved)
       -- CR 120.3e: mark the damage. CR 120.3d's alternative -- the -1/-1 counters
       -- a wither and/or infect source's damage causes instead -- is in
       -- `counterResults` below rather than here, since it goes through
@@ -1164,7 +1166,7 @@ processDamage settle events = do
       -- CR 120.3d's counters go to a CREATURE recipient, the same card type CR
       -- 120.3e's mark answers to, so the two readings of "is this a creature" must
       -- be one reading.
-      damagedTypesOf ev = Projection.damagedCardTypes board (DamageEvent.target ev)
+      damagedTypesOf = DamageEvent.recipientCardTypes
       markOne g ev = case DamageEvent.target ev of
         -- Every object-shaped recipient goes through one arm, INCLUDING
         -- Recipient.ToObject: CR 120.1a's three card types are what decide the

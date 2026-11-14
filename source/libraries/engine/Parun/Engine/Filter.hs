@@ -440,14 +440,15 @@ data View = MkView
     countersPutThisTurn :: Set.Set (PlayerId.PlayerId, CounterKind.CounterKind Keyword.Type.Keyword),
     -- CR 120.1 / 608.2i: whom did this candidate deal damage to earlier this
     -- turn? Every recipient of a GameEvent.DamageDealt it was the source of,
-    -- each beside that event's CR 510 / 608 kind, LAZY for `crewedThisTurn`'s
+    -- each beside that event's CR 510 / 608 kind and the recipient's card types
+    -- as it was dealt the damage (CR 120.3), LAZY for `crewedThisTurn`'s
     -- reason; DealtDamageTo compares them against the party and the
     -- kind the card names.
-    dealtDamageTo :: Set.Set (Recipient.Recipient, DamageKind.DamageKind),
+    dealtDamageTo :: Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType),
     -- CR 120.1 / 400.7: the same answer for every EARLIER turn this candidate
     -- has been this object, off Game.damageBeforeThisTurn, which
     -- Lookback.AsThisObject joins to `dealtDamageTo`. Lazy for its reason.
-    dealtDamageEarlier :: Set.Set (Recipient.Recipient, DamageKind.DamageKind),
+    dealtDamageEarlier :: Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType),
     -- CR 302.6: has this candidate's CONTROLLER controlled it continuously since
     -- their most recent turn began? Read from Object.sickness, the field CR
     -- 302.6's own gates on attacking and the tap symbol are read from, and
@@ -1252,13 +1253,14 @@ data Context = MkContext
     -- SLOT. Filled with sourceMeasures, and a SET for sourceColors' reason (CR
     -- 708.2a's nameless object).
     sourceNames :: Set.Set CardName.CardName,
-    -- CR 120.1: whom the SOURCE dealt damage to this turn, each beside the kind,
+    -- CR 120.1: whom the SOURCE dealt damage to this turn, each beside the kind
+    -- and the recipient's card types,
     -- for DealtDamageTo's Source dealer. View.dealtDamageTo's answer for the
     -- source. Filled with sourceMeasures, and lazy for its reason.
-    sourceDealtDamage :: Set.Set (Recipient.Recipient, DamageKind.DamageKind),
+    sourceDealtDamage :: Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType),
     -- CR 120.1 / 400.7: the same for every earlier turn, View.dealtDamageEarlier's
     -- answer for the source. Filled with sourceMeasures.
-    sourceDealtDamageEarlier :: Set.Set (Recipient.Recipient, DamageKind.DamageKind),
+    sourceDealtDamageEarlier :: Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType),
     -- CR 202.3, the computed half: the number the TARGET SLOT being matched
     -- names as its bound, for the Measures atom's EnclosingAmount operand --
     -- Celestine, the Living Saint's "where X is the amount of life you gained
@@ -2664,8 +2666,12 @@ matches context view predicate = case predicate of
   -- The Source dealer reads the same pair off the context, and a holder party
   -- is the candidate's holder as it is now: Steel Hellkite's ruling, proved by
   -- its scenarios under data/scenarios/damage.
+  --
+  -- An Another party is any object but the dealer, of the card type it had as
+  -- it was dealt the damage, whatever it is now (CR 608.2i). The Wolverine,
+  -- Best There Is scenarios under data/scenarios/damage prove it.
   Filter.DealtDamageTo (DealtDamageTo.MkDealtDamageTo party wanted window dealer) ->
-    let toParty damaged = case party of
+    let toParty damaged damagedTypes = case party of
           DamagedParty.Anyone -> True
           DamagedParty.Source -> Maybe.isJust (source context) && Recipient.objectOf damaged == source context
           DamagedParty.Related relation -> case (Recipient.playerOf damaged, perspective context) of
@@ -2675,10 +2681,11 @@ matches context view predicate = case predicate of
             Just oid -> Set.member oid (Map.findWithDefault Set.empty slot (slotObjects context))
             Nothing -> False
           DamagedParty.HolderOfCandidate holder -> Maybe.isJust (Recipient.playerOf damaged) && Recipient.playerOf damaged == heldBy holder view
-        hit (damaged, dealtKind) = toParty damaged && all (== dealtKind) wanted
-        (thisTurn, allEarlier) = case dealer of
-          DamageDealer.Candidate -> (dealtDamageTo view, dealtDamageEarlier view)
-          DamageDealer.Source -> (sourceDealtDamage context, sourceDealtDamageEarlier context)
+          DamagedParty.Another cardType -> Set.member cardType damagedTypes && Recipient.objectOf damaged /= dealerId
+        hit (damaged, dealtKind, damagedTypes) = toParty damaged damagedTypes && all (== dealtKind) wanted
+        (thisTurn, allEarlier, dealerId) = case dealer of
+          DamageDealer.Candidate -> (dealtDamageTo view, dealtDamageEarlier view, identity view)
+          DamageDealer.Source -> (sourceDealtDamage context, sourceDealtDamageEarlier context, source context)
         earlier = case window of
           Lookback.ThisTurn -> Set.empty
           Lookback.AsThisObject -> allEarlier

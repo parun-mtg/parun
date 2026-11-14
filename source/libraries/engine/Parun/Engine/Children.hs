@@ -722,6 +722,7 @@ dealtDamageToChildren children asked = case asked of
           DamagedParty.Source -> pure asked
           DamagedParty.Anyone -> pure asked
           DamagedParty.HolderOfCandidate _ -> pure asked
+          DamagedParty.Another _ -> pure asked
 
 -- | A counter link's children: the keyword its kind may hold.
 counterLinkedChildren :: (Applicative f) => Children keyword f -> CounterLinked.CounterLinked keyword -> f (CounterLinked.CounterLinked keyword)
