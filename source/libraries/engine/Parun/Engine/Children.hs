@@ -665,6 +665,7 @@ filterChildren children predicate = case predicate of
   Filter.HasSticker _ -> pure predicate
   Filter.Stickered -> pure predicate
   Filter.HasActivatedAbility _ -> pure predicate
+  Filter.HasAbility -> pure predicate
   Filter.IsInZone _ -> pure predicate
   Filter.WasCastFrom _ -> pure predicate
   Filter.TagWasSpent _ -> pure predicate

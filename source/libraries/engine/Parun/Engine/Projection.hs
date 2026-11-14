@@ -4485,6 +4485,9 @@ filterReads f = case f of
   -- behaviour: no card in data/cards/ writes a mana-ability kind of this atom
   -- into an Affected or a Count position.
   Filter.Type.HasActivatedAbility _ -> everyAspect
+  -- CR 113.1a: the atom above's reads, of which its field is a disjunct
+  -- (Count.characteristicsHaveAbility).
+  Filter.Type.HasAbility -> everyAspect
   -- CR 400.1 / 109.3: a zone is not a characteristic, so no Modification writes
   -- one and no layer's ordering turns on this atom.
   Filter.Type.IsInZone _ -> Set.empty
@@ -4568,6 +4571,8 @@ filterReadsPeers f = case f of
   -- Parun.ProjectionSpec's "CR 613.8a the Nexus satisfies the Ogre's gate, so the
   -- Ogre joins the Conversion's set" proves it.
   Filter.Type.HasActivatedAbility _ -> True
+  -- The atom above's gate, its field being a disjunct of this one's.
+  Filter.Type.HasAbility -> True
   -- Over-declared, as filterReads over-declares the same two: viewOfCharacteristics
   -- answers both False outright, so no board can move them, but the subject whose
   -- characteristics CR 301.5 and CR 702.5a compare against is another object.
@@ -4764,9 +4769,11 @@ modificationWrites m = case m of
   -- leaves the suite green.
   Modification.GainEnchant _ -> Set.singleton Keywords
   Modification.LoseEnchant _ -> Set.singleton Keywords
-  -- Writes ProjectedCharacteristics.castingPermissions, which no Filter atom
-  -- reads, so no Aspect names it.
-  Modification.GainCastingPermission _ -> Set.empty
+  -- Writes ProjectedCharacteristics.castingPermissions, a CR 601.3 ability
+  -- Filter.HasAbility reads, which declares Keywords. A REGRESSION FENCE: no
+  -- board in the pool grants a permission to a creature an affected set asks
+  -- this of.
+  Modification.GainCastingPermission _ -> Set.singleton Keywords
   -- Writes ProjectedCharacteristics.activatedAbilities or .triggeredAbilities,
   -- which Aspect has no finer grain for than Keywords -- the same answer
   -- LoseNamedAbility gives below, this being the same write in the other

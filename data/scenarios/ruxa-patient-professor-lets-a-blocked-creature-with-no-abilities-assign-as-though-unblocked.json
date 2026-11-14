@@ -1,0 +1,33 @@
+{
+  "description": "CR 510.1c / 113.1a: under Ruxa, Patient Professor, alice's blocked Grizzly Bears may assign its combat damage as though unblocked; her blocked Desert Cerodon, which has cycling, is not asked",
+  "note": "An unscheduled prompt fails the scenario, so the Cerodon's damage going to its blocker unasked is the proof it was not offered the choice.",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Ruxa, Patient Professor", "label": "ruxa", "ready": true },
+          { "card": "Grizzly Bears", "label": "bears", "ready": true },
+          { "card": "Desert Cerodon", "label": "cerodon", "ready": true }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Barbarian Horde", "label": "horde", "ready": true },
+          { "card": "Barbarian Horde", "label": "horde2", "ready": true }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$bears", "$cerodon"] } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "do": { "Block": { "$horde": ["$bears"], "$horde2": ["$cerodon"] } } },
+    { "turn": 1, "step": "CombatDamage", "player": "alice", "source": "$bears", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Life": { "player": "bob", "life": 17 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Damage": { "object": "$horde", "damage": 0 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Barbarian Horde", "count": 1 } } }
+  ]
+}

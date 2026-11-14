@@ -39,6 +39,7 @@ import qualified Parun.Engine.Star as Star
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.Vanguard as Vanguard
 import qualified Parun.Extra.Natural as Natural
+import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Affected as Affected
@@ -72,6 +73,7 @@ import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.Mana as Mana
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.MatchScope as MatchScope
+import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
@@ -123,6 +125,7 @@ viewOfCardLapsed :: Set Condition.Type.Condition -> Face.Face Card.Type.Card -> 
 viewOfCardLapsed lapsed face =
   let typeLine = Face.typeLine face
       roster = filter (Count.grantHeld lapsed) (printedAbilitiesOf face)
+      activated = ManaAbility.abilityKinds (Subtype.intrinsicManaAbility (TypeLine.types typeLine) (TypeLine.subtypes typeLine)) roster
    in Filter.MkView
         { -- CR 201.1 off the printed FACE. A multi-faced card's combined view
           -- carries the halves joined for rendering (Engine.Card.merge2); CR
@@ -344,7 +347,10 @@ viewOfCardLapsed lapsed face =
           -- CR 305.6's intrinsic ability through the reader every view builder
           -- shares: a Mountain must answer the same here as it does on the
           -- battlefield.
-          Filter.activatedAbilityKinds = ManaAbility.abilityKinds (Subtype.intrinsicManaAbility (TypeLine.types typeLine) (TypeLine.subtypes typeLine)) roster,
+          Filter.activatedAbilityKinds = activated,
+          -- CR 113.1a off the PRINTED face, `activatedAbilityKinds` above among
+          -- its disjuncts.
+          Filter.hasAbility = printedHasAbility activated face,
           -- CR 702.184c reaches a permanent's CONTROLLER; this builder describes
           -- a printed FACE with no controller and no board to grant it one.
           Filter.grantsStationToughness = False,
@@ -352,6 +358,40 @@ viewOfCardLapsed lapsed face =
           Filter.devotionBonus = Devotion.bonusOf (Face.playerAbilities face),
           Filter.loyaltyIsToughness = False
         }
+
+-- CR 113.1a / 113.3: does a printed face have any ability at all, given the
+-- kinds of activated ability viewOfCard measured? Count.characteristicsHaveAbility
+-- read off the face's own lists, which no layer has touched, plus the two that
+-- function before play only (CR 103.5's mulligan and CR 103.6's opening-hand
+-- actions). A REGRESSION FENCE: a card in a game is read through its
+-- projection, and no card in the pool asks this of a card outside one.
+printedHasAbility :: Set AbilityKind.AbilityKind -> Face.Face Card.Type.Card -> Bool
+printedHasAbility activated face =
+  not (Set.null activated)
+    || not (Map.null (Face.keywords face))
+    || Maybe.isJust (Face.characteristicPT face)
+    || Maybe.isJust (Face.characteristicColors face)
+    || not (null (Face.triggeredAbilities face))
+    || not (null (Face.replacementEffects face))
+    || not (null (Face.staticAbilities face))
+    || not (null (Face.playerAbilities face))
+    || ruleAbilitiesOfFace face /= mempty
+    || not (null (Face.specialActions face))
+    || not (null (Face.costReductions face))
+    || not (null (Face.alternativeCosts face))
+    || not (null (Face.additionalCosts face))
+    || not (null (Face.additionalCostChoices face))
+    || not (null (Face.enchant face))
+    || not (null (Face.castingPermissions face))
+    || not (null (Face.castingRestrictions face))
+    || not (null (Face.mulliganActions face))
+    || not (null (Face.openingHandActions face))
+    || Face.counterability face /= Counterability.Counterable
+    || Face.copyability face /= Copyability.Copyable
+    || any (`Set.member` types) [CardType.Planeswalker, CardType.Battle]
+    || (any (`Set.member` types) [CardType.Instant, CardType.Sorcery] && not (null (Modal.Type.modes (Face.spell face))))
+  where
+    types = TypeLine.types (Face.typeLine face)
 
 -- viewOfCard's activated-ability roster: the face's own list and rule 702's.
 printedAbilitiesOf :: Face.Face Card.Type.Card -> [ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)]
@@ -911,6 +951,10 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- the ability with it (CR 305.7) and one that lost all its abilities in
       -- layer 6 has too (CR 613.1f).
       Filter.activatedAbilityKinds = ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf pc) (abilitiesFromCharacteristics peers pc oid gs),
+      -- CR 113.1a off the PROJECTION, `activatedAbilityKinds` above among its
+      -- disjuncts: a layer-6 grant or wipe moves it (CR 613.1f), and a face-down
+      -- permanent's projection holds no ability (CR 708.2a).
+      Filter.hasAbility = Count.characteristicsHaveAbility (ManaAbility.abilityKinds (Subtype.intrinsicManaAbilityOf pc) (abilitiesFromCharacteristics peers pc oid gs)) pc,
       -- CR 702.184c off the PROJECTION, applyModification's GrantsStationToughness
       -- arm being layer 6's only writer.
       Filter.grantsStationToughness = PC.grantsStationToughness pc,
