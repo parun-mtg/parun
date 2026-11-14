@@ -1,0 +1,15 @@
+{
+  "description": "CR 115.1, 611.2a, 514.2: Scorpion's Sting gives target creature -3/-3 until end of turn, a 6/4 surviving as 3/1 and recovering at cleanup",
+  "note": "Craw Wurm's toughness 4 survives the -3; its power and toughness are read after resolution and again on bob's turn. alice's own Grizzly Bears make the target a real choice.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "BC", "hand": [{"card": "Scorpion's Sting", "label": "sting"}], "battlefield": [{"card": "Grizzly Bears", "label": "bears"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Craw Wurm", "label": "wurm"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$sting", "targets": ["$wurm"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$wurm", "power": 3, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 2, "toughness": 2}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"PowerToughness": {"object": "$wurm", "power": 6, "toughness": 4}}}
+  ]
+}
