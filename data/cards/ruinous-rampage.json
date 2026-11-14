@@ -1,0 +1,111 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Ruinous Rampage",
+      "oracleText": "Choose one —\n• Ruinous Rampage deals 3 damage to each opponent.\n• Exile all artifacts with mana value 3 or less.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "DealDamage",
+                    "value": {
+                      "parts": [
+                        {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 3
+                          },
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "Opponent"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Artifact"
+                            },
+                            {
+                              "type": "Measures",
+                              "value": {
+                                "comparison": "AtMost",
+                                "measure": "ManaValue",
+                                "operand": {
+                                  "type": "Literal",
+                                  "value": 3
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "zone": "Exile"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "selection": {
+          "type": "ChooseBetween",
+          "value": {
+            "least": 1,
+            "most": 1
+          }
+        }
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
