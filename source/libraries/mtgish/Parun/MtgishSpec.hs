@@ -99,6 +99,7 @@ import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -177,7 +178,7 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
   -- CR 614.1d: "This artifact enters tapped."
   Spec.it s "reads entering tapped as a replacement effect of the source" $ do
     Spec.assertEq s (Right ()) (accepts charcoalDiamond)
-    Spec.assertEq s [ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource EntryRewrite.Tapped)] (fmap PrintedReplacement.effect (Face.replacementEffects (translated charcoalDiamond)))
+    Spec.assertEq s [ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource (EntryRewrite.EntersTapState TapState.Tapped))] (fmap PrintedReplacement.effect (Face.replacementEffects (translated charcoalDiamond)))
 
   -- CR 723: a preparation card is its own face and then its prepare spell's,
   -- each held to its own Oracle text; the first "enters prepared" (CR
@@ -201,7 +202,7 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
     Spec.assertEq s (Right ()) (accepts desertedBeach)
     let yours fs = Quantity.Count (Count.MkCount (Scope.InZone (InZone.MkInZone Zone.Battlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))) (Filter.And (fs <> [Filter.HeldBy Holder.Controller PlayerRelation.You])) Aggregation.Members)
         atMost q k = Just (Condition.Compares (Compares.MkCompares q Comparison.AtMost (Quantity.Literal k)))
-        tapped = ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource EntryRewrite.Tapped)
+        tapped = ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource (EntryRewrite.EntersTapState TapState.Tapped))
     Spec.assertEq s [(atMost (yours [Filter.HasCardType CardType.Planeswalker]) 0, tapped)] [(PrintedReplacement.condition r, PrintedReplacement.effect r) | r <- Face.replacementEffects (translated fateholdAnnex)]
     Spec.assertEq s [(atMost (yours [Filter.Not Filter.IsSource, Filter.HasCardType CardType.Land]) 1, tapped)] [(PrintedReplacement.condition r, PrintedReplacement.effect r) | r <- Face.replacementEffects (translated desertedBeach)]
 

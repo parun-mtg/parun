@@ -43,12 +43,13 @@ data AsCopy ability effect = MkAsCopy
     -- | CR 614.1d inside CR 614.1c's sentence: Vesuva's "you may have this land
     -- enter TAPPED as a copy of any land on the battlefield". One replacement
     -- doing two things, so the status rides the rewrite rather than sitting in a
-    -- second EntryRewrite.Tapped beside it: a second replacement would tap a
+    -- second EntryRewrite.EntersTapState beside it: a second replacement would tap a
     -- Vesuva that DECLINED the copy, which the printed sentence does not.
     --
     -- Not a CopyException: CR 707.2 excludes status from the copiable values, so
     -- this may not be written into the snapshot. It goes onto the object through
-    -- Parun.Engine.Event.enterTapped, the same write EntryRewrite.Tapped makes.
+    -- Parun.Engine.Event.enterTapState, the same write EntryRewrite.EntersTapState
+    -- makes.
     tapped :: Bool,
     -- | CR 707.9g / 603.11: the triggered ability linked to this replacement,
     -- "When you do, ..." in the same paragraph (Wall of Stolen Identity). Empty

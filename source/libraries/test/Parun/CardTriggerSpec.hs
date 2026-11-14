@@ -2601,14 +2601,14 @@ betrayalSpec s registry = Spec.describe s "CR 701.26a a becomes-tapped trigger" 
       _ -> Spec.assertFailure s "fixture should give alice exactly two attackers"
   -- CR 603.2e: "An ability that triggers when a permanent 'becomes tapped' ...
   -- doesn't trigger if the permanent enters the battlefield in that state." The
-  -- pair is the same board under the two writes -- Event.enterTapped, which
+  -- pair is the same board under the two writes -- Event.enterTapState, which
   -- Parun.Engine.Resolve.Common.putOntoBattlefield mirrors, against Event.tap -- so the only thing
   -- that differs is which one the engine used.
   Spec.it s "CR 603.2e a permanent stamped tapped as it enters fires nothing" $ do
     board <- betrayalBoard s registry True
     case board of
       ([enchanted, _], _, gs) -> do
-        let entered = settleAndResolve (S.runPure S.identityAnswer gs (Event.enterTapped enchanted))
+        let entered = settleAndResolve (S.runPure S.identityAnswer gs (Event.enterTapState TapState.Tapped enchanted))
             tapped = settleAndResolve (S.runPure S.identityAnswer gs (Event.tap enchanted))
         Spec.assertEqWith s "CR 603.2e carol drew nothing off the entering stamp" (handNames S.carol entered) []
         Spec.assertEqWith s "though the very same tap through the funnel draws her a card" (handNames S.carol tapped) ["Island"]

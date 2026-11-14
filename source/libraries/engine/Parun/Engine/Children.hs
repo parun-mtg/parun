@@ -2374,7 +2374,7 @@ entryRewriteChildren c rewrite = case rewrite of
   EntryRewrite.Amplify _ -> pure rewrite
   EntryRewrite.Tribute _ -> pure rewrite
   EntryRewrite.Compleated _ -> pure rewrite
-  EntryRewrite.Tapped -> pure rewrite
+  EntryRewrite.EntersTapState _ -> pure rewrite
   EntryRewrite.Prepared -> pure rewrite
   EntryRewrite.OrTapped price -> EntryRewrite.OrTapped <$> entryPriceChildren c price
   EntryRewrite.PayAnyLife cap -> EntryRewrite.PayAnyLife <$> traverse (replacementQuantity c) cap

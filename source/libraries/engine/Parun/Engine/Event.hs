@@ -865,8 +865,8 @@ payLife settle pid n = do
   settled <- resolveLifeLoss settle LifeLossCause.ByPayment pid n
   changeLife pid (negate (toInteger settled))
 
--- CR 110.5b: stamp the tapped status onto an entering permanent, the write shared
--- by EntryRewrite.Tapped (CR 614.1d), by the declining half of
+-- CR 110.5b: stamp a tap status onto an entering permanent, the write shared
+-- by EntryRewrite.EntersTapState (CR 614.1d), by the declining half of
 -- EntryRewrite.OrTapped (CR 614.1c), and
 -- by the taking half of EntryRewrite.AsCopy's `tapped` (Vesuva) -- which is why
 -- it is one function: those sentences differ in what they charge and not in what
@@ -879,10 +879,10 @@ payLife settle pid n = do
 -- doesn't trigger if the permanent enters the battlefield in that state. See the
 -- arms in `apply` for why stamping the already-materialized incarnation is
 -- observationally the same as minting it tapped.
-enterTapped :: ObjectId -> Game ()
-enterTapped oid =
+enterTapState :: TapState.TapState -> ObjectId -> Game ()
+enterTapState status oid =
   State.modify' $ \gs ->
-    let stamp obj = obj {Object.tapped = TapState.Tapped}
+    let stamp obj = obj {Object.tapped = status}
      in gs {GameState.objects = Map.adjust stamp oid (GameState.objects gs)}
 
 -- CR 701.40b / 701.40g and CR 701.58b / 701.58g: the card representing a
@@ -1150,7 +1150,7 @@ damageEvent gs kind source target amount =
 -- exactly what a second record would break.
 --
 -- What does NOT come through here is a permanent entering the battlefield tapped
--- (`enterTapped` above, and Parun.Engine.Resolve.Common.putOntoBattlefield) -- CR 603.2e's other
+-- (`enterTapState` above, and Parun.Engine.Resolve.Common.putOntoBattlefield) -- CR 603.2e's other
 -- sentence, and the reason neither comes through here.
 --
 -- CR 110.5 makes tapped a PERMANENT's status, which every caller above already
@@ -3152,7 +3152,7 @@ apply settle batch applied batchPrevented candidate event =
             -- copy. On this branch alone -- a declined copy is a Vesuva that
             -- entered untapped, since the printed "may" governs both halves
             -- at once.
-            Monad.when (AsCopy.tapped asCopy) (enterTapped oid)
+            Monad.when (AsCopy.tapped asCopy) (enterTapState TapState.Tapped oid)
             -- CR 707.9e, on this branch alone for the same reason: the
             -- exception is an ADDITIONAL EFFECT rather than a modification of
             -- a characteristic (Altered Ego's "except it enters with X
@@ -4226,7 +4226,8 @@ apply settle batch applied batchPrevented candidate event =
             }
         pure (Just event)
       -- CR 614.1d / 110.5b: "This permanent enters tapped" (Zof Bloodbog's land,
-      -- Headless Skaab's creature -- the arm gates on no card type). CR 110.5b
+      -- Headless Skaab's creature -- the arm gates on no card type), or
+      -- Spelunking's "Lands you control enter untapped". CR 110.5b
       -- has a permanent enter untapped "unless a spell or ability says otherwise",
       -- and this is the permanent's own ability saying otherwise -- which is why
       -- it is here and not in EntryRiders, the rider a SPELL or ability writes
@@ -4245,9 +4246,14 @@ apply settle batch applied batchPrevented candidate event =
       -- state-based action can see the interim object.
       --
       -- No prompt, and none is owed: rule 614.1d's rewrite has no choice in it.
-      EntryRewrite.Tapped -> do
+      -- Which of a tapped and an untapped row applies LAST is CR 616.1's
+      -- question, asked by the loop running this arm: Spelunking's ruling
+      -- (2023-11-10) lets the controller order the two. The untapped stamp
+      -- overrides a tap state the move seeded as well, which is that ruling's
+      -- "simply put onto the battlefield tapped".
+      EntryRewrite.EntersTapState status -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
-        enterTapped oid
+        enterTapState status oid
         pure (Just event)
       -- CR 723.3a: "This creature enters prepared" (Pompous Battlemage), the
       -- arm above's posture for a designation: stamped on the entering
@@ -4280,7 +4286,7 @@ apply settle batch applied batchPrevented candidate event =
           -- falls back to its owner. Tapped rather than untapped, because with
           -- nobody to ask nobody paid -- which is the card's own stated default,
           -- "if you don't, it enters tapped".
-          Nothing -> enterTapped oid
+          Nothing -> enterTapState TapState.Tapped oid
           Just controller -> case price of
             -- CR 119.4: a player may pay N life only if their life total is at
             -- least N. Below that, declining is the only legal answer -- a forced
@@ -4303,7 +4309,7 @@ apply settle batch applied batchPrevented candidate event =
                   else pure OptionalDecision.Declines
               case answer of
                 OptionalDecision.Exercises -> payLife settle controller n
-                OptionalDecision.Declines -> enterTapped oid
+                OptionalDecision.Declines -> enterTapState TapState.Tapped oid
             -- CR 701.20a: through `reveal`, its own funnel, so the shown card
             -- reaches the public log with the projection a player at the table
             -- would see. Nothing moves and nothing changes (CR 701.20b), so this
@@ -4330,7 +4336,7 @@ apply settle batch applied batchPrevented candidate event =
               -- the refusal.
               case answer of
                 Just shown | List.elem shown candidates -> reveal RevealCause.Ordinary controller shown
-                _ -> enterTapped oid
+                _ -> enterTapState TapState.Tapped oid
             -- CR 701.4a: the reveal above, with the permanents the controller
             -- controls offered beside the hand, on the same prompt and posture.
             -- A beheld permanent is only chosen, so nothing is logged for it.
@@ -4343,7 +4349,7 @@ apply settle batch applied batchPrevented candidate event =
                 Just shown
                   | List.elem shown candidates ->
                       Monad.when (fmap Object.zone (Game.lookupObject shown gs) == Just Zone.Hand) (reveal RevealCause.Ordinary controller shown)
-                _ -> enterTapped oid
+                _ -> enterTapState TapState.Tapped oid
         pure (Just event)
       -- CR 614.1c / 119.4: "As this enters, pay any amount of life" (Phyrexian
       -- Processor), at most the cap where one is printed (Nameless Race), the
@@ -7716,11 +7722,10 @@ changeZoneEnteringIn settle asOf batch seed source oid requestedDest position ri
 -- pass would have handed bob the permanent; see #2169. Identical wherever the two
 -- seats coincide, which is every other land play.
 --
--- `tapped` is CR 614.1d's "enters tapped" a permission states for the land
--- played under it (Parun.Types.ExilePlayPermission.landEnters), seeded on the
--- proposed event as changeZoneEntering's rider is.
-changeZoneShowing :: Game () -> Maybe PlayerId -> ObjectId -> Zone -> Maybe CardName.CardName -> TapState.TapState -> Game (Seq.Seq ObjectId)
-changeZoneShowing settle under oid requestedDest shown tapped = changeZoneAttaching settle Nothing Set.empty oid requestedDest LibraryPosition.defaultValue Nothing tapped Map.empty under shown Facing.FaceUp False CarryOver.NotCarried False Seq.empty
+-- CarryOver.Played follows the entry row a permission's rider installed for
+-- this play onto the arriving land (Parun.Engine.Cast.installLandEntry).
+changeZoneShowing :: Game () -> Maybe PlayerId -> ObjectId -> Zone -> Maybe CardName.CardName -> Game (Seq.Seq ObjectId)
+changeZoneShowing settle under oid requestedDest shown = changeZoneAttaching settle Nothing Set.empty oid requestedDest LibraryPosition.defaultValue Nothing TapState.Untapped Map.empty under shown Facing.FaceUp False CarryOver.Played False Seq.empty
 
 -- changeZoneShowing for a move that puts the object into its destination FACE
 -- DOWN -- the CR 110.5b "unless a spell or ability says otherwise" that morph is.
@@ -9539,11 +9544,17 @@ arrangeComponents pid dest components =
 -- move, and this re-keys it. Parun.PlanechaseSpec's "CR 400.7b" group proves it.
 --
 -- CR 400.7g is implemented on Parun.Engine.Cast.keywordsBefore and
--- Parun.Types.Object.castGrants, and CR 400.7i for an exile permission's rider
--- on Parun.Engine.Cast.playLand's entry, rather than here.
+-- Parun.Types.Object.castGrants rather than here.
+--
+-- A land play (CarryOver.Played) runs `reenter` alone: an exile permission's
+-- "each land played this way enters tapped" watches that one entry, as Boreal
+-- Outrider's row watches a spell's.
 carryOver :: CarryOver.CarryOver -> ObjectId -> ObjectId -> Game ()
 carryOver carrying oldId newId = case carrying of
   CarryOver.NotCarried -> pure ()
+  CarryOver.Played ->
+    State.modify' $ \gs ->
+      gs {GameState.stored = (GameState.stored gs) {StoredEffects.replacements = fmap (reenter oldId newId) (StoredEffects.replacements (GameState.stored gs))}}
   CarryOver.Carried ->
     State.modify' $ \gs ->
       let referred = referTo oldId newId gs

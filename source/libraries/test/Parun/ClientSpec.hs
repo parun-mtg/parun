@@ -1440,7 +1440,7 @@ spec s registry = Spec.describe s "Client" $ do
         facing = Hotseat.fresh {Hotseat.facing = Just S.alice}
         alice = Decider.MkDecider S.alice
         upTo heading screenLines = takeWhile (\l -> not (any (`Text.isPrefixOf` l) [Text.pack "Type ", Text.pack "> "])) (dropWhile (not . Text.isPrefixOf heading) screenLines)
-        tapped = ReplacementEntry.MkReplacementEntry f (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource EntryRewrite.Tapped))
+        tapped = ReplacementEntry.MkReplacementEntry f (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.EntersTapState TapState.Tapped)))
         (picked, replacement) = asking facing ["1"] gs (Prompt.ChooseReplacement alice S.alice [tapped, ReplacementEntry.MkReplacementEntry g (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource EntryRewrite.Prepared))])
         hit = DamageEvent.MkDamageEvent f (Recipient.ToPlayer S.bob) 2 False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat
         (event, delayed) = asking facing ["2"] gs (Prompt.ChooseDelayedTriggerEvent alice S.alice f (GameEvent.DamageDealt hit NonEmpty.:| [GameEvent.DamageDealt hit {DamageEvent.amount = 3}]))

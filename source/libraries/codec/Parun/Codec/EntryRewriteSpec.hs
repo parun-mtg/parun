@@ -40,6 +40,7 @@ import qualified Parun.Types.SetPowerToughness as SetPowerToughness
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.Supertype as Supertype
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 
@@ -252,14 +253,19 @@ spec s = Spec.describe s "Parun.Codec.EntryRewrite" $ do
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
       (EntryRewrite.PayAnyLife (Just (Quantity.Literal 2)))
       " {\"type\":\"PayAnyLife\",\"value\":{\"type\":\"Literal\",\"value\":2}} "
-  -- CR 614.1d: the tap-state rewrite a permanent's own text prints, payload-free
-  -- because rule 614.1d and CR 110.5b fix both halves.
+  -- CR 614.1d: the tap-state rewrite, one bare tag per state.
   Spec.it s "Tapped (Zof Bloodbog)" $
     Common.assertCodec
       s
       (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
-      EntryRewrite.Tapped
+      (EntryRewrite.EntersTapState TapState.Tapped)
       " {\"type\":\"Tapped\"} "
+  Spec.it s "Untapped (Spelunking)" $
+    Common.assertCodec
+      s
+      (EntryRewrite.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
+      (EntryRewrite.EntersTapState TapState.Untapped)
+      " {\"type\":\"Untapped\"} "
   -- CR 723.3a: the enters-prepared rewrite, payload-free because the rule fixes
   -- the designation and CR 723.3c the copy it mints.
   Spec.it s "Prepared (Pompous Battlemage)" $

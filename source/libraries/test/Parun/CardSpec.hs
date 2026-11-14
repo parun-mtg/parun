@@ -2119,6 +2119,7 @@ reservedSlots =
       Binding.crewers,
       Binding.manaSource,
       Binding.castSpell,
+      Binding.playedLand,
       Binding.castSpellTargets,
       Binding.castSpellX,
       Binding.thisAbility,
@@ -4200,7 +4201,7 @@ entryRewriteFilters entryRewrite = case entryRewrite of
   EntryRewrite.Bloodthirst _ -> []
   EntryRewrite.Tribute _ -> []
   EntryRewrite.Compleated _ -> []
-  EntryRewrite.Tapped -> []
+  EntryRewrite.EntersTapState _ -> []
   EntryRewrite.Prepared -> []
   EntryRewrite.OrTapped (EntryPrice.PayLife _) -> []
   -- The cap is a Quantity, reaching Filters the way withCountersFilters' do.

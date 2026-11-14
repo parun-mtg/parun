@@ -1727,7 +1727,7 @@ entryRewriteReads rewrite = case rewrite of
   EntryRewrite.Bloodthirst _ -> ([], [])
   EntryRewrite.Tribute _ -> ([], [])
   EntryRewrite.Compleated _ -> ([], [])
-  EntryRewrite.Tapped -> ([], [])
+  EntryRewrite.EntersTapState _ -> ([], [])
   EntryRewrite.Prepared -> ([], [])
   EntryRewrite.OrTapped (EntryPrice.PayLife _) -> ([], [])
   EntryRewrite.OrTapped (EntryPrice.Reveal filter_) -> ([filter_], [])
@@ -1947,7 +1947,7 @@ entryRewriteEffects rewrite = case rewrite of
   EntryRewrite.Bloodthirst _ -> []
   EntryRewrite.Tribute _ -> []
   EntryRewrite.Compleated _ -> []
-  EntryRewrite.Tapped -> []
+  EntryRewrite.EntersTapState _ -> []
   EntryRewrite.Prepared -> []
   EntryRewrite.OrTapped _ -> []
   EntryRewrite.PayAnyLife _ -> []

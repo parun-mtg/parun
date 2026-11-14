@@ -52,6 +52,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Times as Times
 import qualified Parun.Types.Toughness as Toughness
@@ -454,7 +455,7 @@ enchant context slot = do
 -- it functions from or a name, is not spelled out here.
 replacement :: Target.Context -> PrintedReplacement.PrintedReplacement card ability effect -> [Text.Text]
 replacement context r = case r of
-  PrintedReplacement.MkPrintedReplacement condition (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource EntryRewrite.Tapped)) zones Nothing
+  PrintedReplacement.MkPrintedReplacement condition (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.EntersTapState TapState.Tapped))) zones Nothing
     | Set.null zones -> case condition of
         Nothing -> [Target.self context <> Text.pack " enters tapped."]
         Just c -> do

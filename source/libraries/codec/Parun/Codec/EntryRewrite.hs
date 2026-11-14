@@ -19,6 +19,7 @@ import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Types.EntryRewrite as EntryRewrite
+import qualified Parun.Types.TapState as TapState
 
 -- | @AsCopy@ takes a required object payload: the eligible filter has no default
 -- (#1512), so the bare tag a plain Clone used to write is no longer a legal
@@ -56,7 +57,8 @@ codec abilityCodec effectCodec =
       Arm.payload "Tribute" Common.natural EntryRewrite.Tribute (\x -> case x of EntryRewrite.Tribute y -> Just y; _ -> Nothing),
       Arm.payload "Amplify" Common.natural EntryRewrite.Amplify (\x -> case x of EntryRewrite.Amplify y -> Just y; _ -> Nothing),
       Arm.payload "Compleated" Common.natural EntryRewrite.Compleated (\x -> case x of EntryRewrite.Compleated y -> Just y; _ -> Nothing),
-      Arm.nullary "Tapped" EntryRewrite.Tapped,
+      Arm.nullary "Tapped" (EntryRewrite.EntersTapState TapState.Tapped),
+      Arm.nullary "Untapped" (EntryRewrite.EntersTapState TapState.Untapped),
       Arm.nullary "Prepared" EntryRewrite.Prepared,
       Arm.nullary "EntersTransformed" EntryRewrite.EntersTransformed,
       Arm.payload "OrTapped" EntryPrice.codec EntryRewrite.OrTapped (\x -> case x of EntryRewrite.OrTapped y -> Just y; _ -> Nothing),
@@ -91,7 +93,8 @@ tagOf x = case x of
   EntryRewrite.Tribute {} -> "Tribute"
   EntryRewrite.Amplify {} -> "Amplify"
   EntryRewrite.Compleated {} -> "Compleated"
-  EntryRewrite.Tapped {} -> "Tapped"
+  EntryRewrite.EntersTapState TapState.Tapped -> "Tapped"
+  EntryRewrite.EntersTapState TapState.Untapped -> "Untapped"
   EntryRewrite.Prepared {} -> "Prepared"
   EntryRewrite.EntersTransformed {} -> "EntersTransformed"
   EntryRewrite.OrTapped {} -> "OrTapped"
