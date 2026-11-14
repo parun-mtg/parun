@@ -42,9 +42,10 @@ spec s _ = Spec.describe s "Reply" $ do
         wall = BallotChoice.ForObject (ObjectId.MkObjectId 3)
         piker = BallotChoice.ForObject (ObjectId.MkObjectId 7)
         trip offered choice = resolving (Reply.decode (Reply.shapeOf (vote offered)) (Reply.encode (Reply.shapeOf (vote offered)) naming choice))
-    Spec.assertEqWith s "a word is spelled as itself" (Reply.encode (Reply.shapeOf (vote (time NonEmpty.:| [knowledge]))) naming knowledge) (R.Text (Text.pack "knowledge"))
-    Spec.assertEqWith s "a player is spelled as their seat label" (Reply.encode (Reply.shapeOf (vote (bob NonEmpty.:| [carol]))) naming carol) (R.Text (Text.pack "seat2"))
-    Spec.assertEqWith s "each kind decodes back to the choice it encoded" (fmap (uncurry trip) [(time NonEmpty.:| [knowledge], knowledge), (bob NonEmpty.:| [carol], carol), (wall NonEmpty.:| [piker], piker)]) [Just knowledge, Just carol, Just piker]
+    Spec.assertEqWith s "a word is spelled as itself" (Reply.encode (Reply.shapeOf (vote (time NonEmpty.:| [knowledge]))) naming (Just knowledge)) (R.Text (Text.pack "knowledge"))
+    Spec.assertEqWith s "a player is spelled as their seat label" (Reply.encode (Reply.shapeOf (vote (bob NonEmpty.:| [carol]))) naming (Just carol)) (R.Text (Text.pack "seat2"))
+    Spec.assertEqWith s "each kind decodes back to the choice it encoded" (fmap (uncurry trip) [(time NonEmpty.:| [knowledge], Just knowledge), (bob NonEmpty.:| [carol], Just carol), (wall NonEmpty.:| [piker], Just piker)]) [Just (Just knowledge), Just (Just carol), Just (Just piker)]
+    Spec.assertEqWith s "no ballot is null, both ways" (fmap (\offered -> (Reply.encode (Reply.shapeOf (vote offered)) naming Nothing, trip offered Nothing)) [time NonEmpty.:| [knowledge], wall NonEmpty.:| [piker]]) (replicate 2 (R.Null, Just Nothing))
 
 choose :: Prompt.Prompt Action.Action
 choose = Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Pass, tap]
@@ -55,8 +56,8 @@ tap = Action.ActivateManaAbility (ObjectId.MkObjectId 7)
 learn :: Prompt.Prompt (Maybe LearnMode.LearnMode)
 learn = Prompt.ChooseLearn (Decider.MkDecider S.alice) S.alice (ObjectId.MkObjectId 7) (minBound NonEmpty.:| [maxBound])
 
-vote :: NonEmpty.NonEmpty (BallotChoice.BallotChoice ObjectId.ObjectId) -> Prompt.Prompt (BallotChoice.BallotChoice ObjectId.ObjectId)
-vote = Prompt.ChooseVote (Decider.MkDecider S.alice) S.alice (ObjectId.MkObjectId 9)
+vote :: NonEmpty.NonEmpty (BallotChoice.BallotChoice ObjectId.ObjectId) -> Prompt.Prompt (Maybe (BallotChoice.BallotChoice ObjectId.ObjectId))
+vote offered = Prompt.ChooseVote (Decider.MkDecider S.alice) S.alice (ObjectId.MkObjectId 9) offered True
 
 -- Names a seat "seat" plus its index and an object by a label of its id, and
 -- resolves both back, as a run would.

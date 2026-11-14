@@ -2256,7 +2256,7 @@ playerSacrifices settle resolving source controller legal (PlayerSacrifices.MkPl
 -- candidate list and rule 701.38d's ballot counts are all read off this one
 -- `gs`.
 vote :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Vote.Vote -> Game ()
-vote resolving source controller legal (Vote.MkVote starter choices secret) = do
+vote resolving source controller legal (Vote.MkVote starter choices secret upToOne) = do
   gs <- State.get
   let -- Rule 701.38a's "specified player". A reference naming several names the
       -- first in PlayerId order, and one naming nobody falls back to CR 109.5's
@@ -2287,8 +2287,19 @@ vote resolving source controller legal (Vote.MkVote starter choices secret) = do
             OptionalDecision.Exercises -> Monad.replicateM (Natural.toIntSaturating count) (ask voter)
             OptionalDecision.Declines -> pure []
         pure (own <> concat offered)
-      -- Through Game.chooseAmong, rule 701.38a stating no way to abstain.
-      ballotAmong = Game.chooseAmong (\decider who -> Prompt.ChooseVote decider who resolving)
+      -- Game.chooseAmong's none / one / ask / check, rule 701.38a stating no
+      -- way to abstain. Card text that does ("up to one", Vote.upToOne) makes
+      -- no ballot an answer, so one candidate is asked too, and an answer
+      -- outside the offer casts none, Game.mayChooseAmong's posture.
+      ballotAmong voter offered = case NonEmpty.nonEmpty offered of
+        Nothing -> pure Nothing
+        Just (sole NonEmpty.:| []) | not upToOne -> pure (Just sole)
+        Just listed -> do
+          answer <- Game.choose (Prompt.ChooseVote (Decide.deciderFor voter gs) voter resolving listed upToOne)
+          pure $ case answer of
+            Just picked | elem picked listed -> Just picked
+            _ | upToOne -> Nothing
+            _ -> Just (NonEmpty.head listed)
       -- Each ballot is logged as it is cast, an object snapshotted as it is
       -- voted for, and a secret vote's are revealed together once the last
       -- is in, in voting order. Answered beside its voter.

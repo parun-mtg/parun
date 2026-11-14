@@ -261,7 +261,7 @@ bot names = Answerer.MkAnswerer $ \asked -> case Asked.prompt asked of
   Prompt.ChooseRingBearer _ _ candidates -> Generator.pick candidates
   Prompt.ChooseRoom _ _ _ rooms -> Generator.pick rooms
   Prompt.ChooseSticker _ _ _ stickers -> Generator.pick stickers
-  Prompt.ChooseVote _ _ _ choices -> Generator.pick choices
+  Prompt.ChooseVote _ _ _ choices abstain -> Generator.pick ((if abstain then (Nothing NonEmpty.<|) else id) (fmap Just choices))
   -- Any index into the offer.
   Prompt.ChooseDelayedTriggerEvent _ _ _ events -> indexInto (Asked.prompt asked) (NonEmpty.toList events)
   Prompt.ChooseDieResult _ _ _ results -> indexInto (Asked.prompt asked) (NonEmpty.toList results)

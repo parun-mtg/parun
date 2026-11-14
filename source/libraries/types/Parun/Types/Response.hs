@@ -261,12 +261,12 @@ data Response
     -- player chose where the removal names no kind.
     ChoseMixedCounterRemoval (Map.Map ObjectId.ObjectId (Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural.Natural))
   | -- | CR 701.38a / 701.38b: the object, word or player one player voted
-    -- for.
+    -- for, Nothing for no ballot where Parun.Types.Vote's upToOne allows it.
     --
     -- Its own constructor for ChoseBolster's reason: a vote's candidates are an
     -- arbitrary sweep of the battlefield, which can coincide with any of the
     -- object choices above.
-    ChoseVote (BallotChoice.BallotChoice ObjectId.ObjectId)
+    ChoseVote (Maybe (BallotChoice.BallotChoice ObjectId.ObjectId))
   | -- | CR 107.14: how much {E} a player chose to pay to an
     -- Effect.PayAnyEnergy.
     --

@@ -1056,7 +1056,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseAmass _ _ _ objects -> chosen `elem` objects
   Prompt.Type.ChooseBlight _ _ _ objects -> chosen `elem` objects
   Prompt.Type.ChooseBehold _ _ _ objects -> chosen `elem` objects
-  Prompt.Type.ChooseVote _ _ _ choices -> chosen `elem` choices
+  Prompt.Type.ChooseVote _ _ _ choices abstain -> maybe abstain (`elem` choices) chosen
   Prompt.Type.ChooseCounterKind _ _ _ kinds -> chosen `elem` kinds
   Prompt.Type.ChooseMovedCounterOrNone _ _ _ _ kinds -> all (`elem` kinds) chosen
   Prompt.Type.ChooseDamageSource _ _ _ objects -> chosen `elem` objects

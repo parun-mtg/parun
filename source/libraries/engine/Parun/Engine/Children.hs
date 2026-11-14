@@ -1266,7 +1266,7 @@ effectChildren c effect = case effect of
   Effect.Venture _ -> pure effect
   Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices players who filter_ quantity permanents) ->
     fmap Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices <$> onPlayer c players <*> traverse (onFilter c) who <*> onFilter c filter_ <*> onQuantity c quantity <*> traverse (onSlot c) permanents)
-  Effect.Vote (Vote.MkVote starter choices secret) -> fmap Effect.Vote (Vote.MkVote <$> onPlayer c starter <*> voteChoicesChildren c choices <*> pure secret)
+  Effect.Vote (Vote.MkVote starter choices secret upToOne) -> fmap Effect.Vote (Vote.MkVote <$> onPlayer c starter <*> voteChoicesChildren c choices <*> pure secret <*> pure upToOne)
   Effect.Bid (Bid.MkBid opening highBid highBidder) -> fmap Effect.Bid (Bid.MkBid <$> onQuantity c opening <*> onSlot c highBid <*> onSlot c highBidder)
   Effect.TakeExtraTurn (TakeExtraTurn.MkTakeExtraTurn who skips count) -> fmap Effect.TakeExtraTurn (TakeExtraTurn.MkTakeExtraTurn <$> onPlayer c who <*> pure skips <*> onQuantity c count)
   Effect.ShuffleIntoLibrary (ShuffleIntoLibrary.MkShuffleIntoLibrary library ref named) ->
