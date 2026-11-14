@@ -1533,11 +1533,11 @@ damageEventSpec s registry =
           Spec.assertEqWith s "two events" (length events) 2
           Spec.assertBool
             s
-            (elem (DamageEvent.MkDamageEvent a (Recipient.ToCreature b) 2 0 False False False 0 Nothing (Just S.alice) (Set.fromList [Subtype.Goblin, Subtype.Warrior]) False (Set.singleton CardType.Creature) Nothing DamageKind.Combat) events)
+            (elem (DamageEvent.MkDamageEvent a (Recipient.ToCreature b) 2 1 False False False 0 Nothing (Just S.alice) (Set.fromList [Subtype.Goblin, Subtype.Warrior]) False (Set.singleton CardType.Creature) (Just Zone.Battlefield) DamageKind.Combat) events)
             "attacker hit blocker for 2"
           Spec.assertBool
             s
-            (elem (DamageEvent.MkDamageEvent b (Recipient.ToCreature a) 2 0 False False False 0 Nothing (Just S.bob) (Set.fromList [Subtype.Goblin, Subtype.Warrior]) False (Set.singleton CardType.Creature) Nothing DamageKind.Combat) events)
+            (elem (DamageEvent.MkDamageEvent b (Recipient.ToCreature a) 2 1 False False False 0 Nothing (Just S.bob) (Set.fromList [Subtype.Goblin, Subtype.Warrior]) False (Set.singleton CardType.Creature) (Just Zone.Battlefield) DamageKind.Combat) events)
             "blocker hit attacker for 2"
         _ -> Spec.assertFailure s "fixture should have one creature per side"
 
@@ -1551,7 +1551,7 @@ damageEventSpec s registry =
             s
             "one player event"
             (S.damageEventsOf after)
-            [DamageEvent.MkDamageEvent a (Recipient.ToPlayer S.bob) 2 0 False False False 0 Nothing (Just S.alice) (Set.fromList [Subtype.Goblin, Subtype.Warrior]) False (Set.singleton CardType.Creature) Nothing DamageKind.Combat]
+            [DamageEvent.MkDamageEvent a (Recipient.ToPlayer S.bob) 2 0 False False False 0 Nothing (Just S.alice) (Set.fromList [Subtype.Goblin, Subtype.Warrior]) False (Set.singleton CardType.Creature) (Just Zone.Battlefield) DamageKind.Combat]
         _ -> Spec.assertFailure s "fixture should have an attacker"
 
 deathtouchSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
