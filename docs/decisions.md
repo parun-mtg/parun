@@ -2292,3 +2292,29 @@ Entries are ordered by the first rule each cites.
   scenario
   `cr-603-2c-ob-nixilis-triggers-on-one-opponent-at-exactly-1-when-another-loses-2`.
 - **Issue**: #5302.
+
+## Which life gains a spell or ability causes, for Rain of Gore
+
+- **Question**: Rain of Gore replaces a gain "if a spell or ability would
+  cause its controller to gain life". Is a lifelink gain from noncombat damage
+  one, and is the gain a replacement substitutes (Words of Worship's "you gain
+  5 life instead" of a draw step draw) one?
+- **Rules**: CR 609.1, 614.1, 119.10, 120.3f, 702.15b; CR of 2026-11-06. The
+  card's ruling (2013-04-15) excludes combat damage from a lifelink creature
+  and says nothing of noncombat damage or of replacement effects.
+- **Decision**: Both are. A gain is caused by the spell or ability whose
+  effect is being performed as it happens, so noncombat lifelink damage a
+  spell deals is that spell's, controlled by its controller; a gain a
+  replacement substitutes is the effect of the ability that made the row
+  (CR 609.1, 614.1), controlled by the row's controller.
+- **Rejected**: Reading only an instruction to gain life as the cause, which
+  the ruling's naming combat damage alone would make redundant; and reading a
+  substituted gain as caused by whatever performed the replaced event, which
+  leaves a draw step draw's substituted gain with no cause though an ability's
+  effect plainly made it.
+- **Site**: `Parun.Engine.Event`'s `resolveLifeGain` and `candidateCause`,
+  proved by the scenarios
+  `cr-609-1-rain-of-gore-turns-a-lifelink-gain-from-its-controller-s-fight-spell-into-a-loss`
+  and
+  `cr-614-1-rain-of-gore-turns-the-gain-words-of-worship-substitutes-for-a-draw-step-draw-into-a-loss`.
+- **Issue**: #5810.

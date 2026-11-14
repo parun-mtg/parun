@@ -2348,7 +2348,7 @@ replacementEffectChildren c replacement = case replacement of
   ReplacementEffect.UntapR (UntapR.MkUntapR during rewrite) -> fmap ReplacementEffect.UntapR (UntapR.MkUntapR during <$> untapRewriteChildren c rewrite)
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR (LifeLossPattern.MkLifeLossPattern whose cause) rewrite) ->
     fmap ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR <$> (LifeLossPattern.MkLifeLossPattern <$> replacementWhose c whose <*> pure cause) <*> lifeLossRewriteChildren c rewrite)
-  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR whose rewrite) -> fmap ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR <$> replacementWhose c whose <*> lifeGainRewriteChildren c rewrite)
+  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR whose whichCause rewrite) -> fmap ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR <$> replacementWhose c whose <*> pure whichCause <*> lifeGainRewriteChildren c rewrite)
   ReplacementEffect.CounterLossR (CounterLossR.MkCounterLossR onWhat kind floor_) ->
     fmap ReplacementEffect.CounterLossR (CounterLossR.MkCounterLossR <$> replacementFilter c onWhat <*> replacementCounterKind c kind <*> pure floor_)
   -- CR 504.1: "except the first in your draw step" reads the turn's log back to the step's beginning.

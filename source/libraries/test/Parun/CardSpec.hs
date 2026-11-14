@@ -4339,7 +4339,7 @@ replacementEffectFilters replacementEffect = case replacementEffect of
   -- A computed scaling's Quantity is the one Filter a life row can hold.
   ReplacementEffect.LifeLossR (LifeLossR.MkLifeLossR _ (LifeLossRewrite.Scaled scaling)) -> scalingFilters scaling
   ReplacementEffect.LifeLossR {} -> []
-  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ (LifeGainRewrite.Scaled scaling)) -> scalingFilters scaling
+  ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ _ (LifeGainRewrite.Scaled scaling)) -> scalingFilters scaling
   ReplacementEffect.LifeGainR {} -> []
   -- CR 120.3c: the permanent losing the counters, and the kind, which may
   -- carry a Filter as CounterR's does.

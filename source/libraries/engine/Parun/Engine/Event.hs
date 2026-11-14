@@ -4952,9 +4952,12 @@ apply settle batch applied batchPrevented candidate event =
       --
       -- The seat is the one the EVENT named, which for the producer is CR 109.5's
       -- "you" as well: its pattern is LifeLossPattern's Related You.
+      --
+      -- CR 609.1 / 614.1: the gain is the effect of the row's ability, so its
+      -- controller is the gain's causing controller (candidateCause).
       LifeLossRewrite.GainInstead -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
-        settled <- resolveLifeGainSpent settle (spentWith candidate applied) pid n
+        settled <- resolveLifeGainSpent settle (spentWith candidate applied) (candidateCause candidate) pid n
         changeLife pid (toInteger settled)
         pure Nothing
     -- Unreachable: `applies` admits LifeLossR only against WouldLoseLife.
@@ -4975,7 +4978,7 @@ apply settle batch applied batchPrevented candidate event =
     -- event is left STANDING at a rewritten gain rather than cancelled, the
     -- resizing loss arms above for their reason: CR 616.2's next iteration
     -- re-collects against it, so a second Boon Reflection quadruples.
-    (ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ rewrite), ProposedEvent.WouldGainLife pid n) -> case rewrite of
+    (ReplacementEffect.LifeGainR (LifeGainR.MkLifeGainR _ _ rewrite), ProposedEvent.WouldGainLife cause pid n) -> case rewrite of
       -- The proposed amount IS the whole input: a scaling is stated on the gain
       -- and not on the resulting total, so nothing is read off the board.
       -- Parun.Engine.Replacement.scale is the shared arithmetic, LifeLossRewrite's
@@ -4983,7 +4986,7 @@ apply settle batch applied batchPrevented candidate event =
       LifeGainRewrite.Scaled scaling -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         gs <- State.get
-        pure (Just (ProposedEvent.WouldGainLife pid (Replacement.scale gs candidate scaling n)))
+        pure (Just (ProposedEvent.WouldGainLife cause pid (Replacement.scale gs candidate scaling n)))
       -- CR 614.6: Lich's "draw that many cards instead". The gain never
       -- happens, so no life total moves and no GameEvent.LifeGained is
       -- recorded; the player the event named draws through CR 121.2a's
@@ -5024,10 +5027,11 @@ apply settle batch applied batchPrevented candidate event =
     (ReplacementEffect.DrawR (DrawR.MkDrawR _ _ rewrite), ProposedEvent.WouldDraw pid drawKind) -> case rewrite of
       -- Through resolveLifeGain, CR 614.1's funnel for the gain class: the life
       -- this rewrite substitutes for the draw is a life gain event like any
-      -- other, so a LifeGainR row resizes it.
+      -- other, so a LifeGainR row resizes it. CR 609.1 / 614.1: it is the
+      -- effect of the row's ability, which causes it (candidateCause).
       DrawRewrite.GainLife n -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
-        settled <- resolveLifeGainSpent settle (spentWith candidate applied) pid n
+        settled <- resolveLifeGainSpent settle (spentWith candidate applied) (candidateCause candidate) pid n
         changeLife pid (toInteger settled)
         pure Nothing
       -- CR 400.11c through the same CR 614.6 cancellation: Ring of Ma'rûf's
@@ -5237,7 +5241,7 @@ apply settle batch applied batchPrevented candidate event =
       -- row's controller controls, never a cost, so Spiritual Focus sees who
       -- caused the discard.
       DrawRewrite.DiscardThenDrawOrMill -> do
-        let asEffect = payingOnResolution False . causedBy (fmap (\controller -> Cause.MkCause controller (ReplacementCandidate.source candidate) Nothing) (ReplacementCandidate.controller candidate))
+        let asEffect = payingOnResolution False . causedBy (candidateCause candidate)
         Replacement.consume (ReplacementCandidate.identity candidate)
         gs <- State.get
         let held = Game.cardsIn Zone.Hand pid gs
@@ -7240,12 +7244,22 @@ resolveCounterLoss settle asOf oid kind n =
 -- an effect. Parun.PlayerEffectSpec's GiantCindermaw group is the proof.
 --
 -- `settle` is drawSeries', for the draws Lich makes in the gain's place.
+--
+-- CR 609.1: the gain's cause is the spell or ability whose effect is being
+-- performed (Scratch.causing), read live since the gain has not happened yet;
+-- Nothing for combat damage's lifelink, which no spell or ability causes (Rain
+-- of Gore's ruling); see docs/decisions.md, "Which life gains a spell or
+-- ability causes, for Rain of Gore". The rain-of-gore scenarios in
+-- data/scenarios/life-replacement prove it.
 resolveLifeGain :: Game () -> PlayerId -> Natural -> Game Natural
-resolveLifeGain settle = resolveLifeGainSpent settle Set.empty
+resolveLifeGain settle pid n = do
+  cause <- State.gets (Scratch.causing . GameState.scratch)
+  resolveLifeGainSpent settle Set.empty cause pid n
 
--- resolveLifeLossSpent's gain side.
-resolveLifeGainSpent :: Game () -> Set CandidateId -> PlayerId -> Natural -> Game Natural
-resolveLifeGainSpent settle spent pid n =
+-- resolveLifeLossSpent's gain side, for a gain a replacement substitutes: its
+-- cause is the row's, never Scratch.causing (candidateCause).
+resolveLifeGainSpent :: Game () -> Set CandidateId -> Maybe Cause.Cause -> PlayerId -> Natural -> Game Natural
+resolveLifeGainSpent settle spent cause pid n =
   if n == 0
     then pure 0
     else do
@@ -7253,7 +7267,7 @@ resolveLifeGainSpent settle spent pid n =
       if PlayerEffect.prohibitsGainingLife pid gs
         then pure 0
         else do
-          outcome <- applyReplacementsIn settle Nothing Set.empty spent (ProposedEvent.WouldGainLife pid n)
+          outcome <- applyReplacementsIn settle Nothing Set.empty spent (ProposedEvent.WouldGainLife cause pid n)
           pure (maybe 0 snd (outcome >>= Replacement.asLifeGain))
 
 -- CR 705.1's flip of ONE coin. The ONE road every flip in the engine takes:
@@ -12043,6 +12057,13 @@ payingOnResolution paying body = do
   result <- body
   State.modify' (\g -> g {GameState.scratch = (GameState.scratch g) {Scratch.payingOnResolution = saved}})
   pure result
+
+-- CR 609.1 / 614.1: a replacement row's substituted event is the effect of
+-- the ability that made the row, controlled by the row's controller.
+-- See docs/decisions.md, "Which life gains a spell or ability causes, for Rain
+-- of Gore".
+candidateCause :: ReplacementCandidate -> Maybe Cause.Cause
+candidateCause candidate = fmap (\controller -> Cause.MkCause controller (ReplacementCandidate.source candidate) Nothing) (ReplacementCandidate.controller candidate)
 
 -- CR 609.1: run `body` as the effect of the spell or ability `cause`
 -- names, or with Nothing as no effect at all -- a cost's payment
