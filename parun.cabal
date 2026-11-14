@@ -1016,6 +1016,8 @@ library codec
     Parun.Codec.InstructionRSpec
     Parun.Codec.InZone
     Parun.Codec.InZoneSpec
+    Parun.Codec.JoinAttack
+    Parun.Codec.JoinAttackSpec
     Parun.Codec.Keyword
     Parun.Codec.KeywordCostPart
     Parun.Codec.KeywordCostPartSpec
@@ -3244,6 +3246,7 @@ library types
     Parun.Types.InstructionR
     Parun.Types.InstructionRewrite
     Parun.Types.InZone
+    Parun.Types.JoinAttack
     Parun.Types.Key
     Parun.Types.Keyword
     Parun.Types.KeywordCostPart

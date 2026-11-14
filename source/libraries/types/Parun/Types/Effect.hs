@@ -66,6 +66,7 @@ import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.Guess as Guess
 import qualified Parun.Types.InitiativeTarget as InitiativeTarget
+import qualified Parun.Types.JoinAttack as JoinAttack
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LifeExchange as LifeExchange
 import qualified Parun.Types.LifeLoss as LifeLoss
@@ -534,6 +535,10 @@ data Effect card ability
   | -- | CR 509.3a: the named creature blocks an attacking creature of the
     -- resolving controller's choice (False Orders).
     BlockAttacker ObjectRef.ObjectRef
+  | -- | CR 508.4: an effect states that the named creatures are attacking, each
+    -- what the resolving controller chooses among the players and planeswalkers
+    -- a player is attacking (Tahngarth, First Mate).
+    JoinAttack JoinAttack.JoinAttack
   | -- | CR 509.3b's third road onto the battlefield's blocking side: an effect
     -- makes creatures ALREADY in combat block the other of two attacking
     -- creatures (General Jarkeld). The slot holds both attackers, one instance

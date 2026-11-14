@@ -470,6 +470,7 @@ import qualified Parun.Codec.InitiativeTargetSpec
 import qualified Parun.Codec.InstanceOrdinalSpec
 import qualified Parun.Codec.InstructionRSpec
 import qualified Parun.Codec.InstructionRewriteSpec
+import qualified Parun.Codec.JoinAttackSpec
 import qualified Parun.Codec.KeywordCostPartSpec
 import qualified Parun.Codec.KeywordCostRestrictionSpec
 import qualified Parun.Codec.KeywordCountSpec
@@ -1793,6 +1794,7 @@ spec s reference corpus = do
   Parun.Codec.RegenerabilitySpec.spec s
   Parun.Codec.ReinforceSpec.spec s
   Parun.Codec.RemoveCountersSpec.spec s
+  Parun.Codec.JoinAttackSpec.spec s
   Parun.Codec.RemoveFromCombatSpec.spec s
   Parun.Codec.RemovePlayerCountersSpec.spec s
   Parun.Codec.RepeatIfSpec.spec s

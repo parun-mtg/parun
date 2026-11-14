@@ -3214,7 +3214,8 @@ data AttackChoice
 
 -- CR 508.4: a creature put onto the battlefield attacking has its controller
 -- choose what it is attacking as it enters. Resolve calls this for each permanent
--- an effect's EntryRiders say is attacking.
+-- an effect's EntryRiders say is attacking, and joinAttack for a creature an
+-- effect states is attacking.
 --
 -- The creature was never DECLARED, and this function's whole difference from
 -- declareAttackers follows: neither GameEvent.AttackerDeclared nor
@@ -3326,6 +3327,33 @@ putOntoBattlefieldAttacking choice oid = do
                       }
                 }
     _ -> pure ()
+
+-- CR 508.4's second sentence for a creature already on the battlefield
+-- (Tahngarth, First Mate): an effect states it is attacking what `chooser`
+-- picks among the players and planeswalkers `alongside`'s attacking creatures
+-- are attacking -- no battle, the card printing "a player or planeswalker".
+-- That pick is the effect specifying, so putOntoBattlefieldAttacking takes it
+-- as Specified and carries the rest: its guards (CR 506.3f being CR 506.3g's
+-- no-op too), CR 508.4b, and no event (the creature never "attacked").
+--
+-- The candidates are read off Combat.attackers as the effect resolves, so what
+-- no creature attacks any more is none; through announceAttackTarget, elided at
+-- one candidate, and a no-op at none.
+joinAttack :: PlayerId -> PlayerId -> ObjectId -> Game ()
+joinAttack chooser alongside oid = do
+  gs <- State.get
+  let attacked =
+        ListUtils.nubOrd
+          [ target
+          | (attacker, target) <- Map.toList (Combat.attackers (TurnRegisters.combat (GameState.turn gs))),
+            Projection.controllerOf attacker gs == Just alongside,
+            case target of
+              AttackTarget.OfBattle _ -> False
+              _ -> True
+          ]
+  Monad.forM_ (NonEmpty.nonEmpty attacked) $ \options -> do
+    target <- announceAttackTarget chooser oid options
+    putOntoBattlefieldAttacking (Specified target) oid
 
 -- What an effect leaves open about CR 509.4's choice, AttackChoice's twin:
 -- settled by Parun.Engine.Resolve.Common's read of Parun.Types.EntryBlock.

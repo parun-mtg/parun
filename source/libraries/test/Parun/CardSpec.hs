@@ -294,6 +294,7 @@ import qualified Parun.Types.Impending as Impending
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.InstructionR as InstructionR
 import qualified Parun.Types.InstructionRewrite as InstructionRewrite
+import qualified Parun.Types.JoinAttack as JoinAttack
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Types.KeywordCount as KeywordCount
@@ -825,6 +826,7 @@ objectRefPositions =
         ("turn-face-down", Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown (plantedRef "tf") FaceDownCharacteristics.defaultValue), [plantedRef "tf"]),
         ("remove-from-combat", Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat (plantedRef "rc") Unblocking.StayBlocked), [plantedRef "rc"]),
         ("block-attacker", Effect.BlockAttacker (plantedRef "ba"), [plantedRef "ba"]),
+        ("join-attack", Effect.JoinAttack (JoinAttack.MkJoinAttack (plantedRef "ja") (PlayerRef.Relative PlayerRelation.You)), [plantedRef "ja"]),
         ("gain-control", Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (plantedRef "gc") Nothing (PlayerRef.Relative PlayerRelation.You)), [plantedRef "gc"]),
         ("require-block", Effect.RequireBlock (RequireBlock.MkRequireBlock Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "rb-blocker")) (Just (RestrictedCreatures.Named (plantedRef "rb-attacker"))) RequirementArity.EachSubject), [plantedRef "rb-blocker", plantedRef "rb-attacker"]),
         ("prohibit", Effect.Prohibit (Prohibit.MkProhibit Prohibition.Regenerate Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "cb"))), [plantedRef "cb"]),
@@ -899,6 +901,7 @@ playerRefPositions =
         ("remove-player-counters", Effect.RemovePlayerCounters (RemovePlayerCounters.MkRemovePlayerCounters (plantedPlayer "rp") PlayerCounterKind.Rad one Nothing), [plantedPlayer "rp"]),
         ("require-attack", Effect.RequireAttack (RequireAttack.MkRequireAttack Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "ra")) (Just (AttackTargetRef.Players (plantedPlayer "ra-defender")))), [plantedPlayer "ra-defender"]),
         ("gain-control", Effect.GainControl (GainControl.MkGainControl Duration.Indefinite (plantedRef "gc") Nothing (plantedPlayer "gc")), [plantedPlayer "gc"]),
+        ("join-attack", Effect.JoinAttack (JoinAttack.MkJoinAttack (plantedRef "ja") (plantedPlayer "ja")), [plantedPlayer "ja"]),
         ("blight", Effect.Blight (Blight.MkBlight (plantedPlayer "bl") one Nothing), [plantedPlayer "bl"]),
         ("take-extra-turn", Effect.TakeExtraTurn TakeExtraTurn.MkTakeExtraTurn {TakeExtraTurn.player = plantedPlayer "te", TakeExtraTurn.skips = Set.empty, TakeExtraTurn.count = Quantity.Type.Literal 1}, [plantedPlayer "te"]),
         ("shuffle-into-library", Effect.ShuffleIntoLibrary (ShuffleIntoLibrary.MkShuffleIntoLibrary (Just (plantedPlayer "si")) (plantedRef "si") Nothing), [plantedPlayer "si"]),
@@ -5284,6 +5287,7 @@ effectFilters effect = case effect of
   Effect.Fight _ -> []
   Effect.RemoveFromCombat payload -> frame SourceHostFramed (objectRefFilters (RemoveFromCombat.removed payload))
   Effect.BlockAttacker ref -> frame SourceHostFramed (objectRefFilters ref)
+  Effect.JoinAttack payload -> frame SourceHostFramed (objectRefFilters (JoinAttack.creature payload))
   Effect.BecomesBlocked _ -> []
   Effect.SwitchBlockers _ -> []
   Effect.ExchangeBlocks _ -> []
