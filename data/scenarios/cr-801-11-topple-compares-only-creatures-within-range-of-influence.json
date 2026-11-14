@@ -147,7 +147,12 @@
         "range": 1
       },
       {
-        "battlefield": [],
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm2"
+          }
+        ],
         "hand": [],
         "library": [
           {
@@ -221,6 +226,19 @@
           "card": "Copper Host Crusher",
           "count": 1,
           "player": "dave",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Craw Wurm",
+          "count": 1,
+          "player": "eve",
           "zone": "Battlefield"
         }
       },
