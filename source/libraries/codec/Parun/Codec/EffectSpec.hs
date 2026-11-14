@@ -1558,14 +1558,20 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       fromJson
       (among RemovalCount.AnyNumber Nothing)
       " {\"type\":\"RemoveCountersAmong\",\"value\":{\"count\":{\"type\":\"AnyNumber\"},\"from\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"IsSource\"}},\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"Stun\"}}}} "
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      (among RemovalCount.All Nothing)
+      " {\"type\":\"RemoveCountersAmong\",\"value\":{\"count\":{\"type\":\"All\"},\"from\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"IsSource\"}},\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"Stun\"}}}} "
   -- Counters of any kind at an exact count, in any number, up to a count or
   -- all: Spinal Parasite's, Eventide's Shadow's, Mabel, Bitter Recluse's and
-  -- Suncleanser's forms are accepted, and all of one kind is RemoveCounters.
+  -- Suncleanser's forms are accepted, as is all of one kind (Oblivion Stone).
   Spec.it s "RemoveCountersAmong of any kind" $ do
     let decoded json = Codec.decode RemoveCountersAmong.Codec.codec =<< Common.parse (Text.pack json)
     Spec.assertBool s (Either.isRight (decoded "{\"count\":{\"type\":\"AnyNumber\"},\"from\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"IsSource\"}},\"kind\":{\"type\":\"OfAnyKind\"}}")) "expected any number of any kind to decode"
     Spec.assertBool s (Either.isRight (decoded "{\"count\":{\"type\":\"All\"},\"from\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"IsSource\"}},\"kind\":{\"type\":\"OfAnyKind\"}}")) "expected all of any kind to decode"
-    Spec.assertBool s (Either.isLeft (decoded "{\"count\":{\"type\":\"All\"},\"from\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"IsSource\"}},\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"Stun\"}}}")) "expected all of one kind to fail"
+    Spec.assertBool s (Either.isRight (decoded "{\"count\":{\"type\":\"All\"},\"from\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"IsSource\"}},\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"Stun\"}}}")) "expected all of one kind to decode"
     Spec.assertBool s (Either.isRight (decoded "{\"count\":{\"type\":\"UpTo\",\"value\":{\"type\":\"Literal\",\"value\":3}},\"from\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"IsSource\"}},\"kind\":{\"type\":\"OfAnyKind\"}}")) "expected up to three of any kind to decode"
     Spec.assertBool s (Either.isRight (decoded "{\"count\":{\"type\":\"Exactly\",\"value\":{\"type\":\"Literal\",\"value\":1}},\"from\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"IsSource\"}},\"kind\":{\"type\":\"OfAnyKind\"}}")) "expected exactly one of any kind to decode"
   -- Every PlayerRef shape the opcode accepts: the self-scoped one, and the slot

@@ -556,7 +556,6 @@ removeCountersAmong resolving source controller legal (RemoveCountersAmong.MkRem
           | otherwise -> do
               answer <- Game.choose (Prompt.ChooseCounterRemovalAtLeast decider controller source 0 offered)
               pure (if Cost.withinOffer offered answer then answer else Map.empty)
-        -- Refused by Parun.Codec.RemoveCountersAmong; this is what it would mean.
         RemovalCount.All -> pure offered
       Monad.forM_ (Map.toList (Map.filter (> 0) division)) (\(permanent, taken) -> Event.removeCounters permanent kind taken)
       pure (sum division)
