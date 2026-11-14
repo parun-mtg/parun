@@ -1,0 +1,86 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Nanoform Sentinel",
+      "oracleText": "Whenever this creature becomes tapped, untap another target permanent. This ability triggers only once each turn.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "BecomesTapState",
+            "value": {
+              "actor": {
+                "type": "Self"
+              },
+              "status": "Tapped"
+            }
+          },
+          "limit": {
+            "type": "OncePerTurn"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Untap",
+                        "value": {
+                          "type": "InSlot",
+                          "value": "target"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsSource"
+                      }
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Robot"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

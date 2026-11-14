@@ -1,0 +1,121 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              },
+              {
+                "type": "Sacrifice",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "whichPermanents": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "Not",
+                        "value": {
+                          "type": "IsSource"
+                        }
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Artifact"
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "Plus",
+                                "value": {
+                                  "left": {
+                                    "type": "Literal",
+                                    "value": 1
+                                  },
+                                  "right": {
+                                    "type": "AgainstSlot",
+                                    "value": {
+                                      "quantity": {
+                                        "type": "Measure",
+                                        "value": "ManaValue"
+                                      },
+                                      "slot": "thatSacrificedPermanent"
+                                    }
+                                  }
+                                }
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "You"
+                              }
+                            }
+                          },
+                          "slot": "exiled",
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "GrantPlayFromExile",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "exiled"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Memorial Vault",
+      "oracleText": "{T}, Sacrifice another artifact: Exile the top X cards of your library, where X is one plus the mana value of the sacrificed artifact. You may play those cards this turn.",
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

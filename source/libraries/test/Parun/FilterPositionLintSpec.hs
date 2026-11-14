@@ -2225,6 +2225,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Instill Energy", 1), -- an activated untap
         ("Infinite Reflection", 1), -- a CR 707.5 copy entry, read as Pariah's is
         ("Mirrormind Crown", 1), -- a CR 614.1a token row's copied permanent, read as Pariah's is
+        ("Moonlit Meditation", 1), -- Mirrormind Crown's token row, through an Aura
         ("Firebreathing", 1), -- an activated pump
         ("Adventuring Gear", 1), -- Firebreathing's pump, from a landfall trigger
         ("Shiv's Embrace", 1), -- Firebreathing's wording

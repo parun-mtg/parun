@@ -1,0 +1,196 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Meltstrider's Resolve",
+            "label": "resolve"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "G",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Gray Ogre",
+            "label": "ogre"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 509.1b: Meltstrider's Resolve's enchanted creature gets +0/+2 and can't be blocked by more than one creature, its fight declined by choosing no target",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [],
+          "object": "$resolve",
+          "targets": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "victim": []
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 2,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Gray Ogre",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Block": {
+          "$giant": [
+            "$bears"
+          ],
+          "$ogre": [
+            "$bears"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$ogre": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$bears",
+          "blockers": [
+            "$ogre"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}

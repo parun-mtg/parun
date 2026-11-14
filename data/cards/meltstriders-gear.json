@@ -1,0 +1,122 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Equip",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 5
+                }
+              ]
+            },
+            "quality": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Meltstrider's Gear",
+      "oracleText": "When this Equipment enters, attach it to target creature you control.\nEquipped creature gets +2/+1 and has reach.\nEquip {5} ({5}: Attach to target creature you control. Equip only as a sorcery.)",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HasAttached",
+                  "value": {
+                    "type": "IsSource"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 2
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Reach"
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Attach",
+                        "value": "target"
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Equipment"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}
