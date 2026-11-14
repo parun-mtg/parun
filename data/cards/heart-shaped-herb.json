@@ -1,0 +1,136 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              },
+              {
+                "type": "SacrificeThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "FromAnywhere",
+                            "value": {
+                              "slot": "thatSacrificedPermanent"
+                            }
+                          },
+                          "riders": {
+                            "counters": [
+                              {
+                                "count": {
+                                  "type": "Literal",
+                                  "value": 3
+                                },
+                                "kind": {
+                                  "type": "PlusOnePlusOne"
+                                }
+                              }
+                            ],
+                            "under": {
+                              "type": "Owner"
+                            }
+                          },
+                          "zone": "Battlefield"
+                        }
+                      },
+                      {
+                        "type": "BecomeMonarch",
+                        "value": {
+                          "type": "TheController"
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "components": [
+                          {
+                            "type": "Sacrifice",
+                            "value": {
+                              "count": {
+                                "type": "Fixed",
+                                "value": 1
+                              },
+                              "whichPermanents": {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              }
+                            }
+                          }
+                        ],
+                        "mana": []
+                      },
+                      "payer": {
+                        "type": "Relative",
+                        "value": "You"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        }
+      ],
+      "name": "Heart-Shaped Herb",
+      "oracleText": "If a source an opponent controls would deal damage to you, prevent 1 of that damage.\n{2}, {T}, Sacrifice this artifact: You may sacrifice a creature. If you do, return that card to the battlefield under its owner's control with three +1/+1 counters on it and you become the monarch.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "DamageR",
+            "value": {
+              "matching": {
+                "whatSource": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "Opponent"
+                  }
+                },
+                "whoRecipient": "You"
+              },
+              "rewrite": {
+                "type": "PreventUpTo",
+                "value": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}
