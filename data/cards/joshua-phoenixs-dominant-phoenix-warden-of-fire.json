@@ -230,7 +230,7 @@
                             {
                               "quantity": {
                                 "type": "Literal",
-                                "value": 3
+                                "value": 2
                               },
                               "ref": {
                                 "type": "Players",
