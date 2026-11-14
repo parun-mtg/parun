@@ -1,0 +1,117 @@
+{
+  "description": "CR 715.3c, 715.2b, 707.2, 715.2a, 106.4, 712.11, 400.7, 701.17a: Esper Terra's chapter III copies a nonlegendary enchantment that is not a Saga, so no lore counters are offered, and the copy is sacrificed at its controller's end step; chapter IV adds two mana of each color and returns the card front face up as a new Terra, Magical Adept, whose enters trigger mills five and puts an enchantment card milled this way into its controller's hand",
+  "note": "Turn 1: Esper Terra starts with two lore counters and the precombat main phase adds the third (CR 715.3c). Chapter III's only legal target is alice's Glorious Anthem; the copy is not a Saga, so no number is asked, and the copy (the third Glorious Anthem object, after the one in the library) has haste and Esper Terra is 8/8 under two Anthems until alice's end step sacrifices the copy. Turn 4: chapter IV leaves WWUUBBRRGG in alice's pool and Esper Terra returns as Terra with no lore counters; its trigger mills Volcanic Hammer, Glorious Anthem, Lightning Bolt, History of Benalia and Giant Growth, and alice takes History of Benalia, Glorious Anthem staying in the graveyard.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Terra, Magical Adept",
+            "face": "Esper Terra",
+            "label": "esper",
+            "counters": [
+              {
+                "key": {
+                  "type": "Lore"
+                },
+                "value": 2
+              }
+            ]
+          },
+          {
+            "card": "Glorious Anthem",
+            "label": "anthem"
+          }
+        ],
+        "library": [
+          {
+            "card": "Lava Axe"
+          },
+          {
+            "card": "Volcanic Hammer"
+          },
+          {
+            "card": "Glorious Anthem"
+          },
+          {
+            "card": "Lightning Bolt"
+          },
+          {
+            "card": "History of Benalia"
+          },
+          {
+            "card": "Giant Growth"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $esper"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "$esper", "kind": {"type": "Lore"}, "count": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Glorious Anthem", "count": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "Glorious Anthem#3", "keyword": {"type": "Haste"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$esper", "power": 8, "toughness": 8}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Glorious Anthem", "count": 1}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"PowerToughness": {"object": "$esper", "power": 7, "toughness": 7}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $esper"]}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "White"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "White"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Blue"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Blue"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Black"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Black"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Green"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}, {"manaType": {"type": "Colored", "value": "Green"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}]}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Esper Terra", "count": 0}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Terra, Magical Adept", "count": 1}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Names": {"object": "Terra, Magical Adept", "names": ["Terra, Magical Adept"]}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Counters": {"object": "Terra, Magical Adept", "kind": {"type": "Lore"}, "count": 0}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Types": {"object": "Terra, Magical Adept", "types": ["Creature"]}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Terra, Magical Adept", "power": 5, "toughness": 3}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Terra, Magical Adept"]}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "History of Benalia"}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "History of Benalia", "count": 1}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Lava Axe", "count": 1}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Glorious Anthem", "count": 1}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Volcanic Hammer", "count": 1}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Giant Growth", "count": 1}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "History of Benalia", "count": 0}}},
+    {"turn": 4, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Island", "count": 2}}}
+  ]
+}
