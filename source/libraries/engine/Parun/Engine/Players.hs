@@ -243,6 +243,11 @@ namedUncut given gs ref =
                 Hop.Itself -> Just
                 Hop.Host -> (`Game.hostWithLastKnown` gs)
            in fmap pure (slotObject given slot >>= hopped >>= holderOf holder)
+        -- CR 303.4b / 303.4m: the player the object a slot names is attached
+        -- to, read live -- Parun.Types.LastKnown.host records an object host
+        -- only. Unanswered where the slot names no one object or its host is
+        -- not a player. Paradox Haze's scenarios prove it.
+        PlayerRef.PlayerHostOfBound slot -> fmap pure (slotObject given slot >>= \oid -> Game.lookupObject oid gs >>= Object.attachedTo >>= Recipient.playerOf)
         -- CR 611.2b: the arm above, BAKED -- the object named outright, so a
         -- stored duration asks who controls or owns it NOW. Unanswered while the
         -- object is phased out, which CR 702.26b treats as not existing. Proved

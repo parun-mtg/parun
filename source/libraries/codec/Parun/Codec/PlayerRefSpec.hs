@@ -92,6 +92,12 @@ spec s = Spec.describe s "Parun.Codec.PlayerRef" $ do
       PlayerRef.codec
       (PlayerRef.HolderOfObject Holder.Owner (ObjectId.MkObjectId 7))
       " {\"type\":\"HolderOfObject\",\"value\":{\"holder\":\"Owner\",\"object\":7}} "
+  Spec.it s "PlayerHostOfBound" $
+    Common.assertCodec
+      s
+      PlayerRef.codec
+      (PlayerRef.PlayerHostOfBound (SlotName.MkSlotName (Text.pack "self")))
+      " {\"type\":\"PlayerHostOfBound\",\"value\":\"self\"} "
   -- CR 614.1c / CR 702.174b: HolderOfBound's shape one record over.
   Spec.it s "ChosenPlayerOfBound" $
     Common.assertCodec

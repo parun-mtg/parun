@@ -1,0 +1,91 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "attached": "bob",
+            "card": "Paradox Haze",
+            "label": "haze"
+          },
+          {
+            "card": "Fountain of Renewal"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Fountain of Renewal"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Untap"
+  },
+  "description": "CR 500.9 / 303.4m: Paradox Haze gives enchanted player an additional upkeep step after their first, and \"your upkeep\" triggers again in it",
+  "final": [
+    {
+      "Life": {
+        "life": 21,
+        "player": "alice"
+      }
+    },
+    {
+      "Life": {
+        "life": 22,
+        "player": "bob"
+      }
+    }
+  ],
+  "note": "alice controls the Haze but it enchants bob, so only bob's turn gets a second upkeep: each controls a Fountain of Renewal, and alice gains 1 life on her turn while bob gains 2 on his.",
+  "timeline": [
+    {
+      "check": {
+        "Life": {
+          "life": 21,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 22,
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    }
+  ]
+}
