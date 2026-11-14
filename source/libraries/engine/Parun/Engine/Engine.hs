@@ -1198,9 +1198,9 @@ placeBorne srcId pending = do
           -- Not implemented: revealing a card CR 406.4's draw picked out of a
           -- face-down pile here (#5424).
           attempt rejected = do
-            (chosen, _) <- Target.chooseTargets Nothing controller abilId srcId bound inheritedX slots sets
+            (chosen, _, seats) <- Target.chooseTargets Nothing controller abilId srcId bound inheritedX slots sets
             if Target.selectionLegal StackObjectKind.TriggeredAbility Nothing (Just controller) bound srcId inheritedX slots sets chosen gs
-              then pure (Just chosen)
+              then pure (Just (chosen, seats))
               else
                 let key = Map.intersectionWith Set.intersection chosen sets
                  in if Set.member key rejected
@@ -1210,9 +1210,9 @@ placeBorne srcId pending = do
       case answered of
         -- CR 603.3d: a required choice with no legal answer forthcoming.
         Nothing -> State.modify' (Game.cease abilId)
-        Just chosen -> do
+        Just (chosen, seats) -> do
           -- CR 603.3d / 601.2d: the division among the targets just fixed.
-          divisions <- Target.announceDivision Nothing controller abilId srcId bound slots chosen
+          divisions <- Target.announceDivision Nothing controller abilId srcId bound slots seats chosen
           -- CR 113.7: the ability's SOURCE is bound under the reserved slot as it
           -- is placed, so "this creature" resolves as an ordinary slot read even
           -- after the source has left. CR 603.7c: a delayed ability's CAPTURED

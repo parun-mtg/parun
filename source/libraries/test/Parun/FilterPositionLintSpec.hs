@@ -1903,6 +1903,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Chandra's Fury", 1), -- its damage's object, Flame Wave's sentence
         ("Necrotic Plague", 1), -- its trigger's target slot, relative to the dead creature's controller
         ("Confusion in the Ranks", 1), -- its trigger's target slot, relative to the entering permanent's controller
+        ("Grand Ossuary", 1), -- its death trigger's target slot, Necrotic Plague's shape
         ("Chandra, Pyromaster", 1), -- its +1's second target slot, Flame Wave's sentence
         ("Soul of Shandalar", 2), -- both abilities' second target slots, Flame Wave's sentence
         ("Cloak and Dagger, Entwined", 1), -- its trigger's second target slot, Soul of Shandalar's shape
