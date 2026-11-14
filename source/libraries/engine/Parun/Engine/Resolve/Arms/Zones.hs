@@ -1835,7 +1835,9 @@ gainLife settle resolving source controller legal (PlayerQuantity.MkPlayerQuanti
 -- BOTH sides go through changeLifeByDelta, so each is proposed -- the lowered
 -- one as a life loss, the raised one as a life gain -- and CR 701.12c's
 -- "replacement effects may modify these gains and losses" is reachable;
--- ReplacementSpec's Bloodletter group proves the loss half.
+-- ReplacementSpec's Bloodletter group proves the loss half, the
+-- mister-negative-draws-the-loss-tainted-remedy-made-of-its-gain scenario the
+-- gain half.
 --
 -- CR 701.12c's deferral to CR 119.7-8: a player who can't gain life can't be
 -- given a higher total this way and a player who can't lose life can't be
@@ -1847,10 +1849,11 @@ gainLife settle resolving source controller legal (PlayerQuantity.MkPlayerQuanti
 -- CR 810.9e needs nothing: teammates sharing a total (Game.lifeSharers) hold
 -- the same one, so both deltas are zero and the exchange moves nothing.
 --
--- The tally (Mister Negative) is the controller's SETTLED loss, CR 614.1's
--- replacements included, and 0 where the exchange did not happen or did not
--- lower the controller's total. Bound even at 0, LoseLife's tally's posture.
--- The two mister-negative-exchanges scenarios are the proof.
+-- The tally (Mister Negative) is how far the exchange lowered the controller's
+-- total, CR 614.1's replacements included (a gain Tainted Remedy turns into a
+-- loss counts), and 0 where the exchange did not happen or did not lower it.
+-- Bound even at 0, LoseLife's tally's posture. The mister-negative-exchanges
+-- scenarios are the proof.
 exchangeLifeTotals :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> LifeExchange.LifeExchange -> Game ()
 exchangeLifeTotals settle resolving source controller legal (LifeExchange.MkLifeExchange sides mTally) = do
   gs <- State.get
