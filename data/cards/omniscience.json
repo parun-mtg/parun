@@ -33,7 +33,7 @@
       "playerAbilities": [
         {
           "effect": {
-            "type": "CastWithoutPayingManaCost",
+            "type": "PayRatherThanManaCost",
             "value": {
               "from": "Hand",
               "spells": {

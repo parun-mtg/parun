@@ -591,19 +591,19 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
       (PlayerEffect.PlotFrom (PlotFromZone.MkPlotFromZone (InZone.MkInZone Zone.Library (PlayerRef.Relative PlayerRelation.You)) (Filter.Not (Filter.HasCardType CardType.Land))))
       " {\"type\":\"PlotFrom\",\"value\":{\"from\":{\"zone\":\"Library\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}},\"matching\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Land\"}}}} "
   -- CR 118.9 / Omniscience, whose sentence names no quality of the spell.
-  Spec.it s "CastWithoutPayingManaCost, an empty filter" $
+  Spec.it s "PayRatherThanManaCost, an empty filter" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast (Filter.And []) Nothing Nothing Nothing))
-      " {\"type\":\"CastWithoutPayingManaCost\",\"value\":{\"spells\":{\"type\":\"And\",\"value\":[]}}} "
+      (PlayerEffect.PayRatherThanManaCost (FreeCast.MkFreeCast (Filter.And []) [] Nothing Nothing Nothing))
+      " {\"type\":\"PayRatherThanManaCost\",\"value\":{\"spells\":{\"type\":\"And\",\"value\":[]}}} "
   -- The same grant narrowed, which is the axis a second printing would use.
-  Spec.it s "CastWithoutPayingManaCost, a filter that names qualities" $
+  Spec.it s "PayRatherThanManaCost, a filter that names qualities" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.CastWithoutPayingManaCost (FreeCast.MkFreeCast (Filter.HasCardType CardType.Creature) Nothing Nothing Nothing))
-      " {\"type\":\"CastWithoutPayingManaCost\",\"value\":{\"spells\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
+      (PlayerEffect.PayRatherThanManaCost (FreeCast.MkFreeCast (Filter.HasCardType CardType.Creature) [] Nothing Nothing Nothing))
+      " {\"type\":\"PayRatherThanManaCost\",\"value\":{\"spells\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- Solemnity's first sentence, which names no kind, so the key is null -- the
   -- wire form data/cards/solemnity.json writes.
   Spec.it s "CantGetCounters, no kind named" $

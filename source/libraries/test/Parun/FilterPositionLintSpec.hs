@@ -15,7 +15,7 @@ import qualified Data.Monoid as Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), Surveyed, anyFace, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, survey, surveyedFace, surveyedFilters, surveyedPool, triggerConditionFilters, turnUpRewriteFilters)
+import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), Surveyed, anyFace, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, costComponentFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, survey, surveyedFace, surveyedFilters, surveyedPool, triggerConditionFilters, turnUpRewriteFilters)
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Filter as Filter.Codec
@@ -511,7 +511,7 @@ amountedSlotAtoms value = case value of
         tagged names = any (\v -> case v of Value.String t -> String.unwrap t `elem` fmap Text.pack names; _ -> False) (keyed "type")
         referenceAtoms = sum (fmap (amountedAtoms "filter") (if tagged ["Reference"] then keyed "value" else []))
         restrictionAtoms = sum (fmap (amountedAtoms "affected") (if tagged ["CantAttack", "CantBlock"] then keyed "value" else []))
-        freeCastAtoms = sum (fmap (amountedAtoms "spells") (if tagged ["CastWithoutPayingManaCost"] then keyed "value" else []))
+        freeCastAtoms = sum (fmap (amountedAtoms "spells") (if tagged ["PayRatherThanManaCost"] then keyed "value" else []))
         -- A CastFrom value writes "pool" and "amount" too, so the descent below
         -- takes it for a slot and reads its absent "filter": counted here alone.
         castFromAtoms = sum (fmap (amountedAtoms "matching") (if tagged ["CastFrom"] then keyed "value" else []))
@@ -1988,7 +1988,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "CR 601.3a no player effect compares a mana value against anything but a literal" $ do
     ps <- S.allPrintings s corpus
     let encode = Codec.encode (Filter.Codec.codec Keyword.Codec.codec)
-        freeCastSpells c = [FreeCast.spells grant | PlayerEffect.CastWithoutPayingManaCost grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c)] <> [CastFromZone.matching grant | PlayerEffect.CastFrom grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c), Maybe.isJust (CastFromZone.amount grant)]
+        freeCastSpells c = [FreeCast.spells grant | PlayerEffect.PayRatherThanManaCost grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c)] <> [CastFromZone.matching grant | PlayerEffect.CastFrom grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities c), Maybe.isJust (CastFromZone.amount grant)]
         inPlayerEffects wanted c = sum [manaValueComparisons wanted (encode f) | (framing, f) <- cardFilters c, elem framing [PlayerEffectFramed, StoredPlayerEffectFramed]] - sum [manaValueComparisons wanted (encode f) | f <- freeCastSpells c]
         nonLiteral = (/= Text.pack "Literal")
         offenders = filter (anyFace ((/= 0) . inPlayerEffects nonLiteral) . Printing.card) ps
@@ -2893,7 +2893,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- (Spitfire Handler's, Ironclaw Curse's, Okk's company), a wish's filter (Synthetic Wishful
   -- Djinn's), a triggered ability's own condition (Kami of Mourning's) and a
   -- target slot's filter (Stone Giant's, which Parun.Engine.Target.slotContext
-  -- frames through Projection.framedWith), only
+  -- frames through Projection.framedWith), an effect-stated alternative cost's
+  -- payment (Dream Halls', which Parun.Engine.Cost.discardCandidates frames
+  -- through Projection.framedBy), only
   -- Parun.Engine.Keyword's keywords and Parun.Engine.Ring's emblem write them, and
   -- this is what keeps that true.
   Spec.it s "CR 702.134a / 702.60a / 702.78a no card compares against the source outside the positions that fill it" $ do
@@ -2908,9 +2910,10 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
           CombatRestriction.CantBlockAlone x -> Maybe.maybeToList (AloneUnless.alongside x)
           _ -> []
         inSlots needle c = sum [occurrences needle (atomJson f) | (InTargetSlot, f) <- surveyedFilters c]
+        inPayments needle c = sum [occurrences needle (atomJson f) | PlayerEffect.PayRatherThanManaCost grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities (surveyedFace c)), f <- concatMap costComponentFilters (FreeCast.instead grant)]
         -- `e` is the face's encoding, made once however many needles read it.
-        admittedIn e needle c = (pairwise e needle c, wishFilterAtoms needle e, triggerConditionAtoms needle e, inSlots needle c)
-        outsideIn e needle c = let (p, w, t, i) = admittedIn e needle c in occurrences needle e - p - w - t - i
+        admittedIn e needle c = (pairwise e needle c, wishFilterAtoms needle e, triggerConditionAtoms needle e, inSlots needle c, inPayments needle c)
+        outsideIn e needle c = let (p, w, t, i, a) = admittedIn e needle c in occurrences needle e - p - w - t - i - a
         admitted needle c = admittedIn (encoded c) needle c
         outside needle c = outsideIn (encoded c) needle c
         strays c = let e = encoded c in filter (\needle -> outsideIn e needle c /= 0) needles
@@ -2925,12 +2928,15 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       s
       "the Djinn's is in a wish, the Kami's in a trigger condition, the Handler's pairwise, the Giant's in a target slot"
       (fmap (\p -> (admitted ofSource (survey (S.combinedFace p)), outside ofSource (survey (S.combinedFace p)))) [djinn, kami, spitfire, giant])
-      [((0, 1, 0, 0), 0), ((0, 0, 1, 0), 0), ((1, 0, 0, 0), 0), ((0, 0, 0, 1), 0)]
+      [((0, 1, 0, 0, 0), 0), ((0, 0, 1, 0, 0), 0), ((1, 0, 0, 0, 0), 0), ((0, 0, 0, 1, 0), 0)]
+    halls <- S.printingOf s registry "Dream Halls"
+    let sameColor = atomJson (Filter.Type.Shares Trait.Color Anchor.Source)
+    Spec.assertEqWith s "Dream Halls' is in an alternative cost's payment" (admitted sameColor (survey (S.combinedFace halls)), outside sameColor (survey (S.combinedFace halls))) ((0, 0, 0, 0, 1), 0)
     -- The resolved row's blocker filter is pairwise too, and Space Beleren's +1
     -- writes one there.
     beleren <- S.printingOf s registry "Space Beleren"
     let sameSector = atomJson (Filter.Type.Shares Trait.Sector Anchor.Source)
-    Spec.assertEqWith s "Space Beleren's is in a resolved evasion's blocker filter" (admitted sameSector (survey (S.combinedFace beleren)), outside sameSector (survey (S.combinedFace beleren))) ((1, 0, 0, 0), 0)
+    Spec.assertEqWith s "Space Beleren's is in a resolved evasion's blocker filter" (admitted sameSector (survey (S.combinedFace beleren)), outside sameSector (survey (S.combinedFace beleren))) ((1, 0, 0, 0, 0), 0)
     -- NOT vacuous the other way either: the same counter over a hand-built face
     -- that DOES carry each atom -- buried under all three combinators, in a
     -- static ability's affected set, whose Projection.affectedContext fills no

@@ -4099,8 +4099,9 @@ playerEffectFilters playerEffect = case playerEffect of
   -- CR 118.9's standing alternative cost, narrowed by the spell's own qualities
   -- exactly as the zone permission above is (Omniscience's is `And []`). An
   -- `amount` count's Filters are read with perEachCount's Context, so they
-  -- take the same framing.
-  PlayerEffect.CastWithoutPayingManaCost grant -> FreeCast.spells grant : foldMap (fmap snd . quantityFilters) (FreeCast.amount grant)
+  -- take the same framing; a stated payment's, the zone permission's
+  -- additional costs' standard.
+  PlayerEffect.PayRatherThanManaCost grant -> FreeCast.spells grant : concatMap costComponentFilters (FreeCast.instead grant) <> foldMap (fmap snd . quantityFilters) (FreeCast.amount grant)
   -- CR 101.2's counter prohibition narrows by counter KIND, not by a Filter over
   -- objects: the object-side half of the same printings is
   -- Parun.Types.CounterRestriction, whose affected filter this lint reaches

@@ -54,7 +54,7 @@
                             "type": "UntilUsed"
                           },
                           "effect": {
-                            "type": "CastWithoutPayingManaCost",
+                            "type": "PayRatherThanManaCost",
                             "value": {
                               "spells": {
                                 "type": "And",
