@@ -192,6 +192,8 @@ data Quantity
     -- "escaped" -- else 0. The keyword itself where an instance asks only of its
     -- own payment (CR 702.152b).
     CastUsing (KeywordDesignator.KeywordDesignator Keyword.Keyword)
+  | -- | CR 702.51c / 400.7d: how many creatures convoked the spell this quantity is evaluated against, or the spell that became it.
+    Convokers
   | -- | CR 107.4h: 1 if mana carrying that production tag was spent to pay for
     -- the object this quantity is evaluated against, else 0.
     --

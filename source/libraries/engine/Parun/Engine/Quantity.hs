@@ -761,6 +761,9 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- CR 701.26a counted off the log, the arm above's look-back. Keyed by
         -- id, so CR 400.7's new object starts again at 0.
         Quantity.TimesTappedThisTurn -> fmap (Game.timesTappedThisTurn gs) mOid
+        -- CR 702.51c off the cast's own record rather than over the board, so a
+        -- convoker that has since left still counts (Knight-Errant of Eos).
+        Quantity.Convokers -> fmap (\oid -> toInteger (Set.size (Count.convokersOf oid (fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs))))))) mOid
         -- CR 702.30a's window as a 0/1 -- echo's intervening "if", read of the
         -- ability's own source at both CR 603.4 and CR 608.2a.
         --
@@ -1729,6 +1732,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.WasBlocking -> False
   Quantity.WasBlockedThisTurn -> False
   Quantity.TimesTappedThisTurn -> False
+  Quantity.Convokers -> False
   Quantity.ControlGained _ _ -> False
   Quantity.PlayedBy _ -> False
   Quantity.DamageDealtThisTurn _ -> False

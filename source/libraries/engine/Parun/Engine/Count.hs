@@ -1356,6 +1356,13 @@ convokedThisTurn oid gs =
       spells = Maybe.mapMaybe convokedByIt events
    in Set.fromList (concatMap (\spell -> spell : becamePermanents spell events) spells)
 
+-- CR 702.51c / 400.7d: the creatures that convoked this object, or the spell
+-- that became it, off the record the cast's payment wrote -- so a convoker that
+-- has since left is still one (Quantity.Convokers).
+convokersOf :: ObjectId -> [GameEvent.GameEvent] -> Set.Set ObjectId
+convokersOf oid events =
+  Set.unions [Convoking.convokedBy convoked | GameEvent.Convoked convoked <- events, let spell = Convoking.spell convoked, spell == oid || elem oid (becamePermanents spell events)]
+
 -- CR 400.7d's "the spell that became that permanent", asked the other way
 -- round: the permanents one object became by resolving off the stack, read
 -- off the move log. A list rather than a Maybe for CR 713.8's several arrivals,

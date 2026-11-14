@@ -165,6 +165,7 @@ codec =
       -- and the answer comes off the log rather than off that object.
       Arm.nullary "WasBlockedThisTurn" Quantity.WasBlockedThisTurn,
       Arm.nullary "TimesTappedThisTurn" Quantity.TimesTappedThisTurn,
+      Arm.nullary "Convokers" Quantity.Convokers,
       -- The window is the tag, Parun.Codec.Scope's OverBound posture.
       Arm.payload "ControlGainedSinceLastUpkeep" PlayerRef.codec (Quantity.ControlGained ControlWindow.SinceLastUpkeep) (\x -> case x of Quantity.ControlGained ControlWindow.SinceLastUpkeep y -> Just y; _ -> Nothing),
       Arm.payload "ControlGainedThisTurn" PlayerRef.codec (Quantity.ControlGained ControlWindow.ThisTurn) (\x -> case x of Quantity.ControlGained ControlWindow.ThisTurn y -> Just y; _ -> Nothing),
@@ -334,6 +335,7 @@ tagOf x = case x of
   Quantity.WasBlocking {} -> "WasBlocking"
   Quantity.WasBlockedThisTurn {} -> "WasBlockedThisTurn"
   Quantity.TimesTappedThisTurn {} -> "TimesTappedThisTurn"
+  Quantity.Convokers {} -> "Convokers"
   Quantity.ControlGained ControlWindow.SinceLastUpkeep _ -> "ControlGainedSinceLastUpkeep"
   Quantity.ControlGained ControlWindow.ThisTurn _ -> "ControlGainedThisTurn"
   Quantity.PlayedBy {} -> "PlayedBy"
