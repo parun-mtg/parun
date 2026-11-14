@@ -3399,10 +3399,11 @@ attachRestrictionChildren :: (Applicative f) => RuleChildren f -> AttachRestrict
 attachRestrictionChildren c (AttachRestriction.MkAttachRestriction affected attachers) =
   AttachRestriction.MkAttachRestriction <$> ruleAffected c affected <*> ruleFilter c attachers
 
--- | A rule permission's children. The rule it waives is left as it is.
+-- | A rule permission's children. The rule it waives and what the attack may be
+-- aimed at are left as they are, CantAttackPlayer's defenders and kinds.
 rulePermissionChildren :: (Applicative f) => RuleChildren f -> RulePermission.RulePermission -> f RulePermission.RulePermission
-rulePermissionChildren c (RulePermission.MkRulePermission affected while waives) =
-  RulePermission.MkRulePermission <$> ruleAffected c affected <*> traverse (ruleCondition c) while <*> pure waives
+rulePermissionChildren c (RulePermission.MkRulePermission affected while waives against) =
+  RulePermission.MkRulePermission <$> ruleAffected c affected <*> traverse (ruleCondition c) while <*> pure waives <*> pure against
 
 -- | An attack requirement's children (CR 508.1d). The defender it names and
 -- its arity are left as they are.

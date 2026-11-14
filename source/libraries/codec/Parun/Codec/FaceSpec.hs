@@ -633,7 +633,7 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
         s
         encodeFace
         decodeFace
-        baseFace {Face.rulePermissions = [RulePermission.MkRulePermission Affected.Attached Nothing RuleWaiver.Defender]}
+        baseFace {Face.rulePermissions = [RulePermission.MkRulePermission Affected.Attached Nothing RuleWaiver.Defender Nothing]}
         (init baseFaceJson <> ",\"rulePermissions\":[{\"affected\":{\"type\":\"Attached\"}}]}")
     Spec.it s "attachRestrictions" $
       Common.assertJsonCodec
