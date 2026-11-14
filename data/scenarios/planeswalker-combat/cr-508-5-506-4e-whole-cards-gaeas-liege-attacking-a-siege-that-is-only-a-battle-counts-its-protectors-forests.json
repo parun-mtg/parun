@@ -1,0 +1,389 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Gaea's Liege",
+            "label": "liege",
+            "ready": true
+          },
+          {
+            "card": "Luxior, Giada's Gift",
+            "label": "luxior"
+          },
+          {
+            "card": "Mountain",
+            "label": "mtn"
+          },
+          {
+            "card": "Forest",
+            "label": "af1"
+          },
+          {
+            "card": "Forest",
+            "label": "af2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Magnetic Theft",
+            "label": "theft"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Invasion of Dominaria",
+            "counters": [
+              {
+                "key": {
+                  "type": "Defense"
+                },
+                "value": 5
+              }
+            ],
+            "label": "invasion",
+            "protector": "carol"
+          },
+          {
+            "card": "Liquimetal Coating",
+            "label": "coating",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bobbear",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          },
+          {
+            "card": "Forest",
+            "label": "bf1"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Skilled Animator",
+            "label": "animator"
+          },
+          {
+            "card": "Planeswalkerificate",
+            "label": "pw"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "carolbear",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "cf1"
+          },
+          {
+            "card": "Forest",
+            "label": "cf2"
+          },
+          {
+            "card": "Forest",
+            "label": "cf3"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 508.5 / 506.4e / 310.9d whole cards: Gaea's Liege attacking, as a planeswalker, a Siege that is only a battle now counts its protector's Forests, not its controller's",
+  "note": "Three seats, every opponent defending (CR 802.2). bob's Invasion of Dominaria, carol protecting it, is made a 5/5 artifact creature (Liquimetal Coating, Skilled Animator) and a planeswalker (Planeswalkerificate) on his turn. On alice's turn Gaea's Liege, 2/2 on her two Forests, attacks it as a planeswalker and counts bob's one Forest. Magnetic Theft then attaches Luxior, Giada's Gift: no planeswalker, still a battle being attacked (CR 506.4e), so carol, its protector, is the defending player relative to it (CR 310.9d), and the Liege's layer 7b effect counts her three Forests (CR 508.5).",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "object": "$coating",
+          "targets": [
+            "$invasion"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            null
+          ],
+          "object": "$animator"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$invasion"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
+          ],
+          "object": "$pw",
+          "targets": [
+            "$invasion"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$invasion",
+          "types": [
+            "Artifact",
+            "Battle",
+            "Creature",
+            "Planeswalker"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$liege",
+          "power": 2,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": [
+          "$liege"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$invasion"
+      },
+      "player": "alice",
+      "source": "$liege",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Defenders": {
+          "players": [
+            "bob",
+            "carol"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$liege",
+          "power": 1,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mtn"
+          ],
+          "object": "$theft",
+          "targetsBySlot": {
+            "creature": [
+              "$invasion"
+            ],
+            "equipment": [
+              "$luxior"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": "$invasion",
+          "object": "$luxior",
+          "of": "AttachedTo"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$invasion",
+          "types": [
+            "Artifact",
+            "Battle",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$liege",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    }
+  ]
+}

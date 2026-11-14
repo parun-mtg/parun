@@ -288,7 +288,7 @@ admitting gs m oids = case m of
 -- it. Every other arm ignores it.
 applyModification :: (ObjectId -> ProjectedCharacteristics) -> Count.ViewOf -> ObjectId -> Timestamp -> GameState -> ObjectId -> Set CardType.CardType -> Affected.Affected -> Modification -> ProjectedCharacteristics -> ProjectedCharacteristics
 applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
-  let context = SourceContext.sourceContext gs (controllerOf src gs) src
+  let context = SourceContext.sourceContext viewOf gs (controllerOf src gs) src
       granting = grantingTo pc
       grantingTo receiver k =
         let granter = Game.lookupObject src gs
@@ -1324,18 +1324,18 @@ affectsFramed frame grants peers source oid a partial gs = case a of
         perspective = controllerOfGiven grants source gs
      in Set.member oid (GameState.battlefield gs)
           && inReach
-          && Filter.matches (frame (affectedContext source perspective gs)) (viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs) f
+          && Filter.matches (frame (affectedContext peers source perspective gs)) (viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs) f
   -- Matching's body without the battlefield conjunct.
   Affected.MatchingAnywhere f ->
     let perspective = controllerOfGiven grants source gs
      in inReach
-          && Filter.matches (frame (affectedContext source perspective gs)) (viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs) f
+          && Filter.matches (frame (affectedContext peers source perspective gs)) (viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs) f
   -- Matching's body with that conjunct NEGATED rather than dropped.
   Affected.MatchingOffBattlefield f ->
     let perspective = controllerOfGiven grants source gs
      in not (Set.member oid (GameState.battlefield gs))
           && inReach
-          && Filter.matches (frame (affectedContext source perspective gs)) (viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs) f
+          && Filter.matches (frame (affectedContext peers source perspective gs)) (viewOfCharacteristics peers oid partial (controllerOfGiven grants oid gs) (countersOf oid gs) gs) f
   -- CR 303.4b / 303.4m: the source's attachment again, read for the PLAYER it
   -- names. The Filter's perspective stays the source's controller (CR 109.5), not
   -- the enchanted player's. The candidate's controller is bound once and used
@@ -1354,7 +1354,7 @@ affectsFramed frame grants peers source oid a partial gs = case a of
        in Set.member oid (GameState.battlefield gs)
             && controller == Just pid
             && inReach
-            && Filter.matches (frame (affectedContext source (controllerOfGiven grants source gs) gs)) (viewOfCharacteristics peers oid partial controller (countersOf oid gs) gs) f
+            && Filter.matches (frame (affectedContext peers source (controllerOfGiven grants source gs) gs)) (viewOfCharacteristics peers oid partial controller (countersOf oid gs) gs) f
     Nothing -> False
   -- CR 611.3d: a rider, applied by storing it (Event.permissionRiders) and never
   -- derived, so a projection's own read of the template names nothing.
@@ -1373,8 +1373,8 @@ affectsFramed frame grants peers source oid a partial gs = case a of
 -- OBJECT and not its card: Object.chosenColors is per-incarnation, and CR 707.6
 -- leaves a copy to make its own choice, so two permanents of the one printing
 -- answer differently.
-affectedContext :: ObjectId -> Maybe PlayerId.PlayerId -> GameState -> Filter.Context
-affectedContext source perspective gs = SourceContext.sourceContext gs perspective source
+affectedContext :: Count.ViewOf -> ObjectId -> Maybe PlayerId.PlayerId -> GameState -> Filter.Context
+affectedContext peers source perspective gs = SourceContext.sourceContext peers gs perspective source
 
 -- The characteristics view of an object: its CR 613 projection and its projected
 -- controller (CR 613.1b; Nothing when the id is unknown). Rule 613.1 names no
@@ -1560,15 +1560,15 @@ framedByBindings gs bindings = framedBySlots gs (Binding.recipientsBySlot (Bindi
 -- Parun.Engine.SourceContext.sourceContext with the source's projected
 -- characteristics filled too (withCharacteristicsOf): THE context a source's
 -- own ability is matched in, everywhere outside the CR 613 layer fold. The
--- fold builds its contexts through SourceContext directly, since projecting the
--- source from inside its own projection would not terminate.
+-- fold builds its contexts through SourceContext directly, with its own bounded
+-- view, since projecting the source from inside its own projection would not
+-- terminate.
 sourceContext :: GameState -> Maybe PlayerId.PlayerId -> ObjectId -> Filter.Context
 sourceContext gs perspective source =
   framedBy source gs (Filter.contextIn gs perspective (Just source))
 
--- SourceContext.framedBy plus withCharacteristicsOf and the defending player
--- through the projection (SourceContext.withDefendingPlayer): every
--- source-derived field.
+-- SourceContext.framedBy through the projection plus withCharacteristicsOf:
+-- every source-derived field.
 framedBy :: ObjectId -> GameState -> Filter.Context -> Filter.Context
 framedBy source gs = framedWith (SourceContext.choicesOf (Game.acquisitionOf source gs) source gs) source gs
 
@@ -1577,8 +1577,7 @@ framedBy source gs = framedWith (SourceContext.choicesOf (Game.acquisitionOf sou
 framedWith :: SourceChoices.SourceChoices -> ObjectId -> GameState -> Filter.Context -> Filter.Context
 framedWith choices source gs =
   withCharacteristicsOf source gs
-    . SourceContext.withDefendingPlayer viewWithLastKnownAnywhere source gs
-    . SourceContext.framedWith choices source gs
+    . SourceContext.framedWith (viewWithLastKnownAnywhere gs) choices source gs
 
 -- `context` with `object`'s projected power, toughness, mana value, colours and
 -- names as the source's (CR 613), through its last known information once it
@@ -2692,7 +2691,8 @@ carriesCondition sa =
 -- next pass.
 conditionHolds :: [Gathered] -> GameState -> ObjectId -> Layer -> Condition.Type.Condition -> Bool
 conditionHolds cands gs src lowest =
-  Condition.holds (viewUpTo lowest cands gs) (SourceContext.sourceContext gs (controllerOf src gs) src) gs src
+  let viewOf = viewUpTo lowest cands gs
+   in Condition.holds viewOf (SourceContext.sourceContext viewOf gs (controllerOf src gs) src) gs src
 
 -- CR 614.12: the board a determination about an entering permanent reads --
 -- this state with every materialized-but-not-entered permanent taken out of the
@@ -5250,7 +5250,7 @@ applyCharacteristicPT :: Count.ViewOf -> GameState -> ObjectId -> ProjectedChara
 applyCharacteristicPT viewOf gs oid pc = case PC.characteristicPT pc of
   Nothing -> pc
   Just cda ->
-    let context = SourceContext.sourceContext gs (controllerOf oid gs) oid
+    let context = SourceContext.sourceContext viewOf gs (controllerOf oid gs) oid
      in pc
           { PC.power = Just (Quantity.determine viewOf context gs oid (CharacteristicPT.power cda)),
             PC.toughness = Just (Quantity.determine viewOf context gs oid (CharacteristicPT.toughness cda))

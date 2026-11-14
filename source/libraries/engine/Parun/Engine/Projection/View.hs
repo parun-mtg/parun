@@ -1962,7 +1962,7 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
       -- this seed from a token is CR 208.2's star. Parun.CountSpec's Miming Slime
       -- group is what proves that.
       let seedViewOf = const Nothing
-          seedContext = SourceContext.sourceContext gs (controllerOf oid gs) oid
+          seedContext = SourceContext.sourceContext seedViewOf gs (controllerOf oid gs) oid
        in PC.MkProjectedCharacteristics
             { -- CR 709.4a: the names the object shows, which `face` cannot carry --
               -- Game.namesOf decides which halves show.
@@ -2384,7 +2384,7 @@ ungatedAbilitiesOf pc oid gs = Count.abilitiesOf (Deploy.grants (maybe False (Co
 -- CR 611.3a: does a granted ability's "as long as" clause hold, with the
 -- object's controller as CR 109.5's "you".
 grantHolds :: Count.ViewOf -> ObjectId -> GameState -> Condition.Type.Condition -> Bool
-grantHolds peers oid gs = Condition.holds peers (SourceContext.sourceContext gs (controllerOf oid gs) oid) gs oid
+grantHolds peers oid gs = Condition.holds peers (SourceContext.sourceContext peers gs (controllerOf oid gs) oid) gs oid
 
 -- CR 115.1: what a stack object TARGETS -- the recipients under its declared
 -- target slots, which is CR 601.2c's (602.2b's, 603.3d's) announcement read live
@@ -2610,7 +2610,8 @@ layerTwo grants gs =
         Nothing -> True
         Just cond ->
           let src = ceSource e
-           in Condition.holds (Just . leanViewOf ctrl gs) (SourceContext.sourceContext gs (ctrl src) src) gs src cond
+              lean = Just . leanViewOf ctrl gs
+           in Condition.holds lean (SourceContext.sourceContext lean gs (ctrl src) src) gs src cond
       outcome table e =
         let ctrl = controllerIn table
             named = if holdsIn ctrl e then controlNames ctrl gs (ceSource e) (ceAffected e) else Set.empty
@@ -2780,7 +2781,7 @@ controlReaches ctrl gs source oid =
 matchesLeanly :: (ObjectId -> Maybe PlayerId.PlayerId) -> GameState -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> ObjectId -> Bool
 matchesLeanly ctrl gs source f oid =
   Filter.matches
-    (SourceContext.sourceContext gs (ctrl source) source)
+    (SourceContext.sourceContext (Just . leanViewOf ctrl gs) gs (ctrl source) source)
     (leanViewOf ctrl gs oid)
     f
 
