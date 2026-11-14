@@ -1006,6 +1006,32 @@ excessDealt before source aimed settled =
       bar <- excessThreshold before source recipient
       pure (Natural.minusSaturating (sum (fmap DamageEvent.amount (filter ((== recipient) . DamageEvent.target) settled))) bar)
 
+-- CR 120.10: each event's share of the excess damage its batch dealt a
+-- permanent, against the bar of the board the batch is dealt on, so damage
+-- already marked counts. "Those sources together": the bar is the lowest
+-- excessThreshold over the batch's sources to the permanent, so one deathtouch
+-- source makes 1 lethal (Aegar, the Freezing Flame's rulings). The shares fill
+-- the bar in event order and sum to the permanent's excess; which event carries
+-- it is unobservable, since a trigger on it reads the batch.
+settleExcess :: GameState -> [DamageEvent.DamageEvent] -> [DamageEvent.DamageEvent]
+settleExcess board events = snd (List.mapAccumL share Map.empty events)
+  where
+    hit ev = Recipient.objectOf (DamageEvent.target ev)
+    bars =
+      Map.fromListWith
+        min
+        [ (oid, bar)
+        | ev <- events,
+          Just oid <- [hit ev],
+          Just bar <- [excessThreshold board (DamageEvent.source ev) (DamageEvent.target ev)]
+        ]
+    share dealtSoFar ev = case hit ev >>= \oid -> fmap ((,) oid) (Map.lookup oid bars) of
+      Nothing -> (dealtSoFar, ev)
+      Just (oid, bar) ->
+        let before = Map.findWithDefault 0 oid dealtSoFar
+            after = before + DamageEvent.amount ev
+         in (Map.insert oid after dealtSoFar, ev {DamageEvent.excess = Natural.minusSaturating after (max bar before)})
+
 -- CR 120.3: carry out a batch of damage events' results -- mark damage on
 -- creatures (CR 120.3e), drain life from players (CR 120.3a), take loyalty and
 -- defense counters off (CR 120.3c, CR 120.3h), place the counters infect, wither
@@ -1073,13 +1099,15 @@ applyDamage settle events = do
 -- life" trigger would read the amount before the replacement.
 processDamage :: Game () -> [DamageEvent.DamageEvent] -> Game ([DamageEvent.DamageEvent], [(PlayerId, Natural)])
 processDamage settle events = do
-  (survivors, prevented) <- Event.resolveDamageBatch events
+  (resolved, prevented) <- Event.resolveDamageBatch events
   -- The state the whole batch is read against: recipients are classified off it
   -- (Projection.damagedCardTypes), the commander tally is asked of it, and `counterResults`
   -- reads each source's controller out of it. CR 510.2's simultaneity, which no
   -- event in the batch may disturb for the next.
   board <- State.get
-  let -- CR 120.3e: mark the damage. CR 120.3d's alternative -- the -1/-1 counters
+  let -- The events CR 120.4b deals, each carrying its CR 120.10 excess.
+      survivors = settleExcess board resolved
+      -- CR 120.3e: mark the damage. CR 120.3d's alternative -- the -1/-1 counters
       -- a wither and/or infect source's damage causes instead -- is in
       -- `counterResults` below rather than here, since it goes through
       -- Event.putCounters, CR 122.6's funnel, and this fold is pure.

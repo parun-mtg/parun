@@ -12,6 +12,9 @@ data PermanentIsDealtDamage = MkPermanentIsDealtDamage
     -- per simultaneous batch (Ripjaw Raptor's and Fungusaur's rulings).
     -- EachOccurrence for "a source deals damage to": one per damage event, so
     -- per source (Belltower Sphinx).
-    batching :: Batching.Batching
+    batching :: Batching.Batching,
+    -- | CR 120.10: only damage over the permanent's bar, "is dealt excess
+    -- damage" (Fall of Cair Andros); its amount is the excess.
+    excess :: Bool
   }
   deriving (Eq, Ord, Show)

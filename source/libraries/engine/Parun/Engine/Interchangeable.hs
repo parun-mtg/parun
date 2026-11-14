@@ -178,7 +178,8 @@ objects pcs gs a b =
         ( Filter.Engine.declaredThisTurn view,
           Filter.Engine.couldAttackThisTurn view,
           Filter.Engine.leftLibraryThisTurn view,
-          Filter.Engine.dealtDamageThisTurn view,
+          -- Less each event's recipient, which is the viewed object itself.
+          fmap (\ev -> ev {DamageEvent.target = Recipient.ToObject (DamageEvent.source ev)}) (Filter.Engine.dealtDamageThisTurn view),
           Filter.Engine.lostLifeThisTurn view,
           Filter.Engine.activatedThisTurn view,
           Filter.Engine.arrivalThisTurn view,

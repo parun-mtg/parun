@@ -4229,10 +4229,8 @@ freerunningDamageThisTurn pid gs =
    in any freeran (TurnRegisters.events (GameState.turn gs))
 
 -- CR 120.1 / 608.2i: was this PLAYER dealt damage during the turn named? The
--- log fold damagedPlayer exists for, written once here because two callers ask
--- it -- Parun.Engine.Count.playerView, which fills the player candidate's
--- Filter.dealtDamageThisTurn, and Parun.Engine.Quantity's PlayersDealtDamage
--- arm, which counts the seats it answers True for. The turn's extent is
+-- log fold damagedPlayer exists for, read by Parun.Engine.Quantity's
+-- PlayersDealtDamage arm, which counts the seats it answers True for. The turn's extent is
 -- turnLog's: Parun.Engine.Engine.beginTurnOf moves the log aside at the handoff.
 -- A kind narrows the question to that damage alone (CR 510.2's combat damage),
 -- and a card type to a source's that had it.

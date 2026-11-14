@@ -15,12 +15,18 @@ spec s = Spec.describe s "Parun.Codec.PermanentIsDealtDamage" $ do
     Common.assertCodec
       s
       PermanentIsDealtDamage.codec
-      (PermanentIsDealtDamage.MkPermanentIsDealtDamage {PermanentIsDealtDamage.dealt = DealtDamage.MkDealtDamage ActingPermanent.Self Nothing Nothing, PermanentIsDealtDamage.batching = Batching.OneOrMore})
+      (PermanentIsDealtDamage.MkPermanentIsDealtDamage {PermanentIsDealtDamage.dealt = DealtDamage.MkDealtDamage ActingPermanent.Self Nothing Nothing, PermanentIsDealtDamage.batching = Batching.OneOrMore, PermanentIsDealtDamage.excess = False})
       " {\"dealt\":{\"recipient\":{\"type\":\"Self\"}}} "
   Spec.it s "the per-source reading" $
     Common.assertCodec
       s
       PermanentIsDealtDamage.codec
-      (PermanentIsDealtDamage.MkPermanentIsDealtDamage {PermanentIsDealtDamage.dealt = DealtDamage.MkDealtDamage ActingPermanent.Self (Just DamageKind.Combat) Nothing, PermanentIsDealtDamage.batching = Batching.EachOccurrence})
+      (PermanentIsDealtDamage.MkPermanentIsDealtDamage {PermanentIsDealtDamage.dealt = DealtDamage.MkDealtDamage ActingPermanent.Self (Just DamageKind.Combat) Nothing, PermanentIsDealtDamage.batching = Batching.EachOccurrence, PermanentIsDealtDamage.excess = False})
       " {\"dealt\":{\"recipient\":{\"type\":\"Self\"},\"kind\":\"Combat\"},\"batching\":\"EachOccurrence\"} "
+  Spec.it s "the excess reading" $
+    Common.assertCodec
+      s
+      PermanentIsDealtDamage.codec
+      (PermanentIsDealtDamage.MkPermanentIsDealtDamage {PermanentIsDealtDamage.dealt = DealtDamage.MkDealtDamage ActingPermanent.Self (Just DamageKind.Noncombat) Nothing, PermanentIsDealtDamage.batching = Batching.OneOrMore, PermanentIsDealtDamage.excess = True})
+      " {\"dealt\":{\"recipient\":{\"type\":\"Self\"},\"kind\":\"Noncombat\"},\"excess\":true} "
   Spec.it s "has a schema" $ Common.assertHasSchema s PermanentIsDealtDamage.codec

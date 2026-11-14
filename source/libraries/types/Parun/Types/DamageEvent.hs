@@ -8,17 +8,22 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.Zone as Zone
 
 -- | One instance of damage: a source dealt `amount` to `target`. The first reader
 -- is deathtouch's CR 704.5h SBA, which asks `dealtByDeathtouch`.
 --
--- Every field past the first three is a deal-time RIDER -- a fact about the
+-- Every field past the first four is a deal-time RIDER -- a fact about the
 -- source, captured as the damage is dealt because it may be unaskable later.
 -- Parun.Engine.Event.damageEvent is where they are read.
 data DamageEvent = MkDamageEvent
   { source :: ObjectId.ObjectId,
     target :: Recipient.Recipient,
     amount :: Natural.Natural,
+    -- | CR 120.10: this event's share of the excess damage its batch dealt the
+    -- permanent, 0 for a player and until Parun.Engine.Damage.processDamage
+    -- settles the batch. The shares of one batch sum to the permanent's excess.
+    excess :: Natural.Natural,
     -- | CR 702.2e: whether the source had deathtouch WHEN THIS DAMAGE WAS DEALT.
     -- Captured at deal time rather than re-derived at SBA-check time, so a source
     -- that has since changed or ceased cannot alter it. The same read supplies
@@ -84,6 +89,11 @@ data DamageEvent = MkDamageEvent
     -- in the turn" (Admiral Beckett Brass's ruling, 2017-09-29). CR 608.2h's last
     -- known information for a source already gone.
     dealtByCardTypes :: Set.Set CardType.CardType,
+    -- | CR 400.1: the zone the source was in when this damage was dealt, so a
+    -- source on the stack was a spell (CR 112.1, Aegar, the Freezing Flame's
+    -- "a ... spell you controlled dealt damage"). Nothing for a source already
+    -- gone.
+    dealtFromZone :: Maybe Zone.Zone,
     -- | CR 510 vs CR 608: combat damage or not. Set at deal time -- Damage tags
     -- Combat, Resolve's DealDamage tags Noncombat. Read by Replacement.applies's
     -- DamageR arm (CR 615.1's damage pattern).

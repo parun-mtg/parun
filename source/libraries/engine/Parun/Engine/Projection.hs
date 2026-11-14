@@ -4363,7 +4363,8 @@ filterReads f = case f of
   -- over: the prohibition is gathered outside the layer system (CR 613.11) and
   -- handed in on the context, so it is a fixed input to any single projection.
   Filter.Type.CantPayKeywordCost _ -> Set.empty
-  Filter.Type.DealtDamageThisTurn -> Set.empty
+  -- A source filter reads the event's riders, filed with the log.
+  Filter.Type.DealtDamageThisTurn _ -> Set.empty
   -- Reads nothing a layer writes: a player's life is no characteristic.
   Filter.Type.LostLifeThisTurn -> Set.empty
   -- Reads nothing: no Modification writes TurnRegisters.activationsThisTurn.
@@ -4681,7 +4682,7 @@ filterReadsPeers f = case f of
   -- CR 702.122d reads the CONTEXT's gathered set rather than any field of a
   -- peer's view, so no second projection can change its answer.
   Filter.Type.CantPayKeywordCost _ -> False
-  Filter.Type.DealtDamageThisTurn -> False
+  Filter.Type.DealtDamageThisTurn _ -> False
   Filter.Type.LostLifeThisTurn -> False
   Filter.Type.ActivatedThisTurn -> False
   Filter.Type.DealtDamageTo _ -> False

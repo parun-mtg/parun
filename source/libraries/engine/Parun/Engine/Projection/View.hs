@@ -209,7 +209,7 @@ viewOfCardLapsed lapsed face =
           -- planeswalker, and this builder describes a printed FACE rather than
           -- a permanent. viewOfCharacteristics is the view that holds an id and
           -- answers.
-          Filter.dealtDamageThisTurn = False,
+          Filter.dealtDamageThisTurn = [],
           -- CR 119.3: only a player loses life.
           Filter.lostLifeThisTurn = False,
           -- CR 700.10 asks after an OBJECT; this builder describes a printed

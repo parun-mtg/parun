@@ -1134,7 +1134,7 @@ spec s registry = Spec.describe s "Client" $ do
         listedAfter heading screenLines = takeWhile (Text.isPrefixOf (Text.pack "  ")) (drop 1 (dropWhile (/= Text.pack heading) screenLines))
         arrange = Prompt.ArrangeLibraryArrivals alice S.alice LibraryPosition.Top [b, g]
         (reordered, shown) = asking facing ["2 1"] gs arrange
-        hit target n = DamageEvent.MkDamageEvent f target n False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat
+        hit target n = DamageEvent.MkDamageEvent f target n 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Noncombat
         (_, damage) = asking facing [""] gs (Prompt.OrderDamage alice S.alice [hit (Recipient.ToPlayer S.bob) 2, hit (Recipient.ToCreature g) 3])
     Spec.assertEqWith s "cards listed, the first going on top" (listedAfter "Arrange library arrivals: type their numbers first to last, separated by spaces, or press Enter to keep this order; the first goes on top:" shown) [Text.pack "  1. Grizzly Bears", Text.pack "  2. Your Hill Giant 3/3"]
     Spec.assertEqWith s "the order typed" reordered (Right [1, 0])
@@ -1281,7 +1281,7 @@ spec s registry = Spec.describe s "Client" $ do
         time = CounterKind.Time
         kinds = Map.fromList [(plus, 2), (time, 1)] :: Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural
         among = Prompt.ChooseCounterRemovalAmong alice S.alice f 2 (Map.fromList [(b, 1), (g, 2)])
-        hit amount = DamageEvent.MkDamageEvent f (Recipient.ToPlayer S.bob) amount False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat
+        hit amount = DamageEvent.MkDamageEvent f (Recipient.ToPlayer S.bob) amount 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Noncombat
         allocate = Prompt.AllocateDamage alice S.alice [hit 2, hit 3] 4
         slot = SlotName.MkSlotName (Text.pack "target")
         announce = Prompt.AnnounceTargets alice S.alice f (Map.singleton slot (TargetCount.MkTargetCount 1 Nothing, Set.fromList [Recipient.ToPlayer S.bob, Recipient.ToCreature b]))
@@ -1442,7 +1442,7 @@ spec s registry = Spec.describe s "Client" $ do
         upTo heading screenLines = takeWhile (\l -> not (any (`Text.isPrefixOf` l) [Text.pack "Type ", Text.pack "> "])) (dropWhile (not . Text.isPrefixOf heading) screenLines)
         tapped = ReplacementEntry.MkReplacementEntry f (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.EntersTapState TapState.Tapped)))
         (picked, replacement) = asking facing ["1"] gs (Prompt.ChooseReplacement alice S.alice [tapped, ReplacementEntry.MkReplacementEntry g (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource EntryRewrite.Prepared))])
-        hit = DamageEvent.MkDamageEvent f (Recipient.ToPlayer S.bob) 2 False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat
+        hit = DamageEvent.MkDamageEvent f (Recipient.ToPlayer S.bob) 2 0 False False False 0 Nothing Nothing mempty False mempty Nothing DamageKind.Noncombat
         (event, delayed) = asking facing ["2"] gs (Prompt.ChooseDelayedTriggerEvent alice S.alice f (GameEvent.DamageDealt hit NonEmpty.:| [GameEvent.DamageDealt hit {DamageEvent.amount = 3}]))
         (modifier, modifiers) = asking facing ["2"] gs (Prompt.ChooseRollModifier alice S.alice (Just f NonEmpty.:| [Nothing]))
         (_, keepers) = asking facing ["1"] gs (Prompt.ChooseStickerKeeper alice S.alice (printing NonEmpty.:| [printing]))

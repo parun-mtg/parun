@@ -389,7 +389,7 @@ departedAs gs oid =
 -- with the fields a bare PlayerId cannot answer filled from the board.
 -- Parun.Engine.Projection.View.viewOfCharacteristics fills Filter.dealtDamageThisTurn
 -- for an object off Game.damagedObject; this is its player half, off
--- Game.wasDealtDamage, so CR 120.1's four recipients are read back
+-- Game.damagedPlayer, so CR 120.1's four recipients are read back
 -- through one event reader (#2157).
 --
 -- Here rather than in Parun.Engine.Filter, which holds no game state, and here
@@ -407,7 +407,7 @@ departedAs gs oid =
 playerView :: GameState -> PlayerId -> Filter.View
 playerView gs pid =
   (Filter.playerView pid)
-    { Filter.dealtDamageThisTurn = Game.wasDealtDamage WhichTurn.ThisTurn Nothing Nothing gs pid,
+    { Filter.dealtDamageThisTurn = damageThisTurn ((== Just pid) . Game.damagedPlayer) gs,
       -- CR 119.3 / 608.2i: the same division for a life total. Damage reaches
       -- the log as its own life loss (CR 120.3a), so no damage read is needed.
       Filter.lostLifeThisTurn = Game.lifeChangedIn LifeDirection.Lost (TurnRegisters.events (GameState.turn gs)) pid > 0,
@@ -1282,8 +1282,18 @@ leftLibraryThisTurn oid gs =
 -- Object.damage -- CR 120.6 removes the marks on a regeneration, CR 701.69a heals
 -- them away and CR 120.3d/120.3e mark none at all for wither or infect, and any
 -- such creature was still dealt damage this turn.
-dealtDamageThisTurn :: ObjectId -> GameState -> Bool
-dealtDamageThisTurn oid gs = any ((== Just oid) . Game.damagedObject . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
+dealtDamageThisTurn :: ObjectId -> GameState -> [DamageEvent.DamageEvent]
+dealtDamageThisTurn oid = damageThisTurn ((== Just oid) . Game.damagedObject)
+
+-- The turn's damage events whose log entry the predicate admits, for an
+-- object's or a player's Filter.dealtDamageThisTurn.
+damageThisTurn :: (GameEvent.GameEvent -> Bool) -> GameState -> [DamageEvent.DamageEvent]
+damageThisTurn admits gs =
+  [ ev
+  | logged <- Foldable.toList (Game.turnLog WhichTurn.ThisTurn gs),
+    admits (LoggedEvent.event logged),
+    GameEvent.DamageDealt ev <- [LoggedEvent.event logged]
+  ]
 
 -- CR 700.10: was this object the source of an ability activated this turn?
 -- Every logged activation counts, resolved or not, whoever activated it and
@@ -1561,7 +1571,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       Filter.leftLibraryThisTurn = Set.empty,
       -- CR 120.1 damages an OBJECT, and this view describes a snapshot rather
       -- than one -- there is no id here for the turn's damage to have named.
-      Filter.dealtDamageThisTurn = False,
+      Filter.dealtDamageThisTurn = [],
       -- CR 119.3: only a player loses life.
       Filter.lostLifeThisTurn = False,
       -- CR 700.10 names an OBJECT as a source, and this view describes a

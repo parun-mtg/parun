@@ -168,9 +168,9 @@ evaluateFor viewOf context gs announcedOn oid = evaluateAgainst viewOf context g
 evaluateAgainst :: Count.ViewOf -> Filter.Context -> GameState -> ObjectId -> Maybe ObjectId -> Maybe Filter.View -> Quantity -> Maybe Integer
 evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
   let recur = evaluateAgainst viewOf context gs announcedOn mOid mView
-      -- Was this player dealt damage during that turn? Game.wasDealtDamage is the
-      -- shared fold, so this count and the Filter.DealtDamageThisTurn atom a player
-      -- candidate answers cannot come apart; see Game.damagedPlayer under it for CR
+      -- Was this player dealt damage during that turn? Game.damagedPlayer is
+      -- the reader under both this fold and the Filter.DealtDamageThisTurn atom
+      -- a player candidate answers, so they cannot come apart; see it for CR
       -- 120.3a's recipient and for CR 120.8's zero.
       wasDealtDamage which kind by = Game.wasDealtDamage which kind by gs
       -- CR 102.1's reference, resolved by Count.playersFor for every arm but the

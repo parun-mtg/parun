@@ -142,9 +142,13 @@ event context creature c = case c of
     | Set.null recipients -> do
         (one, that) <- described context f
         [other ("Whenever " <> one <> " deals combat damage") [(combatDamager, that)]]
-  TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage (ActingPermanent.Matching f) Nothing Nothing) Batching.OneOrMore) -> do
+  TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage (ActingPermanent.Matching f) kind Nothing) Batching.OneOrMore excess) -> do
     (one, _) <- described context f
-    [other ("Whenever " <> one <> " is dealt damage") [(becameSlot, "it")]]
+    let kindWord k = case k of
+          DamageKind.Combat -> "combat"
+          DamageKind.Noncombat -> "noncombat"
+        damage = unwords (["excess" | excess] <> foldMap (pure . kindWord) kind <> ["damage"])
+    [other ("Whenever " <> one <> " is dealt " <> damage) [(becameSlot, "it")]]
   TriggerCondition.Attacks (AttackTrigger.Declaration (DeclarationTrigger.MkDeclarationTrigger relation Nothing TriggerFrequency.EveryTime Nothing)) -> do
     who <- case relation of
       PlayerRelation.You -> ["you attack"]
@@ -240,8 +244,8 @@ selfEvent context creature c = case c of
     [(recurring, "becomes blocked by " <> one, [(thatBlocker, that)])]
   -- Free: the ability word enrage (CR 207.2c) printed (Ripjaw Raptor) or
   -- not (Stuffy Doll).
-  TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self Nothing Nothing) Batching.OneOrMore) -> [(recurring <> ["Enrage \8212 Whenever"], "is dealt damage", [])]
-  TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self (Just DamageKind.Combat) Nothing) Batching.OneOrMore) -> [(recurring, "is dealt combat damage", [])]
+  TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self Nothing Nothing) Batching.OneOrMore False) -> [(recurring <> ["Enrage \8212 Whenever"], "is dealt damage", [])]
+  TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self (Just DamageKind.Combat) Nothing) Batching.OneOrMore False) -> [(recurring, "is dealt combat damage", [])]
   TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing recipients atLeast)
     | Set.null recipients, atLeast > 0 -> [(recurring, "deals " <> show atLeast <> " or more damage", [])]
     | [DamageRecipient.Player relation] <- Set.toList recipients,

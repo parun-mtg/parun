@@ -475,8 +475,14 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      Filter.DealtDamageThisTurn
+      (Filter.DealtDamageThisTurn Nothing)
       " {\"type\":\"DealtDamageThisTurn\"} "
+  Spec.it s "DealtDamageThisTurn, by a source" $
+    Common.assertCodec
+      s
+      codec
+      (Filter.DealtDamageThisTurn (Just (Filter.IsInZone Zone.Stack)))
+      " {\"type\":\"DealtDamageThisTurn\",\"value\":{\"type\":\"IsInZone\",\"value\":\"Stack\"}} "
   Spec.it s "LostLifeThisTurn" $
     Common.assertCodec
       s

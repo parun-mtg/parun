@@ -400,8 +400,9 @@ data Filter keyword
     -- has damage dealt to both -- was DEALT DAMAGE earlier this turn.
     -- DeclaredThisTurn's look-back read one event arm over
     -- (GameEvent.DamageDealt), and not Object.damage being positive: a wither or
-    -- infect source marks nothing at all (CR 120.3d).
-    DealtDamageThisTurn
+    -- infect source marks nothing at all (CR 120.3d). Just a filter admits only
+    -- damage from a source it matched as it dealt the damage.
+    DealtDamageThisTurn (Maybe (Filter keyword))
   | -- | CR 119.3 / 608.2i: the candidate PLAYER lost life earlier this turn --
     -- Rix Maadi Guildmage's "target player who lost life this turn".
     LostLifeThisTurn
