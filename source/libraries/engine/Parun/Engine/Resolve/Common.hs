@@ -3845,7 +3845,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
     -- leaves none of it still there, or Expiry.arm stores nothing.
     noneCanBeHeld duration ref =
       let named = objectRefObjects legal resolving controller source gs ref
-          held = frozenAffected gs (filter (Maybe.isJust . flip Game.lookupObject gs) named)
+          held = frozenAffected gs named
        in not (null named) && (null held || Maybe.isNothing (Expiry.arm resolving legal controller source duration gs))
     -- The tap-state half of Effect.Tap's and Effect.Untap's arms: the sweep
     -- names at least one permanent and none of them is in the state the
@@ -5084,12 +5084,14 @@ conniveOne settle proposed oid = Monad.when (proposed > 0) $ do
 
 -- CR 702.26e: the objects a resolving effect that changes characteristics or
 -- control freezes (CR 611.2c), less every phased-out permanent -- even one it
--- names specifically, as a `self` group slot does. ModifyTarget's arm and
+-- names specifically, as a `self` group slot does -- and, CR 400.7, every id
+-- that has left its zone and so names no object. ModifyTarget's arm and
 -- installControl are the callers. Parun.PhasingSpec's two "CR 702.26e a
 -- phased-out permanent is left out of a resolving ..." cases are the proof, one
--- per caller.
+-- per caller; data/scenarios/kain-traitorous-dragoon-gone-before-its-trigger-resolves-gives-no-cards-treasures-or-life-loss.json
+-- proves the departed id.
 frozenAffected :: GameState -> [ObjectId] -> [ObjectId]
-frozenAffected gs = filter (not . (`Phasing.isPhasedOut` gs))
+frozenAffected gs = filter (\oid -> Map.member oid (GameState.objects gs) && not (Phasing.isPhasedOut oid gs))
 
 -- CR 613.1b / 611.2c: install a layer-2 control effect giving `recipient` the
 -- objects `ref` names, for `duration` -- GainControl's arm. `mSlot` takes the
