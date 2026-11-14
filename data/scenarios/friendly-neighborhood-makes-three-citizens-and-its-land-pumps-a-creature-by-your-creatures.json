@@ -1,0 +1,32 @@
+{
+  "description": "CR 303.4a, 603.6a, 111.1, 613.1f, 602.2a, 602.5d, 608.2h: Friendly Neighborhood's entering makes three 1/1 green and white Human Citizen tokens, and its enchanted land gains a sorcery-speed {1}, {T} ability giving target creature +1/+1 per creature its activator controls",
+  "note": "Alice controls four creatures (three tokens and a Grizzly Bears), bob two, six in all, so the pump on bob's 3/3 Hill Giant reads 7/7 only for the activator's count. The beginning-of-combat activation, with the mana untapped and the stack empty, is refused only by the sorcery restriction.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice",
+     "battlefield": [{"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}, {"card": "Plains", "label": "p3"}, {"card": "Plains", "label": "p4"}, {"card": "Forest", "label": "forest"}, {"card": "Mountain", "label": "mountain"}, {"card": "Grizzly Bears", "label": "bears"}],
+     "hand": [{"card": "Friendly Neighborhood", "label": "hood"}],
+     "library": [{"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob",
+     "battlefield": [{"card": "Hill Giant", "label": "giant"}, {"card": "Savannah Lions", "label": "lions"}],
+     "library": [{"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$hood", "targets": ["$forest"], "mana": ["$p1", "$p2", "$p3", "$p4", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Friendly Neighborhood"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "AttachedTo", "object": "Friendly Neighborhood", "is": "$forest"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Human Citizen Token", "count": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Human Citizen Token", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "Human Citizen Token#3", "power": 1, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Colors", "object": "Human Citizen Token#3", "is": ["White", "Green"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Subtypes": {"object": "Human Citizen Token#3", "subtypes": ["Citizen", "Human"]}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "refuse": {"Activate": {"object": "$forest", "targets": ["$giant"], "mana": ["$mountain", null]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"Activate": {"object": "$forest", "targets": ["$giant"], "mana": ["$mountain", null]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Tapped": {"object": "$forest", "tapped": true}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$giant", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$giant", "power": 7, "toughness": 7}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$lions", "power": 2, "toughness": 1}}}
+  ]
+}

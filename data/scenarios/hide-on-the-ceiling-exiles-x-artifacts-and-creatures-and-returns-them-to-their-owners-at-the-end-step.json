@@ -1,0 +1,26 @@
+{
+  "description": "CR 107.3a, 601.2c, 603.7a, 400.7: Hide on the Ceiling for X=2 exiles bob's Mind Stone and carol's Hill Giant, which alice controls; at the beginning of the end step both return, the Giant under carol's control, not alice's",
+  "note": "Targets are one artifact and one creature, held by different players, so the filter's 'and/or' and 'any controller' both show. The Giant is carol's card under alice's control, so 'owners' control' is seen. Bob's Savannah Lions, a third legal target, stays put, showing X caps the count. The Mind Stone returns untapped as a new object, and nothing returns before the end step.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}], "hand": [{"card": "Hide on the Ceiling", "label": "hide"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Mind Stone", "label": "stone", "tapped": true}, {"card": "Savannah Lions", "label": "lions"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "carol", "battlefield": [{"card": "Hill Giant", "label": "giant", "controller": "alice"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Controller", "object": "$giant", "is": "alice"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$hide", "x": 2, "targets": ["$stone", "$giant"], "mana": ["$i1", "$i2", "$i3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Mind Stone", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Exile", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Savannah Lions", "count": 1}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Exile", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of Hide on the Ceiling"]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Mind Stone", "count": 1}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Hill Giant", "count": 0}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Controller", "object": "Hill Giant", "is": "carol"}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Tapped": {"object": "Mind Stone", "tapped": false}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Exile", "card": "Mind Stone", "count": 0}}}
+  ]
+}

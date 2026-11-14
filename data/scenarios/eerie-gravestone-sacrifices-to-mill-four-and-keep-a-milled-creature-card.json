@@ -1,0 +1,27 @@
+{
+  "description": "CR 602.2, 118.3, 701.17a, 608.2c: Eerie Gravestone's {1}{B}, sacrifice ability mills four and puts a creature card from among the milled cards, not a noncreature permanent card or a creature card already in the graveyard, into its controller's hand",
+  "note": "The milled Mountain is a permanent card (Something Worth Saving's filter would take it) and the Grizzly Bears that starts in the graveyard is a creature card the ability did not mill; the milled Savannah Lions is a second creature card, so the choice is asked; the fifth card, a Plains, stays in the library.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice",
+     "battlefield": [{"card": "Eerie Gravestone", "label": "stone"}, {"card": "Swamp", "label": "swamp"}, {"card": "Plains", "label": "plains"}],
+     "graveyard": [{"card": "Grizzly Bears", "label": "oldbears"}],
+     "library": [{"card": "Lightning Bolt"}, {"card": "Mountain"}, {"card": "Hill Giant"}, {"card": "Savannah Lions"}, {"card": "Plains"}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$stone", "mana": ["$plains", "$swamp"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Eerie Gravestone", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseOptional": "Exercises"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Mountain"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "$oldbears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Hill Giant"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Mountain", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Mountain", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Lightning Bolt", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Savannah Lions", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Plains", "count": 1}}}
+  ]
+}

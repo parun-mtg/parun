@@ -1,0 +1,38 @@
+{
+  "description": "CR 700.2a, 601.2b, 601.2c, 611.2a, 613.4c, 702.7b: Heroes' Hangout's Date Night exiles alice's top two and lets her play the one she chose (a Forest, played from exile); Patrol Night gives two target creatures +1/+0 and first strike, so alice's Grizzly Bears kill bob's blocking Hill Giant before it strikes back",
+  "note": "Date Night's chosen card is a land so the permission shows in the same turn; the unchosen Divination stays in exile. Patrol Night targets two of alice's creatures, leaving bob's Hill Giant untouched: Bears 3/2 first strike blocked by the 3/3 Giant survives with no damage, which a plain +1/+0 (simultaneous damage) would not allow. Savannah Lions shows the second target got both. Bob's Giant keeps 3/3 and no first strike.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [
+      {"card": "Grizzly Bears", "label": "bears", "ready": true},
+      {"card": "Savannah Lions", "label": "lions", "ready": true},
+      {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}],
+     "hand": [{"card": "Heroes' Hangout", "label": "date"}, {"card": "Heroes' Hangout", "label": "patrol"}],
+     "library": [{"card": "Forest", "label": "fo"}, {"card": "Divination", "label": "div"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "carol", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$date", "modes": [0], "mana": ["$m1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseCardFromAmong", "with": "Forest"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Forest", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Divination", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"PlayLand": "Forest"}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Forest", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Exile", "card": "Forest", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$patrol", "modes": [1], "targets": ["$bears", "$lions"], "mana": ["$m2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 3, "toughness": 2}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$lions", "power": 3, "toughness": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$lions", "keyword": {"type": "FirstStrike"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$giant", "power": 3, "toughness": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "FirstStrike"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Island", "count": 3}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$bears", "do": {"ChooseAttackTarget": "$bob"}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$giant": ["$bears"]}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Damage": {"object": "$bears", "damage": 0}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}}
+  ]
+}
