@@ -1281,14 +1281,12 @@ draw settle resolving source controller legal (Draw.MkDraw ref quantity mSlot) =
     -- 616.1g settles it before any of the individual draws below -- so
     -- the count those draws run on is the one this loop leaves standing,
     -- and a row that replaced the instruction outright leaves none.
-    outcome <- Event.applyReplacementsIn settle Nothing Set.empty Set.empty (instruction pid)
-    got <- case outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards of
-      Nothing -> pure []
-      -- CR 121.2: draw the settled count one at a time, so each draw
-      -- re-reads the library top and the CR 104.3c empty-library loss is
-      -- preserved; CR 614.11a: what a replacement queued in one draw's
-      -- place lands before the next.
-      Just (drawer, settled) -> Event.drawSeries DrawKind.Other settle Set.empty drawer settled
+    --
+    -- CR 121.2: the settled count is drawn one at a time, so each draw
+    -- re-reads the library top and the CR 104.3c empty-library loss is
+    -- preserved; CR 614.11a: what a replacement queued in one draw's
+    -- place lands before the next.
+    got <- Event.drawInstructionReturning settle DrawKind.Other Set.empty pid (Integer.toNaturalSaturating (Map.findWithDefault 0 pid instructed))
     -- CR 603.12: fewer cards drawn than the instruction named, against
     -- the count BEFORE any replacement -- The Royal Scions' 2019-10-04
     -- rulings, fewer than four does not trigger and five or more does.
