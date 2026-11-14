@@ -23,10 +23,6 @@
           {
             "card": "Island",
             "label": "i1"
-          },
-          {
-            "card": "Island",
-            "label": "i2"
           }
         ],
         "hand": [
@@ -115,7 +111,7 @@
             "$m1",
             "$f",
             "$i1",
-            "$i2"
+            null
           ],
           "object": "$cyto",
           "targets": [
@@ -170,7 +166,7 @@
       "check": {
         "View": {
           "is": [
-            "trigger of Epochrasite"
+            "trigger of $baloth"
           ],
           "of": "Stack"
         }
@@ -215,6 +211,28 @@
       "turn": 1
     },
     {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderTriggers",
+          "with": [
+            0,
+            1
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
       "check": {
         "View": {
           "is": [
@@ -251,11 +269,47 @@
         }
       },
       "player": "alice",
-      "step": "Upkeep",
+      "step": "PrecombatMain",
       "turn": 3
     },
     {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderTriggers",
+          "with": [
+            0,
+            1
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 5
+    },
+    {
       "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderTriggers",
+          "with": [
+            0,
+            1
+          ]
+        }
+      },
       "player": "alice",
       "step": "Upkeep",
       "turn": 5
