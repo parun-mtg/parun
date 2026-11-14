@@ -1,0 +1,190 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Zealous Display",
+      "oracleText": "Creatures you control get +2/+0 until end of turn. If it's not your turn, untap those creatures.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "ModifyPowerToughness",
+                        "value": {
+                          "power": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "toughness": {
+                            "type": "Literal",
+                            "value": 0
+                          }
+                        }
+                      },
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "You"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "condition": {
+                  "type": "Any",
+                  "value": [
+                    {
+                      "type": "During",
+                      "value": {
+                        "scope": {
+                          "type": "PlayersTurn",
+                          "value": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          }
+                        },
+                        "window": {
+                          "type": "BeginningPhase"
+                        }
+                      }
+                    },
+                    {
+                      "type": "During",
+                      "value": {
+                        "scope": {
+                          "type": "PlayersTurn",
+                          "value": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          }
+                        },
+                        "window": {
+                          "type": "Step",
+                          "value": {
+                            "type": "PrecombatMain"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "During",
+                      "value": {
+                        "scope": {
+                          "type": "PlayersTurn",
+                          "value": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          }
+                        },
+                        "window": {
+                          "type": "CombatPhase"
+                        }
+                      }
+                    },
+                    {
+                      "type": "During",
+                      "value": {
+                        "scope": {
+                          "type": "PlayersTurn",
+                          "value": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          }
+                        },
+                        "window": {
+                          "type": "Step",
+                          "value": {
+                            "type": "PostcombatMain"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "During",
+                      "value": {
+                        "scope": {
+                          "type": "PlayersTurn",
+                          "value": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          }
+                        },
+                        "window": {
+                          "type": "EndingPhase"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "effects": [
+                  {
+                    "type": "Untap",
+                    "value": {
+                      "type": "EachMatching",
+                      "value": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasCardType",
+                            "value": "Creature"
+                          },
+                          {
+                            "type": "HeldBy",
+                            "value": {
+                              "holder": "Controller",
+                              "relation": "You"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

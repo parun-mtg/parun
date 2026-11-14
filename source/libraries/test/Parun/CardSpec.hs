@@ -2401,6 +2401,8 @@ namedTokens =
       -- Mole Man, Moloid Master's "a 1/1 green Minion creature token named
       -- Moloid".
       CardName.MkCardName (Text.pack "Moloid"),
+      -- Weapons Manufacturing's "a colorless artifact token named Munitions".
+      CardName.MkCardName (Text.pack "Munitions"),
       -- Mutable Explorer's "a tapped Mutavault token", the card Mutavault's
       -- characteristics under its name.
       CardName.MkCardName (Text.pack "Mutavault"),
