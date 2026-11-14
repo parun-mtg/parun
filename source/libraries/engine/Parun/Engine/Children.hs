@@ -3281,7 +3281,7 @@ objectRefChildren c ref = case ref of
   ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound bound filter_) -> fmap ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound <$> refSlot c bound <*> refFilter c filter_)
   ObjectRef.AttackedBy bound -> ObjectRef.AttackedBy <$> refSlot c bound
   -- CR 400.7j: which object the slot's card became is read off the zone moves.
-  ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere bound among) -> refLooksBack c HistoryRead.Moves *> fmap ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere <$> refSlot c bound <*> traverse (refSlot c) among)
+  ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere bound among reach) -> refLooksBack c HistoryRead.Moves *> fmap ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere <$> refSlot c bound <*> traverse (refSlot c) among <*> pure reach)
   ObjectRef.AllOf refs -> ObjectRef.AllOf <$> traverse (refNested c) refs
 
 -- | A battlefield choice's children (CR 608.2d): what it picks among, who

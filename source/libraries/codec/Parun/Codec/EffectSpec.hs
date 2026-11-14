@@ -190,6 +190,7 @@ import qualified Parun.Types.PutCounters as PutCounters
 import qualified Parun.Types.PutCountersFrom as PutCountersFrom
 import qualified Parun.Types.PutSticker as PutSticker
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.Reach as Reach
 import qualified Parun.Types.RedirectDamage as RedirectDamage
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.RemovalCount as RemovalCount
@@ -1364,7 +1365,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ExchangeOwnership (ExchangeOwnership.MkExchangeOwnership (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere {FromAnywhere.slot = SlotName.MkSlotName (Text.pack "self"), FromAnywhere.among = Nothing}))))
+      (Effect.ExchangeOwnership (ExchangeOwnership.MkExchangeOwnership (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) (ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere {FromAnywhere.slot = SlotName.MkSlotName (Text.pack "self"), FromAnywhere.among = Nothing, FromAnywhere.reach = Reach.PublicZone}))))
       " {\"type\":\"ExchangeOwnership\",\"value\":{\"one\":{\"type\":\"InSlot\",\"value\":\"target\"},\"other\":{\"type\":\"FromAnywhere\",\"value\":{\"slot\":\"self\"}}}} "
   -- CR 701.12d: the card and the top card of a library trade zones.
   Spec.it s "ExchangeCardZones" $

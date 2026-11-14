@@ -46,6 +46,7 @@
                           "other": {
                             "type": "FromAnywhere",
                             "value": {
+                              "reach": "AnyZone",
                               "slot": "self"
                             }
                           }
@@ -67,6 +68,7 @@
                           "ref": {
                             "type": "FromAnywhere",
                             "value": {
+                              "reach": "AnyZone",
                               "slot": "self"
                             }
                           },

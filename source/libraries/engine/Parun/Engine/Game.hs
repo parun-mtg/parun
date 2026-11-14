@@ -3880,6 +3880,19 @@ currentIncarnations oid gs
   | Map.member oid (GameState.objects gs) = [oid]
   | otherwise = concatMap (`currentIncarnations` gs) (arrivalsOf oid gs)
 
+-- CR 400.7j with no "from anywhere": the object this id is, or what its one
+-- logged zone change made of it where that change put it into a public zone
+-- (CR 400.2). One change and no further, since a second makes another new
+-- object (CR 400.7) that neither sentence of the rule reaches.
+publicIncarnations :: ObjectId -> GameState -> [ObjectId]
+publicIncarnations oid gs
+  | Map.member oid (GameState.objects gs) = [oid]
+  | otherwise = filter public (arrivalsOf oid gs)
+  where
+    public arrival = case zoneOf arrival gs of
+      Just zone -> not (isHiddenZone zone)
+      Nothing -> False
+
 -- CR 400.7: the ids a logged Moved entry naming this one as its DEPARTURE
 -- arrived as -- none for CR 111.7's token, several for a melded or merged
 -- permanent's split.

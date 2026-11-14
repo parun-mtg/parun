@@ -226,6 +226,7 @@ import qualified Parun.Types.PutSticker as PutSticker
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RandomCard as RandomCard
 import qualified Parun.Types.RandomCardInGraveyard as RandomCardInGraveyard
+import qualified Parun.Types.Reach as Reach
 import Parun.Types.Recipient (Recipient)
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RedirectDamage as RedirectDamage
@@ -518,7 +519,7 @@ objectRefSlots :: ObjectRef -> Map.Map SlotName SlotArity
 objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRefs ref))) $ case ref of
   ObjectRef.InSlot slot -> Map.singleton slot SlotArity.Many
   -- InSlot's read of the slot, never a target (CR 115.10a).
-  ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere slot among) -> Map.fromList [(named, SlotArity.Many) | named <- slot : Foldable.toList among]
+  ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere slot among _) -> Map.fromList [(named, SlotArity.Many) | named <- slot : Foldable.toList among]
   -- Rain of Daggers' "all creatures target opponent controls": the sweep's
   -- HeldByBound is the only read of its target slot.
   ObjectRef.EachMatching filter_ -> filterSlotsOf filter_
@@ -3038,10 +3039,15 @@ objectRefObjects legal resolving controller source gs ref = case ref of
   -- this turn's logged zone changes to the objects it is now -- and, given an
   -- `among`, kept only where that slot holds the incarnation too (CR 400.7j).
   -- The scenario ante-bronze-tablet-destroyed-in-response-trades-only-the-target
-  -- proves the `among` half.
-  ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere slot among) ->
+  -- proves the `among` half, and
+  -- heart-shaped-herb-cannot-return-a-darksteel-colossus-from-its-library the
+  -- public-zone `reach`.
+  ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere slot among reach) ->
     let held named = objectRefObjects legal resolving controller source gs (ObjectRef.InSlot named)
-        followed = concatMap (`Game.currentIncarnations` gs) (held slot)
+        follow = case reach of
+          Reach.PublicZone -> Game.publicIncarnations
+          Reach.AnyZone -> Game.currentIncarnations
+        followed = concatMap (`follow` gs) (held slot)
      in maybe followed (\named -> filter (`elem` held named) followed) among
   -- Each ref's objects in the order written, an object two refs name once.
   ObjectRef.AllOf refs -> ListUtils.nubOrd (concatMap (objectRefObjects legal resolving controller source gs) refs)

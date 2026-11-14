@@ -692,6 +692,7 @@ import qualified Parun.Codec.QuantitySpec
 import qualified Parun.Codec.QuestionSpec
 import qualified Parun.Codec.QuotientSpec
 import qualified Parun.Codec.RangeOfInfluenceSpec
+import qualified Parun.Codec.ReachSpec
 import qualified Parun.Codec.ReadinessSpec
 import qualified Parun.Codec.RecipientSpec
 import qualified Parun.Codec.RedirectDamageSpec
@@ -1769,6 +1770,7 @@ spec s reference corpus = do
   Parun.Codec.PutCountersSpec.spec s
   Parun.Codec.QuantitySpec.spec s
   Parun.Codec.RangeOfInfluenceSpec.spec s
+  Parun.Codec.ReachSpec.spec s
   Parun.Codec.ReadinessSpec.spec s
   Parun.Codec.RecipientSpec.spec s
   Parun.Codec.RedirectDamageSpec.spec s

@@ -3387,7 +3387,7 @@ clauseIsImpossible asked resolving source controller legal gs clause =
       definedBefore = List.scanl (\defined effect -> Set.union defined (boundSlots effect)) Set.empty effects
       readsOnly defined ref = case ref of
         ObjectRef.InSlot slot -> Set.member slot defined
-        ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere slot among) -> all (`Set.member` defined) (slot : Foldable.toList among)
+        ObjectRef.FromAnywhere (FromAnywhere.MkFromAnywhere slot among _) -> all (`Set.member` defined) (slot : Foldable.toList among)
         ObjectRef.AllOf refs -> all (readsOnly defined) refs
         _ -> False
       dependent defined effect =

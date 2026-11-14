@@ -1,0 +1,32 @@
+{
+  "description": "CR 400.7j bob sacrifices Darksteel Colossus to Heart-Shaped Herb, its replacement shuffles it into their library, and the Herb returns nothing from that hidden zone though bob still becomes the monarch",
+  "note": "The Colossus's replacement puts it into bob's library instead of their graveyard. CR 400.7j lets the Herb's return find the sacrificed card only in a public zone (CR 400.2), so it stays in the library. The sacrifice was still paid (CR 118.12), so the crowning happens.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Heart-Shaped Herb", "label": "herb" },
+          { "card": "Darksteel Colossus", "label": "colossus" },
+          { "card": "Plains", "label": "q1" },
+          { "card": "Plains", "label": "q2" }
+        ],
+        "library": [{ "card": "Island", "label": "i1" }, { "card": "Island", "label": "i2" }, { "card": "Island", "label": "i3" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Activate": { "object": "$herb", "mana": ["$q1", "$q2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "ChooseToPay": { "decision": "Pays" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "Shuffle", "with": ["$i1", "Darksteel Colossus", "$i2", "$i3"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Darksteel Colossus", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "Count": { "player": "bob", "zone": "Library", "card": "Darksteel Colossus", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "Monarch": { "player": "bob" } } }
+  ]
+}

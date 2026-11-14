@@ -1476,6 +1476,8 @@ library codec
     Parun.Codec.RandomCardInGraveyard
     Parun.Codec.RangeOfInfluence
     Parun.Codec.RangeOfInfluenceSpec
+    Parun.Codec.Reach
+    Parun.Codec.ReachSpec
     Parun.Codec.Readiness
     Parun.Codec.ReadinessSpec
     Parun.Codec.Recipient
@@ -3473,6 +3475,7 @@ library types
     Parun.Types.RandomCard
     Parun.Types.RandomCardInGraveyard
     Parun.Types.RangeOfInfluence
+    Parun.Types.Reach
     Parun.Types.Readiness
     Parun.Types.Recipient
     Parun.Types.RedirectDamage
