@@ -6,15 +6,22 @@ import qualified Parun.Codec.FreeCast as FreeCast
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.Anchor as Anchor
+import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.Comparison as Comparison
+import qualified Parun.Types.CostAmount as CostAmount
+import qualified Parun.Types.CostComponent as CostComponent
+import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FreeCast as FreeCast
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Measures as Measures
+import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TurnOrdinal as TurnOrdinal
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.Zone as Zone
@@ -27,14 +34,14 @@ spec s = Spec.describe s "Parun.Codec.FreeCast" $ do
     Common.assertCodec
       s
       FreeCast.codec
-      (FreeCast.MkFreeCast {FreeCast.spells = Filter.And [], FreeCast.amount = Nothing, FreeCast.from = Nothing, FreeCast.onlyNth = Nothing})
+      (FreeCast.MkFreeCast {FreeCast.spells = Filter.And [], FreeCast.instead = [], FreeCast.amount = Nothing, FreeCast.from = Nothing, FreeCast.onlyNth = Nothing})
       " {\"spells\":{\"type\":\"And\",\"value\":[]}} "
   -- Omniscience: "from your hand".
   Spec.it s "MkFreeCast, from written" $
     Common.assertCodec
       s
       FreeCast.codec
-      (FreeCast.MkFreeCast {FreeCast.spells = Filter.And [], FreeCast.amount = Nothing, FreeCast.from = Just Zone.Hand, FreeCast.onlyNth = Nothing})
+      (FreeCast.MkFreeCast {FreeCast.spells = Filter.And [], FreeCast.instead = [], FreeCast.amount = Nothing, FreeCast.from = Just Zone.Hand, FreeCast.onlyNth = Nothing})
       " {\"spells\":{\"type\":\"And\",\"value\":[]},\"from\":\"Hand\"} "
   -- Omnipresence: the number the spells' mana value compares against.
   Spec.it s "MkFreeCast, amount written" $
@@ -43,6 +50,7 @@ spec s = Spec.describe s "Parun.Codec.FreeCast" $ do
       FreeCast.codec
       ( FreeCast.MkFreeCast
           { FreeCast.spells = Filter.Measures (Measures.MkMeasures Measure.ManaValue Comparison.AtMost Operand.EnclosingAmount),
+            FreeCast.instead = [],
             FreeCast.amount = Just (Quantity.Literal 2),
             FreeCast.from = Nothing,
             FreeCast.onlyNth = Nothing
@@ -54,8 +62,22 @@ spec s = Spec.describe s "Parun.Codec.FreeCast" $ do
     Common.assertCodec
       s
       FreeCast.codec
-      (FreeCast.MkFreeCast {FreeCast.spells = Filter.And [], FreeCast.amount = Nothing, FreeCast.from = Nothing, FreeCast.onlyNth = Just (TurnOrdinal.MkTurnOrdinal (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) 1)})
+      (FreeCast.MkFreeCast {FreeCast.spells = Filter.And [], FreeCast.instead = [], FreeCast.amount = Nothing, FreeCast.from = Nothing, FreeCast.onlyNth = Just (TurnOrdinal.MkTurnOrdinal (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) 1)})
       " {\"spells\":{\"type\":\"And\",\"value\":[]},\"onlyNth\":{\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"ordinal\":1}} "
+  -- Dream Halls: a discard sharing a colour with the spell, paid instead.
+  Spec.it s "MkFreeCast, instead written" $
+    Common.assertCodec
+      s
+      FreeCast.codec
+      ( FreeCast.MkFreeCast
+          { FreeCast.spells = Filter.And [],
+            FreeCast.instead = [CostComponent.DiscardCards (DiscardCards.MkDiscardCards (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Shares Trait.Color Anchor.Source) CardSelection.ByChoice)],
+            FreeCast.amount = Nothing,
+            FreeCast.from = Nothing,
+            FreeCast.onlyNth = Nothing
+          }
+      )
+      " {\"spells\":{\"type\":\"And\",\"value\":[]},\"instead\":[{\"type\":\"DiscardCards\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichCards\":{\"type\":\"Shares\",\"value\":{\"trait\":{\"type\":\"Color\"},\"anchor\":{\"type\":\"Source\"}}}}}]} "
   Spec.it s "refuses onlyNth beside amount" $
     Spec.assertBool
       s

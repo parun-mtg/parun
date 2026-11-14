@@ -737,7 +737,7 @@ prohibitsCasting pid oid variable gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -891,7 +891,7 @@ prohibitsPlayingLand pid oid gs =
         -- CR 118.9's alternative cost says what a SPELL pays, and a land is
         -- never cast (CR 305.1) -- so this permission neither allows nor
         -- prohibits a land play, whatever its Filter reads.
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -957,7 +957,7 @@ searchPortion pid gs =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -1049,7 +1049,7 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -1167,7 +1167,7 @@ prohibitsCounters pid kind gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
         PlayerEffect.AdditionalVotes _ -> False
@@ -1245,7 +1245,7 @@ stateBasedActionDoesntApplyTo action pid oid gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -1311,7 +1311,7 @@ schemesCantBeSetInMotion gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -1389,7 +1389,7 @@ moveTriggerings move pid subject effects board =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -1477,7 +1477,7 @@ additionalTriggers pid bearer gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -1543,7 +1543,7 @@ prohibitsAttackingWithCreatures pid gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -2296,7 +2296,7 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.CastFrom _ -> Nothing
   PlayerEffect.PlayLandsFrom _ -> Nothing
   PlayerEffect.PlotFrom _ -> Nothing
-  PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+  PlayerEffect.PayRatherThanManaCost _ -> Nothing
   PlayerEffect.CantGetCounters _ -> Nothing
   PlayerEffect.StateCoinFlip _ -> Nothing
   PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -2565,9 +2565,9 @@ castFromGrantOf effect = case effect of
   PlayerEffect.PlotFrom _ -> Nothing
   -- A COST and not a permission at all: Omniscience says what a spell
   -- pays, never where it may be cast from, so it opens no zone.
-  -- mayCastWithoutPayingManaCost below is its one reader, and CR
+  -- ratherThanManaCost below is its one reader, and CR
   -- 601.3's permission is still owed separately.
-  PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+  PlayerEffect.PayRatherThanManaCost _ -> Nothing
   PlayerEffect.CantGetCounters _ -> Nothing
   PlayerEffect.StateCoinFlip _ -> Nothing
   PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -2845,20 +2845,21 @@ mayPlotFrom pid zone oid gs =
     | (source, PlayerEffect.PlotFrom grant) <- applying pid gs
     ]
 
--- CR 118.9 / Omniscience, World War Hulk: may `pid` cast `oid` without paying
--- its mana cost, because an EFFECT applies that alternative cost to it?
+-- CR 118.9 / Omniscience, Dream Halls: what may `pid` pay rather than `oid`'s
+-- mana cost, because an EFFECT applies that alternative cost to it? One list of
+-- components per distinct cost, empty for "without paying its mana cost".
 --
 -- The typed question Parun.Engine.Cost.candidateCostsFor asks wherever it
 -- offers the printed cost, so that module never sees a PlayerEffect
 -- constructor. NOT a permission and so not asked beside the two above: what
--- this adds is one more CR 601.2b candidate. Answering True where CR 601.3
+-- this adds is one more CR 601.2b candidate each. Answering where CR 601.3
 -- forbids the cast anyway changes nothing, because Parun.Engine.Cast.castable
 -- demands a permission alongside an affordable candidate.
 --
 -- A DISJUNCTION, for mayCastFromGraveyard's reason: an alternative cost is
 -- OFFERED rather than imposed (CR 118.9b), so two effects offering the same
--- {0} give the player the same one choice and CR 613.11's timestamp order has
--- nothing to order. CR 118.9a's "only one alternative cost" is not this
+-- {0} give the player the same one choice -- hence the nub -- and CR 613.11's
+-- timestamp order has nothing to order. CR 118.9a's "only one alternative cost" is not this
 -- function's to enforce -- it is CR 601.2b's announcement picking one candidate
 -- from the list.
 --
@@ -2869,79 +2870,79 @@ mayPlotFrom pid zone oid gs =
 -- A grant's `from` is the GRANTEE's zone: Omniscience's "from YOUR hand" says
 -- nothing of alice's cast from bob's hand under Sen Triplets (see #2169), so
 -- the card's owner is asked beside its zone.
-mayCastWithoutPayingManaCost :: PlayerId -> ObjectId -> GameState -> Bool
-mayCastWithoutPayingManaCost pid oid gs =
+ratherThanManaCost :: PlayerId -> ObjectId -> GameState -> [[CostComponent.CostComponent Keyword]]
+ratherThanManaCost pid oid gs =
   let inTheirOwn zone = Game.zoneOf oid gs == Just zone && fmap Object.owner (Game.lookupObject oid gs) == Just pid
       allows (source, effect) = case effect of
-        PlayerEffect.CastWithoutPayingManaCost grant -> all inTheirOwn (FreeCast.from grant) && freeCastAdmits pid source grant oid gs
-        PlayerEffect.CantGetCounters _ -> False
-        PlayerEffect.StateCoinFlip _ -> False
-        PlayerEffect.ModifyDieRoll _ -> False
-        PlayerEffect.AdditionalVotes _ -> False
-        PlayerEffect.AdditionalSurveilCards _ -> False
-        PlayerEffect.Cant _ -> False
-        PlayerEffect.RevealsDraw _ -> False
-        PlayerEffect.Precluded _ -> False
-        PlayerEffect.Shows _ -> False
+        PlayerEffect.PayRatherThanManaCost grant -> if all inTheirOwn (FreeCast.from grant) && freeCastAdmits pid source grant oid gs then Just (FreeCast.instead grant) else Nothing
+        PlayerEffect.CantGetCounters _ -> Nothing
+        PlayerEffect.StateCoinFlip _ -> Nothing
+        PlayerEffect.ModifyDieRoll _ -> Nothing
+        PlayerEffect.AdditionalVotes _ -> Nothing
+        PlayerEffect.AdditionalSurveilCards _ -> Nothing
+        PlayerEffect.Cant _ -> Nothing
+        PlayerEffect.RevealsDraw _ -> Nothing
+        PlayerEffect.Precluded _ -> Nothing
+        PlayerEffect.Shows _ -> Nothing
         -- The CR 601.3 permissions, which say WHERE a spell may be cast from and
         -- WHEN. Neither states a cost, which is the whole reason this arm is its
         -- own: Yawgmoth's Will's cast pays the card's printed cost.
-        PlayerEffect.CastFrom _ -> False
-        PlayerEffect.CastAsThoughItHadFlash {} -> False
-        PlayerEffect.MayPlayAsThoughItHadFlash _ -> False
-        PlayerEffect.KeywordRiderGrant _ -> False
-        PlayerEffect.LoyaltyGrant _ -> False
-        PlayerEffect.MayTapForMana _ -> False
-        PlayerEffect.PlayLandsFrom _ -> False
-        PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.PlayAdditionalLands _ -> False
-        PlayerEffect.CantCastSpells -> False
-        PlayerEffect.CantActivateAbilities {} -> False
-        PlayerEffect.CantCastMoreThan _ -> False
+        PlayerEffect.CastFrom _ -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
+        PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.KeywordRiderGrant _ -> Nothing
+        PlayerEffect.LoyaltyGrant _ -> Nothing
+        PlayerEffect.MayTapForMana _ -> Nothing
+        PlayerEffect.PlayLandsFrom _ -> Nothing
+        PlayerEffect.PlotFrom _ -> Nothing
+        PlayerEffect.PlayAdditionalLands _ -> Nothing
+        PlayerEffect.CantCastSpells -> Nothing
+        PlayerEffect.CantActivateAbilities {} -> Nothing
+        PlayerEffect.CantCastMoreThan _ -> Nothing
         -- CR 118.7's increases and reductions, which change what a cost COMES
         -- TO; this arm supplies a different cost to start from (CR 118.9c). The
         -- two compose at Parun.Engine.Cost.total, which is handed whichever
         -- candidate CR 601.2b settled on -- so a reduction applied to {0} still
         -- floors at {0} and neither reader knows of the other.
-        PlayerEffect.ModifyCost {} -> False
-        PlayerEffect.AlternativeActivationCost {} -> False
-        PlayerEffect.NoMaximumHandSize -> False
-        PlayerEffect.SetMaximumHandSize _ -> False
-        PlayerEffect.IncreaseMaximumHandSize _ -> False
-        PlayerEffect.IncreaseDevotion _ -> False
-        PlayerEffect.ReduceMaximumHandSize _ -> False
-        PlayerEffect.DontLoseUnspentMana {} -> False
-        PlayerEffect.LoseLifeForUnspentMana -> False
-        PlayerEffect.MayPayLifeForMana {} -> False
-        PlayerEffect.SpendManaAsThough _ -> False
-        PlayerEffect.CantBeTargetedBy {} -> False
-        PlayerEffect.CantBeCountered _ -> False
-        PlayerEffect.NextSpell _ _ -> False
-        PlayerEffect.RestrictTargeting _ -> False
-        PlayerEffect.TargetPastHexproof _ -> False
-        PlayerEffect.DamageCantBePrevented _ -> False
-        PlayerEffect.DamageCantBeRedirected _ -> False
-        PlayerEffect.DamageAsThoughSourceHad {} -> False
-        PlayerEffect.CantSearchLibraries _ -> False
-        PlayerEffect.SearchesTopOfLibraries _ -> False
-        PlayerEffect.HasProtectionFrom _ -> False
-        PlayerEffect.StateBasedActionDoesntApply _ _ -> False
-        PlayerEffect.CantSetSchemesInMotion -> False
-        PlayerEffect.EntriesTrigger _ -> False
-        PlayerEffect.AdditionalTriggers _ -> False
-        PlayerEffect.ControlledWhileSearching -> False
-        PlayerEffect.BlocksFromPiles -> False
-        PlayerEffect.YouChoose _ -> False
-        PlayerEffect.ExilesFoundWhileSearching -> False
-        PlayerEffect.CantAttackWithCreatures -> False
+        PlayerEffect.ModifyCost {} -> Nothing
+        PlayerEffect.AlternativeActivationCost {} -> Nothing
+        PlayerEffect.NoMaximumHandSize -> Nothing
+        PlayerEffect.SetMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
+        PlayerEffect.ReduceMaximumHandSize _ -> Nothing
+        PlayerEffect.DontLoseUnspentMana {} -> Nothing
+        PlayerEffect.LoseLifeForUnspentMana -> Nothing
+        PlayerEffect.MayPayLifeForMana {} -> Nothing
+        PlayerEffect.SpendManaAsThough _ -> Nothing
+        PlayerEffect.CantBeTargetedBy {} -> Nothing
+        PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
+        PlayerEffect.RestrictTargeting _ -> Nothing
+        PlayerEffect.TargetPastHexproof _ -> Nothing
+        PlayerEffect.DamageCantBePrevented _ -> Nothing
+        PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
+        PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
+        PlayerEffect.HasProtectionFrom _ -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
+        PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.EntriesTrigger _ -> Nothing
+        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.ControlledWhileSearching -> Nothing
+        PlayerEffect.BlocksFromPiles -> Nothing
+        PlayerEffect.YouChoose _ -> Nothing
+        PlayerEffect.ExilesFoundWhileSearching -> Nothing
+        PlayerEffect.CantAttackWithCreatures -> Nothing
         -- The PROHIBITIONS, read at their own gate (prohibitsCasting above): CR
         -- 101.2 makes a "can't" beat any cost this offers, and folding them here
         -- would let a permission outvote one.
-        PlayerEffect.CantCastMatching _ -> False
-        PlayerEffect.PutTappedAsYouCascade _ -> False
-        PlayerEffect.CastOnlyAtSorcerySpeed -> False
-        PlayerEffect.CantPlayLands _ -> False
-   in any allows (applying pid gs)
+        PlayerEffect.CantCastMatching _ -> Nothing
+        PlayerEffect.PutTappedAsYouCascade _ -> Nothing
+        PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.CantPlayLands _ -> Nothing
+   in ListUtils.nubOrd (Maybe.mapMaybe allows (applying pid gs))
 
 -- CR 305.1: which piles may `pid` play a land from because an EFFECT says so?
 -- Crucible of Worlds' whole sentence, the play half of Yawgmoth's Will's first
@@ -3027,7 +3028,7 @@ playLandPiles pid gs =
         PlayerEffect.CantPlayLands _ -> []
         -- A cost, not a zone: CR 118.9's grant says what a spell PAYS and
         -- widens no pile a land may be played from.
-        PlayerEffect.CastWithoutPayingManaCost _ -> []
+        PlayerEffect.PayRatherThanManaCost _ -> []
         PlayerEffect.CantGetCounters _ -> []
         PlayerEffect.StateCoinFlip _ -> []
         PlayerEffect.ModifyDieRoll _ -> []
@@ -3146,7 +3147,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -3260,7 +3261,7 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -3358,7 +3359,7 @@ protectionCarriers gs =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -3449,7 +3450,7 @@ landPlaysAllowed pid gs =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -3532,7 +3533,7 @@ votesAllowed pid gs =
         PlayerEffect.CastFrom {} -> Nothing
         PlayerEffect.PlayLandsFrom {} -> Nothing
         PlayerEffect.PlotFrom {} -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost {} -> Nothing
+        PlayerEffect.PayRatherThanManaCost {} -> Nothing
         PlayerEffect.CantGetCounters {} -> Nothing
         PlayerEffect.StateCoinFlip {} -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -3601,7 +3602,7 @@ offeredExtras pid gs =
         PlayerEffect.CastFrom {} -> False
         PlayerEffect.PlayLandsFrom {} -> False
         PlayerEffect.PlotFrom {} -> False
-        PlayerEffect.CastWithoutPayingManaCost {} -> False
+        PlayerEffect.PayRatherThanManaCost {} -> False
         PlayerEffect.CantGetCounters {} -> False
         PlayerEffect.StateCoinFlip {} -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -3671,7 +3672,7 @@ cascadeActions pid gs =
         PlayerEffect.CastFrom {} -> Nothing
         PlayerEffect.PlayLandsFrom {} -> Nothing
         PlayerEffect.PlotFrom {} -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost {} -> Nothing
+        PlayerEffect.PayRatherThanManaCost {} -> Nothing
         PlayerEffect.CantGetCounters {} -> Nothing
         PlayerEffect.StateCoinFlip {} -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -3740,7 +3741,7 @@ drawReveals pid nth gs =
         PlayerEffect.CastFrom {} -> Nothing
         PlayerEffect.PlayLandsFrom {} -> Nothing
         PlayerEffect.PlotFrom {} -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost {} -> Nothing
+        PlayerEffect.PayRatherThanManaCost {} -> Nothing
         PlayerEffect.CantGetCounters {} -> Nothing
         PlayerEffect.StateCoinFlip {} -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -3808,7 +3809,7 @@ shownGrants pid gs =
         PlayerEffect.CastFrom {} -> Nothing
         PlayerEffect.PlayLandsFrom {} -> Nothing
         PlayerEffect.PlotFrom {} -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost {} -> Nothing
+        PlayerEffect.PayRatherThanManaCost {} -> Nothing
         PlayerEffect.CantGetCounters {} -> Nothing
         PlayerEffect.StateCoinFlip {} -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -3911,7 +3912,7 @@ maximumHandSize pid gs =
         PlayerEffect.CastFrom _ -> current
         PlayerEffect.PlayLandsFrom _ -> current
         PlayerEffect.PlotFrom _ -> current
-        PlayerEffect.CastWithoutPayingManaCost _ -> current
+        PlayerEffect.PayRatherThanManaCost _ -> current
         PlayerEffect.CantGetCounters _ -> current
         PlayerEffect.StateCoinFlip _ -> current
         PlayerEffect.ModifyDieRoll _ -> current
@@ -4022,7 +4023,7 @@ unspentManaRows pid gs =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -4101,7 +4102,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -4191,7 +4192,7 @@ forbids reaches pid gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -4312,7 +4313,7 @@ precludes outcome pid gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -4390,7 +4391,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -4552,7 +4553,7 @@ cantBeCountered pid counterer oid gs =
         PlayerEffect.CastFrom _ -> False
         PlayerEffect.PlayLandsFrom _ -> False
         PlayerEffect.PlotFrom _ -> False
-        PlayerEffect.CastWithoutPayingManaCost _ -> False
+        PlayerEffect.PayRatherThanManaCost _ -> False
         PlayerEffect.CantGetCounters _ -> False
         PlayerEffect.StateCoinFlip _ -> False
         PlayerEffect.ModifyDieRoll _ -> False
@@ -4617,7 +4618,7 @@ targetingRestrictions =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -4701,7 +4702,7 @@ hexproofExemptions =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -4796,7 +4797,7 @@ unpreventable gs =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -4882,7 +4883,7 @@ unredirectable gs =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -4952,7 +4953,7 @@ damageAsThough gs =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
         PlayerEffect.StateCoinFlip _ -> Nothing
         PlayerEffect.ModifyDieRoll _ -> Nothing
@@ -5068,7 +5069,7 @@ statedFlips pid gs =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
    in Maybe.mapMaybe (says . snd) (applying pid gs)
 
@@ -5150,7 +5151,7 @@ rollModifiers pid gs =
         PlayerEffect.CastFrom _ -> Nothing
         PlayerEffect.PlayLandsFrom _ -> Nothing
         PlayerEffect.PlotFrom _ -> Nothing
-        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.PayRatherThanManaCost _ -> Nothing
         PlayerEffect.CantGetCounters _ -> Nothing
    in Maybe.mapMaybe (\(source, effect) -> fmap ((,) (RowSource.object source)) (modifies effect)) (applying pid gs)
 
@@ -5197,7 +5198,7 @@ castUse effect = case effect of
   -- to an ordinal answers Nothing for the targets' reason: `spells` alone would
   -- spend it on a spell outside its `amount`, `from` or `onlyNth`. No card in
   -- `data/cards/` writes one under Duration.UntilUsed.
-  PlayerEffect.CastWithoutPayingManaCost grant
+  PlayerEffect.PayRatherThanManaCost grant
     | Maybe.isNothing (FreeCast.amount grant) && Maybe.isNothing (FreeCast.from grant) && Maybe.isNothing (FreeCast.onlyNth grant) -> Just (FreeCast.spells grant)
   PlayerEffect.NextSpell criterion _ -> Just criterion
   _ -> fst <$> castFlashGrant effect
@@ -5288,7 +5289,7 @@ overPlayerRefs f effect = case effect of
     fmap (\ref -> PlayerEffect.PlayLandsFrom inZone {InZone.player = ref}) (f (InZone.player inZone))
   PlayerEffect.PlotFrom grant ->
     fmap (\ref -> PlayerEffect.PlotFrom grant {PlotFromZone.from = (PlotFromZone.from grant) {InZone.player = ref}}) (f (InZone.player (PlotFromZone.from grant)))
-  PlayerEffect.CastWithoutPayingManaCost _ -> pure effect
+  PlayerEffect.PayRatherThanManaCost _ -> pure effect
   PlayerEffect.CantGetCounters _ -> pure effect
   PlayerEffect.StateCoinFlip _ -> pure effect
   PlayerEffect.ModifyDieRoll _ -> pure effect
@@ -5385,7 +5386,7 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.CastFrom _ -> pure effect
   PlayerEffect.PlayLandsFrom _ -> pure effect
   PlayerEffect.PlotFrom _ -> pure effect
-  PlayerEffect.CastWithoutPayingManaCost _ -> pure effect
+  PlayerEffect.PayRatherThanManaCost _ -> pure effect
   PlayerEffect.CantGetCounters _ -> pure effect
   PlayerEffect.StateCoinFlip _ -> pure effect
   PlayerEffect.ModifyDieRoll _ -> pure effect

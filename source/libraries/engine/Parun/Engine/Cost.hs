@@ -917,7 +917,15 @@ candidateCostsGiven permitted pid name oid gs =
               -- Hulk) no per-card list can hold. Untagged, `untagged`'s reason.
               -- CR 107.3b's "the only legal choice for X is 0" is
               -- fixedXUnlessPaid's, which insteadOfManaCost applies.
-              freeCast = if PlayerEffect.mayCastWithoutPayingManaCost pid oid gs then [untagged (withoutPayingManaCost face)] else []
+              --
+              -- A grant stating a payment (Dream Halls' discard) lays it beside
+              -- the face's additional costs, CR 118.9d; its filter reads the
+              -- spell, discardCandidates' Source.
+              freeCast =
+                [ untagged (free {Cost.components = instead <> Cost.components free})
+                | let free = withoutPayingManaCost face,
+                  instead <- PlayerEffect.ratherThanManaCost pid oid gs
+                ]
               ordinary = untagged printed : alternatives <> bestowed <> prototyped <> mutated <> evoked <> emerged <> surged <> spectacled <> prowled <> freerun <> freeCast
            in -- CR 118.8 / 601.2b: every candidate below owes this face's choice
               -- costs, whichever of them the caster announces, so the expansion
@@ -5944,7 +5952,9 @@ paidInSecondPass slots pid oid gs component = case component of
   -- CR 701.20a shows the cards and CR 701.20b moves none, so the first pass holds it.
   CostComponent.RevealTopOfLibrary _ -> False
   -- CR 601.2h's RANDOM half reaches a discard only at random; Parun.CostSpec's
-  -- "a random discard is paid after a chosen one" proves it.
+  -- "a random discard is paid after a chosen one" proves it, and the scenario
+  -- cr-601-2h-sonic-burst-under-dream-halls-discards-the-chosen-card-before-the-random-one
+  -- at gameplay level.
   CostComponent.DiscardCards (DiscardCards.MkDiscardCards (ObjectCount.Exactly _) _ CardSelection.AtRandom) -> True
   CostComponent.DiscardCards {} -> False
   -- A HAND is not a library (CR 400.2 makes both hidden, which is not what rule
