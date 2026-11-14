@@ -1,0 +1,101 @@
+{
+  "description": "CR 107.3a / 405.6c Springjack Pasture sacrificing no Goats adds no mana and gains no life",
+  "note": "alice announces X = 0: both Mountain Goats stay, the pool stays empty and her life stays at 20, its ruling's reading.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Springjack Pasture",
+            "label": "pasture",
+            "ready": true
+          },
+          {
+            "card": "Mountain Goat",
+            "label": "g1",
+            "ready": true
+          },
+          {
+            "card": "Mountain Goat",
+            "label": "g2",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $pasture",
+          "mana": [],
+          "x": 0,
+          "yields": [
+            []
+          ],
+          "costOrder": [
+            0,
+            1
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "ManaPool",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 20
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ],
+  "final": [
+    {
+      "Count": {
+        "card": "Mountain Goat",
+        "count": 0,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Mountain Goat",
+        "count": 2,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$pasture",
+        "tapped": true
+      }
+    }
+  ]
+}

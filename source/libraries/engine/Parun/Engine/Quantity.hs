@@ -147,8 +147,8 @@ evaluate viewOf context gs oid = evaluateFor viewOf context gs oid oid
 -- Resolve.bindAmountSlot writes to the effect's source mid-resolution (Bane of
 -- Progress binds and reads one inside a TRIGGERED ability, where the two ids
 -- differ), Event.eventBindings writes to the stack object as a trigger is
--- gathered, and Resolve.runPreventionRider writes the ambient channel, which
--- belongs to no object at all. See the arm itself.
+-- gathered, and Resolve.runPreventionRider and Cost.tapForManaWith write the
+-- ambient channel, which belongs to no object at all. See the arm itself.
 evaluateFor :: Count.ViewOf -> Filter.Context -> GameState -> ObjectId -> ObjectId -> Quantity -> Maybe Integer
 evaluateFor viewOf context gs announcedOn oid = evaluateAgainst viewOf context gs announcedOn (Just oid) (viewOf oid)
 
@@ -286,6 +286,10 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         --     reading above is disturbed, and it can collide with none of them: the
         --     map is empty except while a rider runs, and a rider's own effects are the
         --     only readers alive then.
+        --   * Cost.tapForManaWith writes it too, for the span of one mana ability's
+        --     clauses: what its cost paid, Springjack Pasture's X, CR 605.3b leaving
+        --     no ability object to bind it on. The source it reads first is a
+        --     permanent, which never carries the reserved payment slots.
         --
         -- The source is asked first so the existing reading is untouched, and the two
         -- cannot collide over one name: a mid-resolution bind names a slot the CARD
