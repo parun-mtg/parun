@@ -8,4 +8,6 @@ data RuleWaiver
     AttackSickness
   | -- | CR 302.6's {T}/{Q} half: "you may activate abilities of creatures you control as though those creatures had haste".
     ActivationSickness
+  | -- | CR 514.2: "damage isn't removed from this creature during cleanup steps".
+    CleanupDamage
   deriving (Bounded, Enum, Eq, Ord, Show)

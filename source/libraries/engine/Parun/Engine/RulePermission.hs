@@ -1,11 +1,13 @@
--- CR 702.3b / 302.6 / 613.11: the continuous effects that let a creature attack
--- past defender or summoning sickness, or have its {T} and {Q} abilities
--- activated past summoning sickness. One of the modules on the axis CR 613.11 reaches past the layer
--- system, alongside Parun.Engine.BlockPermission and
--- Parun.Engine.CombatRestriction; none is a layer.
+-- CR 702.3b / 302.6 / 514.2 / 613.11: the continuous effects that let a creature
+-- attack past defender or summoning sickness, have its {T} and {Q} abilities
+-- activated past summoning sickness, or keep its damage through cleanup. One of
+-- the modules on the axis CR 613.11 reaches past the layer system, alongside
+-- Parun.Engine.BlockPermission and Parun.Engine.CombatRestriction; none is a
+-- layer.
 --
--- The only reader of Parun.Types.RulePermission. Parun.Engine.Combat and
--- Parun.Engine.Cost ask for a SET and never learn which card produced it.
+-- The only reader of Parun.Types.RulePermission. Parun.Engine.Combat,
+-- Parun.Engine.Cost and Parun.Engine.Damage ask for a SET and never learn which
+-- card produced it.
 module Parun.Engine.RulePermission where
 
 import Data.Set (Set)
