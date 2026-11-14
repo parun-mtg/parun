@@ -541,7 +541,9 @@ discardToHandSize pid = do
 -- 800.1 makes a multiplayer game one that BEGINS with more than two players, and
 -- turnOrder is the permanent roster, so a three-player game down to two
 -- survivors still does not skip. The whole step is skipped (CR 500.11), not just
--- its draw: runStep asks this ahead of the replacement system.
+-- its draw: runStep asks this ahead of the replacement system. Every draw step
+-- of that turn, a CR 500.8 added one included (docs/decisions.md, "Whether an
+-- added draw step on the first turn is skipped").
 skipsDraw :: GameState -> Bool
 skipsDraw gs =
   TurnRegisters.turnNumber (GameState.turn gs) == 1

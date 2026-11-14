@@ -421,11 +421,17 @@ jumpToCleanup remaining = case Seq.elemIndexL (Phase.Ending EndingStep.Cleanup) 
   Nothing -> spliceExtraCleanup remaining
   Just i -> Seq.drop i remaining
 
--- The steps one added phase expands to. CR 506.1 fixes the combat phase's five
--- and their order; CR 505.2 ("The main phase has no steps") is why a main phase
--- is one element.
+-- The steps one added phase expands to. CR 501.1 fixes the beginning phase's
+-- three and CR 506.1 the combat phase's five, each in order; CR 505.2 ("The main
+-- phase has no steps") is why a main phase is one element.
 expandExtraPhase :: ExtraPhase -> Seq Phase
 expandExtraPhase extra = case extra of
+  ExtraPhase.ExtraBeginning ->
+    Seq.fromList
+      [ Phase.Beginning BeginningStep.Untap,
+        Phase.Beginning BeginningStep.Upkeep,
+        Phase.Beginning BeginningStep.DrawStep
+      ]
   ExtraPhase.ExtraCombat ->
     Seq.fromList
       [ Phase.Combat CombatStep.BeginningOfCombat,
