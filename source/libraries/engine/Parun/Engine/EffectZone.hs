@@ -234,6 +234,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.LoseGame {} -> Set.empty
   Effect.WinGame {} -> Set.empty
   Effect.DrawGame {} -> Set.empty
+  Effect.ReverseTurnOrder {} -> Set.empty
   Effect.RedistributeLifeTotals -> Set.empty
   Effect.IncreaseSpeed {} -> Set.empty
   Effect.DecreaseSpeed {} -> Set.empty
@@ -294,6 +295,7 @@ zonesFunctionedAgainst itself delayed effect = case effect of
   Effect.Meld {} -> Set.empty
   Effect.PhaseOut _ -> Set.empty
   Effect.AddPhases _ -> Set.empty
+  Effect.AddStep _ -> Set.empty
   Effect.EndTurn -> Set.empty
   Effect.EndCombatPhase -> Set.empty
   Effect.GainControl (GainControl.MkGainControl {}) -> Set.empty

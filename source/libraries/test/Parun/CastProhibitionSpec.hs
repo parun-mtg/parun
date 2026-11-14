@@ -248,7 +248,7 @@ ceaseFireSpec s registry =
       piker <- S.printingOf s registry "Goblin Piker"
       lightningBolt <- S.printingOf s registry "Lightning Bolt"
       let (alicesPiker, bobsPiker, carolsPiker, _, before, _) = ceaseFireAfter plains ceaseFire mountain piker lightningBolt
-      Spec.assertEqWith s "three seats" (length (GameState.turnOrder before)) 3
+      Spec.assertEqWith s "three seats" (length (GameState.seating before)) 3
       Spec.assertBool s (offersCast S.alice alicesPiker piker before) "alice could cast"
       Spec.assertBool s (offersCast S.bob bobsPiker piker before) "bob could cast"
       Spec.assertBool s (offersCast S.carol carolsPiker piker before) "carol could cast"

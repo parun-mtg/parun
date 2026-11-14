@@ -1187,7 +1187,7 @@ proliferate source controller legal targeted = case targeted of
     let recipients = Set.toList (Map.findWithDefault Set.empty slot legal)
         permanents = Maybe.mapMaybe Recipient.objectOf recipients
         players = [pid | Recipient.ToPlayer pid <- recipients]
-    Common.giveAnotherOfEachKind controller gs permanents players
+    Common.giveAnotherOfEachKind source controller gs permanents players
 
 -- CR 701.39a: "bolster N" -- put N +1/+1 counters on a creature you control
 -- with the least toughness, or tied for least. The prompt is raised only for a
@@ -1841,6 +1841,22 @@ addPhases extras =
             }
       }
 
+-- CR 500.9: add the step directly after the one this is resolving in, which is
+-- the head of `remaining`.
+--
+-- Not implemented: an added end step is read as the ending phase beginning
+-- again (Turn.phaseBeginningAt), so a CR 614.10 ending-phase skip would take it
+-- (#7583).
+addStep :: Phase.Phase -> Game ()
+addStep step =
+  State.modify' $ \gs ->
+    gs
+      { GameState.turn =
+          (GameState.turn gs)
+            { TurnRegisters.remaining = Turn.spliceStep step (TurnRegisters.remaining (GameState.turn gs))
+            }
+      }
+
 -- CR 725.1: end the turn (Time Stop). Rule 725.1's six steps, in its own order,
 -- and deliberately NOT the CR 608 process the fold around this is running.
 endTurn :: (Game Result -> PendingReplacementEffect.PendingReplacementEffect -> Game ()) -> (Game Result -> Game ()) -> Game Result -> Game ()
@@ -1936,7 +1952,7 @@ endTurn runDamageRewriteEffect runReplacementEffects runSubgame = do
           Phase.Ending _ -> cleared
           _ -> maybe cleared (\ending -> Mana.endRetentionAtEndOf ending (Expiry.dropAtEndOf ending cleared)) (Turn.wholePhaseOf phase)
         jumped = case phase of
-          Phase.Ending EndingStep.Cleanup -> Turn.spliceExtraCleanup (TurnRegisters.remaining (GameState.turn gs))
+          Phase.Ending EndingStep.Cleanup -> Turn.spliceStep (Phase.Ending EndingStep.Cleanup) (TurnRegisters.remaining (GameState.turn gs))
           _ -> Turn.jumpToCleanup (TurnRegisters.remaining (GameState.turn gs))
      in expired
           { GameState.turn =
@@ -2136,6 +2152,13 @@ exchangeControl resolving source controller legal sides =
     sideController oid gs
       | Set.member oid (GameState.battlefield gs) = Projection.controllerOf oid gs
       | otherwise = Nothing
+
+-- CR 101.4 with Aeon Engine's rulings: flip the turn order the game began
+-- with, so a second reversal restores it. Seating, TurnRegisters.turnAnchor and
+-- the extra turns already waiting are untouched: the next ordinary turn is the
+-- next seat in the new order after the anchor (Engine.walkToNextTurn).
+reverseTurnOrder :: Game ()
+reverseTurnOrder = State.modify' (\gs -> gs {GameState.turnOrderReversed = not (GameState.turnOrderReversed gs)})
 
 takeExtraTurnArm :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> TakeExtraTurn.TakeExtraTurn -> Game ()
 takeExtraTurnArm resolving source controller legal takeExtraTurn = do

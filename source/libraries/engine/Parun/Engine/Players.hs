@@ -138,8 +138,9 @@ offer you gs = Maybe.fromMaybe [] . related (Just you) gs
 
 -- | CR 801.5a / 801.5c: the players @you@ may name to MAKE a choice in this
 -- relation -- "an opponent chooses", "of an opponent's choice". 'offer' where it
--- holds anyone; otherwise the player in the relation closest to @you@'s left,
--- the next in turn order (CR 101.4), still in the game. Nobody only where
+-- holds anyone; otherwise the player in the relation closest to @you@'s left
+-- (a seat walk, Game.seatsFrom, which a reversed turn order does not turn
+-- round), still in the game. Nobody only where
 -- nobody in the game stands in the relation. Not for a player who is the
 -- choice's ANSWER ("choose an opponent"), whom @you@ choose and 'offer' cuts.
 --
@@ -150,7 +151,7 @@ chooserOffer you gs relation = case offer you gs relation of
   [] ->
     let playing = Game.stillPlaying gs
         stands pid = List.elem pid playing && PlayerRelation.holds (Game.teams gs) relation you pid
-     in take 1 (filter stands (drop 1 (Game.turnOrderFrom you gs)))
+     in take 1 (filter stands (drop 1 (Game.seatsFrom you gs)))
   inRange -> inRange
 
 -- | CR 608.2d / 614.12a / 601.2c: @chooser@ picks one of the candidates, for
@@ -243,6 +244,11 @@ namedUncut given gs ref =
                 Hop.Itself -> Just
                 Hop.Host -> (`Game.hostWithLastKnown` gs)
            in fmap pure (slotObject given slot >>= hopped >>= holderOf holder)
+        -- CR 303.4b / 303.4m: the player the object a slot names is attached
+        -- to, read live -- Parun.Types.LastKnown.host records an object host
+        -- only. Unanswered where the slot names no one object or its host is
+        -- not a player. Paradox Haze's scenarios prove it.
+        PlayerRef.PlayerHostOfBound slot -> fmap pure (slotObject given slot >>= \oid -> Game.lookupObject oid gs >>= Object.attachedTo >>= Recipient.playerOf)
         -- CR 611.2b: the arm above, BAKED -- the object named outright, so a
         -- stored duration asks who controls or owns it NOW. Unanswered while the
         -- object is phased out, which CR 702.26b treats as not existing. Proved

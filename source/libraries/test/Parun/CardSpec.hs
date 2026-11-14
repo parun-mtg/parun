@@ -5228,6 +5228,7 @@ effectFilters effect = case effect of
   Effect.LoseGame {} -> []
   Effect.WinGame {} -> []
   Effect.DrawGame {} -> []
+  Effect.ReverseTurnOrder {} -> []
   Effect.RedistributeLifeTotals -> []
   Effect.IncreaseSpeed (PlayerQuantity.MkPlayerQuantity _ quantity) -> frame Unframed (quantityFilters quantity)
   Effect.DecreaseSpeed d -> frame Unframed (quantityFilters (SpeedDecrease.quantity d))
@@ -5346,6 +5347,7 @@ effectFilters effect = case effect of
   Effect.Meld (Meld.MkMeld ref card) -> frame SourceHostFramed (objectRefFilters ref) <> overFaces cardFilters card
   Effect.PhaseOut (PhaseOut.MkPhaseOut ref _duration) -> frame SourceHostFramed (objectRefFilters ref)
   Effect.AddPhases _ -> []
+  Effect.AddStep _ -> []
   Effect.EndTurn -> []
   Effect.EndCombatPhase -> []
   Effect.GainControl (GainControl.MkGainControl duration ref _ _) -> frame Unframed (durationFilters duration) <> frame SourceHostFramed (objectRefFilters ref)

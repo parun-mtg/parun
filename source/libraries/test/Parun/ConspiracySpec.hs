@@ -273,7 +273,7 @@ spec s registry = Spec.describe s "Conspiracy" $ do
       Spec.assertEqWith s "without Power Play, alice starts and has none" (begunWith S.alice control) False
       Spec.assertEqWith s "and bob has his" (begunWith S.bob control) True
       Spec.assertEqWith s "bob takes the first turn" (TurnRegisters.activePlayer (GameState.turn with)) S.bob
-      Spec.assertEqWith s "the turn order begins with him" (GameState.turnOrder with) [S.bob, S.alice]
+      Spec.assertEqWith s "the turn order begins with him" (GameState.seating with) [S.bob, S.alice]
       -- CR 500.7: Serra Avenger's count of turns of the game.
       Spec.assertEqWith s "and the first turn is his first turn of the game, not alice's" (GameState.turnsBegun with) (Map.singleton S.bob 1)
       -- CR 103.5: the starting player declares first.
@@ -292,8 +292,8 @@ spec s registry = Spec.describe s "Conspiracy" $ do
       let matchup = (S.alice, deckOf mountain []) NonEmpty.:| [(S.bob, deckOf mountain [powerPlay]), (S.carol, deckOf mountain [powerPlay])]
           (toCarol, carolAsked) = started 1 matchup
           (toBob, bobAsked) = started 0 matchup
-      Spec.assertEqWith s "landing on carol, she starts and bob goes last" (GameState.turnOrder toCarol) [S.carol, S.alice, S.bob]
-      Spec.assertEqWith s "landing on bob, he starts and alice goes last" (GameState.turnOrder toBob) [S.bob, S.carol, S.alice]
+      Spec.assertEqWith s "landing on carol, she starts and bob goes last" (GameState.seating toCarol) [S.carol, S.alice, S.bob]
+      Spec.assertEqWith s "landing on bob, he starts and alice goes last" (GameState.seating toBob) [S.bob, S.carol, S.alice]
       Spec.assertEqWith s "carol takes the first turn" (TurnRegisters.activePlayer (GameState.turn toCarol)) S.carol
       Spec.assertEqWith s "one draw, over bob and carol alone" (draws carolAsked) [[S.bob, S.carol]]
       Spec.assertEqWith s "the same draw in the other log" (draws bobAsked) [[S.bob, S.carol]]
@@ -304,9 +304,9 @@ spec s registry = Spec.describe s "Conspiracy" $ do
       mountain <- S.printingOf s registry "Mountain"
       powerPlay <- S.printingOf s registry "Power Play"
       let restart conspiracies = S.runPure keepAnswer (built mountain conspiracies) (Setup.restartGame S.performer Set.empty S.alice)
-      Spec.assertEqWith s "with Power Play, bob starts the new game" (GameState.turnOrder (restart [powerPlay])) [S.bob, S.alice]
+      Spec.assertEqWith s "with Power Play, bob starts the new game" (GameState.seating (restart [powerPlay])) [S.bob, S.alice]
       Spec.assertEqWith s "its first turn his first turn of the game (CR 500.7)" (GameState.turnsBegun (restart [powerPlay])) (Map.singleton S.bob 1)
-      Spec.assertEqWith s "without it, alice does" (GameState.turnOrder (restart [])) [S.alice, S.bob]
+      Spec.assertEqWith s "without it, alice does" (GameState.seating (restart [])) [S.alice, S.bob]
 
   -- CR 315.5a: alice brings Backup Plan over thirty Mountains, and bob brings
   -- nothing. Every board is the whole of Setup.newGame.

@@ -11,9 +11,9 @@ import qualified Parun.Types.StepBegins as StepBegins
 
 -- | A bare object keyed by the record's field names, replacing the two-element
 -- array this payload used to be. Phase and scope are required: an unscoped
--- trigger is a different card, not a defaulted one. CR 505.1b's @ordinal@ is
--- defaulted to absent, which is what every card that names its phase rather than
--- counting main phases says.
+-- trigger is a different card, not a defaulted one. The @ordinal@ is defaulted
+-- to absent, which is what every card that names its step rather than counting
+-- occurrences says.
 codec :: Codec.Codec StepBegins.StepBegins
 codec = Fields.object $ do
   ordinal <- Fields.defaulted "ordinal" Nothing (Common.maybe Common.natural) StepBegins.ordinal

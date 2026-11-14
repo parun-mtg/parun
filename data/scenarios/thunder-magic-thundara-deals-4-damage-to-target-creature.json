@@ -1,0 +1,55 @@
+{
+  "description": "Thunder Magic cast for its Thundara tier deals 4 damage to target creature",
+  "note": "Alice pays {R} plus Thundara's {3} with four Mountains and targets bob's Colossal Dreadmaw, a 6/6 that survives so the 4 stays marked (Hill Giant gives the target prompt a second candidate); the other tiers would mark 2 or 8.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Mountain", "label": "m1" },
+          { "card": "Mountain", "label": "m2" },
+          { "card": "Mountain", "label": "m3" },
+          { "card": "Mountain", "label": "m4" }
+        ],
+        "hand": [{ "card": "Thunder Magic", "label": "thunder" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Colossal Dreadmaw", "label": "dreadmaw" },
+          { "card": "Hill Giant", "label": "giant" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$thunder",
+          "mana": ["$m1", "$m2", "$m3", "$m4"],
+          "modes": [1],
+          "targets": ["$dreadmaw"]
+        }
+      }
+    },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": { "Damage": { "damage": 4, "object": "$dreadmaw" } }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": { "Count": { "card": "Thunder Magic", "player": "alice", "zone": "Graveyard", "count": 1 } }
+    }
+  ]
+}

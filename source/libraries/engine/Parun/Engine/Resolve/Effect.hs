@@ -731,11 +731,13 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Meld payload -> Counters.meld (runReplacementEffects runSubgame) resolving source controller legal payload
   Effect.PhaseOut payload -> Counters.phaseOut resolving source controller legal payload
   Effect.AddPhases payload -> Counters.addPhases payload
+  Effect.AddStep payload -> Counters.addStep payload
   Effect.EndTurn -> Counters.endTurn runDamageRewriteEffect runReplacementEffects runSubgame
   Effect.EndCombatPhase -> Counters.endCombatPhase runDamageRewriteEffect runReplacementEffects runSubgame
   Effect.GainControl payload -> Counters.gainControl resolving source controller legal payload
   Effect.ExchangeControl payload -> Counters.exchangeControl resolving source controller legal payload
   Effect.TakeExtraTurn payload -> Counters.takeExtraTurnArm resolving source controller legal payload
+  Effect.ReverseTurnOrder -> Counters.reverseTurnOrder
 
 -- The no-subgame executor, for a test that drives one effect directly: a
 -- PlaySubgame resolves as a draw here (see noSubgame).

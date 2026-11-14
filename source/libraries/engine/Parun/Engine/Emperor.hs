@@ -21,7 +21,7 @@ import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Teams as Teams
 
 -- | CR 809.3: an Emperor game's options over this game's seating
--- (GameState.turnOrder), its teams and each team's emperor -- CR 809.3a's
+-- (GameState.seating), its teams and each team's emperor -- CR 809.3a's
 -- ranges, CR 809.3b's deploy creatures option and CR 809.3c's attack option --
 -- or Nothing over a seating Parun.Engine.Seating.misseated refuses (CR 809.2,
 -- 809.6a).
@@ -39,7 +39,7 @@ setUp teams emperors gs =
                     (MatchScope.settings (GameState.match gs))
                       { GameSettings.teams = teams,
                         GameSettings.emperors = emperors,
-                        GameSettings.rangeOfInfluence = RangeOfInfluence.MkRangeOfInfluence (ranges teams emperors (GameState.turnOrder gs)),
+                        GameSettings.rangeOfInfluence = RangeOfInfluence.MkRangeOfInfluence (ranges teams emperors (GameState.seating gs)),
                         GameSettings.deployCreatures = True,
                         GameSettings.attackOption = Just AttackOption.Adjacent
                       }
@@ -81,4 +81,4 @@ fallsWith reason leaving gs =
         Departure.Drew -> Departure.Drew
         Departure.Lost -> Departure.Lost
         Departure.Conceded -> Departure.Lost
-   in [(theirs, pid) | pid <- GameState.turnOrder gs, List.elem pid (Game.stillPlaying gs), followed pid]
+   in [(theirs, pid) | pid <- GameState.seating gs, List.elem pid (Game.stillPlaying gs), followed pid]

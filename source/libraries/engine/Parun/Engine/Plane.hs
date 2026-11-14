@@ -10,6 +10,7 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Face as Face
@@ -89,7 +90,7 @@ planarController :: GameState -> PlayerId
 planarController gs =
   let active = TurnRegisters.activePlayer (GameState.turn gs)
       playing = Game.stillPlaying gs
-      order = GameState.turnOrder gs
+      order = Turn.turnOrder gs
       after = drop 1 (List.dropWhile (/= active) order) <> order
    in if List.elem active playing then active else Maybe.fromMaybe active (List.find (`List.elem` playing) after)
 

@@ -198,16 +198,15 @@ skipEmptyCombat gs =
 -- of influence, and so needs no clause for planeswalkers and battles either; no
 -- opponent in range leaves the list empty, which is its "can't attack".
 --
--- Left is the next seat in turn order and right is the previous one, which is CR
--- 101.4's identification of the two ("the next player in turn order (usually the
--- player seated to the active player's left)"); GameState.turnOrder is the
--- seating roster, so those are the two ends of it rotated to the active player,
--- with their own seat removed. Game.turnOrderFrom rather than Game.apnapOrder,
--- which under CR 805.6 regroups the seats by team.
+-- Left is the next seat in GameState.seating and right is the previous one --
+-- the two ends of the roster rotated to the active player, their own seat
+-- removed. Game.seatsFrom, a seat walk, so a reversed turn order (Aeon Engine)
+-- leaves left and right where they sit; not Game.apnapOrder, which also
+-- regroups the seats by team under CR 805.6.
 attackableOpponents :: GameState -> [PlayerId]
 attackableOpponents gs =
   let active = TurnRegisters.activePlayer (GameState.turn gs)
-      others = drop 1 (Game.turnOrderFrom active gs)
+      others = drop 1 (Game.seatsFrom active gs)
       opponents = opponentsInRange gs
       seatedAt neighbour = filter (\pid -> Just pid == neighbour) opponents
       beside = filter (\pid -> List.elem pid (Game.neighbours active gs))

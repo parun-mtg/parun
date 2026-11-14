@@ -1081,6 +1081,7 @@ effectChildren c effect = case effect of
   Effect.LoseGame who -> fmap Effect.LoseGame (onPlayer c who)
   Effect.WinGame who -> fmap Effect.WinGame (onPlayer c who)
   Effect.DrawGame -> pure effect
+  Effect.ReverseTurnOrder -> pure effect
   Effect.RedistributeLifeTotals -> pure effect
   Effect.IncreaseSpeed x -> fmap Effect.IncreaseSpeed (playerQuantityChildren c x)
   Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease who quantity floor_) -> fmap Effect.DecreaseSpeed (SpeedDecrease.MkSpeedDecrease <$> onPlayer c who <*> onQuantity c quantity <*> pure floor_)
@@ -1186,6 +1187,7 @@ effectChildren c effect = case effect of
   Effect.SwitchBlockers named -> fmap Effect.SwitchBlockers (onSlot c named)
   Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks first second) -> fmap Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks <$> onSlot c first <*> onSlot c second)
   Effect.AddPhases _ -> pure effect
+  Effect.AddStep _ -> pure effect
   Effect.EndTurn -> pure effect
   Effect.EndCombatPhase -> pure effect
   Effect.GainControl (GainControl.MkGainControl duration ref named to) -> fmap Effect.GainControl (GainControl.MkGainControl <$> onDuration c duration <*> onObjectRef c ref <*> traverse (onSlot c) named <*> onPlayer c to)

@@ -3129,7 +3129,7 @@ stillPlaying gs =
    in fmap fst (filter isPlaying (Map.toList (GameState.players gs)))
 
 -- Who is still in the game, in SEATING order. stillPlaying reads the players
--- map, so it comes back in PlayerId order; GameState.turnOrder is the permanent
+-- map, so it comes back in PlayerId order; GameState.seating is the permanent
 -- seating roster (CR 800.5, CR 806.3). The order is load-bearing: CR 103.5 has
 -- the starting player declare their mulligan first, then each other player in
 -- turn order, and CR 728.1a / CR 730.2 rotate the rebuilt order to begin with
@@ -3137,7 +3137,7 @@ stillPlaying gs =
 stillPlayingInOrder :: GameState -> [PlayerId]
 stillPlayingInOrder gs =
   let playing = stillPlaying gs
-   in filter (\pid -> List.elem pid playing) (GameState.turnOrder gs)
+   in filter (\pid -> List.elem pid playing) (GameState.seating gs)
 
 -- CR 808.1: which team each player in this game is on, or CR 102.4's empty map
 -- for a game not played between teams. MatchScope.settings is where the option
@@ -3230,7 +3230,7 @@ inRangeSeated seated you candidate gs =
 seatsThisTurn :: GameState -> [PlayerId]
 seatsThisTurn gs =
   let playing = stillPlaying gs
-   in filter (\pid -> List.elem pid playing || Set.member pid (GameState.departedThisTurn gs)) (GameState.turnOrder gs)
+   in filter (\pid -> List.elem pid playing || Set.member pid (GameState.departedThisTurn gs)) (GameState.seating gs)
 
 -- CR 809.3c: the players seated immediately next to @you@, either side, over
 -- seatsThisTurn -- the Emperor variant always uses CR 801's option, whose CR
@@ -3251,13 +3251,13 @@ neighbours you gs = case List.break (== you) (seatsThisTurn gs) of
 opponentsOf :: PlayerId -> GameState -> [PlayerId]
 opponentsOf you gs = filter (areOpponents gs you) (stillPlaying gs)
 
--- CR 101.4: the seating roster rotated to APNAP order. The shared anchor for CR
+-- CR 101.4: the turn order rotated to APNAP order. The shared anchor for CR
 -- 603.3b (Engine.apnapPlayers, stacking triggers) and CR 121.2c
 -- (Parun.Engine.Resolve's Draw arm).
 --
--- SEATING, not survival: turnOrder is the permanent roster (CR 800.5), so a
--- departed seat is still named here, and a caller that must not name one
--- filters with stillPlaying. An active player somehow absent from the roster
+-- SEATS, not survival: the turn order runs over the permanent roster (CR
+-- 800.5), so a departed seat is still named here, and a caller that must not
+-- name one filters with stillPlaying. An active player somehow absent from the roster
 -- degrades to the roster itself rather than to nobody.
 --
 -- CR 805.6: under the shared team turns option the whole active team comes
@@ -3272,16 +3272,17 @@ apnapOrder gs =
    in List.sortOn (\pid -> List.findIndex (Turn.sharesTurn gs pid) rotated) rotated
 
 -- CR 805.2: the primary player of this player's team -- the still-playing
--- teammate in the team's rightmost seat, which is the one turn order (CR 101.4,
--- to the left) reaches first from outside the team. Without the shared team
--- turns option every player is their own.
+-- teammate in the team's rightmost seat: the one whose right-hand neighbour,
+-- the previous seat in GameState.seating, is off the team. A seat, so a
+-- reversed turn order (Turn.turnOrder) does not move it. Without the shared
+-- team turns option every player is their own.
 --
 -- Seating does not change when a player leaves, so a departed opponent's seat
 -- still bounds the team: the rightmost seat is found once every opponent has
 -- left too, as when Parun.Engine.Ante.payOut asks a winning team.
 primaryOf :: GameState -> PlayerId -> PlayerId
 primaryOf gs pid =
-  let seats = filter (\p -> List.elem p (stillPlaying gs) || not (mate p)) (GameState.turnOrder gs)
+  let seats = filter (\p -> List.elem p (stillPlaying gs) || not (mate p)) (GameState.seating gs)
       mate = Turn.sharesTurn gs pid
       before = drop (length seats - 1) seats <> seats
    in case [seat | (previous, seat) <- zip before seats, mate seat, not (mate previous)] of
@@ -3315,25 +3316,37 @@ heirOnDeparture eligible = do
   gs <- State.get
   let active = TurnRegisters.activePlayer (GameState.turn gs)
       live = filter eligible (Turn.activePlayers gs)
-      walk = case List.break (== active) (GameState.turnOrder gs) of
+      walk = case List.break (== active) (Turn.turnOrder gs) of
         (before, _ : after) -> after <> before
         (before, []) -> before
   case live of
     [] -> pure (List.find eligible walk)
     _ -> chooseAmong Prompt.ChooseActivePlayer (primaryOf gs active) live
 
--- apnapOrder's generalisation: the seating roster rotated to start with the
--- player NAMED rather than with the active player. CR 701.38a's vote is the
--- reader -- "starting with a specified player and proceeding in turn order" --
--- and rule 101.4 is this with the active player, so the two share one rotation.
+-- apnapOrder's generalisation: the turn order (Turn.turnOrder) rotated to
+-- start with the player NAMED rather than with the active player. CR
+-- 701.38a's vote is the reader -- "starting with a specified player and
+-- proceeding in turn order" -- and rule 101.4 is this with the active player,
+-- so the two share one rotation.
 --
--- SEATING, not survival, apnapOrder's own posture: a caller that must not name a
+-- SEATS, not survival, apnapOrder's own posture: a caller that must not name a
 -- departed seat filters with stillPlaying. A player absent from the roster
 -- degrades to the roster itself rather than to nobody.
 turnOrderFrom :: PlayerId -> GameState -> [PlayerId]
-turnOrderFrom start gs =
-  let order = GameState.turnOrder gs
-   in dropWhile (/= start) order <> takeWhile (/= start) order
+turnOrderFrom start = rotateTo start . Turn.turnOrder
+
+-- CR 801.5c / 803.1a: the seating roster rotated to start with this player,
+-- then each seat to their left in turn. turnOrderFrom's walk while the turn
+-- order is not reversed; a left or a right is a seat, so this ignores a
+-- reversal. A player absent from the roster degrades to the roster itself.
+seatsFrom :: PlayerId -> GameState -> [PlayerId]
+seatsFrom start = rotateTo start . GameState.seating
+
+-- CR 103 / 728.1a: put `starter` at the head of the order, preserving the
+-- cyclic order. Total: a `starter` not in the order leaves it as-is.
+rotateTo :: PlayerId -> [PlayerId] -> [PlayerId]
+rotateTo starter order = case break (== starter) order of
+  (before, after) -> after <> before
 
 -- CR 800.4h: if a rule requires a player who has left the game to make a choice,
 -- the next player in turn order makes that choice. A player still in the game is
@@ -4509,7 +4522,7 @@ attackedInLastTurnOf gs pid oid = any ((== oid) . AttackerDeclared.attacker) (at
 attackersInTheirLastTurn :: GameState -> PlayerId -> Natural
 attackersInTheirLastTurn gs victim =
   let attackedVictim attacking row = AttackerDeclared.attackingPlayer row == attacking && AttackerDeclared.target row == AttackTarget.OfPlayer victim
-   in Natural.length (filter (\attacking -> any (attackedVictim attacking) (attacksInOwnLastTurn gs attacking)) (GameState.turnOrder gs))
+   in Natural.length (filter (\attacking -> any (attackedVictim attacking) (attacksInOwnLastTurn gs attacking)) (GameState.seating gs))
 
 -- CR 509.1h / 608.2i: did this OBJECT become a blocked creature this turn?
 -- attackersDeclaredThisTurn's footing over the other combat log, and its extent

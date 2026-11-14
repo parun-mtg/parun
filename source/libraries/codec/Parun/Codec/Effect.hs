@@ -97,6 +97,7 @@ import qualified Parun.Codec.NextDamageInstance as NextDamageInstance
 import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.OfferCast as OfferCast
 import qualified Parun.Codec.PermanentActed as PermanentActed
+import qualified Parun.Codec.Phase as Phase
 import qualified Parun.Codec.PhaseOut as PhaseOut
 import qualified Parun.Codec.PlayerCounters as PlayerCounters
 import qualified Parun.Codec.PlayerQuantity as PlayerQuantity
@@ -240,6 +241,7 @@ codec cardCodec abilityCodec =
           Arm.payload "LoseGame" PlayerRef.codec Effect.LoseGame (\x -> case x of Effect.LoseGame y -> Just y; _ -> Nothing),
           Arm.payload "WinGame" PlayerRef.codec Effect.WinGame (\x -> case x of Effect.WinGame y -> Just y; _ -> Nothing),
           Arm.nullary "DrawGame" Effect.DrawGame,
+          Arm.nullary "ReverseTurnOrder" Effect.ReverseTurnOrder,
           Arm.nullary "RedistributeLifeTotals" Effect.RedistributeLifeTotals,
           Arm.payload "IncreaseSpeed" PlayerQuantity.codec Effect.IncreaseSpeed (\x -> case x of Effect.IncreaseSpeed y -> Just y; _ -> Nothing),
           Arm.payload "DecreaseSpeed" SpeedDecrease.codec Effect.DecreaseSpeed (\x -> case x of Effect.DecreaseSpeed y -> Just y; _ -> Nothing),
@@ -284,6 +286,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Meld" meldCodec Effect.Meld (\x -> case x of Effect.Meld y -> Just y; _ -> Nothing),
           Arm.payload "PhaseOut" PhaseOut.codec Effect.PhaseOut (\x -> case x of Effect.PhaseOut y -> Just y; _ -> Nothing),
           Arm.payload "AddPhases" (Common.list ExtraPhase.codec) Effect.AddPhases (\x -> case x of Effect.AddPhases y -> Just y; _ -> Nothing),
+          Arm.payload "AddStep" Phase.codec Effect.AddStep (\x -> case x of Effect.AddStep y -> Just y; _ -> Nothing),
           Arm.nullary "EndTurn" Effect.EndTurn,
           Arm.nullary "EndCombatPhase" Effect.EndCombatPhase,
           Arm.payload "GainControl" GainControl.codec Effect.GainControl (\x -> case x of Effect.GainControl y -> Just y; _ -> Nothing),
@@ -475,6 +478,7 @@ tagOf x = case x of
   Effect.Meld {} -> "Meld"
   Effect.PhaseOut {} -> "PhaseOut"
   Effect.AddPhases {} -> "AddPhases"
+  Effect.AddStep {} -> "AddStep"
   Effect.EndTurn {} -> "EndTurn"
   Effect.EndCombatPhase {} -> "EndCombatPhase"
   Effect.GainControl {} -> "GainControl"
@@ -516,6 +520,7 @@ tagOf x = case x of
   Effect.FlipCoin {} -> "FlipCoin"
   Effect.Guess {} -> "Guess"
   Effect.TakeExtraTurn {} -> "TakeExtraTurn"
+  Effect.ReverseTurnOrder {} -> "ReverseTurnOrder"
   Effect.ShuffleIntoLibrary {} -> "ShuffleIntoLibrary"
   Effect.Ante {} -> "Ante"
   Effect.PutSticker {} -> "PutSticker"

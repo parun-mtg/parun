@@ -1,0 +1,132 @@
+{
+  "board": {
+    "active": "carol",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Winding Constrictor",
+            "label": "constrictor"
+          }
+        ],
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 1
+          }
+        ],
+        "name": "alice",
+        "team": 1
+      },
+      {
+        "counters": [
+          {
+            "key": "Poison",
+            "value": 1
+          }
+        ],
+        "name": "bob",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island-1"
+          },
+          {
+            "card": "Island",
+            "label": "island-2"
+          },
+          {
+            "card": "Island",
+            "label": "island-3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Steady Progress",
+            "label": "progress"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      },
+      {
+        "name": "dave",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain",
+    "twoHeadedGiant": true
+  },
+  "description": "CR 701.34b the proliferating player chooses Winding Constrictor's controller, so the team gets two poison counters",
+  "final": [
+    {
+      "PlayerCounters": {
+        "count": 3,
+        "kind": "Poison",
+        "player": "alice"
+      }
+    },
+    {
+      "PlayerCounters": {
+        "count": 3,
+        "kind": "Poison",
+        "player": "bob"
+      }
+    }
+  ],
+  "note": "A Two-Headed Giant game with alice and bob's team on one poison counter and alice controlling Winding Constrictor. Carol's Steady Progress chooses both of them; only one is given the team's counter, and carol chooses which (CR 701.34b). She picks alice, whose Constrictor makes it two, so the team is on three. The control picks bob instead, and the team is on two.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island-1",
+            "$island-2",
+            "$island-3"
+          ],
+          "object": "$progress"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseProliferate",
+          "with": [
+            [],
+            [
+              "alice",
+              "bob"
+            ]
+          ]
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOpponent",
+          "with": "alice"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

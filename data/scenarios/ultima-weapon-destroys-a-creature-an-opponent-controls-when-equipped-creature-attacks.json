@@ -1,0 +1,55 @@
+{
+  "description": "Ultima Weapon gives +7/+7, and whenever the equipped creature attacks it destroys target creature an opponent controls",
+  "note": "Grizzly Bears wears the Weapon and is 9/9. It attacks; the trigger targets bob's Hill Giant (bob's Craw Wurm makes the target prompt a real choice) and destroys it. Bob's creatures are tapped, so nothing blocks and bob takes 9.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bears", "ready": true },
+          { "card": "Ultima Weapon", "label": "weapon", "attached": "bears" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Hill Giant", "label": "giant", "tapped": true },
+          { "card": "Craw Wurm", "label": "wurm", "tapped": true }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": { "PowerToughness": { "object": "$bears", "power": 9, "toughness": 9 } }
+    },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$bears"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "ChooseTargets": { "target": ["$giant"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": { "Count": { "card": "Hill Giant", "player": "bob", "zone": "Graveyard", "count": 1 } }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": { "Count": { "card": "Craw Wurm", "player": "bob", "zone": "Battlefield", "count": 1 } }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": { "Life": { "player": "bob", "life": 11 } }
+    }
+  ]
+}

@@ -569,7 +569,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- arity argument -- there is exactly one starting player, so a disjunction over
         -- the named seats and a sum over them agree on every board.
         --
-        -- The head of GameState.turnOrder, which CR 103.1's last sentence defines as
+        -- The head of GameState.seating, which CR 103.1's last sentence defines as
         -- the starting player's seat, and which that field is documented to be rotated
         -- to. It is never shortened by a departure, so a game whose starting player has
         -- left still answers with them -- the seat is the rule's subject, not who is
@@ -580,7 +580,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- reference that could not be resolved at all.
         Quantity.IsStartingPlayer ref -> case playersOf ref of
           Nothing -> Nothing
-          Just pids -> Just (if any (\pid -> Maybe.listToMaybe (GameState.turnOrder gs) == Just pid) pids then 1 else 0)
+          Just pids -> Just (if any (\pid -> Maybe.listToMaybe (GameState.seating gs) == Just pid) pids then 1 else 0)
         -- CR 102.1: is that player the active player? The two arms above's shape again,
         -- and the simplest of the three: TurnRegisters.activePlayer is a PlayerId rather
         -- than a Maybe, so there is no "no active player" board for this arm to have a
@@ -1496,6 +1496,8 @@ playerRefIsSlotless ref = case ref of
   -- InSlot's answer, and for its reason: the slot is a TARGET slot, which
   -- Resolve.Slots.quantitySlots reports by folding nestedRefs.
   PlayerRef.HolderOfBound {} -> False
+  -- The arm above's answer: the object is named by a slot.
+  PlayerRef.PlayerHostOfBound _ -> False
   -- Specific's answer: the baked half names its object outright.
   PlayerRef.HolderOfObject _ _ -> True
   -- The arm above's answer: the object is named by a slot.
@@ -1573,6 +1575,7 @@ forCandidate pid =
         PlayerRef.EachInSlot _ -> ref
         PlayerRef.Specific _ -> ref
         PlayerRef.HolderOfBound {} -> ref
+        PlayerRef.PlayerHostOfBound _ -> ref
         PlayerRef.HolderOfObject _ _ -> ref
         PlayerRef.ChosenPlayerOfBound _ _ -> ref
         PlayerRef.Attacking _ -> ref
@@ -1623,6 +1626,8 @@ bakePlayerRef players objects ref = case ref of
   -- stored reference names nobody. Scryfall o:"enchanted creature's
   -- controller's", 2026-10-25, no hit: no printing yet counts through it.
   PlayerRef.HolderOfBound _ Hop.Host _ -> ref
+  -- LEFT STANDING, the arm above's posture and for its reason.
+  PlayerRef.PlayerHostOfBound _ -> ref
   PlayerRef.HolderOfObject _ _ -> ref
   -- LEFT STANDING: not implemented, a stored condition reading the player an
   -- object chose, which goes unanswered and ends (#4833).

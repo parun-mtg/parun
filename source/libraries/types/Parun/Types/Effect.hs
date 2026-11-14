@@ -85,6 +85,7 @@ import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PlayerCounters as PlayerCounters
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
@@ -564,6 +565,9 @@ data Effect card ability
   | -- | CR 500.8: add phases to a turn, directly after the specified phase, in
     -- written order (Aggravated Assault). Targetless.
     AddPhases [ExtraPhase.ExtraPhase]
+  | -- | CR 500.9: add this step directly after the step the effect resolves in
+    -- (Paradox Haze). Targetless.
+    AddStep Phase.Phase
   | -- | CR 725.1: end the turn (Time Stop). Nullary, that rule's six steps
     -- fixing the whole procedure, including CR 725.1f's suppression of priority.
     EndTurn
@@ -847,6 +851,9 @@ data Effect card ability
     -- PhaseSelectors are the steps and phases each such turn skips (Savor the
     -- Moment).
     TakeExtraTurn TakeExtraTurn.TakeExtraTurn
+  | -- | CR 101.4: reverse the game's turn order, seating unchanged (Aeon
+    -- Engine).
+    ReverseTurnOrder
   | -- | CR 701.24: the referenced objects are shuffled into their owners'
     -- libraries (Riftsweeper), and CR 701.24c shuffles even where they are gone;
     -- ShuffleIntoLibrary.library names the library where the card's words do not

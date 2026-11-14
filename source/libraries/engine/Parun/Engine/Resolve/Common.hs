@@ -2186,7 +2186,7 @@ exileFoundFor agent exiled =
 -- 724.1a's way of taking one's own decisions back.
 controlledTeam :: PlayerId -> PlayerId -> GameState -> [PlayerId]
 controlledTeam controller target gs =
-  filter (\pid -> pid == target || (pid /= controller && Turn.sharesTurn gs target pid)) (GameState.turnOrder gs)
+  filter (\pid -> pid == target || (pid /= controller && Turn.sharesTurn gs target pid)) (GameState.seating gs)
 
 -- CR 402.3 with a CR 608.2d choice: each hand the reference names is offered to
 -- its OWN owner (a hand's cards are that player's alone), who picks the ref's
@@ -3555,6 +3555,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.LoseGame {} -> False
   Effect.WinGame {} -> False
   Effect.DrawGame {} -> False
+  Effect.ReverseTurnOrder {} -> False
   Effect.RedistributeLifeTotals {} -> False
   Effect.IncreaseSpeed {} -> False
   Effect.DecreaseSpeed {} -> False
@@ -3669,6 +3670,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.SwitchBlockers {} -> False
   Effect.ExchangeBlocks {} -> False
   Effect.AddPhases {} -> False
+  Effect.AddStep {} -> False
   Effect.EndTurn {} -> False
   Effect.EndCombatPhase {} -> False
   Effect.GainControl (GainControl.MkGainControl duration ref _ _) -> noneCanBeHeld duration ref
@@ -3993,6 +3995,7 @@ proliferateOnce source controller = do
       Game.choose (Prompt.ChooseProliferate (Decide.deciderFor controller gs) controller permanents players)
     -- FILTERED, NOT TRUSTED: an answer naming something not offered is dropped.
     giveAnotherOfEachKind
+      source
       controller
       gs
       (filter (\oid -> Set.member oid pickedPermanents) permanents)
@@ -4009,10 +4012,11 @@ playerKinds :: GameState -> PlayerId -> [PlayerCounterKind.PlayerCounterKind]
 playerKinds gs pid = foldMap (Map.keys . Map.filter (> 0) . Player.counters) (Map.lookup pid (GameState.players gs))
 
 -- Give each permanent and player one more counter of each kind it bears in
--- `before` (CR 608.2h: read before any lands), `controller`'s effect doing it:
--- the Effect.Proliferate arm's placement, chosen (CR 701.34a) or targeted.
-giveAnotherOfEachKind :: PlayerId -> GameState -> [ObjectId] -> [PlayerId] -> Game ()
-giveAnotherOfEachKind controller before permanents players = do
+-- `before` (CR 608.2h: read before any lands), `controller`'s effect of
+-- `source` doing it: the Effect.Proliferate arm's placement, chosen (CR
+-- 701.34a) or targeted.
+giveAnotherOfEachKind :: ObjectId -> PlayerId -> GameState -> [ObjectId] -> [PlayerId] -> Game ()
+giveAnotherOfEachKind source controller before permanents players = do
   -- CR 122.6: object counters through the single funnel, so CR 614's counter
   -- replacements apply to a proliferated counter as to a placed one. ONE
   -- event, the PutCounters arm's CR 608.2f bracket, so a kind-free
@@ -4025,14 +4029,18 @@ giveAnotherOfEachKind controller before permanents players = do
   --
   -- CR 701.34b: a kind a team shares (Game.counterSharers, Two-Headed Giant's
   -- poison) gets one additional counter however many of its members were
-  -- chosen.
-  --
-  -- Not implemented: the proliferating player's choice of WHICH chosen
-  -- teammate gets that counter; the first in turn order does (#4795).
-  Monad.forM_ (zip [0 :: Int ..] players) $ \(i, pid) ->
-    Monad.forM_ (playerKinds before pid) $ \kind ->
-      Monad.unless (any (\earlier -> List.elem pid (Game.counterSharers kind earlier before)) (take i players)) $
-        Monad.void (Event.putPlayerCounters (CounterCause.ByEffect controller) pid kind 1)
+  -- chosen, and `controller` chooses which member gets it. The scenario
+  -- cr-701-34b-the-proliferating-player-chooses-winding-constrictor-s-controller
+  -- proves it.
+  let pick done (pid, kind)
+        | any (\(given, k) -> k == kind && List.elem pid (Game.counterSharers kind given before)) done = pure done
+        | otherwise = do
+            let chosen = filter (`List.elem` Game.counterSharers kind pid before) players
+            picked <- Players.chooseOne controller source Nothing chosen
+            pure (done <> [(Maybe.fromMaybe pid picked, kind)])
+  given <- Monad.foldM pick [] [(pid, kind) | pid <- players, kind <- playerKinds before pid]
+  Monad.forM_ given $ \(pid, kind) ->
+    Monad.void (Event.putPlayerCounters (CounterCause.ByEffect controller) pid kind 1)
 
 -- CR 603.7c: stamp the land an earthbend animated onto the resolving object, so
 -- the environment the arming opcode captures next carries it. Parun.Engine.Earthbend's

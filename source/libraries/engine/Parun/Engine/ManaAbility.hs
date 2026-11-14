@@ -413,6 +413,7 @@ manaProduced effect = case effect of
   Effect.LoseGame {} -> Nothing
   Effect.WinGame {} -> Nothing
   Effect.DrawGame {} -> Nothing
+  Effect.ReverseTurnOrder {} -> Nothing
   Effect.RedistributeLifeTotals -> Nothing
   Effect.IncreaseSpeed {} -> Nothing
   Effect.DecreaseSpeed {} -> Nothing
@@ -465,6 +466,7 @@ manaProduced effect = case effect of
   Effect.Meld {} -> Nothing
   Effect.PhaseOut _ -> Nothing
   Effect.AddPhases _ -> Nothing
+  Effect.AddStep _ -> Nothing
   Effect.EndTurn -> Nothing
   Effect.EndCombatPhase -> Nothing
   Effect.GainControl (GainControl.MkGainControl {}) -> Nothing
@@ -625,6 +627,7 @@ playerChoice effect = case effect of
   Effect.LoseGame {} -> Nothing
   Effect.WinGame {} -> Nothing
   Effect.DrawGame {} -> Nothing
+  Effect.ReverseTurnOrder {} -> Nothing
   Effect.RedistributeLifeTotals -> Nothing
   Effect.IncreaseSpeed {} -> Nothing
   Effect.DecreaseSpeed {} -> Nothing
@@ -672,6 +675,7 @@ playerChoice effect = case effect of
   Effect.Meld {} -> Nothing
   Effect.PhaseOut _ -> Nothing
   Effect.AddPhases _ -> Nothing
+  Effect.AddStep _ -> Nothing
   Effect.EndTurn -> Nothing
   Effect.EndCombatPhase -> Nothing
   Effect.GainControl {} -> Nothing
@@ -892,6 +896,7 @@ movesLibraryCard effect = case effect of
   Effect.LoseGame {} -> False
   Effect.WinGame {} -> False
   Effect.DrawGame {} -> False
+  Effect.ReverseTurnOrder {} -> False
   Effect.RedistributeLifeTotals -> False
   Effect.IncreaseSpeed {} -> False
   Effect.DecreaseSpeed {} -> False
@@ -969,6 +974,7 @@ movesLibraryCard effect = case effect of
   -- draw step's draw is one of those rather than an effect of this ability. Same for
   -- the extra turn below.
   Effect.AddPhases _ -> False
+  Effect.AddStep _ -> False
   Effect.EndTurn -> False
   Effect.EndCombatPhase -> False
   Effect.TakeExtraTurn {} -> False

@@ -12,7 +12,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Teams as Teams
 
 -- | CR 811.2: an Alternating Teams game over this game's seating
--- (GameState.turnOrder) and these teams, or Nothing when the game cannot be
+-- (GameState.seating) and these teams, or Nothing when the game cannot be
 -- one: a seating 'seated' refuses, or an attack option other than CR 811.2b's
 -- three. The attack option is the caller's; CR 811.2a's range of influence is
 -- only recommended and CR 811.2c's deploy creatures option is off in
@@ -26,7 +26,7 @@ setUp teams gs =
         Just AttackOption.Rightward -> True
         Just AttackOption.Adjacent -> False
         Nothing -> False
-   in if optionAllowed && seated teams (GameState.turnOrder gs)
+   in if optionAllowed && seated teams (GameState.seating gs)
         then Just gs {GameState.match = (GameState.match gs) {MatchScope.settings = settings {GameSettings.teams = teams, GameSettings.alternatingTeams = True}}}
         else Nothing
 

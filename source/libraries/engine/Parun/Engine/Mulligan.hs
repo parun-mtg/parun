@@ -359,7 +359,7 @@ declared pid decision offer =
 -- count toward the cards bottomed or the mulligans allowed.
 --
 -- CR 800.1: a multiplayer game BEGINS with more than two players, rather than
--- currently having them. GameState.turnOrder is the permanent seating roster,
+-- currently having them. GameState.seating is the permanent seating roster,
 -- so counting seats answers that directly and a game that drops to two players
 -- by departure keeps its free mulligan. A rebuilt game (CR 728.1, CR 730.2) is
 -- seated from the players who were in the game it came from, so it answers for
@@ -374,7 +374,7 @@ declared pid decision offer =
 -- A Natural rather than a Bool, because the caller subtracts this.
 freeMulligans :: GameState.GameState -> Numeric.Natural.Natural
 freeMulligans gs =
-  if length (GameState.turnOrder gs) > 2 || GameSettings.brawl (MatchScope.settings (GameState.match gs))
+  if length (GameState.seating gs) > 2 || GameSettings.brawl (MatchScope.settings (GameState.match gs))
     then 1
     else 0
 

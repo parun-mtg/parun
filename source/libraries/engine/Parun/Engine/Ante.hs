@@ -78,7 +78,7 @@ payOut = do
     Just (Result.Won winner) -> Foldable.traverse_ (`payTo` winner) ante
     Just (Result.TeamWon team) -> do
       let onTeam pid = Teams.teamOf (Game.teams gs) pid == Just team
-          winners = filter onTeam (GameState.turnOrder gs)
+          winners = filter onTeam (GameState.seating gs)
       case filter onTeam (Game.stillPlayingInOrder gs) of
         [] -> pure ()
         speaker : _ ->

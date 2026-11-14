@@ -170,6 +170,7 @@ overPlayerRefSlots f ref = case ref of
   -- same way.
   PlayerRef.EachOpponentExcept slot -> fmap PlayerRef.EachOpponentExcept (f slot)
   PlayerRef.HolderOfBound holder hop slot -> fmap (PlayerRef.HolderOfBound holder hop) (f slot)
+  PlayerRef.PlayerHostOfBound slot -> fmap PlayerRef.PlayerHostOfBound (f slot)
   -- The arm above's namespace, one record over.
   PlayerRef.ChosenPlayerOfBound slot choice -> fmap (`PlayerRef.ChosenPlayerOfBound` choice) (f slot)
   PlayerRef.Attacking attacking -> fmap (\slot -> PlayerRef.Attacking attacking {AttackingPlayers.attacked = slot}) (f (AttackingPlayers.attacked attacking))

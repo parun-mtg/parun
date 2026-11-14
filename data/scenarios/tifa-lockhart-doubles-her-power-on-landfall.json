@@ -1,0 +1,38 @@
+{
+  "description": "Tifa Lockhart doubles her power until end of turn when a land alice controls enters",
+  "note": "CR 701.10b: Tifa carries a +1/+1 counter, so she is 2/3 and doubling makes her 4/3, not the 3/3 a +1/+0 would; toughness is untouched. She is 2/3 again at bob's turn.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Tifa Lockhart", "label": "tifa", "counters": [{ "key": { "type": "PlusOnePlusOne" }, "value": 1 }] }
+        ],
+        "hand": [{ "card": "Forest", "label": "forest" }],
+        "library": [{ "card": "Forest" }, { "card": "Forest" }]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Forest" }, { "card": "Forest" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$forest" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": { "PowerToughness": { "object": "$tifa", "power": 4, "toughness": 3 } }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "bob",
+      "check": { "PowerToughness": { "object": "$tifa", "power": 2, "toughness": 3 } }
+    }
+  ]
+}

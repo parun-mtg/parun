@@ -1,0 +1,165 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Triple Triad",
+      "oracleText": "At the beginning of your upkeep, each player exiles the top card of their library. Until end of turn, you may play the card you own exiled this way and each other card exiled this way with lesser mana value than it without paying their mana costs.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Beginning",
+                "value": "Upkeep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "TopOfLibrary",
+                            "value": {
+                              "count": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "player": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              }
+                            }
+                          },
+                          "slot": "exiled",
+                          "zone": "Exile"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "GrantPlayFromExile",
+                              "value": {
+                                "alternativeCost": {
+                                  "type": "InsteadOfManaCost",
+                                  "value": []
+                                },
+                                "duration": {
+                                  "type": "UntilEndOfTurn"
+                                },
+                                "ref": {
+                                  "type": "InSlot",
+                                  "value": "yours"
+                                }
+                              }
+                            },
+                            {
+                              "type": "GrantPlayFromExile",
+                              "value": {
+                                "alternativeCost": {
+                                  "type": "InsteadOfManaCost",
+                                  "value": []
+                                },
+                                "duration": {
+                                  "type": "UntilEndOfTurn"
+                                },
+                                "ref": {
+                                  "type": "EachCardFromAmong",
+                                  "value": {
+                                    "filter": {
+                                      "type": "Measures",
+                                      "value": {
+                                        "comparison": "LessThan",
+                                        "measure": "ManaValue",
+                                        "operand": {
+                                          "type": "OfBound",
+                                          "value": {
+                                            "measure": "ManaValue",
+                                            "slot": "yours"
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "slot": "exiled"
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "EachCardFromAmong",
+                            "value": {
+                              "filter": {
+                                "type": "HeldBy",
+                                "value": {
+                                  "holder": "Owner",
+                                  "relation": "You"
+                                }
+                              },
+                              "slot": "exiled"
+                            }
+                          },
+                          "slot": "yours"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

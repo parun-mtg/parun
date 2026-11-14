@@ -5701,7 +5701,7 @@ apply settle batch applied batchPrevented candidate event =
       let decider = Maybe.fromMaybe pid (ReplacementCandidate.controller candidate)
           queued = StoredEffects.pendingSkipEffects (GameState.stored gs)
           involved = foldMap (Set.singleton . PendingReplacementEffect.controller . PendingSkipEffect.pending) queued
-          fromActive = let (before, after) = List.break (== TurnRegisters.activePlayer (GameState.turn gs)) (GameState.turnOrder gs) in after <> before
+          fromActive = let (before, after) = List.break (== TurnRegisters.activePlayer (GameState.turn gs)) (Turn.turnOrder gs) in after <> before
           breaker = List.find (`Set.member` involved) fromActive
           floating = Set.fromList (fmap ActiveReplacement.timestamp (StoredEffects.replacements (GameState.stored gs)))
           position = (GameState.extraTurns gs, GameState.turnMarkers gs, floating)
