@@ -1814,7 +1814,7 @@ manaConfluenceSpec s registry = Spec.describe s "Mana Confluence" $ do
         buysBlack :: Bool -> Prompt.Prompt r -> r
         buysBlack printed p = case p of
           Prompt.ChooseManaYield _ _ _ candidates ->
-            let wanted option = Mana.yieldUnits option == Mana.unitsOf black && (ManaOption.cost option /= Mana.intrinsicManaCost) == printed
+            let wanted option = Mana.yieldUnits option == Mana.unitsOf black && (ManaOption.cost option /= Mint.intrinsicManaCost) == printed
              in Maybe.fromMaybe (NonEmpty.head candidates) (List.find wanted (NonEmpty.toList candidates))
           _ -> S.identityAnswer p
         blacks = filter ((==) (Mana.unitsOf black) . Mana.yieldUnits) (optionsOffered confluenceId gs)

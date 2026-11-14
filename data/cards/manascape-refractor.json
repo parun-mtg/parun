@@ -1,0 +1,100 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        }
+      ],
+      "name": "Manascape Refractor",
+      "oracleText": "This artifact enters tapped.\nThis artifact has all activated abilities of all lands on the battlefield.\nYou may spend mana as though it were mana of any color to pay the activation costs of this artifact's abilities.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "SpendManaAsThough",
+            "value": {
+              "asThough": [
+                {
+                  "type": "Colored",
+                  "value": "White"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Blue"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Black"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              ],
+              "only": false,
+              "scope": {
+                "type": "Activating",
+                "value": {
+                  "type": "IsSource"
+                }
+              },
+              "which": {
+                "type": "Any"
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainCardAbilities",
+              "value": {
+                "cards": {
+                  "type": "HasCardType",
+                  "value": "Land"
+                },
+                "from": "OnTheBattlefield"
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

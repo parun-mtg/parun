@@ -1,0 +1,125 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Manascape Refractor",
+            "label": "refractor"
+          },
+          {
+            "card": "Joiner Adept",
+            "label": "adept"
+          },
+          {
+            "card": "Forest",
+            "label": "forest",
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "shock"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "a1"
+          },
+          {
+            "card": "Island",
+            "label": "a2"
+          },
+          {
+            "card": "Island",
+            "label": "a3"
+          },
+          {
+            "card": "Island",
+            "label": "a4"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island",
+            "label": "b1"
+          },
+          {
+            "card": "Island",
+            "label": "b2"
+          },
+          {
+            "card": "Island",
+            "label": "b3"
+          },
+          {
+            "card": "Island",
+            "label": "b4"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 613.8a: Manascape Refractor's lend depends on Joiner Adept's grant to lands, so it has the granted ability although its timestamp is earlier",
+  "note": "The Refractor came first, then Joiner Adept gave alice's Forest \"{T}: Add one mana of any color.\" The Refractor has that ability too and taps for {R} to cast Shock at bob.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$refractor"
+          ],
+          "object": "$shock",
+          "targets": [
+            "$bob"
+          ],
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": [
+                  "Artifact"
+                ]
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

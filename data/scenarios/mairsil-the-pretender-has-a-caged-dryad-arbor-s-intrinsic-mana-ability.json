@@ -1,0 +1,100 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mairsil, the Pretender",
+            "label": "mairsil",
+            "ready": true
+          }
+        ],
+        "exile": [
+          {
+            "card": "Dryad Arbor",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "cage"
+                },
+                "value": 1
+              }
+            ],
+            "label": "arbor"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 305.6 / 613.1f: Mairsil, the Pretender has the intrinsic mana ability of a caged Dryad Arbor, a land with a basic land type in exile",
+  "note": "Dryad Arbor prints no ability, only the Forest type. alice has no land and taps Mairsil for {G} to cast Llanowar Elves.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mairsil"
+          ],
+          "object": "$elves"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Llanowar Elves",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
