@@ -588,6 +588,9 @@ data Filter keyword
     -- a player offered their own foretold card by that rule is still refused it
     -- by Riftsweeper's own words.
     IsExiledFaceDown
+  | -- | CR 702.185b: the candidate is a WARPED card in exile, read off
+    -- Object.warped.
+    IsWarped
   | -- | CR 701.27h: the candidate is a "transformed permanent" -- a double-faced
     -- permanent on the battlefield with its back face up. Both of the rule's
     -- exclusions are in the answer: a permanent showing its front face is never

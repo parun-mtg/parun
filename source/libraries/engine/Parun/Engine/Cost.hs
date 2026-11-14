@@ -2512,7 +2512,8 @@ revealFromHandCandidates = discardCandidates
 
 -- The objects this player may behold to pay a Behold component on `oid`: CR
 -- 701.4a's two pools as one list, `revealFromHandCandidates`' hand ahead of the
--- battlefield permanents this player CONTROLS that the criterion admits.
+-- battlefield permanents this player CONTROLS that the criterion admits. The
+-- hand is Behold.cardZone's default; Close Encounter's names exile instead.
 --
 -- NARROWED to what the payer controls, unlike `tapCandidates` and
 -- `returnCandidates`: rule 701.4a says "a [quality] permanent you control", so
@@ -2527,20 +2528,20 @@ revealFromHandCandidates = discardCandidates
 -- `supposed` is a subtype read as the one `oid` chose (Filter.HasChosenSubtype)
 -- in place of whatever it has recorded, for `beholdableTypes` to ask about a
 -- choice not yet made; Nothing reads the record.
-beholdCandidates :: Maybe Subtype.Type.Subtype -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
-beholdCandidates supposed slots pid oid criterion gs =
+beholdCandidates :: Maybe Subtype.Type.Subtype -> Zone.Zone -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
+beholdCandidates supposed cardZone slots pid oid criterion gs =
   let framed = Projection.framedBy oid gs (Projection.contextWithSlots gs (Just pid) (Just oid) slots)
       context = maybe framed (\subtype -> framed {Filter.sourceChosenSubtype = Just subtype}) supposed
       viewOf = Projection.viewsOf gs
       matches candidate = Filter.matches context (viewOf candidate) criterion
-   in filter matches (beholdPool pid oid gs)
+   in filter matches (beholdPool cardZone pid oid gs)
 
--- CR 701.4a's two pools before any criterion: `revealFromHandCandidates`' hand,
--- less `oid` and any card being cast (CR 601.2a), ahead of the permanents this
--- player controls.
-beholdPool :: PlayerId -> ObjectId -> GameState -> [ObjectId]
-beholdPool pid oid gs =
-  filter (\candidate -> candidate /= oid && not (Game.beingCast gs candidate)) (Game.cardsIn Zone.Hand pid gs)
+-- CR 701.4a's two pools before any criterion: the cards this player owns in
+-- `cardZone` (`revealFromHandCandidates`' hand, for a behold), less `oid` and
+-- any card being cast (CR 601.2a), ahead of the permanents this player controls.
+beholdPool :: Zone.Zone -> PlayerId -> ObjectId -> GameState -> [ObjectId]
+beholdPool cardZone pid oid gs =
+  filter (\candidate -> candidate /= oid && not (Game.beingCast gs candidate)) (Game.cardsIn cardZone pid gs)
     <> List.sort (Projection.controls pid gs)
 
 -- CR 118.3: the subtypes of `family` this player may choose for a
@@ -2553,8 +2554,8 @@ beholdPool pid oid gs =
 beholdableTypes :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Behold.Behold Keyword.Type.Keyword -> SubtypeFamily.SubtypeFamily -> GameState -> [Subtype.Type.Subtype]
 beholdableTypes slots pid oid behold family gs =
   let viewOf = Projection.viewsOf gs
-      worn = Set.filter (Subtype.inFamily family) (foldMap (Filter.subtypes . viewOf) (beholdPool pid oid gs))
-      enough subtype = Natural.length (beholdCandidates (Just subtype) slots pid oid (Behold.whichObjects behold) gs) >= Behold.count behold
+      worn = Set.filter (Subtype.inFamily family) (foldMap (Filter.subtypes . viewOf) (beholdPool (Behold.cardZone behold) pid oid gs))
+      enough subtype = Natural.length (beholdCandidates (Just subtype) (Behold.cardZone behold) slots pid oid (Behold.whichObjects behold) gs) >= Behold.count behold
    in filter enough (Set.toAscList worn)
 
 -- CR 701.4a `n` times over `beholdCandidates`' one pool: the objects this player
@@ -2570,10 +2571,10 @@ beholdableTypes slots pid oid behold family gs =
 --
 -- Each is revealed where it is in the hand, conditioned on the ZONE rather than
 -- on which half the answer came from, so the two halves cannot disagree.
-beholdObjects :: Maybe ObjectId -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Natural -> Filter.Type.Filter Keyword.Type.Keyword -> Game (Maybe [ObjectId])
-beholdObjects paidFor slots pid oid n criterion = do
+beholdObjects :: Maybe ObjectId -> Zone.Zone -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Natural -> Filter.Type.Filter Keyword.Type.Keyword -> Game (Maybe [ObjectId])
+beholdObjects paidFor cardZone slots pid oid n criterion = do
   gs <- State.get
-  beheld <- pickDistinct (\decider who -> Prompt.ChooseBehold decider who oid) pid (beholdCandidates Nothing slots pid oid criterion gs) n
+  beheld <- pickDistinct (\decider who -> Prompt.ChooseBehold decider who oid) pid (beholdCandidates Nothing cardZone slots pid oid criterion gs) n
   Monad.forM_ (Maybe.fromMaybe [] beheld) $ \chosen ->
     Monad.when (fmap Object.zone (Game.lookupObject chosen gs) == Just Zone.Hand) (revealPaying paidFor pid chosen)
   pure beheld
@@ -4436,12 +4437,12 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- Where the payer first chooses a type (Behold.chosenType), payable while
   -- some type leaves that many: `beholdableTypes`.
   CostComponent.Behold behold -> case Behold.chosenType behold of
-    Nothing -> Natural.length (beholdCandidates Nothing slots pid oid (Behold.whichObjects behold) gs) >= Behold.count behold
+    Nothing -> Natural.length (beholdCandidates Nothing (Behold.cardZone behold) slots pid oid (Behold.whichObjects behold) gs) >= Behold.count behold
     Just family -> not (null (beholdableTypes slots pid oid behold family gs))
   -- The arm above at a count of one: CR 118.3 asks the same pool, the exile
   -- spending what it beheld.
   CostComponent.BeholdAndExile criterion ->
-    not (null (beholdCandidates Nothing slots pid oid criterion gs))
+    not (null (beholdCandidates Nothing Zone.Hand slots pid oid criterion gs))
   -- CR 702.29a: payable only while the card is in the paying player's hand.
   -- Asked of the zone and the owner rather than of control, CR 108.4 giving a
   -- card in a hand no controller and CR 400.3 putting it in its OWNER's.
@@ -7566,7 +7567,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
       gs <- State.get
       picked <- Game.chooseAmong (\decider who offered -> Prompt.ChooseSubtype decider who oid family (Just offered)) pid (beholdableTypes slots pid oid behold family gs)
       Foldable.for_ picked $ \subtype -> State.modify' (\g -> Game.recordChoice Chosen.Subtype (Game.acquisitionOf oid g) (const (Just subtype)) oid g)
-    beheld <- beholdObjects paidFor slots pid oid n criterion
+    beheld <- beholdObjects paidFor (Behold.cardZone behold) slots pid oid n criterion
     pure (maybe Payment.Unpaid (Payment.Paid . Binding.paidObjects Binding.beheldObject . Set.fromList . fmap Recipient.ToObject) beheld)
   -- CR 701.4a's behold of ONE object, `beholdObjects` as the arm above, then CR
   -- 406.2's exile of what was beheld through Event.changeZoneReturning.
@@ -7576,7 +7577,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- the link to the permanent the spell becomes. Parun.CostSpec's Champion of the
   -- Weird group is the proof.
   CostComponent.BeholdAndExile criterion -> do
-    beheld <- beholdObjects paidFor slots pid oid 1 criterion
+    beheld <- beholdObjects paidFor Zone.Hand slots pid oid 1 criterion
     case beheld of
       Just [chosen] -> do
         arrived <- Event.changeZoneReturning (ManaAbilityPerformer.settle perform) chosen Zone.Exile

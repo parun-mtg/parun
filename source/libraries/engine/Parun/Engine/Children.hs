@@ -652,6 +652,7 @@ filterChildren children predicate = case predicate of
   Filter.IsFaceDown -> pure predicate
   Filter.RepresentedByCard f -> fmap Filter.RepresentedByCard (nest children f)
   Filter.IsExiledFaceDown -> pure predicate
+  Filter.IsWarped -> pure predicate
   Filter.Transformed -> pure predicate
   Filter.IsRingBearer -> pure predicate
   Filter.IsPaired -> pure predicate
@@ -2033,7 +2034,7 @@ costComponentChildren c component = case component of
   CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold tally criterion) -> fmap CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold <$> cardTallyChildren c tally <*> costFilter c criterion)
   CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand n criterion) -> fmap CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand <$> costAmountChildren c n <*> costFilter c criterion)
   CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand n criterion) -> fmap CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand <$> costAmountChildren c n <*> costFilter c criterion)
-  CostComponent.Behold (Behold.MkBehold n criterion chosen) -> fmap CostComponent.Behold (flip (Behold.MkBehold n) chosen <$> costFilter c criterion)
+  CostComponent.Behold (Behold.MkBehold n criterion chosen zone) -> fmap CostComponent.Behold ((\f -> Behold.MkBehold n f chosen zone) <$> costFilter c criterion)
   CostComponent.BeholdAndExile criterion -> CostComponent.BeholdAndExile <$> costFilter c criterion
   CostComponent.MillCards _ -> pure component
   CostComponent.RevealTopOfLibrary _ -> pure component

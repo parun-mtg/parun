@@ -15,6 +15,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.CostChoice" $ do
@@ -25,7 +26,7 @@ spec s = Spec.describe s "Parun.Codec.CostChoice" $ do
       s
       CostChoice.codec
       ( CostChoice.MkCostChoice
-          ( Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = [CostComponent.Behold (Behold.MkBehold {Behold.count = 1, Behold.whichObjects = Filter.HasCardType CardType.Creature, Behold.chosenType = Nothing})]}
+          ( Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost []), Cost.components = [CostComponent.Behold (Behold.MkBehold {Behold.count = 1, Behold.whichObjects = Filter.HasCardType CardType.Creature, Behold.chosenType = Nothing, Behold.cardZone = Zone.Hand})]}
               NonEmpty.:| [Cost.MkCost {Cost.mana = Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]), Cost.components = []}]
           )
       )

@@ -188,6 +188,7 @@ codec keywordCodec =
       -- representing the candidate rather than the candidate.
       Arm.payload "RepresentedByCard" (codec keywordCodec) Filter.RepresentedByCard (\x -> case x of Filter.RepresentedByCard y -> Just y; _ -> Nothing),
       Arm.nullary "IsExiledFaceDown" Filter.IsExiledFaceDown,
+      Arm.nullary "IsWarped" Filter.IsWarped,
       Arm.nullary "Transformed" Filter.Transformed,
       Arm.nullary "IsRingBearer" Filter.IsRingBearer,
       Arm.nullary "IsPaired" Filter.IsPaired,
@@ -382,6 +383,7 @@ tagOf x = case x of
   Filter.IsFaceDown {} -> "IsFaceDown"
   Filter.RepresentedByCard {} -> "RepresentedByCard"
   Filter.IsExiledFaceDown {} -> "IsExiledFaceDown"
+  Filter.IsWarped {} -> "IsWarped"
   Filter.Transformed {} -> "Transformed"
   Filter.IsRingBearer {} -> "IsRingBearer"
   Filter.IsPaired {} -> "IsPaired"
