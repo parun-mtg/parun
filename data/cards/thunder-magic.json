@@ -62,7 +62,7 @@
                           },
                           "ref": {
                             "type": "InSlot",
-                            "value": "target"
+                            "value": "thunder"
                           }
                         }
                       ]
@@ -72,7 +72,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "thunder": {
                 "pool": {
                   "type": "Creatures"
                 }
@@ -94,7 +94,7 @@
                           },
                           "ref": {
                             "type": "InSlot",
-                            "value": "target"
+                            "value": "thundara"
                           }
                         }
                       ]
@@ -104,7 +104,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "thundara": {
                 "pool": {
                   "type": "Creatures"
                 }
@@ -126,7 +126,7 @@
                           },
                           "ref": {
                             "type": "InSlot",
-                            "value": "target"
+                            "value": "thundaga"
                           }
                         }
                       ]
@@ -136,7 +136,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "thundaga": {
                 "pool": {
                   "type": "Creatures"
                 }

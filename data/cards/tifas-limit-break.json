@@ -72,7 +72,7 @@
                       },
                       "ref": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "somersault"
                       }
                     }
                   }
@@ -80,7 +80,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "somersault": {
                 "pool": {
                   "type": "Creatures"
                 }
@@ -107,7 +107,7 @@
                                 "type": "Measure",
                                 "value": "Power"
                               },
-                              "slot": "target"
+                              "slot": "meteorStrikes"
                             }
                           },
                           "toughness": {
@@ -117,14 +117,14 @@
                                 "type": "Measure",
                                 "value": "Toughness"
                               },
-                              "slot": "target"
+                              "slot": "meteorStrikes"
                             }
                           }
                         }
                       },
                       "ref": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "meteorStrikes"
                       }
                     }
                   }
@@ -132,7 +132,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "meteorStrikes": {
                 "pool": {
                   "type": "Creatures"
                 }
@@ -166,7 +166,7 @@
                                     "type": "Measure",
                                     "value": "Power"
                                   },
-                                  "slot": "target"
+                                  "slot": "finalHeaven"
                                 }
                               }
                             }
@@ -185,7 +185,7 @@
                                     "type": "Measure",
                                     "value": "Toughness"
                                   },
-                                  "slot": "target"
+                                  "slot": "finalHeaven"
                                 }
                               }
                             }
@@ -194,7 +194,7 @@
                       },
                       "ref": {
                         "type": "InSlot",
-                        "value": "target"
+                        "value": "finalHeaven"
                       }
                     }
                   }
@@ -202,7 +202,7 @@
               }
             ],
             "targetSlots": {
-              "target": {
+              "finalHeaven": {
                 "pool": {
                   "type": "Creatures"
                 }
