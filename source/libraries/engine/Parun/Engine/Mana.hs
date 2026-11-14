@@ -719,7 +719,7 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
       -- `announcedByComponent`'s.
       --
       -- Not implemented: a yield reading any other slot its cost binds, which
-      -- is supplied as the offer prices it (#6152).
+      -- is supplied as the offer prices it (#7634).
       perCandidate option =
         let (activations, share, manaCost) = measured option
             addsReading slot addition = Set.member slot (Quantity.objectSlots (ManaAddition.count addition)) || Map.member slot (Slots.productionSlots (ManaAddition.production addition))
@@ -747,7 +747,7 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
                 Nothing
                   | announcedByComponent option ->
                       [ (activations, plainYield yield, manaCost, fixed)
-                      | (x, fixed) <- takeWhile ((> 0) . Activations.times . snd) [(x, measuredAt x option) | x <- [1 .. Natural.length (GameState.battlefield gs)]],
+                      | (x, fixed) <- takeWhile ((> 0) . Activations.times . snd) [(x, measuredAt x option) | x <- [1 .. componentCeiling]],
                         yield <- ListUtils.nubOrd [shareOf priced | (offered, priced) <- manaRepricingsGiven (Map.singleton Binding.variableX (Binding.toAmount x)) gs pcs oid gs, offered == option],
                         not (null (unitsOf yield))
                       ]
@@ -776,13 +776,18 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
       -- what the activation at that X spends, so the walk takes X Goats for X
       -- mana. Its mana part announces none, so nothing is charged per X; X =
       -- 0 adds nothing and is no supply. Bounded by the battlefield's size,
-      -- past which no count of permanents is payable; a bound short of another
-      -- kind of count only understates supply. The proof is
+      -- past which no count of permanents is payable, or by the counters on
+      -- it where that is larger, past which no count of counters is --
+      -- Petalmane Baku's "Remove X ki counters"; a bound short of another kind
+      -- of count only understates supply. The proof is
       -- data/scenarios/mana's
       -- cr-107-3a-springjack-pasture-sacrifice-x-goats-offers-the-cast, with
       -- cr-107-3a-springjack-pasture-beside-one-goat-offers-no-two-mana-cast
-      -- for the bound and cr-107-3a-two-springjack-pastures-share-their-goats
-      -- for the claim.
+      -- for the bound, cr-107-3a-two-springjack-pastures-share-their-goats
+      -- for the claim, and
+      -- cr-107-3a-petalmane-baku-remove-x-ki-counters-offers-the-cast for the
+      -- counters.
+      componentCeiling = max (Natural.length (GameState.battlefield gs)) (sum [sum (Object.counters object) | candidate <- Foldable.toList (GameState.battlefield gs), object <- Maybe.maybeToList (Game.lookupObject candidate gs)])
       announcedByComponent option = readsX option && not (announcing option) && any CostAmount.Engine.componentHasVariable (Cost.components (ManaOption.cost option))
       measuredAt x option = supply ForOffer pcs pid oid (CostAmount.Engine.substituteAnnounced Binding.variableX x (ManaOption.cost option)) (ManaOption.restrictions option) (ManaOption.ability option) gs
       -- CR 601.2h / 118.1 on the supply side: a yield reading how many counters
@@ -797,7 +802,7 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
       -- carry where the floor is all it fixes (CounterSpread.FromAmongAtLeast).
       --
       -- Not implemented: a floor not yet announced (CR 601.2b's X), which is
-      -- supplied as the offer prices it (#6152).
+      -- supplied as the offer prices it (#7634).
       removable option = case [removal | CostComponent.RemoveCounters removal <- Cost.components (ManaOption.cost option)] of
         [CountersFromPermanents.MkCountersFromPermanents (ObjectCount.Exactly (CostAmount.Fixed floor_)) which criterion spread]
           | any (any (Set.member Binding.removedCounters . QuantitySlot.slots . ManaAddition.count) . Maybe.mapMaybe ManaAbility.manaProduced . Foldable.toList . Clause.effects . fst) (ManaOption.steps option) ->
