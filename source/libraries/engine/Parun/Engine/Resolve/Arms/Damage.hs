@@ -1133,13 +1133,13 @@ search settle performManaAbility runSubgame resolving source controller legal (S
         -- RevealThenTop's and Top's found cards are still in the library at
         -- its shuffle, and CR 701.24b leaves them out of it: not reordered,
         -- they stay the objects the search found until they are put on top,
-        -- which reorders them (CR 701.20d). Several would go on top in the
-        -- order their owner states (CR 401.4, arrangeInLibrary) -- a
-        -- regression fence, no card in data/cards putting more than one into
-        -- one library; Insidious Dreams would (gap #5394). The scenarios
-        -- cr-701-24b-mystical-tutor-s-find-is-left-out-of-the-shuffle-and-put-on-top
-        -- and, unrevealed and one library per searcher,
-        -- cr-701-24b-scheming-symmetry-puts-each-searcher-s-find-on-top-of-their-own-library
+        -- which reorders them (CR 701.20d). Several go on top in the order
+        -- their owner states (CR 401.4, arrangeInLibrary). The scenarios
+        -- cr-701-24b-mystical-tutor-s-find-is-left-out-of-the-shuffle-and-put-on-top,
+        -- unrevealed and one library per searcher
+        -- cr-701-24b-scheming-symmetry-puts-each-searcher-s-find-on-top-of-their-own-library,
+        -- and, several finds in one library,
+        -- cr-107-3a-whole-card-insidious-dreams-discards-two-finds-two-and-stacks-them-in-order
         -- are the proof.
         let readLibraries = ListUtils.nubOrd [owner | (_, owner, chosenZones, _, _, _) <- decisions, Set.member Zone.Library chosenZones]
             shuffled
