@@ -398,11 +398,15 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   Spec.it s "render prints a trigger on attacking, blocking and combat damage" $ do
     let on event effects = withFace (\f -> (typed [CardType.Creature] [] f) {Face.triggeredAbilities = [triggered event [clause effects] []]})
     Spec.assertEq s [[Text.pack "Whenever Spark attacks, defending player discards a card.", Text.pack "When Spark attacks, defending player discards a card."]] (Oracle.abilities (on (TriggerCondition.Attacks (AttackTrigger.Attacker AttackerTrigger.defaultValue)) [discard (PlayerRef.InSlot thatPlayer) 1]))
-    let raiders = on (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Player PlayerRelation.Opponent)))) [discard (PlayerRef.InSlot thatPlayer) 1]
+    let raiders = on (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Player PlayerRelation.Opponent)) 0)) [discard (PlayerRef.InSlot thatPlayer) 1]
     Spec.assertEq s (Just (Text.pack "Whenever Spark deals combat damage to an opponent, that player discards a card.")) (Oracle.render raiders)
     -- Free: the player the event names is "they" too (Mai, Scornful Striker).
     Spec.assertBool s (elem (Text.pack "Whenever Spark deals combat damage to an opponent, they discard a card.") (concat (Oracle.abilities raiders))) "no \"they\" for the player an event names"
     Spec.assertBool s (Oracle.says raiders spark (Text.pack "Whenever this creature deals combat damage to an opponent, that opponent discards a card.")) "that opponent unsaid"
+    -- Spinneret and Spiderling's floor.
+    Spec.assertEq s (Just (Text.pack "Whenever Spark deals 4 or more damage, you gain 1 life.")) (Oracle.render (on (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing Set.empty 4)) [gainLife 1]))
+    -- Deus of Calamity's, to a player.
+    Spec.assertEq s (Just (Text.pack "Whenever Spark deals 6 or more damage to an opponent, that player discards a card.")) (Oracle.render (on (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing (Set.singleton (DamageRecipient.Player PlayerRelation.Opponent)) 6)) [discard (PlayerRef.InSlot thatPlayer) 1]))
     let sentry = on (TriggerCondition.Blocks (BlockTrigger.MkBlockTrigger BlockRole.Blocker Filter.IsSource (BlockCount.EachCreature (Filter.HasCardType CardType.Creature)))) [destroy (ObjectRef.AllOf (ObjectRef.InSlot thatAttacker NonEmpty.:| [ObjectRef.InSlot self])) Regenerability.Regenerable]
     Spec.assertEq s (Just (Text.pack "Whenever Spark blocks a creature, destroy that creature and it.")) (Oracle.render sentry)
     Spec.assertBool s (Oracle.says sentry spark (Text.pack "When this creature blocks a creature, destroy that creature and this creature.")) "Loyal Sentry's wording unsaid"

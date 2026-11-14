@@ -124,5 +124,6 @@ dealsCombatDamageToAPlayer =
     DamageTrigger.MkDamageTrigger
       { DamageTrigger.actor = ActingPermanent.Self,
         DamageTrigger.kind = Just DamageKind.Combat,
-        DamageTrigger.recipients = Set.singleton (DamageRecipient.Player PlayerRelation.AnyPlayer)
+        DamageTrigger.recipients = Set.singleton (DamageRecipient.Player PlayerRelation.AnyPlayer),
+        DamageTrigger.atLeast = 0
       }

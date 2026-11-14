@@ -828,7 +828,7 @@ trigger n = case Node.tag n of
       (who, whom) <- pair n
       Monad.unless (single who == Just "ThisPermanent") (Node.untranslated n)
       relation <- players whom
-      Right (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self kind (Set.singleton (DamageRecipient.Player relation))), bound [("Trigger_ThatCreature", Oracle.Target.selfSlot), ("Trigger_ThatPlayer", Oracle.Trigger.thatPlayer)])
+      Right (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self kind (Set.singleton (DamageRecipient.Player relation)) 0), bound [("Trigger_ThatCreature", Oracle.Target.selfSlot), ("Trigger_ThatPlayer", Oracle.Trigger.thatPlayer)])
     step phase = do
       whose <- Node.argument n
       scope <- case singlePlayer whose of

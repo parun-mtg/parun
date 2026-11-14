@@ -96,7 +96,7 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
       codec
       ( GrantedAbility.Triggered
           ( TriggeredAbility.MkTriggeredAbility
-              (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Player PlayerRelation.AnyPlayer))))
+              (TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Player PlayerRelation.AnyPlayer)) 0))
               emptyModal
               Nothing
               Nothing

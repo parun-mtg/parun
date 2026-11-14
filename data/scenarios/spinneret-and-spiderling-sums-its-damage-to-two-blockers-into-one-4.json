@@ -1,0 +1,17 @@
+{
+  "description": "CR 603.2c, 510.2: Spinneret and Spiderling's 2 combat damage to each of two blockers is one event of 4 damage, which exiles alice's top card",
+  "note": "Neither blocker is dealt 4, so a per-recipient reading would trigger nothing.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "library": [{"card": "Forest"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Spinneret and Spiderling", "label": "sp", "ready": true, "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 3}]}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Grizzly Bears", "label": "b1", "ready": true}, {"card": "Grizzly Bears", "label": "b2", "ready": true}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$sp"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$b1": ["$sp"], "$b2": ["$sp"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": {"Answer": {"prompt": "AssignCombatDamage", "with": [[["Creature", "$b1"], 2], [["Creature", "$b2"], 2]]}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 2}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Exile", "is": ["Forest"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "do": {"PlayLand": "Forest"}},
+    {"turn": 1, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Forest", "count": 1}}}
+  ]
+}

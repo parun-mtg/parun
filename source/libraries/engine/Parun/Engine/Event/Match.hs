@@ -1212,7 +1212,8 @@ armMatches bindings board atEvent gs bearer you cond event = case cond of
           DamageTrigger.MkDamageTrigger
             { DamageTrigger.actor = ActingPermanent.Matching (PermanentsDealDamageToPlayer.filter p),
               DamageTrigger.kind = PermanentsDealDamageToPlayer.kind p,
-              DamageTrigger.recipients = Set.singleton (DamageRecipient.Player (PermanentsDealDamageToPlayer.recipient p))
+              DamageTrigger.recipients = Set.singleton (DamageRecipient.Player (PermanentsDealDamageToPlayer.recipient p)),
+              DamageTrigger.atLeast = 0
             }
       )
       event

@@ -1498,7 +1498,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.Enters (EntersTrigger.MkEntersTrigger permanent batching) -> fmap TriggerCondition.Enters (EntersTrigger.MkEntersTrigger <$> actingChildren c permanent <*> pure batching)
   TriggerCondition.StepBegins (StepBegins.MkStepBegins phase ordinal turn) -> fmap TriggerCondition.StepBegins (StepBegins.MkStepBegins phase <$> traverse (triggerOrdinal c HistoryRead.StepBegins) ordinal <*> triggerTurn c turn)
   TriggerCondition.StateIs state -> fmap TriggerCondition.StateIs (triggerState c state)
-  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger actor kind recipients) -> fmap (\renamed -> TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger renamed kind recipients)) (actingChildren c actor)
+  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger actor kind recipients atLeast) -> fmap (\renamed -> TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger renamed kind recipients atLeast)) (actingChildren c actor)
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage recipient kind by) batching) ->
     fmap (\renamed -> TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage renamed kind by) batching)) (actingChildren c recipient)
   TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching turn) -> fmap (TriggerCondition.PlayerIsDealtDamage . PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching) (triggerTurn c turn)

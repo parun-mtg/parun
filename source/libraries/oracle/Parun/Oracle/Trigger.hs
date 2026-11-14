@@ -134,7 +134,7 @@ event context creature c = case c of
     word <- ["it", that]
     subject <- also one
     [other ("Whenever " <> subject <> " attacks and isn't blocked") [(attackingCreature, word), (thatPlayer, "defending player")]]
-  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching f) (Just DamageKind.Combat) recipients)
+  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching f) (Just DamageKind.Combat) recipients 0)
     | [DamageRecipient.Player relation] <- Set.toList recipients -> do
         (one, that) <- described context f
         (whom, player') <- player relation
@@ -242,7 +242,13 @@ selfEvent context creature c = case c of
   -- not (Stuffy Doll).
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self Nothing Nothing) Batching.OneOrMore) -> [(recurring <> ["Enrage \8212 Whenever"], "is dealt damage", [])]
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self (Just DamageKind.Combat) Nothing) Batching.OneOrMore) -> [(recurring, "is dealt combat damage", [])]
-  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self kind recipients)
+  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing recipients atLeast)
+    | Set.null recipients, atLeast > 0 -> [(recurring, "deals " <> show atLeast <> " or more damage", [])]
+    | [DamageRecipient.Player relation] <- Set.toList recipients,
+      atLeast > 0 -> do
+        (whom, that) <- player relation
+        [(recurring, "deals " <> show atLeast <> " or more damage to " <> whom, [(thatPlayer, that)])]
+  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self kind recipients 0)
     | Set.null recipients, Nothing <- kind -> [(recurring, "deals damage", [])]
     | Set.null recipients, Just DamageKind.Combat <- kind -> [(recurring, "deals combat damage", [])]
     | [DamageRecipient.Player relation] <- Set.toList recipients,
