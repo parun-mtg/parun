@@ -1373,6 +1373,7 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
     giant <- S.printingOf s registry "Hill Giant"
     bears <- S.printingOf s registry "Grizzly Bears"
     jace <- S.printingOf s registry "Jace Beleren"
+    forest <- S.printingOf s registry "Forest"
     board <- planarBoard s registry ["Mount Keralia", "Tazeem"]
     let (giantId, b1) = S.addPermanent giant S.alice board
         (alicesJace, b2) = S.addPermanent jace S.alice b1
@@ -1382,13 +1383,15 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
         pressured = inMain S.alice (endStep S.bob (endStep S.alice loyal))
         keralia = Maybe.fromMaybe S.noSource (Maybe.listToMaybe (Planechase.faceUp pressured))
         walked = rollAndResolve 6 pressured
-        shielded = rollAndResolve 6 (rollAndResolve 5 pressured)
+        -- CR 901.9: the second roll costs {1}, which the Forest pays.
+        shielded = rollAndResolve 6 (rollAndResolve 5 (snd (S.addPermanent forest S.alice pressured)))
         loyalty = S.counterOf CounterKind.Loyalty
     Spec.assertEqWith s "CR 901.6 alice's end step and bob's: two pressure counters" (S.counterOf pressure keralia pressured) 2
     Spec.assertEqWith s "CR 608.2h the departed plane dealt two to alice's Hill Giant" (S.damageOf giantId walked) (Just 2)
     Spec.assertEqWith s "and two to each Jace" (loyalty alicesJace walked, loyalty bobsJace walked) (1, 1)
     Spec.assertEqWith s "and bob's Grizzly Bears died" (zoneNames Zone.Graveyard S.bob walked) [cardName "Grizzly Bears"]
     Spec.assertEqWith s "CR 701.31b Tazeem is face up, Mount Keralia face down" (faceUpNames walked, deckNames S.alice walked) ([cardName "Tazeem"], [cardName "Mount Keralia"])
+    Spec.assertEqWith s "the second roll walked to Tazeem" (faceUpNames shielded) [cardName "Tazeem"]
     Spec.assertEqWith s "CR 609.7b after chaos, alice's Hill Giant takes nothing" (S.damageOf giantId shielded) (Just 0)
     Spec.assertEqWith s "nor her Jace, while bob's takes two" (loyalty alicesJace shielded, loyalty bobsJace shielded) (3, 1)
     Spec.assertEqWith s "and bob's Grizzly Bears still died" (zoneNames Zone.Graveyard S.bob shielded) [cardName "Grizzly Bears"]

@@ -27056,6 +27056,7 @@
     "OPC2": {
       "9": {"card":"Akoum"},
       "11": {"card":"Astral Arena"},
+      "25": {"card":"Mount Keralia"},
       "4": {"card":"Mutual Epiphany"},
       "30": {"card":"Orzhova"}
     },
@@ -27067,6 +27068,7 @@
       "17": {"card":"Celestine Reef"},
       "21": {"card":"Eloren Wilds"},
       "24": {"card":"Fields of Summer"},
+      "52": {"card":"Mount Keralia"},
       "4": {"card":"Mutual Epiphany"},
       "55": {"card":"Naya"},
       "60": {"card":"Orzhova"},
