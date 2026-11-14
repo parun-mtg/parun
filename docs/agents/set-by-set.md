@@ -256,7 +256,8 @@ A stale transcription looks exactly like a missing capability: grep
 card, sweep the corpus for its siblings.
 
 A hand-written card runs `parun oracle` and then `-p Parun.Ingest -p
-Parun.Engine.Card.Lint` before the push (`CLAUDE.md`): `parun oracle` gives a
+Parun.Engine.Card.Lint -p Parun.Cards` before the push (`CLAUDE.md`):
+`parun oracle` gives a
 card the Oracle renderer does not render an empty
 `data/oracle-unrendered/<slug>.txt`, and takes one that starts rendering off.
 

@@ -1494,8 +1494,12 @@ assertAuthors ::
 assertAuthors s registry pool label counts authors = do
   let facesCount faces = Foldable.foldl' (\(a, b) (c, d) -> (a + c, b + d)) (0, 0) (fmap counts faces)
       authored = facesCount . fmap survey . Foldable.toList . Card.Type.faces . Printing.card
-  counted <- traverse (\(name, _) -> fmap (\p -> (name, authored p)) (S.printingOf s registry name)) authors
-  Spec.assertEqWith s label counted (fmap (\(name, n) -> (name, (n, 0))) authors)
+      filed = Registry.filedAs . Printing.card
+  printings <- traverse (S.printingOf s registry . fst) authors
+  Spec.assertEqWith s label (zip (fmap fst authors) (fmap authored printings)) (fmap (\(name, n) -> (name, (n, 0))) authors)
+  -- Named before the total, so a new author's failure says which card to list.
+  let listed = Set.fromList (fmap filed printings)
+  Spec.assertEqWith s "and they are the pool's only ones: unlisted authors" [filed p | (p, faces) <- pool, uncurry (+) (facesCount faces) > 0, filed p `Set.notMember` listed] []
   Spec.assertEqWith s "and they are the pool's only ones" (sum (fmap (uncurry (+) . facesCount . snd) pool)) (sum (fmap snd authors))
 
 filterPositionLintSpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
