@@ -3978,6 +3978,11 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
               let usable way = Maybe.isJust (underAlternative allowed face (PlayerEffect.permissionAlternative way) unfolded)
               permissionUsed <- choosePlayPermission pid sid (filter usable (fmap (fmap (\way@(src, grant) -> if src == oid then (sid, grant) else way)) (Maybe.fromMaybe [] ways)))
               let ridersUsed = riders permissionUsed
+                  -- CR 118.9 / 601.2b: which printed alternative cost was
+                  -- paid, bound under Binding.printedAlternativeCost below. No
+                  -- permission's alternative is laid over such a candidate
+                  -- (underAlternative, CR 118.9a).
+                  paidAlternative = foldMap (Map.singleton Binding.printedAlternativeCost . Binding.toAmount) (CandidateCost.printedAlternative chosenCandidate)
                   -- CR 118.9: the permission's alternative cost, laid over the
                   -- candidate before its additional costs; `usable` leaves no
                   -- way it refuses, so the fallback is never taken.
@@ -4293,7 +4298,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                             g
                               { GameState.objects =
                                   Map.adjust
-                                    (\o -> o {Object.bindings = stampChooser (Binding.setAnnouncedTargets chosen (Binding.setYou pid (Binding.setTriggerSource sid (Target.stampDefendingPlayers sid chosen g (Map.union (Binding.fromAnnounced counts) (Binding.setDivisions divisions (Binding.fromChoices chosen boundX chosenModes)))))))})
+                                    (\o -> o {Object.bindings = stampChooser (Binding.setAnnouncedTargets chosen (Binding.setYou pid (Binding.setTriggerSource sid (Target.stampDefendingPlayers sid chosen g (Map.unions [paidAlternative, Binding.fromAnnounced counts, Binding.setDivisions divisions (Binding.fromChoices chosen boundX chosenModes)])))))})
                                     sid
                                     (GameState.objects g)
                               }

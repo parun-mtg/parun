@@ -2111,6 +2111,7 @@ reservedSlots =
       Binding.collectedEvidence,
       Binding.waterbendCost,
       Binding.blightCost,
+      Binding.printedAlternativeCost,
       Binding.removedCounters,
       Binding.loyaltyRemoved,
       Binding.crewedVehicle,
@@ -5967,6 +5968,10 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         --     against the same `sacrificesAsCost` for Jarad, Golgari Lich Lord.
         --   * the slot a CR 118.12 cost paid at resolution binds, per
         --     `payGateBound`.
+        --   * Binding.printedAlternativeCost, and only when the face prints an
+        --     alternative cost: Parun.Engine.Cast binds it for a spell cast for
+        --     one, so Baleful Mastery's "if the {1}{B} cost was paid" is an
+        --     ordinary Quantity.WasBound read.
         --   * Binding.modeChooser, and only when the face names a chooser other
         --     than its caster (Face.modeChooser): Parun.Engine.Cast stamps CR
         --     700.2e's chooser for exactly those, so Fatal Lore's "that player"
@@ -5989,7 +5994,11 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
                 if Face.modeChooser card /= PlayerRelation.You
                   then Set.singleton Binding.modeChooser
                   else Set.empty
-           in modalSlotsOffend (armedReads card) (Set.unions [Set.fromList [Binding.you, Binding.triggerSource], announcedX, revealed, sacrificed, recorded, chooser, payGateBound (Face.spell card)]) (Face.spell card)
+              alternative =
+                if null (Face.alternativeCosts card)
+                  then Set.empty
+                  else Set.singleton Binding.printedAlternativeCost
+           in modalSlotsOffend (armedReads card) (Set.unions [Set.fromList [Binding.you, Binding.triggerSource], announcedX, revealed, sacrificed, recorded, chooser, alternative, payGateBound (Face.spell card)]) (Face.spell card)
         sweeps = anyFaceOrMinted cardOffends
         offenders = filter (sweeps . Printing.card) ps
         slot = SlotName.MkSlotName (Text.pack "creature")
