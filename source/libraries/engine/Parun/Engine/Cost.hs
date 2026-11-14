@@ -4956,7 +4956,7 @@ criteriaOf component = case component of
 -- Not implemented: asking where a set of answers does not compose. With
 -- everything kept the whole action goes back unasked, a combat toll's mill
 -- (`unreversibleStretch`) with it; otherwise the activation stands unasked
--- (#4860).
+-- (#7445).
 --
 -- The special actions and CR 118.12's payment announce nothing that writes:
 -- their two states differ only in Bookkeeping.lastChoice and, at
@@ -4980,7 +4980,7 @@ criteriaOf component = case component of
 -- is the proof.
 --
 -- Not implemented: telling them apart where such a state does not compose;
--- they come back as one (#4860).
+-- they come back as one (#7445).
 --
 -- The CANCELLATION HAPPENS FIRST, before the question: rule 734.1 reverses the
 -- action and cancels the payments flat, and only its last-but-one sentence
