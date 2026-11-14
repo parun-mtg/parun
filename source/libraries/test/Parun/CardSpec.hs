@@ -3611,6 +3611,7 @@ modificationFilters modification = case modification of
   Modification.GainKeywordAtManaCost keyword -> case keyword of
     CostKeyword.Flashback -> []
     CostKeyword.Scavenge -> []
+    CostKeyword.Unearth -> []
     CostKeyword.Embalm -> []
     CostKeyword.Encore -> []
     CostKeyword.Disguise -> []

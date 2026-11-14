@@ -14,6 +14,7 @@ codec =
     tagOf
     [ Arm.nullary "Flashback" CostKeyword.Flashback,
       Arm.nullary "Scavenge" CostKeyword.Scavenge,
+      Arm.nullary "Unearth" CostKeyword.Unearth,
       Arm.nullary "Embalm" CostKeyword.Embalm,
       Arm.nullary "Encore" CostKeyword.Encore,
       Arm.nullary "Disguise" CostKeyword.Disguise,
@@ -29,6 +30,7 @@ tagOf :: CostKeyword.CostKeyword -> String
 tagOf x = case x of
   CostKeyword.Flashback -> "Flashback"
   CostKeyword.Scavenge -> "Scavenge"
+  CostKeyword.Unearth -> "Unearth"
   CostKeyword.Embalm -> "Embalm"
   CostKeyword.Encore -> "Encore"
   CostKeyword.Disguise -> "Disguise"

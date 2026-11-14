@@ -12,6 +12,8 @@ data CostKeyword
     Flashback
   | -- | CR 702.97a (Varolz, the Scar-Striped).
     Scavenge
+  | -- | CR 702.84a (Grixis).
+    Unearth
   | -- | CR 702.128a (Cursecloth Wrappings).
     Embalm
   | -- | CR 702.141a (Wire Surgeons).

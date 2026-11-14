@@ -14,6 +14,12 @@ spec s = Spec.describe s "Parun.Codec.CostKeyword" $ do
       CostKeyword.codec
       CostKeyword.Scavenge
       " \"Scavenge\" "
+  Spec.it s "Unearth" $
+    Common.assertCodec
+      s
+      CostKeyword.codec
+      CostKeyword.Unearth
+      " \"Unearth\" "
   Spec.it s "BeamMeUp restricting no creature" $
     Common.assertCodec
       s

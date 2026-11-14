@@ -3110,6 +3110,23 @@ ownManaCostKeywordSpec s registry = Spec.describe s "Keyword priced at the card'
     Spec.assertEqWith s "CR 702.141a one Yotian Soldier token per opponent" (length (tokensNamed "Yotian Soldier" after)) 2
     Spec.assertEqWith s "CR 202.1a paid with the Soldier's own {3}: three Mountains tapped" (S.tappedCount S.alice after) 3
 
+  -- Grixis, a face-up plane, grants unearth to the red Hill Giant {3}{R} and not
+  -- to the green Grizzly Bears: the Giant returns with haste for four Mountains.
+  Spec.it s "CR 702.84a Grixis's unearth is paid with the Giant's own {3}{R}" $ do
+    grixis <- S.printingOf s registry "Grixis"
+    (_, gyId, gs0) <- ownManaCostBoard s registry Nothing "Hill Giant"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    let (_, gs1) = S.addObjectIn Zone.Command grixis S.alice gs0
+        (bearsId, gs) = S.addGraveyardCard bears S.alice gs1
+        after = activateOnly S.identityAnswer gyId gs
+        giants = filter (\oid -> fmap Face.name (Game.faceOf oid after) == Just (CardName.MkCardName (Text.pack "Hill Giant"))) (Game.zoneMembers Zone.Battlefield S.alice after)
+    Spec.assertBool s (null (Activatable.abilitiesFor bearsId gs)) "CR 105.2 the green Bears is given no unearth"
+    case giants of
+      [giant] -> do
+        Spec.assertBool s (Projection.hasKeyword Keyword.Haste giant after) "CR 702.84a the unearthed Giant has haste"
+        Spec.assertEqWith s "CR 202.1a paid with the Giant's own {3}{R}: four Mountains tapped" (S.tappedCount S.alice after) 4
+      other -> Spec.assertFailure s ("expected one unearthed Hill Giant, got " <> show (length other))
+
 -- CR 702.84a, every sentence of it: "[Cost]: Return this card from your graveyard
 -- to the battlefield. It gains haste. Exile it at the beginning of the next end
 -- step. If it would leave the battlefield, exile it instead of putting it anywhere

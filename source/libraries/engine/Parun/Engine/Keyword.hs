@@ -3252,8 +3252,8 @@ madnessCostFor manaCost payload = case payload of
   MadnessCost.Stated cost -> cost
   MadnessCost.OwnManaCost -> Cost.MkCost {Cost.mana = manaCost, Cost.components = []}
 
--- CR 702.34a / 702.97a / 702.128a / 702.141a / 702.168a / 702.152a / 702.180a /
--- 702.187b / 702.56a / 702.119a / 702.196a: the keyword a
+-- CR 702.34a / 702.97a / 702.84a / 702.128a / 702.141a / 702.168a / 702.152a /
+-- 702.180a / 702.187b / 702.56a / 702.119a / 702.196a: the keyword a
 -- Modification.GainKeywordAtManaCost names, carrying the [cost] it was priced
 -- at. Parun.Engine.Projection supplies the receiving object's mana cost, and
 -- grantedBy bakes a beam me up's unreturnable.
@@ -3261,6 +3261,7 @@ withCost :: CostKeyword.CostKeyword -> Cost Keyword -> Keyword
 withCost keyword cost = case keyword of
   CostKeyword.Flashback -> Keyword.Flashback cost
   CostKeyword.Scavenge -> Keyword.Scavenge cost
+  CostKeyword.Unearth -> Keyword.Unearth cost
   CostKeyword.Embalm -> Keyword.Embalm cost
   CostKeyword.Encore -> Keyword.Encore cost
   CostKeyword.Disguise -> Keyword.Disguise cost
