@@ -31,6 +31,7 @@ import qualified Parun.Play.Match
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
+import qualified Parun.Slug as Slug
 import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Test
 import qualified Parun.Types.Card as Card.Type
@@ -123,7 +124,8 @@ readDeckList registry path = do
 -- file wins -- and is named on stderr if it says something other than MTGJSON
 -- does. Then every pool card gains its faces' Oracle text, the one field this
 -- writes into a hand-written file, and data/legalities.json is rewritten with
--- the pool's cards' legalities. Files are written compact;
+-- the pool's cards' legalities, and data/oracle-unrendered is synced as
+-- `parun oracle` syncs it. Files are written compact;
 -- `script/format-json.sh fix` puts them in canonical form.
 --
 -- Prints what it did, and why the cards it did not write were left out, by the
@@ -155,11 +157,13 @@ ingest path = do
       sheetRoot <- StickerSheets.defaultRoot
       sheets <- StickerSheets.loadRoot sheetRoot
       sheetsStamped <- fmap length (Monad.filterM (stampSheet known) [(file, sheet) | (file, Right sheet) <- sheets])
+      markers <- syncUnrendered root (fmap snd pool)
       let reasons = Map.fromListWith (+) [(Text.takeWhile (/= ':') reason, 1 :: Int) | Left reason <- outcomes]
       putStrLn $ "written: " <> show (length (filter (== Right True) outcomes))
       putStrLn $ "already in the pool: " <> show (length (filter (== Right False) outcomes))
       putStrLn $ "pool files given Oracle text: " <> show stamped
       putStrLn $ "sticker sheets given Oracle text: " <> show sheetsStamped
+      reportMarkers markers
       putStrLn $ "pool cards with legality data: " <> show (Map.size (LegalityTable.cards table)) <> " of " <> show (length pool)
       putStrLn $ "left out: " <> show (sum reasons)
       mapM_ (\(kind, n) -> TextIO.putStrLn (Text.pack "  " <> kind <> Text.pack (": " <> show n))) (Map.toDescList reasons)
@@ -167,14 +171,16 @@ ingest path = do
 -- | Prints how much of the pool Parun.Oracle renders, by card and by ability:
 -- the coverage the Oracle check measures (#5477). Parun.IngestSpec checks the
 -- cards it renders in full; an ability rendered on any other card is counted
--- but not checked.
+-- but not checked. Also syncs data/oracle-unrendered ('syncUnrendered').
 oracle :: IO ()
 oracle = do
-  loaded <- Registry.defaultRoot >>= Registry.loadRoot
+  root <- Registry.defaultRoot
+  loaded <- Registry.loadRoot root
   let cards = Maybe.mapMaybe Registry.referenceCard loaded
       rendered = filter (Maybe.isJust . Oracle.render) cards
       abilities = concatMap Oracle.abilities cards
       whole = concatMap Oracle.abilities rendered
+  syncUnrendered root cards >>= reportMarkers
   putStrLn $ "rendered: " <> show (length rendered) <> " of " <> show (length cards)
   putStrLn $ "abilities rendered: " <> show (length (filter (not . null) abilities)) <> " of " <> show (length abilities) <> ", " <> show (length whole) <> " of them on cards rendered in full"
 
@@ -338,6 +344,28 @@ stampSheet (exact, _) (file, sheet) =
    in if stamped == sheet || Maybe.isNothing (StickerSheet.Type.oracleText stamped)
         then pure False
         else True <$ ByteString.writeFile file (Encoding.encodeUtf8 (Common.render (Codec.encode StickerSheet.codec stamped)))
+
+-- | Makes data/oracle-unrendered hold exactly one empty SLUG.txt per card
+-- Parun.Oracle does not render, the list Parun.IngestSpec checks: a card that
+-- stops rendering gains its marker and one that starts loses it. Returns the
+-- slugs added and removed.
+syncUnrendered :: FilePath -> [Card.Type.Card] -> IO ([String], [String])
+syncUnrendered root cards = do
+  let directory = root <> "/../oracle-unrendered"
+  files <- Directory.listDirectory directory
+  let listed = Map.fromList [(maybe file Text.unpack (Text.stripSuffix (Text.pack ".txt") (Text.pack file)), file) | file <- files]
+      unrendered = Set.fromList [Text.unpack (Slug.unwrap (Registry.filedAs card)) | card <- cards, Maybe.isNothing (Oracle.render card)]
+      added = Set.toList (Set.difference unrendered (Map.keysSet listed))
+      removed = Map.withoutKeys listed unrendered
+  mapM_ (\slug -> writeFile (directory <> "/" <> slug <> ".txt") "") added
+  mapM_ (\file -> Directory.removeFile (directory <> "/" <> file)) removed
+  pure (added, Map.keys removed)
+
+reportMarkers :: ([String], [String]) -> IO ()
+reportMarkers (added, removed) = do
+  putStrLn $ "unrendered markers added: " <> show (length added) <> ", removed: " <> show (length removed)
+  mapM_ (putStrLn . ("  + " <>)) added
+  mapM_ (putStrLn . ("  - " <>)) removed
 
 writeCard :: FilePath -> Card.Type.Card -> IO ()
 writeCard file = ByteString.writeFile file . Encoding.encodeUtf8 . Common.render . Codec.encode Card.codec

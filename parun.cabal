@@ -2114,6 +2114,7 @@ library executable
     parun:play,
     parun:registry,
     parun:scenario,
+    parun:slug,
     parun:test,
     parun:types,
     text ^>=2.1.3,
