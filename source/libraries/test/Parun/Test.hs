@@ -202,6 +202,7 @@ import qualified Parun.Codec.CoinReadingSpec
 import qualified Parun.Codec.ColorSpec
 import qualified Parun.Codec.ColorSpreadSpec
 import qualified Parun.Codec.CombatDamageAmountSpec
+import qualified Parun.Codec.CombatDamageObligationSpec
 import qualified Parun.Codec.CombatDamageOptionSpec
 import qualified Parun.Codec.CombatDeclarationSpec
 import qualified Parun.Codec.CombatRestrictionSpec
@@ -1816,6 +1817,7 @@ spec s reference corpus = do
   Parun.Codec.RevealCauseSpec.spec s
   Parun.Codec.RevealTimingSpec.spec s
   Parun.Codec.RevealedThisWaySpec.spec s
+  Parun.Codec.CombatDamageObligationSpec.spec s
   Parun.Codec.RevealObligationSpec.spec s
   Parun.Codec.RevealedSpec.spec s
   Parun.Codec.RevealSpec.spec s

@@ -20,6 +20,7 @@ import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.ChangeWord as ChangeWord
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
+import qualified Parun.Types.CombatDamageObligation as CombatDamageObligation
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
 import qualified Parun.Types.CopyException as CopyException
 import qualified Parun.Types.Copyability as Copyability
@@ -116,7 +117,7 @@ testCharacteristics =
       -- wrong field would not round trip to the same JSON.
       PC.textChangedKeywords = Map.singleton Keyword.Trample 1,
       PC.combatDamageAmount = Just CombatDamageAmount.EqualToToughness,
-      PC.combatDamageOptions = Set.singleton CombatDamageOption.ToDefendingCreature,
+      PC.combatDamageOptions = Map.singleton CombatDamageOption.ToDefendingCreature CombatDamageObligation.Optional,
       PC.grantsStationToughness = True,
       PC.loyaltyIsToughness = True,
       -- Parun.Codec.FaceSpec's own values for the four cost fields.
@@ -188,7 +189,7 @@ testCharacteristicsJson =
     <> "\"wordChanges\":[{\"from\":{\"type\":\"Spirit\"},\"to\":{\"type\":\"Elf\"}}],"
     <> "\"textChangedKeywords\":[{\"key\":{\"type\":\"Trample\"},\"value\":1}],"
     <> "\"combatDamageAmount\":\"EqualToToughness\","
-    <> "\"combatDamageOptions\":[\"ToDefendingCreature\"],"
+    <> "\"combatDamageOptions\":[{\"key\":\"ToDefendingCreature\",\"value\":\"Optional\"}],"
     <> "\"grantsStationToughness\":true,"
     <> "\"loyaltyIsToughness\":true,"
     <> "\"additionalCosts\":[{\"type\":\"TapThis\"}],"
@@ -251,7 +252,7 @@ minimalCharacteristics =
       PC.wordChanges = [],
       PC.textChangedKeywords = Map.empty,
       PC.combatDamageAmount = Nothing,
-      PC.combatDamageOptions = Set.empty,
+      PC.combatDamageOptions = Map.empty,
       PC.grantsStationToughness = False,
       PC.loyaltyIsToughness = False,
       PC.additionalCosts = [],

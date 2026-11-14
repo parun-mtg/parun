@@ -14,6 +14,7 @@ import qualified Parun.Codec.ChangeWord as ChangeWord
 import qualified Parun.Codec.CharacteristicPT as CharacteristicPT
 import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.CombatDamageAmount as CombatDamageAmount
+import qualified Parun.Codec.CombatDamageObligation as CombatDamageObligation
 import qualified Parun.Codec.CombatDamageOption as CombatDamageOption
 import qualified Parun.Codec.CopyException as CopyException
 import qualified Parun.Codec.Copyability as Copyability
@@ -92,7 +93,7 @@ codec = Fields.object $ do
   wordChanges <- Fields.defaulted "wordChanges" [] (Common.list ChangeWord.codec) PC.wordChanges
   textChangedKeywords <- Fields.defaulted "textChangedKeywords" Map.empty (Common.multiset Keyword.codec) PC.textChangedKeywords
   combatDamageAmount <- Fields.defaulted "combatDamageAmount" Nothing (Common.maybe CombatDamageAmount.codec) PC.combatDamageAmount
-  combatDamageOptions <- Fields.defaulted "combatDamageOptions" Set.empty (Common.set CombatDamageOption.codec) PC.combatDamageOptions
+  combatDamageOptions <- Fields.defaulted "combatDamageOptions" Map.empty (Common.keyedList (Common.keyValue CombatDamageOption.codec CombatDamageObligation.codec)) PC.combatDamageOptions
   grantsStationToughness <- Fields.defaulted "grantsStationToughness" False Common.boolean PC.grantsStationToughness
   loyaltyIsToughness <- Fields.defaulted "loyaltyIsToughness" False Common.boolean PC.loyaltyIsToughness
   additionalCosts <- Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) PC.additionalCosts

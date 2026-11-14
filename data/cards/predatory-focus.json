@@ -1,0 +1,82 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Predatory Focus",
+      "oracleText": "You may have creatures you control assign their combat damage this turn as though they weren't blocked.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "AssignCombatDamageAs",
+                        "value": {
+                          "obligation": "Mandatory",
+                          "option": "AsThoughUnblocked"
+                        }
+                      },
+                      "ref": {
+                        "type": "EachMatching",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "You"
+                              }
+                            },
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                ],
+                "optionality": {
+                  "type": "Optional"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

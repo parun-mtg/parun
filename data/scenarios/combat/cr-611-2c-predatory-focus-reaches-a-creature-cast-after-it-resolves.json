@@ -1,0 +1,44 @@
+{
+  "description": "CR 611.2c Predatory Focus taken: Grizzly Bears, and a Raging Goblin cast after it resolved, both assign to bob as though unblocked, with nobody asked",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "hand": [
+          { "card": "Predatory Focus", "label": "focus" },
+          { "card": "Raging Goblin", "label": "goblin" }
+        ],
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bears", "ready": true },
+          { "card": "Forest", "label": "f1", "ready": true },
+          { "card": "Forest", "label": "f2", "ready": true },
+          { "card": "Forest", "label": "f3", "ready": true },
+          { "card": "Forest", "label": "f4", "ready": true },
+          { "card": "Forest", "label": "f5", "ready": true },
+          { "card": "Mountain", "label": "m1", "ready": true }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Hill Giant", "label": "giant", "ready": true },
+          { "card": "Barbarian Horde", "label": "horde", "ready": true }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$focus", "mana": ["$f1", "$f2", "$f3", "$f4", "$f5", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$goblin", "mana": ["$m1"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$bears", "Raging Goblin"] } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "do": { "Block": { "$giant": ["$bears"], "$horde": ["Raging Goblin"] } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Life": { "player": "bob", "life": 17 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Damage": { "object": "$giant", "damage": 0 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Damage": { "object": "$horde", "damage": 0 } } }
+  ]
+}

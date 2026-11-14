@@ -27,6 +27,7 @@ import Parun.Types.AttackTarget (AttackTarget)
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Combat as Combat.Type
+import qualified Parun.Types.CombatDamageObligation as CombatDamageObligation
 import qualified Parun.Types.CombatDamageOption as CombatDamageOption
 import qualified Parun.Types.CounterCause as CounterCause
 import qualified Parun.Types.CounterChange as CounterChange
@@ -416,13 +417,16 @@ attackerAssignment gs announced contested (attacker, target) = case Projection.c
             live = filter (\oid -> onBattlefield oid gs) (Set.toList recorded)
             -- The controller's "you may", asked just before the creature
             -- assigns (Siege Behemoth's ruling). An assignment it was asked
-            -- for is that player's, so CR 510.1e's return asks it again.
-            offer option pid exercised declined = do
-              answer <- Game.choose (Prompt.ChooseCombatDamageOption (Decide.deciderFor pid gs) pid attacker option)
-              (who, division, thresholds) <- case answer of
-                OptionalDecision.Exercises -> exercised
-                OptionalDecision.Declines -> declined
-              pure (Just (Maybe.fromMaybe pid who), division, thresholds)
+            -- for is that player's, so CR 510.1e's return asks it again. A
+            -- forced option (Outmaneuver) leaves nothing to ask, banding or not.
+            offer option pid exercised declined = case Projection.combatDamageObligation option attacker gs of
+              Just CombatDamageObligation.Mandatory -> exercised
+              _ -> do
+                answer <- Game.choose (Prompt.ChooseCombatDamageOption (Decide.deciderFor pid gs) pid attacker option)
+                (who, division, thresholds) <- case answer of
+                  OptionalDecision.Exercises -> exercised
+                  OptionalDecision.Declines -> declined
+                pure (Just (Maybe.fromMaybe pid who), division, thresholds)
             -- Cunning Giant: all of it to one creature its defending player
             -- controls, whether or not it is attacking anything: its text overrides
             -- CR 510.1b and 506.4c (CR 101.1), and two players have one defending
@@ -769,8 +773,8 @@ turnUpToAssign entry = do
 -- above 0, and a recipient: what attackerAssignment and blockerAssignment would
 -- address, read the way each reads it. An attacker that is blocked by nothing
 -- still there and lacks trample (CR 510.1c), and a blocker whose attackers have
--- all gone (CR 510.1d), assign none. An attacker that may assign as though
--- unblocked counts as one that would (Siege Behemoth grants a face-down creature
+-- all gone (CR 510.1d), assign none. An attacker that may or must assign as
+-- though unblocked counts as one that would (Siege Behemoth grants a face-down creature
 -- that). Cunning Giant's option counts too, a regression fence: a face-down
 -- creature cannot have it (CR 708.2, 613.2b).
 wouldAssign :: GameState -> Either (ObjectId, AttackTarget) (ObjectId, Set.Set ObjectId) -> Bool
@@ -797,8 +801,8 @@ wouldAssign gs entry =
 --   * a blocker they share, whose lethal damage either may put in (CR 702.19b),
 --   * the same attacked PLANESWALKER, whose loyalty either may pay down (CR
 --     702.19c). Only a planeswalker: the other two attack targets carry threshold
---     0, so no share of them gates anything. A blocked creature that may assign
---     as though unblocked reaches it through this same test.
+--     0, so no share of them gates anything. A blocked creature that may or
+--     must assign as though unblocked reaches it through this same test.
 --   * any blocker of this one, for an unblocked creature that may assign to a
 --     creature its defending player controls (Cunning Giant).
 --

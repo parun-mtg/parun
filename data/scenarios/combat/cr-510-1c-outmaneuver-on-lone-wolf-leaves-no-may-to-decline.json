@@ -1,0 +1,30 @@
+{
+  "description": "CR 510.1c Outmaneuver on a blocked Lone Wolf: the forced grant beside the printed may leaves alice nothing to decline, so nobody is asked and bob takes the damage",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "hand": [{ "card": "Outmaneuver", "label": "outmaneuver" }],
+        "battlefield": [
+          { "card": "Lone Wolf", "label": "wolf", "ready": true },
+          { "card": "Mountain", "label": "m1", "ready": true },
+          { "card": "Mountain", "label": "m2", "ready": true }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant", "ready": true }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$wolf"] } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "do": { "Block": { "$giant": ["$wolf"] } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "do": { "Cast": { "object": "$outmaneuver", "x": 1, "mana": ["$m1", "$m2"] } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Life": { "player": "bob", "life": 18 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "alice", "check": { "Damage": { "object": "$giant", "damage": 0 } } }
+  ]
+}

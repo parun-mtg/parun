@@ -94,8 +94,10 @@
           },
           "modifications": [
             {
-              "type": "MayAssignCombatDamage",
-              "value": "AsThoughUnblocked"
+              "type": "AssignCombatDamageAs",
+              "value": {
+                "option": "AsThoughUnblocked"
+              }
             }
           ]
         }

@@ -1,0 +1,70 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Outmaneuver",
+      "oracleText": "X target blocked creatures assign their combat damage this turn as though they weren't blocked.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ModifyTarget",
+                    "value": {
+                      "duration": {
+                        "type": "UntilEndOfTurn"
+                      },
+                      "modification": {
+                        "type": "AssignCombatDamageAs",
+                        "value": {
+                          "obligation": "Mandatory",
+                          "option": "AsThoughUnblocked"
+                        }
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "targets"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "targets": {
+                "count": {
+                  "type": "AnnouncedX"
+                },
+                "filter": {
+                  "type": "HasBlockStatus",
+                  "value": "Blocked"
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
