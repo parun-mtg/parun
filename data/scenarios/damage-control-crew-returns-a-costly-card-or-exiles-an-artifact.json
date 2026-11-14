@@ -261,7 +261,7 @@
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
-          "target": [
+          "permanent": [
             "$giant"
           ]
         }
@@ -272,7 +272,7 @@
     {
       "do": {
         "ChooseTargets": {
-          "target": [
+          "permanent": [
             "$thopter"
           ]
         }

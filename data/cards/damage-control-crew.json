@@ -83,7 +83,7 @@
                         "value": {
                           "ref": {
                             "type": "InSlot",
-                            "value": "target"
+                            "value": "permanent"
                           },
                           "zone": "Exile"
                         }
@@ -92,7 +92,7 @@
                   }
                 ],
                 "targetSlots": {
-                  "target": {
+                  "permanent": {
                     "filter": {
                       "type": "Or",
                       "value": [

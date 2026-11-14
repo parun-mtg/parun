@@ -79,7 +79,7 @@
                         "value": {
                           "ref": {
                             "type": "InSlot",
-                            "value": "target"
+                            "value": "card"
                           },
                           "zone": "Hand"
                         }
@@ -88,7 +88,7 @@
                   }
                 ],
                 "targetSlots": {
-                  "target": {
+                  "card": {
                     "filter": {
                       "type": "And",
                       "value": [

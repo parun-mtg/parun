@@ -267,7 +267,7 @@
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
-          "target": [
+          "card": [
             "$deadgiant"
           ]
         }
@@ -278,7 +278,7 @@
     {
       "do": {
         "ChooseTargets": {
-          "target": [
+          "card": [
             "$deadbears"
           ]
         }
