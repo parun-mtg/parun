@@ -2,6 +2,7 @@ module Parun.Codec.CostComponent where
 
 import qualified Data.Typeable as Typeable
 import qualified Parun.Codec.Behold as Behold
+import qualified Parun.Codec.CardsFromHand as CardsFromHand
 import qualified Parun.Codec.ComputedLife as ComputedLife
 import qualified Parun.Codec.CostAmount as CostAmount
 import qualified Parun.Codec.CountersFromPermanents as CountersFromPermanents
@@ -9,7 +10,6 @@ import qualified Parun.Codec.CountersOnPayer as CountersOnPayer
 import qualified Parun.Codec.CountersOnThis as CountersOnThis
 import qualified Parun.Codec.DiscardCards as DiscardCards
 import qualified Parun.Codec.ExileCardsFromGraveyard as ExileCardsFromGraveyard
-import qualified Parun.Codec.ExileCardsFromHand as ExileCardsFromHand
 import qualified Parun.Codec.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Codec.ExileMaterials as ExileMaterials
 import qualified Parun.Codec.ExilePermanents as ExilePermanents
@@ -81,8 +81,8 @@ codec keywordCodec =
       Arm.nullary "CollectEvidenceOfTargets" CostComponent.CollectEvidenceOfTargets,
       Arm.payload "ExileCardsTotalling" (ExileCardsTotalling.codec keywordCodec) CostComponent.ExileCardsTotalling (\x -> case x of CostComponent.ExileCardsTotalling y -> Just y; _ -> Nothing),
       Arm.payload "ExileTopFromGraveyard" (Filter.codec keywordCodec) CostComponent.ExileTopFromGraveyard (\x -> case x of CostComponent.ExileTopFromGraveyard y -> Just y; _ -> Nothing),
-      Arm.payload "ExileCardsFromHand" (ExileCardsFromHand.codec keywordCodec) CostComponent.ExileCardsFromHand (\x -> case x of CostComponent.ExileCardsFromHand y -> Just y; _ -> Nothing),
-      Arm.payload "RevealCardFromHand" (Filter.codec keywordCodec) CostComponent.RevealCardFromHand (\x -> case x of CostComponent.RevealCardFromHand y -> Just y; _ -> Nothing),
+      Arm.payload "ExileCardsFromHand" (CardsFromHand.codec keywordCodec) CostComponent.ExileCardsFromHand (\x -> case x of CostComponent.ExileCardsFromHand y -> Just y; _ -> Nothing),
+      Arm.payload "RevealCardsFromHand" (CardsFromHand.codec keywordCodec) CostComponent.RevealCardsFromHand (\x -> case x of CostComponent.RevealCardsFromHand y -> Just y; _ -> Nothing),
       Arm.payload "Behold" (Behold.codec keywordCodec) CostComponent.Behold (\x -> case x of CostComponent.Behold y -> Just y; _ -> Nothing),
       Arm.payload "BeholdAndExile" (Filter.codec keywordCodec) CostComponent.BeholdAndExile (\x -> case x of CostComponent.BeholdAndExile y -> Just y; _ -> Nothing),
       Arm.payload "MillCards" Common.natural CostComponent.MillCards (\x -> case x of CostComponent.MillCards y -> Just y; _ -> Nothing),
@@ -130,7 +130,7 @@ tagOf x = case x of
   CostComponent.ExileCardsTotalling {} -> "ExileCardsTotalling"
   CostComponent.ExileTopFromGraveyard {} -> "ExileTopFromGraveyard"
   CostComponent.ExileCardsFromHand {} -> "ExileCardsFromHand"
-  CostComponent.RevealCardFromHand {} -> "RevealCardFromHand"
+  CostComponent.RevealCardsFromHand {} -> "RevealCardsFromHand"
   CostComponent.Behold {} -> "Behold"
   CostComponent.BeholdAndExile {} -> "BeholdAndExile"
   CostComponent.MillCards {} -> "MillCards"

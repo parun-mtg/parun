@@ -2,6 +2,7 @@ module Parun.Types.CostComponent where
 
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Behold as Behold
+import qualified Parun.Types.CardsFromHand as CardsFromHand
 import qualified Parun.Types.ComputedLife as ComputedLife
 import qualified Parun.Types.CostAmount as CostAmount
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
@@ -10,7 +11,6 @@ import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
-import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
@@ -198,17 +198,18 @@ data CostComponent keyword
   | -- | CR 406.2 out of a hidden zone / Cadaverous Bloom, March of Wretched
     -- Sorrow: the paying player exiles this many cards matching the Filter from
     -- their own hand, which the payer chooses.
-    ExileCardsFromHand (ExileCardsFromHand.ExileCardsFromHand keyword)
-  | -- | CR 701.20a as a cost / Living Destiny: the paying player reveals one card
-    -- matching the Filter from their own hand, which the payer chooses. CR 701.20b
-    -- leaves the card in the hand, so this component spends nothing.
-    RevealCardFromHand (Filter.Filter keyword)
+    ExileCardsFromHand (CardsFromHand.CardsFromHand keyword)
+  | -- | CR 701.20a as a cost / Living Destiny, Martyr of Sands: the paying player
+    -- reveals this many cards matching the Filter from their own hand, which the
+    -- payer chooses. CR 701.20b leaves the cards in the hand, so this component
+    -- spends nothing.
+    RevealCardsFromHand (CardsFromHand.CardsFromHand keyword)
   | -- | CR 701.4a as a cost / Caustic Exhale, Kindle the Inner Flame: the paying
     -- player beholds this many distinct objects matching the Filter, each either
     -- a matching card revealed from their hand or a matching permanent they
     -- control.
     --
-    -- A TWO-ZONE choice, which is why this is not RevealCardFromHand with a wider
+    -- A TWO-ZONE choice, which is why this is not RevealCardsFromHand with a wider
     -- criterion: rule 701.4a offers the hidden hand OR the battlefield, and the
     -- payer picks which. Parun.Engine.Cost.beholdCandidates is the union and
     -- Prompt.ChooseBehold the ask.

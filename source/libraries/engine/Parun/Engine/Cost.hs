@@ -92,6 +92,7 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardTally as CardTally
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CardsFromHand as CardsFromHand
 import qualified Parun.Types.CastingPermission as CastingPermission
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.ChosenQuality as ChosenQuality
@@ -116,13 +117,13 @@ import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnPayer as CountersOnPayer
 import qualified Parun.Types.CountersOnThis as CountersOnThis
+import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.DefinedX as DefinedX
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Emerge as Emerge
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
-import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExileMaterials as ExileMaterials
@@ -1944,8 +1945,8 @@ traverseAmount f component = case component of
   -- CR 601.2f's computed amount, not CR 601.2b's X: fixComputed reads it once the
   -- targets exist.
   CostComponent.CollectEvidenceOfTargets -> pure component
-  CostComponent.ExileCardsFromHand exile -> (\amount -> CostComponent.ExileCardsFromHand exile {ExileCardsFromHand.count = amount}) <$> f (ExileCardsFromHand.count exile)
-  CostComponent.RevealCardFromHand _ -> pure component
+  CostComponent.ExileCardsFromHand exile -> (\amount -> CostComponent.ExileCardsFromHand exile {CardsFromHand.count = amount}) <$> f (CardsFromHand.count exile)
+  CostComponent.RevealCardsFromHand reveal -> (\amount -> CostComponent.RevealCardsFromHand reveal {CardsFromHand.count = amount}) <$> f (CardsFromHand.count reveal)
   CostComponent.Behold _ -> pure component
   CostComponent.BeholdAndExile _ -> pure component
   CostComponent.MillCards _ -> pure component
@@ -2099,8 +2100,9 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.CollectEvidenceOfTargets -> False
   CostComponent.ExileCardsTotalling _ -> False
   -- One card per exile out of a finite hand, Sacrifice's reason.
-  CostComponent.ExileCardsFromHand exile -> ExileCardsFromHand.count exile == announced
-  CostComponent.RevealCardFromHand _ -> False
+  CostComponent.ExileCardsFromHand exile -> CardsFromHand.count exile == announced
+  -- One distinct card per reveal out of a finite hand, the arm above's reason.
+  CostComponent.RevealCardsFromHand reveal -> CardsFromHand.count reveal == announced
   CostComponent.Behold _ -> False
   CostComponent.BeholdAndExile _ -> False
   CostComponent.MillCards _ -> False
@@ -2428,19 +2430,19 @@ componentStatesHiddenQuality component = case component of
   -- The second: CR 406.2's exile reads the same hidden hand, so the criterion
   -- decides -- Jhoira of the Ghitu's "a nonland card" states a quality,
   -- Cadaverous Bloom's "a card" does not.
-  CostComponent.ExileCardsFromHand exile -> Filter.statesAQuality (ExileCardsFromHand.whichCards exile)
+  CostComponent.ExileCardsFromHand exile -> Filter.statesAQuality (CardsFromHand.whichCards exile)
   -- The third: CR 701.20a reveals out of the same hidden hand, and the criterion
   -- decides -- Living Destiny's "a creature card" states a quality. CR 701.20b
   -- leaving the card in the hand does not matter here: rule 118.8c asks what the
   -- cost's cards are described BY, not where they end up.
-  CostComponent.RevealCardFromHand criterion -> Filter.statesAQuality criterion
+  CostComponent.RevealCardsFromHand reveal -> Filter.statesAQuality (CardsFromHand.whichCards reveal)
   -- The fourth: CR 118.12's hand-to-battlefield cost reads the same hidden zone,
   -- and every printing of it names a quality -- Hakbal of the Surging Soul's "a
   -- land card". The DESTINATION is not what rule 118.8c asks about; the zone the
   -- cards are described IN is, and that is the hand.
   CostComponent.PutCardFromHandOntoBattlefield criterion -> Filter.statesAQuality criterion
   -- The fifth, and with the sixth below the only ones whose action reaches a
-  -- PUBLIC zone as well: CR 701.4a's hand half is RevealCardFromHand's action
+  -- PUBLIC zone as well: CR 701.4a's hand half is RevealCardsFromHand's action
   -- exactly, and rule 118.8c asks whether the cost INCLUDES such an action rather
   -- than whether it forces one, so the battlefield half it offers instead does
   -- not take this arm out.
@@ -2565,7 +2567,7 @@ putOntoBattlefieldCandidates = discardCandidates
 exileFromHandCandidates :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
 exileFromHandCandidates = discardCandidates
 
--- The cards this player may reveal to pay a RevealCardFromHand component on
+-- The cards this player may reveal to pay a RevealCardsFromHand component on
 -- `oid`: the same pool once more, out of the same hidden zone (CR 402.3) and
 -- narrowed by the same criterion through the same CR 613 projection. CR 701.20a
 -- says nothing about which cards may be shown, so nothing separates the pools.
@@ -2639,20 +2641,27 @@ beholdableTypes slots pid oid behold family gs =
 beholdObjects :: Maybe ObjectId -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Natural -> Filter.Type.Filter Keyword.Type.Keyword -> Game (Maybe [ObjectId])
 beholdObjects paidFor slots pid oid n criterion = do
   gs <- State.get
-  let pool = beholdCandidates Nothing slots pid oid criterion gs
-      pick chosen owed
-        | owed == 0 = pure (Just (reverse chosen))
-        | otherwise = do
-            let left = filter (`notElem` chosen) pool
-            picked <- case compare (Natural.length left) owed of
-              LT -> pure Nothing
-              EQ -> pure (Maybe.listToMaybe left)
-              GT -> Game.chooseAmong (\decider who -> Prompt.ChooseBehold decider who oid) pid left
-            maybe (pure Nothing) (\one -> pick (one : chosen) (owed - 1)) picked
-  beheld <- pick [] n
+  beheld <- pickDistinct (\decider who -> Prompt.ChooseBehold decider who oid) pid (beholdCandidates Nothing slots pid oid criterion gs) n
   Monad.forM_ (Maybe.fromMaybe [] beheld) $ \chosen ->
     Monad.when (fmap Object.zone (Game.lookupObject chosen gs) == Just Zone.Hand) (revealPaying paidFor pid chosen)
   pure beheld
+
+-- `n` distinct objects of `pool` for `pid` to pay with, in the order chosen,
+-- each asked through `question` over what the earlier picks left; Nothing where
+-- the pool holds fewer. A pick is elided only once as many are left as are owed,
+-- every remaining answer then taking them all.
+pickDistinct :: (Decider.Decider -> PlayerId -> NonEmpty.NonEmpty ObjectId -> Prompt.Prompt ObjectId) -> PlayerId -> [ObjectId] -> Natural -> Game (Maybe [ObjectId])
+pickDistinct question pid pool = go []
+  where
+    go chosen owed
+      | owed == 0 = pure (Just (reverse chosen))
+      | otherwise = do
+          let left = filter (`notElem` chosen) pool
+          picked <- case compare (Natural.length left) owed of
+            LT -> pure Nothing
+            EQ -> pure (Maybe.listToMaybe left)
+            GT -> Game.chooseAmong question pid left
+          maybe (pure Nothing) (\one -> go (one : chosen) (owed - 1)) picked
 
 -- CR 701.20a: reveal a card as part of a cost, kept revealed from the
 -- announcement until `paidFor`, the spell or ability object paid for, leaves the
@@ -3099,10 +3108,10 @@ claimOfGiven board slots pid oid component gs =
         -- The pool excludes the card being CAST as well as the object the cost is on
         -- (Game.beingCast), so a spell being offered is not fuel for the source that would
         -- pay for it: CR 601.2a has it on the stack by the time CR 601.2h pays.
-        CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand (CostAmount.Fixed n) criterion) ->
+        CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand (CostAmount.Fixed n) criterion) ->
           claim (ClaimAxis.Removal Zone.Hand) (Set.fromList (exileFromHandCandidates slots pid oid criterion gs)) n
         -- Nothing until CR 601.2b fixes the count, Sacrifice's arm.
-        CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand (CostAmount.Announced _) _) -> Nothing
+        CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand (CostAmount.Announced _) _) -> Nothing
         CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard n criterion) ->
           claim (ClaimAxis.Removal Zone.Graveyard) (Set.fromList (exileCandidatesGiven board slots pid oid criterion gs)) n
         -- The same graveyard pool and the same axis, as ONE selection reaching the
@@ -3233,8 +3242,8 @@ claimOfGiven board slots pid oid component gs =
         -- leaves the revealed card in the hand, so nothing leaves any pool. CR
         -- 701.20c is what makes the shared-choice half right here too -- a card
         -- already revealed may be revealed again.
-        CostComponent.RevealCardFromHand _ -> Nothing
-        -- Nothing, RevealCardFromHand's arm just above and for a reason that covers
+        CostComponent.RevealCardsFromHand _ -> Nothing
+        -- Nothing, RevealCardsFromHand's arm just above and for a reason that covers
         -- both of CR 701.4a's halves: neither revealing a card nor choosing a permanent
         -- takes anything out of any pool.
         CostComponent.Behold _ -> Nothing
@@ -3724,7 +3733,7 @@ uncountedCeiling pid oid claims gs component = case component of
   CostComponent.PutCountersOnPayer _ -> Nothing
   -- Nothing, the arm above's answer: CR 701.20c lets a revealed card be
   -- revealed again, so CR 701.20b spends nothing. A FENCE, the arm above's.
-  CostComponent.RevealCardFromHand _ -> Nothing
+  CostComponent.RevealCardsFromHand _ -> Nothing
   -- Nothing, the arm above's answer: neither of CR 701.4a's halves spends
   -- anything. A FENCE, the arm above's.
   CostComponent.Behold _ -> Nothing
@@ -4082,7 +4091,7 @@ targetComputed component = case component of
   CostComponent.ExileMaterials _ -> False
   CostComponent.ExileTopFromGraveyard _ -> False
   CostComponent.ExileCardsFromHand {} -> False
-  CostComponent.RevealCardFromHand _ -> False
+  CostComponent.RevealCardsFromHand _ -> False
   CostComponent.Behold _ -> False
   CostComponent.BeholdAndExile _ -> False
   CostComponent.MillCards _ -> False
@@ -4137,7 +4146,7 @@ announcedRecord component = case component of
   CostComponent.ExileMaterials _ -> Nothing
   CostComponent.ExileTopFromGraveyard _ -> Nothing
   CostComponent.ExileCardsFromHand {} -> Nothing
-  CostComponent.RevealCardFromHand _ -> Nothing
+  CostComponent.RevealCardsFromHand _ -> Nothing
   CostComponent.Behold _ -> Just Binding.beheldObject
   CostComponent.BeholdAndExile _ -> Nothing
   CostComponent.MillCards _ -> Nothing
@@ -4208,7 +4217,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.CollectEvidenceOfTargets -> 0
   CostComponent.ExileCardsTotalling _ -> 0
   CostComponent.ExileCardsFromHand {} -> 0
-  CostComponent.RevealCardFromHand _ -> 0
+  CostComponent.RevealCardsFromHand _ -> 0
   CostComponent.Behold _ -> 0
   CostComponent.BeholdAndExile _ -> 0
   CostComponent.MillCards _ -> 0
@@ -4264,7 +4273,7 @@ energyOwedByComponent component = case component of
   CostComponent.CollectEvidenceOfTargets -> 0
   CostComponent.ExileCardsTotalling _ -> 0
   CostComponent.ExileCardsFromHand {} -> 0
-  CostComponent.RevealCardFromHand _ -> 0
+  CostComponent.RevealCardsFromHand _ -> 0
   CostComponent.Behold _ -> 0
   CostComponent.BeholdAndExile _ -> 0
   CostComponent.MillCards _ -> 0
@@ -4330,7 +4339,7 @@ countersOwedByComponent component = case component of
   CostComponent.CollectEvidenceOfTargets -> []
   CostComponent.ExileCardsTotalling _ -> []
   CostComponent.ExileCardsFromHand {} -> []
-  CostComponent.RevealCardFromHand _ -> []
+  CostComponent.RevealCardsFromHand _ -> []
   CostComponent.Behold _ -> []
   CostComponent.BeholdAndExile _ -> []
   CostComponent.MillCards _ -> []
@@ -4468,17 +4477,17 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- ReturnPermanents arm's note above: relaxing this arm to True leaves
   -- Parun.CostSpec's Cadaverous Bloom cases green, the empty claim pool refusing
   -- the same activation. A FENCE, not proven behaviour.
-  CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand amount criterion) ->
+  CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand amount criterion) ->
     payableAnnounced amount (\n -> Natural.length (exileFromHandCandidates slots pid oid criterion gs) >= n)
-  -- CR 118.3: payable only if the hand holds a card the criterion admits, the arm
-  -- above's reading. What it decides is the OFFER: `payComponent` below answers
-  -- Unpaid on an empty pool anyway, so a caster with no creature card is refused
+  -- CR 118.3: payable only if the hand holds that many cards the criterion
+  -- admits, the arm above's reading. What it decides is the OFFER: `payComponent`
+  -- below answers Unpaid on too small a pool anyway, so a caster with no creature card is refused
   -- either way -- Parun.CostSpec's "CR 118.3 the cast is not offered at all" is the
   -- assertion this arm alone reddens, and the two beneath it hold without it.
-  CostComponent.RevealCardFromHand criterion ->
-    not (null (revealFromHandCandidates slots pid oid criterion gs))
+  CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand amount criterion) ->
+    payableAnnounced amount (\n -> Natural.length (revealFromHandCandidates slots pid oid criterion gs) >= n)
   -- CR 118.3: payable only if the payer's hand and battlefield together hold at
-  -- least `n` objects the criterion admits, RevealCardFromHand's arm above over
+  -- least `n` objects the criterion admits, RevealCardsFromHand's arm above over
   -- CR 701.4a's two zones at once. What it decides is the OFFER;
   -- `payComponent` answers Unpaid on too small a pool either way. Parun.CostSpec's
   -- "CR 118.3 two Elementals cannot behold three" is the proof.
@@ -4857,8 +4866,8 @@ criteriaOf component = case component of
   CostComponent.ExilePermanents exiled -> [ExilePermanents.whichPermanents exiled]
   CostComponent.DiscardCards discard -> [DiscardCards.whichCards discard]
   CostComponent.PutCardFromHandOntoBattlefield criterion -> [criterion]
-  CostComponent.ExileCardsFromHand exile -> [ExileCardsFromHand.whichCards exile]
-  CostComponent.RevealCardFromHand criterion -> [criterion]
+  CostComponent.ExileCardsFromHand exile -> [CardsFromHand.whichCards exile]
+  CostComponent.RevealCardsFromHand reveal -> [CardsFromHand.whichCards reveal]
   CostComponent.Behold behold -> [Behold.whichObjects behold]
   CostComponent.BeholdAndExile criterion -> [criterion]
   CostComponent.ExileCardsFromGraveyard exile -> [ExileCardsFromGraveyard.whichCards exile]
@@ -5988,8 +5997,8 @@ paidInSecondPass component = case component of
   CostComponent.VariableAtLeast _ -> False
   -- CR 701.20b moves nothing out of any zone, so rule 601.2h's library half has
   -- nothing to ask of it.
-  CostComponent.RevealCardFromHand _ -> False
-  -- CR 701.4a moves nothing out of any zone, RevealCardFromHand's arm above.
+  CostComponent.RevealCardsFromHand _ -> False
+  -- CR 701.4a moves nothing out of any zone, RevealCardsFromHand's arm above.
   CostComponent.Behold _ -> False
   -- The exile moves a card out of a hand or off the battlefield, neither a
   -- library, so the header's first pass holds it.
@@ -6093,7 +6102,7 @@ sourceOnly component = case component of
   CostComponent.CollectEvidenceOfTargets -> Nothing
   CostComponent.ExileCardsTotalling _ -> Nothing
   CostComponent.ExileCardsFromHand {} -> Nothing
-  CostComponent.RevealCardFromHand _ -> Nothing
+  CostComponent.RevealCardsFromHand _ -> Nothing
   CostComponent.Behold _ -> Nothing
   CostComponent.BeholdAndExile _ -> Nothing
   CostComponent.TapForTotalPower {} -> Nothing
@@ -6149,8 +6158,8 @@ orderSensitive component = case component of
   CostComponent.ExileCardsFromHand {} -> True
   -- FALSE, one of the two object-choosing components that answer so: CR 701.20b
   -- leaves the card where it was, so paying this changes no other part's pool.
-  CostComponent.RevealCardFromHand _ -> False
-  -- FALSE, RevealCardFromHand's arm above and for its reason: CR 701.4a leaves the
+  CostComponent.RevealCardsFromHand _ -> False
+  -- FALSE, RevealCardsFromHand's arm above and for its reason: CR 701.4a leaves the
   -- card in the hand and the permanent on the battlefield, so paying this changes
   -- no other part's pool.
   CostComponent.Behold _ -> False
@@ -7533,7 +7542,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- are asked at once as Prompt.ChooseExiles, ExilePermanents' elision and
   -- reject-not-repair posture, and exiled as ONE event (Event.changeZonesTogether),
   -- ExileCardsFromGraveyard's reason.
-  CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand amount criterion) -> paidAnnounced amount $ \n -> do
+  CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand amount criterion) -> paidAnnounced amount $ \n -> do
     gs <- State.get
     let candidates = exileFromHandCandidates slots pid oid criterion gs
         decider = Decide.deciderFor pid gs
@@ -7559,22 +7568,27 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- earlier component of the same cost that emptied the hand leaves this Unpaid,
   -- and asked through Game.chooseAmong.
   --
+  -- `n` distinct cards, asked one at a time through `pickDistinct`, Behold's
+  -- posture below.
+  --
   -- Binds Binding.revealedCard, so "the revealed card's mana value" has a name to
   -- read at resolution (Living Destiny); Parun.Engine.Cast folds the payment's slots
   -- onto the spell.
   --
-  -- CR 701.20a keeps the card revealed while the spell is on the stack
-  -- (`revealPaying`); the scenario
+  -- CR 701.20a keeps the cards revealed while the spell or ability is on the stack
+  -- (`revealPaying`); the scenarios
   -- cost/cr-701-20a-lasting-reveal-living-destiny-s-revealed-card-stays-revealed-while-it-is-cast
-  -- is the proof. An activated ability's cost is unproven (gap #4997).
-  CostComponent.RevealCardFromHand criterion -> do
+  -- and
+  -- cost/cr-701-20a-lasting-reveal-martyr-of-sands-revealed-cards-stay-revealed-while-its-ability-is-on-the-stack
+  -- are the proof.
+  CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand amount criterion) -> paidAnnounced amount $ \n -> do
     gs <- State.get
-    picked <- Game.chooseAmong (\decider who -> Prompt.ChooseCardInHand decider who oid) pid (revealFromHandCandidates slots pid oid criterion gs)
+    picked <- pickDistinct (\decider who -> Prompt.ChooseCardInHand decider who oid) pid (revealFromHandCandidates slots pid oid criterion gs) n
     case picked of
       Nothing -> pure Payment.Unpaid
       Just chosen -> do
-        revealPaying paidFor pid chosen
-        pure (Payment.Paid (Binding.paidObjects Binding.revealedCard (Set.singleton (Recipient.ToObject chosen))))
+        Monad.forM_ chosen (revealPaying paidFor pid)
+        pure (Payment.Paid (Binding.paidObjects Binding.revealedCard (Set.fromList (fmap Recipient.ToObject chosen))))
   -- CR 701.4a's two-zone choice through `beholdObjects`: this many distinct
   -- objects out of the payer's hand and the permanents they control taken
   -- together, each revealed where it came out of the hand, and kept revealed

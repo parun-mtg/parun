@@ -127,6 +127,7 @@ import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardSelection as CardSelection
 import qualified Parun.Types.CardType as CardType
+import qualified Parun.Types.CardsFromHand as CardsFromHand
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastObligation as CastObligation
 import qualified Parun.Types.CastOffer as CastOffer
@@ -254,7 +255,6 @@ import qualified Parun.Types.ExchangeValues as ExchangeValues
 import qualified Parun.Types.ExchangeZones as ExchangeZones
 import qualified Parun.Types.ExchangedValue as ExchangedValue
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
-import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.ExileMaterials as ExileMaterials
@@ -1171,7 +1171,7 @@ declaresVariable = Cost.hasVariable
 
 -- Does this cost REVEAL a card the payer chooses? declaresVariable's shape: CR
 -- 601.2h's payment binds Binding.revealedCard (Parun.Engine.Cost.payComponent's
--- RevealCardFromHand arm, folded onto the spell by Parun.Engine.Cast), so a spell
+-- RevealCardsFromHand arm, folded onto the spell by Parun.Engine.Cast), so a spell
 -- whose cost has such a component may read the slot and one whose cost has not
 -- may not.
 --
@@ -1183,7 +1183,7 @@ declaresVariable = Cost.hasVariable
 revealsAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
 revealsAsCost =
   let isReveal component = case component of
-        CostComponent.RevealCardFromHand _ -> True
+        CostComponent.RevealCardsFromHand _ -> True
         _ -> False
    in any isReveal . Cost.Type.components
 
@@ -3140,9 +3140,9 @@ costComponentFilters component = case component of
   CostComponent.DiscardCards (DiscardCards.MkDiscardCards _ f _) -> [f]
   CostComponent.PutCardFromHandOntoBattlefield f -> [f]
   -- CR 406.2 out of the hand: Cadaverous Bloom's "a card".
-  CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand _ f) -> [f]
+  CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand _ f) -> [f]
   -- CR 701.20a out of the hand: Living Destiny's "a creature card".
-  CostComponent.RevealCardFromHand f -> [f]
+  CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand _ f) -> [f]
   -- CR 701.4a over the hand and the battlefield at once: Caustic Exhale's "a
   -- Dragon".
   CostComponent.Behold behold -> [Behold.whichObjects behold]

@@ -2041,7 +2041,7 @@ searchForSameManaValue cost filter_ destination =
 -- the two reveals -- the cost's and rule 602.2a's -- one duration, "from the time
 -- the spell or ability is announced until the time it leaves the stack", so the
 -- component would only reveal a card that is already revealed.
--- CostComponent.RevealCardFromHand is a different shape -- revealing ANOTHER card
+-- CostComponent.RevealCardsFromHand is a different shape -- revealing ANOTHER card
 -- the payer chooses, as Living Destiny's additional cost does -- and ninjutsu is
 -- not one of its producers.
 --

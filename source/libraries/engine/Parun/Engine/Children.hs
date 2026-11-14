@@ -80,6 +80,7 @@ import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardTally as CardTally
+import qualified Parun.Types.CardsFromHand as CardsFromHand
 import qualified Parun.Types.CastFrom as CastFrom
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CastOffer as CastOffer
@@ -233,7 +234,6 @@ import qualified Parun.Types.ExchangeValues as ExchangeValues
 import qualified Parun.Types.ExchangeZones as ExchangeZones
 import qualified Parun.Types.ExchangedValue as ExchangedValue
 import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
-import qualified Parun.Types.ExileCardsFromHand as ExileCardsFromHand
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileFromGraveyard as ExileFromGraveyard
 import qualified Parun.Types.ExileHaunting as ExileHaunting
@@ -2023,8 +2023,8 @@ costComponentChildren c component = case component of
   CostComponent.CollectEvidence _ -> pure component
   CostComponent.CollectEvidenceOfTargets -> pure component
   CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold tally criterion) -> fmap CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold <$> cardTallyChildren c tally <*> costFilter c criterion)
-  CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand n criterion) -> fmap CostComponent.ExileCardsFromHand (ExileCardsFromHand.MkExileCardsFromHand <$> costAmountChildren c n <*> costFilter c criterion)
-  CostComponent.RevealCardFromHand criterion -> CostComponent.RevealCardFromHand <$> costFilter c criterion
+  CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand n criterion) -> fmap CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand <$> costAmountChildren c n <*> costFilter c criterion)
+  CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand n criterion) -> fmap CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand <$> costAmountChildren c n <*> costFilter c criterion)
   CostComponent.Behold (Behold.MkBehold n criterion chosen) -> fmap CostComponent.Behold (flip (Behold.MkBehold n) chosen <$> costFilter c criterion)
   CostComponent.BeholdAndExile criterion -> CostComponent.BeholdAndExile <$> costFilter c criterion
   CostComponent.MillCards _ -> pure component
