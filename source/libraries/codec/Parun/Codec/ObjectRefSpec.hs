@@ -449,7 +449,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound (SlotName.MkSlotName (Text.pack "target")) (Filter.HasSubtype Subtype.Equipment)))
+      (ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound (SlotName.MkSlotName (Text.pack "target")) (Filter.HasSubtype Subtype.Equipment) Zone.Battlefield))
       " {\"type\":\"AttachedToBound\",\"value\":{\"slot\":\"target\",\"filter\":{\"type\":\"HasSubtype\",\"value\":\"Equipment\"}}} "
   -- CR 508.1b: the attacker's slot, a bare string.
   Spec.it s "AttackedBy" $
@@ -511,7 +511,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
                 Codec.encode ObjectRef.codec (ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Library (PlayerRef.Relative PlayerRelation.You) (Filter.And []) (Quantity.Literal 1))),
                 Codec.encode ObjectRef.codec (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield Set.empty)),
                 Codec.encode ObjectRef.codec (ObjectRef.AllOf (ObjectRef.EachCardInYourHand NonEmpty.:| [])),
-                Codec.encode ObjectRef.codec (ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound (SlotName.MkSlotName (Text.pack "target")) (Filter.HasCardType CardType.Creature)))
+                Codec.encode ObjectRef.codec (ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound (SlotName.MkSlotName (Text.pack "target")) (Filter.HasCardType CardType.Creature) Zone.Battlefield))
               ]
           )
       )

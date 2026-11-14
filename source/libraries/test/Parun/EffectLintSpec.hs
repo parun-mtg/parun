@@ -64,6 +64,7 @@ import qualified Parun.Types.AttachBound as AttachBound
 import qualified Parun.Types.AttachR as AttachR
 import qualified Parun.Types.AttachRewrite as AttachRewrite
 import qualified Parun.Types.AttachTarget as AttachTarget
+import qualified Parun.Types.AttachedToBound as AttachedToBound
 import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.Card as Card.Type
@@ -3080,6 +3081,18 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
                       && Set.member Subtype.Type.Aura (TypeLine.subtypes (Face.typeLine face))
                       && not (any (holdsPlayer . TargetSlot.pool) (Face.enchant face))
                   )
+                  && ref `notElem` fmap ObjectRef.InSlot (auraLoopSlots face)
+          _ -> False
+        -- Or for a loop member drawn only from Auras that were attached to a
+        -- host, which enchanted an object and so no player: Cass, Hand of
+        -- Vengeance's "Aura cards that were attached to it".
+        auraLoopSlots face = [ForEach.slot loop | Effect.ForEach loop <- cardResolutionEffects face, attachedAuras (ForEach.ref loop)]
+        attachedAuras ref = case ref of
+          ObjectRef.AttachedToBound bound -> requiresAura (AttachedToBound.filter bound)
+          _ -> False
+        requiresAura filter_ = case filter_ of
+          Filter.Type.HasSubtype Subtype.Type.Aura -> True
+          Filter.Type.And filters -> any requiresAura filters
           _ -> False
         offendsOn face = any (\effect -> offends effect || selfAuraMove face effect) (cardResolutionEffects face)
         offenders = filter (anyFace offendsOn . Printing.card) ps
