@@ -89,10 +89,8 @@
                             "type": "Indefinite"
                           },
                           "ref": {
-                            "type": "EachMatching",
-                            "value": {
-                              "type": "IsSource"
-                            }
+                            "type": "InSlot",
+                            "value": "self"
                           },
                           "to": {
                             "type": "InSlot",
