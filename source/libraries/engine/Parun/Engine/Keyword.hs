@@ -7626,9 +7626,9 @@ revealedForMiracle revealed =
    in Set.filter keep
 
 -- The triggered abilities rule 702 mints for a card in a HAND, off the keywords
--- its caller hands over. `triggeredAbilitiesOf`'s sibling, and the same roster:
--- a set rather than counts, `exileTriggeredAbilitiesOf`'s reading, since rule
--- 702.94a states no per-instance clause.
+-- its caller hands over. `triggeredAbilitiesOf`'s sibling, and the same roster,
+-- over a set rather than counts: the caller has already narrowed the miracle
+-- abilities to the one revealed for (`revealedForMiracle`).
 --
 -- Rule 702.94a's miracle is the only one any of them reaches today, and CR 113.6k
 -- is what decides that -- Parun.Engine.Event filters this list by
@@ -7653,18 +7653,16 @@ handTriggeredAbilitiesOf = triggeredAbilitiesOf . Map.fromSet (const 1)
 -- free play watches that removal. Vanishing's pair one rule over has the same
 -- two shapes.
 --
--- A SET rather than a count-carrying Map, `handTriggeredAbilitiesOf`'s
--- reading: rule 702.62 states no per-instance clause, and no card in
--- data/cards/ prints suspend twice, so the caller hands over the distinct
--- keywords as a set. Rule 702.85c and its siblings do state one, which
--- is why `stackTriggeredAbilitiesOf` next door counts.
---
--- Not implemented: a pair per instance for a card holding two suspends, which
--- two unconditional grants give it (#4460).
-exileTriggeredAbilitiesOf :: Set Keyword -> [TriggeredAbility Card (GrantedAbility.GrantedAbility Card)]
-exileTriggeredAbilitiesOf keywords = case suspendKeyword keywords of
-  Nothing -> []
-  Just keyword -> [timeCounterUpkeep, suspendLastCounter keyword]
+-- COUNTED, `stackTriggeredAbilitiesOf`'s shape: rule 702.62 states no
+-- per-instance clause, so CR 113.2c's "each instance functions independently"
+-- governs, and a card holding two suspends (Durkwood Baloth copying Epochrasite
+-- as it died) gets two pairs, each last-counter trigger naming its own keyword.
+exileTriggeredAbilitiesOf :: Map Keyword Natural -> [TriggeredAbility Card (GrantedAbility.GrantedAbility Card)]
+exileTriggeredAbilitiesOf =
+  let pairFor keyword count = case keyword of
+        Keyword.Suspend _ -> concat (List.genericReplicate count [timeCounterUpkeep, suspendLastCounter keyword])
+        _ -> []
+   in concatMap (uncurry pairFor) . Map.toAscList
 
 -- CR 702.59a's ability, "a triggered ability that functions only while the card
 -- with recover is in a player's graveyard" -- the roster the graveyard scan in
@@ -7681,9 +7679,8 @@ exileTriggeredAbilitiesOf keywords = case suspendKeyword keywords of
 -- graveyard by the time the ability is gathered, which is the one zone its
 -- condition can be checked from.
 --
--- A SET rather than a count-carrying Map, `exileTriggeredAbilitiesOf`'s reading:
--- rule 702.59 states no per-instance clause, and no card in data/cards/ prints
--- recover twice. Rule 702.55 states none either, and CR 702.55b's link is to one
+-- A SET rather than a count-carrying Map: rule 702.59 states no per-instance
+-- clause, and no card in data/cards/ prints recover twice. Rule 702.55 states none either, and CR 702.55b's link is to one
 -- creature, so a second printed haunt on one spell would be a second ability
 -- over the same card -- unreachable, no printing carrying two.
 graveyardTriggeredAbilitiesOf :: Set CardType.CardType -> Set Keyword -> [TriggeredAbility Card (GrantedAbility.GrantedAbility Card)]
@@ -7765,7 +7762,7 @@ recover cost =
 -- the zone itself, so asking `functionsIn` would only re-derive it from a
 -- condition (a cast) that says nothing about the stack.
 --
--- COUNTED, where `exileTriggeredAbilitiesOf` next door takes a set: CR 702.85c,
+-- COUNTED, as `exileTriggeredAbilitiesOf` is: CR 702.85c,
 -- CR 702.60b, CR 702.40b, CR 702.69b, CR 702.78b, CR 702.56b and CR 702.153b each
 -- say the instances trigger separately, so Apex Devastator's four printed
 -- cascades are four abilities (Parun.KeywordTriggerSpec's Cascade group). The PARAMETERIZED

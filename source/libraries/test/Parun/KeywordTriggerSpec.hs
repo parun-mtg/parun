@@ -2933,7 +2933,7 @@ recoverSpec s = Spec.describe s "Recover" $ do
   Spec.it s "CR 702.59a the graveyard roster mints it" $ do
     let cost = Cost.MkCost Nothing []
     Spec.assertEqWith s "recover is on the graveyard roster" (Keyword.graveyardTriggeredAbilitiesOf Set.empty (Set.singleton (Keyword.Type.Recover cost))) [Keyword.recover cost]
-    Spec.assertEqWith s "and on none of the others" (Keyword.handTriggeredAbilitiesOf (Set.singleton (Keyword.Type.Recover cost)) <> Keyword.exileTriggeredAbilitiesOf (Set.singleton (Keyword.Type.Recover cost))) []
+    Spec.assertEqWith s "and on none of the others" (Keyword.handTriggeredAbilitiesOf (Set.singleton (Keyword.Type.Recover cost)) <> Keyword.exileTriggeredAbilitiesOf (Map.singleton (Keyword.Type.Recover cost) 1)) []
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
