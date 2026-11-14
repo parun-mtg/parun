@@ -473,6 +473,7 @@ import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnFaceDown as TurnFaceDown
+import qualified Parun.Types.TurnOrdinal as TurnOrdinal
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
@@ -652,6 +653,7 @@ filterChildren children predicate = case predicate of
   Filter.IsFaceDown -> pure predicate
   Filter.RepresentedByCard f -> fmap Filter.RepresentedByCard (nest children f)
   Filter.IsExiledFaceDown -> pure predicate
+  Filter.IsWarped -> pure predicate
   Filter.Transformed -> pure predicate
   Filter.IsRingBearer -> pure predicate
   Filter.IsPaired -> pure predicate
@@ -2034,7 +2036,7 @@ costComponentChildren c component = case component of
   CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold tally criterion) -> fmap CostComponent.ExileCardsTotalling (ExileCardsTotalling.MkExileCardsTotalling threshold <$> cardTallyChildren c tally <*> costFilter c criterion)
   CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand n criterion) -> fmap CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand <$> costAmountChildren c n <*> costFilter c criterion)
   CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand n criterion) -> fmap CostComponent.RevealCardsFromHand (CardsFromHand.MkCardsFromHand <$> costAmountChildren c n <*> costFilter c criterion)
-  CostComponent.Behold (Behold.MkBehold n criterion chosen) -> fmap CostComponent.Behold (flip (Behold.MkBehold n) chosen <$> costFilter c criterion)
+  CostComponent.Behold (Behold.MkBehold n criterion chosen zone) -> fmap CostComponent.Behold ((\f -> Behold.MkBehold n f chosen zone) <$> costFilter c criterion)
   CostComponent.BeholdAndExile criterion -> CostComponent.BeholdAndExile <$> costFilter c criterion
   CostComponent.MillCards _ -> pure component
   CostComponent.RevealTopOfLibrary _ -> pure component
@@ -2209,14 +2211,18 @@ playerEffectChildren c effect = case effect of
   PlayerEffect.Shows _ -> pure effect
   PlayerEffect.RevealsDraw _ -> pure effect
 
--- | An "only the first each turn" limit's children: the turn it counts over,
--- and the events it counts.
+-- | An "only the first (or nth) each turn" limit's children: the turn it
+-- counts over, and the events it counts.
 onlyFirstChildren :: (Applicative f) => PlayerEffectChildren f -> HistoryRead.HistoryRead -> TurnScope.TurnScope -> f TurnScope.TurnScope
 onlyFirstChildren c counted turn = playerLooksBack c counted *> playerTurn c turn
 
+-- | The same over a limit naming its ordinal, which has no children.
+onlyNthChildren :: (Applicative f) => PlayerEffectChildren f -> HistoryRead.HistoryRead -> TurnOrdinal.TurnOrdinal -> f TurnOrdinal.TurnOrdinal
+onlyNthChildren c counted (TurnOrdinal.MkTurnOrdinal turn n) = flip TurnOrdinal.MkTurnOrdinal n <$> onlyFirstChildren c counted turn
+
 -- | A cost modifier's children (CR 601.2f, 602.2b).
 costModifierChildren :: (Applicative f) => PlayerEffectChildren f -> CostModifier.CostModifier -> f CostModifier.CostModifier
-costModifierChildren c (CostModifier.MkCostModifier subject matching whichTargets perTarget perEach countedAgainst onlyFirst change) =
+costModifierChildren c (CostModifier.MkCostModifier subject matching whichTargets perTarget perEach countedAgainst onlyNth change) =
   CostModifier.MkCostModifier
     <$> costSubjectChildren c subject
     <*> playerFilter c matching
@@ -2224,10 +2230,10 @@ costModifierChildren c (CostModifier.MkCostModifier subject matching whichTarget
     <*> traverse (perTargetChildren c) perTarget
     <*> traverse (playerQuantity c) perEach
     <*> pure countedAgainst
-    <*> traverse (onlyFirstChildren c (costSubjectHistory subject)) onlyFirst
+    <*> traverse (onlyNthChildren c (costSubjectHistory subject)) onlyNth
     <*> costChangeChildren c change
 
--- | The turn's history a cost modifier's "only the first" reads: CR 601.2i's
+-- | The turn's history a cost modifier's "only the nth" reads: CR 601.2i's
 -- casts for a spell, CR 602.2's activations for an ability.
 costSubjectHistory :: CostSubject.CostSubject -> HistoryRead.HistoryRead
 costSubjectHistory subject = case subject of

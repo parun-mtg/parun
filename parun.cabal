@@ -1366,6 +1366,8 @@ library codec
     Parun.Codec.PlaneswalkRewrite
     Parun.Codec.PlaneswalkRewriteSpec
     Parun.Codec.PlaneswalkRSpec
+    Parun.Codec.PlayAllowance
+    Parun.Codec.PlayAllowanceSpec
     Parun.Codec.PlayBudget
     Parun.Codec.PlayBudgetSpec
     Parun.Codec.Player
@@ -1794,6 +1796,7 @@ library codec
     Parun.Codec.TurnFaceDownSpec
     Parun.Codec.TurnMarker
     Parun.Codec.TurnMarkerSpec
+    Parun.Codec.TurnOrdinal
     Parun.Codec.TurnRegisters
     Parun.Codec.TurnRegistersSpec
     Parun.Codec.TurnResume
@@ -3422,6 +3425,7 @@ library types
     Parun.Types.PlaneswalkCause
     Parun.Types.PlaneswalkR
     Parun.Types.PlaneswalkRewrite
+    Parun.Types.PlayAllowance
     Parun.Types.PlayBudget
     Parun.Types.Player
     Parun.Types.PlayerActed
@@ -3676,6 +3680,7 @@ library types
     Parun.Types.TurnedUpOffDeck
     Parun.Types.TurnFaceDown
     Parun.Types.TurnMarker
+    Parun.Types.TurnOrdinal
     Parun.Types.TurnRegisters
     Parun.Types.TurnResume
     Parun.Types.TurnRole

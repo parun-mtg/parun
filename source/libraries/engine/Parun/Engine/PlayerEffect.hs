@@ -156,6 +156,7 @@ import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.Teams as Teams
 import Parun.Types.Timestamp (Timestamp)
+import qualified Parun.Types.TurnOrdinal as TurnOrdinal
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.VariableChoice as VariableChoice
@@ -1761,10 +1762,11 @@ admitsAtManaValue pid permission oid manaValue gs = case permission of
 spellCostAdjustments :: Set.Set Recipient.Recipient -> PlayerId -> ObjectId -> GameState -> CostAdjustments
 spellCostAdjustments targets pid oid gs =
   let reaches source modifier = case CostModifier.subject modifier of
-        -- Then Shadow in the Warp's "first", asked with the same criterion.
+        -- Then Shadow in the Warp's "first" or Uthros Psionicist's "second",
+        -- asked with the same criterion.
         CostSubject.Spells ->
           matchesObjectFrom source (CostModifier.matching modifier) oid gs
-            && maybe True (firstCast pid source (CostModifier.matching modifier) oid gs) (CostModifier.onlyFirst modifier)
+            && maybe True (nthCast pid source (CostModifier.matching modifier) oid gs) (CostModifier.onlyNth modifier)
         -- Oppressive Rays, turned away by the SUBJECT and not by its Filter
         -- -- the mirror of what keeps Thalia off an activation cost in
         -- activationCostAdjustmentsGiven below (#90).
@@ -1940,15 +1942,15 @@ targetQuestions pid gs r =
 
 -- Professor Hojo's "the FIRST activated ability you activate during your turn"
 -- and Kíli the Resourceful's "the first equip ability you activate each turn":
--- in a turn the scope admits, is there no activation by `pid` earlier this turn
--- matching the criteria? Reduced or not, and whether or not the effect asking
--- existed yet (Tezzeret, Betrayer of Flesh's ruling). Asked of
--- TurnRegisters.activationsThisTurn's snapshots rather than the live board
+-- in a turn the scope admits, are there exactly one fewer than the ordinal
+-- activations by `pid` earlier this turn matching the criteria? Reduced or
+-- not, and whether or not the effect asking existed yet (Tezzeret, Betrayer of
+-- Flesh's ruling). Asked of TurnRegisters.activationsThisTurn's snapshots rather than the live board
 -- (Count.pastView), with the criteria Parun.Types.CostModifier carries
 -- (Count.activationMeets); `source` is the asking effect's own permanent, which
 -- Filter.IsSource reads.
-firstActivation :: PlayerId -> RowSource -> Filter Keyword -> ActivationCriteria.ActivationCriteria Keyword -> Maybe (Filter Keyword) -> GameState -> TurnScope.TurnScope -> Bool
-firstActivation pid source criterion criteria aimedAt gs scope =
+nthActivation :: PlayerId -> RowSource -> Filter Keyword -> ActivationCriteria.ActivationCriteria Keyword -> Maybe (Filter Keyword) -> GameState -> TurnOrdinal.TurnOrdinal -> Bool
+nthActivation pid source criterion criteria aimedAt gs (TurnOrdinal.MkTurnOrdinal scope n) =
   let matchesSnapshot you criterion' snapshot = Filter.matches (contextFor you source gs) (Count.pastView snapshot) criterion'
       admits past =
         PastActivation.activator past == pid
@@ -1956,24 +1958,31 @@ firstActivation pid source criterion criteria aimedAt gs scope =
           && Count.activationMeets criteria past
           && maybe True (\f -> any (matchesSnapshot (Just (targetPerspective pid source gs)) f) (PastActivation.targets past)) aimedAt
    in Turn.turnScopeAdmits (Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) (contextFor (Just pid) source gs) gs) gs scope (TurnRegisters.activePlayer (GameState.turn gs)) pid
-        && not (any admits (TurnRegisters.activationsThisTurn (GameState.turn gs)))
+        && countIs n admits (Foldable.toList (TurnRegisters.activationsThisTurn (GameState.turn gs)))
 
--- Shadow in the Warp's "the FIRST creature spell you cast each turn",
--- firstActivation's twin over CR 601.2i's casts: in a turn the scope admits, did
--- `pid` cast no spell matching `criterion` earlier this turn? Reduced or not, and
--- whether or not the effect asking existed yet (Shadow in the Warp's ruling).
+-- Whether the matching ones earlier this turn, plus the one being begun, are
+-- the ordinal: one for "first", so none earlier. Zero matches nothing.
+countIs :: Natural -> (a -> Bool) -> [a] -> Bool
+countIs n admits earlier = Natural.length (filter admits earlier) + 1 == n
+
+-- Shadow in the Warp's "the FIRST creature spell you cast each turn" and Uthros
+-- Psionicist's "the SECOND spell", nthActivation's twin over CR 601.2i's casts:
+-- in a turn the scope admits, did `pid` cast exactly one fewer than the ordinal
+-- spells matching `criterion` earlier this turn? Reduced or not, and whether or
+-- not the effect asking existed yet (Shadow in the Warp's and Uthros
+-- Psionicist's rulings).
 -- Asked of the casts the log holds before `oid`'s own (Game.castsBefore), or of
 -- all of them while `oid` is still being cast, since CR 601.2f runs before CR
 -- 601.2i files it. Each past cast is matched as cast (Count.snapshotView), with
 -- its caster as CR 109.5's "you".
-firstCast :: PlayerId -> RowSource -> Filter Keyword -> ObjectId -> GameState -> TurnScope.TurnScope -> Bool
-firstCast pid source criterion oid gs scope =
+nthCast :: PlayerId -> RowSource -> Filter Keyword -> ObjectId -> GameState -> TurnOrdinal.TurnOrdinal -> Bool
+nthCast pid source criterion oid gs (TurnOrdinal.MkTurnOrdinal scope n) =
   let earlier = Maybe.fromMaybe (Foldable.toList (Game.castsInLog (TurnRegisters.events (GameState.turn gs)))) (Game.castsBefore oid gs)
       admits cast =
         SpellWasCast.player cast == pid
           && maybe False (\view -> Filter.matches (contextFor (Just pid) source gs) view criterion) (Count.snapshotView (Projection.viewWithLastKnownAnywhere gs) gs (EventShape.SpellCast CastWindow.ThisTurn) (GameEvent.SpellCast cast))
    in Turn.turnScopeAdmits (Count.scopePlayers (Projection.viewWithLastKnownAnywhere gs) (contextFor (Just pid) source gs) gs) gs scope (TurnRegisters.activePlayer (GameState.turn gs)) pid
-        && not (any admits earlier)
+        && countIs n admits earlier
 
 -- CR 118.9 through CR 602.2b: the costs `pid` may pay RATHER THAN the
 -- activation cost of an ability stamped `stamp` -- Kíli the Resourceful's {0}
@@ -1985,7 +1994,7 @@ alternativeActivationCosts :: [(RowSource, PlayerEffect)] -> PlayerId -> Maybe K
 alternativeActivationCosts effects pid stamp gs =
   let offered (source, effect) = case effect of
         PlayerEffect.AlternativeActivationCost (AlternativeActivationCost.MkAlternativeActivationCost granted onlyFirst amount) ->
-          if any (Keyword.designates granted) stamp && maybe True (firstActivation pid source (Filter.Type.And []) ActivationCriteria.MkActivationCriteria {ActivationCriteria.grantedBy = Just granted, ActivationCriteria.whichKind = Nothing, ActivationCriteria.whichLoyalty = Nothing, ActivationCriteria.whichAbility = Nothing} Nothing gs) onlyFirst
+          if any (Keyword.designates granted) stamp && maybe True (nthActivation pid source (Filter.Type.And []) ActivationCriteria.MkActivationCriteria {ActivationCriteria.grantedBy = Just granted, ActivationCriteria.whichKind = Nothing, ActivationCriteria.whichLoyalty = Nothing, ActivationCriteria.whichAbility = Nothing} Nothing gs . firstOf) onlyFirst
             then Just amount
             else Nothing
         _ -> Nothing
@@ -2050,7 +2059,7 @@ activationCostAdjustmentsGiven effects pid targets stamp named kind loyalty srcI
           let criterion = CostModifier.matching modifier
            in matchesObjectFrom source criterion srcId gs
                 && Filter.abilityMeets criteria (AbilityFacts.MkAbilityFacts stamp named kind loyalty)
-                && maybe True (firstActivation pid source criterion criteria (CostModifier.whichTargets modifier) gs) (CostModifier.onlyFirst modifier)
+                && maybe True (nthActivation pid source criterion criteria (CostModifier.whichTargets modifier) gs) (CostModifier.onlyNth modifier)
         -- Thalia and Sapphire Medallion, turned away by the SUBJECT and not by
         -- their Filters, which is what keeps a noncreature permanent's activated
         -- ability untaxed (#90).
@@ -2193,12 +2202,16 @@ grantReaches grantOf pid oid gs (source, effect) =
 -- matching one.
 type FlashGrant = (Filter Keyword, Maybe TurnScope.TurnScope)
 
--- Radagast of Rhosgobel's "the first creature spell you cast each turn": firstCast
+-- Radagast of Rhosgobel's "the first creature spell you cast each turn": nthCast
 -- asked with the grant's own criterion, as spellCostAdjustments asks Shadow in the
 -- Warp's, so the two halves of Radagast's sentence read one tally. True without a
 -- scope.
 flashFirst :: PlayerId -> RowSource -> Filter Keyword -> ObjectId -> GameState -> Maybe TurnScope.TurnScope -> Bool
-flashFirst pid source criterion oid gs = maybe True (firstCast pid source criterion oid gs)
+flashFirst pid source criterion oid gs = maybe True (nthCast pid source criterion oid gs . firstOf)
+
+-- A scope's "first" as an ordinal, for the limits that print no other.
+firstOf :: TurnScope.TurnScope -> TurnOrdinal.TurnOrdinal
+firstOf scope = TurnOrdinal.MkTurnOrdinal {TurnOrdinal.scope = scope, TurnOrdinal.ordinal = 1}
 
 -- CR 601.1a / 601.3b: the criterion a grant on the "as though it had flash"
 -- axis applies to a LAND PLAY, or Nothing. Only the play-scoped grant (Scout's

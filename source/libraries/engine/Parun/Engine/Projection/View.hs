@@ -285,6 +285,7 @@ viewOfCardLapsed lapsed face =
           -- printed FACE with no object behind it -- the line above's reason,
           -- one rule over.
           Filter.exiledFaceDown = False,
+          Filter.warped = False,
           -- CR 701.27h asks about a permanent on the battlefield; this is a
           -- printed FACE with no object behind it, so the rule's own answer is
           -- False rather than an unknown.
@@ -810,6 +811,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- mints a fresh incarnation on the way out, so the object it is True of is
       -- in exile by construction.
       Filter.exiledFaceDown = maybe False Object.exiledFaceDown (Game.lookupObject oid gs),
+      Filter.warped = maybe False (Maybe.isJust . Object.warped) (Game.lookupObject oid gs),
       -- CR 701.27h's three conjuncts, and the only site that fills the field. The
       -- face is read CURRENT -- Game.isFrontFaceUp reads Object.face, never the
       -- Object.turnedOverAt beside it -- which is the rule's first exclusion, a

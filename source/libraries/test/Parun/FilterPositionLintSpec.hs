@@ -1768,6 +1768,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Summoner's Bond", 1), -- its search's filter, against its trigger's spell
         ("Doubling Chant", 1), -- its search's filter, against its loop's member
         ("Shimian Specter", 1), -- its search's filter, against its loop's member
+        ("Kotose, the Silent Spider", 1), -- its search's filter, against its exiled target
         ("Legion's End", 3), -- its battlefield and graveyard exiles' objects and its hand sweep's filter
         ("Maelstrom Pulse", 1), -- its destroy's object
         ("Rat King, Verminister", 1), -- its return's object
@@ -2164,6 +2165,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("Topple", 1), -- a target slot
             ("Summon: Valefor", 1),
             ("The Dining Car", 1),
+            ("Will of the Abzan", 1),
             ("Witch-king, Bringer of Ruin", 1)
           ]
     assertAuthors s registry pool "each author's operands are in a choice's, a target slot's or a leaves trigger's filter" (otherCandidateCounts . surveyedFace) authors

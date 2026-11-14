@@ -6688,7 +6688,9 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- (Protean Hydra). The amount is a Quantity on an
         -- EntryRewrite.WithCounters row rather than an effect, so Card.allEffects
         -- cannot see this one either.
-        entryCountersReadX rows =
+        -- Parametric in what the amount reads: X here, the total mana spent in
+        -- spellReadsSpent below.
+        entryCountersRead readsOff rows =
           or $ do
             ReplacementEffect.EntryR (EntryR.MkEntryR _ rewrite) <- rows
             -- CR 707.9e's additional counters are the same reader one rewrite
@@ -6703,7 +6705,8 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
               EntryRewrite.AsCopy asCopy -> Maybe.mapMaybe CopyClause.counters (AsCopy.clauses asCopy)
               _ -> []
             q <- Map.elems (WithCounters.counters wc)
-            pure (Set.member Binding.variableX (QuantitySlot.slots q))
+            pure (readsOff q)
+        entryCountersReadX = entryCountersRead (Set.member Binding.variableX . QuantitySlot.slots)
         -- The same rule's reader in a CR 614.1c row that RUNS effects rather than
         -- placing counters: Neverwinter Hydra's "roll X d6", which
         -- Parun.Engine.Resolve.Effect.runEntryEffect answers with the announcement.
@@ -6777,10 +6780,13 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         turnedUpReadsX c = any (\t -> Resolve.hasRead StaticRead.ReadsX (Modal.allEffects (TriggeredAbility.modal t)) || modalReadsAnnouncedX (TriggeredAbility.modal t)) (turnedUpTriggers c)
         turnUpDeclaresX c = any declaresVariable (turnUpCostsOf c)
         -- CR 601.2h's reader of a declared X: the spell's own "amount of mana
-        -- spent to cast this spell", which X's mana is part of (Molten Note).
-        -- It answers only for a spell declaring X, since the total is read
-        -- whether or not there is one.
-        spellReadsSpent c = Resolve.hasRead StaticRead.ReadsManaSpent (Modal.allEffects (Face.spell c))
+        -- spent to cast this spell", which X's mana is part of (Molten Note),
+        -- or the CR 614.1c counters the permanent enters with read off that
+        -- total (Dyadrine, Synthesis Amalgam). It answers only for a spell
+        -- declaring X, since the total is read whether or not there is one.
+        spellReadsSpent c =
+          Resolve.hasRead StaticRead.ReadsManaSpent (Modal.allEffects (Face.spell c))
+            || entryCountersRead (Quantity.hasRead StaticRead.ReadsManaSpent) (concatMap (entryMembers . PrintedReplacement.effect) (Face.replacementEffects c))
         offends f =
           let spellDeclaresX = any declaresVariable (spellCostsOf f)
            in ((readsX f || (spellDeclaresX && spellReadsSpent f)) /= (spellDeclaresX || turnUpDeclaresX f))
