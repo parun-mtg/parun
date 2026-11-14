@@ -1,0 +1,127 @@
+{
+  "description": "CR 603.5, 608.2c: Scarlet Spider, Kaine's controller declines the discard as he enters, so he gets no +1/+1 counter",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s0",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m0",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Scarlet Spider, Kaine",
+            "label": "kaine"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$kaine",
+          "mana": [
+            "$s0",
+            "$m0"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Declines"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ],
+  "final": [
+    {
+      "Counters": {
+        "count": 0,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "Scarlet Spider, Kaine"
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "Scarlet Spider, Kaine",
+        "power": 2,
+        "toughness": 1
+      }
+    },
+    {
+      "Count": {
+        "card": "Hill Giant",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ]
+}
