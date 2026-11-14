@@ -50,6 +50,7 @@ import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Deck as Deck
@@ -1363,6 +1364,35 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
     Spec.assertEqWith s "chaos: alice may have her life total become 20" (S.lifeOf S.alice (S.runPure exercising hurt rolled)) (Just 20)
     Spec.assertEqWith s "and may decline" (S.lifeOf S.alice (S.runPure declining hurt rolled)) (Just 7)
 
+  -- Mount Keralia, Plane -- Regatha (Oracle text checked on Scryfall,
+  -- 2026-11-14): a pressure counter at each end step, the active player being
+  -- the planar controller (CR 901.6), damage from the
+  -- departed plane (CR 608.2h), and the chaos shield over planes by name (CR
+  -- 609.7b), which outlives the plane it came from.
+  Spec.it s "CR 608.2h planeswalking away from Mount Keralia deals its pressure, and its chaos shield spares alice's permanents" $ do
+    giant <- S.printingOf s registry "Hill Giant"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    jace <- S.printingOf s registry "Jace Beleren"
+    board <- planarBoard s registry ["Mount Keralia", "Tazeem"]
+    let (giantId, b1) = S.addPermanent giant S.alice board
+        (alicesJace, b2) = S.addPermanent jace S.alice b1
+        (_, b3) = S.addPermanent bears S.bob b2
+        (bobsJace, b4) = S.addPermanent jace S.bob b3
+        loyal = S.addCounter CounterKind.Loyalty 3 bobsJace (S.addCounter CounterKind.Loyalty 3 alicesJace b4)
+        pressured = inMain S.alice (endStep S.bob (endStep S.alice loyal))
+        keralia = Maybe.fromMaybe S.noSource (Maybe.listToMaybe (Planechase.faceUp pressured))
+        walked = rollAndResolve 6 pressured
+        shielded = rollAndResolve 6 (rollAndResolve 5 pressured)
+        loyalty = S.counterOf CounterKind.Loyalty
+    Spec.assertEqWith s "CR 901.6 alice's end step and bob's: two pressure counters" (S.counterOf pressure keralia pressured) 2
+    Spec.assertEqWith s "CR 608.2h the departed plane dealt two to alice's Hill Giant" (S.damageOf giantId walked) (Just 2)
+    Spec.assertEqWith s "and two to each Jace" (loyalty alicesJace walked, loyalty bobsJace walked) (1, 1)
+    Spec.assertEqWith s "and bob's Grizzly Bears died" (zoneNames Zone.Graveyard S.bob walked) [cardName "Grizzly Bears"]
+    Spec.assertEqWith s "CR 701.31b Tazeem is face up, Mount Keralia face down" (faceUpNames walked, deckNames S.alice walked) ([cardName "Tazeem"], [cardName "Mount Keralia"])
+    Spec.assertEqWith s "CR 609.7b after chaos, alice's Hill Giant takes nothing" (S.damageOf giantId shielded) (Just 0)
+    Spec.assertEqWith s "nor her Jace, while bob's takes two" (loyalty alicesJace shielded, loyalty bobsJace shielded) (3, 1)
+    Spec.assertEqWith s "and bob's Grizzly Bears still died" (zoneNames Zone.Graveyard S.bob shielded) [cardName "Grizzly Bears"]
+
   -- Eloren Wilds, Plane -- Shandalar (Oracle text checked on Scryfall,
   -- 2026-11-04). Bob taps while alice is the planar controller, so "that player"
   -- is no "you". Sol Ring's mana is an artifact's and the extra {C} is the
@@ -1519,3 +1549,7 @@ declaringAt defending gs =
             TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [defending]}
           }
     }
+
+-- Mount Keralia's counter.
+pressure :: CounterKind.CounterKind Keyword.Keyword
+pressure = CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack "pressure"))
