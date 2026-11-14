@@ -136,6 +136,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.OwnedZone as OwnedZone
 import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
@@ -1834,7 +1835,7 @@ armMatches bindings board atEvent beforeEvent gs bearer you cond event = case co
   -- was, and the permanent turned face down is seen with CR 708.2's listed
   -- characteristics. An actor that is gone AND filed no last known information
   -- answers False.
-  TriggerCondition.PermanentActs watched -> case event of
+  TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger watched _) -> case event of
     GameEvent.PermanentActed acted ->
       PermanentActed.action acted == PermanentActed.action watched && case PermanentActed.permanent watched of
         ActingPermanent.Self -> PermanentActed.permanent acted == bearer

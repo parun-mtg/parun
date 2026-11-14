@@ -133,6 +133,7 @@ import Parun.Types.PendingTrigger (PendingTrigger)
 import qualified Parun.Types.PendingTrigger as PendingTrigger
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
+import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PlanarDieRolled as PlanarDieRolled
@@ -919,7 +920,7 @@ looksBack condition = case condition of
   -- mutated permanent the same object. An explore or connive moves cards, but
   -- its event says the keyword action COMPLETED, not that anything left a zone.
   -- Phasing out is CR 603.10b's own entry; phasing in is not on the list.
-  TriggerCondition.PermanentActs watched -> PermanentActed.action watched == PermanentAction.PhaseOut
+  TriggerCondition.PermanentActs watched -> PermanentActed.action (PermanentActsTrigger.acted watched) == PermanentAction.PhaseOut
   TriggerCondition.PlacesSticker _ -> False
   -- Not on CR 603.10a's list, and CR 706.1's roll is no zone change: it moves
   -- no object at all, so CR 603.10's first sentence governs.
@@ -1122,9 +1123,9 @@ looksBack condition = case condition of
 --
 -- CR 603.1b lets one ability carry several conditions, and `any` makes such an
 -- ability batch-scoped as a whole: a mixed AnyOf would fire at most once per group
--- rather than once per group plus once per member. Nothing in data/cards mixes
--- the two readings, and CardSpec's anyOfOffends already narrows what an AnyOf may
--- hold; a card that did would need this arm re-derived rather than reused.
+-- rather than once per group plus once per member. FilterPositionLintSpec's
+-- anyOfOffends rejects a card that mixes the two readings; one that needed to
+-- would need this arm re-derived rather than reused.
 batchScoped :: TriggerCondition -> Bool
 batchScoped condition = case condition of
   TriggerCondition.RoomEntered _ -> False
@@ -1142,7 +1143,6 @@ batchScoped condition = case condition of
   TriggerCondition.PlayerCommitsCrime _ -> False
   TriggerCondition.PlayerExpends _ -> False
   TriggerCondition.SelfBecomesPlotted -> False
-  TriggerCondition.PermanentActs _ -> False
   TriggerCondition.PlayerRollsResult _ -> False
   TriggerCondition.Visit -> False
   TriggerCondition.ChaosEnsues -> False
@@ -1175,6 +1175,11 @@ batchScoped condition = case condition of
   -- tapping, however many it tapped -- a cost's taps, CR 508.1f's attackers, or
   -- one Effect.Tap -- so long as each of those sites brackets its loop.
   TriggerCondition.BecomesTapState watched -> BecomesTapState.batching watched == Batching.OneOrMore
+  -- Teferi's Imp's "whenever this creature phases out" is per actor, while The
+  -- War Doctor's "one or more other permanents phase out" is one occurrence for
+  -- Parun.Engine.Phasing.phaseOutSet's whole group, indirect riders included
+  -- (CR 702.26g).
+  TriggerCondition.PermanentActs watched -> PermanentActsTrigger.batching watched == Batching.OneOrMore
   -- CR 106.12a names one resolution of one mana ability, so one occurrence;
   -- no printing of it says "one or more".
   TriggerCondition.TappedForMana _ -> False
@@ -1535,7 +1540,11 @@ eventTriggersGiven scope standing events gs =
       --
       -- CR 603.10b: likewise the permanent this event phased out, which no board
       -- after it holds, offered under its controller on the board before, the
-      -- one Parun.Engine.Phasing.phaseOutSet always files.
+      -- one Parun.Engine.Phasing.phaseOutSet always files. Offered for its OWN
+      -- event alone, so a bearer phasing out beside others does not see theirs:
+      -- The War Doctor's ruling (2023-10-13), which
+      -- data/scenarios/the-war-doctor-phasing-out-with-its-aura-gets-no-time-counter.json
+      -- proves.
       lookedBackAt onBattlefield logged =
         let filed oid = case Map.lookup (LoggedEvent.group logged) (Snapshots.boardBeforeEvent (GameState.snapshots gs)) of
               Just board | Set.member oid (GameState.battlefield board) -> Just board

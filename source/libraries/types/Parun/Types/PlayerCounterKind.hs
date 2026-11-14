@@ -35,8 +35,9 @@ data PlayerCounterKind
     -- behaviour to it, so since nothing in the rules reads an experience
     -- counter the closed half must not either. A pure vocabulary constructor,
     -- only ever counted by a card's own text -- Meren of Clan Nel Toth hands
-    -- one out and Ezuri, Claw of Progress counts them, both through the same
-    -- Effect and Quantity arms every other kind uses.
+    -- one out, Ezuri, Claw of Progress counts them and Mizzix of the Izmagnus
+    -- compares against them, all through the same Effect, Quantity and Operand
+    -- arms every other kind uses.
     --
     -- After the rule-numbered kinds, having no rule number to sort by.
     Experience

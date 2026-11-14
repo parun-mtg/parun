@@ -352,6 +352,7 @@ import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PerTarget as PerTarget
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
@@ -704,6 +705,7 @@ operandChildren children operand = case operand of
   Operand.AmountInSlot name -> fmap Operand.AmountInSlot (slot children SlotArity.Amount name)
   Operand.EnclosingAmount -> pure operand
   Operand.OfEachOtherCandidate _ -> pure operand
+  Operand.YourCounters _ -> pure operand
 
 -- | A damage look-back's children: the slot its party reads, at MANY
 -- (membership, IsBound's reading).
@@ -1264,7 +1266,7 @@ effectChildren c effect = case effect of
   Effect.Venture _ -> pure effect
   Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices players who filter_ quantity permanents) ->
     fmap Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices <$> onPlayer c players <*> traverse (onFilter c) who <*> onFilter c filter_ <*> onQuantity c quantity <*> traverse (onSlot c) permanents)
-  Effect.Vote (Vote.MkVote starter choices secret) -> fmap Effect.Vote (Vote.MkVote <$> onPlayer c starter <*> voteChoicesChildren c choices <*> pure secret)
+  Effect.Vote (Vote.MkVote starter choices secret upToOne) -> fmap Effect.Vote (Vote.MkVote <$> onPlayer c starter <*> voteChoicesChildren c choices <*> pure secret <*> pure upToOne)
   Effect.Bid (Bid.MkBid opening highBid highBidder) -> fmap Effect.Bid (Bid.MkBid <$> onQuantity c opening <*> onSlot c highBid <*> onSlot c highBidder)
   Effect.TakeExtraTurn (TakeExtraTurn.MkTakeExtraTurn who skips count) -> fmap Effect.TakeExtraTurn (TakeExtraTurn.MkTakeExtraTurn <$> onPlayer c who <*> pure skips <*> onQuantity c count)
   Effect.ShuffleIntoLibrary (ShuffleIntoLibrary.MkShuffleIntoLibrary library ref named) ->
@@ -1643,7 +1645,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.SelfBecomesPlotted -> pure condition
   TriggerCondition.AttachmentChanges (AttachmentTrigger.MkAttachmentTrigger end direction other) -> fmap (TriggerCondition.AttachmentChanges . AttachmentTrigger.MkAttachmentTrigger end direction) (triggerFilter c other)
   TriggerCondition.Reflexive -> pure condition
-  TriggerCondition.PermanentActs (PermanentActed.MkPermanentActed action permanent) -> fmap (TriggerCondition.PermanentActs . PermanentActed.MkPermanentActed action) (actingChildren c permanent)
+  TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action permanent) batching) -> fmap (\p -> TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed action p) batching)) (actingChildren c permanent)
   TriggerCondition.PlayerActs (PlayerActed.MkPlayerActed _ _) -> pure condition
   TriggerCondition.PlacesSticker (PlacesSticker.MkPlacesSticker placer kinds stickered) -> fmap (TriggerCondition.PlacesSticker . PlacesSticker.MkPlacesSticker placer kinds) (triggerFilter c stickered)
 
@@ -2213,13 +2215,14 @@ onlyFirstChildren c counted turn = playerLooksBack c counted *> playerTurn c tur
 
 -- | A cost modifier's children (CR 601.2f, 602.2b).
 costModifierChildren :: (Applicative f) => PlayerEffectChildren f -> CostModifier.CostModifier -> f CostModifier.CostModifier
-costModifierChildren c (CostModifier.MkCostModifier subject matching whichTargets perTarget perEach onlyFirst change) =
+costModifierChildren c (CostModifier.MkCostModifier subject matching whichTargets perTarget perEach countedAgainst onlyFirst change) =
   CostModifier.MkCostModifier
     <$> costSubjectChildren c subject
     <*> playerFilter c matching
     <*> traverse (playerFilter c) whichTargets
     <*> traverse (perTargetChildren c) perTarget
     <*> traverse (playerQuantity c) perEach
+    <*> pure countedAgainst
     <*> traverse (onlyFirstChildren c (costSubjectHistory subject)) onlyFirst
     <*> costChangeChildren c change
 

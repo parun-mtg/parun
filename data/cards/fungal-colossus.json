@@ -1,0 +1,82 @@
+{
+  "faces": [
+    {
+      "costReductions": [
+        {
+          "amount": [
+            {
+              "type": "Generic",
+              "value": 1
+            }
+          ],
+          "perEach": {
+            "type": "Count",
+            "value": {
+              "aggregation": {
+                "type": "DistinctNames"
+              },
+              "filter": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "HasCardType",
+                    "value": "Land"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                ]
+              },
+              "scope": {
+                "type": "InZone",
+                "value": {
+                  "player": {
+                    "type": "Relative",
+                    "value": "AnyPlayer"
+                  },
+                  "zone": "Battlefield"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 6
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Fungal Colossus",
+      "oracleText": "This spell costs {X} less to cast, where X is the number of differently named lands you control.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "typeLine": {
+        "subtypes": [
+          "Beast",
+          "Fungus"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

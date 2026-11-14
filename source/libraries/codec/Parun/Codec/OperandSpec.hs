@@ -9,6 +9,7 @@ import qualified Parun.Types.CandidateScope as CandidateScope
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.OtherCandidates as OtherCandidates
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.SlotName as SlotName
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -55,4 +56,10 @@ spec s = Spec.describe s "Parun.Codec.Operand" $ do
       Operand.codec
       (Operand.OfEachOtherCandidate (OtherCandidates.MkOtherCandidates Measure.ManaValue CandidateScope.EveryCandidate))
       " {\"type\":\"OfEachOtherCandidate\",\"value\":{\"measure\":\"ManaValue\",\"scope\":\"EveryCandidate\"}} "
+  Spec.it s "YourCounters" $
+    Common.assertCodec
+      s
+      Operand.codec
+      (Operand.YourCounters PlayerCounterKind.Experience)
+      " {\"type\":\"YourCounters\",\"value\":\"Experience\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Operand.codec

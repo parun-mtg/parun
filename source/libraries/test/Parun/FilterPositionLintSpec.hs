@@ -24,6 +24,7 @@ import qualified Parun.Codec.KeywordDesignator as KeywordDesignator.Codec
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
+import qualified Parun.Engine.Event.Trigger as Trigger
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Keyword as Keyword.Engine
 import qualified Parun.Engine.Mint as Mint
@@ -52,6 +53,7 @@ import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCostScope as AttackCostScope
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackerTrigger as AttackerTrigger
+import qualified Parun.Types.Batching as Batching
 import qualified Parun.Types.Behold as Behold
 import qualified Parun.Types.BlockCost as BlockCost
 import qualified Parun.Types.BoundMeasure as BoundMeasure
@@ -87,6 +89,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.Count as Count.Type
+import qualified Parun.Types.CountedAgainst as CountedAgainst
 import qualified Parun.Types.CounterGrouping as CounterGrouping
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterKind as CounterKind
@@ -162,6 +165,7 @@ import qualified Parun.Types.PayBranch as PayBranch
 import qualified Parun.Types.PayGate as PayGate
 import qualified Parun.Types.PayObligation as PayObligation
 import qualified Parun.Types.PerCreature as PerCreature
+import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -1440,8 +1444,8 @@ timesPaidOffends card =
       isPrinted = not . null . taggedValues (Text.pack "Printed")
    in any (`notElem` printed) (timesPaidKeywords encoded) || any (`notElem` linked) (filter isPrinted (timesPaidDesignators encoded))
 
--- Two things a TriggerCondition.AnyOf may not contain, checked at every depth so
--- that a nested one cannot smuggle either in.
+-- Three things a TriggerCondition.AnyOf may not contain, checked at every depth so
+-- that a nested one cannot smuggle any in.
 --
 -- A CR 603.8 STATE trigger, because the two kinds of condition are gathered by
 -- different scans: Parun.Engine.Event.Trigger.stateTriggers walks the battlefield (and the
@@ -1456,14 +1460,20 @@ timesPaidOffends card =
 -- A NESTED AnyOf, because a flat list says everything a nested one could and the
 -- nesting only multiplies the shapes the classifications above have to be right
 -- for.
+--
+-- Disjuncts that DISAGREE on CR 603.2c's batching, because
+-- Parun.Engine.Event.Trigger.batchScoped's AnyOf arm answers `any`, so a
+-- per-occurrence disjunct beside a batch one would fire once per group. The War
+-- Doctor's two "one or more" halves agree.
 anyOfOffends :: TriggerCondition.TriggerCondition -> Bool
 anyOfOffends condition =
   let inside c = case c of
         TriggerCondition.StateIs _ -> True
         TriggerCondition.AnyOf _ -> True
         _ -> False
+      mixed conditions = any Trigger.batchScoped conditions && not (all Trigger.batchScoped conditions)
    in case condition of
-        TriggerCondition.AnyOf conditions -> any inside conditions || any anyOfOffends conditions
+        TriggerCondition.AnyOf conditions -> any inside conditions || any anyOfOffends conditions || mixed conditions
         _ -> False
 
 -- | A position lint's accepting side: each author's atoms, as many as named,
@@ -1499,7 +1509,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- pool with no AnyOf at all would pass this without examining anything.
   -- The pool's AnyOf cards -- Balemurk Leech, Bartered Cow and their like -- are
   -- all ACCEPTED here.
-  Spec.it s "CR 603.2 no AnyOf mixes in a state trigger or nests another AnyOf" $ do
+  Spec.it s "CR 603.2 no AnyOf mixes in a state trigger, nests another AnyOf or mixes CR 603.2c batching" $ do
     ps <- S.allPrintings s corpus
     let conditions c = fmap TriggeredAbility.condition (Face.triggeredAbilities c)
         isAnyOf c = case c of TriggerCondition.AnyOf _ -> True; _ -> False
@@ -1508,7 +1518,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       s
       (any (anyFace (any isAnyOf . conditions) . Printing.card) ps)
       "the pool has a card with an AnyOf condition to lint"
-    Spec.assertEqWith s "every AnyOf holds only event triggers, flat" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "every AnyOf holds only event triggers, flat, batched alike" (fmap (S.nameOf . Printing.card) offenders) []
   -- The REJECTING direction, against hand-built offenders rather than card files,
   -- as the repeated-face-name lint above does it.
   Spec.it s "the lint itself catches a state trigger and a nested AnyOf inside an AnyOf" $ do
@@ -1523,6 +1533,10 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- NOT an offence outside an AnyOf: a bare state trigger is how every CR 603.8
     -- card in the pool is written, and this lint must not reject those.
     Spec.assertBool s (not (anyOfOffends (TriggerCondition.StateIs never))) "a bare state trigger is left alone"
+    -- CR 603.2c: a batch Enters beside a per-occurrence one.
+    let entersOne = TriggerCondition.Enters EntersTrigger.defaultValue {EntersTrigger.batching = Batching.OneOrMore}
+    Spec.assertBool s (anyOfOffends (TriggerCondition.AnyOf [entersOne, TriggerCondition.Enters EntersTrigger.defaultValue])) "a batch disjunct beside a per-occurrence one is rejected"
+    Spec.assertBool s (not (anyOfOffends (TriggerCondition.AnyOf [entersOne, entersOne]))) "and two batch disjuncts are fine"
   Spec.it s "no mode declares a slot named enchant" $ do
     ps <- S.allPrintings s corpus
     let offends c = any (Map.member Card.enchantSlot . Mode.targetSlots) (Modal.modes (Face.spell c))
@@ -3254,7 +3268,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ( "CR 613.11's spell-cost modifier",
               base
                 { Face.playerAbilities =
-                    [PlayerStaticAbility.MkPlayerStaticAbility {PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.You, PlayerStaticAbility.condition = Nothing, PlayerStaticAbility.name = Nothing, PlayerStaticAbility.effect = PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells buried Nothing Nothing Nothing Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 1])))}]
+                    [PlayerStaticAbility.MkPlayerStaticAbility {PlayerStaticAbility.scope = PlayerScope.Related PlayerRelation.You, PlayerStaticAbility.condition = Nothing, PlayerStaticAbility.name = Nothing, PlayerStaticAbility.effect = PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells buried Nothing Nothing Nothing CountedAgainst.ChangeSource Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 1])))}]
                 }
             ),
             ( "CR 508.1c's combat restriction",
@@ -3869,6 +3883,32 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       "and a target slot asking it is rejected"
       (chosenValueOffends isLastExiledWithSourceCounts isLastExiledWithSourceTag (survey planted), isLastExiledWithSourceCounts (survey planted))
       (True, (0, 1))
+
+  -- CR 122.1: a player's counters are on the Context only where
+  -- Filter.contextIn built it; a trigger condition is framed so, and a
+  -- static ability's affected set (Filter.contextFor) is not.
+  Spec.it s "CR 122.1 no card compares against a player's counters outside a trigger condition" $ do
+    let needle = Value.String (String.MkString (Text.pack "YourCounters"))
+        encoded = Codec.encode (Face.Codec.codec Card.codec) . surveyedFace
+        counts c = let e = encoded c in (triggerConditionAtoms needle e, occurrences needle e - triggerConditionAtoms needle e)
+    Spec.assertEqWith s "the operand is written only in a trigger condition" [S.nameOf (Printing.card p) | (p, faces) <- pool, any ((/= 0) . snd . counts) faces] []
+    mizzix <- S.printingOf s registry "Mizzix of the Izmagnus"
+    Spec.assertEqWith s "Mizzix's is in its trigger condition" (counts (survey (S.combinedFace mizzix))) (1, 0)
+    piker <- S.printingOf s registry "Goblin Piker"
+    let atom = Filter.Type.Measures (Measures.MkMeasures Measure.ManaValue Comparison.GreaterThan (Operand.YourCounters PlayerCounterKind.Experience))
+        planted =
+          (S.combinedFace piker)
+            { Face.staticAbilities =
+                [ StaticAbility.MkStaticAbility
+                    (Affected.Matching atom)
+                    Nothing
+                    Set.empty
+                    Nothing
+                    Nothing
+                    (NonEmpty.singleton Modification.LoseAllAbilities)
+                ]
+            }
+    Spec.assertEqWith s "and one in an affected set is seen" (counts (survey planted)) (0, 1)
 
 spec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 spec s registry corpus = Spec.describe s "Parun.Engine.Card" $ do

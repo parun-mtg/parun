@@ -54,6 +54,7 @@ import qualified Parun.Types.Answerer as Answerer
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.BallotChoice as BallotChoice
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -417,6 +418,7 @@ spec s registry = Spec.describe s "Protocol" $ do
           answers <- traverse (Protocol.decodeAnswer prompt) options
           if all (Scenario.withinOffer prompt) answers then Right (answers, field "entries" offer) else Left (Text.pack "an option outside the offer")
         entries = Just . R.Array
+        ballot = BallotChoice.ForWord . SlotName.MkSlotName . Text.pack
         tapped = ReplacementEntry.MkReplacementEntry looked (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.EntersTapState TapState.Tapped)))
         hit = DamageEvent.MkDamageEvent o7 (Recipient.ToPlayer S.bob) 2 False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat
         hidden = GameEvent.Looked (Looked.MkLooked looked (Projection.project looked gs) (Set.singleton S.bob))
@@ -432,6 +434,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 315.5a a hand as its cards" (offered (Prompt.KeepHand alice S.alice ([o7] NonEmpty.:| [[]]))) (Right ([0, 1], entries [R.Array [Protocol.object o7], R.Array []]))
     Spec.assertEqWith s "CR 706.4 a result as its number" (offered (Prompt.ChooseDieResult alice S.alice (Just o7) (4 NonEmpty.:| [4]))) (Right ([0, 1], entries [R.Number 4, R.Number 4]))
     Spec.assertEqWith s "CR 701.48a a branch, then neither" (offered (Prompt.ChooseLearn alice S.alice o7 (LearnMode.TakeLesson NonEmpty.:| []))) (Right ([Just LearnMode.TakeLesson, Nothing], entries [R.Text (Text.pack "TakeLesson")]))
+    Spec.assertEqWith s "CR 701.38a a vote's choices, then no ballot where it is offered" (fmap (fmap fst . offered . Prompt.ChooseVote alice S.alice o7 (ballot "time" NonEmpty.:| [ballot "knowledge"])) [True, False]) [Right [Just (ballot "time"), Just (ballot "knowledge"), Nothing], Right [Just (ballot "time"), Just (ballot "knowledge")]]
     Spec.assertEqWith s "CR 608.2d a clause, as its index where no object resolves, then neither where it is offered" (offered (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) True Seq.empty)) (Right ([Just (clause 1), Just (clause 2), Nothing], entries [R.Number 1, R.Number 2]))
     Spec.assertEqWith s "CR 701.55a a branch of a villainous choice as its Oracle text, and as its index where its clause does not render" (offered (Prompt.ChooseClause bobDecides S.bob plan (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False Seq.empty)) (Right ([Just (clause 1), Just (clause 2)], entries [R.Text (Text.pack "Target opponent discards three cards."), R.Number 2]))
     Spec.assertEqWith s "CR 101.4b and the branch an earlier chooser announced likewise" (field "earlier" (Protocol.offerOf gs (Prompt.ChooseClause bobDecides S.bob plan (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False (Seq.singleton (S.alice, Just (clause 1)))))) (Just (R.Array [R.Array [R.Text (Text.pack "0"), R.Text (Text.pack "Target opponent discards three cards.")]]))

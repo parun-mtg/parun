@@ -13,6 +13,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostModifier as CostModifier.Type
 import qualified Parun.Types.CostSubject as CostSubject
+import qualified Parun.Types.CountedAgainst as CountedAgainst
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -29,7 +30,7 @@ spec s = Spec.describe s "Parun.Codec.CostModifier" $ do
     Common.assertCodec
       s
       CostModifier.codec
-      (CostModifier.Type.MkCostModifier CostSubject.Spells (Filter.Not (Filter.HasCardType CardType.Creature)) Nothing Nothing Nothing Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 1])))
+      (CostModifier.Type.MkCostModifier CostSubject.Spells (Filter.Not (Filter.HasCardType CardType.Creature)) Nothing Nothing Nothing CountedAgainst.ChangeSource Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 1])))
       " {\"subject\":{\"type\":\"Spells\"},\"matching\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"change\":{\"type\":\"Increase\",\"value\":[{\"type\":\"Generic\",\"value\":1}]}} "
   -- Every criterion present on the activation subject: Professor Hojo's first,
   -- Zirda's kind, Dwarven Mauler's target, Henzie's count, Heartstone's floor.
@@ -43,17 +44,23 @@ spec s = Spec.describe s "Parun.Codec.CostModifier" $ do
           (Just Filter.IsSource)
           (Just (PerTarget.MkPerTarget (Filter.HasCardType CardType.Creature) Nothing))
           (Just (Quantity.CommanderCasts (PlayerRef.Relative PlayerRelation.You)))
+          CountedAgainst.PaidFor
           (Just (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)))
           (CostChange.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic 2]) 1 False))
       )
-      " {\"subject\":{\"type\":\"Activations\",\"value\":{\"whichKind\":\"NonManaAbility\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"whichTargets\":{\"type\":\"IsSource\"},\"perTarget\":{\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"perEach\":{\"type\":\"CommanderCasts\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"onlyFirst\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"change\":{\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":2}],\"atLeast\":1}}} "
+      " {\"subject\":{\"type\":\"Activations\",\"value\":{\"whichKind\":\"NonManaAbility\"}},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"whichTargets\":{\"type\":\"IsSource\"},\"perTarget\":{\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"perEach\":{\"type\":\"CommanderCasts\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"countedAgainst\":\"PaidFor\",\"onlyFirst\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"change\":{\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":2}],\"atLeast\":1}}} "
   -- Shadow in the Warp's first creature spell.
   Spec.it s "a spell reduction for the first each turn" $
     Common.assertCodec
       s
       CostModifier.codec
-      (CostModifier.Type.MkCostModifier CostSubject.Spells (Filter.HasCardType CardType.Creature) Nothing Nothing Nothing (Just (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))) (CostChange.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic 2]) 0 False)))
+      (CostModifier.Type.MkCostModifier CostSubject.Spells (Filter.HasCardType CardType.Creature) Nothing Nothing Nothing CountedAgainst.ChangeSource (Just (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))) (CostChange.Reduce (AppliedReduction.MkAppliedReduction (ManaCost.MkManaCost [ManaSymbol.Generic 2]) 0 False)))
       " {\"subject\":{\"type\":\"Spells\"},\"matching\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"onlyFirst\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}},\"change\":{\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":2}]}}} "
+  Spec.it s "refuses countedAgainst beside no perEach" $
+    Spec.assertBool
+      s
+      (Either.isLeft (Codec.decode CostModifier.codec =<< Common.parse (Text.pack "{\"subject\":{\"type\":\"Spells\"},\"matching\":{\"type\":\"IsSource\"},\"countedAgainst\":\"PaidFor\",\"change\":{\"type\":\"Increase\",\"value\":[{\"type\":\"Generic\",\"value\":1}]}}")))
+      "expected a decode failure"
   Spec.it s "refuses onlyFirst beside whichLoyalty" $
     Spec.assertBool
       s

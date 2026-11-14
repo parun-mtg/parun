@@ -27,7 +27,7 @@ import qualified Parun.Codec.LeavesTrigger as LeavesTrigger
 import qualified Parun.Codec.LeavesZoneTrigger as LeavesZoneTrigger
 import qualified Parun.Codec.LifeTrigger as LifeTrigger
 import qualified Parun.Codec.LostPermanent as LostPermanent
-import qualified Parun.Codec.PermanentActed as PermanentActed
+import qualified Parun.Codec.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Codec.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Codec.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Codec.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
@@ -102,7 +102,7 @@ codec =
           Arm.payload "CausedBy" (CausedBy.codec codec) TriggerCondition.CausedBy (\x -> case x of TriggerCondition.CausedBy y -> Just y; _ -> Nothing),
           Arm.payload "TurnedFaceUp" ActingPermanent.codec TriggerCondition.TurnedFaceUp (\x -> case x of TriggerCondition.TurnedFaceUp y -> Just y; _ -> Nothing),
           Arm.payload "Transforms" TransformTrigger.codec TriggerCondition.Transforms (\x -> case x of TriggerCondition.Transforms y -> Just y; _ -> Nothing),
-          Arm.payload "PermanentActs" (PermanentActed.codec ActingPermanent.codec) TriggerCondition.PermanentActs (\x -> case x of TriggerCondition.PermanentActs y -> Just y; _ -> Nothing),
+          Arm.payload "PermanentActs" PermanentActsTrigger.codec TriggerCondition.PermanentActs (\x -> case x of TriggerCondition.PermanentActs y -> Just y; _ -> Nothing),
           Arm.nullary "FaceDownPermanentLeavesRevealed" TriggerCondition.FaceDownPermanentLeavesRevealed,
           Arm.payload "PermanentBecomesDesignated" PermanentBecomesDesignated.codec TriggerCondition.PermanentBecomesDesignated (\x -> case x of TriggerCondition.PermanentBecomesDesignated y -> Just y; _ -> Nothing),
           Arm.nullary "AttachedCreatureMentors" TriggerCondition.AttachedCreatureMentors,

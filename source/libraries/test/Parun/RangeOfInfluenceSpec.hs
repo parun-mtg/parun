@@ -995,7 +995,7 @@ spec s registry = Spec.describe s "Range of influence" $ do
 -- else defers to S.identityAnswer. Pure, since each ballot names its seat.
 votingAs :: [(PlayerId.PlayerId, [PlayerId.PlayerId])] -> [(PlayerId.PlayerId, [ObjectId.ObjectId])] -> Prompt.Prompt r -> r
 votingAs players objects p = case p of
-  Prompt.ChooseVote _ who _ offered -> preferred (fmap (fmap BallotChoice.ForPlayer) (lookup who players) <> fmap (fmap BallotChoice.ForObject) (lookup who objects)) offered
+  Prompt.ChooseVote _ who _ offered _ -> Just $ preferred (fmap (fmap BallotChoice.ForPlayer) (lookup who players) <> fmap (fmap BallotChoice.ForObject) (lookup who objects)) offered
   _ -> S.identityAnswer p
   where
     preferred :: (Eq a) => Maybe [a] -> NonEmpty.NonEmpty a -> a

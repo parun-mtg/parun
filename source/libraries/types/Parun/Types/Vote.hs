@@ -15,6 +15,10 @@ data Vote = MkVote
     -- | Whether each ballot is shown to its voter alone until every ballot is
     -- revealed at once: secret council's card text; the ability word has no
     -- rules meaning (CR 207.2c).
-    secret :: Bool
+    secret :: Bool,
+    -- | Whether a voter may cast no ballot: Vault 11: Voter's Dilemma's "votes
+    -- for up to one creature", card text overriding rule 701.38a's "chooses one"
+    -- (CR 101.1).
+    upToOne :: Bool
   }
   deriving (Eq, Ord, Show)

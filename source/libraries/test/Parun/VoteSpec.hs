@@ -120,10 +120,10 @@ votingFor ::
   Prompt.Prompt r ->
   State.State [(PlayerId.PlayerId, [ObjectId.ObjectId])] r
 votingFor pins p = case p of
-  Prompt.ChooseVote _ pid _ offered -> do
+  Prompt.ChooseVote _ pid _ offered _ -> do
     State.modify (<> [(pid, foldMap Foldable.toList offered)])
     pure $ case lookup pid pins of
-      Just oid -> BallotChoice.ForObject oid
+      Just oid -> Just (BallotChoice.ForObject oid)
       Nothing -> S.identityAnswer p
   _ -> pure (S.identityAnswer p)
 
@@ -196,10 +196,10 @@ votingWords ::
   Prompt.Prompt r ->
   State.State ([SlotName.SlotName], [(PlayerId.PlayerId, [SlotName.SlotName])]) r
 votingWords p = case p of
-  Prompt.ChooseVote _ pid _ offered -> do
+  Prompt.ChooseVote _ pid _ offered _ -> do
     (pending, asked) <- State.get
     State.put (drop 1 pending, asked <> [(pid, foldMap wordOf offered)])
-    pure (case pending of chosen : _ -> BallotChoice.ForWord chosen; [] -> S.identityAnswer p)
+    pure (case pending of chosen : _ -> Just (BallotChoice.ForWord chosen); [] -> S.identityAnswer p)
   _ -> pure (S.identityAnswer p)
 
 word :: String -> SlotName.SlotName
@@ -283,10 +283,10 @@ mayVotingWords ::
   Prompt.Prompt r ->
   State.State ([SlotName.SlotName], [Either PlayerId.PlayerId PlayerId.PlayerId]) r
 mayVotingWords decision p = case p of
-  Prompt.ChooseVote _ pid _ _ -> do
+  Prompt.ChooseVote _ pid _ _ _ -> do
     (pending, asked) <- State.get
     State.put (drop 1 pending, asked <> [Right pid])
-    pure (case pending of chosen : _ -> BallotChoice.ForWord chosen; [] -> S.identityAnswer p)
+    pure (case pending of chosen : _ -> Just (BallotChoice.ForWord chosen); [] -> S.identityAnswer p)
   Prompt.OfferedExtra _ pid _ _ -> do
     State.modify (fmap (<> [Left pid]))
     pure decision
@@ -300,10 +300,10 @@ votingPlayers ::
   Prompt.Prompt r ->
   State.State ([PlayerId.PlayerId], [(PlayerId.PlayerId, [PlayerId.PlayerId])]) r
 votingPlayers p = case p of
-  Prompt.ChooseVote _ pid _ offered -> do
+  Prompt.ChooseVote _ pid _ offered _ -> do
     (pending, asked) <- State.get
     State.put (drop 1 pending, asked <> [(pid, foldMap playerOf offered)])
-    pure (case pending of chosen : _ -> BallotChoice.ForPlayer chosen; [] -> S.identityAnswer p)
+    pure (case pending of chosen : _ -> Just (BallotChoice.ForPlayer chosen); [] -> S.identityAnswer p)
   _ -> pure (S.identityAnswer p)
 
 -- The slot Mob Verdict's tally is bound at.
@@ -321,7 +321,7 @@ playerVote ::
   GameState.GameState ->
   ([(PlayerId.PlayerId, [PlayerId.PlayerId])], GameState.GameState)
 playerVote resolving source picks gs =
-  let vote = Effect.Vote (Vote.MkVote (PlayerRef.Relative PlayerRelation.You) (VoteChoices.Players (VotePlayers.MkVotePlayers True votesSlot)) False)
+  let vote = Effect.Vote (Vote.MkVote (PlayerRef.Relative PlayerRelation.You) (VoteChoices.Players (VotePlayers.MkVotePlayers True votesSlot)) False False)
       ((_, after), (_, asked)) = State.runState (Engine.runGame votingPlayers gs (Resolve.applyEffect resolving source S.alice Map.empty Map.empty vote)) (picks, [])
    in (asked, after)
 

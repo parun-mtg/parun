@@ -3,6 +3,7 @@ module Parun.Codec.Operand where
 import qualified Parun.Codec.BoundMeasure as BoundMeasure
 import qualified Parun.Codec.Measure as Measure
 import qualified Parun.Codec.OtherCandidates as OtherCandidates
+import qualified Parun.Codec.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
@@ -19,7 +20,8 @@ codec =
       Arm.payload "OfBound" BoundMeasure.codec Operand.OfBound (\x -> case x of Operand.OfBound y -> Just y; _ -> Nothing),
       Arm.payload "AmountInSlot" SlotName.codec Operand.AmountInSlot (\x -> case x of Operand.AmountInSlot y -> Just y; _ -> Nothing),
       Arm.nullary "EnclosingAmount" Operand.EnclosingAmount,
-      Arm.payload "OfEachOtherCandidate" OtherCandidates.codec Operand.OfEachOtherCandidate (\x -> case x of Operand.OfEachOtherCandidate y -> Just y; _ -> Nothing)
+      Arm.payload "OfEachOtherCandidate" OtherCandidates.codec Operand.OfEachOtherCandidate (\x -> case x of Operand.OfEachOtherCandidate y -> Just y; _ -> Nothing),
+      Arm.payload "YourCounters" PlayerCounterKind.codec Operand.YourCounters (\x -> case x of Operand.YourCounters y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: Operand.Operand -> String
@@ -31,3 +33,4 @@ tagOf x = case x of
   Operand.AmountInSlot {} -> "AmountInSlot"
   Operand.EnclosingAmount {} -> "EnclosingAmount"
   Operand.OfEachOtherCandidate {} -> "OfEachOtherCandidate"
+  Operand.YourCounters {} -> "YourCounters"

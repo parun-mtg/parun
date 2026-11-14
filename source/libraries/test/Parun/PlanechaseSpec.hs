@@ -329,7 +329,7 @@ spec s registry = Spec.describe s "Parun.Engine.Planechase" $ do
         voting :: Prompt.Prompt r -> r
         voting p = case p of
           Prompt.RollDie _ -> 5
-          Prompt.ChooseVote _ pid _ offered -> Maybe.fromMaybe (NonEmpty.head offered) (List.find (\choice -> fmap BallotChoice.ForObject (Map.lookup pid ballots) == Just choice) (NonEmpty.toList offered))
+          Prompt.ChooseVote _ pid _ offered _ -> Just (Maybe.fromMaybe (NonEmpty.head offered) (List.find (\choice -> fmap BallotChoice.ForObject (Map.lookup pid ballots) == Just choice) (NonEmpty.toList offered)))
           _ -> S.identityAnswer p
         chaos = S.runPure voting ranged (Planechase.roll S.manaPerformer S.alice >> Engine.priorityLoop)
     Spec.assertEqWith s "CR 801.18 carol's ballot left bob's Piker the one creature exiled" (fmap (`Set.member` GameState.battlefield chaos) [bobs, carols, daves]) [False, True, True]
@@ -816,9 +816,9 @@ enigmaBoard s registry gs = do
 enigmaAnswer :: String -> String -> Prompt.Prompt r -> r
 enigmaAnswer alices bobs p = case p of
   Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToPlayer S.bob))) sets
-  Prompt.ChooseVote _ pid _ offered ->
+  Prompt.ChooseVote _ pid _ offered _ ->
     let wanted = BallotChoice.ForWord (SlotName.MkSlotName (Text.pack (if pid == S.alice then alices else bobs)))
-     in Maybe.fromMaybe (NonEmpty.head offered) (List.find (== wanted) (NonEmpty.toList offered))
+     in Just (Maybe.fromMaybe (NonEmpty.head offered) (List.find (== wanted) (NonEmpty.toList offered)))
   _ -> S.identityAnswer p
 
 -- The planar die shows `n`, and a choice among cards takes the last one
