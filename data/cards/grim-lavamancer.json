@@ -11,7 +11,10 @@
               {
                 "type": "ExileCardsFromGraveyard",
                 "value": {
-                  "count": 2,
+                  "count": {
+                    "type": "Fixed",
+                    "value": 2
+                  },
                   "whichCards": {
                     "type": "And",
                     "value": []

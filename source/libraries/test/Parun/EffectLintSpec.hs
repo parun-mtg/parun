@@ -1360,13 +1360,15 @@ chooserRef = Maybe.isJust . questionOf
 -- reached, so this is the fence that keeps a card from loading a combination no
 -- test reaches. A position read through the pure objectRefObjects allows none.
 --
--- A move's: every question but SeveralPermanents and RandomAmong. The scenario
+-- A move's: every question but SeveralPermanents. The scenario
 -- ransack-sends-the-chosen-to-the-bottom-and-orders-the-rest reaches
--- AnyCardsFromAmong. OffBattlefield's ask is Parun.Engine.Resolve.Effect's
+-- AnyCardsFromAmong, and
+-- cr-601-2f-gorex-exiles-any-number-of-creature-cards-and-returns-them-at-random
+-- RandomAmong. OffBattlefield's ask is Parun.Engine.Resolve.Effect's
 -- chosenPermanents, which Mirror of Fate's scenario reaches through
 -- Effect.ChoosePermanents; no permanent opcode's test reaches it.
 movedQuestions :: [Question]
-movedQuestions = filter (`notElem` [SeveralPermanents, RandomAmong]) [minBound .. maxBound]
+movedQuestions = filter (/= SeveralPermanents) [minBound .. maxBound]
 
 -- The battlefield questions, for the opcodes that act on PERMANENTS -- Tovolar,
 -- Dire Overlord's transform, Teferi, Hero of Dominaria's untap, God-Eternal
