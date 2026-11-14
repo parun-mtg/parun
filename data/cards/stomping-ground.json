@@ -1,0 +1,36 @@
+{
+  "faces": [
+    {
+      "name": "Stomping Ground",
+      "oracleText": "({T}: Add {R} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "OrTapped",
+                "value": {
+                  "type": "PayLife",
+                  "value": 2
+                }
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Forest",
+          "Mountain"
+        ],
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}
