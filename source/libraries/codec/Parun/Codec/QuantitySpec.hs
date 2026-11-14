@@ -702,13 +702,19 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       (Quantity.TalliedThisTurn TurnTally.CrimesCommitted (PlayerRef.Relative PlayerRelation.You))
       " {\"type\":\"CrimesCommittedThisTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
-  -- CR 305.2a, on CardsDiscardedThisTurn's terms. Fastbond's is the Relative arm.
-  Spec.it s "LandsPlayedThisTurn" $
+  -- CR 305.2a, on CardsDiscardedThisTurn's terms. Fastbond's excludes no
+  -- origin, Spider-Man 2099's your hand.
+  Spec.it s "LandsPlayedThisTurn" $ do
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.TalliedThisTurn TurnTally.LandsPlayed (PlayerRef.Relative PlayerRelation.You))
-      " {\"type\":\"LandsPlayedThisTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
+      (Quantity.TalliedThisTurn (TurnTally.LandsPlayed Set.empty) (PlayerRef.Relative PlayerRelation.You))
+      " {\"type\":\"LandsPlayedThisTurn\",\"value\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.TalliedThisTurn (TurnTally.LandsPlayed (Set.singleton Zone.Hand)) (PlayerRef.Relative PlayerRelation.You))
+      " {\"type\":\"LandsPlayedThisTurn\",\"value\":{\"excluding\":[\"Hand\"],\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}} "
   -- CR 119.3: the tally's record, whose own spec covers its fields. Fortifying
   -- Draught's is this turn's gain; First Response's last turn's loss.
   Spec.it s "LifeChanged" $ do

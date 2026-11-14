@@ -58,6 +58,7 @@ module Parun.Engine.Interchangeable.Mentions where
 import qualified Data.Functor.Const as Const
 import qualified Data.Map.Strict as Map
 import qualified Data.Monoid as Monoid
+import qualified Data.Set as Set
 import qualified Parun.Engine.Binding as Binding.Engine
 import qualified Parun.Engine.Children as Children
 import qualified Parun.Types.AbilityAct as AbilityAct
@@ -1061,15 +1062,18 @@ quantityNames asking x =
         Quantity.Convokers -> history asking HistoryRead.Convokes <> history asking HistoryRead.Moves
         Quantity.AttackersDeclaredThisTurn _ -> history asking HistoryRead.Attacks
         Quantity.AttackersInTheirLastTurn _ -> history asking HistoryRead.Attacks
-        -- Draws and land plays read player-keyed tallies naming no object
-        -- (TurnRegisters.drawsThisTurn, GameState.landsPlayed), so no history.
+        -- Draws and land plays from anywhere read player-keyed tallies naming no
+        -- object (TurnRegisters.drawsThisTurn, GameState.landsPlayed), so no
+        -- history; land plays excluding an origin read the log's.
         Quantity.TalliedThisTurn tally _ -> case tally of
           TurnTally.CardsDiscarded -> history asking HistoryRead.Discards
           TurnTally.CardsDrawn -> mempty
           TurnTally.ActionsDone acts -> history asking (HistoryRead.Acts acts)
           TurnTally.DilemmasFaced -> history asking HistoryRead.Dilemmas
           TurnTally.CrimesCommitted -> history asking HistoryRead.Crimes
-          TurnTally.LandsPlayed -> mempty
+          TurnTally.LandsPlayed excluding
+            | Set.null excluding -> mempty
+            | otherwise -> history asking HistoryRead.LandPlays
         Quantity.LifeChanged tally -> turnHistory asking (LifeTally.turn tally) (case LifeTally.direction tally of LifeDirection.Gained -> HistoryRead.LifeGains; LifeDirection.Lost -> HistoryRead.LifeLosses)
         Quantity.PlayersDealtDamage tally -> turnHistory asking (DamageTally.turn tally) HistoryRead.Damage
         Quantity.DamageDealtToPlayersThisTurn _ -> history asking HistoryRead.Damage

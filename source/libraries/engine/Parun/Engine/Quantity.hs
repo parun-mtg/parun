@@ -62,6 +62,7 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.Keyword as Keyword.Type
+import qualified Parun.Types.LandPlayed as LandPlayed
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LifeTally as LifeTally
 import qualified Parun.Types.LoggedEvent as LoggedEvent
@@ -1889,6 +1890,8 @@ controlGainedThisTurn gs pid oid current =
 -- last turn's plays, and CR 305.3 makes this turn's 0. Kept because the CR
 -- states it: no pool card reads another player's land plays (Fastbond reads its
 -- controller's, on their turn), so dropping the gate leaves the suite green.
+-- Excluding an origin, they fold the log's GameEvent.LandPlayed instead, which
+-- names the zone (CR 305.1).
 talliedThisTurn :: TurnTally.TurnTally -> PlayerId.PlayerId -> GameState -> Integer
 talliedThisTurn tally pid gs = case tally of
   TurnTally.CardsDiscarded -> toInteger (length (filter ((== Just pid) . Game.discardOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))))
@@ -1896,9 +1899,24 @@ talliedThisTurn tally pid gs = case tally of
   TurnTally.ActionsDone acts -> toInteger (Game.actionsDoneThisTurn acts gs pid)
   TurnTally.DilemmasFaced -> toInteger (Game.doneThisTurn Game.dilemmaFacer gs pid)
   TurnTally.CrimesCommitted -> toInteger (Game.doneThisTurn Game.criminal gs pid)
-  TurnTally.LandsPlayed
-    | Turn.hasTurnRunning gs pid -> toInteger (Map.findWithDefault 0 pid (GameState.landsPlayed gs))
-    | otherwise -> 0
+  TurnTally.LandsPlayed excluding
+    | not (Turn.hasTurnRunning gs pid) -> 0
+    | Set.null excluding -> toInteger (Map.findWithDefault 0 pid (GameState.landsPlayed gs))
+    | otherwise -> toInteger (length (filter (playedNotFrom excluding pid gs) (Maybe.mapMaybe (landPlayedOf . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs))))))
+
+-- CR 305.1 / 400.3: was this play `pid`'s, from none of `excluding` as `pid`'s
+-- own zone? A per-player zone is its card's owner's, so a land played from
+-- another player's hand (Sen Triplets) was not played from "your hand".
+playedNotFrom :: Set.Set Zone.Zone -> PlayerId.PlayerId -> GameState -> LandPlayed.LandPlayed -> Bool
+playedNotFrom excluding pid gs played =
+  let from = LandPlayed.from played
+      own = Zone.shared from || Game.ownerWithLastKnown (LandPlayed.land played) gs == Just pid
+   in LandPlayed.player played == pid && not (Set.member from excluding && own)
+
+landPlayedOf :: GameEvent.GameEvent -> Maybe LandPlayed.LandPlayed
+landPlayedOf event = case event of
+  GameEvent.LandPlayed played -> Just played
+  _ -> Nothing
 
 controlClockOf :: GameState -> ObjectId -> Map.Map PlayerId.PlayerId ControlClock.ControlClock
 controlClockOf gs oid = Maybe.fromMaybe Map.empty (Game.liveOrLastKnown Object.controlClock LastKnown.controlClock oid gs)

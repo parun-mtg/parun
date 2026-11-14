@@ -2,6 +2,7 @@ module Parun.Types.TurnTally where
 
 import qualified Data.Set as Set
 import qualified Parun.Types.PlayerAction as PlayerAction
+import qualified Parun.Types.Zone as Zone
 
 -- | What Parun.Types.Quantity's TalliedThisTurn counts a player doing this turn.
 data TurnTally
@@ -18,7 +19,9 @@ data TurnTally
   | -- | CR 700.13: crimes committed -- Nimble Brigand's "if you've committed a
     -- crime this turn".
     CrimesCommitted
-  | -- | CR 305.2a: lands played -- Fastbond's "if it wasn't the first land you
-    -- played this turn".
-    LandsPlayed
+  | -- | CR 305.2a: lands played, but not from these of the player's own zones
+    -- (CR 400.3), a shared one whoever owns the land -- Spider-Man 2099's "from
+    -- anywhere other than your hand". Empty is Fastbond's "if it wasn't the
+    -- first land you played this turn".
+    LandsPlayed (Set.Set Zone.Zone)
   deriving (Eq, Ord, Show)

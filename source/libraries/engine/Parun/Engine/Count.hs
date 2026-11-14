@@ -819,7 +819,7 @@ snapshotView viewOf gs shape event = case event of
   -- which it can -- CR 601.2i's trigger is checked while the spell is still
   -- there. The CHARACTERISTICS, that is: Game.ownerWithLastKnown reads the live object
   -- for the one field a snapshot cannot carry, wherever there still is one.
-  GameEvent.SpellCast (SpellWasCast.MkSpellWasCast caster spell snapshot _ _ lapsed) -> case shape of
+  GameEvent.SpellCast (SpellWasCast.MkSpellWasCast caster spell snapshot from _ lapsed) -> case shape of
     -- CR 601.2a: "that player becomes its controller", so the caster the event
     -- recorded IS the view's controller and Filter.HeldBy Holder.Controller You answers "a
     -- spell you've cast". The spell's id is deliberately left out of the view
@@ -848,7 +848,12 @@ snapshotView viewOf gs shape event = case event of
     where
       -- CR 113.6 / 604.2: on the stack. A regression fence: nothing in
       -- data/cards/ asks a cast whether it had an activated ability.
-      castView = viewOfSnapshot False (Just caster) (Game.ownerWithLastKnown spell gs) False Map.empty Zone.Stack Zone.Battlefield lapsed snapshot
+      --
+      -- CR 601.2a: where it was cast from is the event's to supply, as its owner
+      -- is, the snapshot recording no zone -- Spider-Man 2099's "cast a spell this
+      -- turn from anywhere other than your hand"
+      -- (data/scenarios/spider-man-2099-deals-damage-after-a-land-played-from-the-graveyard.json).
+      castView = (viewOfSnapshot False (Just caster) (Game.ownerWithLastKnown spell gs) False Map.empty Zone.Stack Zone.Battlefield lapsed snapshot) {Filter.castFrom = from}
   GameEvent.BecameMonarch _ -> Nothing
   GameEvent.TookInitiative _ -> Nothing
   GameEvent.MulliganDeclared _ -> Nothing
@@ -1502,7 +1507,8 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- is vacuously False against one.
       Filter.zone = Nothing,
       -- CR 601.2a: a snapshot records characteristics and no zone at all, so it
-      -- cannot say where a cast came from either -- `zone` above's reason.
+      -- cannot say where a cast came from either -- `zone` above's reason. The
+      -- SpellCast arm supplies it off the event, as it does the owner.
       Filter.castFrom = Nothing,
       Filter.castBy = Nothing,
       -- CR 115.1: a snapshot is of an object that has left the stack or never
