@@ -40,6 +40,8 @@ data HistoryRead
     Discards
   | -- | Permanents that entered the battlefield (CR 603.6a).
     Entries
+  | -- | Lands played (CR 305.1).
+    LandPlays
   | -- | Life gained (CR 119.3).
     LifeGains
   | -- | Life lost (CR 119.3).
