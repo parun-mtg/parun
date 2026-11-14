@@ -63,12 +63,10 @@
                                   "value": "Equipment"
                                 },
                                 {
-                                  "type": "IsAttachedTo",
+                                  "type": "AttachedTo",
                                   "value": {
-                                    "type": "Bound",
-                                    "value": {
-                                      "slot": "creature"
-                                    }
+                                    "type": "IsBound",
+                                    "value": "creature"
                                   }
                                 }
                               ]

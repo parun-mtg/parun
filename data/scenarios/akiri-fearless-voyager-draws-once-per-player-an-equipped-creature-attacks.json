@@ -76,6 +76,14 @@
         "battlefield": [
           {
             "card": "Jace Beleren",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 3
+              }
+            ],
             "label": "jace"
           }
         ],
