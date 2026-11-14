@@ -71,7 +71,10 @@ is set up by `docs/agents/cloud-environment.md`.
    an issue". Classify cheaply: start from `parun translate --set SET --out
    DIR`'s rejections, judge whether the DSL expresses the blocking node (a
    pool card using it is the evidence), and Scryfall-verify only the
-   capability cards. Then append the census snapshot to the tracker's body:
+   capability cards. A shape several batches need and no pool card has yet
+   (a token, a keyword's wording) goes in the first batch, with as much of
+   it as that batch can carry; each later batch needing it names that batch
+   in its body and is linked as blocked by it. Then append the census snapshot to the tracker's body:
    the date, the count per place, and the two trend numbers (the first dry
    run's translations, and the cards needing a capability).
 3. **Fan out** ("Mechanics"). Batches first: they overturn census verdicts
@@ -81,17 +84,20 @@ is set up by `docs/agents/cloud-environment.md`.
    `GameState` field, a reader every resolution, search, combat or cast
    passes through, a codec shape, or a new `docs/decisions.md` entry. Audit
    any other at the orchestrator's judgement: more of a kind that keeps
-   finding defects, none of a kind clean twice running. The auditor is a
+   finding defects, none of a kind clean twice running. A one-line diff, or
+   an additive arm or field only the new card reads, is reviewed inline
+   instead, by reading the engine diff once. The auditor is a
    read-only subagent of the orchestrator ("Templates"); each finding that
    holds on the orchestrator's own reading becomes a fix issue (`bug`,
-   `rules-correctness`) under the tracker. Record each skip and its reason on
-   the tracker.
+   `rules-correctness`) under the tracker. Record each audit, inline review
+   and skip, with its reason and the PR's `Cost:` line, on the tracker.
 5. **Finish.** When every other sub-issue and every issue blocking the
    tracker is closed, file the finish issue and label it. Its PR commits the
    set list as `data/decks/sets/<set>/all.txt` (`1 Name` a line, one per
    card name; `DecksSpec` proves each resolves), regenerates
    `data/legalities.json` with `parun ingest` (no other unit commits it),
-   writes `docs/sets/<set>.md`, and ticks the set on #6476. The doc is the tracker's census snapshot, then
+   and writes `docs/sets/<set>.md`; once it merges, the orchestrator ticks
+   the set on #6476. The doc is the tracker's census snapshot, then
    `## How it went`: a frozen record (the no-tallies rule for trackers does
    not apply) built from the tracker and its sub-issues' merged PRs, where a
    figure nobody recorded is "not recorded", never an estimate:
@@ -165,8 +171,15 @@ summary, and its title carries no CR numbers.
   (`docs/agents/set-by-set.md`, "Git and the PR"). Don't update a `BEHIND`
   branch: the queue tests each PR against main. Read a failed job's log
   first: one that died in `Set up job` is not a real failure.
-- **Waiting** is a scheduled check-in or a PR subscription, never a polling
-  loop.
+- **Waiting** is one background `script/wait-issues.sh ISSUE...` over every
+  labelled issue in flight: it exits when one closes or loses the `claude`
+  label, and costs no turns meanwhile. Restart it after each event and stop
+  the one it replaces, since a stale waiter re-fires on an issue already
+  handled. Never poll by hand or schedule check-ins.
+- **Per merged unit**, `script/issue-status.sh ISSUE` prints what the
+  orchestrator reads: the issue's state, its last comment, and the closing
+  PR's merge SHA, `Cost:` and `Deferred` lines and changed files outside
+  `data/`. Read the diff only of those files, and only to decide an audit.
 
 ## Writing an issue
 
@@ -260,6 +273,8 @@ capability needs a gameplay-level scenario on the real card".
 > unaffected games are unchanged; two such effects at once; control or zone
 > changes mid-effect; multiplayer). Enumerate with jq the pool cards that
 > reach the changed reader and say whether any now reads differently. Also
-> check `CLAUDE.md` item 4's sites for the new constructors and fields, and
-> whether the tests prove what they claim. Report findings only, most severe
-> first.
+> check `CLAUDE.md` item 4's sites for the new constructors and fields, every
+> arm matching a constructor whose payload gained a field (one reading only
+> the old fields compiles unchanged), every path still going around any
+> funnel the PR claims every path now takes, and whether the tests prove
+> what they claim. Report findings only, most severe first.
