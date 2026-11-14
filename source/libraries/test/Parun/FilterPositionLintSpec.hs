@@ -2108,12 +2108,12 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> ability
         permitting = (S.combinedFace maralen) {Face.playerAbilities = fmap struck (Face.playerAbilities (S.combinedFace maralen))}
     Spec.assertEqWith s "a cast permission naming no amount is an offence" (enclosingAmountCounts permitting) (0, 1)
-  -- CR 608.2d's other-candidates operand is answerable only where a choice
-  -- gathers a pool. See otherCandidateCounts.
-  Spec.it s "CR 608.2d no card compares against other candidates outside a choice's pool" $ do
+  -- CR 608.2d's other-candidates operand is answerable only where a choice or
+  -- a leaves trigger gathers a pool. See otherCandidateCounts.
+  Spec.it s "CR 608.2d no card compares against other candidates outside a choice's or a leaves trigger's pool" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace ((/= 0) . snd . otherCandidateCounts) . Printing.card) ps
-    Spec.assertEqWith s "the operand sits only in a choice's or a target slot's filter" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "the operand sits only in a choice's, a target slot's or a leaves trigger's filter" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: these author it, and are accepted -- each with how many.
     -- Juxtapose writes two, one per ChoosePermanents.
     let authors :: [(String, Int)]
@@ -2148,7 +2148,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("The Dining Car", 1),
             ("Witch-king, Bringer of Ruin", 1)
           ]
-    assertAuthors s registry pool "each author's operands are in a choice's or a target slot's filter" (otherCandidateCounts . surveyedFace) authors
+    assertAuthors s registry pool "each author's operands are in a choice's, a target slot's or a leaves trigger's filter" (otherCandidateCounts . surveyedFace) authors
     -- The rejected side: the same atom in an entry trigger's filter, which
     -- gathers no pool.
     piker <- S.printingOf s registry "Goblin Piker"
