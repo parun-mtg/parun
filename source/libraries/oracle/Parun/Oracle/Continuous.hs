@@ -139,7 +139,8 @@ data Trailing = MkTrailing Text.Text Text.Text
 
 -- | A change to power and toughness, "+3/+3", and the clause defining an X it
 -- uses. A change that counts reads "+1/+1 for each card in your hand" or
--- "+X/+X, where X is the number of cards in your hand" (CR 107.3). Free: "for
+-- "+X/+X, where X is the number of cards in your hand" (CR 107.3), and one
+-- that subtracts it "-0/-X" (Monoist Circuit-Feeder). Free: "for
 -- each" (Empyrial Armor) or "where X is" (Inner Calm, Outer Strength). A
 -- measure reads "where X is" only floored (CR 107.1b, Rush of Blood); bare,
 -- it is doubling (CR 701.10b-c), which no change here reads as.
@@ -165,11 +166,13 @@ powerToughness context power toughness =
         (v, measured) <- case filter (/= Quantity.Literal 0) [power, toughness] of
           v@(Quantity.Count _) : vs | all (== v) vs -> [(v, v)]
           v@(Quantity.Arithmetic (Arithmetic.NonNegative m)) : vs | all (== v) vs -> [(v, m)]
+          v@(Quantity.Arithmetic (Arithmetic.Negate m@(Quantity.Count _))) : vs | all (== v) vs -> [(v, m)]
           _ -> []
         a <- Target.amounts context measured
         Target.EqualTo e <- [Target.reading a]
         Monad.guard (null (Target.names a))
-        let x q = Text.pack (if q == v then "+X" else "+0")
+        let sign = if v == Quantity.Arithmetic (Arithmetic.Negate measured) then "-" else "+"
+            x q = Text.pack (sign <> if q == v then "X" else "0")
         [(x power <> Text.pack "/" <> x toughness, MkTrailing Text.empty (Text.pack ", where X is " <> e))]
    in if null plain then perEach <> variable else plain
   where

@@ -682,7 +682,7 @@ joined context predicates = case predicates of
     -- an imperative, ", then" (Macabre Waltz) or "and" (Sorcerer's Strongbox).
     | implied p || implied q -> apart <> together <> togetherX <> thenImperative <> andImperative <> imperativeAnd <> imperativeThen
     -- Free: "and" (Vampiric Feast) or two sentences (Soul Shred).
-    | otherwise -> together <> apart <> togetherX <> durationFirst
+    | otherwise -> together <> apart <> togetherX <> durationFirst <> durationFirstX
     where
       -- Free for one duration read twice: after each verb, above, or once ahead
       -- of both (Rookie Mistake).
@@ -690,6 +690,18 @@ joined context predicates = case predicates of
         [ (Prose.sentence (Text.pack "until end of turn, " <> clauseText p {verb = vp} <> Text.pack " and " <> clauseText q {verb = vq}) <> trailing q, allMentions p <> allMentions q)
         | Just vp <- [Text.stripSuffix (Text.pack " until end of turn") (verb p)],
           Just vq <- [Text.stripSuffix (Text.pack " until end of turn") (verb q)]
+        ]
+      -- Free: that duration ahead of both and one X defined once after them
+      -- (Monoist Circuit-Feeder).
+      durationFirstX =
+        [ (Prose.sentence (Text.pack "until end of turn, " <> clauseText p {verb = vp} <> Text.pack " and " <> clauseText q {verb = vq} <> whereX <> e) <> trailing q, allMentions p <> allMentions q)
+        | let whereX = Text.pack ", where X is "
+              defined v = [(before, Text.drop (Text.length whereX) rest) | let (before, rest) = Text.breakOn whereX v, not (Text.null rest)],
+          (wp, e) <- defined (verb p),
+          (wq, e') <- defined (verb q),
+          e == e',
+          Just vp <- [Text.stripSuffix (Text.pack " until end of turn") wp],
+          Just vq <- [Text.stripSuffix (Text.pack " until end of turn") wq]
         ]
       together = [(Prose.sentence (clauseText p <> Text.pack " and " <> clauseText q) <> trailing q, allMentions p <> allMentions q)]
       apart = [(text, allMentions p <> allMentions q) | text <- followedBy context (sentences p) (sentences q)]
