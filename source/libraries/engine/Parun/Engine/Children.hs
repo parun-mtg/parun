@@ -1297,7 +1297,7 @@ effectChildren c effect = case effect of
       )
   Effect.OfferNamedCopy _ -> pure effect
   Effect.OfferNotedCopy offer -> fmap Effect.OfferNotedCopy (castOfferChildren c offer)
-  Effect.GrantPlayFromExile (GrantPlayFromExile.MkGrantPlayFromExile duration who ref spending alternativeCost condition verb increase landEnters upTo keywords zone) ->
+  Effect.GrantPlayFromExile (GrantPlayFromExile.MkGrantPlayFromExile duration who ref spending alternativeCost condition verb increase landEnters spellEnters upTo keywords zone) ->
     fmap
       Effect.GrantPlayFromExile
       ( GrantPlayFromExile.MkGrantPlayFromExile
@@ -1310,6 +1310,7 @@ effectChildren c effect = case effect of
           <*> pure verb
           <*> pure increase
           <*> pure landEnters
+          <*> pure spellEnters
           <*> pure upTo
           <*> traverse (onKeyword c) keywords
           <*> pure zone

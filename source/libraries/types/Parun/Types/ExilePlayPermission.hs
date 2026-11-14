@@ -108,6 +108,9 @@ data ExilePlayPermission = MkExilePlayPermission
     -- | CR 400.7i / 614.1d: how a land played under it enters -- Lightstall
     -- Inquisitor\'s "each land played this way enters tapped".
     landEnters :: TapState.TapState,
+    -- | CR 400.7h / 614.1d: how the permanent a spell cast under it becomes
+    -- enters -- Kaldring, the Rimestaff\'s "if you do, it enters tapped".
+    spellEnters :: TapState.TapState,
     -- | CR 601.3: the plays left among the cards one grant covers, shared by
     -- each of their permissions -- March of Reckless Joy\'s "up to two of
     -- those cards". Nothing is no limit. Spent by
@@ -137,6 +140,7 @@ defaultValue p s =
       verb = PermissionVerb.Play,
       increase = 0,
       landEnters = TapState.Untapped,
+      spellEnters = TapState.Untapped,
       budget = Nothing,
       keywords = []
     }

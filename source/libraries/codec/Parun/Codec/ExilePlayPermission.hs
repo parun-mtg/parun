@@ -20,9 +20,9 @@ import qualified Parun.Types.ExilePlayPermission as ExilePlayPermission
 
 -- | Every axis 'Fields.required', because none of them has a default the rules
 -- give: `spending` is CR 118.14's rider, `alternativeCost` is CR 118.9's,
--- `increase` and `landEnters` are CR 601.2f's and CR 614.1d's, `budget` is
--- CR 601.3's count of plays left, `keywords` CR 400.7h's, and `origin`
--- is CR 716.3d's own question -- a permission written without any of them
+-- `increase` is CR 601.2f's, `landEnters` and `spellEnters` CR 614.1d's,
+-- `budget` CR 601.3's count of plays left, `keywords` CR 400.7h's, and
+-- `origin` is CR 716.3d's own question -- a permission written without any of them
 -- would decode as a different permission rather than as an incomplete
 -- one. The type's haddock argues each field. Unlike
 -- Parun.Codec.GrantPlayFromExile's opcode, which elides its riders at their
@@ -40,6 +40,7 @@ codec = Fields.object $ do
   verb <- Fields.required "verb" PermissionVerb.codec ExilePlayPermission.verb
   increase <- Fields.required "increase" Common.natural ExilePlayPermission.increase
   landEnters <- Fields.required "landEnters" TapState.codec ExilePlayPermission.landEnters
+  spellEnters <- Fields.required "spellEnters" TapState.codec ExilePlayPermission.spellEnters
   budget <- Fields.required "budget" (Common.maybe PlayBudget.codec) ExilePlayPermission.budget
   keywords <- Fields.required "keywords" (Common.list Keyword.codec) ExilePlayPermission.keywords
   pure
@@ -54,6 +55,7 @@ codec = Fields.object $ do
         ExilePlayPermission.verb = verb,
         ExilePlayPermission.increase = increase,
         ExilePlayPermission.landEnters = landEnters,
+        ExilePlayPermission.spellEnters = spellEnters,
         ExilePlayPermission.budget = budget,
         ExilePlayPermission.keywords = keywords
       }

@@ -42,6 +42,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
+            GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
             GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
@@ -63,6 +64,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
+            GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
             GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
@@ -85,6 +87,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
+            GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
             GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
@@ -107,6 +110,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
+            GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
             GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
@@ -129,6 +133,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.verb = PermissionVerb.Cast,
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
+            GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
             GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
@@ -150,6 +155,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
+            GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
             GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
@@ -171,6 +177,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.verb = PermissionVerb.Cast,
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
+            GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
             GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
@@ -193,6 +200,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 1,
             GrantPlayFromExile.landEnters = TapState.Tapped,
+            GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
             GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
@@ -214,6 +222,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.verb = PermissionVerb.Play,
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
+            GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Just (PlayAllowance.Plays 2),
             GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Exile
@@ -235,6 +244,7 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.verb = PermissionVerb.Cast,
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
+            GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
             GrantPlayFromExile.keywords = [Keyword.Undaunted],
             GrantPlayFromExile.zone = GrantZone.Exile
@@ -256,10 +266,33 @@ spec s = Spec.describe s "Parun.Codec.GrantPlayFromExile" $ do
             GrantPlayFromExile.verb = PermissionVerb.Cast,
             GrantPlayFromExile.increase = 0,
             GrantPlayFromExile.landEnters = TapState.Untapped,
+            GrantPlayFromExile.spellEnters = TapState.Untapped,
             GrantPlayFromExile.upTo = Nothing,
             GrantPlayFromExile.keywords = [],
             GrantPlayFromExile.zone = GrantZone.Graveyard
           }
       )
       " {\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"verb\":\"Cast\",\"zone\":\"Graveyard\"} "
+  -- Kaldring, the Rimestaff's: whatever is played enters tapped.
+  Spec.it s "MkGrantPlayFromExile, Kaldring, the Rimestaff's riders" $
+    Common.assertCodec
+      s
+      GrantPlayFromExile.codec
+      ( GrantPlayFromExile.MkGrantPlayFromExile
+          { GrantPlayFromExile.duration = Duration.UntilEndOfTurn,
+            GrantPlayFromExile.player = PlayerRef.Relative PlayerRelation.You,
+            GrantPlayFromExile.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
+            GrantPlayFromExile.spending = ManaSpending.AsProduced,
+            GrantPlayFromExile.alternativeCost = Nothing,
+            GrantPlayFromExile.condition = Nothing,
+            GrantPlayFromExile.verb = PermissionVerb.Play,
+            GrantPlayFromExile.increase = 0,
+            GrantPlayFromExile.landEnters = TapState.Tapped,
+            GrantPlayFromExile.spellEnters = TapState.Tapped,
+            GrantPlayFromExile.upTo = Nothing,
+            GrantPlayFromExile.keywords = [],
+            GrantPlayFromExile.zone = GrantZone.Graveyard
+          }
+      )
+      " {\"duration\":{\"type\":\"UntilEndOfTurn\"},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"landEnters\":\"Tapped\",\"spellEnters\":\"Tapped\",\"zone\":\"Graveyard\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s GrantPlayFromExile.codec
