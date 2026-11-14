@@ -3606,6 +3606,10 @@ modificationFilters modification = case modification of
     CostKeyword.Encore -> []
     CostKeyword.Disguise -> []
     CostKeyword.Blitz -> []
+    CostKeyword.Harmonize -> []
+    CostKeyword.Mayhem -> []
+    CostKeyword.Replicate -> []
+    CostKeyword.Emerge -> []
     CostKeyword.BeamMeUp unreturnable -> keywordFramed (Maybe.maybeToList unreturnable)
   -- CR 702.5a again: the granted slot's own Filter, which is card text like any
   -- other and has to be swept. NOT [] -- this, LoseEnchant beside it,

@@ -3499,6 +3499,10 @@ modificationChildren c modification = case modification of
       CostKeyword.Encore -> pure costKeyword
       CostKeyword.Disguise -> pure costKeyword
       CostKeyword.Blitz -> pure costKeyword
+      CostKeyword.Harmonize -> pure costKeyword
+      CostKeyword.Mayhem -> pure costKeyword
+      CostKeyword.Replicate -> pure costKeyword
+      CostKeyword.Emerge -> pure costKeyword
       CostKeyword.BeamMeUp unreturnable -> CostKeyword.BeamMeUp <$> traverse (modificationFilter c) unreturnable
   Modification.GainEnchant targetSlot -> Modification.GainEnchant <$> modificationTargetSlot c targetSlot
   Modification.LoseEnchant targetSlot -> Modification.LoseEnchant <$> modificationTargetSlot c targetSlot
