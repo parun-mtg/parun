@@ -1,0 +1,91 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Nacatl War-Pride",
+            "label": "nacatl",
+            "ready": true
+          },
+          {
+            "card": "Goblin War Drums",
+            "label": "drums"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "b1",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "b2",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 509.1c Nacatl War-Pride may be blocked by two creatures when exactly one blocker is impossible",
+  "note": "Goblin War Drums gives every Nacatl menace, so the maximum is zero and two Pikers on one Nacatl are legal (the card's ruling): the sentence is one requirement, not a requirement plus a restriction against a second blocker.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$nacatl"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTimestamps": [
+          "Nacatl War-Pride#2",
+          "Nacatl War-Pride#3"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$b1": [
+            "$nacatl"
+          ],
+          "$b2": [
+            "$nacatl"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$nacatl",
+          "blockers": [
+            "$b1",
+            "$b2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}

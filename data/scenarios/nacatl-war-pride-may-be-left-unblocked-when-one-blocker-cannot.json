@@ -1,0 +1,92 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Nacatl War-Pride",
+            "label": "nacatl",
+            "ready": true
+          },
+          {
+            "card": "Goblin War Drums",
+            "label": "drums"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "b1",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "b2",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 509.1c Nacatl War-Pride may be left unblocked when exactly one blocker is impossible",
+  "note": "Goblin War Drums gives every Nacatl menace, so no declaration obeys an exactly-one requirement and the maximum is zero: declaring no blockers is legal (the card's ruling). Reading the sentence as Gaea's Protector's group, two Pikers on one Nacatl would obey one and no block would be refused.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$nacatl"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTimestamps": [
+          "Nacatl War-Pride#2",
+          "Nacatl War-Pride#3"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$nacatl",
+          "blockers": null
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 11,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

@@ -1530,6 +1530,8 @@ library codec
     Parun.Codec.RequireAttackSpec
     Parun.Codec.RequireBlock
     Parun.Codec.RequireBlockSpec
+    Parun.Codec.RequiredBlockers
+    Parun.Codec.RequiredBlockersSpec
     Parun.Codec.RequiredDefender
     Parun.Codec.RequiredDefenderSpec
     Parun.Codec.RequirementArity
@@ -3520,6 +3522,7 @@ library types
     Parun.Types.Request
     Parun.Types.RequireAttack
     Parun.Types.RequireBlock
+    Parun.Types.RequiredBlockers
     Parun.Types.RequiredDefender
     Parun.Types.RequirementArity
     Parun.Types.Response

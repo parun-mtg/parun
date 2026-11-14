@@ -3390,10 +3390,11 @@ blockPermissionChildren :: (Applicative f) => RuleChildren f -> BlockPermission.
 blockPermissionChildren c (BlockPermission.MkBlockPermission affected additional while) =
   BlockPermission.MkBlockPermission <$> ruleAffected c affected <*> traverse (ruleQuantity c) additional <*> traverse (ruleCondition c) while
 
--- | A block requirement's children (CR 509.1c). Its arity is left as it is.
+-- | A block requirement's children (CR 509.1c). Its arity and blocker count are
+-- left as they are.
 blockRequirementChildren :: (Applicative f) => RuleChildren f -> BlockRequirement.BlockRequirement -> f BlockRequirement.BlockRequirement
-blockRequirementChildren c (BlockRequirement.MkBlockRequirement subject attacker while arity) =
-  BlockRequirement.MkBlockRequirement <$> traverse (ruleAffected c) subject <*> traverse (ruleAffected c) attacker <*> traverse (ruleCondition c) while <*> pure arity
+blockRequirementChildren c (BlockRequirement.MkBlockRequirement subject attacker while arity blockers) =
+  BlockRequirement.MkBlockRequirement <$> traverse (ruleAffected c) subject <*> traverse (ruleAffected c) attacker <*> traverse (ruleCondition c) while <*> pure arity <*> pure blockers
 
 -- | A counter restriction's children (CR 122.1).
 counterRestrictionChildren :: (Applicative f) => RuleChildren f -> CounterRestriction.CounterRestriction -> f CounterRestriction.CounterRestriction

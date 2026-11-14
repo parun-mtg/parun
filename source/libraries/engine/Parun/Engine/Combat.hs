@@ -1503,8 +1503,9 @@ declaredPairs declaration =
 -- blocker is what makes the required block legal). A
 -- block of any other attacker adds no requirement obeyed and can be dropped
 -- from a legal declaration without making it illegal -- dropping every block of
--- an unwanted menace attacker together -- so the answer lies in this smaller
--- space, and the drop only moves a declaration earlier, so the first maximum is
+-- an unwanted menace attacker together, and an exactly-one group names every
+-- able block of its attacker, so none of its blocks is dropped. So the answer
+-- lies in this smaller space, and the drop only moves a declaration earlier, so the first maximum is
 -- unchanged. A partial declaration is abandoned once what it has obeyed plus
 -- the most its remaining blockers could obey -- the largest values that fit
 -- under CR 509.1b's blocker limit -- cannot exceed the best found, which is the
@@ -1526,7 +1527,7 @@ bestBlockDeclaration requirements limit most alone arity pcs able payable candid
       -- Every pair some requirement names, a GROUP's members included: a block
       -- of one of those is what obeys the group, so the same options walk
       -- reaches it.
-      named = Map.keys weights <> concatMap Set.toList (Map.keys (Requirement.groups requirements))
+      named = Map.keys weights <> concatMap Set.toList (Map.keys (Requirement.groups requirements) <> Map.keys (Requirement.exactly requirements))
       requiredOf = Map.fromListWith Set.union (fmap (Bifunctor.second Set.singleton) named)
       wanted = Set.fromList (fmap snd named)
       -- Phyrexian Colossus' "three or more" is the same extra-blocker reason.
@@ -1567,18 +1568,30 @@ bestBlockDeclaration requirements limit most alone arity pcs able payable candid
       -- The most a completion of this node could obey. Every group not yet
       -- obeyed is counted in whole, which over-estimates rather than
       -- under-estimates -- a group is worth its weight once -- so the prune
-      -- still skips no leaf that could replace the best.
-      ceilingOf met used remaining obeyed =
+      -- still skips no leaf that could replace the best. An exactly-one group
+      -- is counted while it holds at most one block, since blocks are only
+      -- ever added below this node.
+      ceilingOf declaration met used remaining obeyed =
         let values = List.sortBy (flip compare) (fmap (\(_, _, v) -> v) remaining)
-         in met + sum (maybe values (\k -> take (Natural.toIntSaturating k) values) (room used)) + Requirement.unobeyed requirements obeyed
+         in met
+              + sum (maybe values (\k -> take (Natural.toIntSaturating k) values) (room used))
+              + Requirement.unobeyed requirements obeyed
+              + Requirement.exactlyLive requirements (declaredPairs declaration)
+      -- `met` tracks the monotone halves as blocks are pinned; the exactly-one
+      -- groups are scored at the leaf, where no further block can un-obey one.
+      -- The leaf is compared on its SCORE rather than on its ceiling, which
+      -- still counts the groups it left unobeyed: a REGRESSION FENCE, since
+      -- comparing the ceiling leaves the Combat subtree and the Nacatl War-Pride
+      -- scenarios green -- no board built yet ends on a worse leaf.
       go best declaration met used remaining obeyed =
-        if ceilingOf met used remaining obeyed <= snd best
+        if ceilingOf declaration met used remaining obeyed <= snd best
           then best
           else case remaining of
             [] ->
-              if blockDeclarationAllowed limit most alone arity pcs able declaration gs && payable declaration
-                then (declaration, met)
-                else best
+              let score = met + Requirement.exactlyMet requirements (declaredPairs declaration)
+               in if score > snd best && blockDeclarationAllowed limit most alone arity pcs able declaration gs && payable declaration
+                    then (declaration, score)
+                    else best
             (blocker, options, _) : rest ->
               let try acc chosen
                     | Set.null chosen = go acc declaration met used rest obeyed
@@ -1691,7 +1704,12 @@ declarableBlockers pid gs =
       obeyed = requirementsMet requirements best
       payable declaration = blockTollsPayable pid declaration gs
       blocking blocker = maybe False (not . Set.null) (Map.lookup blocker best)
-      added blocker attacker = blockDeclarationAllowed limit most alone arity pcs able (Map.insert blocker (Set.singleton attacker) best) gs
+      -- The requirements are asked again, since a block added can un-obey an
+      -- exactly-one group (Nacatl War-Pride). A regression fence: no board
+      -- built yet leaves the creature in no other legal declaration.
+      added blocker attacker =
+        let declaration = Map.insert blocker (Set.singleton attacker) best
+         in blockDeclarationAllowed limit most alone arity pcs able declaration gs && requirementsMet requirements declaration >= obeyed
       reached blocker attacker =
         let (heavier, boosted) = Requirement.boosted [(blocker, attacker)] requirements
             witness = bestBlockDeclaration boosted limit most alone arity pcs able payable candidates attackers gs

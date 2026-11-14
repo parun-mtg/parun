@@ -2,6 +2,7 @@ module Parun.Types.BlockRequirement where
 
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.Condition as Condition
+import qualified Parun.Types.RequiredBlockers as RequiredBlockers
 import qualified Parun.Types.RequirementArity as RequirementArity
 
 -- | CR 509.1c: one printed BLOCKING REQUIREMENT -- an effect saying a creature
@@ -101,6 +102,11 @@ data BlockRequirement = MkBlockRequirement
     -- Parun.Types.AttackRequirement carries the same axis for CR 508.1d, where
     -- the group is per requirement rather than per object -- that side's object
     -- axis narrows WHOM to attack rather than naming a second subject.
-    arity :: RequirementArity.RequirementArity
+    arity :: RequirementArity.RequirementArity,
+    -- | How many blockers obey each AnySubject group: AnyNumber is Gaea's
+    -- Protector's "must be blocked", ExactlyOne Nacatl War-Pride's "must be
+    -- blocked by exactly one creature". Read only under AnySubject, the arity
+    -- that states a group.
+    blockers :: RequiredBlockers.RequiredBlockers
   }
   deriving (Eq, Ord, Show)
