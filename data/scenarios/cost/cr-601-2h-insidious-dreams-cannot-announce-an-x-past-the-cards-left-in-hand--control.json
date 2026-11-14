@@ -38,13 +38,16 @@
         ],
         "library": [
           {
-            "card": "Forest"
+            "card": "Forest",
+            "label": "forest"
           },
           {
-            "card": "Mountain"
+            "card": "Mountain",
+            "label": "mountain"
           },
           {
-            "card": "Island"
+            "card": "Island",
+            "label": "island"
           }
         ]
       },
@@ -112,6 +115,70 @@
           "zone": "Stack",
           "card": "Insidious Dreams",
           "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$forest",
+            "$island"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$mountain"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ArrangeLibraryCards",
+          "with": [
+            0,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library",
+          "is": [
+            "Forest",
+            "Island",
+            "Mountain"
+          ]
         }
       }
     }

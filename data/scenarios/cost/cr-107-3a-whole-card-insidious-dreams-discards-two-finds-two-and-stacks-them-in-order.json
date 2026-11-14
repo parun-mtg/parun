@@ -68,7 +68,7 @@
         "name": "bob",
         "library": [
           {
-            "card": "Forest"
+            "card": "Swamp"
           }
         ]
       }
@@ -118,7 +118,7 @@
           "player": "alice",
           "zone": "Hand",
           "is": [
-            "Plains"
+            "$plains"
           ]
         }
       }
