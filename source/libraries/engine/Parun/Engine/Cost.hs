@@ -3453,7 +3453,11 @@ manaActivationsOn grants rows effects measure pcs pid oid printedCost restrictio
         -- controller is the player activating it, which Mana Cache's "during
         -- their turn" reads (Parun.ManaSpec's Mana Cache group). CR 602.1b's
         -- other instruction, who may activate at all, is Mana.routeAccess.
-        && ActivationRestriction.restrictionsOk pid oid ability restrictions gs
+        --
+        -- Relaxed by the grants reaching it as Parun.Engine.Activatable's is:
+        -- Elvish Refueler's over Loot, the Pathfinder's exhaust mana ability,
+        -- which data/scenarios' elvish-refueler cases prove.
+        && ActivationRestriction.riderOk pid oid ability restrictions (PlayerEffect.keywordRiderGrantsGiven effects (ActivatedAbility.keyword =<< ability) oid gs) gs
         then
           Activations.MkActivations
             { -- The PRINTED mana part, which is what `repeatsOf` reads: a

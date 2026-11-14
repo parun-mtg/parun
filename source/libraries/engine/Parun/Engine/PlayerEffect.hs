@@ -2122,15 +2122,21 @@ mayPlayAsThoughItHadFlash pid oid gs = any (grantReaches landPlayFlashGrant pid 
 -- CR 602.5: the clauses of its rider that grants let `pid` activate an ability
 -- under this rule-702 keyword of `srcId` past -- Leonin Shikari's "equip
 -- abilities" any time they could cast an instant, Birgi's boast twice, Wonder
--- Man's power-up an additional time. The keyword is compared against
+-- Man's power-up an additional time, Elvish Refueler's exhaust as though it
+-- hadn't been. The keyword is compared against
 -- Parun.Types.ActivatedAbility.keyword, as prohibitsActivating above is, so
 -- reconfigure -- no equip ability, per Forge Anew's ruling -- is not reached.
 -- The criterion is asked of the permanent from the effect's source, as
 -- loyaltyGrants' is.
 keywordRiderGrants :: Maybe Keyword -> PlayerId -> ObjectId -> GameState -> [RiderClause.RiderClause]
-keywordRiderGrants stamp pid srcId gs =
+keywordRiderGrants stamp pid srcId gs = keywordRiderGrantsGiven (applying pid gs) stamp srcId gs
+
+-- The same grants given `applying pid gs`'s own answer, which CR 605.3a's mana
+-- window (Parun.Engine.Cost.manaActivationsOn) has already gathered.
+keywordRiderGrantsGiven :: [(RowSource, PlayerEffect)] -> Maybe Keyword -> ObjectId -> GameState -> [RiderClause.RiderClause]
+keywordRiderGrantsGiven effects stamp srcId gs =
   [ KeywordRiderGrant.relaxes grant
-  | (source, PlayerEffect.KeywordRiderGrant grant) <- applying pid gs,
+  | (source, PlayerEffect.KeywordRiderGrant grant) <- effects,
     any (Keyword.designates (KeywordRiderGrant.abilities grant)) stamp,
     matchesObjectFrom source (KeywordRiderGrant.permanents grant) srcId gs
   ]

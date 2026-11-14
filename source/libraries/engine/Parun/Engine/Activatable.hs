@@ -390,23 +390,15 @@ loyaltyOk pid srcId ability gs =
               )
        )
 
--- CR 602.5: the ability's printed rider holds, or holds once every grant
--- reaching it has relaxed its clause -- Leonin Shikari's reads CR 602.5d's
--- clause as CR 602.5e's, Birgi's raises CR 602.5b's per-turn count, Wonder
--- Man's its once-only count. Each relaxation only widens, so applying all of
--- them at once admits whatever any subset would. The grants are asked only when
--- the rider as printed refuses, so a board without one pays nothing for them.
--- Parun.ActivateSpec's InstantSpeedEquip group proves the first,
--- data/scenarios/activate's Birgi cases the second, and data/scenarios'
--- wonder-man-hollywood-hero cases the third.
+-- CR 602.5: ActivationRestriction.riderOk over the grants reaching this
+-- ability -- Leonin Shikari's reads CR 602.5d's clause as CR 602.5e's, Birgi's
+-- raises CR 602.5b's per-turn count, Wonder Man's its once-only count, Elvish
+-- Refueler's lifts it. Parun.ActivateSpec's InstantSpeedEquip group proves the
+-- first, data/scenarios/activate's Birgi cases the second, and data/scenarios'
+-- wonder-man-hollywood-hero and elvish-refueler cases the last two.
 riderOk :: PlayerId -> ObjectId -> ActivatedAbility.ActivatedAbility Card.Card (GrantedAbility.GrantedAbility Card.Card) -> GameState -> Bool
 riderOk pid srcId ability gs =
-  let printed = Keyword.restrictionsOf ability
-      grants = PlayerEffect.keywordRiderGrants (ActivatedAbility.keyword ability) pid srcId gs
-   in ActivationRestriction.restrictionsOk pid srcId (Just ability) printed gs
-        || ( not (null grants)
-               && ActivationRestriction.restrictionsOk pid srcId (Just ability) (fmap (\r -> foldr ActivationRestriction.relaxedBy r grants) printed) gs
-           )
+  ActivationRestriction.riderOk pid srcId (Just ability) (Keyword.restrictionsOf ability) (PlayerEffect.keywordRiderGrants (ActivatedAbility.keyword ability) pid srcId gs) gs
 
 loyaltyActivatedThisTurn :: ObjectId -> GameState -> Bool
 loyaltyActivatedThisTurn srcId gs = any (loyaltyOf . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
