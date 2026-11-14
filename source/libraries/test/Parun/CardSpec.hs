@@ -4038,6 +4038,8 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.DamageCantBePrevented pattern_ -> damagePatternFilters pattern_
   -- CR 614.9's twin, patterned by the same type and read the same way.
   PlayerEffect.DamageCantBeRedirected pattern_ -> damagePatternFilters pattern_
+  -- CR 120.3's "as though its source had", patterned by the same type too.
+  PlayerEffect.DamageAsThoughSourceHad pattern_ _ -> damagePatternFilters pattern_
   -- CR 701.23's prohibition narrows by WHOSE library and WHOSE spell or
   -- ability, both PlayerScopes, and by no quality a Filter could state.
   PlayerEffect.CantSearchLibraries _ -> []

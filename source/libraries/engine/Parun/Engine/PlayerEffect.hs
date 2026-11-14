@@ -673,6 +673,7 @@ prohibitsCasting pid oid variable gs =
         -- a spell for either.
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
@@ -868,6 +869,7 @@ prohibitsPlayingLand pid oid gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
@@ -941,6 +943,7 @@ searchPortion pid gs =
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -1032,6 +1035,7 @@ prohibitsSearching pid owner causeController gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -1145,6 +1149,7 @@ prohibitsCounters pid kind gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -1228,6 +1233,7 @@ stateBasedActionDoesntApplyTo action pid oid gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
@@ -1293,6 +1299,7 @@ schemesCantBeSetInMotion gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
@@ -1363,6 +1370,7 @@ entryTriggerings pid entrant gs =
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
@@ -1442,6 +1450,7 @@ additionalTriggers pid bearer gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
@@ -1507,6 +1516,7 @@ prohibitsAttackingWithCreatures pid gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
@@ -2250,6 +2260,7 @@ landPlayFlashGrant effect = case effect of
   PlayerEffect.TargetPastHexproof _ -> Nothing
   PlayerEffect.DamageCantBePrevented _ -> Nothing
   PlayerEffect.DamageCantBeRedirected _ -> Nothing
+  PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
   PlayerEffect.CantSearchLibraries _ -> Nothing
   PlayerEffect.SearchesTopOfLibraries _ -> Nothing
   PlayerEffect.HasProtectionFrom _ -> Nothing
@@ -2511,6 +2522,7 @@ castFromGrantOf effect = case effect of
   PlayerEffect.TargetPastHexproof _ -> Nothing
   PlayerEffect.DamageCantBePrevented _ -> Nothing
   PlayerEffect.DamageCantBeRedirected _ -> Nothing
+  PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
   PlayerEffect.CantSearchLibraries _ -> Nothing
   PlayerEffect.SearchesTopOfLibraries _ -> Nothing
   PlayerEffect.HasProtectionFrom _ -> Nothing
@@ -2893,6 +2905,7 @@ mayCastWithoutPayingManaCost pid oid gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
@@ -2976,6 +2989,7 @@ playLandPiles pid gs =
         PlayerEffect.TargetPastHexproof _ -> []
         PlayerEffect.DamageCantBePrevented _ -> []
         PlayerEffect.DamageCantBeRedirected _ -> []
+        PlayerEffect.DamageAsThoughSourceHad {} -> []
         PlayerEffect.CantSearchLibraries _ -> []
         PlayerEffect.SearchesTopOfLibraries _ -> []
         PlayerEffect.HasProtectionFrom _ -> []
@@ -3096,6 +3110,7 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
@@ -3212,6 +3227,7 @@ protectedFromGiven rows aimer view gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
         PlayerEffect.CantSetSchemesInMotion -> False
         PlayerEffect.EntriesTrigger _ -> False
@@ -3309,6 +3325,7 @@ protectionCarriers gs =
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
         PlayerEffect.CantSetSchemesInMotion -> Nothing
         PlayerEffect.EntriesTrigger _ -> Nothing
@@ -3396,6 +3413,7 @@ landPlaysAllowed pid gs =
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
@@ -3479,6 +3497,7 @@ votesAllowed pid gs =
         PlayerEffect.TargetPastHexproof {} -> Nothing
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
         PlayerEffect.SearchesTopOfLibraries {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
@@ -3547,6 +3566,7 @@ offeredExtras pid gs =
         PlayerEffect.TargetPastHexproof {} -> False
         PlayerEffect.DamageCantBePrevented {} -> False
         PlayerEffect.DamageCantBeRedirected {} -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries {} -> False
         PlayerEffect.SearchesTopOfLibraries {} -> False
         PlayerEffect.StateBasedActionDoesntApply _ _ -> False
@@ -3616,6 +3636,7 @@ cascadeActions pid gs =
         PlayerEffect.TargetPastHexproof {} -> Nothing
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
         PlayerEffect.SearchesTopOfLibraries {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
@@ -3684,6 +3705,7 @@ drawReveals pid nth gs =
         PlayerEffect.TargetPastHexproof {} -> Nothing
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
         PlayerEffect.SearchesTopOfLibraries {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
@@ -3751,6 +3773,7 @@ shownGrants pid gs =
         PlayerEffect.TargetPastHexproof {} -> Nothing
         PlayerEffect.DamageCantBePrevented {} -> Nothing
         PlayerEffect.DamageCantBeRedirected {} -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries {} -> Nothing
         PlayerEffect.SearchesTopOfLibraries {} -> Nothing
         PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
@@ -3852,6 +3875,7 @@ maximumHandSize pid gs =
         PlayerEffect.TargetPastHexproof _ -> current
         PlayerEffect.DamageCantBePrevented _ -> current
         PlayerEffect.DamageCantBeRedirected _ -> current
+        PlayerEffect.DamageAsThoughSourceHad {} -> current
         PlayerEffect.CantSearchLibraries _ -> current
         PlayerEffect.SearchesTopOfLibraries _ -> current
         PlayerEffect.HasProtectionFrom _ -> current
@@ -3962,6 +3986,7 @@ unspentManaRows pid gs =
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
@@ -4040,6 +4065,7 @@ losesLifeForUnspentMana pid gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
@@ -4129,6 +4155,7 @@ forbids reaches pid gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
@@ -4249,6 +4276,7 @@ precludes outcome pid gs =
         PlayerEffect.TargetPastHexproof _ -> False
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
@@ -4326,6 +4354,7 @@ spendManaAsThoughRows pid gs =
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
@@ -4487,6 +4516,7 @@ cantBeCountered pid counterer oid gs =
         -- the stack. The two travel together on one card and share nothing.
         PlayerEffect.DamageCantBePrevented _ -> False
         PlayerEffect.DamageCantBeRedirected _ -> False
+        PlayerEffect.DamageAsThoughSourceHad {} -> False
         PlayerEffect.CantSearchLibraries _ -> False
         PlayerEffect.SearchesTopOfLibraries _ -> False
         PlayerEffect.HasProtectionFrom _ -> False
@@ -4551,6 +4581,7 @@ targetingRestrictions =
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
@@ -4634,6 +4665,7 @@ hexproofExemptions =
         PlayerEffect.MayTapForMana _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
@@ -4728,6 +4760,7 @@ unpreventable gs =
   let says (src, effect) = case effect of
         PlayerEffect.DamageCantBePrevented pattern_ -> Just (RowSource.object src, pattern_)
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
@@ -4812,6 +4845,77 @@ unredirectable :: GameState -> [(Maybe ObjectId, DamagePattern.DamagePattern)]
 unredirectable gs =
   let says (src, effect) = case effect of
         PlayerEffect.DamageCantBeRedirected pattern_ -> Just (RowSource.object src, pattern_)
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
+        PlayerEffect.DamageCantBePrevented _ -> Nothing
+        PlayerEffect.CantSearchLibraries _ -> Nothing
+        PlayerEffect.SearchesTopOfLibraries _ -> Nothing
+        PlayerEffect.HasProtectionFrom _ -> Nothing
+        PlayerEffect.StateBasedActionDoesntApply _ _ -> Nothing
+        PlayerEffect.CantSetSchemesInMotion -> Nothing
+        PlayerEffect.EntriesTrigger _ -> Nothing
+        PlayerEffect.AdditionalTriggers _ -> Nothing
+        PlayerEffect.ControlledWhileSearching -> Nothing
+        PlayerEffect.BlocksFromPiles -> Nothing
+        PlayerEffect.YouChoose _ -> Nothing
+        PlayerEffect.ExilesFoundWhileSearching -> Nothing
+        PlayerEffect.CantAttackWithCreatures -> Nothing
+        PlayerEffect.CantCastMatching _ -> Nothing
+        PlayerEffect.PutTappedAsYouCascade _ -> Nothing
+        PlayerEffect.CastOnlyAtSorcerySpeed -> Nothing
+        PlayerEffect.CantPlayLands _ -> Nothing
+        PlayerEffect.CastFrom _ -> Nothing
+        PlayerEffect.PlayLandsFrom _ -> Nothing
+        PlayerEffect.PlotFrom _ -> Nothing
+        PlayerEffect.CastWithoutPayingManaCost _ -> Nothing
+        PlayerEffect.CantGetCounters _ -> Nothing
+        PlayerEffect.StateCoinFlip _ -> Nothing
+        PlayerEffect.ModifyDieRoll _ -> Nothing
+        PlayerEffect.AdditionalVotes _ -> Nothing
+        PlayerEffect.AdditionalSurveilCards _ -> Nothing
+        PlayerEffect.Cant _ -> Nothing
+        PlayerEffect.RevealsDraw _ -> Nothing
+        PlayerEffect.Precluded _ -> Nothing
+        PlayerEffect.Shows _ -> Nothing
+        PlayerEffect.CantBeCountered _ -> Nothing
+        PlayerEffect.NextSpell _ _ -> Nothing
+        PlayerEffect.RestrictTargeting _ -> Nothing
+        PlayerEffect.TargetPastHexproof _ -> Nothing
+        PlayerEffect.CantCastSpells -> Nothing
+        PlayerEffect.CantActivateAbilities {} -> Nothing
+        PlayerEffect.CantCastMoreThan _ -> Nothing
+        PlayerEffect.ModifyCost {} -> Nothing
+        PlayerEffect.AlternativeActivationCost {} -> Nothing
+        PlayerEffect.PlayAdditionalLands _ -> Nothing
+        PlayerEffect.NoMaximumHandSize -> Nothing
+        PlayerEffect.SetMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseMaximumHandSize _ -> Nothing
+        PlayerEffect.IncreaseDevotion _ -> Nothing
+        PlayerEffect.ReduceMaximumHandSize _ -> Nothing
+        PlayerEffect.DontLoseUnspentMana {} -> Nothing
+        PlayerEffect.LoseLifeForUnspentMana -> Nothing
+        PlayerEffect.MayPayLifeForMana {} -> Nothing
+        PlayerEffect.SpendManaAsThough _ -> Nothing
+        PlayerEffect.CantBeTargetedBy {} -> Nothing
+        PlayerEffect.CastAsThoughItHadFlash {} -> Nothing
+        PlayerEffect.MayPlayAsThoughItHadFlash _ -> Nothing
+        PlayerEffect.KeywordRiderGrant _ -> Nothing
+        PlayerEffect.LoyaltyGrant _ -> Nothing
+        PlayerEffect.MayTapForMana _ -> Nothing
+   in concatMap (\pid -> Maybe.mapMaybe says (applying pid gs)) (Game.stillPlaying gs)
+
+-- CR 120.3 / 613.11: the patterns of every "damage is dealt as though its source
+-- had" effect applying right now (Phyrexian Unlife, Everlasting Torment), each
+-- with the keyword it lends and the SOURCE of the effect that says it.
+-- `unpreventable`'s posture and for its reason: the sentence is about a damage
+-- event, so the board-wide fold is exact while AnyPlayer is the only scope a card
+-- may pair with it (Parun.EffectLintSpec). The row's "as long as" condition is
+-- `applying`'s, read live, so Unlife's "0 or less life" is asked as the damage is
+-- dealt.
+damageAsThough :: GameState -> [(Maybe ObjectId, DamagePattern.DamagePattern, Keyword)]
+damageAsThough gs =
+  let says (src, effect) = case effect of
+        PlayerEffect.DamageAsThoughSourceHad pattern_ keyword -> Just (RowSource.object src, pattern_, keyword)
+        PlayerEffect.DamageCantBeRedirected _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.SearchesTopOfLibraries _ -> Nothing
@@ -4928,6 +5032,7 @@ statedFlips pid gs =
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
@@ -5009,6 +5114,7 @@ rollModifiers pid gs =
         PlayerEffect.TargetPastHexproof _ -> Nothing
         PlayerEffect.DamageCantBePrevented _ -> Nothing
         PlayerEffect.DamageCantBeRedirected _ -> Nothing
+        PlayerEffect.DamageAsThoughSourceHad {} -> Nothing
         PlayerEffect.CantSearchLibraries _ -> Nothing
         PlayerEffect.SearchesTopOfLibraries _ -> Nothing
         PlayerEffect.HasProtectionFrom _ -> Nothing
@@ -5144,6 +5250,7 @@ overPlayerRefs f effect = case effect of
   PlayerEffect.TargetPastHexproof _ -> pure effect
   PlayerEffect.DamageCantBePrevented _ -> pure effect
   PlayerEffect.DamageCantBeRedirected _ -> pure effect
+  PlayerEffect.DamageAsThoughSourceHad {} -> pure effect
   PlayerEffect.CantSearchLibraries _ -> pure effect
   PlayerEffect.SearchesTopOfLibraries _ -> pure effect
   PlayerEffect.StateBasedActionDoesntApply _ _ -> pure effect
@@ -5243,6 +5350,7 @@ overDamagePatterns f effect = case effect of
   PlayerEffect.TargetPastHexproof _ -> pure effect
   PlayerEffect.DamageCantBePrevented pattern_ -> fmap PlayerEffect.DamageCantBePrevented (f pattern_)
   PlayerEffect.DamageCantBeRedirected pattern_ -> fmap PlayerEffect.DamageCantBeRedirected (f pattern_)
+  PlayerEffect.DamageAsThoughSourceHad pattern_ keyword -> fmap (`PlayerEffect.DamageAsThoughSourceHad` keyword) (f pattern_)
   PlayerEffect.CantSearchLibraries _ -> pure effect
   PlayerEffect.SearchesTopOfLibraries _ -> pure effect
   PlayerEffect.StateBasedActionDoesntApply _ _ -> pure effect

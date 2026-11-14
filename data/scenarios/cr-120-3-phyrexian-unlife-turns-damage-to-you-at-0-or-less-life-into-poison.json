@@ -1,0 +1,14 @@
+{
+  "description": "CR 120.3 / 613.11: Phyrexian Unlife leaves the combat damage that takes alice from 1 to -3 ordinary, and turns bob's Shock at her afterwards into two poison counters",
+  "note": "Both Bears' damage is one batch dealt while alice is at 1 life, so neither is as though its source had infect (Unlife's 2011-06-01 ruling). The Shock is dealt while she is at -3, so it costs no life. Unlife's first ability keeps her in the game at -3.",
+  "board": {"active": "bob", "step": "PrecombatMain", "seats": [{"name": "alice", "life": 1, "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Phyrexian Unlife", "label": "unlife"}]}, {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Grizzly Bears", "label": "bears2", "ready": true}, {"card": "Mountain", "label": "mountain", "ready": true}], "hand": [{"card": "Shock", "label": "shock"}]}]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": ["$bears", "$bears2"]}},
+    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"Life": {"player": "alice", "life": -3}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"PlayerCounters": {"player": "alice", "kind": "Poison", "count": 0}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "do": {"Cast": {"object": "$shock", "targets": ["$alice"], "mana": ["$mountain"]}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "check": {"Life": {"player": "alice", "life": -3}}},
+    {"turn": 1, "step": "PostcombatMain", "player": "bob", "check": {"PlayerCounters": {"player": "alice", "kind": "Poison", "count": 2}}}
+  ]
+}
