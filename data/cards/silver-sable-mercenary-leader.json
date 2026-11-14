@@ -1,0 +1,187 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Silver Sable, Mercenary Leader",
+      "oracleText": "When Silver Sable enters, put a +1/+1 counter on another target creature.\nWhenever Silver Sable attacks, target modified creature you control gains lifelink until end of turn. (Equipment, Auras you control, and counters are modifications.)",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsSource"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {}
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Lifelink"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Or",
+                          "value": [
+                            {
+                              "type": "HasCountersOfAnyKind"
+                            },
+                            {
+                              "type": "HasAttached",
+                              "value": {
+                                "type": "HasSubtype",
+                                "value": "Equipment"
+                              }
+                            },
+                            {
+                              "type": "HasAttached",
+                              "value": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasSubtype",
+                                    "value": "Aura"
+                                  },
+                                  {
+                                    "type": "Shares",
+                                    "value": {
+                                      "anchor": {
+                                        "type": "Host"
+                                      },
+                                      "trait": {
+                                        "type": "Controller"
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Hero",
+          "Human",
+          "Mercenary"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

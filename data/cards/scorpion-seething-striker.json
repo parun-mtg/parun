@@ -1,0 +1,138 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Deathtouch"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Scorpion, Seething Striker",
+      "oracleText": "Deathtouch\nAt the beginning of your end step, if a creature died this turn, target creature you control connives. (Draw a card, then discard a card. If you discarded a nonland card, put a +1/+1 counter on that creature.)",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "Count",
+                "value": {
+                  "aggregation": {
+                    "type": "Members"
+                  },
+                  "filter": {
+                    "type": "HasCardType",
+                    "value": "Creature"
+                  },
+                  "scope": {
+                    "type": "InHistory",
+                    "value": {
+                      "type": "MovedBetween",
+                      "value": {
+                        "from": "Battlefield",
+                        "to": "Graveyard"
+                      }
+                    }
+                  }
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Connive",
+                        "value": {
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Scorpion",
+          "Villain"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

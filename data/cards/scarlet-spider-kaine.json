@@ -1,0 +1,135 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Menace"
+        },
+        {
+          "type": "Mayhem",
+          "value": {
+            "mana": [
+              {
+                "type": "Hybrid",
+                "value": {
+                  "left": {
+                    "type": "Colored",
+                    "value": "Black"
+                  },
+                  "right": {
+                    "type": "Colored",
+                    "value": "Red"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Scarlet Spider, Kaine",
+      "oracleText": "Menace (This creature can't be blocked except by two or more creatures.)\nWhen Scarlet Spider enters, you may discard a card. If you do, put a +1/+1 counter on him.\nMayhem {B/R} (You may cast this card from your graveyard for {B/R} if you discarded it this turn. Timing rules still apply.)",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ],
+                    "ifTaken": {
+                      "type": "AnyTaken",
+                      "value": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Hero",
+          "Human",
+          "Spider"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

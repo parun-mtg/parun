@@ -1,0 +1,148 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Scout the City",
+      "oracleText": "Choose one —\n• Look Around — Mill three cards. You may put a permanent card from among them into your hand. You gain 3 life. (To mill three cards, put the top three cards of your library into your graveyard.)\n• Bring Down — Destroy target creature with flying.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Mill",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 3
+                      },
+                      "slot": "milled"
+                    }
+                  }
+                ]
+              },
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "ChosenCardFromAmong",
+                        "value": {
+                          "filter": {
+                            "type": "Or",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Artifact"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Battle"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Enchantment"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Land"
+                              },
+                              {
+                                "type": "HasCardType",
+                                "value": "Planeswalker"
+                              }
+                            ]
+                          },
+                          "slot": "milled"
+                        }
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ],
+                "optionality": {
+                  "type": "Optional"
+                }
+              },
+              {
+                "effects": [
+                  {
+                    "type": "GainLife",
+                    "value": {
+                      "player": {
+                        "type": "Relative",
+                        "value": "You"
+                      },
+                      "quantity": {
+                        "type": "Literal",
+                        "value": 3
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Destroy",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "flier"
+                      },
+                      "regenerability": "Regenerable"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "flier": {
+                "filter": {
+                  "type": "HasKeyword",
+                  "value": {
+                    "type": "Flying"
+                  }
+                },
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}

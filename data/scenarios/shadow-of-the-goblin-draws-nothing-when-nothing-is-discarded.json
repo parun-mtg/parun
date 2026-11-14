@@ -1,0 +1,145 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Shadow of the Goblin",
+            "label": "shadow"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 505.1, 608.2c: Shadow of the Goblin's Unreliable Visions, with an empty hand, discards nothing and so draws nothing",
+  "note": "The pair of the discard-then-draw scenario, differing only in the empty hand: the trigger still resolves, and the Swamp stays on top of the library.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $shadow"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Swamp",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

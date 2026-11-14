@@ -1,0 +1,250 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "hand": [
+          {
+            "card": "Shocker, Unshakable",
+            "label": "shocker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "RRRRRR",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 17,
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.6a, 120.3a, 115.1: Shocker, Unshakable's entering trigger deals 2 damage to target creature and 2 damage to that creature's controller",
+  "note": "Three seats so 'that creature's controller' is carol, not any opponent: bob keeps 20. The Hill Giant survives with 2 damage, so the creature part is 2, not more.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$shocker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Shocker, Unshakable"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 2,
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 15,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 0,
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -36,9 +36,10 @@ normalise name =
 -- before " the " or " of ", that word (CR 201.5c: "Arcanis" for Arcanis the
 -- Omnipotent, "Kiora" for Kiora of Fire and Ashes), and "this creature" and
 -- its siblings, which Oracle text uses
--- for the same thing on newer cards (CR 700.7). A named character's "he" or
--- "she" is written "it", the pronoun the renderer gives the source (Edgar,
--- Ancient Bloodlord's "He gains menace").
+-- for the same thing on newer cards (CR 700.7). A named character's "he",
+-- "she" or "him" is written "it", the pronoun the renderer gives the source
+-- (Edgar, Ancient Bloodlord's "He gains menace"; Scarlet Spider, Kaine's
+-- "on him").
 selfReferences :: CardName.CardName -> Text.Text -> Text.Text
 selfReferences name text =
   let full = Text.toLower (CardName.unwrap name)
@@ -48,7 +49,7 @@ selfReferences name text =
          in if Text.null after || Text.any (== ' ') before then Text.empty else before
       nouns = fmap (\noun -> Text.pack ("this " <> noun)) ["creature", "spell", "artifact", "enchantment", "land", "permanent", "card", "planeswalker", "aura", "equipment", "vehicle"]
       named = List.foldl' (\t needle -> replaceWord needle (Text.pack "~") t) text ([full, short, epithet " the ", epithet " of "] <> nouns)
-   in List.foldl' (\t pronoun -> replaceWord pronoun (Text.pack "it") t) named (fmap Text.pack ["he", "she"])
+   in List.foldl' (\t pronoun -> replaceWord pronoun (Text.pack "it") t) named (fmap Text.pack ["he", "she", "him"])
 
 -- | Every occurrence of the needle standing as whole words replaced, so a card
 -- named Shock leaves "shockwave" alone.

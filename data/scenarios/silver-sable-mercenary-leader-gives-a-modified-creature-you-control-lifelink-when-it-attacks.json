@@ -1,0 +1,250 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Silver Sable, Mercenary Leader",
+            "label": "sable",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ],
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Air Elemental",
+            "label": "elemental",
+            "ready": true
+          },
+          {
+            "attached": "elemental",
+            "card": "Bonesplitter",
+            "label": "blade"
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions",
+            "ready": true
+          },
+          {
+            "attached": "lions",
+            "card": "Holy Strength",
+            "label": "aura-a"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm",
+            "ready": true
+          },
+          {
+            "card": "Serra Angel",
+            "label": "angel",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "attached": "wurm",
+            "card": "Holy Strength",
+            "label": "aura-b"
+          },
+          {
+            "card": "Hill Giant",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ],
+            "label": "giant",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 700.9 / 702.15b: Silver Sable's attack gives lifelink to target creature you control with a counter, an Equipment or an Aura you control on it; not to one under an opponent's Aura, an unmodified one, or an opponent's",
+  "note": "The Lions' Aura is alice's and the Wurm's is bob's, the pair differing only in the Aura's controller; bob's countered Giant is modified but not alice's.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$sable",
+          "$lions"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$wurm"
+          ]
+        }
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$angel"
+          ]
+        }
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$giant"
+          ]
+        }
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$sable"
+          ]
+        }
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$lions"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Lifelink"
+          },
+          "object": "$lions"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Lifelink"
+          },
+          "object": "$sable"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 15,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 23,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

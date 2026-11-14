@@ -1,0 +1,171 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "WebSlinging",
+          "value": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "White"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Spider-Man India",
+      "oracleText": "Web-slinging {1}{G}{W} (You may cast this spell for {1}{G}{W} if you also return a tapped creature you control to its owner's hand.)\nPavitr's Sevā — Whenever you cast a creature spell, put a +1/+1 counter on target creature you control. It gains flying until end of turn.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "HasCardType",
+                      "value": "Creature"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Flying"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Hero",
+          "Human",
+          "Spider"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

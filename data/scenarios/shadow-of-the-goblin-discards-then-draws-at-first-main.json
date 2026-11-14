@@ -1,0 +1,193 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Shadow of the Goblin",
+            "label": "shadow"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          },
+          {
+            "card": "Mountain",
+            "label": "mtn"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 505.1, 701.9a, 608.2c: at the beginning of its controller's first main phase Shadow of the Goblin's Unreliable Visions discards a card and, only if one was discarded, draws a card",
+  "note": "Turn 1 begins in the upkeep and its draw is skipped (CR 103.8a). Two cards make the discard a choice; the Bolt goes and only the top Swamp is drawn. Its pair, the empty-hand scenario, discards nothing and draws nothing.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $shadow"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$bolt"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lightning Bolt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Swamp",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

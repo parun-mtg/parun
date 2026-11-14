@@ -1,0 +1,206 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Shadow of the Goblin",
+      "oracleText": "Unreliable Visions — At the beginning of your first main phase, discard a card. If you do, draw a card.\nUndying Vengeance — Whenever you play a land or cast a spell from anywhere other than your hand, this enchantment deals 1 damage to each opponent.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "ordinal": 1,
+              "phase": {
+                "type": "PrecombatMain"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ],
+                    "ifTaken": {
+                      "type": "AnyTaken",
+                      "value": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "PlayerPlaysLand",
+                "value": {
+                  "filter": {
+                    "type": "Not",
+                    "value": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "EnteredThisTurn",
+                          "value": {
+                            "from": [
+                              "Hand"
+                            ],
+                            "to": "Battlefield"
+                          }
+                        },
+                        {
+                          "type": "ControllerIsOwner"
+                        }
+                      ]
+                    }
+                  },
+                  "player": "You"
+                }
+              },
+              {
+                "type": "SpellCast",
+                "value": {
+                  "scope": {
+                    "type": "PlayersTurn",
+                    "value": {
+                      "type": "Relative",
+                      "value": "AnyPlayer"
+                    }
+                  },
+                  "spell": {
+                    "type": "Matching",
+                    "value": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        },
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "WasCastFrom",
+                                "value": "Hand"
+                              },
+                              {
+                                "type": "ControllerIsOwner"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "ref": {
+                                "type": "Players",
+                                "value": {
+                                  "players": {
+                                    "type": "Relative",
+                                    "value": "Opponent"
+                                  }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

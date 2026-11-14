@@ -1,0 +1,124 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Red"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Green"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 4
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Surveil",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Savage Mansion",
+      "oracleText": "This land enters tapped.\n{T}: Add {R} or {G}.\n{4}, {T}: Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}
