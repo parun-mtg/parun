@@ -4743,17 +4743,18 @@ mintedRemovalRestrictionsFor keyword =
 -- GRANTER's entry choice (Cho-Manno's Blessing), which the host's frame cannot
 -- read, so a bare Filter.HasChosenColor quality bakes it into Filter.HasColor,
 -- an Or of them where several were chosen, and the empty Or -- protection from
--- nothing -- where none was.
--- Parun.FilterPositionLintSpec's grantedChosenColors admits the bare atom
--- alone, so a card burying it is rejected rather than misread.
+-- nothing -- where none was. CR 702.14a's "landwalk of the chosen type"
+-- likewise (Traveler's Cloak): the granter's subtype choice, written in.
+-- Parun.FilterPositionLintSpec's grantedChosen admits the bare atom alone, so
+-- a card burying it is rejected rather than misread.
 --
 -- CR 702.16p's spare (Benevolent Blessing) likewise, conjunct by conjunct: "you"
 -- is the granter's controller `you`, and Filter.AttachedNoLaterThanSource is
 -- `already`, the host's attachments stamped no later than the granter (CR
 -- 613.7e restamps each attach, so that is "already attached when the effect
 -- started to apply").
-grantedBy :: ObjectId -> Set.Set Color.Color -> Maybe PlayerId -> [ObjectId] -> Keyword -> Keyword
-grantedBy granter chosen you already keyword = case withChosenColors chosen keyword of
+grantedBy :: ObjectId -> Set.Set Color.Color -> Maybe Subtype.Subtype -> Maybe PlayerId -> [ObjectId] -> Keyword -> Keyword
+grantedBy granter chosen subtype you already keyword = case withChoices chosen subtype keyword of
   Keyword.Protection protection ->
     Keyword.Protection protection {Protection.spares = fmap spare (Protection.spares protection)}
   -- Scotty, Miracle Worker's "Scotty can't be beamed up to cast a spell this
@@ -4772,12 +4773,14 @@ grantedBy granter chosen you already keyword = case withChosenColors chosen keyw
 -- CR 607.2d / 608.2h: a bare Filter.HasChosenColor protection quality with
 -- the chosen colours written in -- Filter.HasColor, an Or of them where several
 -- were chosen, and the empty Or, protection from nothing, where none was.
--- CR 702.11d's "hexproof from that color" (Mondo Gecko) likewise.
+-- CR 702.11d's "hexproof from that color" (Mondo Gecko) likewise. CR 702.14a's
+-- bare Filter.HasChosenSubtype landwalk criterion with the chosen subtype
+-- written in, and the empty Or, no land at all, where none was chosen.
 -- grantedBy's first half, and Parun.Engine.Projection.freezeQuantities' whole
 -- answer for a resolution's grant (Stave Off), whose source has left the stack
 -- by the time the grant is projected.
-withChosenColors :: Set.Set Color.Color -> Keyword -> Keyword
-withChosenColors chosen keyword = case keyword of
+withChoices :: Set.Set Color.Color -> Maybe Subtype.Subtype -> Keyword -> Keyword
+withChoices chosen subtype keyword = case keyword of
   Keyword.Protection protection
     | Protection.quality protection == Filter.HasChosenColor ->
         Keyword.Protection
@@ -4785,6 +4788,7 @@ withChosenColors chosen keyword = case keyword of
             { Protection.quality = baked
             }
   Keyword.Hexproof (Just Filter.HasChosenColor) -> Keyword.Hexproof (Just baked)
+  Keyword.Landwalk Filter.HasChosenSubtype -> Keyword.Landwalk (maybe (Filter.Or []) Filter.HasSubtype subtype)
   _ -> keyword
   where
     baked = case Set.toList chosen of
@@ -4796,7 +4800,7 @@ withChosenColors chosen keyword = case keyword of
 -- and the empty Or, protection from nothing, where there are none.
 -- Parun.Engine.Projection.freezeQuantities' answer for a resolution's grant
 -- (Figure of Fable), whose "your" is the resolving ability's controller where
--- the unbaked atom reads the carrier's. A bare atom only, withChosenColors'
+-- the unbaked atom reads the carrier's. A bare atom only, withChoices'
 -- posture. Proved by data/scenarios/'s Figure of Fable control-change
 -- scenario.
 --

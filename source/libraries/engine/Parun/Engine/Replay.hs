@@ -1253,10 +1253,11 @@ defaultAnswer p = case p of
   -- CR 726.4 / 727.4: every candidate is a live active player who may take it.
   -- CR 805.6a: or one still to draw, any of whom may draw next.
   Prompt.ChooseActivePlayer _ _ candidates -> NonEmpty.head candidates
-  -- CR 305.6 / 205.3m / 205.3j: any member of the family is legal, so one is
-  -- conjured from a list the prompt does not offer.
+  -- CR 305.6 / 205.3i / 205.3m / 205.3j: any member of the family is legal,
+  -- so one is conjured from a list the prompt does not offer.
   Prompt.ChooseSubtype _ _ _ family Nothing -> case family of
     SubtypeFamily.BasicLandType -> Subtype.Mountain
+    SubtypeFamily.LandType -> Subtype.Mountain
     SubtypeFamily.CreatureType -> Subtype.Goblin
     SubtypeFamily.PlaneswalkerType -> Subtype.Gideon
   -- A printed list (Eclipsed Realms) admits only its own; the first is legal.

@@ -86,6 +86,7 @@ isPlaneswalkerType = Set.member CardType.Planeswalker . correlatedCardTypes
 inFamily :: SubtypeFamily.SubtypeFamily -> Subtype.Subtype -> Bool
 inFamily family = case family of
   SubtypeFamily.BasicLandType -> isBasicLandType
+  SubtypeFamily.LandType -> isLandType
   SubtypeFamily.CreatureType -> isCreatureType
   SubtypeFamily.PlaneswalkerType -> isPlaneswalkerType
 
