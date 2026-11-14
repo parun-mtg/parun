@@ -92,6 +92,8 @@ import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OwnedZone as OwnedZone
+import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentWasSacrificed as PermanentWasSacrificed
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
@@ -343,6 +345,12 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   (TriggerCondition.TurnedFaceUp subject, GameEvent.TurnedFaceUp t) -> case subject of
     ActingPermanent.Self -> maybe Map.empty (\x -> Binding.fromChoices Map.empty (Just x) Seq.empty) (TurnedFaceUp.announcedX t)
     ActingPermanent.Matching _ -> Binding.setBecame (TurnedFaceUp.object t) Map.empty
+  -- Foe-Razer Regent's "put two +1/+1 counters on it": the actor, CR 400.7e's
+  -- slot as the printed word, the Matching TurnedFaceUp reading above. Per
+  -- occurrence only: a OneOrMore batch's one slot would name one of several
+  -- actors (leavesSlots' reason).
+  (TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed _ (ActingPermanent.Matching _)) Batching.EachOccurrence), GameEvent.PermanentActed acted) ->
+    Binding.setBecame (PermanentActed.permanent acted) Map.empty
   -- CR 701.32b's "that scheme" (My Laughter Echoes): the scheme set in motion.
   -- No zone change need have happened, so CR 400.7e's slot is the printed word,
   -- CountersChange's reason.
@@ -1491,13 +1499,13 @@ eventBindingSlots cond = case cond of
   -- Nothing: CR 702.170a names an object, but Aloe Alchemist targets a creature
   -- of its controller's choosing rather than pointing at it.
   TriggerCondition.SelfBecomesPlotted -> Set.empty
-  -- Nothing: the event names the acting permanent, and no printed payload points
-  -- at it as anything but the bearer. Under Self the actor IS the bearer, which
-  -- CR 113.7a's source slot already names -- Renegade Krasis' and Savior of
-  -- Ollenbock's "this creature", and Glory-Bound Initiate's linked "it" (CR
-  -- 701.43d), read as Filter.IsSource. Under a Filter, Wildgrowth Walker grows
-  -- itself and Synthetic Veiled Witness draws. A card printing "that creature"
-  -- would earn CR 400.7e's slot, as a Matching TurnedFaceUp does.
+  -- Under Self the actor IS the bearer, which CR 113.7a's source slot already
+  -- names -- Renegade Krasis' and Savior of Ollenbock's "this creature", and
+  -- Glory-Bound Initiate's linked "it" (CR 701.43d), read as Filter.IsSource.
+  -- Under a Filter, one occurrence's actor is CR 400.7e's slot, as a Matching
+  -- TurnedFaceUp's is (Foe-Razer Regent's "it"); a OneOrMore batch binds
+  -- nothing, eventBindings' arm's reason.
+  TriggerCondition.PermanentActs (PermanentActsTrigger.MkPermanentActsTrigger (PermanentActed.MkPermanentActed _ (ActingPermanent.Matching _)) Batching.EachOccurrence) -> Set.singleton Binding.became
   TriggerCondition.PermanentActs _ -> Set.empty
   -- Empty as a floor: CR 701.62b fires on a manifest dread that put nothing into
   -- the graveyard, which binds nothing. The `became` it binds otherwise is

@@ -308,6 +308,12 @@ fight runPreventionRiders runReplacementEffects runSubgame resolving source lega
             -- the rule words it.
             | oneId == twoId = blow oneId oneId (2 * onePower)
             | otherwise = blow oneId twoId onePower <> blow twoId oneId twoPower
+      -- Each creature fought, whatever damage it dealt: a 0-power fighter
+      -- still fights (CR 701.14a). One act for a self-fight (CR 701.14c).
+      -- data/scenarios/foe-razer-regent-grows-each-creature-you-control-that-fought.json
+      -- proves it.
+      Monad.forM_ (ListUtils.nubOrd [oneId, twoId]) $ \oid ->
+        State.modify' (Event.recordEvent (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Fight oid)))
       -- ONE batch: CR 701.14a's "each of those creatures deals damage" is one
       -- action, so the two blows land simultaneously and a creature that dies
       -- to the first still dealt the second.
