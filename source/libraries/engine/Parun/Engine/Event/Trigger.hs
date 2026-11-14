@@ -424,19 +424,19 @@ standingOf gs =
           | not (Object.exiledFaceDown obj),
             Just face <- Projection.abilityFaceOf oid obj gs ->
               let inExileZone subtypes triggered keywords = Maybe.mapMaybe (functionsIn subtypes (Face.delayedAbilities face) Zone.Exile) triggered <> fmap whole (Keyword.exileTriggeredAbilitiesOf keywords)
-                  onFace = inExileZone (TypeLine.subtypes (Face.typeLine face)) (Face.triggeredAbilities face) (Face.keywordSet face)
+                  onFace = inExileZone (TypeLine.subtypes (Face.typeLine face)) (Face.triggeredAbilities face) (Face.keywords face)
                in if null onFace && not exileGrantInForce
                     then Nothing
                     else
                       let pc = Projection.project oid gs
-                       in case inExileZone (PC.subtypes pc) (PC.triggeredAbilities pc) (Map.keysSet (PC.keywords pc)) of
+                       in case inExileZone (PC.subtypes pc) (PC.triggeredAbilities pc) (PC.keywords pc) of
                             [] -> Nothing
                             abilities -> Just (oid, (Object.owner obj, abilities))
         _ -> Nothing
       -- Does anything grant a keyword that mints an exile trigger, or a triggered
       -- ability outright? A thunk:
       -- only an exiled card whose ability face yields none forces it.
-      exileGrantInForce = Projection.mintingOrTriggeredGrantInForce Keyword.exileTriggeredAbilitiesOf gs
+      exileGrantInForce = Projection.mintingOrTriggeredGrantInForce (Keyword.exileTriggeredAbilitiesOf . Map.fromSet (const 1)) gs
       inExile = Map.fromList (Maybe.mapMaybe exileCandidate (Set.toAscList (GameState.exile gs)))
       -- CR 113.6b's zones that no source above stands in: a card in a hand, a
       -- library, the ante zone or the command zone, or a spell on the stack,
