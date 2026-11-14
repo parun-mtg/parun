@@ -92,6 +92,7 @@ import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Quotient as Quotient
 import qualified Parun.Types.Rounding as Rounding
 import qualified Parun.Types.Scratch as Scratch
+import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotArity as SlotArity
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.Snapshots as Snapshots
@@ -106,6 +107,7 @@ import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Times as Times
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnTally as TurnTally
+import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 import qualified Parun.Types.VotesReceived as VotesReceived
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
@@ -1155,6 +1157,15 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
           fmap
             (\oid -> if Game.enteredThisTurn oid gs then 1 else 0)
             mOid
+        -- CR 901.11b as a 0/1: the turn's GameEvent.TurnedUpOffDeck naming this
+        -- object and a player the reference names -- Unyaro's "if you
+        -- planeswalked to Unyaro this turn". The id is the face-up card's,
+        -- which turning it up keeps (Parun.Engine.Planechase.turnUp), so a plane
+        -- walked away from and back to is a new object only once CR 311.6 has
+        -- made it one.
+        Quantity.PlaneswalkedTo ref -> case (playersOf ref, mOid) of
+          (Just pids, Just oid) -> Just (if any (walkedTo pids oid . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs)) then 1 else 0)
+          _ -> Nothing
         -- CR 400.7 / 400.3 read as a 0/1: did the object this evaluation is aimed at
         -- enter the battlefield out of the named player's copy of the named zone?
         --
@@ -1764,6 +1775,7 @@ talliesWhatHappened quantity = case quantity of
   Quantity.CompletedDungeon {} -> False
   Quantity.DraftNotes {} -> False
   Quantity.EnteredThisTurn -> False
+  Quantity.PlaneswalkedTo _ -> False
   Quantity.EnteredFrom _ -> False
   Quantity.WasCastFrom _ -> False
   Quantity.BlockersBeyond _ -> False
@@ -1952,3 +1964,12 @@ lastCardExiledWith viewOf context gs criterion = do
 -- (Filter.sourceAcquisition), else the one its source `src` has now.
 readerAcquisition :: Filter.Context -> ObjectId -> GameState -> Acquisition.Acquisition
 readerAcquisition context src gs = Maybe.fromMaybe (Game.acquisitionOf src gs) (Filter.sourceAcquisition context)
+
+-- CR 901.11b: is this event one of these players planeswalking to this card?
+walkedTo :: [PlayerId.PlayerId] -> ObjectId -> GameEvent.GameEvent -> Bool
+walkedTo pids oid event = case event of
+  GameEvent.TurnedUpOffDeck turned ->
+    TurnedUpOffDeck.deck turned == SideDeck.Planar
+      && TurnedUpOffDeck.card turned == oid
+      && elem (TurnedUpOffDeck.player turned) pids
+  _ -> False

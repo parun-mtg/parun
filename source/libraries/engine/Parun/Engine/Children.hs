@@ -357,6 +357,7 @@ import qualified Parun.Types.PermanentActsTrigger as PermanentActsTrigger
 import qualified Parun.Types.PermanentBecomesDesignated as PermanentBecomesDesignated
 import qualified Parun.Types.PermanentIsDealtDamage as PermanentIsDealtDamage
 import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamageToPlayer
+import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
@@ -842,6 +843,7 @@ quantityChildren children quantity = case quantity of
   Quantity.CompletedDungeon (CompletedDungeon.MkCompletedDungeon ref name) -> fmap (\renamed -> Quantity.CompletedDungeon (CompletedDungeon.MkCompletedDungeon renamed name)) (player children ref)
   Quantity.DraftNotes (DraftNoteTally.MkDraftNoteTally ref name fold) -> fmap (\renamed -> Quantity.DraftNotes (DraftNoteTally.MkDraftNoteTally renamed name fold)) (player children ref)
   Quantity.EnteredThisTurn -> pure quantity
+  Quantity.PlaneswalkedTo ref -> fmap Quantity.PlaneswalkedTo (player children ref)
   Quantity.EnteredFrom from -> fmap Quantity.EnteredFrom (inZoneChildren children from)
   Quantity.WasCastFrom (CastFrom.MkCastFrom caster from) -> fmap Quantity.WasCastFrom (CastFrom.MkCastFrom <$> player children caster <*> traverse (inZoneChildren children) from)
   Quantity.BlockersBeyond _ -> pure quantity
@@ -1174,7 +1176,7 @@ effectChildren c effect = case effect of
   Effect.Convert ref -> fmap Effect.Convert (onObjectRef c ref)
   Effect.Flip ref -> fmap Effect.Flip (onObjectRef c ref)
   Effect.Meld (Meld.MkMeld objects result) -> fmap Effect.Meld (Meld.MkMeld <$> onObjectRef c objects <*> onMelded c result)
-  Effect.PhaseOut ref -> fmap Effect.PhaseOut (onObjectRef c ref)
+  Effect.PhaseOut (PhaseOut.MkPhaseOut ref duration) -> fmap Effect.PhaseOut (PhaseOut.MkPhaseOut <$> onObjectRef c ref <*> traverse (onMoveDuration c) duration)
   Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown ref characteristics) -> fmap Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown <$> onObjectRef c ref <*> onFaceDown c characteristics)
   Effect.TurnFaceUp named -> fmap Effect.TurnFaceUp (onSlot c named)
   Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat removed unblocking) -> fmap (\rewritten -> Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat rewritten unblocking)) (onObjectRef c removed)

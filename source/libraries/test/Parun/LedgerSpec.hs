@@ -175,7 +175,7 @@ spec s registry = Spec.describe s "Ledger" $ do
     let attached = setAttached equipment (Just (Recipient.ToObject first)) unattached
         phased = Phasing.phaseOut (PhasedOut.Directly S.alice) equipment attached
         before = phased {GameState.objects = Map.delete first (GameState.objects phased)}
-        after = Phasing.phaseIn S.alice equipment before
+        after = Phasing.phaseIn equipment before
     Spec.assertEqWith s "phased in unattached" (fmap Object.attachedTo (Map.lookup equipment (GameState.objects after))) (Just Nothing)
     Spec.assertEqWith s "no discrepancy" (Ledger.discrepancies before after) []
   Spec.it s "CR 608.2i: the log carried across a turn handoff is read from both halves" $ do

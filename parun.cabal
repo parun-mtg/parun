@@ -1352,6 +1352,7 @@ library codec
     Parun.Codec.Phase
     Parun.Codec.PhasedOut
     Parun.Codec.PhasedOutSpec
+    Parun.Codec.PhaseOut
     Parun.Codec.PhasePattern
     Parun.Codec.PhasePatternSpec
     Parun.Codec.PhaseR
@@ -3446,6 +3447,7 @@ library types
     Parun.Types.PerTarget
     Parun.Types.Phase
     Parun.Types.PhasedOut
+    Parun.Types.PhaseOut
     Parun.Types.PhasePattern
     Parun.Types.PhaseR
     Parun.Types.PhaseRewrite

@@ -42,6 +42,7 @@ import qualified Parun.Engine.Goad as Goad
 import qualified Parun.Engine.Learn as Learn
 import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.ManifestDread as ManifestDread
+import qualified Parun.Engine.MoveDuration as MoveDuration
 import qualified Parun.Engine.Phasing as Phasing
 import qualified Parun.Engine.Planechase as Planechase
 import qualified Parun.Engine.Populate as Populate
@@ -114,6 +115,7 @@ import Parun.Types.ObjectRef (ObjectRef)
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PendingReplacementEffect as PendingReplacementEffect
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
 import qualified Parun.Types.PlayerActed as PlayerActed
@@ -1800,8 +1802,8 @@ meld settle resolving source controller legal (Meld.MkMeld ref resultCard) = do
   -- printing names the melded permanent later in its own instruction list.
   Monad.void (Event.meld settle controller (objectRefObjects legal resolving controller source gs ref) resultCard)
 
-phaseOut :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
-phaseOut resolving source controller legal ref =
+phaseOut :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> PhaseOut.PhaseOut -> Game ()
+phaseOut resolving source controller legal payload =
   State.modify' $ \gs ->
     -- CR 702.26b: each named permanent phases out; the victims are enumerated
     -- ONCE (CR 608.2f). The whole set goes to Phasing.phaseOutSet in one call,
@@ -1811,7 +1813,16 @@ phaseOut resolving source controller legal ref =
     -- Nothing about the row is read off `controller`: rule 702.26a schedules
     -- the return by who controlled IT, and `controller` is only phaseOutSet's
     -- fallback for a permanent the projection can no longer place.
-    Phasing.phaseOutSet controller (Set.fromList (objectRefObjects legal resolving controller source gs ref)) gs
+    --
+    -- CR 610.4b / 610.4c: an "until" whose event has already happened declines
+    -- the phase-out, the test Parun.Engine.MoveDuration.hasHappened shares
+    -- with CR 610.3's moves.
+    let duration = PhaseOut.duration payload
+        declined = any (\lasting -> MoveDuration.hasHappened lasting resolving source controller gs) duration
+        ending = fmap (\lasting -> MoveDuration.endingOf lasting source controller) duration
+     in if declined
+          then gs
+          else Phasing.phaseOutSet controller ending (Set.fromList (objectRefObjects legal resolving controller source gs (PhaseOut.ref payload))) gs
 
 -- CR 500.8: add the phases, directly after the phase this is resolving in.
 -- Turn.splicePhases is handed TurnRegisters.phase because that is NOT the head of

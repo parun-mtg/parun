@@ -129,7 +129,6 @@ import qualified Parun.Types.PendingSkipEffect as PendingSkipEffect
 import qualified Parun.Types.PendingTrigger as PendingTrigger
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
-import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.PlayerControl as PlayerControl
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerInstruction as PlayerInstruction
@@ -416,7 +415,7 @@ settleAll :: PlayerId -> Game ()
 settleAll pid = do
   gs <- State.get
   let settle obj = obj {Object.sickness = Sickness.Settled pid}
-      phasedOut = Map.keys (Map.filter ((== pid) . PhasedOut.under) (GameState.phasedOut gs))
+      phasedOut = Map.keys (Map.filter ((== pid) . Phasing.storedPlayer) (GameState.phasedOut gs))
       ids = Projection.controls pid gs <> phasedOut
   State.put gs {GameState.objects = foldr (Map.adjust settle) (GameState.objects gs) ids}
 
@@ -1405,6 +1404,8 @@ settlePasses passes boards = do
   -- CR 610.3's second one-shot effect, Palace Jailer's and Banisher Priest's
   -- alike: a return zone change is not something an Expiry sweep can perform.
   returned <- MoveDuration.returnDue (Resolve.runReplacementEffects playSubgame)
+  -- CR 610.4's second one-shot effect, the phasing twin of the return above.
+  phasedIn <- State.state Phasing.phaseInDue
   -- CR 800.4c, checked here for CR 704.3's reason and not because it is a
   -- state-based action -- that rule says it is not. AFTER the two above, each
   -- of which can be what ends a control-changing effect: the conditional sweep
@@ -1487,7 +1488,7 @@ settlePasses passes boards = do
   passed <- Departure.passesSince begun passes
   Departure.checkMandatoryLoop passed
   ended <- State.gets (Maybe.isJust . GameState.result)
-  more <- if not ended && (swept || returned || orphaned || dayNight || designated || sampledControl || unpaired || unsectored || acted || placed) then settlePasses passed (if acted then boards <> [board] else []) else pure False
+  more <- if not ended && (swept || returned || phasedIn || orphaned || dayNight || designated || sampledControl || unpaired || unsectored || acted || placed) then settlePasses passed (if acted then boards <> [board] else []) else pure False
   pure (acted || placed || more)
 
 -- CR 117.5: settle, then grant `holder` priority with a fresh pass count (CR

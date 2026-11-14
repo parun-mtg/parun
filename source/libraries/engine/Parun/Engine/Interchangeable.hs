@@ -579,7 +579,8 @@ affectedNames oid source gs affected = case affected of
 -- which is what makes searching them exact rather than merely likely.
 --
 --   * GameState.phasedOut (CR 702.26b), keyed by the phased-out permanent, its
---     value the player it phased out under.
+--     value the player it phased out under and, for a CR 610.4 row, the event
+--     that phases it in.
 --   * GameState.movedUntil (CR 610.3), keyed by the object a move with a
 --     duration put in another zone, its value the event that brings it back --
 --     a source leaving the battlefield, or CR 726's watching player and whether
@@ -611,10 +612,10 @@ affectedNames oid source gs affected = case affected of
 --     activationsThisTurn (CR 602.2) and each player's own last turn's attacks
 --     (Game.attacksInOwnLastTurn, CR 508.1a), by the object each entry names.
 --
--- phasedOut and a crowning watch can never name a CANDIDATE through the one
--- caller (Parun.Engine.Cost's mana-source window): both key on an object not on
--- the battlefield, and neither value holds an object at all. A source-leaves
--- watch is the opposite case on its value side and the reason it is searched
+-- phasedOut and a crowning or planeswalk watch can never name a CANDIDATE
+-- through their keys in the one caller (Parun.Engine.Cost's mana-source window):
+-- each keys on an object not on the battlefield, and only a source-leaves ending
+-- holds an object at all. A source-leaves watch is the opposite case on its value side and the reason it is searched
 -- rather than assumed inert: the source it names IS on the battlefield while the
 -- watch stands, so a permanent that owes an exiled card its return is not
 -- interchangeable with one that owes nothing. They are searched
@@ -689,7 +690,8 @@ namedByRelation oid gs =
         || any (any (attackedLastTurnNames oid) . Game.attacksInOwnLastTurn gs) (GameState.turnOrder gs)
 
 -- The objects a GameState.phasedOut row names BEYOND its key: none, since CR
--- 702.26a's stored value is the player the permanent phased out under.
+-- 702.26a's stored value is the player the permanent phased out under, bar a CR
+-- 610.4 ending's source (endingNames).
 --
 -- Total over PhasedOut's constructors and POSITIONAL, so a field added to any of
 -- them is an arity error here rather than an ObjectId this silently stops
@@ -699,6 +701,7 @@ phasedOutNames row = case row of
   PhasedOut.Directly _under -> Set.empty
   PhasedOut.Indirectly _under -> Set.empty
   PhasedOut.Orphaned _under -> Set.empty
+  PhasedOut.Until _under ending -> foldMap endingNames ending
 
 -- The objects a GameState.movedUntil row names beyond its key: CR 610.3's
 -- source, whose leaving the battlefield ends the move, and nothing for a CR 726
@@ -706,9 +709,16 @@ phasedOutNames row = case row of
 -- phasedOutNames' reason.
 returnWatchNames :: ReturnWatch.ReturnWatch -> Set.Set ObjectId
 returnWatchNames watch = case watch of
-  ReturnWatch.MkReturnWatch ending _zone -> case ending of
-    ReturnEnding.SourceLeaves source -> Set.singleton source
-    ReturnEnding.OpponentCrowned (MonarchWatch.MkMonarchWatch _controller _due) -> Set.empty
+  ReturnWatch.MkReturnWatch ending _zone -> endingNames ending
+
+-- The objects an "until" ending names: CR 610.3's and CR 610.4's source, and
+-- nothing for a crowning or a planeswalk, whose values are a player and an
+-- event group. Positional for phasedOutNames' reason.
+endingNames :: ReturnEnding.ReturnEnding -> Set.Set ObjectId
+endingNames ending = case ending of
+  ReturnEnding.SourceLeaves source -> Set.singleton source
+  ReturnEnding.OpponentCrowned (MonarchWatch.MkMonarchWatch _controller _due) -> Set.empty
+  ReturnEnding.Planeswalked _due -> Set.empty
 
 -- The objects a GameState.exilePiles row names beyond its key: none. Its value is
 -- CR 406.4's pile stamp, which names a pile rather than an object. Positional for

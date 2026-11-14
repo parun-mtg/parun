@@ -1,7 +1,8 @@
 module Parun.Types.MoveDuration where
 
--- | CR 610.3: the event that ends a zone change a card makes "until" something
--- happens, printed on the move itself rather than spelled as a second ability.
+-- | CR 610.3 / 610.4: the event that ends a zone change or phase-out a card
+-- makes "until" something happens, printed on the effect itself rather than
+-- spelled as a second ability.
 --
 -- The DURATION on a one-shot zone change, which is a different thing from
 -- Parun.Types.Duration: that one says how long a stored CONTINUOUS effect lasts
@@ -16,4 +17,6 @@ data MoveDuration
     UntilSourceLeavesTheBattlefield
   | -- | CR 726 (Palace Jailer): "until an opponent becomes the monarch".
     UntilAnOpponentBecomesTheMonarch
+  | -- | CR 901.11 (Unyaro): "until a player planeswalks".
+    UntilAPlayerPlaneswalks
   deriving (Bounded, Enum, Eq, Ord, Show)

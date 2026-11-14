@@ -889,6 +889,14 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       Quantity.EnteredThisTurn
       " {\"type\":\"EnteredThisTurn\"} "
+  -- CR 901.11b: the plane is the object evaluated against, so only the player
+  -- is on the wire.
+  Spec.it s "PlaneswalkedTo carries a PlayerRef" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.PlaneswalkedTo (PlayerRef.Relative PlayerRelation.You))
+      " {\"type\":\"PlaneswalkedTo\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
   -- CR 400.7's origin zone carries an InZone -- the payload a Count's scope
   -- carries, so the decoder that rejects a shared zone scoped to one player
   -- covers this arm without a second predicate.

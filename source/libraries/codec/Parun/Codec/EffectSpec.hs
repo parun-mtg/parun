@@ -162,6 +162,7 @@ import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MonarchTarget as MonarchTarget
 import qualified Parun.Types.MoveCounters as MoveCounters
+import qualified Parun.Types.MoveDuration as MoveDuration
 import qualified Parun.Types.MoveMana as MoveMana
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.MovedKinds as MovedKinds
@@ -176,6 +177,7 @@ import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerCounters as PlayerCounters
@@ -1863,28 +1865,22 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       (Codec.encode (Effect.codec (constCodec sentinel) abilityCodec) (Effect.Meld (Meld.MkMeld (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "melding"))) (0 :: Int))))
   -- CR 702.26b. Both ObjectRef arms, since the pool prints one of each: Reality
   -- Ripple's "target artifact, creature, or land phases out" is the slot, and
-  -- Teferi's Protection's "all permanents you control phase out" is the filter. It
-  -- shares Tap's, Untap's and Transform's wire shape, so it must not collapse into
-  -- any of their tags.
-  Spec.it s "PhaseOut round-trips both ObjectRef arms, and is not Transform" $ do
+  -- Teferi's Protection's "all permanents you control phase out" is the filter,
+  -- and Unyaro's "until a player planeswalks" the duration (CR 610.4), an absent
+  -- key for CR 702.26a's untap step.
+  Spec.it s "PhaseOut round-trips both ObjectRef arms and a duration" $ do
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.PhaseOut (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
-      " {\"type\":\"PhaseOut\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
+      (Effect.PhaseOut (PhaseOut.MkPhaseOut (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) Nothing))
+      " {\"type\":\"PhaseOut\",\"value\":{\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}}} "
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.PhaseOut (ObjectRef.EachMatching (Filter.HasCardType CardType.Creature)))
-      " {\"type\":\"PhaseOut\",\"value\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
-    Spec.assertBool
-      s
-      ( toJson (Effect.PhaseOut (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
-          /= toJson (Effect.Transform (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
-      )
-      "PhaseOut and Transform of the same slot encode differently"
+      (Effect.PhaseOut (PhaseOut.MkPhaseOut (ObjectRef.EachMatching (Filter.HasCardType CardType.Creature)) (Just MoveDuration.UntilAPlayerPlaneswalks)))
+      " {\"type\":\"PhaseOut\",\"value\":{\"duration\":\"UntilAPlayerPlaneswalks\",\"ref\":{\"type\":\"EachMatching\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}}} "
   -- CR 708.2. One slot and no ObjectRef, since Backslide names a target and
   -- nothing in the pool sweeps a set face down; the listed characteristics are
   -- CR 708.2a's here, so that key is absent.

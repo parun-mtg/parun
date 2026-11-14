@@ -373,6 +373,7 @@ import qualified Parun.Types.PermanentsDealDamageToPlayer as PermanentsDealDamag
 import qualified Parun.Types.PermissionLimit as PermissionLimit
 import qualified Parun.Types.PermissionPool as PermissionPool
 import qualified Parun.Types.PermissionVerb as PermissionVerb
+import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
 import qualified Parun.Types.PhaseSelector as PhaseSelector
@@ -822,7 +823,7 @@ objectRefPositions =
         ("transform", Effect.Transform (plantedRef "tr"), [plantedRef "tr"]),
         ("convert", Effect.Convert (plantedRef "cv"), [plantedRef "cv"]),
         ("meld", Effect.Meld (Meld.MkMeld (plantedRef "me") ()), [plantedRef "me"]),
-        ("phase-out", Effect.PhaseOut (plantedRef "po"), [plantedRef "po"]),
+        ("phase-out", Effect.PhaseOut (PhaseOut.MkPhaseOut (plantedRef "po") Nothing), [plantedRef "po"]),
         ("turn-face-down", Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown (plantedRef "tf") FaceDownCharacteristics.defaultValue), [plantedRef "tf"]),
         ("remove-from-combat", Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat (plantedRef "rc") Unblocking.StayBlocked), [plantedRef "rc"]),
         ("block-attacker", Effect.BlockAttacker (plantedRef "ba"), [plantedRef "ba"]),
@@ -3525,6 +3526,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.CompletedDungeon {} -> []
   Quantity.Type.DraftNotes {} -> []
   Quantity.Type.EnteredThisTurn -> []
+  Quantity.Type.PlaneswalkedTo _ -> []
   Quantity.Type.EnteredFrom _ -> []
   Quantity.Type.WasCastFrom _ -> []
   Quantity.Type.BlockersBeyond _ -> []
@@ -5342,7 +5344,7 @@ effectFilters effect = case effect of
   Effect.Convert ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Flip ref -> frame SourceHostFramed (objectRefFilters ref)
   Effect.Meld (Meld.MkMeld ref card) -> frame SourceHostFramed (objectRefFilters ref) <> overFaces cardFilters card
-  Effect.PhaseOut ref -> frame SourceHostFramed (objectRefFilters ref)
+  Effect.PhaseOut (PhaseOut.MkPhaseOut ref _duration) -> frame SourceHostFramed (objectRefFilters ref)
   Effect.AddPhases _ -> []
   Effect.EndTurn -> []
   Effect.EndCombatPhase -> []

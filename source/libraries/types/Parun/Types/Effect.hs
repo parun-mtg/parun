@@ -85,6 +85,7 @@ import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.PermanentActed as PermanentActed
+import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PlayerCounters as PlayerCounters
 import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -515,9 +516,10 @@ data Effect card ability
     -- onto the battlefield with their back faces up and combined, as one
     -- permanent (CR 713.6).
     Meld (Meld.Meld card)
-  | -- | CR 702.26b: the permanents the ObjectRef names phase out. Not a zone
-    -- change (CR 702.26d), and CR 702.26a fixes when it ends.
-    PhaseOut ObjectRef.ObjectRef
+  | -- | CR 702.26b: the permanents the payload names phase out, until CR
+    -- 702.26a's untap step or CR 610.4's stated event. Not a zone change (CR
+    -- 702.26d).
+    PhaseOut PhaseOut.PhaseOut
   | -- | CR 708.2: turn the named permanents face down with the copiable values
     -- the effect lists for them, CR 708.2a's 2/2 supplying them where it lists
     -- none.
