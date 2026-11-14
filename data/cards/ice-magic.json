@@ -1,0 +1,140 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Tiered"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "modeCosts": {
+        "0": {
+          "mana": []
+        },
+        "1": {
+          "mana": [
+            {
+              "type": "Generic",
+              "value": 2
+            }
+          ]
+        },
+        "2": {
+          "mana": [
+            {
+              "type": "Generic",
+              "value": 5
+            },
+            {
+              "type": "OfType",
+              "value": {
+                "type": "Colored",
+                "value": "Blue"
+              }
+            }
+          ]
+        }
+      },
+      "name": "Ice Magic",
+      "oracleText": "Tiered (Choose one additional cost.)\n• Blizzard — {0} — Return target creature to its owner's hand.\n• Blizzara — {2} — Target creature's owner puts it on their choice of the top or bottom of their library.\n• Blizzaga — {5}{U} — Target creature's owner shuffles it into their library.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "blizzard"
+                      },
+                      "zone": "Hand"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "blizzard": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "MoveToZone",
+                    "value": {
+                      "placement": {
+                        "type": "OwnerChooses"
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "blizzara"
+                      },
+                      "zone": "Library"
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "blizzara": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          },
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "ShuffleIntoLibrary",
+                    "value": {
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "blizzaga"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "blizzaga": {
+                "pool": {
+                  "type": "Creatures"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}
