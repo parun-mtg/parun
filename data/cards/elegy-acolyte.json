@@ -217,8 +217,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Human",
-          "Cleric"
+          "Cleric",
+          "Human"
         ],
         "types": [
           "Creature"
