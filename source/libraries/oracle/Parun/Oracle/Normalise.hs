@@ -80,8 +80,9 @@ withoutReminders = Text.pack . go (0 :: Int) . Text.unpack
 
 -- | Oracle text with the flavor word heading each line or mode dropped (CR
 -- 207.2d): what precedes a line's first " \8212 ", past a mode's bullet (The
--- Vision), when that is a phrase (it opens with a letter and holds no sentence
--- or reminder punctuation) that is neither an ability word (CR 207.2c), which
+-- Vision), when that is a phrase (it opens with a letter or digit and holds no
+-- sentence or reminder punctuation, a thousands separator aside: Jumbo
+-- Cactuar's "10,000 Needles") that is neither an ability word (CR 207.2c), which
 -- the renderer prints, nor a chapter symbol's numeral (CR 715.2). Only the stamped side goes through this, so a heading the
 -- renderer prints that is not an ability word fails the check until it is
 -- exempted here.
@@ -97,9 +98,12 @@ withoutFlavorWords = Text.intercalate (Text.pack "\n") . fmap unheaded . Text.sp
     bullet = Text.pack "\8226 "
     dash = Text.pack " \8212 "
     flavorWord heading =
-      maybe False (Char.isAlpha . fst) (Text.uncons heading)
-        && not (Text.any (`elem` ".,:;(\"{") heading)
+      maybe False (Char.isAlphaNum . fst) (Text.uncons heading)
+        && not (Text.any (`elem` ".,:;(\"{") (withoutThousandsSeparators heading))
         && not (Text.all (`elem` "IVX") heading)
         && Set.notMember (key heading) abilityWords
+    withoutThousandsSeparators heading =
+      let cs = Text.unpack heading
+       in Text.pack [c | (before, c, after) <- List.zip3 (' ' : cs) cs (drop 1 cs <> " "), not (c == ',' && Char.isDigit before && Char.isDigit after)]
     key = Text.toLower . Text.filter Char.isAlphaNum
     abilityWords = Set.fromList (fmap (key . Text.pack . show) [minBound .. maxBound :: AbilityWord.AbilityWord])
