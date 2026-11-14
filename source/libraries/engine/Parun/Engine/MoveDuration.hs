@@ -117,10 +117,9 @@ endingOf duration source controller = case duration of
 -- events first. Sources with no logged departure return theirs together, after
 -- the rest. data/scenarios/simultaneous-moves' Banisher Priest and Palace
 -- Jailer boards prove one register's group, and its concession board a
--- Jailer's and a Priest's prisoner returning as one. Parun.LibraryOrderSpec's
--- "CR 610.3d a prisoner whose source left before a crowning returns before the
--- crowning's" proves the order across groups, at this sweep rather than in a
--- game (gap #4583).
+-- Jailer's and a Priest's prisoner returning as one, and its Heart-Shaped Herb
+-- board the order across groups: a Priest leaving, then a crowning, with no
+-- settle between.
 --
 -- The entry goes whether or not the move happened. A cancelled move (CR 614.6) or
 -- an id that is no longer in the zone it was moved to has had its duration end all
