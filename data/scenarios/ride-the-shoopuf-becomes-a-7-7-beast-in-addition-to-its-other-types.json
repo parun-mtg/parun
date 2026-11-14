@@ -1,0 +1,331 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ride the Shoopuf",
+            "label": "shoopuf"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Forest",
+            "label": "f5"
+          },
+          {
+            "card": "Forest",
+            "label": "f6"
+          },
+          {
+            "card": "Forest",
+            "label": "f7"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Forest",
+            "label": "land1"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 205.1b, 611.2c, 613.4b, 613.4c: Ride the Shoopuf's landfall puts a +1/+1 counter on a creature its controller controls, and its activation makes it a 7/7 Beast creature that stays an enchantment and outlives the turn",
+  "note": "The activation leaves the Shoopuf an Enchantment Creature (in addition, not instead) and a Beast at 7/7, still so on turn 3, so the effect does not end with the turn. Turn 3's landfall can then target the Shoopuf itself, and its counter applies over the set 7/7 (CR 613.4c after 613.4b) for 8/8.",
+  "timeline": [
+    {
+      "do": {
+        "PlayLand": "$land1"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$shoopuf",
+          "types": [
+            "Enchantment"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4",
+            "$f5",
+            "$f6",
+            "$f7",
+            null
+          ],
+          "object": "$shoopuf"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$shoopuf",
+          "types": [
+            "Creature",
+            "Enchantment"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$shoopuf",
+          "subtypes": [
+            "Beast"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$shoopuf",
+          "power": 7,
+          "toughness": 7
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$shoopuf",
+          "power": 7,
+          "toughness": 7
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$shoopuf",
+          "types": [
+            "Creature",
+            "Enchantment"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "PlayLand": "Mountain"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$shoopuf"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$shoopuf"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$shoopuf",
+          "power": 8,
+          "toughness": 8
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}

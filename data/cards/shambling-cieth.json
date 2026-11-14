@@ -1,0 +1,132 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Shambling Cie'th",
+      "oracleText": "This creature enters tapped.\nWhenever you cast a noncreature spell, you may pay {B}. If you do, return this card from your graveyard to your hand.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      }
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "origin": "Graveyard",
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          },
+                          "zone": "Hand"
+                        }
+                      }
+                    ],
+                    "payGate": {
+                      "branch": "IfPaid",
+                      "cost": {
+                        "mana": [
+                          {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Black"
+                            }
+                          }
+                        ]
+                      },
+                      "payer": {
+                        "type": "InSlot",
+                        "value": "you"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Horror",
+          "Mutant"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
