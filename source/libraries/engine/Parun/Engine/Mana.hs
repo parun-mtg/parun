@@ -38,6 +38,7 @@ import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.Replacement as Replacement
+import qualified Parun.Engine.Resolve.Slots as Slots
 import qualified Parun.Engine.SourceContext as SourceContext
 import qualified Parun.Engine.Subtype as Subtype.Engine
 import qualified Parun.Extra.Integer as Integer
@@ -285,9 +286,11 @@ noActivations = Activations.MkActivations {Activations.times = 0, Activations.cl
 -- types mixed, and none where nothing is noted.
 --
 -- CR 106.7's "could produce" asks manaTypesOf of every permanent the filter
--- matches, from the source controller's seat, and offers the types its mana
--- filter admits. `visited` is the sources whose answer is being worked out:
--- one of them asked again contributes nothing, which is the rule's own
+-- matches, from the source controller's seat with `bound`'s slots framed, and
+-- offers the types its mana filter admits: Squandered Resources' filter names
+-- the land its cost sacrificed, still on `gs` (CR 608.2h). `visited` is the
+-- sources whose answer is being worked out: one of them asked again
+-- contributes nothing, which is the rule's own
 -- example -- two Exotic Orchards and nothing else produce no mana, and a
 -- Forest beside either makes both produce {G}.
 --
@@ -332,7 +335,7 @@ producedVisiting bound visited oid gs poolBoard production = case production of
   ManaProduction.Noted -> Settles (foldMap Foldable.toList (Map.lookup oid (GameState.notedMana gs)))
   ManaProduction.CouldProduce could ->
     let visiting = Set.insert oid visited
-        context = Projection.sourceContext gs (Projection.controllerOf oid gs) oid
+        context = Projection.framedBySlots gs bound (Projection.sourceContext gs (Projection.controllerOf oid gs) oid)
         asked other = Set.notMember other visiting && maybe False (\view -> Filter.matches context view (CouldProduce.among could)) (Projection.fullView gs other)
         types = Set.filter (ManaFilter.matchesType (CouldProduce.types could)) (Set.fromList (concatMap (\other -> manaTypesVisiting visiting other gs) (filter asked (Set.toList (GameState.battlefield gs)))))
      in among (Set.toList types)
@@ -376,6 +379,14 @@ data Produced
   = Settles [ManaType]
   | Offers ColorSpread.ColorSpread (NonEmpty.NonEmpty ManaType)
   deriving (Eq, Show)
+
+-- Whether two answers ask the same choice, so their runs pair up one to one:
+-- any two settled runs, or offers of one spread among the same types.
+sameShape :: Produced -> Produced -> Bool
+sameShape left right = case (left, right) of
+  (Settles _, Settles _) -> True
+  (Offers leftSpread leftTypes, Offers rightSpread rightTypes) -> leftSpread == rightSpread && leftTypes == rightTypes
+  _ -> False
 
 -- CR 105.4: every way `howMany` units of an offer can be chosen. One
 -- colour repeats a single pick; any combination is each multiset of picks, the
@@ -695,7 +706,8 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
       -- CR 601.2h / 608.2h on the supply side: a yield reading the permanent
       -- its cost sacrifices or exiles -- Priest of Yawgmoth's "equal to the
       -- sacrificed artifact's mana value", Food Chain's "1 plus the exiled
-      -- creature's mana value" -- is one supply per yield some candidate gives,
+      -- creature's mana value", Squandered Resources' "any type the sacrificed
+      -- land could produce" -- is one supply per yield some candidate gives,
       -- each claiming only the candidates that give it, so the walk can count
       -- the artifact a cast actually needs and cannot count it twice. Offered,
       -- it reads none, which would supply nothing at all. Parun.ManaSpec's
@@ -708,7 +720,8 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
       -- is supplied as the offer prices it (#6152).
       perCandidate option =
         let (activations, share, manaCost) = measured option
-            readsSlot slot = any (\(clause, _) -> any (Set.member slot . Quantity.objectSlots . ManaAddition.count) (Maybe.mapMaybe ManaAbility.manaProduced (Foldable.toList (Clause.effects clause)))) (ManaOption.steps option)
+            addsReading slot addition = Set.member slot (Quantity.objectSlots (ManaAddition.count addition)) || Map.member slot (Slots.productionSlots (ManaAddition.production addition))
+            readsSlot slot = any (\(clause, _) -> any (addsReading slot) (Maybe.mapMaybe ManaAbility.manaProduced (Foldable.toList (Clause.effects clause)))) (ManaOption.steps option)
             -- The slot each one-object removal of the cost binds its object
             -- under (Parun.Engine.Cost.payComponent's arms).
             removalSlot component = case component of
@@ -1075,7 +1088,8 @@ pricedOptionsVisiting visited rewritesOf paid poolBoard pcs oid gs =
       -- The PRICED half reads the same quantity with the payment's slots bound,
       -- and an offer reading one of them reads 0.
       countContext = Projection.sourceContext gs (Projection.controllerOf oid gs) oid
-      pricedContext = (Projection.framedByBindings gs paid countContext) {Filter.boundAmounts = Map.mapMaybe Binding.Type.amount paid}
+      pricedContext = (Projection.framedBySlots gs pricedSlots countContext) {Filter.boundAmounts = Map.mapMaybe Binding.Type.amount paid}
+      pricedSlots = Binding.recipientsBySlot (Binding.targetsOf paid) paid
       howManyIn context addition = max 0 (Integer.toIntSaturating (Maybe.fromMaybe 0 (Quantity.evaluate (Projection.fullView gs) context gs oid (ManaAddition.count addition))))
       -- "Any one color" is one CR 105.4 choice per INSTRUCTION, so the count
       -- replicates the unit AFTER the type is picked: two of any one color offer five options
@@ -1150,18 +1164,23 @@ pricedOptionsVisiting visited rewritesOf paid poolBoard pcs oid gs =
       -- offer could not know (Wizard's Rockets' X, CR 601.2b), no offered
       -- choice is the same as a priced one, so every priced choice stands
       -- beside every offered one and Parun.Engine.Cost.tapForManaWith asks
-      -- among them once the cost is paid.
+      -- among them once the cost is paid. So is a production whose choices the
+      -- slots change: Squandered Resources offers no mana and is priced at
+      -- every type the sacrificed land could produce (CR 106.7).
       additionRuns reader addition =
         let offeredCount = howManyIn countContext addition
             pricedCount = howManyIn pricedContext addition
-            producedOn board = producedVisiting Map.empty visited oid gs board (ManaAddition.production addition)
-            runsOn board howMany = case producedOn board of
+            producedWith slots board = producedVisiting slots visited oid gs board (ManaAddition.production addition)
+            offeredProduced = producedWith Map.empty gs
+            pricedProduced = producedWith pricedSlots poolBoard
+            runsOf answer howMany = case answer of
               Settles run -> [concat (replicate howMany (fmap (unitFor reader addition) run))]
               Offers spread types -> fmap (fmap (unitFor reader addition)) (choicesOf howMany spread types)
-            offered = runsOn gs offeredCount
-            priced = runsOn poolBoard pricedCount
-         in case producedOn gs of
+            offered = runsOf offeredProduced offeredCount
+            priced = runsOf pricedProduced pricedCount
+         in case offeredProduced of
               Offers ColorSpread.AnyCombination _ | offeredCount /= pricedCount -> [(o, p) | o <- offered, p <- priced]
+              _ | not (sameShape offeredProduced pricedProduced) -> [(o, p) | o <- offered, p <- priced]
               _ -> zip offered priced
    in concatMap expand (manaRoutesOfGiven pcs oid gs)
 
