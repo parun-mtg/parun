@@ -23,8 +23,10 @@
                       {
                         "type": "ExchangeLifeTotals",
                         "value": {
-                          "type": "WithController",
-                          "value": "target"
+                          "sides": {
+                            "type": "WithController",
+                            "value": "target"
+                          }
                         }
                       }
                     ]

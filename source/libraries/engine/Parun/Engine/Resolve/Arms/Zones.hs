@@ -112,6 +112,7 @@ import qualified Parun.Types.GuessAnswer as GuessAnswer
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.LifeExchange as LifeExchange
 import qualified Parun.Types.LifeLoss as LifeLoss
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.LoopMembers as LoopMembers
@@ -1845,8 +1846,13 @@ gainLife settle resolving source controller legal (PlayerQuantity.MkPlayerQuanti
 --
 -- CR 810.9e needs nothing: teammates sharing a total (Game.lifeSharers) hold
 -- the same one, so both deltas are zero and the exchange moves nothing.
-exchangeLifeTotals :: Game () -> PlayerId -> Map.Map SlotName (Set Recipient) -> ExchangeSides.ExchangeSides -> Game ()
-exchangeLifeTotals settle controller legal sides = do
+--
+-- The tally (Mister Negative) is the controller's SETTLED loss, CR 614.1's
+-- replacements included, and 0 where the exchange did not happen or did not
+-- lower the controller's total. Bound even at 0, LoseLife's tally's posture.
+-- The two mister-negative-exchanges scenarios are the proof.
+exchangeLifeTotals :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> LifeExchange.LifeExchange -> Game ()
+exchangeLifeTotals settle resolving source controller legal (LifeExchange.MkLifeExchange sides mTally) = do
   gs <- State.get
   let twoSides = case sides of
         ExchangeSides.WithController slot -> case legalOne slot legal of
@@ -1872,14 +1878,19 @@ exchangeLifeTotals settle controller legal sides = do
       -- CR 701.12a's "the entire exchange", which either happens or does not --
       -- so the gain and the loss it decomposes into share one
       -- Parun.Types.EventGroup rather than reading as two events in sequence.
-      Monad.unless (barred this (thatLife - thisLife) || barred that (thisLife - thatLife))
-        . Event.simultaneously
-        $ do
-          Common.changeLifeByDelta settle this (thatLife - thisLife)
-          Common.changeLifeByDelta settle that (thisLife - thatLife)
+      lost <-
+        if barred this (thatLife - thisLife) || barred that (thisLife - thatLife)
+          then pure 0
+          else Event.simultaneously $ do
+            thisChange <- Common.changeLifeByDelta settle this (thatLife - thisLife)
+            thatChange <- Common.changeLifeByDelta settle that (thisLife - thatLife)
+            pure (sum [negate change | (pid, change) <- [(this, thisChange), (that, thatChange)], pid == controller, change < 0])
+      tallied lost
     -- CR 701.12a: if the entire exchange can't be completed, no part of it
     -- occurs.
-    Nothing -> pure ()
+    Nothing -> tallied 0
+  where
+    tallied lost = Monad.forM_ mTally $ \slot -> State.modify' (Common.bindAmountSlot resolving source slot (Integer.toNaturalSaturating lost))
 
 -- CR 701.12g: both values are read off the one pre-exchange `gs` before
 -- either is written, so each reaches the other's PREVIOUS value. A life total
@@ -1906,7 +1917,7 @@ exchangeValues settle resolving source controller legal (ExchangeValues.MkExchan
                 | new > life = PlayerEffect.prohibitsGainingLife pid gs
                 | new < life = PlayerEffect.prohibitsLosingLife pid gs
                 | otherwise = False
-          pure (life, \new -> if barred new then Nothing else Just (Common.changeLifeByDelta settle pid (new - life)))
+          pure (life, \new -> if barred new then Nothing else Just (Monad.void (Common.changeLifeByDelta settle pid (new - life))))
         ExchangedValue.Power ref -> creature ref Projection.powerOf (\new -> SetBasePowerToughness.MkSetBasePowerToughness (Just new) Nothing)
         ExchangedValue.Toughness ref -> creature ref Projection.toughnessOf (SetBasePowerToughness.MkSetBasePowerToughness Nothing . Just)
       creature ref characteristic setting = do

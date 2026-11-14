@@ -1060,6 +1060,8 @@ library codec
     Parun.Codec.LifeChangeSpec
     Parun.Codec.LifeDirection
     Parun.Codec.LifeDirectionSpec
+    Parun.Codec.LifeExchange
+    Parun.Codec.LifeExchangeSpec
     Parun.Codec.LifeGainR
     Parun.Codec.LifeGainRewrite
     Parun.Codec.LifeGainRewriteSpec
@@ -3223,6 +3225,7 @@ library types
     Parun.Types.LibraryPosition
     Parun.Types.LifeChange
     Parun.Types.LifeDirection
+    Parun.Types.LifeExchange
     Parun.Types.LifeGainR
     Parun.Types.LifeGainRewrite
     Parun.Types.LifeIs

@@ -284,6 +284,7 @@ import qualified Parun.Types.LeavesZoneTrigger as LeavesZoneTrigger
 import qualified Parun.Types.LeavingPermanent as LeavingPermanent
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LifeDirection as LifeDirection
+import qualified Parun.Types.LifeExchange as LifeExchange
 import qualified Parun.Types.LifeGainR as LifeGainR
 import qualified Parun.Types.LifeGainRewrite as LifeGainRewrite
 import qualified Parun.Types.LifeLoss as LifeLoss
@@ -1056,7 +1057,7 @@ effectChildren c effect = case effect of
   Effect.Discard subject -> fmap Effect.Discard (discardChildren c subject)
   Effect.LoseLife (LifeLoss.MkLifeLoss who quantity cause tally) -> fmap Effect.LoseLife (LifeLoss.MkLifeLoss <$> onPlayer c who <*> onQuantity c quantity <*> pure cause <*> traverse (onSlot c) tally)
   Effect.GainLife x -> fmap Effect.GainLife (playerQuantityChildren c x)
-  Effect.ExchangeLifeTotals sides -> fmap Effect.ExchangeLifeTotals (exchangeSidesChildren c sides)
+  Effect.ExchangeLifeTotals (LifeExchange.MkLifeExchange sides tally) -> fmap Effect.ExchangeLifeTotals (LifeExchange.MkLifeExchange <$> exchangeSidesChildren c sides <*> traverse (onSlot c) tally)
   Effect.ExchangeValues (ExchangeValues.MkExchangeValues one other duration) ->
     fmap Effect.ExchangeValues (ExchangeValues.MkExchangeValues <$> exchangedValueChildren c one <*> exchangedValueChildren c other <*> onDuration c duration)
   Effect.ExchangeZones (ExchangeZones.MkExchangeZones who zones) -> fmap (\renamed -> Effect.ExchangeZones (ExchangeZones.MkExchangeZones renamed zones)) (onPlayer c who)

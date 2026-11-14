@@ -60,7 +60,6 @@ import qualified Parun.Codec.Earthbend as Earthbend
 import qualified Parun.Codec.ExchangeBlocks as ExchangeBlocks
 import qualified Parun.Codec.ExchangeCardZones as ExchangeCardZones
 import qualified Parun.Codec.ExchangeOwnership as ExchangeOwnership
-import qualified Parun.Codec.ExchangeSides as ExchangeSides
 import qualified Parun.Codec.ExchangeValues as ExchangeValues
 import qualified Parun.Codec.ExchangeZones as ExchangeZones
 import qualified Parun.Codec.ExileHaunting as ExileHaunting
@@ -78,6 +77,7 @@ import qualified Parun.Codec.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Codec.Guess as Guess
 import qualified Parun.Codec.InitiativeTarget as InitiativeTarget
 import qualified Parun.Codec.LaterPayment as LaterPayment
+import qualified Parun.Codec.LifeExchange as LifeExchange
 import qualified Parun.Codec.LifeLoss as LifeLoss
 import qualified Parun.Codec.LookAt as LookAt
 import qualified Parun.Codec.MakeForetold as MakeForetold
@@ -226,7 +226,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Discard" Discard.codec Effect.Discard (\x -> case x of Effect.Discard y -> Just y; _ -> Nothing),
           Arm.payload "LoseLife" LifeLoss.codec Effect.LoseLife (\x -> case x of Effect.LoseLife y -> Just y; _ -> Nothing),
           Arm.payload "GainLife" PlayerQuantity.codec Effect.GainLife (\x -> case x of Effect.GainLife y -> Just y; _ -> Nothing),
-          Arm.payload "ExchangeLifeTotals" ExchangeSides.codec Effect.ExchangeLifeTotals (\x -> case x of Effect.ExchangeLifeTotals y -> Just y; _ -> Nothing),
+          Arm.payload "ExchangeLifeTotals" LifeExchange.codec Effect.ExchangeLifeTotals (\x -> case x of Effect.ExchangeLifeTotals y -> Just y; _ -> Nothing),
           Arm.payload "ExchangeValues" ExchangeValues.codec Effect.ExchangeValues (\x -> case x of Effect.ExchangeValues y -> Just y; _ -> Nothing),
           Arm.payload "ExchangeZones" ExchangeZones.codec Effect.ExchangeZones (\x -> case x of Effect.ExchangeZones y -> Just y; _ -> Nothing),
           Arm.payload "ExchangeCardZones" ExchangeCardZones.codec Effect.ExchangeCardZones (\x -> case x of Effect.ExchangeCardZones y -> Just y; _ -> Nothing),

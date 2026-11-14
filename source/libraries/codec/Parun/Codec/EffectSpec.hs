@@ -137,6 +137,7 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LaterPayment as LaterPayment
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.LifeExchange as LifeExchange
 import qualified Parun.Types.LifeLoss as LifeLoss
 import qualified Parun.Types.LifeLossCause as LifeLossCause
 import qualified Parun.Types.LookAt as LookAt
@@ -859,15 +860,15 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ExchangeLifeTotals (ExchangeSides.WithController (SlotName.MkSlotName (Text.pack "target"))))
-      " {\"type\":\"ExchangeLifeTotals\",\"value\":{\"type\":\"WithController\",\"value\":\"target\"}} "
+      (Effect.ExchangeLifeTotals (LifeExchange.MkLifeExchange (ExchangeSides.WithController (SlotName.MkSlotName (Text.pack "target"))) Nothing))
+      " {\"type\":\"ExchangeLifeTotals\",\"value\":{\"sides\":{\"type\":\"WithController\",\"value\":\"target\"}}} "
   Spec.it s "ExchangeLifeTotals between two targets" $
     Common.assertJsonCodec
       s
       toJson
       fromJson
-      (Effect.ExchangeLifeTotals (ExchangeSides.BetweenTargets (SlotName.MkSlotName (Text.pack "players"))))
-      " {\"type\":\"ExchangeLifeTotals\",\"value\":{\"type\":\"BetweenTargets\",\"value\":\"players\"}} "
+      (Effect.ExchangeLifeTotals (LifeExchange.MkLifeExchange (ExchangeSides.BetweenTargets (SlotName.MkSlotName (Text.pack "players"))) Nothing))
+      " {\"type\":\"ExchangeLifeTotals\",\"value\":{\"sides\":{\"type\":\"BetweenTargets\",\"value\":\"players\"}}} "
   Spec.it s "ExchangeValues" $
     Common.assertJsonCodec
       s

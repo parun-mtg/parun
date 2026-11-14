@@ -4,7 +4,7 @@ import qualified Parun.Types.SlotName as SlotName
 
 -- | Which two players an exchange runs between (CR 701.12a: an exchange has
 -- exactly two sides, and CR 701.12c is the life-total one). Read by
--- Effect.ExchangeLifeTotals.
+-- Parun.Types.LifeExchange.
 --
 -- Its own sum rather than a pair of Parun.Types.PlayerRefs: a PlayerRef may name
 -- every player at once, which an exchange has nowhere to put, and the two sides

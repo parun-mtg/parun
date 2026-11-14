@@ -493,6 +493,7 @@ import qualified Parun.Codec.LibraryPlacementSpec
 import qualified Parun.Codec.LibraryPositionSpec
 import qualified Parun.Codec.LifeChangeSpec
 import qualified Parun.Codec.LifeDirectionSpec
+import qualified Parun.Codec.LifeExchangeSpec
 import qualified Parun.Codec.LifeGainRSpec
 import qualified Parun.Codec.LifeGainRewriteSpec
 import qualified Parun.Codec.LifeIsSpec
@@ -1568,6 +1569,7 @@ spec s reference corpus = do
   Parun.Codec.LifeLossRewriteSpec.spec s
   Parun.Codec.LifeLossRSpec.spec s
   Parun.Codec.CounterLossRSpec.spec s
+  Parun.Codec.LifeExchangeSpec.spec s
   Parun.Codec.LifeLossSpec.spec s
   Parun.Codec.LimitUnlessSpec.spec s
   Parun.Codec.LoggedEventSpec.spec s
