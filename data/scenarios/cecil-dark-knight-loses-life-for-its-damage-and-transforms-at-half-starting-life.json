@@ -1,0 +1,397 @@
+{
+  "description": "CR 120.3a, 603.2, 608.2c, 119.3, 103.4, 701.26b, 701.27a, 701.27c, 702.15b, 508.1, 702.12b: Cecil, Dark Knight's damage makes you lose that much life and, once that leaves you at or below half your starting life, untaps and transforms it; Cecil, Redeemed Paladin attacking gives other attacking creatures, not itself or a creature at home, indestructible",
+  "note": "alice starts at 14 of 20. Turn 1: Cecil deals bob 2, alice drops to 12, above half, so Cecil stays tapped and front face up. Turn 4: 2 more puts her at exactly 10, half her starting 20, so Cecil untaps and becomes the 4/4 Paladin (rules out a strict less-than). Turn 7: the Paladin and Grizzly Bears attack while Hill Giant stays home; only the Bears gain indestructible, and alice gains 4 from lifelink and loses nothing, the Darkness trigger being gone with the front face.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "life": 14,
+        "battlefield": [
+          {
+            "card": "Cecil, Dark Knight",
+            "label": "cecil",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "life": 19,
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$cecil"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $cecil"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 17
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 12
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$cecil",
+          "names": [
+            "Cecil, Dark Knight"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$cecil",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "turn": 4,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$cecil"
+        ]
+      }
+    },
+    {
+      "turn": 4,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      }
+    },
+    {
+      "turn": 4,
+      "step": "CombatDamage",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$cecil",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "turn": 4,
+      "step": "CombatDamage",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 4,
+      "step": "CombatDamage",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 10
+        }
+      }
+    },
+    {
+      "turn": 4,
+      "step": "CombatDamage",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$cecil",
+          "names": [
+            "Cecil, Redeemed Paladin"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 4,
+      "step": "CombatDamage",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$cecil",
+          "tapped": false
+        }
+      }
+    },
+    {
+      "turn": 4,
+      "step": "CombatDamage",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$cecil",
+          "power": 4,
+          "toughness": 4
+        }
+      }
+    },
+    {
+      "turn": 7,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$cecil",
+          "$bears"
+        ]
+      }
+    },
+    {
+      "turn": 7,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      }
+    },
+    {
+      "turn": 7,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      }
+    },
+    {
+      "turn": 7,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $cecil"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 7,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 7,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$bears",
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 7,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$cecil",
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 7,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$giant",
+          "keyword": {
+            "type": "Indestructible"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 7,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 14
+        }
+      }
+    },
+    {
+      "turn": 7,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 9
+        }
+      }
+    },
+    {
+      "turn": 7,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "carol",
+          "life": 20
+        }
+      }
+    },
+    {
+      "turn": 7,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    }
+  ]
+}
