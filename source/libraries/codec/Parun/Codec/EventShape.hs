@@ -21,7 +21,8 @@ codec =
       Arm.payload "SpellCast" CastWindow.codec EventShape.SpellCast (\x -> case x of EventShape.SpellCast y -> Just y; _ -> Nothing),
       Arm.nullary "AttackerDeclared" EventShape.AttackerDeclared,
       Arm.nullary "CountersPut" EventShape.CountersPut,
-      Arm.nullary "Sacrificed" EventShape.Sacrificed
+      Arm.nullary "Sacrificed" EventShape.Sacrificed,
+      Arm.nullary "DealtCombatDamageToPlayer" EventShape.DealtCombatDamageToPlayer
     ]
 
 tagOf :: EventShape.EventShape -> String
@@ -33,3 +34,4 @@ tagOf x = case x of
   EventShape.AttackerDeclared -> "AttackerDeclared"
   EventShape.CountersPut -> "CountersPut"
   EventShape.Sacrificed -> "Sacrificed"
+  EventShape.DealtCombatDamageToPlayer -> "DealtCombatDamageToPlayer"

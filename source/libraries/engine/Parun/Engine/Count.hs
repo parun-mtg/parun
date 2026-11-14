@@ -10,6 +10,7 @@
 module Parun.Engine.Count where
 
 import qualified Control.Monad as Monad
+import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
@@ -172,7 +173,8 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
               thisTurn = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
               isEvaluatedCast event = Maybe.isJust (Filter.evaluated context) && fmap SpellWasCast.spell (Game.castOf event) == Filter.evaluated context
               views = Maybe.mapMaybe (snapshotView viewOf gs shape) logged
-              kept = fmap ((,) Nothing) (Maybe.mapMaybe (keep predicate context . Just) views)
+              matched = Maybe.mapMaybe (keep predicate context . Just) views
+              kept = fmap ((,) Nothing) (if oncePerObject shape then ListUtils.nubOrdOn Filter.identity matched else matched)
            in pure (aggregate quantityOf aggregation kept)
         -- CR 102.1: the players themselves. Candidates come from the same
         -- playersFor the zone arm indexes by, so CR 800.4a's departed seat is not
@@ -813,7 +815,22 @@ snapshotView viewOf gs shape event = case event of
     EventShape.AttackerDeclared -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
-  GameEvent.DamageDealt _ -> Nothing
+    EventShape.DealtCombatDamageToPlayer -> Nothing
+  -- CR 510.2 / 608.2i: the source as it dealt the damage, off the event's
+  -- deal-time riders, so a creature that has since died or changed hands still
+  -- counts under the player who controlled it then (Excess's ruling,
+  -- 2022-04-29). damagedPlayer drops an event of 0 (CR 120.8).
+  GameEvent.DamageDealt dealt -> case shape of
+    EventShape.DealtCombatDamageToPlayer
+      | DamageEvent.kind dealt == DamageKind.Combat && Maybe.isJust (Game.damagedPlayer event) -> Just (Filter.dealtByView dealt)
+      | otherwise -> Nothing
+    EventShape.MovedBetween {} -> Nothing
+    EventShape.MovedFrom {} -> Nothing
+    EventShape.CardArrivedIn {} -> Nothing
+    EventShape.SpellCast _ -> Nothing
+    EventShape.AttackerDeclared -> Nothing
+    EventShape.CountersPut -> Nothing
+    EventShape.Sacrificed -> Nothing
   -- CR 615.13's record names two ids, a recipient and an amount, and snapshots no
   -- characteristics, so there is nothing for a Filter to look at.
   GameEvent.DamagePrevented {} -> Nothing
@@ -851,6 +868,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.AttackerDeclared -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
+    EventShape.DealtCombatDamageToPlayer -> Nothing
     where
       -- CR 113.6 / 604.2: on the stack. A regression fence: nothing in
       -- data/cards/ asks a cast whether it had an activated ability.
@@ -892,6 +910,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.SpellCast _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
+    EventShape.DealtCombatDamageToPlayer -> Nothing
   GameEvent.BecameBlocking {} -> Nothing
   GameEvent.BlocksDeclared {} -> Nothing
   GameEvent.AttackerBlocked {} -> Nothing
@@ -927,6 +946,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared -> Nothing
     EventShape.CountersPut -> Nothing
+    EventShape.DealtCombatDamageToPlayer -> Nothing
   GameEvent.AbilityTriggered {} -> Nothing
   GameEvent.AbilityActivated _ -> Nothing
   GameEvent.LifeLost {} -> Nothing
@@ -956,6 +976,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.SpellCast _ -> Nothing
     EventShape.AttackerDeclared -> Nothing
     EventShape.Sacrificed -> Nothing
+    EventShape.DealtCombatDamageToPlayer -> Nothing
   -- CR 122.1's removal names an object by id and snapshots no characteristics,
   -- and no EventShape names it.
   GameEvent.CountersRemoved {} -> Nothing
@@ -1043,6 +1064,21 @@ snapshotView viewOf gs shape event = case event of
     EventShape.AttackerDeclared -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
+    EventShape.DealtCombatDamageToPlayer -> Nothing
+
+-- Does a fold over this shape count each object once, however many of its
+-- events matched? CR 510.2's double striker connects twice and is one creature
+-- (Excess's "for each creature"); every other shape's unit is the event.
+oncePerObject :: EventShape.EventShape -> Bool
+oncePerObject shape = case shape of
+  EventShape.DealtCombatDamageToPlayer -> True
+  EventShape.MovedBetween {} -> False
+  EventShape.MovedFrom {} -> False
+  EventShape.CardArrivedIn {} -> False
+  EventShape.SpellCast _ -> False
+  EventShape.AttackerDeclared -> False
+  EventShape.CountersPut -> False
+  EventShape.Sacrificed -> False
 
 -- CR 110.2 / 608.2i: an arrival under the controller it entered under, so
 -- "entered the battlefield under your control this turn" still counts one
