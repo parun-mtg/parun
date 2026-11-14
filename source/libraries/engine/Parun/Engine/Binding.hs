@@ -894,6 +894,19 @@ waterbendCost = SlotName.MkSlotName (Text.pack "thatWaterbendCost")
 blightCost :: SlotName
 blightCost = SlotName.MkSlotName (Text.pack "thatBlightCost")
 
+-- CR 118.9 / 601.2b: the reserved slot under which Parun.Engine.Cast binds,
+-- as an amount, the index of the PRINTED alternative cost a spell was cast for
+-- (CandidateCost.printedAlternative) -- what "if the {1}{B} cost was paid" asks
+-- after through Quantity.WasBound (Baleful Mastery). Unbound for a spell cast
+-- for any other cost, a granted alternative or "without paying its mana cost"
+-- included. Copied with the rest of the bindings by a copy of the spell (CR
+-- 707.10).
+--
+-- Not a target (CR 115.10a), so the same CR 608.2b posture and the same "no
+-- card's targetSlots may name it" sweep as the slots above.
+printedAlternativeCost :: SlotName
+printedAlternativeCost = SlotName.MkSlotName (Text.pack "thatAlternativeCost")
+
 -- CR 118.1 / 601.2h: the reserved slot under which a
 -- CostComponent.RemoveCounters payment binds HOW MANY counters it took
 -- off -- Ooze Flux's "the number of +1\/+1 counters removed this way", which

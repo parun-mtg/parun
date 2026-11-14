@@ -606,8 +606,14 @@ candidateCostsGiven permitted pid name oid gs =
               -- cost") is read off `spell` too, CR 113.6d's standing; the
               -- projection has already applied any wipe to it. The scenario
               -- cr-118-9-the-kavu-mine-security-conjured-is-cast-for-0 proves it.
+              --
+              -- A printed one is tagged with its index (CR 601.2b), so the cast
+              -- records which printed cost was paid; a granted one is not.
               alternatives =
-                fmap (withAdditional . AlternativeCost.cost) (filter available (Face.alternativeCosts face <> PC.grantedAlternativeCosts spell))
+                [ (untagged (withAdditional (AlternativeCost.cost alternative))) {CandidateCost.printedAlternative = index}
+                | (index, alternative) <- zip (fmap Just [0 ..]) (Face.alternativeCosts face) <> fmap ((,) Nothing) (PC.grantedAlternativeCosts spell),
+                  available alternative
+                ]
               -- CR 702.103a: bestow, offered from EVERY zone the printed cost is
               -- -- "a static ability that functions in any zone from which you
               -- could play the card it's on" -- so it joins `ordinary` below
@@ -746,6 +752,7 @@ candidateCostsGiven permitted pid name oid gs =
                         (withAdditional (Emerge.cost emerge) {Cost.components = Cost.components (Emerge.cost emerge) <> [CostComponent.Sacrifice (Sacrifice.MkSacrifice (ObjectCount.Exactly (CostAmount.Fixed 1)) (Filter.Type.IsObject vid))]})
                         [ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]]
                         False
+                        Nothing
                         Nothing
                  in concatMap
                       (\emerge -> fmap (offer emerge) (victims (Maybe.fromMaybe (Filter.Type.HasCardType CardType.Creature) (Emerge.quality emerge))))
@@ -897,7 +904,7 @@ candidateCostsGiven permitted pid name oid gs =
               -- CR 107.3b's "the only legal choice for X is 0" is
               -- fixedXUnlessPaid's, which insteadOfManaCost applies.
               freeCast = if PlayerEffect.mayCastWithoutPayingManaCost pid oid gs then [untagged (withoutPayingManaCost face)] else []
-              ordinary = fmap untagged (printed : alternatives) <> bestowed <> prototyped <> mutated <> evoked <> emerged <> surged <> spectacled <> prowled <> freerun <> freeCast
+              ordinary = untagged printed : alternatives <> bestowed <> prototyped <> mutated <> evoked <> emerged <> surged <> spectacled <> prowled <> freerun <> freeCast
            in -- CR 118.8 / 601.2b: every candidate below owes this face's choice
               -- costs, whichever of them the caster announces, so the expansion
               -- wraps the whole list rather than any one arm of it. The zone is
@@ -1027,6 +1034,7 @@ candidateCostsGiven permitted pid name oid gs =
                                 (withAdditional cost {Cost.components = Cost.components cost <> [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) (criterion vid) False)]})
                                 [ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]]
                                 False
+                                Nothing
                                 Nothing
                             tappingNone cost = CandidateCost.plain (Just (Keyword.Type.Harmonize cost)) (withAdditional cost)
                          in concatMap

@@ -1,5 +1,6 @@
 module Parun.Types.CandidateCost where
 
+import Numeric.Natural (Natural)
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.Keyword as Keyword
@@ -57,10 +58,17 @@ data CandidateCost = MkCandidateCost
     -- | CR 603.7g: the delayed ability a cast for this candidate creates as it
     -- becomes cast; Nothing for every candidate but the one a consequence-
     -- carrying CastingPermission.CastAsThoughItHadFlash offers.
-    arms :: Maybe AbilityName.AbilityName
+    arms :: Maybe AbilityName.AbilityName,
+    -- | CR 118.9 / 601.2b: which of the face's PRINTED alternative costs this
+    -- candidate is, by index into Face.alternativeCosts; Nothing for every other
+    -- candidate, a granted alternative included. Parun.Engine.Cast binds it under
+    -- Binding.printedAlternativeCost, Baleful Mastery's "if the {1}{B} cost was
+    -- paid".
+    printedAlternative :: Maybe Natural
   }
   deriving (Eq, Ord, Show)
 
--- | A candidate bringing no reduction, no window of its own and no delayed ability.
+-- | A candidate bringing no reduction, no window of its own, no delayed ability
+-- and no printed alternative.
 plain :: Maybe Keyword.Keyword -> Cost.Cost Keyword.Keyword -> CandidateCost
-plain k c = MkCandidateCost k c [] False Nothing
+plain k c = MkCandidateCost k c [] False Nothing Nothing
