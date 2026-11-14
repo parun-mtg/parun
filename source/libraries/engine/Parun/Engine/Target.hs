@@ -42,9 +42,11 @@ import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.Binding as Binding.Type
 import Parun.Types.Card (Card)
+import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Count as Count.Type
+import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.Filter as Filter.Type
 import Parun.Types.Game (Game)
@@ -1236,7 +1238,9 @@ stillLegal kind reader perspective bindings acquisition source recipient slot gs
 -- CR 608.2b over one slot's targets: each judged alone (stillLegal), then
 -- the survivors together against the slot's `total`, which refuses them all
 -- (Reunion of the House's ruling, "the entire selection of targets is
--- illegal"). The total is over the targets still legal alone
+-- illegal"), and its `together` in the same posture (togetherRefused), a
+-- reading no test observes, since none renames a target in its graveyard. The
+-- total is over the targets still legal alone
 -- (docs/decisions.md, "A capped target set is re-totalled over its legal
 -- targets"). data/scenarios/target's Cytoshape cases prove both. Totalling
 -- every recipient instead reddens only the hexproof one: a departed target's
@@ -1244,7 +1248,7 @@ stillLegal kind reader perspective bindings acquisition source recipient slot gs
 stillLegalAmong :: StackObjectKind.StackObjectKind -> Maybe AbilityName.AbilityName -> Maybe PlayerId -> Map SlotName Binding.Type.Binding -> Acquisition.Acquisition -> ObjectId -> TargetSlot -> Set Recipient -> GameState -> Set Recipient
 stillLegalAmong kind reader perspective bindings acquisition source slot recipients gs =
   let alone = Set.filter (\recipient -> stillLegal kind reader perspective bindings acquisition source recipient slot gs) recipients
-   in Set.difference alone (totalRefused (countingBy reader perspective bindings source gs) slot alone gs)
+   in Set.difference alone (Set.union (togetherRefused slot alone gs) (totalRefused (countingBy reader perspective bindings source gs) slot alone gs))
 
 -- CR 303.4c: is `recipient` still one the slot ADMITS -- the same membership
 -- question stillLegal asks, minus rule 702's targeting restrictions. See
@@ -1368,9 +1372,10 @@ poolSplits legalUnder ranges slots sets =
 
 -- CR 601.2c: the slots whose targets the joint check may tell apart one from
 -- another -- a slot whose filter or computed bound reads a sibling, or whose
--- pool names one poolSplits did not split (`split`), and every slot so read.
--- jointlyJudged's fourth way, `together`, reads only the zone holding each
--- target (togetherRefused) and is not here.
+-- pool names one poolSplits did not split (`split`), and every slot so read --
+-- and a slot whose `together` keeps its targets' values apart
+-- (togetherRefused). jointlyJudged's fourth way's other `together`, one zone,
+-- reads only the zone holding each target and is not here.
 entangledSlots :: Set SlotName -> Map SlotName TargetSlot -> Set SlotName
 entangledSlots split slots =
   let declared = Map.keysSet slots
@@ -1378,9 +1383,12 @@ entangledSlots split slots =
         Set.union
           (siblingReads declared slot)
           (Set.difference (Set.intersection declared (foldMap Set.singleton (scopeSlot (TargetSlot.pool slot)))) split)
+      apart slot = case TargetSlot.together slot of
+        Just (Together.Differing _) -> True
+        _ -> False
       tangle name slot =
         let read_ = reads_ slot
-         in if Set.null read_ then Set.empty else Set.insert name read_
+         in if Set.null read_ && not (apart slot) then Set.empty else Set.insert name read_
    in Map.foldMapWithKey tangle slots
 
 -- CR 601.2c: the counts each slot may be answered with, narrowed by its legal set
@@ -1642,8 +1650,9 @@ siblingReads declared slot =
 --   * the CR 202.3 computed BOUND names one (boundNamesSibling above).
 --
 -- A fourth reads no sibling but the slot's OWN other targets: TargetSlot's
--- `together`, Decompose's "from a single graveyard" (togetherRefused), and its
--- `total`, Fire Lord Sozin's "with total mana value X or less" (totalRefused).
+-- `together`, Decompose's "from a single graveyard" and Behold the Sinister
+-- Six!'s "with different names" (togetherRefused), and its `total`, Fire Lord
+-- Sozin's "with total mana value X or less" (totalRefused).
 --
 -- Filter.boundSlots is the read half, the same set Parun.Engine.Resolve's dataflow
 -- lint folds over a mode's slots, so an atom that function does not report is one
@@ -1848,13 +1857,15 @@ slotCapacities counting x slots sets gs =
                in Natural.length (takeWhile (<= toInteger (counting most)) (drop 1 (scanl (+) 0 weights)))
         _ -> Natural.length legal
       -- TargetSlot's `together`: the most of the legal set one zone holds, plus
-      -- whatever is in none (togetherRefused).
+      -- whatever is in none, or the most of it no two of which share a value
+      -- (togetherRefused).
       togetherCapacity slot legal = case TargetSlot.together slot of
         Nothing -> Natural.length legal
         Just Together.InOneZone ->
           let held = Map.fromListWith (+) [(zone, 1 :: Natural) | Just zone <- fmap (zoneHolding gs) (Set.toList legal)]
               loose = Natural.length (Set.filter (Maybe.isNothing . zoneHolding gs) legal)
            in loose + Foldable.foldl' max 0 held
+        Just (Together.Differing axis) -> mostApart (Maybe.mapMaybe (differingValues axis gs) (Set.toList legal))
       scoped name slot =
         let legal = legalOf name
          in case scopeSlot (TargetSlot.pool slot) of
@@ -2320,17 +2331,47 @@ jointlyIllegalGiven kind reader pools perspective unannounced seed source slots 
    in Map.mapWithKey refused (Map.filter (jointlyJudged (Map.keysSet slots)) slots)
 
 -- CR 601.2c: the targets a slot's `together` refuses as a whole -- every one of
--- them when they do not share what it names, since no one of them is the
--- illegal one. Judged at each road jointlyIllegalGiven serves, the
--- announcement and CR 115.7's change of targets; CR 608.2b has nothing of it
--- left to re-check, a card leaving its graveyard being illegal on its own (CR
--- 400.7) and a card's graveyard being its owner's (CR 400.3).
+-- them when they do not share what it names, or two of them share what it
+-- keeps apart, since no one of them is the illegal one. Judged at each road
+-- jointlyIllegalGiven serves, the announcement and CR 115.7's change of
+-- targets, and at CR 608.2b's (stillLegalAmong), where one zone has nothing
+-- left to re-check: a card leaving its graveyard is illegal on its own (CR
+-- 400.7), and a card's graveyard is its owner's (CR 400.3).
+-- data/scenarios/target's Behold the Sinister Six! case proves `Differing`.
 togetherRefused :: TargetSlot -> Set Recipient -> GameState -> Set Recipient
 togetherRefused slot picked gs = case TargetSlot.together slot of
   Nothing -> Set.empty
   Just Together.InOneZone
     | Set.size (Set.fromList (Maybe.mapMaybe (zoneHolding gs) (Set.toList picked))) > 1 -> picked
     | otherwise -> Set.empty
+  Just (Together.Differing axis)
+    | maybe False apart (traverse (differingValues axis gs) (Set.toList picked)) -> Set.empty
+    | otherwise -> picked
+  where
+    apart sets = sum (fmap Set.size sets) == Set.size (Set.unions sets)
+
+-- One target's values on a `Differing` axis (Filter.differingOf), off its CR
+-- 613 projection, so a split card's two names count (CR 201.2a). Nothing for a
+-- target with no name where names are kept apart (CR 201.2b), or a player.
+differingValues :: DifferentIn.DifferentIn -> GameState -> Recipient -> Maybe (Set (DifferentIn.DifferentIn, Either CardName.CardName (Either Integer CardType.CardType)))
+differingValues axis gs recipient = do
+  oid <- Recipient.objectOf recipient
+  Filter.differingOf (Set.singleton axis) (Projection.viewOfObject oid gs)
+
+-- The most of these value sets no two of which share a value. Exact: some
+-- largest answer takes one member per value a member holds alone (swap any
+-- other member holding it for that one), so only the members holding several
+-- values none of those take need a search.
+mostApart :: (Ord v) => [Set v] -> Natural
+mostApart sets =
+  let (alone, several) = List.partition ((<= 1) . Set.size) sets
+      held = Set.unions alone
+   in Natural.length (filter Set.null alone) + Natural.length held + packing (filter (Set.disjoint held) several)
+  where
+    packing [] = 0
+    packing (s : more)
+      | all (Set.disjoint s) more = 1 + packing more
+      | otherwise = max (1 + packing (filter (Set.disjoint s) more)) (packing more)
 
 -- CR 601.2c: the targets a slot's `total` refuses as a whole -- every one of
 -- them when their weights sum past its ceiling, togetherRefused's posture and

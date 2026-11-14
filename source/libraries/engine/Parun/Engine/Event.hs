@@ -1935,7 +1935,7 @@ pickOutside source pid revealed (OutsidePick.MkOutsidePick relation count) = do
 outsideDiffering :: Set DifferentIn.DifferentIn -> OutsideCard.OutsideCard -> GameState.GameState -> Maybe (Set (DifferentIn.DifferentIn, Either CardName.CardName (Either Integer CardType.CardType)))
 outsideDiffering axes card gs
   | Set.null axes = Just Set.empty
-  | otherwise = differingOf axes . Projection.viewOfCard =<< face
+  | otherwise = Filter.differingOf axes . Projection.viewOfCard =<< face
   where
     printed printingId = Game.resolveFaceFor Nothing <$> Game.cardOfPrinting printingId gs
     face = case card of
@@ -1945,23 +1945,6 @@ outsideDiffering axes card gs
         case OutsideObject.facing entry of
           Facing.FaceDown state -> Just (Card.faceDownFace (FaceDownState.listed state))
           Facing.FaceUp -> printed (OutsideObject.printing entry)
-
--- One card's values on a group's DifferentIn axes, keyed by axis so a power never
--- meets a toughness, or Nothing for a card no group admits. CR 201.2b demands
--- each card HAVE a name; a card with no power or toughness shares none.
-differingOf :: Set DifferentIn.DifferentIn -> Filter.View -> Maybe (Set (DifferentIn.DifferentIn, Either CardName.CardName (Either Integer CardType.CardType)))
-differingOf axes view =
-  if Set.member DifferentIn.Names axes && Set.null (Filter.names view)
-    then Nothing
-    else Just (foldMap valuesOf axes)
-  where
-    number axis = foldMap (Set.singleton . (,) axis . Right . Left)
-    valuesOf axis = case axis of
-      DifferentIn.Names -> Set.map ((,) axis . Left) (Filter.names view)
-      DifferentIn.Powers -> number axis (Filter.power view)
-      DifferentIn.ManaValues -> number axis (Filter.manaValue view)
-      DifferentIn.Toughnesses -> number axis (Filter.toughness view)
-      DifferentIn.CardTypes -> Set.map ((,) axis . Right . Right) (Filter.cardTypes view)
 
 -- The members, in order, that keep a group apart -- each shares no value with a
 -- member kept ahead of it.

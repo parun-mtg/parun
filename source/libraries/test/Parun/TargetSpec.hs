@@ -553,6 +553,29 @@ fromTheRubbleSpec s registry =
 -- (CR 608.2b re-checks each), and `second` adds Not (IsBound "first"). alice's graveyard
 -- holds two Hill Giants, a Goblin Piker and a Woodland Changeling; every board
 -- is the same, and the cases differ only in which pair is named.
+-- CR 201.2b / 601.2c: an "up to" slot keeping names apart is offered at most
+-- as many targets as there are names, which no scenario can see: the runner
+-- refuses a count past the offer itself, and the joint check refuses one
+-- within it (data/scenarios/target's Behold the Sinister Six! case).
+beholdSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+beholdSpec s registry = Spec.describe s "Behold the Sinister Six!" $ do
+  Spec.it s "CR 601.2c four creature cards holding three names offer at most three targets" $ do
+    swamp <- S.printingOf s registry "Swamp"
+    bears <- S.printingOf s registry "Grizzly Bears"
+    giant <- S.printingOf s registry "Hill Giant"
+    wurm <- S.printingOf s registry "Craw Wurm"
+    behold <- S.printingOf s registry "Behold the Sinister Six!"
+    let lands = S.landsFor swamp S.alice 7 (Setup.emptyGame S.bothPlayers)
+        (_, g1) = S.addObjectIn Zone.Graveyard bears S.alice lands
+        (_, g2) = S.addObjectIn Zone.Graveyard bears S.alice g1
+        (_, g3) = S.addObjectIn Zone.Graveyard giant S.alice g2
+        (_, g4) = S.addObjectIn Zone.Graveyard wurm S.alice g3
+        (board, spellId) = S.handOne behold g4
+        slots = Modal.allTargetSlots (Face.spell (S.combinedFace behold))
+        offered = Target.legalSets StackObjectKind.Spell Nothing (Just S.alice) False Map.empty spellId slots board
+    Spec.assertEqWith s "all four are offered" (fmap Set.size (Map.elems offered)) [4]
+    Spec.assertEqWith s "at most three are announced" (Map.elems (Target.aimingRanges Nothing (Just S.alice) spellId Nothing slots offered board)) [(0, 3)]
+
 unburySpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 unburySpec s registry = Spec.describe s "Unbury" $ do
   let fixture = do
@@ -584,6 +607,7 @@ unburySpec s registry = Spec.describe s "Unbury" $ do
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Target" $ do
   unburySpec s registry
+  beholdSpec s registry
   pentarchPaladinSpec s registry
   fromTheRubbleSpec s registry
   -- CR 110.2 / 601.2c: ControllerRelatesToBound against a sibling slot. A slot
