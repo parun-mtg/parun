@@ -20,6 +20,7 @@ spec s = Spec.describe s "Parun.Codec.Trait" $ do
   Spec.it s "Owner" $ Common.assertCodec s Trait.codec Trait.Owner " {\"type\":\"Owner\"} "
   Spec.it s "Controller" $ Common.assertCodec s Trait.codec Trait.Controller " {\"type\":\"Controller\"} "
   Spec.it s "CreatureType" $ Common.assertCodec s Trait.codec Trait.CreatureType " {\"type\":\"CreatureType\"} "
+  Spec.it s "LandType" $ Common.assertCodec s Trait.codec Trait.LandType " {\"type\":\"LandType\"} "
   Spec.it s "CardType, any" $ Common.assertCodec s Trait.codec (Trait.CardType Nothing) " {\"type\":\"CardType\"} "
   Spec.it s "CardType, among some" $
     Common.assertCodec

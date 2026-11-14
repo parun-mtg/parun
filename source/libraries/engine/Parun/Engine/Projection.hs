@@ -4198,6 +4198,7 @@ traitReads trait = case trait of
   Trait.Controller -> Set.singleton Controller
   Trait.Sector -> Set.empty
   Trait.CreatureType -> Set.singleton Subtypes
+  Trait.LandType -> Set.singleton Subtypes
   Trait.CardType _ -> Set.singleton Types
 
 -- Which aspects a Filter reads. Exhaustive on purpose: a new Filter arm reading
