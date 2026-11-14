@@ -1569,7 +1569,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger {}) -> pure condition
   TriggerCondition.DamageToPlayerPrevented _ -> pure condition
   TriggerCondition.SelfPreventsDamage filter_ -> fmap TriggerCondition.SelfPreventsDamage (triggerFilter c filter_)
-  TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger direction who turn batching frequency) ->
+  TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger direction who turn batching frequency exactly) ->
     fmap
       TriggerCondition.LifeChanges
       ( LifeTrigger.MkLifeTrigger direction who
@@ -1582,6 +1582,7 @@ triggerConditionChildren c condition = case condition of
                 LifeDirection.Lost -> HistoryRead.LifeLosses
             )
             frequency
+          <*> pure exactly
       )
   TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger kind motion holder threshold grouping) ->
     fmap

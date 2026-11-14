@@ -18,20 +18,27 @@ spec s = Spec.describe s "Parun.Codec.LifeTrigger" $ do
     Common.assertCodec
       s
       LifeTrigger.codec
-      (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.You (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.FirstTimeEachTurn)
+      (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.You (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.FirstTimeEachTurn Nothing)
       " {\"direction\":\"Lost\",\"player\":\"You\",\"frequency\":\"FirstTimeEachTurn\"} "
   -- Exquisite Blood: every loss, on any turn, once each, so no defaulted key.
   Spec.it s "the defaults write no key" $
     Common.assertCodec
       s
       LifeTrigger.codec
-      (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.EveryTime)
+      (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.EveryTime Nothing)
       " {\"direction\":\"Lost\",\"player\":\"Opponent\"} "
   -- Synthetic Communal Vigil's "one or more players gain life".
   Spec.it s "OneOrMore writes its key" $
     Common.assertCodec
       s
       LifeTrigger.codec
-      (LifeTrigger.MkLifeTrigger LifeDirection.Gained PlayerRelation.AnyPlayer (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.OneOrMore TriggerFrequency.EveryTime)
+      (LifeTrigger.MkLifeTrigger LifeDirection.Gained PlayerRelation.AnyPlayer (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.OneOrMore TriggerFrequency.EveryTime Nothing)
       " {\"direction\":\"Gained\",\"player\":\"AnyPlayer\",\"batching\":\"OneOrMore\"} "
+  -- Ob Nixilis, Captive Kingpin's "one or more opponents each lose exactly 1 life".
+  Spec.it s "an exact amount writes its key" $
+    Common.assertCodec
+      s
+      LifeTrigger.codec
+      (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.OneOrMore TriggerFrequency.EveryTime (Just 1))
+      " {\"direction\":\"Lost\",\"player\":\"Opponent\",\"batching\":\"OneOrMore\",\"exactly\":1} "
   Spec.it s "has a schema" $ Common.assertHasSchema s LifeTrigger.codec

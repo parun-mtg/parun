@@ -2523,10 +2523,10 @@ everyTriggerCondition =
     TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger CounteredKind.Ability PlayerRelation.AnyPlayer PlayerRelation.AnyPlayer),
     TriggerCondition.DamageToPlayerPrevented PlayerRelation.You,
     TriggerCondition.SelfPreventsDamage (Filter.Type.And []),
-    TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Gained PlayerRelation.You (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.EveryTime),
-    TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Gained PlayerRelation.AnyPlayer (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.OneOrMore TriggerFrequency.EveryTime),
-    TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.EveryTime),
-    TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) Batching.OneOrMore TriggerFrequency.EveryTime),
+    TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Gained PlayerRelation.You (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.EveryTime Nothing),
+    TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Gained PlayerRelation.AnyPlayer (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.OneOrMore TriggerFrequency.EveryTime Nothing),
+    TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.EveryTime Nothing),
+    TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) Batching.OneOrMore TriggerFrequency.EveryTime Nothing),
     -- One per grouping, holder and threshold the pool prints, plus a
     -- per-counter Permanent holder, whose `became` no printing claims yet, and
     -- The Great Goblin's kind-free one.

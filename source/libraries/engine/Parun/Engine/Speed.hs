@@ -156,7 +156,8 @@ opponentsLoseLifeDuringYourTurn =
         LifeTrigger.player = PlayerRelation.Opponent,
         LifeTrigger.scope = TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You),
         LifeTrigger.batching = Batching.OneOrMore,
-        LifeTrigger.frequency = TriggerFrequency.EveryTime
+        LifeTrigger.frequency = TriggerFrequency.EveryTime,
+        LifeTrigger.exactly = Nothing
       }
 
 -- | CR 702.179d's "if your speed is less than 4", as the Condition both checks

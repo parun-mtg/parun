@@ -991,21 +991,23 @@ anyTriggerReads event = case event of
 -- `atEvent`, for a trigger condition's "while" (CR 603.2), since CR 704.3's
 -- state-based actions run between the event and the gather, so the live game is
 -- too late; the one filed before it (Snapshots.boardBeforeEvent) is a
--- look-back's (CR 603.10a).
+-- look-back's (CR 603.10a). The group's logged events are the whole CR 608.2f
+-- batch, for an arm that totals over it.
 matchesTriggerGiven :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> EventGroup.EventGroup -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
 matchesTriggerGiven bindings board group gs =
-  matchesAt bindings board (gameAfter group gs) (Map.lookup group (Snapshots.boardBeforeEvent (GameState.snapshots gs))) gs
+  let groupEvents = [LoggedEvent.event logged | logged <- Foldable.toList (TurnRegisters.events (GameState.turn gs)), LoggedEvent.group logged == group]
+   in matchesAt bindings board (gameAfter group gs) (Map.lookup group (Snapshots.boardBeforeEvent (GameState.snapshots gs))) groupEvents gs
 
--- matchesTriggerGiven with the two filed games in hand, which an arm asking it
--- again of an inner condition passes on.
-matchesAt :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> Maybe GameState -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-matchesAt bindings board atEvent beforeEvent gs bearer you cond event =
-  anyTriggerReads event && armMatches bindings board atEvent beforeEvent gs bearer you cond event
+-- matchesTriggerGiven with the two filed games and the group's events in hand,
+-- which an arm asking it again of an inner condition passes on.
+matchesAt :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> Maybe GameState -> [GameEvent] -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
+matchesAt bindings board atEvent beforeEvent groupEvents gs bearer you cond event =
+  anyTriggerReads event && armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond event
 
 -- The arm for this condition, which reads the event it watches and falls through
 -- on the rest. Past anyTriggerReads, so only matchesAt calls it.
-armMatches :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> Maybe GameState -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-armMatches bindings board atEvent beforeEvent gs bearer you cond event = case cond of
+armMatches :: Map.Map SlotName.SlotName Binding -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> Maybe GameState -> [GameEvent] -> GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
+armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond event = case cond of
   TriggerCondition.Enters t -> enters bearerContext board gs bearer you t event
   -- CR 603.2b: this step began, on a turn the scope admits, and -- for a card
   -- that counts main phases rather than naming one -- at CR 505.1b's ordinal.
@@ -1230,6 +1232,7 @@ armMatches bindings board atEvent beforeEvent gs bearer you cond event = case co
       board
       atEvent
       beforeEvent
+      groupEvents
       gs
       bearer
       you
@@ -1447,13 +1450,24 @@ armMatches bindings board atEvent beforeEvent gs bearer you cond event = case co
   -- The first-time reading is stamped on the event as it happened
   -- (Event.lifeChanged). Batching is not read here: batchScoped and
   -- eventTriggers' dedup are what separate "a player" from "one or more".
-  TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger direction relation scope _ frequency) ->
-    let admits (LifeChange.MkLifeChange pid _ first) =
+  --
+  -- An exact amount is the changing player's total over the event's whole
+  -- group, not this event's: Damage.lifeLostBy records one loss per damage
+  -- event, and Ob Nixilis, Captive Kingpin's ruling (2023-05-12) totals combat
+  -- damage, so three 1/1s are a loss of 3. A batch trigger matches when any
+  -- admitted player's total is the amount (docs/decisions.md, "One opponent
+  -- losing exactly the amount is enough"). An event missing from the log is
+  -- its own group (Event.matchesTrigger).
+  TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger direction relation scope _ frequency exactly) ->
+    let batch = if event `elem` groupEvents then groupEvents else [event]
+        totalFor pid = sum [amount | Just (changed, amount) <- fmap (Game.lifeChangeOf direction) batch, changed == pid]
+        admits (LifeChange.MkLifeChange pid _ first) =
           PlayerRelation.holds (Game.teams gs) relation you pid
             && Turn.duringRunningTurn scopeNamed gs Nothing scope you
             && case frequency of
               TriggerFrequency.EveryTime -> True
               TriggerFrequency.FirstTimeEachTurn -> first
+            && Maybe.maybe True (== totalFor pid) exactly
      in case (direction, event) of
           (LifeDirection.Gained, GameEvent.LifeGained change) -> admits change
           (LifeDirection.Lost, GameEvent.LifeLost change) -> admits change
@@ -1992,7 +2006,7 @@ armMatches bindings board atEvent beforeEvent gs bearer you cond event = case co
   -- the SAME event fire the ability once here, which is also the right answer --
   -- CR 603.2 matches an event against "a triggered ability's trigger event", and
   -- the ability is one ability.
-  TriggerCondition.AnyOf conditions -> any (\c -> matchesAt bindings board atEvent beforeEvent gs bearer you c event) conditions
+  TriggerCondition.AnyOf conditions -> any (\c -> matchesAt bindings board atEvent beforeEvent groupEvents gs bearer you c event) conditions
   -- CR 609.1: the narrowed condition, on an event a spell or ability's effect
   -- caused, that spell or ability's controller related to CR 109.5's "you" the
   -- way a Discarder discard relates the discarder. The controller is the one the
@@ -2000,7 +2014,7 @@ armMatches bindings board atEvent beforeEvent gs bearer you cond event = case co
   -- control cannot reach back.
   TriggerCondition.CausedBy narrowed ->
     maybe False (causeAdmitted gs bearer you narrowed) (causeOf event)
-      && matchesAt bindings board atEvent beforeEvent gs bearer you (CausedBy.condition narrowed) event
+      && matchesAt bindings board atEvent beforeEvent groupEvents gs bearer you (CausedBy.condition narrowed) event
   -- CR 715.2d's watcher. At ChapterMoment.Triggers it is CR 603.3b's second
   -- class, the one condition in this type whose event is another ability
   -- triggering: "whenever the final chapter ability of a Saga you control

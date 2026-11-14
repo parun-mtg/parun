@@ -356,21 +356,21 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Gained PlayerRelation.You (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.EveryTime))
+      (TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Gained PlayerRelation.You (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.EveryTime Nothing))
       " {\"type\":\"LifeChanges\",\"value\":{\"direction\":\"Gained\",\"player\":\"You\"}} "
   -- Vengeful Warchief.
   Spec.it s "LifeChanges carries a frequency" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.You (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.FirstTimeEachTurn))
+      (TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.You (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.FirstTimeEachTurn Nothing))
       " {\"type\":\"LifeChanges\",\"value\":{\"direction\":\"Lost\",\"player\":\"You\",\"frequency\":\"FirstTimeEachTurn\"}} "
   -- CR 702.179d's speed trigger: a batch, on the controller's turn.
   Spec.it s "LifeChanges carries a scope and a batching" $
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) Batching.OneOrMore TriggerFrequency.EveryTime))
+      (TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) Batching.OneOrMore TriggerFrequency.EveryTime Nothing))
       " {\"type\":\"LifeChanges\",\"value\":{\"direction\":\"Lost\",\"player\":\"Opponent\",\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"batching\":\"OneOrMore\"}} "
   -- CR 715.2b's chapter III; Parun.Codec.CounterTriggerSpec covers the
   -- payload's other keys.

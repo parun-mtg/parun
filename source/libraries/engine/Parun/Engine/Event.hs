@@ -12265,11 +12265,12 @@ revealedObjects revealed gs =
 --
 -- The BINDINGLESS reading, which is every caller that has no environment to offer
 -- and every condition but one, with no board filed before the event, so a
--- look-back pool (CR 603.10a, Event.Match.leaves) is empty.
+-- look-back pool (CR 603.10a, Event.Match.leaves) is empty, and no group, so
+-- the event is its own batch.
 -- Event.Match.matchesTriggerGiven is the same act with CR 603.7c's captured
 -- environment and the event's group in hand.
 matchesTrigger :: GameState -> ObjectId -> PlayerId -> TriggerCondition -> GameEvent -> Bool
-matchesTrigger gs = matchesAt Map.empty (battlefieldCandidates gs) gs Nothing gs
+matchesTrigger gs = matchesAt Map.empty (battlefieldCandidates gs) gs Nothing [] gs
 
 -- CR 603.2b / 109.5: does this condition restrict the turn its event may occur
 -- on to the ABILITY'S CONTROLLER's turn? True for "at the beginning of YOUR
