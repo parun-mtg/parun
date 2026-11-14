@@ -4452,12 +4452,12 @@ distinctlyAssigned = go Set.empty
     go _ [] = True
     go used (options : more) = any (\v -> not (Set.member v used) && go (Set.insert v used) more) options
 
--- One card's values on Search.differentIn's axes (Event.differingOf), read off
+-- One card's values on Search.differentIn's axes (Filter.differingOf), read off
 -- the CR 613 projection, so a split card's two names count (CR 201.2a) and a
 -- star's power is its characteristic-defining ability's number (CR 208.2a,
 -- 604.3).
 differingValues :: Set.Set DifferentIn.DifferentIn -> GameState -> ObjectId -> Maybe (Set.Set (DifferentIn.DifferentIn, Either CardName.CardName (Either Integer CardType.CardType)))
-differingValues axes gs oid = Event.differingOf axes (Projection.viewOfObject oid gs)
+differingValues axes gs oid = Filter.differingOf axes (Projection.viewOfObject oid gs)
 
 -- One found card's move, a member of the search's batch whose board is `asOf`
 -- (Event.changeZoneInBatch). `counters` is Search.counters, frozen: what a card

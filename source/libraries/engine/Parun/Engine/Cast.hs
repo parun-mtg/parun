@@ -140,6 +140,7 @@ import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TappedToPay as TappedToPay
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Timestamp as Timestamp
+import qualified Parun.Types.Together as Together
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnWindow as TurnWindow
 import qualified Parun.Types.TypeLine as TypeLine
@@ -784,8 +785,8 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
         -- still differ to the joint check, which is settled three ways. A slot
         -- a pool names is walked once per answer it could take
         -- (Target.poolSplits), which leaves its dependents classed by the cost
-        -- alone. A `together` slot's members are classed by the zone holding
-        -- them besides. The members of every other jointly judged slot
+        -- alone. A one-zone `together` slot's members are classed by the zone
+        -- holding them besides. The members of every other jointly judged slot
         -- (Target.entangledSlots) are each their own class, which is every
         -- subset, so where such a slot takes several targets the walk stops at
         -- Target.subsetBudget. Parun.CostSpec's "Drafna's Restoration" and
@@ -797,7 +798,7 @@ castAimable key announced x pid oid gs = case Game.faceOf oid gs of
               legalUnder bindings slot = Target.legalRecipientsGiven StackObjectKind.Spell Nothing pools (Just pid) True bindings (Game.acquisitionFor Nothing oid gs) oid slot gs
               (split, splits) = Target.poolSplits legalUnder ranges slots sets
               entangled = Target.entangledSlots split slots
-              zoned = Map.keysSet (Map.filter (Maybe.isJust . TargetSlot.together) slots)
+              zoned = Map.keysSet (Map.filter ((== Just Together.InOneZone) . TargetSlot.together) slots)
               holders = Map.fromListWith Set.union [(Cost.aimedReferent a, Set.singleton name) | (name, members) <- Map.toList sets, a <- Set.toList members]
               jointKey r =
                 let held = Map.findWithDefault Set.empty r holders

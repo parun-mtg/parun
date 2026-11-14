@@ -118,9 +118,9 @@ data TargetSlot = MkTargetSlot
     -- "4 damage divided as you choose"); Quantity.Share reads a target's part.
     -- Nothing is an undivided slot.
     divided :: Maybe Quantity.Quantity,
-    -- | CR 601.2c: what this slot's targets must share, judged over the whole
-    -- answer (Parun.Engine.Target.togetherRefused). Nothing relates no two of
-    -- them.
+    -- | CR 601.2c: what this slot's targets must share or keep apart, judged
+    -- over the whole answer (Parun.Engine.Target.togetherRefused). Nothing
+    -- relates no two of them.
     together :: Maybe Together.Together,
     -- | CR 601.2c: the most this slot's targets may sum to, judged over the
     -- whole answer (Parun.Engine.Target.totalRefused) -- Fire Lord Sozin's

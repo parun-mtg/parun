@@ -68,7 +68,9 @@
                     }
                   }
                 },
-                "together": "InOneZone"
+                "together": {
+                  "type": "InOneZone"
+                }
               }
             }
           }

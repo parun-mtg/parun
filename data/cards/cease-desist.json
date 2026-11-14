@@ -85,7 +85,9 @@
                     }
                   }
                 },
-                "together": "InOneZone"
+                "together": {
+                  "type": "InOneZone"
+                }
               },
               "target": {
                 "pool": {
