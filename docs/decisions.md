@@ -2173,3 +2173,21 @@ Entries are ordered by the first rule each cites.
 - **Site**: `Parun.Engine.Mana.chooseLossReplacements`, proved by the scenario
   `ozai-the-phoenix-king-and-horizon-stone-ask-which-type-the-lost-mana-becomes`.
 - **Issue**: #7231.
+
+## Whose lands Mojave Desert's chaos counts
+
+- **Question**: Mojave Desert's chaos ability creates "X 1/1 black Snake
+  creature token with deathtouch, where X is 1 plus the number of nonbasic land
+  types among lands that player controls", and nothing earlier in the ability
+  names a player. Whose lands are counted?
+- **Rules**: CR 109.5, 901.6, 205.3i; CR of 2026-11-06. Scryfall lists no
+  ruling for the card.
+- **Decision**: The ability's controller's, the planar controller who creates
+  the tokens (CR 109.5's "you").
+- **Rejected**: Each player's lands, for a token batch per player, which the
+  ability's single "create" does not say; and the player who rolled the
+  planar die, whom the text names nowhere and chaos ensuing otherwise lacks.
+- **Site**: `data/cards/mojave-desert.json`'s second triggered ability, proved
+  by `Parun.PlanechaseSpec`'s "CR 205.3i Mojave Desert's chaos makes one Snake
+  plus one per nonbasic land type among alice's lands" (bob's Cave adds none).
+- **Issue**: #5088.

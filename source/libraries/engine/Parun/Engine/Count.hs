@@ -601,6 +601,8 @@ aggregate quantityOf aggregation members = case aggregation of
   -- CR 305.6: a land's other subtypes (Gate, Desert, Urza's) add nothing, and a
   -- land with two basic land types (Tundra) adds both.
   Aggregation.Distinct DistinctOf.BasicLandTypes -> toInteger (Set.size (Set.filter Subtype.isBasicLandType (Set.unions (fmap (Filter.subtypes . snd) members))))
+  -- CR 205.3i: a creature type on an animated land adds nothing.
+  Aggregation.Distinct DistinctOf.NonbasicLandTypes -> toInteger (Set.size (Set.filter (\subtype -> Subtype.isLandType subtype && not (Subtype.isBasicLandType subtype)) (Set.unions (fmap (Filter.subtypes . snd) members))))
   -- CR 202.3a: a member with no mana cost still has mana value 0.
   Aggregation.Distinct DistinctOf.ManaValues -> toInteger (Set.size (Set.fromList (Maybe.mapMaybe (Filter.manaValue . snd) members)))
   -- CR 202.1b: a member with no mana cost adds nothing; {0} is a cost.
