@@ -1,6 +1,7 @@
 module Parun.Types.RulePermission where
 
 import qualified Parun.Types.Affected as Affected
+import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.RuleWaiver as RuleWaiver
 
@@ -30,6 +31,11 @@ data RulePermission = MkRulePermission
     -- unconditionally.
     while :: Maybe Condition.Condition,
     -- | The rule it lifts.
-    waives :: RuleWaiver.RuleWaiver
+    waives :: RuleWaiver.RuleWaiver,
+    -- | CR 508.1b: what an attack it lets may be announced at, read against
+    -- the source's controller (CR 109.5); Nothing is anything. Frenzied
+    -- Saddlebrute's "can attack your opponents and planeswalkers your opponents
+    -- control".
+    against :: Maybe AimedAt.AimedAt
   }
   deriving (Eq, Ord, Show)

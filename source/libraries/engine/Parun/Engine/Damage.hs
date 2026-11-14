@@ -71,7 +71,7 @@ import qualified Parun.Types.TurnUpEvent as TurnUpEvent
 -- ancient-adamantoise-keeps-its-damage-through-cleanup proves it.
 removeAllDamage :: GameState -> GameState
 removeAllDamage gs =
-  let kept = Set.map fst (Set.filter ((== RuleWaiver.CleanupDamage) . snd) (RulePermission.waivers (Set.toList (GameState.battlefield gs)) gs))
+  let kept = Set.map fst (Set.filter ((== RuleWaiver.CleanupDamage) . snd) (Map.keysSet (RulePermission.waivers (Set.toList (GameState.battlefield gs)) gs)))
       clear oid obj = if Set.member oid kept then obj else obj {Object.damage = 0}
    in gs {GameState.objects = Map.mapWithKey clear (GameState.objects gs)}
 

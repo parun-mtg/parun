@@ -1,0 +1,67 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Haste"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Frenzied Saddlebrute",
+      "oracleText": "Haste\nAll creatures can attack your opponents and planeswalkers your opponents control as though those creatures had haste.",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "rulePermissions": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "HasCardType",
+              "value": "Creature"
+            }
+          },
+          "against": {
+            "defenders": {
+              "type": "Scoped",
+              "value": {
+                "type": "Opponent"
+              }
+            },
+            "kinds": [
+              "OfPlayer",
+              "OfPlaneswalker"
+            ]
+          },
+          "waives": "AttackSickness"
+        }
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Orc",
+          "Warrior"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
