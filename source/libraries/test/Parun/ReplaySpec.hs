@@ -2211,9 +2211,9 @@ combatReplaySpec s =
             (ManaType.Colored Color.Blue)
         -- CR 118.7e: which half of a hybrid REDUCTION its payer took decides how
         -- much came off the cost, so it has to survive a transcript too.
-        Spec.it s "ChooseReductionHalf round-trips through the transcript" $ do
+        Spec.it s "ChooseHybridHalf round-trips through the transcript" $ do
           let p =
-                Prompt.ChooseReductionHalf
+                Prompt.ChooseHybridHalf
                   decider
                   S.alice
                   oid
@@ -2255,7 +2255,7 @@ combatReplaySpec s =
         -- symbol, asked of the same player about the same object.
         Spec.it s "a hybrid announcement does not decode as a reduction half" $ do
           let p =
-                Prompt.ChooseReductionHalf
+                Prompt.ChooseHybridHalf
                   decider
                   S.alice
                   oid

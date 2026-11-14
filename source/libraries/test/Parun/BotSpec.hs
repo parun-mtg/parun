@@ -553,7 +553,7 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "players" (drawn (Prompt.ChoosePlayer decider S.alice oid players)) (every players)
     Spec.assertEqWith s "protectors" (drawn (Prompt.ChooseProtector decider S.alice oid players)) (every players)
     Spec.assertEqWith s "reduced costs" (drawn (Prompt.ChooseReducedCost decider S.alice oid totals)) (every totals)
-    Spec.assertEqWith s "reduction halves" (drawn (Prompt.ChooseReductionHalf decider S.alice oid (ManaSymbol.MonocoloredHybrid (ManaType.Colored Color.Black)) halves)) (every halves)
+    Spec.assertEqWith s "hybrid halves" (drawn (Prompt.ChooseHybridHalf decider S.alice oid (ManaSymbol.MonocoloredHybrid (ManaType.Colored Color.Black)) halves)) (every halves)
     Spec.assertEqWith s "ring-bearers" (drawn (Prompt.ChooseRingBearer decider S.alice objects)) (every objects)
     Spec.assertEqWith s "rooms" (drawn (Prompt.ChooseRoom decider S.alice oid (RoomIndex.MkRoomIndex 1 NonEmpty.:| [RoomIndex.MkRoomIndex 2]))) (Set.fromList [RoomIndex.MkRoomIndex 1, RoomIndex.MkRoomIndex 2])
     Spec.assertEqWith s "stickers" (drawn (Prompt.ChooseSticker decider S.alice oid stickers)) (every stickers)

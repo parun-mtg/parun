@@ -1111,7 +1111,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.AnnouncePhyrexianPayment _ _ _ _ payments -> chosen `elem` payments
   Prompt.Type.AnnounceHybridPayment _ _ _ _ payments -> chosen `elem` payments
   Prompt.Type.AnnounceHybridHalf _ _ _ _ types -> chosen `elem` types
-  Prompt.Type.ChooseReductionHalf _ _ _ _ symbols -> chosen `elem` symbols
+  Prompt.Type.ChooseHybridHalf _ _ _ _ symbols -> chosen `elem` symbols
   Prompt.Type.ChooseReducedCost _ _ _ costs -> chosen `elem` costs
   Prompt.Type.Bottom _ _ cards _ -> all (`elem` cards) chosen
   Prompt.Type.MulliganAction _ _ actions -> all (`elem` actions) chosen

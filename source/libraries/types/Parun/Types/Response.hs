@@ -800,10 +800,10 @@ data Response
     -- resolved to, so a Slippery Bogle paid with blue replays as that and not as
     -- green.
     AnnouncedHybridHalf ManaType.ManaType
-  | -- | CR 118.7e: which half of a hybrid mana symbol in a cost REDUCTION its
-    -- payer chose as CR 601.2f applied it. The symbol the half resolved to, so a
-    -- {2/B} reduction taken as {2} replays as that and not as one black mana.
-    ChoseReductionHalf ManaSymbol.ManaSymbol
+  | -- | CR 118.7e / 106.8: which half of a hybrid mana symbol a cost reduction
+    -- was applied as, or an effect added. The symbol the half resolved to, so a
+    -- {2/B} taken as {2} replays as that and not as one black mana.
+    ChoseHybridHalf ManaSymbol.ManaSymbol
   | -- | CR 601.2f: the order a payer applied several cost reductions in, written
     -- as the total that order reached -- which is the whole of what the choice
     -- does, so a Mishra's Foundry animated for {1} rather than for nothing

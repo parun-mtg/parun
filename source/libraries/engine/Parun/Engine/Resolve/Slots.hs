@@ -1039,6 +1039,7 @@ productionPlayerRefs production = case production of
   ManaProduction.Circled -> []
   ManaProduction.DraftNoted _ -> []
   ManaProduction.EachColorAmong _ -> []
+  ManaProduction.ManaCostOf _ -> []
 
 -- The slots a production reads: the tapped permanent's types, and the
 -- objects a "could produce" filter names (Squandered Resources' sacrificed
@@ -1058,6 +1059,7 @@ productionSlots production = case production of
   ManaProduction.Circled -> Map.empty
   ManaProduction.DraftNoted _ -> Map.empty
   ManaProduction.EachColorAmong _ -> Map.empty
+  ManaProduction.ManaCostOf _ -> Map.empty
 
 -- The slots a MonarchTarget reads: only the targeted arm names one.
 monarchTargetSlots :: MonarchTarget.MonarchTarget -> Map.Map SlotName SlotArity

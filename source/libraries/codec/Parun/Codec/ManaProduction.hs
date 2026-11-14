@@ -32,7 +32,8 @@ codec =
       Arm.nullary "InCommanderIdentity" ManaProduction.InCommanderIdentity,
       Arm.nullary "Circled" ManaProduction.Circled,
       Arm.payload "DraftNoted" CardName.codec ManaProduction.DraftNoted (\x -> case x of ManaProduction.DraftNoted y -> Just y; _ -> Nothing),
-      Arm.payload "EachColorAmong" (Filter.codec Keyword.codec) ManaProduction.EachColorAmong (\x -> case x of ManaProduction.EachColorAmong y -> Just y; _ -> Nothing)
+      Arm.payload "EachColorAmong" (Filter.codec Keyword.codec) ManaProduction.EachColorAmong (\x -> case x of ManaProduction.EachColorAmong y -> Just y; _ -> Nothing),
+      Arm.payload "ManaCostOf" (Filter.codec Keyword.codec) ManaProduction.ManaCostOf (\x -> case x of ManaProduction.ManaCostOf y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: ManaProduction.ManaProduction -> String
@@ -50,3 +51,4 @@ tagOf x = case x of
   ManaProduction.Circled {} -> "Circled"
   ManaProduction.DraftNoted {} -> "DraftNoted"
   ManaProduction.EachColorAmong {} -> "EachColorAmong"
+  ManaProduction.ManaCostOf {} -> "ManaCostOf"

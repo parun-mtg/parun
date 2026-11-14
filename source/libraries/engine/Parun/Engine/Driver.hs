@@ -258,5 +258,5 @@ deciderOf prompt = case prompt of
   Prompt.AnnouncePhyrexianPayment decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.AnnounceHybridPayment decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.AnnounceHybridHalf decider _ _ _ _ -> Just (Decider.unwrap decider)
-  Prompt.ChooseReductionHalf decider _ _ _ _ -> Just (Decider.unwrap decider)
+  Prompt.ChooseHybridHalf decider _ _ _ _ -> Just (Decider.unwrap decider)
   Prompt.ChooseReducedCost decider _ _ _ -> Just (Decider.unwrap decider)

@@ -319,6 +319,10 @@ noActivations = Activations.MkActivations {Activations.times = 0, Activations.cl
 -- matched permanents have between them (CR 105.2), read off the board as the
 -- ability resolves (CR 608.2h): the colours are determined, so nothing is
 -- asked, and a colourless board adds none (CR 105.2c).
+--
+-- Elemental Resonance's "mana equal to enchanted permanent's mana cost" reads
+-- the PROJECTED cost (CR 707.2), each symbol rewritten by symbolAdds: settled
+-- where no symbol is hybrid, else CR 106.8's half asked per hybrid symbol.
 produced :: Map.Map SlotName (Set.Set Recipient.Recipient) -> ObjectId -> GameState -> ManaProduction -> Produced
 produced bound oid gs = producedVisiting bound Set.empty oid gs gs
 
@@ -355,6 +359,11 @@ producedVisiting bound visited oid gs poolBoard production = case production of
     let context = Projection.sourceContext gs (Projection.controllerOf oid gs) oid
         colorsOf other = maybe Set.empty (\view -> if Filter.matches context view matching then Filter.colors view else Set.empty) (Projection.fullView gs other)
      in Settles (fmap ManaType.Colored (Set.toList (foldMap colorsOf (Set.toList (GameState.battlefield gs)))))
+  ManaProduction.ManaCostOf matching ->
+    let context = Projection.sourceContext gs (Projection.controllerOf oid gs) oid
+        costOf other = foldMap (\view -> if Filter.matches context view matching then foldMap ManaCost.unwrap (Filter.manaCost view) else []) (Projection.fullView gs other)
+        symbols = fmap (\symbol -> (symbol, symbolAdds symbol)) (concatMap costOf (Set.toList (GameState.battlefield gs)))
+     in if all (null . NonEmpty.tail . snd) symbols then Settles (concatMap (snd . NonEmpty.head . snd) symbols) else PerSymbol symbols
   where
     among types = case types of
       first : second : more -> Offers ColorSpread.OneColor (first NonEmpty.:| (second : more))
@@ -379,6 +388,9 @@ latestTapProduced oid = Foldable.foldl' newest Set.empty . (TurnRegisters.events
 data Produced
   = Settles [ManaType]
   | Offers ColorSpread.ColorSpread (NonEmpty.NonEmpty ManaType)
+  | -- | CR 106.8: a run of symbols, each beside its halves (symbolAdds), one
+    -- asked per hybrid symbol and per unit of the count.
+    PerSymbol [(ManaSymbol.ManaSymbol, NonEmpty.NonEmpty (ManaSymbol.ManaSymbol, [ManaType]))]
   deriving (Eq, Show)
 
 -- Whether two answers ask the same choice, so their runs pair up one to one:
@@ -387,7 +399,15 @@ sameShape :: Produced -> Produced -> Bool
 sameShape left right = case (left, right) of
   (Settles _, Settles _) -> True
   (Offers leftSpread leftTypes, Offers rightSpread rightTypes) -> leftSpread == rightSpread && leftTypes == rightTypes
+  (PerSymbol leftSymbols, PerSymbol rightSymbols) -> leftSymbols == rightSymbols
   _ -> False
+
+-- CR 106.8: every run a PerSymbol production adds `howMany` times over, a half
+-- per hybrid symbol each time; deduplicated as choicesOf is, the order a pool
+-- never keeps left out.
+symbolRuns :: Int -> [(ManaSymbol.ManaSymbol, NonEmpty.NonEmpty (ManaSymbol.ManaSymbol, [ManaType]))] -> [[ManaType]]
+symbolRuns howMany symbols =
+  ListUtils.nubOrd (fmap (List.sort . concat) (Monad.replicateM howMany (fmap concat (traverse (fmap snd . NonEmpty.toList . snd) symbols))))
 
 -- CR 105.4: every way `howMany` units of an offer can be chosen. One
 -- colour repeats a single pick; any combination is each multiset of picks, the
@@ -968,6 +988,7 @@ triggerAdds pid gs pending = case PendingTrigger.source pending of
                in case produced bound source gs (ManaAddition.production addition) of
                     Settles run -> [concat (replicate howMany (fmap (unitOf addition) run))]
                     Offers spread offered -> fmap (fmap (unitOf addition)) (choicesOf howMany spread offered)
+                    PerSymbol symbols -> fmap (fmap (unitOf addition)) (symbolRuns howMany symbols)
      in case Modal.forcedSelection every (Modal.Type.selection modal) of
           Nothing -> [[]]
           Just selection -> fmap concat (traverse adds (Maybe.mapMaybe ManaAbility.manaProduced (Modal.modesEffects selection modal)))
@@ -989,6 +1010,7 @@ readsPool (clause, _) = any (poolProduction . ManaAddition.production) (Maybe.ma
       ManaProduction.Circled -> False
       ManaProduction.DraftNoted _ -> False
       ManaProduction.EachColorAmong _ -> False
+      ManaProduction.ManaCostOf _ -> False
 
 -- CR 603.7a / 106.6a: the delayed ability a Parun.Types.WhenSpent creates as
 -- one mana is produced, its text read off the source's rules text now.
@@ -1206,6 +1228,7 @@ pricedOptionsVisiting visited rewritesOf paid poolBoard pcs oid gs =
             runsOf answer howMany = case answer of
               Settles run -> [concat (replicate howMany (fmap (unitFor reader addition) run))]
               Offers spread types -> fmap (fmap (unitFor reader addition)) (choicesOf howMany spread types)
+              PerSymbol symbols -> fmap (fmap (unitFor reader addition)) (symbolRuns howMany symbols)
             offered = runsOf offeredProduced offeredCount
             priced = runsOf pricedProduced pricedCount
          in case offeredProduced of
@@ -2501,6 +2524,57 @@ phyrexianLife = 2
 -- of those is a two.
 monocoloredHybridGeneric :: Natural
 monocoloredHybridGeneric = 2
+
+-- CR 118.7e's and 106.8's "one half of that symbol": a coloured or colourless
+-- half is an OfType, a generic half a Generic. Nothing for every symbol with
+-- one half, and DEDUPLICATED so the degenerate `Hybrid t t` offers one half,
+-- not two.
+--
+-- CR 107.4f's Phyrexian symbol is NOT here: CR 118.7f gives such a reduction one
+-- mana of the symbol's colour with no choice, which reducingManaTypeOf reads
+-- directly, and CR 106.9 adds one mana of it. The HYBRID Phyrexian symbol is
+-- here, as its two colours: CR 107.4g makes it a Phyrexian symbol, so CR 118.7f
+-- gives one mana of its colour, CR 107.4f makes that colour either of two, and
+-- CR 118.7e and 601.2f give the choice to the payer. Its 2 life is no half:
+-- both rules reduce only by mana, and CR 106.8 adds only mana.
+hybridHalvesOf :: ManaSymbol.ManaSymbol -> Maybe [ManaSymbol.ManaSymbol]
+hybridHalvesOf symbol = case symbol of
+  ManaSymbol.Generic _ -> Nothing
+  ManaSymbol.OfType _ -> Nothing
+  ManaSymbol.Hybrid (Hybrid.MkHybrid a b) -> Just (ListUtils.nubOrd [ManaSymbol.OfType a, ManaSymbol.OfType b])
+  ManaSymbol.MonocoloredHybrid manaType ->
+    Just [ManaSymbol.OfType manaType, ManaSymbol.Generic monocoloredHybridGeneric]
+  ManaSymbol.Phyrexian _ -> Nothing
+  ManaSymbol.HybridPhyrexian (HybridPhyrexian.MkHybridPhyrexian a b) ->
+    Just (ListUtils.nubOrd [ManaSymbol.OfType (ManaType.Colored a), ManaSymbol.OfType (ManaType.Colored b)])
+  ManaSymbol.Snow -> Nothing
+  -- {X} offers no halves to choose between, CR 107.3 making it a value a player
+  -- announces rather than a way of paying one symbol. Reached with the symbol
+  -- still unsubstituted wherever a PRINTED cost is read ahead of any
+  -- announcement, which grantedForetellCost does; a cost being TOTALLED never
+  -- carries one, CR 601.2b preceding CR 601.2f.
+  ManaSymbol.Variable -> Nothing
+
+-- CR 106.8-106.11: the ways an effect adding the mana one symbol represents
+-- can go, each half (hybridHalvesOf) beside the mana it adds. A generic number
+-- adds that much colorless (CR 106.10), a Phyrexian symbol its colour (CR
+-- 106.9), {S} colorless (CR 106.11), and {X} nothing, read off a permanent's
+-- mana cost as 0 (CR 107.3g; Elemental Resonance's ruling, 2006-05-01).
+symbolAdds :: ManaSymbol.ManaSymbol -> NonEmpty.NonEmpty (ManaSymbol.ManaSymbol, [ManaType])
+symbolAdds symbol = case hybridHalvesOf symbol of
+  Just (first : others) -> fmap (\half -> (half, plain half)) (first NonEmpty.:| others)
+  _ -> (symbol, plain symbol) NonEmpty.:| []
+  where
+    plain one = case one of
+      ManaSymbol.Generic n -> List.genericReplicate n ManaType.Colorless
+      ManaSymbol.OfType manaType -> [manaType]
+      ManaSymbol.Phyrexian color -> [ManaType.Colored color]
+      ManaSymbol.Snow -> [ManaType.Colorless]
+      ManaSymbol.Variable -> []
+      -- Unreachable: hybridHalvesOf halves every hybrid symbol.
+      ManaSymbol.Hybrid _ -> []
+      ManaSymbol.MonocoloredHybrid _ -> []
+      ManaSymbol.HybridPhyrexian _ -> []
 
 -- CR 601.2b: a cost paid as a spell is cast has its Phyrexian and its hybrid
 -- symbols announced -- "the player announces whether they intend to pay 2 life or

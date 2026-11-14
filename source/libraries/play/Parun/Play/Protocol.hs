@@ -413,7 +413,7 @@ offerOf gs prompt = case prompt of
   Prompt.AnnouncePhyrexianPayment _ _ source symbol payments -> choosing prompt "options" (Just source) [("symbol", Reply.encode (Reply.viaCodec Codec.ManaSymbol.codec) namer symbol)] (NonEmpty.toList payments)
   Prompt.AnnounceHybridPayment _ _ source mana payments -> choosing prompt "options" (Just source) [("mana", Reply.encode (Reply.viaCodec Codec.ManaType.codec) namer mana)] (NonEmpty.toList payments)
   Prompt.AnnounceHybridHalf _ _ source symbol halves -> choosing prompt "options" (Just source) [("symbol", Reply.encode (Reply.viaCodec Codec.ManaSymbol.codec) namer symbol)] (NonEmpty.toList halves)
-  Prompt.ChooseReductionHalf _ _ source symbol halves -> choosing prompt "options" (Just source) [("symbol", Reply.encode (Reply.viaCodec Codec.ManaSymbol.codec) namer symbol)] (NonEmpty.toList halves)
+  Prompt.ChooseHybridHalf _ _ source symbol halves -> choosing prompt "options" (Just source) [("symbol", Reply.encode (Reply.viaCodec Codec.ManaSymbol.codec) namer symbol)] (NonEmpty.toList halves)
   Prompt.ChooseReducedCost _ _ source costs -> choosing prompt "options" (Just source) [] (NonEmpty.toList costs)
   -- CR 401.4 / 608.2c: from the top inward.
   Prompt.ArrangeLibraryCards _ _ cards -> listing "order" Nothing [] (fmap object cards)

@@ -270,7 +270,7 @@ encode p answer = case p of
   Prompt.AnnouncePhyrexianPayment {} -> Response.AnnouncedPhyrexianPayment answer
   Prompt.AnnounceHybridPayment {} -> Response.AnnouncedHybridPayment answer
   Prompt.AnnounceHybridHalf {} -> Response.AnnouncedHybridHalf answer
-  Prompt.ChooseReductionHalf {} -> Response.ChoseReductionHalf answer
+  Prompt.ChooseHybridHalf {} -> Response.ChoseHybridHalf answer
   Prompt.ChooseReducedCost {} -> Response.ChoseReducedCost answer
 
 -- The inverse of 'encode'. Nothing when the logged response does not match the
@@ -771,8 +771,8 @@ decode p response = case p of
   Prompt.AnnounceHybridHalf {} -> case response of
     Response.AnnouncedHybridHalf half -> Just half
     _ -> Nothing
-  Prompt.ChooseReductionHalf {} -> case response of
-    Response.ChoseReductionHalf half -> Just half
+  Prompt.ChooseHybridHalf {} -> case response of
+    Response.ChoseHybridHalf half -> Just half
     _ -> Nothing
   Prompt.ChooseReducedCost {} -> case response of
     Response.ChoseReducedCost total_ -> Just total_
@@ -1416,10 +1416,11 @@ defaultAnswer p = case p of
   -- CR 118.13 once more, for CR 107.4e's colour/colour hybrid: every offered
   -- half is payable, and the prompt is raised only where two are.
   Prompt.AnnounceHybridHalf _ _ _ _ offers -> NonEmpty.head offers
-  -- CR 118.7e: both halves are legal answers, so the first offered one is as
-  -- deterministic a default as any -- and unlike the announcements above it can
-  -- never make a cost unpayable, since CR 601.2f floors a reduction at {0}.
-  Prompt.ChooseReductionHalf _ _ _ _ offers -> NonEmpty.head offers
+  -- CR 118.7e / 106.8: both halves are legal answers, so the first offered one
+  -- is as deterministic a default as any -- and unlike the announcements above
+  -- it can never make a cost unpayable, since CR 601.2f floors a reduction at
+  -- {0} and an addition pays nothing.
+  Prompt.ChooseHybridHalf _ _ _ _ offers -> NonEmpty.head offers
   -- CR 601.2f: every offered order is legal, and the offer is CHEAPEST FIRST, so
   -- the head is both deterministic and the one that can never strand a payment a
   -- costlier order would have made unpayable.

@@ -52,7 +52,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ChooseReductionHalf",
+          "prompt": "ChooseHybridHalf",
           "with": {
             "type": "Generic",
             "value": 2

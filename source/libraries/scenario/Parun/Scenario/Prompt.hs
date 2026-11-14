@@ -209,5 +209,5 @@ kindOf prompt = Text.pack $ case prompt of
   Prompt.AnnouncePhyrexianPayment {} -> "AnnouncePhyrexianPayment"
   Prompt.AnnounceHybridPayment {} -> "AnnounceHybridPayment"
   Prompt.AnnounceHybridHalf {} -> "AnnounceHybridHalf"
-  Prompt.ChooseReductionHalf {} -> "ChooseReductionHalf"
+  Prompt.ChooseHybridHalf {} -> "ChooseHybridHalf"
   Prompt.ChooseReducedCost {} -> "ChooseReducedCost"
