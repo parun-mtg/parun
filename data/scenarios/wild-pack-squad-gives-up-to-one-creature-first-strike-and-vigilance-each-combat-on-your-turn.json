@@ -1,0 +1,23 @@
+{
+  "description": "CR 603.2b, 115.1, 702.7b, 702.20b, 514.2: at the beginning of combat on its controller's turn, Wild Pack Squad gives up to one target creature first strike and vigilance until end of turn",
+  "note": "The Hill Giant gains both: it attacks without tapping and kills bob's blocking Grizzly Bears before they deal damage. Bob's turn raises no trigger, and on alice's next turn she chooses no target.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Wild Pack Squad", "label": "squad", "ready": true}, {"card": "Hill Giant", "label": "giant", "ready": true}, {"card": "Grizzly Bears", "label": "abears", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bbears", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": {"ChooseTargets": {"target": ["$giant"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$giant"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$bbears": ["$giant"]}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Damage": {"object": "$giant", "damage": 0}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Tapped": {"object": "$giant", "tapped": false}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Keywords": {"object": "$abears", "keyword": {"type": "FirstStrike"}, "count": 0}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "FirstStrike"}, "count": 0}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "Vigilance"}, "count": 0}}},
+    {"turn": 3, "step": "BeginningOfCombat", "player": "alice", "do": {"ChooseTargets": {"target": []}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 3, "step": "PostcombatMain", "player": "alice", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "FirstStrike"}, "count": 0}}},
+    {"turn": 3, "step": "PostcombatMain", "player": "alice", "check": {"Keywords": {"object": "$squad", "keyword": {"type": "FirstStrike"}, "count": 0}}}
+  ]
+}

@@ -17,6 +17,7 @@ import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Gift as Gift
 import qualified Parun.Codec.ReturnPermanents as ReturnPermanents
 import qualified Parun.Codec.Sacrifice as Sacrifice
+import qualified Parun.Codec.SubtypeFamily as SubtypeFamily
 import qualified Parun.Codec.TapForTotalPower as TapForTotalPower
 import qualified Parun.Codec.TapPermanents as TapPermanents
 import qualified Parun.Codec.Zone as Zone
@@ -87,6 +88,7 @@ codec keywordCodec =
       Arm.payload "MillCards" Common.natural CostComponent.MillCards (\x -> case x of CostComponent.MillCards y -> Just y; _ -> Nothing),
       Arm.payload "RevealTopOfLibrary" Common.natural CostComponent.RevealTopOfLibrary (\x -> case x of CostComponent.RevealTopOfLibrary y -> Just y; _ -> Nothing),
       Arm.payload "ChooseOpponent" Gift.codec CostComponent.ChooseOpponent (\x -> case x of CostComponent.ChooseOpponent y -> Just y; _ -> Nothing),
+      Arm.payload "ChooseSubtype" SubtypeFamily.codec CostComponent.ChooseSubtype (\x -> case x of CostComponent.ChooseSubtype y -> Just y; _ -> Nothing),
       Arm.payload "Waterbend" CostAmount.codec CostComponent.Waterbend (\x -> case x of CostComponent.Waterbend y -> Just y; _ -> Nothing),
       Arm.payload "WaterbendInstead" Common.natural CostComponent.WaterbendInstead (\x -> case x of CostComponent.WaterbendInstead y -> Just y; _ -> Nothing),
       Arm.payload "TapInsteadOfMana" (Filter.codec keywordCodec) CostComponent.TapInsteadOfMana (\x -> case x of CostComponent.TapInsteadOfMana y -> Just y; _ -> Nothing),
@@ -134,6 +136,7 @@ tagOf x = case x of
   CostComponent.MillCards {} -> "MillCards"
   CostComponent.RevealTopOfLibrary {} -> "RevealTopOfLibrary"
   CostComponent.ChooseOpponent {} -> "ChooseOpponent"
+  CostComponent.ChooseSubtype {} -> "ChooseSubtype"
   CostComponent.Waterbend {} -> "Waterbend"
   CostComponent.WaterbendInstead {} -> "WaterbendInstead"
   CostComponent.TapInsteadOfMana {} -> "TapInsteadOfMana"

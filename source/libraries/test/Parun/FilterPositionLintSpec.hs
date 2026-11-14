@@ -2111,6 +2111,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("Highcliff Felidar", 1),
             ("Juxtapose", 2),
             ("Myrkul's Edict", 1),
+            ("Papalymo Totolymo", 1),
             ("Penregon Besieged", 1),
             ("Porphyry Nodes", 1),
             ("Professor Onyx", 1),
@@ -3715,6 +3716,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Persecute", hasChosenColorCounts, "a spell's own hand sweep after its own choice", (1, 0)),
         ("Harmonized Crescendo", hasChosenSubtypeCounts, "a spell's Draw quantity after its own choice", (1, 0)),
         ("Celestial Reunion", hasChosenSubtypeCounts, "a spell's behold cost and its resolution after the cost's own choice", (3, 0)),
+        ("Caller of the Hunt", hasChosenSubtypeCounts, "a characteristic-defining ability's two Counts", (2, 0)),
         ("Story Circle", hasChosenColorCounts, "an activated ability's chosen damage source", (1, 0)),
         ("Avacyn, Guardian Angel", hasChosenColorCounts, "two activated abilities' damage shields", (2, 0))
       ]

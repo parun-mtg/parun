@@ -372,6 +372,7 @@ printedBoxQuantity quantity = case quantity of
   Quantity.Type.WasBlocking -> False
   Quantity.Type.WasBlockedThisTurn -> False
   Quantity.Type.TimesTappedThisTurn -> False
+  Quantity.Type.Convokers -> False
   Quantity.Type.ControlGained {} -> False
   Quantity.Type.PlayedBy {} -> False
   Quantity.Type.DamageDealtThisTurn _ -> False
@@ -548,6 +549,8 @@ phasePatternOffends replacement = case replacement of
 -- - RollD20Instead on anything but a flip. Only Event.flipOneCoin reads a roll
 --   back as what it replaced; any other funnel would perform its instruction
 --   anyway.
+-- - ReturnSourceInstead on anything but a learn. Only Retriever Phoenix prints
+--   it, and a flip, a WouldThrow, has no road for it.
 -- - DrawFirst on a flip, which is a WouldThrow and not the WouldPerform its
 --   arm reads.
 -- - SetTo on a flip, for DrawFirst's reason, and SetTo 0, a scaling settling
@@ -557,8 +560,8 @@ phasePatternOffends replacement = case replacement of
 --
 -- Every printed row is Multiply 2, AddMore 1, Eligeth's DrawInstead on a scry,
 -- Pokey, the Scallywagg's RollD20Instead on a flip, Leader, Super-Genius's
--- DrawFirst on a connive or Plots That Span Centuries' SetTo 3 on a set in
--- motion.
+-- DrawFirst on a connive, Plots That Span Centuries' SetTo 3 on a set in
+-- motion or Retriever Phoenix's ReturnSourceInstead on a learn.
 -- Exhaustive rather than a wildcard, this file's discipline for a sum.
 instructionRowOffends :: ReplacementEffect.ReplacementEffect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> Bool
 instructionRowOffends replacement = case replacement of
@@ -590,6 +593,7 @@ instructionRowOffends replacement = case replacement of
       InstructionRewrite.DrawInstead -> instruction /= PlayerInstruction.Scry
       InstructionRewrite.RollD20Instead -> instruction /= PlayerInstruction.FlipCoin
       InstructionRewrite.DrawFirst -> instruction == PlayerInstruction.FlipCoin
+      InstructionRewrite.ReturnSourceInstead -> instruction /= PlayerInstruction.Learn
       InstructionRewrite.SetTo count -> instruction == PlayerInstruction.FlipCoin || count == 0
       InstructionRewrite.Scaled scaling -> case scaling of
         Scaling.Multiply m -> m == 0
@@ -3246,7 +3250,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         offenders = filter (anyFace (any instructionRowOffends . cardReplacementEffects) . Printing.card) ps
     -- Guards against a vacuous sweep: these cards printing an InstructionR are
     -- all swept.
-    Spec.assertEqWith s "the pool's instruction rows include these" (filter (`notElem` fmap (S.nameOf . Printing.card) (filter rowsOf ps)) (fmap (CardName.MkCardName . Text.pack) ["Bruvac the Grandiloquent", "Eligeth, Crossroads Augur", "Kenessos, Priest of Thassa", "Krark's Thumb", "Leader, Super-Genius", "Pokey, the Scallywagg", "Steamflogger Boss", "Tekuthal, Inquiry Dominus", "The Valeyard", "Twinning Staff"])) []
+    Spec.assertEqWith s "the pool's instruction rows include these" (filter (`notElem` fmap (S.nameOf . Printing.card) (filter rowsOf ps)) (fmap (CardName.MkCardName . Text.pack) ["Bruvac the Grandiloquent", "Eligeth, Crossroads Augur", "Kenessos, Priest of Thassa", "Krark's Thumb", "Leader, Super-Genius", "Pokey, the Scallywagg", "Retriever Phoenix", "Steamflogger Boss", "Tekuthal, Inquiry Dominus", "The Valeyard", "Twinning Staff"])) []
     Spec.assertEqWith s "every instruction row is one its funnel carries out" (fmap (S.nameOf . Printing.card) offenders) []
   -- The rejecting direction, against Eligeth's and Krark's Thumb's real rows with
   -- one field changed, never a card file -- Eon Hub's posture below.
@@ -3272,6 +3276,9 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertBool s (all (instructionRowOffends . scaledBy (Scaling.Multiply 0)) (rowsOf thumb)) "and so is none"
     Spec.assertBool s (not (null (rowsOf pokey)) && not (any instructionRowOffends (rowsOf pokey))) "Pokey's d20 instead of a flip is accepted"
     Spec.assertBool s (all (instructionRowOffends . naming PlayerInstruction.Scry) (rowsOf pokey)) "while a d20 instead of a scry is rejected"
+    phoenix <- S.printingOf s registry "Retriever Phoenix"
+    Spec.assertBool s (not (null (rowsOf phoenix)) && not (any instructionRowOffends (rowsOf phoenix))) "Retriever Phoenix's return instead of a learn is accepted"
+    Spec.assertBool s (all (instructionRowOffends . naming PlayerInstruction.Scry) (rowsOf phoenix)) "while a return instead of a scry is rejected"
   Spec.it s "no card authors a player-scoped phase skip (#437)" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace (any phasePatternOffends . cardReplacementEffects) . Printing.card) ps

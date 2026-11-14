@@ -2933,7 +2933,20 @@ recoverSpec s = Spec.describe s "Recover" $ do
   Spec.it s "CR 702.59a the graveyard roster mints it" $ do
     let cost = Cost.MkCost Nothing []
     Spec.assertEqWith s "recover is on the graveyard roster" (Keyword.graveyardTriggeredAbilitiesOf Set.empty (Set.singleton (Keyword.Type.Recover cost))) [Keyword.recover cost]
-    Spec.assertEqWith s "and on none of the others" (Keyword.handTriggeredAbilitiesOf (Set.singleton (Keyword.Type.Recover cost)) <> Keyword.exileTriggeredAbilitiesOf (Set.singleton (Keyword.Type.Recover cost))) []
+    Spec.assertEqWith s "and on none of the others" (Keyword.handTriggeredAbilitiesOf (Set.singleton (Keyword.Type.Recover cost)) <> Keyword.exileTriggeredAbilitiesOf (Map.singleton (Keyword.Type.Recover cost) 1)) []
+
+-- CR 702.62a / 113.2c: the exile roster mints suspend's pair once per
+-- instance. Two instances of ONE keyword (two "it gains suspend" grants) are
+-- one key held twice, which no board in data/cards/ reaches (Frie, Displaced
+-- in Time, is absent); the printed-plus-granted board is
+-- data/scenarios/suspend/cr-113-2c-two-suspends-on-one-card-each-tick-down-and-each-offer-the-cast.json.
+suspendSpec :: (Monad m) => Spec.Spec m n -> n ()
+suspendSpec s = Spec.describe s "Suspend" $ do
+  Spec.it s "CR 113.2c a suspend held twice mints two pairs" $ do
+    let granted = Keyword.Type.Suspend Nothing
+        pair = [Keyword.timeCounterUpkeep, Keyword.suspendLastCounter granted]
+    Spec.assertEqWith s "held once is one pair" (Keyword.exileTriggeredAbilitiesOf (Map.singleton granted 1)) pair
+    Spec.assertEqWith s "held twice is two" (Keyword.exileTriggeredAbilitiesOf (Map.singleton granted 2)) (pair <> pair)
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
@@ -2960,6 +2973,7 @@ spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
   extortSpec s
   incrementSpec s registry
   recoverSpec s
+  suspendSpec s
   selfBlocksSpec s registry
   selfBlocksAtLeastSpec s registry
   selfBlocksOneOrMoreSpec s registry

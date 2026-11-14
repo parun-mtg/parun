@@ -1,0 +1,37 @@
+{
+  "description": "CR 602.2, 611.2a, 702.9a, 701.21a, 702.11b, 702.12b: Spectacular Spider-Man's {1} ability gives it flying until end of turn; its {1}, sacrifice ability gives only the creatures its controller controls hexproof and indestructible until end of turn",
+  "note": "Alice's Grizzly Bears survive her own Lightning Bolt (hexproof stops only opponents) and bob can't Shock them that turn; bob's Hill Giant gains nothing and dies to her second Bolt. On bob's turn the effect has ended and his Shock kills the Bears.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Spectacular Spider-Man", "label": "spidey", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}, {"card": "Mountain", "label": "m3"}, {"card": "Mountain", "label": "m4"}], "hand": [{"card": "Lightning Bolt", "label": "bolt1"}, {"card": "Lightning Bolt", "label": "bolt2"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant", "ready": true}, {"card": "Mountain", "label": "bm1"}], "hand": [{"card": "Shock", "label": "shock"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$spidey", "keyword": {"type": "Flying"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$spidey", "ability": 0, "mana": ["$m1", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$spidey", "keyword": {"type": "Flying"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Flying"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Spectacular Spider-Man", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$spidey", "ability": 1, "mana": ["$m2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Spectacular Spider-Man", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Hexproof"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Indestructible"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "Hexproof"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "Indestructible"}, "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt1", "targets": ["$bears"], "mana": ["$m3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Damage": {"object": "$bears", "damage": 3}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bolt2", "targets": ["$giant"], "mana": ["$m4"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": []}},
+    {"turn": 1, "step": "EndStep", "player": "bob", "refuse": {"Cast": {"object": "$shock", "targets": ["$bears"], "mana": ["$bm1"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Hexproof"}, "count": 0}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Indestructible"}, "count": 0}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$shock", "targets": ["$bears"], "mana": ["$bm1"]}}},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 2, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}}
+  ]
+}

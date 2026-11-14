@@ -1144,6 +1144,7 @@ matchesPrinted viewOf gs event candidate =
               InstructionRewrite.DrawInstead -> True
               InstructionRewrite.RollD20Instead -> True
               InstructionRewrite.DrawFirst -> True
+              InstructionRewrite.ReturnSourceInstead -> True
         -- The same, for the one instruction no WouldPerform carries: a flip is a
         -- WouldThrow of coins (Parun.Types.Throw), and a row naming FlipCoin
         -- watches its flipper.
@@ -2605,6 +2606,9 @@ instructionRewriteReadsApplier rewrite = case rewrite of
   InstructionRewrite.DrawFirst -> True
   -- A fixed count for the seat the event named, Scaled's answer.
   InstructionRewrite.SetTo _ -> False
+  -- Retriever Phoenix's "you may" is asked of the row's controller, who is the
+  -- learner its "you" names: the seat the EVENT named, RollD20Instead's answer.
+  InstructionRewrite.ReturnSourceInstead -> False
 
 -- CR 614.6: does applying this effect replace a coin flip with a die roll or a
 -- roll with a flip (Pokey, the Scallywagg), so the funnel that proposed one has
@@ -2645,6 +2649,7 @@ instructionRewriteSubstitutes rewrite = case rewrite of
   InstructionRewrite.RollD20Instead -> True
   InstructionRewrite.DrawFirst -> False
   InstructionRewrite.SetTo _ -> False
+  InstructionRewrite.ReturnSourceInstead -> False
 
 -- Is this rewrite's amount not a literal -- a CR 702.64a ceiling, or a computed
 -- AddMore -- so that Event.apply evaluates it against the applying candidate's
@@ -2794,6 +2799,9 @@ instructionRewriteReadsSource rewrite = case rewrite of
   InstructionRewrite.RollD20Instead -> False
   InstructionRewrite.DrawFirst -> False
   InstructionRewrite.SetTo _ -> False
+  -- Retriever Phoenix's "return this card" names the row's own source, so two
+  -- Phoenixes in one graveyard return different cards: dredge's answer.
+  InstructionRewrite.ReturnSourceInstead -> True
 
 -- CR 616.1: the affected object's controller (or its owner if it has none), or
 -- the affected player, chooses one to apply. Anything not elided below prompts.

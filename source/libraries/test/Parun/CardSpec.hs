@@ -326,6 +326,7 @@ import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaRestriction as ManaRestriction
 import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaRider as ManaRider
+import qualified Parun.Types.ManaRiderEffect as ManaRiderEffect
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
@@ -3172,6 +3173,7 @@ costComponentFilters component = case component of
   -- CR 702.174a names an opponent rather than an object, so this component
   -- carries no Filter either.
   CostComponent.ChooseOpponent _ -> []
+  CostComponent.ChooseSubtype _ -> []
   CostComponent.Waterbend _ -> []
   CostComponent.WaterbendInstead _ -> []
   -- Heirloom Epic's "an untapped creature you control".
@@ -3456,6 +3458,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.WasBlocking -> []
   Quantity.Type.WasBlockedThisTurn -> []
   Quantity.Type.TimesTappedThisTurn -> []
+  Quantity.Type.Convokers -> []
   Quantity.Type.ControlGained _ _ -> []
   Quantity.Type.PlayedBy _ -> []
   Quantity.Type.DamageDealtThisTurn _ -> []
@@ -4562,7 +4565,8 @@ blockPermissionFilters permission =
 --     affected set, matched by Parun.Engine.Projection.affectsWith through
 --     affectedContext, which fills Filter.Context.sourceChosenColors and
 --     sourceChosenSubtype (CR 607.2d, Gauntlet of Power, Obelisk of Urd,
---     Teferi's Moat).
+--     Teferi's Moat), and a characteristic-defining ability's Counts, read in
+--     that context (CR 604.3, Caller of the Hunt).
 --   * ActivationCostFramed -- an activated ability's own cost, whose pools in
 --     Parun.Engine.Cost and Parun.Engine.Replacement.matchesPermanent fill the
 --     same two fields off the source (SourceContext.framedBy, Doom Cannon).
@@ -4975,6 +4979,13 @@ restrictionFilters restriction =
 manaRiderFilters :: ManaRider.ManaRider -> [Filter.Type.Filter Keyword.Keyword]
 manaRiderFilters rider = [ManaRider.condition rider]
 
+-- What a rider's grant carries: its keyword's and its duration's Filters,
+-- framed as each frames its own.
+manaRiderEffectFilters :: ManaRiderEffect.ManaRiderEffect -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+manaRiderEffectFilters effect = case effect of
+  ManaRiderEffect.CantBeCountered -> []
+  ManaRiderEffect.GainsKeyword keyword duration -> keywordFilters keyword <> durationFilters duration
+
 -- The predicate CR 106.7's "could produce" carries, or "each color among".
 manaProductionFilters :: ManaProduction.ManaProduction -> [Filter.Type.Filter Keyword.Keyword]
 manaProductionFilters production = case production of
@@ -4998,6 +5009,7 @@ manaAdditionFilters addition =
   unframed (manaProductionFilters (ManaAddition.production addition))
     <> fmap ((,) ManaRestrictionFramed) (concatMap restrictionFilters (Maybe.maybeToList (ManaAddition.restriction addition)))
     <> fmap ((,) SpentOnFramed) (concatMap manaRiderFilters (Maybe.maybeToList (ManaAddition.rider addition)))
+    <> foldMap (manaRiderEffectFilters . ManaRider.effect) (ManaAddition.rider addition)
     <> fmap ((,) SpentOnFramed . WhenSpent.casts) (Maybe.maybeToList (ManaAddition.whenSpent addition))
 
 -- Every Filter one effect carries, paired with its Framing. Two arms answer
@@ -5740,7 +5752,6 @@ cardFilters card =
   frame
     Unframed
     ( concatMap keywordFilters (Set.toList (Face.keywordSet card))
-        <> concatMap quantityFilters (characteristicQuantities card)
         <> concatMap quantityFilters (Face.maximumX card)
         <> concatMap (\(Power.MkPower quantity) -> quantityFilters quantity) (Maybe.maybeToList (Face.power card))
         <> concatMap (\(Toughness.MkToughness quantity) -> quantityFilters quantity) (Maybe.maybeToList (Face.toughness card))
@@ -5770,6 +5781,11 @@ cardFilters card =
         <> [(Unframed, matching) | CommanderDeckRule.ChosenExtraColor matching <- Set.toList (Face.commanderDeckRules card)]
         <> [(Unframed, PregameExile.filter exile) | exile <- Maybe.maybeToList (Face.pregameExile card)]
     )
+    -- AffectedSetFramed: CR 604.3's characteristic-defining ability is a static
+    -- ability whose Counts Parun.Engine.Projection.applyCharacteristicPT reads
+    -- through SourceContext.sourceContext, an affected set's context (Caller of
+    -- the Hunt's chosen type).
+    <> frame AffectedSetFramed (concatMap quantityFilters (characteristicQuantities card))
     <> concatMap printedReplacementFilters (Face.replacementEffects card)
     <> concatMap staticAbilityFilters (Face.staticAbilities card)
     -- SOURCE-HOSTED for staticAbilityFilters' reason: a clause on a static

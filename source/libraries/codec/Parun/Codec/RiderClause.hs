@@ -12,7 +12,8 @@ codec =
     tagOf
     [ Arm.nullary "InstantSpeed" RiderClause.InstantSpeed,
       Arm.payload "TimesEachTurn" Common.natural RiderClause.TimesEachTurn (\x -> case x of RiderClause.TimesEachTurn y -> Just y; _ -> Nothing),
-      Arm.nullary "AdditionalTime" RiderClause.AdditionalTime
+      Arm.nullary "AdditionalTime" RiderClause.AdditionalTime,
+      Arm.nullary "AsThoughNotActivated" RiderClause.AsThoughNotActivated
     ]
 
 tagOf :: RiderClause.RiderClause -> String
@@ -20,3 +21,4 @@ tagOf x = case x of
   RiderClause.InstantSpeed {} -> "InstantSpeed"
   RiderClause.TimesEachTurn {} -> "TimesEachTurn"
   RiderClause.AdditionalTime {} -> "AdditionalTime"
+  RiderClause.AsThoughNotActivated {} -> "AsThoughNotActivated"

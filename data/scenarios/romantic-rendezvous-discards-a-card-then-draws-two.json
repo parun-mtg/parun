@@ -1,0 +1,20 @@
+{
+  "description": "CR 608.2c, 701.9a, 121.2: Romantic Rendezvous makes its caster discard one card of their choice, then draw two cards, the draws coming after the discard",
+  "note": "Alice holds Hill Giant and Shock and discards Shock; Grizzly Bears, on top of her library, can't be discarded since it is drawn only afterwards. Bob's hand is untouched.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "RC", "hand": [{"card": "Romantic Rendezvous", "label": "rr"}, {"card": "Hill Giant", "label": "giant"}, {"card": "Shock", "label": "shock"}], "library": [{"card": "Grizzly Bears", "label": "bears"}, {"card": "Goblin Piker", "label": "piker"}, {"card": "Savannah Lions", "label": "lions"}]},
+    {"name": "bob", "hand": [{"card": "Lightning Bolt", "label": "bolt"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "carol", "hand": [{"card": "Unsummon", "label": "unsummon"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$rr"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseDiscard", "with": ["Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseDiscard", "with": ["$shock"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Graveyard", "is": ["Shock", "Romantic Rendezvous"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Hand", "is": ["$giant", "Grizzly Bears", "Goblin Piker"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Library", "is": ["$lions"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "bob", "zone": "Hand", "is": ["$bolt"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "carol", "zone": "Hand", "is": ["$unsummon"]}}}
+  ]
+}

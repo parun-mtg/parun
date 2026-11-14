@@ -306,6 +306,7 @@ import qualified Parun.Types.ManaProduction as ManaProduction
 import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaRestriction as ManaRestriction
 import qualified Parun.Types.ManaRider as ManaRider
+import qualified Parun.Types.ManaRiderEffect as ManaRiderEffect
 import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Measures as Measures
@@ -616,6 +617,7 @@ filterChildren children predicate = case predicate of
   Filter.ConvokedSourceThisTurn -> pure predicate
   Filter.SaddledSourceThisTurn -> pure predicate
   Filter.DealtDamageThisTurn -> pure predicate
+  Filter.LostLifeThisTurn -> pure predicate
   Filter.ActivatedThisTurn -> pure predicate
   Filter.DealtDamageTo asked -> fmap Filter.DealtDamageTo (dealtDamageToChildren children asked)
   Filter.EnteredThisTurn _ -> pure predicate
@@ -801,6 +803,7 @@ quantityChildren children quantity = case quantity of
   Quantity.WasBlocking -> pure quantity
   Quantity.WasBlockedThisTurn -> pure quantity
   Quantity.TimesTappedThisTurn -> pure quantity
+  Quantity.Convokers -> pure quantity
   Quantity.ControlGained window ref -> fmap (Quantity.ControlGained window) (player children ref)
   Quantity.PlayedBy ref -> fmap Quantity.PlayedBy (player children ref)
   Quantity.OpponentsAttacked ref -> fmap Quantity.OpponentsAttacked (player children ref)
@@ -2018,6 +2021,7 @@ costComponentChildren c component = case component of
   CostComponent.MillCards _ -> pure component
   CostComponent.RevealTopOfLibrary _ -> pure component
   CostComponent.ChooseOpponent _ -> pure component
+  CostComponent.ChooseSubtype _ -> pure component
   CostComponent.Waterbend amount -> CostComponent.Waterbend <$> costAmountChildren c amount
   CostComponent.WaterbendInstead _ -> pure component
   CostComponent.TapInsteadOfMana criterion -> CostComponent.TapInsteadOfMana <$> costFilter c criterion
@@ -2468,6 +2472,7 @@ instructionRewriteChildren c rewrite = case rewrite of
   InstructionRewrite.DrawInstead -> pure rewrite
   InstructionRewrite.RollD20Instead -> pure rewrite
   InstructionRewrite.DrawFirst -> pure rewrite
+  InstructionRewrite.ReturnSourceInstead -> pure rewrite
   InstructionRewrite.SetTo _ -> pure rewrite
 
 -- | What a planeswalk replacement does (CR 701.31).
@@ -3602,7 +3607,11 @@ data ManaChildren f = MkManaChildren
     -- | The mana a spend-as-though clause speaks about (CR 609.4b), whole.
     manaSpent :: ManaFilter.ManaFilter -> f ManaFilter.ManaFilter,
     -- | The types a spend-as-though clause lets that mana pay as (CR 609.4b), whole.
-    manaAsThough :: Set.Set ManaType.ManaType -> f (Set.Set ManaType.ManaType)
+    manaAsThough :: Set.Set ManaType.ManaType -> f (Set.Set ManaType.ManaType),
+    -- | The keyword a rider grants the spell its mana paid for (CR 106.6).
+    manaKeyword :: Keyword.Keyword -> f Keyword.Keyword,
+    -- | How long a rider's grant lasts (CR 611.2).
+    manaDuration :: Duration.Duration -> f Duration.Duration
   }
 
 -- | Every child of a mana payload left as it is: the base a walk overrides.
@@ -3615,7 +3624,9 @@ manaLeaves =
       manaSlot = pure,
       manaDesignator = pure,
       manaSpent = pure,
-      manaAsThough = pure
+      manaAsThough = pure,
+      manaKeyword = pure,
+      manaDuration = pure
     }
 
 -- | A mana addition's children (CR 106.1). Its retention is left as it is.
@@ -3661,10 +3672,16 @@ manaRestrictionChildren c (ManaRestriction.MkManaRestriction casts activations k
     <*> pure prohibits
     <*> pure paysGeneric
 
--- | A mana rider's children (CR 106.6). Its effect is left as it is.
+-- | A mana rider's children (CR 106.6).
 manaRiderChildren :: (Applicative f) => ManaChildren f -> ManaRider.ManaRider -> f ManaRider.ManaRider
 manaRiderChildren c (ManaRider.MkManaRider condition effect) =
-  ManaRider.MkManaRider <$> manaCriterion c condition <*> pure effect
+  ManaRider.MkManaRider <$> manaCriterion c condition <*> manaRiderEffectChildren c effect
+
+-- | A mana rider's payload's children (CR 106.6).
+manaRiderEffectChildren :: (Applicative f) => ManaChildren f -> ManaRiderEffect.ManaRiderEffect -> f ManaRiderEffect.ManaRiderEffect
+manaRiderEffectChildren c effect = case effect of
+  ManaRiderEffect.CantBeCountered -> pure effect
+  ManaRiderEffect.GainsKeyword granted lasting -> ManaRiderEffect.GainsKeyword <$> manaKeyword c granted <*> manaDuration c lasting
 
 -- | A spend-as-though clause's children (CR 609.4b). Whether it is the only
 -- way that mana pays is left as it is.

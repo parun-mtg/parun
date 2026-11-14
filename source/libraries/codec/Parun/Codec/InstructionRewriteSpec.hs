@@ -43,4 +43,11 @@ spec s = Spec.describe s "Parun.Codec.InstructionRewrite" $ do
       InstructionRewrite.codec
       (InstructionRewrite.SetTo 3)
       " {\"type\":\"SetTo\",\"value\":3} "
+  -- Retriever Phoenix's "you may instead return this card to the battlefield".
+  Spec.it s "ReturnSourceInstead" $
+    Common.assertCodec
+      s
+      InstructionRewrite.codec
+      InstructionRewrite.ReturnSourceInstead
+      " {\"type\":\"ReturnSourceInstead\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s InstructionRewrite.codec

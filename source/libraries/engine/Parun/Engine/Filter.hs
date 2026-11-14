@@ -375,6 +375,10 @@ data View = MkView
     -- all for a wither or infect source, so the marks are a strict subset of
     -- what was dealt.
     dealtDamageThisTurn :: Bool,
+    -- CR 119.3 / 608.2i: did this PLAYER candidate lose life earlier this
+    -- turn? Filled by Parun.Engine.Count.playerView, `dealtDamageThisTurn`'s
+    -- posture; False for every object, which has no life total.
+    lostLifeThisTurn :: Bool,
     -- CR 700.10: was this candidate the source of an ability activated this
     -- turn? Read off TurnRegisters.activationsThisTurn, and LAZY for
     -- `declaredThisTurn`'s reason -- nothing forces it unless a Filter contains
@@ -938,9 +942,10 @@ spentTagColors spent =
 -- so Parun.Engine.Count.bakePerspective bakes them against the game state
 -- before the match instead.
 --
--- CR 120.1's "was dealt damage this turn" is the one field a caller FILLS rather
--- than bakes, since it is a characteristic of the candidate rather than a
--- comparison; Parun.Engine.Count.playerView is that caller, and the field says so.
+-- CR 120.1's "was dealt damage this turn" and CR 119.3's "lost life this turn"
+-- are fields a caller FILLS rather than bakes, since each asks about the
+-- candidate rather than compares; Parun.Engine.Count.playerView is that caller,
+-- and the fields say so.
 playerView :: PlayerId.PlayerId -> View
 playerView pid =
   MkView
@@ -1022,6 +1027,9 @@ playerView pid =
       -- Parun.Engine.Target.admittedGiven's Recipient.ToPlayer arm -- build the
       -- view through it. Parun.DamageSpec's Needle Drop case is what proves it.
       dealtDamageThisTurn = False,
+      -- The DEFAULT and not the answer, `dealtDamageThisTurn`'s posture:
+      -- Parun.Engine.Count.playerView overwrites it from Game.lifeChangedIn.
+      lostLifeThisTurn = False,
       -- CR 400.7 moves an OBJECT between zones, and a player is not one.
       -- CR 700.10 asks after a PERMANENT, and a player is not one.
       activatedThisTurn = False,
@@ -2542,6 +2550,9 @@ matches context view predicate = case predicate of
   -- CantPayKeywordCost sits between them and is neither: a prohibition lifts the
   -- moment its source leaves.
   Filter.DealtDamageThisTurn -> dealtDamageThisTurn view
+  -- CR 119.3 / 608.2i: the same look-back asked of a player's life total,
+  -- filled by Parun.Engine.Count.playerView and False for every object.
+  Filter.LostLifeThisTurn -> lostLifeThisTurn view
   -- CR 700.10: the same look-back over CR 602.2's activation log, so the
   -- answer holds once the ability is gone or its activator has left the game.
   Filter.ActivatedThisTurn -> activatedThisTurn view
@@ -3178,6 +3189,7 @@ manaValueThresholds predicate = case predicate of
   Filter.LeftLibraryThisTurn _ -> []
   Filter.CantPayKeywordCost _ -> []
   Filter.DealtDamageThisTurn -> []
+  Filter.LostLifeThisTurn -> []
   Filter.ActivatedThisTurn -> []
   Filter.DealtDamageTo _ -> []
   Filter.EnteredThisTurn _ -> []
@@ -3361,6 +3373,7 @@ statesAQuality predicate = case predicate of
   Filter.LeftLibraryThisTurn _ -> True
   Filter.CantPayKeywordCost _ -> True
   Filter.DealtDamageThisTurn -> True
+  Filter.LostLifeThisTurn -> True
   Filter.ActivatedThisTurn -> True
   Filter.DealtDamageTo _ -> True
   Filter.EnteredThisTurn _ -> True
@@ -3543,6 +3556,7 @@ readsSourceValues predicate = case predicate of
   Filter.LeftLibraryThisTurn _ -> False
   Filter.CantPayKeywordCost _ -> False
   Filter.DealtDamageThisTurn -> False
+  Filter.LostLifeThisTurn -> False
   Filter.ActivatedThisTurn -> False
   Filter.DealtDamageTo _ -> False
   Filter.EnteredThisTurn _ -> False

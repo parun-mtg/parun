@@ -1,0 +1,20 @@
+{
+  "description": "CR 602.2, 302.6, 702.10b, 611.2a, 514.2: Taxi Driver's {1}, {T} ability gives target creature haste until end of turn, so a creature that came under its controller's control this turn can attack",
+  "note": "The Bears and the Goblin Piker both arrived this turn; only the Bears get haste, so the Piker's attack is refused and the Bears' is taken. The Mountain pays the {1}.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Taxi Driver", "label": "taxi", "ready": true}, {"card": "Mountain", "label": "m1"}, {"card": "Grizzly Bears", "label": "bears"}, {"card": "Goblin Piker", "label": "piker"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$taxi", "targets": ["$bears"], "mana": ["$m1"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$taxi", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$m1", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$piker", "keyword": {"type": "Haste"}, "count": 0}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": {"Attack": ["$piker"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears"]}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Haste"}, "count": 1}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Haste"}, "count": 0}}}
+  ]
+}

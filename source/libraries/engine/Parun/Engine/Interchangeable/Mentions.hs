@@ -878,7 +878,9 @@ manaVisitors asking =
       Children.manaQuantity = Const.Const . quantityNames asking,
       Children.manaPlayer = Const.Const . playerRefNames asking,
       Children.manaSlot = Const.Const . slotNames asking,
-      Children.manaDesignator = Const.Const . keywordDesignatorNames asking
+      Children.manaDesignator = Const.Const . keywordDesignatorNames asking,
+      Children.manaKeyword = Const.Const . keywordNames asking,
+      Children.manaDuration = Const.Const . durationNames asking
     }
 
 measuresNames :: (Monoid r) => Asking r -> Measures.Measures -> r
@@ -1056,6 +1058,7 @@ quantityNames asking x =
   let own = case x of
         Quantity.WasBlockedThisTurn -> history asking HistoryRead.Blocks
         Quantity.TimesTappedThisTurn -> history asking HistoryRead.Taps
+        Quantity.Convokers -> history asking HistoryRead.Convokes <> history asking HistoryRead.Moves
         Quantity.AttackersDeclaredThisTurn _ -> history asking HistoryRead.Attacks
         Quantity.AttackersInTheirLastTurn _ -> history asking HistoryRead.Attacks
         -- Draws and land plays read player-keyed tallies naming no object

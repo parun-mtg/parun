@@ -37,6 +37,7 @@ import qualified Parun.Types.Rounding as Rounding
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 import qualified Parun.Types.TapPermanents as TapPermanents
 import qualified Parun.Types.WhichCounters as WhichCounters
@@ -369,6 +370,13 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       codec
       (CostComponent.ChooseOpponent Gift.Card)
       " {\"type\":\"ChooseOpponent\",\"value\":{\"type\":\"Card\"}} "
+  -- CR 601.2h: the family the type is chosen from -- Caller of the Hunt's.
+  Spec.it s "ChooseSubtype" $
+    Common.assertCodec
+      s
+      codec
+      (CostComponent.ChooseSubtype SubtypeFamily.CreatureType)
+      " {\"type\":\"ChooseSubtype\",\"value\":\"CreatureType\"} "
   -- CR 701.67a as a cost: a bare amount, which is how much of the cost's generic
   -- mana rule 701.67b lets taps pay for.
   Spec.it s "Waterbend" $

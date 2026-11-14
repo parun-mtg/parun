@@ -12,6 +12,10 @@
 -- Rule 701.48 has no "whenever a player learns", so there is no GameEvent here.
 -- Scryfall @o:"learns"@, 2026-09-18, returns no card; a
 -- printing worded that way is what would need it.
+--
+-- A learn IS replaceable (CR 614.1a): Retriever Phoenix's "if you would learn,
+-- you may instead" is a replacement and not a trigger, so `learn` proposes the
+-- instruction before carrying it out.
 module Parun.Engine.Learn where
 
 import qualified Control.Monad as Monad
@@ -19,6 +23,8 @@ import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Set as Set
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.Replacement as Replacement
+import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
@@ -28,7 +34,9 @@ import qualified Parun.Types.LearnMode as LearnMode
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OutsideDestination as OutsideDestination
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Zone as Zone
 
@@ -54,6 +62,19 @@ lessonFromOutside =
       FromOutsideTheGame.differentIn = Set.empty,
       FromOutsideTheGame.pick = Nothing
     }
+
+-- | CR 701.48a / 614.1a: the instruction to learn, proposed through CR 614's
+-- loop and then carried out as the loop left it, once per time it names. A
+-- replaced learn does not happen (CR 614.6), so with two Retriever Phoenixes in
+-- the graveyard only one returns.
+--
+-- `settle` is Event.drawSeries', for a sequence a replacement makes in the
+-- draw's place (CR 614.11a).
+learn :: Game () -> PlayerId -> ObjectId -> ObjectId -> Game ()
+learn settle pid resolving source = do
+  outcome <- Event.applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.Learn Nothing pid 1)
+  Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.Learn) $ \(learner, times) ->
+    Monad.replicateM_ (Natural.toIntSaturating times) (learnOnce settle learner resolving source)
 
 -- | CR 701.48a: the learner takes one of the rule's two branches, or neither.
 --
@@ -82,10 +103,9 @@ lessonFromOutside =
 -- here: the discard below cannot fail once the card was chosen off the hand, so
 -- the draw always follows it.
 --
--- `settle` is Event.drawSeries', for a sequence a replacement makes in the
--- draw's place (CR 614.11a).
-learn :: Game () -> PlayerId -> ObjectId -> ObjectId -> Game ()
-learn settle pid resolving source = do
+-- `settle` is `learn`'s.
+learnOnce :: Game () -> PlayerId -> ObjectId -> ObjectId -> Game ()
+learnOnce settle pid resolving source = do
   gs <- State.get
   let hand = Game.cardsIn Zone.Hand pid gs
       lessons = Event.eligible (FromOutsideTheGame.filter lessonFromOutside) source pid gs
