@@ -321,6 +321,7 @@ produced bound oid gs = producedVisiting bound Set.empty oid gs gs
 producedVisiting :: Map.Map SlotName (Set.Set Recipient.Recipient) -> Set.Set ObjectId -> ObjectId -> GameState -> GameState -> ManaProduction -> Produced
 producedVisiting bound visited oid gs poolBoard production = case production of
   ManaProduction.OfType manaType -> Settles [manaType]
+  ManaProduction.OneOf types -> among (Set.toList types)
   ManaProduction.AnyColor spread ->
     Offers
       spread
@@ -935,6 +936,7 @@ readsPool (clause, _) = any (poolProduction . ManaAddition.production) (Maybe.ma
   where
     poolProduction production = case production of
       ManaProduction.OfType _ -> False
+      ManaProduction.OneOf _ -> False
       ManaProduction.AnyColor _ -> False
       ManaProduction.Chosen -> False
       ManaProduction.SnowSymbol -> False

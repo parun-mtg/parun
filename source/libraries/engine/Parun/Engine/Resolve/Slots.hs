@@ -1012,6 +1012,7 @@ effectPlayerRefs effect = case effect of
 productionPlayerRefs :: ManaProduction.ManaProduction -> [PlayerRef]
 productionPlayerRefs production = case production of
   ManaProduction.OfType _ -> []
+  ManaProduction.OneOf _ -> []
   ManaProduction.AnyColor _ -> []
   ManaProduction.Chosen -> []
   ManaProduction.SnowSymbol -> []
@@ -1028,6 +1029,7 @@ productionPlayerRefs production = case production of
 productionSlots :: ManaProduction.ManaProduction -> Map.Map SlotName SlotArity
 productionSlots production = case production of
   ManaProduction.OfType _ -> Map.empty
+  ManaProduction.OneOf _ -> Map.empty
   ManaProduction.AnyColor _ -> Map.empty
   ManaProduction.Chosen -> Map.empty
   ManaProduction.SnowSymbol -> Map.empty

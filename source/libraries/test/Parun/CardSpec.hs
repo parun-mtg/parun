@@ -5006,6 +5006,7 @@ manaRiderEffectFilters effect = case effect of
 manaProductionFilters :: ManaProduction.ManaProduction -> [Filter.Type.Filter Keyword.Keyword]
 manaProductionFilters production = case production of
   ManaProduction.OfType _ -> []
+  ManaProduction.OneOf _ -> []
   ManaProduction.AnyColor _ -> []
   ManaProduction.Chosen -> []
   ManaProduction.SnowSymbol -> []

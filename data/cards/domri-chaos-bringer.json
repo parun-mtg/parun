@@ -22,48 +22,17 @@
                         "type": "AddMana",
                         "value": {
                           "production": {
-                            "type": "OfType",
-                            "value": {
-                              "type": "Colored",
-                              "value": "Red"
-                            }
-                          },
-                          "rider": {
-                            "condition": {
-                              "type": "HasCardType",
-                              "value": "Creature"
-                            },
-                            "effect": {
-                              "type": "GainsKeyword",
-                              "value": {
-                                "duration": {
-                                  "type": "Indefinite"
-                                },
-                                "keyword": {
-                                  "type": "Riot"
-                                }
+                            "type": "OneOf",
+                            "value": [
+                              {
+                                "type": "Colored",
+                                "value": "Red"
+                              },
+                              {
+                                "type": "Colored",
+                                "value": "Green"
                               }
-                            }
-                          }
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "clauses": [
-                  {
-                    "effects": [
-                      {
-                        "type": "AddMana",
-                        "value": {
-                          "production": {
-                            "type": "OfType",
-                            "value": {
-                              "type": "Colored",
-                              "value": "Green"
-                            }
+                            ]
                           },
                           "rider": {
                             "condition": {
