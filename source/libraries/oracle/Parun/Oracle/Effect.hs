@@ -273,7 +273,9 @@ steps context cs = case cs of
     | Just (Condition.Compares (Compares.MkCompares measured Comparison.AtMost (Quantity.Literal below))) <- Clause.condition c,
       Clause.condition d == Just (Condition.Compares (Compares.MkCompares measured Comparison.AtLeast (Quantity.Literal (below + 1)))) -> do
         (first, ms) <- clause context c {Clause.condition = Nothing}
-        (body, ns) <- clause (noted context [c]) d
+        -- The second replaces the first, so its pump is not "an additional"
+        -- one (You're Not Alone).
+        (body, ns) <- clause (noted context [c]) {Target.pumped = Target.pumped context} d
         body' <- Foldable.toList (Text.stripSuffix (Text.pack ".") body)
         fmap ([(first, ms), (body' <> Text.pack " instead.", ns)] <>) (steps (noted context [c, d]) rest)
   (i, c) : (j, d) : rest
