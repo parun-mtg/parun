@@ -158,7 +158,9 @@
               "recipients": [
                 {
                   "type": "Permanent",
-                  "value": "Creature"
+                  "value": {
+                    "cardType": "Creature"
+                  }
                 }
               ]
             }

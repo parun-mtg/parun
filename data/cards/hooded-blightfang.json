@@ -136,7 +136,9 @@
               "recipients": [
                 {
                   "type": "Permanent",
-                  "value": "Planeswalker"
+                  "value": {
+                    "cardType": "Planeswalker"
+                  }
                 }
               ]
             }

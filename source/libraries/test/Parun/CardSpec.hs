@@ -202,6 +202,7 @@ import qualified Parun.Types.DamageDirection as DamageDirection
 import qualified Parun.Types.DamagePart as DamagePart
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
+import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageRewrite as DamageRewrite
 import qualified Parun.Types.DamageTrigger as DamageTrigger
 import qualified Parun.Types.DealDamage as DealDamage
@@ -3771,7 +3772,9 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- Pits of Rath's "a creature", Spirit Link's and Curiosity's "enchanted
   -- creature", Tovolar's "a Wolf or Werewolf you control". The self-scoped
   -- readings carry nothing, and a recipient holds no Filter.
-  TriggerCondition.DealsDamage watched -> actingFilters (DamageTrigger.actor watched)
+  TriggerCondition.DealsDamage watched ->
+    actingFilters (DamageTrigger.actor watched)
+      <> unframed [f | DamageRecipient.Permanent _ f <- Set.toList (DamageTrigger.recipients watched)]
   TriggerCondition.IsDealtDamage watched -> actingFilters (DealtDamage.recipient (PermanentIsDealtDamage.dealt watched))
   TriggerCondition.PlayerIsDealtDamage _ -> []
   -- CR 603.2c's batch reading of the same written form carries the same Filter,

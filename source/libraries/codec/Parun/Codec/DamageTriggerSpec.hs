@@ -9,6 +9,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageTrigger as DamageTrigger
+import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -25,8 +26,8 @@ spec s = Spec.describe s "Parun.Codec.DamageTrigger" $ do
     Common.assertCodec
       s
       DamageTrigger.codec
-      (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.fromList [DamageRecipient.Player PlayerRelation.AnyPlayer, DamageRecipient.Permanent CardType.Planeswalker]) 0)
-      " {\"actor\":{\"type\":\"Self\"},\"kind\":\"Combat\",\"recipients\":[{\"type\":\"Player\",\"value\":\"AnyPlayer\"},{\"type\":\"Permanent\",\"value\":\"Planeswalker\"}]} "
+      (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.fromList [DamageRecipient.Player PlayerRelation.AnyPlayer, DamageRecipient.Permanent CardType.Planeswalker (Filter.And [])]) 0)
+      " {\"actor\":{\"type\":\"Self\"},\"kind\":\"Combat\",\"recipients\":[{\"type\":\"Player\",\"value\":\"AnyPlayer\"},{\"type\":\"Permanent\",\"value\":{\"cardType\":\"Planeswalker\"}}]} "
   -- Spinneret and Spiderling's "deals 4 or more damage".
   Spec.it s "a floor writes its key" $
     Common.assertCodec

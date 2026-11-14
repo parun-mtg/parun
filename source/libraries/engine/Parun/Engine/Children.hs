@@ -169,6 +169,7 @@ import qualified Parun.Types.Cycling as Cycling
 import qualified Parun.Types.DamagePart as DamagePart
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
+import qualified Parun.Types.DamageRecipient as DamageRecipient
 import qualified Parun.Types.DamageRewrite as DamageRewrite
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DamageTrigger as DamageTrigger
@@ -1498,7 +1499,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.Enters (EntersTrigger.MkEntersTrigger permanent batching) -> fmap TriggerCondition.Enters (EntersTrigger.MkEntersTrigger <$> actingChildren c permanent <*> pure batching)
   TriggerCondition.StepBegins (StepBegins.MkStepBegins phase ordinal turn) -> fmap TriggerCondition.StepBegins (StepBegins.MkStepBegins phase <$> traverse (triggerOrdinal c HistoryRead.StepBegins) ordinal <*> triggerTurn c turn)
   TriggerCondition.StateIs state -> fmap TriggerCondition.StateIs (triggerState c state)
-  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger actor kind recipients atLeast) -> fmap (\renamed -> TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger renamed kind recipients atLeast)) (actingChildren c actor)
+  TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger actor kind recipients atLeast) -> (\renamed qualified -> TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger renamed kind qualified atLeast)) <$> actingChildren c actor <*> traverseSet (damageRecipientChildren c) recipients
   TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage recipient kind by) batching) ->
     fmap (\renamed -> TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage renamed kind by) batching)) (actingChildren c recipient)
   TriggerCondition.PlayerIsDealtDamage (PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching turn) -> fmap (TriggerCondition.PlayerIsDealtDamage . PlayerIsDealtDamage.MkPlayerIsDealtDamage dealt orTheirPlaneswalkers batching) (triggerTurn c turn)
@@ -1679,6 +1680,12 @@ attackTriggerChildren c trigger = case trigger of
 -- child.
 attackCountChildren :: (Applicative f) => TriggerChildren f -> AttackCount.AttackCount -> f AttackCount.AttackCount
 attackCountChildren c (AttackCount.MkAttackCount measure floor_ filter_) = AttackCount.MkAttackCount measure floor_ <$> triggerFilter c filter_
+
+-- CR 120.1: a permanent recipient's qualifier, read as actingChildren reads an actor's.
+damageRecipientChildren :: (Applicative f) => TriggerChildren f -> DamageRecipient.DamageRecipient -> f DamageRecipient.DamageRecipient
+damageRecipientChildren c recipient = case recipient of
+  DamageRecipient.Player _ -> pure recipient
+  DamageRecipient.Permanent cardType qualifier -> DamageRecipient.Permanent cardType <$> triggerFilter c qualifier
 
 actingChildren :: (Applicative f) => TriggerChildren f -> ActingPermanent.ActingPermanent -> f ActingPermanent.ActingPermanent
 actingChildren c permanent = case permanent of

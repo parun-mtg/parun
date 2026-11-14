@@ -1963,9 +1963,9 @@ representativeEvents cond =
                 named -> damaged <$> named
               damaged recipient = case recipient of
                 DamageRecipient.Player _ -> Recipient.ToPlayer S.bob
-                DamageRecipient.Permanent CardType.Planeswalker -> Recipient.ToPlaneswalker arrived
-                DamageRecipient.Permanent CardType.Battle -> Recipient.ToBattle arrived
-                DamageRecipient.Permanent _ -> Recipient.ToCreature arrived
+                DamageRecipient.Permanent CardType.Planeswalker _ -> Recipient.ToPlaneswalker arrived
+                DamageRecipient.Permanent CardType.Battle _ -> Recipient.ToBattle arrived
+                DamageRecipient.Permanent {} -> Recipient.ToCreature arrived
               events = [noTable (GameEvent.DamageDealt (DamageEvent.MkDamageEvent departed recipient 3 False False False 0 Nothing Nothing mempty False mempty kind)) | kind <- kinds, recipient <- recipients]
            in case events of
                 event : rest -> event NonEmpty.:| rest
@@ -2402,18 +2402,18 @@ everyTriggerCondition =
     TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Beginning BeginningStep.Upkeep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer))),
     TriggerCondition.StateIs (Condition.Type.Compares (Compares.MkCompares (Quantity.Type.Literal 0) Comparison.Exactly (Quantity.Type.Literal 0))),
     TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Player PlayerRelation.AnyPlayer)) 0),
-    TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.fromList [DamageRecipient.Player PlayerRelation.AnyPlayer, DamageRecipient.Permanent CardType.Battle]) 0),
+    TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.fromList [DamageRecipient.Player PlayerRelation.AnyPlayer, DamageRecipient.Permanent CardType.Battle (Filter.Type.And [])]) 0),
     TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) Set.empty 0),
     TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching (Filter.Type.And [])) (Just DamageKind.Combat) Set.empty 0),
     TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing (Set.singleton (DamageRecipient.Player PlayerRelation.AnyPlayer)) 0),
     TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching (Filter.Type.And [])) Nothing (Set.singleton (DamageRecipient.Player PlayerRelation.Opponent)) 0),
     TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching (Filter.Type.And [])) (Just DamageKind.Noncombat) (Set.singleton (DamageRecipient.Player PlayerRelation.Opponent)) 0),
-    TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing (Set.singleton (DamageRecipient.Permanent CardType.Creature)) 0),
-    TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Permanent CardType.Creature)) 0),
+    TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing (Set.singleton (DamageRecipient.Permanent CardType.Creature (Filter.Type.And []))) 0),
+    TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Permanent CardType.Creature (Filter.Type.And []))) 0),
     TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing Set.empty 0),
     TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching (Filter.Type.HasAttached Filter.Type.IsSource)) Nothing Set.empty 0),
     TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching (Filter.Type.And [])) (Just DamageKind.Combat) (Set.singleton (DamageRecipient.Player PlayerRelation.AnyPlayer)) 0),
-    TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching (Filter.Type.And [])) (Just DamageKind.Combat) (Set.fromList [DamageRecipient.Player PlayerRelation.AnyPlayer, DamageRecipient.Permanent CardType.Planeswalker]) 0),
+    TriggerCondition.DealsDamage (DamageTrigger.MkDamageTrigger (ActingPermanent.Matching (Filter.Type.And [])) (Just DamageKind.Combat) (Set.fromList [DamageRecipient.Player PlayerRelation.AnyPlayer, DamageRecipient.Permanent CardType.Planeswalker (Filter.Type.And [])]) 0),
     TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self Nothing Nothing) Batching.OneOrMore),
     TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage ActingPermanent.Self Nothing Nothing) Batching.EachOccurrence),
     TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage (DealtDamage.MkDealtDamage (ActingPermanent.Matching (Filter.Type.And [])) Nothing Nothing) Batching.OneOrMore),
