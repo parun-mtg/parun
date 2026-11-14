@@ -3251,10 +3251,11 @@ madnessCostFor manaCost payload = case payload of
   MadnessCost.Stated cost -> cost
   MadnessCost.OwnManaCost -> Cost.MkCost {Cost.mana = manaCost, Cost.components = []}
 
--- CR 702.34a / 702.97a / 702.128a / 702.141a / 702.168a / 702.152a / 702.196a:
--- the keyword a Modification.GainKeywordAtManaCost names, carrying the [cost] it
--- was priced at. Parun.Engine.Projection supplies the receiving object's mana
--- cost, and grantedBy bakes a beam me up's unreturnable.
+-- CR 702.34a / 702.97a / 702.128a / 702.141a / 702.168a / 702.152a / 702.180a /
+-- 702.187b / 702.56a / 702.119a / 702.196a: the keyword a
+-- Modification.GainKeywordAtManaCost names, carrying the [cost] it was priced
+-- at. Parun.Engine.Projection supplies the receiving object's mana cost, and
+-- grantedBy bakes a beam me up's unreturnable.
 withCost :: CostKeyword.CostKeyword -> Cost Keyword -> Keyword
 withCost keyword cost = case keyword of
   CostKeyword.Flashback -> Keyword.Flashback cost
@@ -3263,6 +3264,11 @@ withCost keyword cost = case keyword of
   CostKeyword.Encore -> Keyword.Encore cost
   CostKeyword.Disguise -> Keyword.Disguise cost
   CostKeyword.Blitz -> Keyword.Blitz cost
+  CostKeyword.Harmonize -> Keyword.Harmonize cost
+  CostKeyword.Mayhem -> Keyword.Mayhem (Just cost)
+  CostKeyword.Replicate -> Keyword.Replicate cost
+  -- CR 702.119a's plain emerge: the victim is any creature.
+  CostKeyword.Emerge -> Keyword.Emerge (Emerge.MkEmerge cost Nothing)
   CostKeyword.BeamMeUp unreturnable -> Keyword.BeamMeUp (BeamMeUp.MkBeamMeUp cost unreturnable)
 
 -- CR 702.102a: does this card's keyword set let both halves be cast as one fused

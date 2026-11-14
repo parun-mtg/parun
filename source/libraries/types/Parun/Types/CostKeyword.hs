@@ -20,6 +20,14 @@ data CostKeyword
     Disguise
   | -- | CR 702.152a (Henzie "Toolbox" Torre).
     Blitz
+  | -- | CR 702.180a (Songcrafter Mage).
+    Harmonize
+  | -- | CR 702.187b (Norman Osborn // Green Goblin).
+    Mayhem
+  | -- | CR 702.56a (Djinn Illuminatus).
+    Replicate
+  | -- | CR 702.119a (Herigast, Erupting Nullkite).
+    Emerge
   | -- | CR 702.196a (Scotty, Miracle Worker), with Parun.Types.BeamMeUp's unreturnable.
     BeamMeUp (Maybe (Filter.Filter Keyword.Keyword))
   deriving (Eq, Ord, Show)

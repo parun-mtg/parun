@@ -18,6 +18,10 @@ codec =
       Arm.nullary "Encore" CostKeyword.Encore,
       Arm.nullary "Disguise" CostKeyword.Disguise,
       Arm.nullary "Blitz" CostKeyword.Blitz,
+      Arm.nullary "Harmonize" CostKeyword.Harmonize,
+      Arm.nullary "Mayhem" CostKeyword.Mayhem,
+      Arm.nullary "Replicate" CostKeyword.Replicate,
+      Arm.nullary "Emerge" CostKeyword.Emerge,
       Arm.optionalPayload "BeamMeUp" (Filter.codec Keyword.codec) CostKeyword.BeamMeUp (\x -> case x of CostKeyword.BeamMeUp y -> Just y; _ -> Nothing)
     ]
 
@@ -29,4 +33,8 @@ tagOf x = case x of
   CostKeyword.Encore -> "Encore"
   CostKeyword.Disguise -> "Disguise"
   CostKeyword.Blitz -> "Blitz"
+  CostKeyword.Harmonize -> "Harmonize"
+  CostKeyword.Mayhem -> "Mayhem"
+  CostKeyword.Replicate -> "Replicate"
+  CostKeyword.Emerge -> "Emerge"
   CostKeyword.BeamMeUp {} -> "BeamMeUp"
