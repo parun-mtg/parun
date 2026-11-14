@@ -793,7 +793,10 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
     let damager = case PermanentIsDealtDamage.batching watched of
           Batching.EachOccurrence -> Binding.setCombatDamager (DamageEvent.source ev)
           Batching.OneOrMore -> id
-     in maybe id Binding.setBecame (Recipient.objectOf (DamageEvent.target ev)) (damager (Binding.setEventAmount (DamageEvent.amount ev) Map.empty))
+        -- CR 120.10's "that excess damage" (Fall of Cair Andros) for an
+        -- excess reading, which batchBindings sums to the permanent's excess.
+        dealtAmount = if PermanentIsDealtDamage.excess watched then DamageEvent.excess ev else DamageEvent.amount ev
+     in maybe id Binding.setBecame (Recipient.objectOf (DamageEvent.target ev)) (damager (Binding.setEventAmount dealtAmount Map.empty))
   -- CR 120.3's "that many" for a damaged player (Lich), summed across the
   -- batch by batchBindings, and the damaged player under `triggerPlayer`, which
   -- batchPartition splits the batch by. A damaged planeswalker (Vengeful

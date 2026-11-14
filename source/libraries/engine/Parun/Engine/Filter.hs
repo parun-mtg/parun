@@ -41,6 +41,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
 import qualified Parun.Types.DamageDealer as DamageDealer
+import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
@@ -384,8 +385,9 @@ data View = MkView
     -- Deliberately not Object.damage: CR 120.6 removes marked damage on a
     -- regeneration, CR 701.69a heals it away and CR 120.3d/120.3e mark none at
     -- all for a wither or infect source, so the marks are a strict subset of
-    -- what was dealt.
-    dealtDamageThisTurn :: Bool,
+    -- what was dealt. The events themselves, so a source filter can judge
+    -- each source as it dealt the damage (dealtByView).
+    dealtDamageThisTurn :: [DamageEvent.DamageEvent],
     -- CR 119.3 / 608.2i: did this PLAYER candidate lose life earlier this
     -- turn? Filled by Parun.Engine.Count.playerView, `dealtDamageThisTurn`'s
     -- posture; False for every object, which has no life total.
@@ -959,7 +961,29 @@ spentTagColors spent =
 -- candidate rather than compares; Parun.Engine.Count.playerView is that caller,
 -- and the fields say so.
 playerView :: PlayerId.PlayerId -> View
-playerView pid =
+playerView pid = nobodyView {playerIdentity = Just pid}
+
+-- CR 120.1 / 608.2h: a damage event's source as it was when it dealt the
+-- damage, off the event's deal-time riders: its controller, card types,
+-- creature types, commander status and zone (a spell is on the stack, CR
+-- 112.1). Not implemented: any other characteristic of the source, which reads
+-- as nobodyView's empty answer (#7519).
+dealtByView :: DamageEvent.DamageEvent -> View
+dealtByView ev =
+  nobodyView
+    { identity = Just (DamageEvent.source ev),
+      controller = DamageEvent.dealtByController ev,
+      cardTypes = DamageEvent.dealtByCardTypes ev,
+      subtypes = DamageEvent.dealtByCreatureTypes ev,
+      commander = DamageEvent.dealtByCommander ev,
+      zone = DamageEvent.dealtFromZone ev
+    }
+
+-- playerView short of the player's identity: every axis empty, false or the
+-- default, each note giving the reason for a player. dealtByView builds on it
+-- for a source that may no longer exist.
+nobodyView :: View
+nobodyView =
   MkView
     { -- CR 109.3 gives a name to an OBJECT, and CR 109.1's list of what an
       -- object is has no player in it.
@@ -997,7 +1021,7 @@ playerView pid =
       targetViews = Map.empty,
       targetCount = 0,
       identity = Nothing,
-      playerIdentity = Just pid,
+      playerIdentity = Nothing,
       -- CR 506.3: only a creature can attack, and a player is not one.
       attacking = False,
       attackingAlone = Set.empty,
@@ -1034,13 +1058,13 @@ playerView pid =
       -- CR 120.1 lets a player BE dealt damage, so unlike the two fields above
       -- this one asks a question a player candidate really can answer -- just not
       -- from here, this view being built from a PlayerId alone and holding no
-      -- board whose event log could be folded. False is therefore the DEFAULT and
+      -- board whose event log could be folded. Empty is therefore the DEFAULT and
       -- not the answer: Parun.Engine.Count.playerView overwrites it from
-      -- Game.wasDealtDamage, and both roads a player candidate travels --
+      -- Game.damagedPlayer, and both roads a player candidate travels --
       -- that module's Scope.OverPlayers fold and
       -- Parun.Engine.Target.admittedGiven's Recipient.ToPlayer arm -- build the
       -- view through it. Parun.DamageSpec's Needle Drop case is what proves it.
-      dealtDamageThisTurn = False,
+      dealtDamageThisTurn = [],
       -- The DEFAULT and not the answer, `dealtDamageThisTurn`'s posture:
       -- Parun.Engine.Count.playerView overwrites it from Game.lifeChangedIn.
       lostLifeThisTurn = False,
@@ -2599,7 +2623,11 @@ matches context view predicate = case predicate of
   -- was dealt damage carrying nothing marked. Named rather than counted, since
   -- CantPayKeywordCost sits between them and is neither: a prohibition lifts the
   -- moment its source leaves.
-  Filter.DealtDamageThisTurn -> dealtDamageThisTurn view
+  --
+  -- A source filter admits only damage from a source it matches as it dealt the
+  -- damage (dealtByView), under the same context, so "you controlled" is still
+  -- the perspective's.
+  Filter.DealtDamageThisTurn by -> any (\ev -> all (matches context (dealtByView ev)) by) (dealtDamageThisTurn view)
   -- CR 119.3 / 608.2i: the same look-back asked of a player's life total,
   -- filled by Parun.Engine.Count.playerView and False for every object.
   Filter.LostLifeThisTurn -> lostLifeThisTurn view
@@ -3241,7 +3269,7 @@ manaValueThresholds predicate = case predicate of
   Filter.DeclaredBlockerThisCombat -> []
   Filter.LeftLibraryThisTurn _ -> []
   Filter.CantPayKeywordCost _ -> []
-  Filter.DealtDamageThisTurn -> []
+  Filter.DealtDamageThisTurn by -> foldMap manaValueThresholds by
   Filter.LostLifeThisTurn -> []
   Filter.ActivatedThisTurn -> []
   Filter.DealtDamageTo _ -> []
@@ -3425,7 +3453,7 @@ statesAQuality predicate = case predicate of
   Filter.DeclaredBlockerThisCombat -> True
   Filter.LeftLibraryThisTurn _ -> True
   Filter.CantPayKeywordCost _ -> True
-  Filter.DealtDamageThisTurn -> True
+  Filter.DealtDamageThisTurn _ -> True
   Filter.LostLifeThisTurn -> True
   Filter.ActivatedThisTurn -> True
   Filter.DealtDamageTo _ -> True
@@ -3610,7 +3638,7 @@ readsSourceValues predicate = case predicate of
   Filter.DeclaredBlockerThisCombat -> False
   Filter.LeftLibraryThisTurn _ -> False
   Filter.CantPayKeywordCost _ -> False
-  Filter.DealtDamageThisTurn -> False
+  Filter.DealtDamageThisTurn by -> any readsSourceValues by
   Filter.LostLifeThisTurn -> False
   Filter.ActivatedThisTurn -> False
   Filter.DealtDamageTo _ -> False

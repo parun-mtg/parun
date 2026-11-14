@@ -148,7 +148,7 @@ codec keywordCodec =
       Arm.nullary "ConvokedSourceThisTurn" Filter.ConvokedSourceThisTurn,
       Arm.nullary "SaddledSourceThisTurn" Filter.SaddledSourceThisTurn,
       Arm.payload "CantPayKeywordCost" KeywordCostPart.codec Filter.CantPayKeywordCost (\x -> case x of Filter.CantPayKeywordCost y -> Just y; _ -> Nothing),
-      Arm.nullary "DealtDamageThisTurn" Filter.DealtDamageThisTurn,
+      Arm.optionalPayload "DealtDamageThisTurn" (codec keywordCodec) Filter.DealtDamageThisTurn (\x -> case x of Filter.DealtDamageThisTurn y -> Just y; _ -> Nothing),
       Arm.nullary "LostLifeThisTurn" Filter.LostLifeThisTurn,
       Arm.nullary "ActivatedThisTurn" Filter.ActivatedThisTurn,
       Arm.payload "DealtDamageTo" DealtDamageTo.codec Filter.DealtDamageTo (\x -> case x of Filter.DealtDamageTo y -> Just y; _ -> Nothing),

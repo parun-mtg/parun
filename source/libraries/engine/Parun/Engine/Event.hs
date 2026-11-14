@@ -1121,6 +1121,8 @@ damageEvent gs kind source target amount =
         { DamageEvent.source = source,
           DamageEvent.target = target,
           DamageEvent.amount = amount,
+          -- CR 120.10's excess is the batch's, settled once it is dealt.
+          DamageEvent.excess = 0,
           DamageEvent.dealtByDeathtouch = has Keyword.Type.Deathtouch,
           DamageEvent.dealtByInfect = has Keyword.Type.Infect,
           DamageEvent.dealtByWither = has Keyword.Type.Wither,
@@ -1133,6 +1135,7 @@ damageEvent gs kind source target amount =
           DamageEvent.dealtByCreatureTypes = Set.filter Subtype.Engine.isCreatureType (PC.subtypes characteristics),
           DamageEvent.dealtByCommander = Commander.isCommander source gs,
           DamageEvent.dealtByCardTypes = PC.cardTypes characteristics,
+          DamageEvent.dealtFromZone = Game.zoneOf source gs,
           DamageEvent.kind = kind
         }
 

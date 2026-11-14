@@ -11,6 +11,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
@@ -27,6 +28,7 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
         { DamageEvent.source = ObjectId.MkObjectId 1,
           DamageEvent.target = Recipient.ToPlayer (PlayerId.MkPlayerId 2),
           DamageEvent.amount = 3,
+          DamageEvent.excess = 0,
           DamageEvent.dealtByDeathtouch = True,
           DamageEvent.dealtByInfect = False,
           DamageEvent.dealtByWither = True,
@@ -36,11 +38,13 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByCreatureTypes = Set.singleton Subtype.Rogue,
           DamageEvent.dealtByCommander = True,
           DamageEvent.dealtByCardTypes = Set.singleton CardType.Artifact,
+          DamageEvent.dealtFromZone = Nothing,
           DamageEvent.kind = DamageKind.Combat
         }
       " {\"source\":1,\"target\":{\"type\":\"ToPlayer\",\"value\":2},\"amount\":3,\"dealtByDeathtouch\":true,\"dealtByWither\":true,\"dealtByToxic\":2,\"dealtByController\":4,\"dealtByCreatureTypes\":[\"Rogue\"],\"dealtByCommander\":true,\"dealtByCardTypes\":[\"Artifact\"],\"kind\":\"Combat\"} "
   -- CR 120.3c's recipient tag and CR 608's noncombat damage are each the other
-  -- arm of their type. CR 702.15b's lifelink payee is a concrete PlayerId.
+  -- arm of their type. CR 702.15b's lifelink payee is a concrete PlayerId, and
+  -- CR 120.10's excess and CR 400.1's zone are away from their defaults.
   Spec.it s "MkDamageEvent, dealt to a planeswalker, with lifelink" $
     Common.assertCodec
       s
@@ -49,6 +53,7 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
         { DamageEvent.source = ObjectId.MkObjectId 1,
           DamageEvent.target = Recipient.ToPlaneswalker (ObjectId.MkObjectId 5),
           DamageEvent.amount = 4,
+          DamageEvent.excess = 1,
           DamageEvent.dealtByDeathtouch = False,
           DamageEvent.dealtByInfect = True,
           DamageEvent.dealtByWither = False,
@@ -58,9 +63,10 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByCreatureTypes = Set.empty,
           DamageEvent.dealtByCommander = False,
           DamageEvent.dealtByCardTypes = Set.empty,
+          DamageEvent.dealtFromZone = Just Zone.Stack,
           DamageEvent.kind = DamageKind.Noncombat
         }
-      " {\"source\":1,\"target\":{\"type\":\"ToPlaneswalker\",\"value\":5},\"amount\":4,\"dealtByInfect\":true,\"dealtByLifelink\":2,\"kind\":\"Noncombat\"} "
+      " {\"source\":1,\"target\":{\"type\":\"ToPlaneswalker\",\"value\":5},\"amount\":4,\"excess\":1,\"dealtByInfect\":true,\"dealtByLifelink\":2,\"dealtFromZone\":\"Stack\",\"kind\":\"Noncombat\"} "
   -- Every dealtBy* rider at its default, which is what an event carrying none
   -- of them means.
   Spec.it s "an all-default value omits every optional key" $
@@ -71,6 +77,7 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
         { DamageEvent.source = ObjectId.MkObjectId 1,
           DamageEvent.target = Recipient.ToPlayer (PlayerId.MkPlayerId 2),
           DamageEvent.amount = 3,
+          DamageEvent.excess = 0,
           DamageEvent.dealtByDeathtouch = False,
           DamageEvent.dealtByInfect = False,
           DamageEvent.dealtByWither = False,
@@ -80,6 +87,7 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByCreatureTypes = Set.empty,
           DamageEvent.dealtByCommander = False,
           DamageEvent.dealtByCardTypes = Set.empty,
+          DamageEvent.dealtFromZone = Nothing,
           DamageEvent.kind = DamageKind.Combat
         }
       " {\"source\":1,\"target\":{\"type\":\"ToPlayer\",\"value\":2},\"amount\":3,\"kind\":\"Combat\"} "

@@ -1056,9 +1056,13 @@ armMatches bindings board atEvent beforeEvent gs bearer you cond event = case co
   -- permanent (a planeswalker, a battle), and the ActingPermanent decides the
   -- match either way. Nothing is dealt damage while the id is a player's, which
   -- is what the Nothing arm falls through on.
-  TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage dealt _) -> case event of
+  --
+  -- With `excess`, only an event carrying some of CR 120.10's excess, which
+  -- Damage.settleExcess stamped on the batch.
+  TriggerCondition.IsDealtDamage (PermanentIsDealtDamage.MkPermanentIsDealtDamage dealt _ excess) -> case event of
     GameEvent.DamageDealt ev ->
       Game.damageCounts (DealtDamage.kind dealt) (DealtDamage.by dealt) ev
+        && (not excess || DamageEvent.excess ev > 0)
         && maybe False (damageBy (DealtDamage.recipient dealt)) (Recipient.objectOf (DamageEvent.target ev))
     _ -> False
   -- CR 120.3: a player the relation admits was DEALT damage of the kind and from

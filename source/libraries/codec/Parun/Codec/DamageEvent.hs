@@ -9,6 +9,7 @@ import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.Recipient as Recipient
 import qualified Parun.Codec.Subtype as Subtype
+import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -21,6 +22,7 @@ codec = Fields.object $ do
   source <- Fields.required "source" ObjectId.codec DamageEvent.source
   target <- Fields.required "target" Recipient.codec DamageEvent.target
   amount <- Fields.required "amount" Common.natural DamageEvent.amount
+  excess <- Fields.defaulted "excess" 0 Common.natural DamageEvent.excess
   dealtByDeathtouch <- Fields.defaulted "dealtByDeathtouch" False Common.boolean DamageEvent.dealtByDeathtouch
   dealtByInfect <- Fields.defaulted "dealtByInfect" False Common.boolean DamageEvent.dealtByInfect
   dealtByWither <- Fields.defaulted "dealtByWither" False Common.boolean DamageEvent.dealtByWither
@@ -35,12 +37,14 @@ codec = Fields.object $ do
   dealtByCreatureTypes <- Fields.defaulted "dealtByCreatureTypes" Set.empty (Common.set Subtype.codec) DamageEvent.dealtByCreatureTypes
   dealtByCommander <- Fields.defaulted "dealtByCommander" False Common.boolean DamageEvent.dealtByCommander
   dealtByCardTypes <- Fields.defaulted "dealtByCardTypes" Set.empty (Common.set CardType.codec) DamageEvent.dealtByCardTypes
+  dealtFromZone <- Fields.defaulted "dealtFromZone" Nothing (Common.maybe Zone.codec) DamageEvent.dealtFromZone
   kind <- Fields.required "kind" DamageKind.codec DamageEvent.kind
   pure
     DamageEvent.MkDamageEvent
       { DamageEvent.source = source,
         DamageEvent.target = target,
         DamageEvent.amount = amount,
+        DamageEvent.excess = excess,
         DamageEvent.dealtByDeathtouch = dealtByDeathtouch,
         DamageEvent.dealtByInfect = dealtByInfect,
         DamageEvent.dealtByWither = dealtByWither,
@@ -50,5 +54,6 @@ codec = Fields.object $ do
         DamageEvent.dealtByCreatureTypes = dealtByCreatureTypes,
         DamageEvent.dealtByCommander = dealtByCommander,
         DamageEvent.dealtByCardTypes = dealtByCardTypes,
+        DamageEvent.dealtFromZone = dealtFromZone,
         DamageEvent.kind = kind
       }
