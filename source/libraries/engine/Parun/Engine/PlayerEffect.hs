@@ -1862,10 +1862,13 @@ perTargetTimes pid source gs perTarget target = case PerTarget.each perTarget of
 
 -- CR 118.9: does a free-cast grant cover this card? Its filter is matched as
 -- matchesObjectFrom matches, with its `amount` framed in (Omnipresence's "the
--- number of creatures you control").
+-- number of creatures you control"), and its ordinal asked of nthCast with the
+-- filter as criterion (Weftwalking's "the first spell"), as flashFirst asks
+-- Radagast of Rhosgobel's.
 freeCastAdmits :: PlayerId -> RowSource -> FreeCast.FreeCast -> ObjectId -> GameState -> Bool
 freeCastAdmits pid source grant oid gs =
   Filter.matches (amountFramed pid source (FreeCast.amount grant) oid gs (contextFrom source oid gs)) (Projection.viewOfObject oid gs) (FreeCast.spells grant)
+    && maybe True (nthCast pid source (FreeCast.spells grant) oid gs) (FreeCast.onlyNth grant)
 
 -- CR 109.5: a grant's `amount` evaluated into Filter.slotAmount for the
 -- EnclosingAmount operand: read against the row's SOURCE with
@@ -5068,12 +5071,12 @@ castUse effect = case effect of
   -- its target criteria never reached. No card in `data/cards/` writes one.
   PlayerEffect.ModifyCost modifier
     | CostModifier.subject modifier == CostSubject.Spells && Maybe.isNothing (CostModifier.whichTargets modifier) && Maybe.isNothing (CostModifier.perTarget modifier) -> Just (CostModifier.matching modifier)
-  -- A grant comparing against a computed number or confined to a zone answers
-  -- Nothing for the targets' reason: `spells` alone would spend it on a spell
-  -- outside its `amount` or `from`. No card in `data/cards/` writes one
-  -- under Duration.UntilUsed.
+  -- A grant comparing against a computed number, confined to a zone or limited
+  -- to an ordinal answers Nothing for the targets' reason: `spells` alone would
+  -- spend it on a spell outside its `amount`, `from` or `onlyNth`. No card in
+  -- `data/cards/` writes one under Duration.UntilUsed.
   PlayerEffect.CastWithoutPayingManaCost grant
-    | Maybe.isNothing (FreeCast.amount grant) && Maybe.isNothing (FreeCast.from grant) -> Just (FreeCast.spells grant)
+    | Maybe.isNothing (FreeCast.amount grant) && Maybe.isNothing (FreeCast.from grant) && Maybe.isNothing (FreeCast.onlyNth grant) -> Just (FreeCast.spells grant)
   PlayerEffect.NextSpell criterion _ -> Just criterion
   _ -> fst <$> castFlashGrant effect
 
