@@ -28,6 +28,7 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.ProhibitedCost as ProhibitedCost
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.RequiredBlockers as RequiredBlockers
 import qualified Parun.Types.RequirementArity as RequirementArity
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
@@ -57,7 +58,7 @@ testRuleAbilities =
       RuleAbilities.attackRequirements = [AttackRequirement.MkAttackRequirement Affected.Attached Nothing Nothing RequirementArity.EachSubject],
       RuleAbilities.blockCosts = [BlockCost.MkBlockCost Affected.Attached (PerCreature.Fixed (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 3])) [])) Nothing Nothing],
       RuleAbilities.blockPermissions = [BlockPermission.MkBlockPermission Affected.Attached (Just (Quantity.Literal 1)) Nothing],
-      RuleAbilities.blockRequirements = [BlockRequirement.MkBlockRequirement Nothing (Just Affected.Attached) Nothing RequirementArity.EachSubject],
+      RuleAbilities.blockRequirements = [BlockRequirement.MkBlockRequirement Nothing (Just Affected.Attached) Nothing RequirementArity.EachSubject RequiredBlockers.AnyNumber],
       RuleAbilities.combatRestrictions = [CombatRestriction.CantAttack (AffectedUnless.MkAffectedUnless Affected.Attached Nothing Nothing Nothing)],
       RuleAbilities.counterRestrictions = [CounterRestriction.MkCounterRestriction Affected.Attached (Just CounterKind.MinusOneMinusOne)],
       RuleAbilities.keywordCostRestrictions = [KeywordCostRestriction.MkKeywordCostRestriction KeywordCostPart.Crew Affected.Attached],

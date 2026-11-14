@@ -717,6 +717,7 @@ import qualified Parun.Codec.ReplacementProvenanceSpec
 import qualified Parun.Codec.RequestSpec
 import qualified Parun.Codec.RequireAttackSpec
 import qualified Parun.Codec.RequireBlockSpec
+import qualified Parun.Codec.RequiredBlockersSpec
 import qualified Parun.Codec.RequiredDefenderSpec
 import qualified Parun.Codec.RequirementAritySpec
 import qualified Parun.Codec.RestartSignalSpec
@@ -1801,6 +1802,7 @@ spec s reference corpus = do
   Parun.Codec.RequireBlockSpec.spec s
   Parun.Codec.RequiredDefenderSpec.spec s
   Parun.Codec.RequirementAritySpec.spec s
+  Parun.Codec.RequiredBlockersSpec.spec s
   Parun.Codec.RestartSignalSpec.spec s
   Parun.Codec.RestrictedCreaturesSpec.spec s
   Parun.Codec.ResultSpec.spec s

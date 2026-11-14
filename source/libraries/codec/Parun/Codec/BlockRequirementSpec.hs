@@ -15,6 +15,7 @@ import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.RequiredBlockers as RequiredBlockers
 import qualified Parun.Types.RequirementArity as RequirementArity
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.Zone as Zone
@@ -27,7 +28,7 @@ spec s = Spec.describe s "Parun.Codec.BlockRequirement" $ do
     Common.assertCodec
       s
       BlockRequirement.codec
-      (BlockRequirement.MkBlockRequirement Nothing (Just Affected.Attached) Nothing RequirementArity.EachSubject)
+      (BlockRequirement.MkBlockRequirement Nothing (Just Affected.Attached) Nothing RequirementArity.EachSubject RequiredBlockers.AnyNumber)
       " {\"attacker\":{\"type\":\"Attached\"}} "
   -- Razorgrass Screen's shape: the requirement names its own source and no
   -- attacker, so the object axis is the absent one.
@@ -35,7 +36,7 @@ spec s = Spec.describe s "Parun.Codec.BlockRequirement" $ do
     Common.assertCodec
       s
       BlockRequirement.codec
-      (BlockRequirement.MkBlockRequirement (Just Affected.Attached) Nothing Nothing RequirementArity.EachSubject)
+      (BlockRequirement.MkBlockRequirement (Just Affected.Attached) Nothing Nothing RequirementArity.EachSubject RequiredBlockers.AnyNumber)
       " {\"subject\":{\"type\":\"Attached\"}} "
   -- Seton's Desire's shape: CR 509.1c's second reading, "or that it must block
   -- if some condition is met", written as an "as long as" clause (CR 611.3a)
@@ -64,6 +65,7 @@ spec s = Spec.describe s "Parun.Codec.BlockRequirement" $ do
               )
           )
           RequirementArity.EachSubject
+          RequiredBlockers.AnyNumber
       )
       " {\"attacker\":{\"type\":\"Attached\"},\"while\":{\"type\":\"Compares\",\"value\":{\"measured\":{\"type\":\"Count\",\"value\":{\"aggregation\":{\"type\":\"Members\"},\"filter\":{\"type\":\"And\",\"value\":[]},\"scope\":{\"type\":\"InZone\",\"value\":{\"zone\":\"Graveyard\",\"player\":{\"type\":\"Relative\",\"value\":\"You\"}}}}},\"comparison\":\"AtLeast\",\"threshold\":{\"type\":\"Literal\",\"value\":7}}}} "
   -- Gaea's Protector's shape: CR 509.1c read as ONE requirement over every able
@@ -72,6 +74,14 @@ spec s = Spec.describe s "Parun.Codec.BlockRequirement" $ do
     Common.assertCodec
       s
       BlockRequirement.codec
-      (BlockRequirement.MkBlockRequirement Nothing (Just (Affected.Matching Filter.IsSource)) Nothing RequirementArity.AnySubject)
+      (BlockRequirement.MkBlockRequirement Nothing (Just (Affected.Matching Filter.IsSource)) Nothing RequirementArity.AnySubject RequiredBlockers.AnyNumber)
       " {\"attacker\":{\"type\":\"Matching\",\"value\":{\"type\":\"IsSource\"}},\"arity\":\"AnySubject\"} "
+  -- Nacatl War-Pride's shape: Gaea's Protector's group, obeyed by exactly one
+  -- blocker.
+  Spec.it s "an exactly-one group requirement" $
+    Common.assertCodec
+      s
+      BlockRequirement.codec
+      (BlockRequirement.MkBlockRequirement Nothing (Just (Affected.Matching Filter.IsSource)) Nothing RequirementArity.AnySubject RequiredBlockers.ExactlyOne)
+      " {\"attacker\":{\"type\":\"Matching\",\"value\":{\"type\":\"IsSource\"}},\"arity\":\"AnySubject\",\"blockers\":\"ExactlyOne\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s BlockRequirement.codec

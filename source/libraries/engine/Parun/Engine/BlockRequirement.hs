@@ -24,6 +24,7 @@ import qualified Parun.Types.BlockRequirement as BlockRequirement
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.RequiredBlockers as RequiredBlockers
 import qualified Parun.Types.RequirementArity as RequirementArity
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.StoredEffects as StoredEffects
@@ -53,7 +54,8 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 -- duplicate-free, so a pair is emitted once per requirement that names it.
 --
 -- The GROUP half is Parun.Types.RequirementArity.AnySubject -- "this creature
--- must be blocked if able", one requirement obeyed by any single able blocker.
+-- must be blocked if able", one requirement obeyed by any single able blocker
+-- -- and its EXACTLY-ONE third, obeyed only while one blocker alone blocks.
 -- It is a set of pairs and not a weight because CR 509.1c counts it once
 -- however many creatures block, and Combat.blockCeilingGiven's search reads it
 -- that way. Combat.bestBlockDeclaration is where widening either half is
@@ -87,7 +89,7 @@ instances able candidates attackers gs =
       fromGrant source = mconcat (fmap (fromRequirement source []) (RuleAbilities.blockRequirements (grantedRules source)))
       fromPermanent source = case RuleAbilities.blockRequirements (Projection.ruleAbilitiesOf source gs) of
         -- Every permanent in almost every game.
-        [] -> ([], [])
+        [] -> mempty
         requirements ->
           -- TWO ability losses, the same pair PlayerEffect.applying asks
           -- about.
@@ -123,7 +125,7 @@ instances able candidates attackers gs =
               -- words printed on THAT object, and the attacker clause below is
               -- printed on the card stating the requirement.
               mconcat (fmap (fromRequirement source (Projection.readerTextChanges source gs)) requirements)
-            else ([], [])
+            else mempty
       -- One whole-board projection and one grant walk for the whole walk, both
       -- unforced until some permanent actually reaches `named`.
       pcs = Projection.projectAll gs
@@ -163,17 +165,28 @@ instances able candidates attackers gs =
             wanted = narrow BlockRequirement.attacker attackers
             blockersOf attacker = fmap (\blocker -> (blocker, attacker)) (filter (\blocker -> able blocker attacker) subjects)
          in if not (inForce source changes requirement)
-              then ([], [])
+              then mempty
               else case BlockRequirement.arity requirement of
                 RequirementArity.EachSubject -> case BlockRequirement.attacker requirement of
-                  Nothing -> ([], fmap (anyAttacker wanted) subjects)
-                  Just _ -> (concatMap blockersOf wanted, [])
+                  Nothing -> ([], fmap (anyAttacker wanted) subjects, [])
+                  Just _ -> (concatMap blockersOf wanted, [], [])
                 -- ONE group per ATTACKER the object axis names, which is what
                 -- Gaea's Protector's sentence is about; the subject set is the
                 -- creatures that could obey it. Two attackers under one such
                 -- requirement are two group requirements, not one obeyed by
                 -- blocking either.
-                RequirementArity.AnySubject -> ([], fmap (Set.fromList . blockersOf) wanted)
+                --
+                -- Nacatl War-Pride's "exactly one" is the same group obeyed by
+                -- one blocker only (its ruling: one requirement, not a
+                -- requirement plus a restriction). Every creature able to
+                -- block the attacker is a member, so the members declared are
+                -- exactly its blockers. Proved by the Nacatl War-Pride
+                -- scenarios.
+                RequirementArity.AnySubject ->
+                  let perAttacker = fmap (Set.fromList . blockersOf) wanted
+                   in case BlockRequirement.blockers requirement of
+                        RequiredBlockers.AnyNumber -> ([], perAttacker, [])
+                        RequiredBlockers.ExactlyOne -> ([], [], perAttacker)
       -- CR 509.1c's second shape -- "or that it must block if some condition is
       -- met" -- read as an "as long as" clause (CR 611.3a) and asked exactly as
       -- AttackRequirement.instances and BlockPermission.instances ask their own
@@ -244,4 +257,7 @@ instances able candidates attackers gs =
           )
       gathered =
         fmap (\source -> fromPermanent source <> fromGrant source) (Set.toList (GameState.battlefield gs))
-   in Requirement.gather (concatMap fst gathered <> storedEach) (concatMap snd gathered <> storedBlockerGroups <> storedGroups)
+      atoms (these, _, _) = these
+      sets (_, these, _) = these
+      exactSets (_, _, these) = these
+   in Requirement.gather (concatMap atoms gathered <> storedEach) (concatMap sets gathered <> storedBlockerGroups <> storedGroups) (concatMap exactSets gathered)

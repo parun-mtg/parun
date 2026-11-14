@@ -375,4 +375,4 @@ instances candidates targets gs =
         fmap (\source -> fromPermanent source <> fromGrant source) (Set.toList (GameState.battlefield gs))
           <> fmap fromStored (StoredEffects.attackRequirements (GameState.stored gs))
           <> fmap fromGoad candidates
-   in Requirement.gather (concatMap fst gathered) (concatMap snd gathered)
+   in Requirement.gather (concatMap fst gathered) (concatMap snd gathered) []
