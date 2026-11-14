@@ -817,10 +817,18 @@ candidateCostsGiven permitted pid name oid gs =
               -- tagged with the keyword itself, which is
               -- what Keyword.resolutionDelayedAbility reads back off
               -- Object.castUsing to arm rule 702.185a's exile.
+              --
+              -- Read off `keywords` too, sneak's two reads: a grant to cards in a
+              -- hand (Tannuk, Steadfast Second) ends as the card leaves it, and
+              -- CR 400.7g carries it onto the spell (docs/decisions.md, "Whether
+              -- a warp granted to a card in a hand carries onto the spell"). The
+              -- scenario
+              -- tannuk-steadfast-second-warps-a-red-creature-card-that-is-exiled-at-the-next-end-step
+              -- proves it.
               warped =
                 fmap
                   (\cost -> CandidateCost.plain (Just (Keyword.Type.Warp cost)) (withAdditional cost))
-                  (Keyword.warpCosts onStack)
+                  (Keyword.warpCosts (keywords <> onStack))
               -- CR 712.8d: the face this card may be cast TRANSFORMED or CONVERTED
               -- as, which is what Parun.Engine.Card.convertedFaceGiven answers and
               -- what Parun.Engine.Cast.castableFacesFor offers. Asked through that
