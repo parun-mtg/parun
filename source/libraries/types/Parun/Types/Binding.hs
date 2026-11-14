@@ -100,7 +100,8 @@ data Binding = MkBinding
     -- a later loop of the same resolution to read member by member -- Mutalith
     -- Vortex Beast's "for each flip you lose, this creature deals 3 damage to
     -- that player". Written by Parun.Engine.Resolve.Arms.Zones's forEach as the
-    -- loop ends, and Nothing for every slot no loop's body bound an amount at.
+    -- loop ends, and by its vote beside a word's tally, each voter's own
+    -- ballots for it (CR 701.38a); Nothing for every other slot.
     perMember :: Maybe (Map.Map Recipient.Recipient Natural.Natural)
   }
   deriving (Eq, Ord, Show)

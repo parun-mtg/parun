@@ -1327,7 +1327,7 @@ cantAttackPlayer candidates players gs =
           let subject = if null changes then affected else Projection.rewriteAffected changes affected
               barred = case Projection.controllerOf source gs of
                 Nothing -> []
-                Just you -> filter (\pid -> PlayerEffect.inScope pid you gs scope) [player]
+                Just you -> filter (\pid -> PlayerEffect.inScopeWithin (Just source) (Just you) pid you gs scope) [player]
               -- CR 116.2d, `cantBeBlockedBy`'s filter on the other pairwise
               -- arm and a regression fence for the same reason.
               unignored creature = not (IgnoredAbility.ignoredForSubject creature source (RuleAbilities.Engine.nameOf restriction) gs)

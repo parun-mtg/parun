@@ -1,0 +1,238 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Elrond of the White Council",
+      "oracleText": "Secret council — When Elrond enters, each player secretly votes for fellowship or aid, then those votes are revealed. For each fellowship vote, the voter chooses a creature they control. You gain control of each creature chosen this way, and they gain \"This creature can't attack its owner.\" Then for each aid vote, put a +1/+1 counter on each creature you control.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Vote",
+                        "value": {
+                          "choices": {
+                            "type": "Words",
+                            "value": [
+                              "fellowship",
+                              "aid"
+                            ]
+                          },
+                          "secret": true,
+                          "starter": {
+                            "type": "Relative",
+                            "value": "You"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "ForEach",
+                        "value": {
+                          "body": [
+                            {
+                              "type": "ForEachNumber",
+                              "value": {
+                                "body": [
+                                  {
+                                    "type": "ChoosePermanents",
+                                    "value": {
+                                      "permanents": {
+                                        "chooser": {
+                                          "type": "InSlot",
+                                          "value": "voter"
+                                        },
+                                        "filter": {
+                                          "type": "And",
+                                          "value": [
+                                            {
+                                              "type": "HasCardType",
+                                              "value": "Creature"
+                                            },
+                                            {
+                                              "type": "HeldByBound",
+                                              "value": {
+                                                "holder": "Controller",
+                                                "slot": "voter"
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "slot": "chosen"
+                                    }
+                                  }
+                                ],
+                                "slot": "ballot",
+                                "upTo": {
+                                  "type": "InSlot",
+                                  "value": "fellowship"
+                                }
+                              }
+                            }
+                          ],
+                          "ref": {
+                            "type": "Players",
+                            "value": {
+                              "players": {
+                                "type": "Relative",
+                                "value": "AnyPlayer"
+                              }
+                            }
+                          },
+                          "slot": "voter"
+                        }
+                      },
+                      {
+                        "type": "GainControl",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "IsBound",
+                              "value": "chosen"
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "Indefinite"
+                          },
+                          "modification": {
+                            "type": "GainAbility",
+                            "value": {
+                              "type": "Rules",
+                              "value": {
+                                "combatRestrictions": [
+                                  {
+                                    "type": "CantAttackPlayer",
+                                    "value": {
+                                      "affected": {
+                                        "type": "Matching",
+                                        "value": {
+                                          "type": "IsSource"
+                                        }
+                                      },
+                                      "defenders": {
+                                        "type": "SourceOwner"
+                                      },
+                                      "kinds": [
+                                        "OfPlayer"
+                                      ]
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "IsBound",
+                              "value": "chosen"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "InSlot",
+                            "value": "aid"
+                          },
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Elf",
+          "Noble"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

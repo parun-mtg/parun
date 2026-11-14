@@ -190,6 +190,7 @@ inScopeWithin source reach pid controller gs scope = case scope of
   PlayerScope.Superlative leading -> List.elem pid (leaders reach gs leading)
   PlayerScope.InRole role -> List.elem pid (Turn.roleHolders role gs)
   PlayerScope.ChosenPlayer -> (source >>= \oid -> Game.currentChoice Chosen.Players oid gs >>= Map.lookup PlayerChoice.AsEnters) == Just pid
+  PlayerScope.SourceOwner -> (source >>= \oid -> fmap Object.owner (Game.lookupObject oid gs)) == Just pid
 
 -- The same question over a CARRIER's affected set rather than over a bare scope:
 -- is `pid` one of the players this row applies to? inScope for the Scoped arm,
@@ -241,9 +242,10 @@ playersInScope reach perspective gs scope = case scope of
   PlayerScope.Related relation -> Players.relatedAmong (Players.table reach gs) perspective gs relation
   PlayerScope.Superlative leading -> Just (leaders reach gs leading)
   PlayerScope.InRole role -> Just (filter (`List.elem` Turn.roleHolders role gs) (Players.table reach gs))
-  -- No source to have chosen anybody: undeterminable, PlayerRef.Candidate's
-  -- posture.
+  -- No source to have chosen or to own anybody: undeterminable,
+  -- PlayerRef.Candidate's posture.
   PlayerScope.ChosenPlayer -> Nothing
+  PlayerScope.SourceOwner -> Nothing
 
 -- CR 707.2a: the player abilities this permanent's copiable rules text gives it
 -- -- its copy snapshot's when it has one, its printed face's otherwise. The
@@ -3043,6 +3045,8 @@ protectedFromTargeting rows pastHexproof caster source sourceView pid gs =
             PlayerScope.InRole _ -> False
             -- Nobody chose a sourceless caster.
             PlayerScope.ChosenPlayer -> False
+            -- Nor owns one.
+            PlayerScope.SourceOwner -> False
         PlayerEffect.CantCastSpells -> False
         PlayerEffect.CantActivateAbilities {} -> False
         PlayerEffect.CantCastMoreThan _ -> False
