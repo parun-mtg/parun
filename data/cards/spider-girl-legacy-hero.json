@@ -18,7 +18,7 @@
         }
       ],
       "name": "Spider-Girl, Legacy Hero",
-      "oracleText": "",
+      "oracleText": "During your turn, Spider-Girl has flying.\nWhen Spider-Girl leaves the battlefield, create a 1/1 green and white Human Citizen creature token.",
       "power": {
         "type": "Literal",
         "value": 2

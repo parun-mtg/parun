@@ -20,7 +20,7 @@
         }
       ],
       "name": "Spider-Gwen, Free Spirit",
-      "oracleText": "",
+      "oracleText": "Reach\nWhenever Spider-Gwen becomes tapped, you may discard a card. If you do, draw a card.",
       "power": {
         "type": "Literal",
         "value": 2

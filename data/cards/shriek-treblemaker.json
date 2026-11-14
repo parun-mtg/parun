@@ -65,7 +65,7 @@
         }
       ],
       "name": "Shriek, Treblemaker",
-      "oracleText": "",
+      "oracleText": "At the beginning of your first main phase, you may discard a card. When you do, target creature can't block this turn.\nSonic Blast — Whenever a creature an opponent controls dies, Shriek deals 1 damage to that player.",
       "power": {
         "type": "Literal",
         "value": 2

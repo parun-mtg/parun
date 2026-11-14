@@ -15,7 +15,7 @@
         }
       ],
       "name": "Silver Sable, Mercenary Leader",
-      "oracleText": "",
+      "oracleText": "When Silver Sable enters, put a +1/+1 counter on another target creature.\nWhenever Silver Sable attacks, target modified creature you control gains lifelink until end of turn. (Equipment, Auras you control, and counters are modifications.)",
       "power": {
         "type": "Literal",
         "value": 2

@@ -98,7 +98,7 @@
         }
       ],
       "name": "Sinister Hideout",
-      "oracleText": "",
+      "oracleText": "This land enters tapped.\n{T}: Add {U} or {B}.\n{4}, {T}: Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)",
       "replacementEffects": [
         {
           "effect": {
