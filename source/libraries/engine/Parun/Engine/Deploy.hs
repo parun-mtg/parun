@@ -63,7 +63,8 @@ ability =
           ActivatedAbility.condition = Nothing,
           ActivatedAbility.name = Nothing,
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- The slot CR 804.2's one target is chosen into.

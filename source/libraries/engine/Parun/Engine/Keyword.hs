@@ -1838,7 +1838,8 @@ cycling cost searchFor =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- CR 702.77a's whole ability. Cycling's one clause over, and the first hand
@@ -1881,7 +1882,8 @@ reinforce n cost =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- The slot rule 702.77a's one target is chosen into, mentorTarget's position.
@@ -1958,7 +1960,8 @@ craft spec =
           ActivatedAbility.name = Nothing,
           -- Written by `mintedBy` at the roster, unearth's reason.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- CR 702.71a's whole ability, transmute's above one zone over: the cost
@@ -2029,7 +2032,8 @@ searchForSameManaValue cost filter_ destination =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- CR 702.49a's whole ability: "[Cost], Reveal this card from your hand, Return an
@@ -2125,7 +2129,8 @@ ninjutsu (Ninjutsu.MkNinjutsu cost variant) =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- CR 113.6b: the minted hand abilities whose keyword states the command zone
@@ -2257,7 +2262,8 @@ unearth cost =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- The slot rule 702.84a's "it" is bound into as the card arrives on the
@@ -2368,7 +2374,8 @@ graveyardTokenCopy exceptions cost =
           ActivatedAbility.name = Nothing,
           -- Written by `mintedBy` at the roster, unearth's reason.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- CR 702.97a's whole ability: "[Cost], Exile this card from your graveyard: Put
@@ -2413,7 +2420,8 @@ scavenge cost =
           ActivatedAbility.name = Nothing,
           -- Written by `mintedBy` at the roster, unearth's reason.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- The slot rule 702.97a's one target is chosen into, reinforceTarget's position.
@@ -2521,7 +2529,8 @@ encore cost =
           ActivatedAbility.name = Nothing,
           -- Written by `mintedBy` at the roster, unearth's reason.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- The slots rule 702.141a's loop needs, myriadOpponentSlot's and
@@ -2687,7 +2696,8 @@ crew n =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- CR 702.171a's whole ability, crew's shape one rule over.
@@ -2737,7 +2747,8 @@ saddle n =
           ActivatedAbility.condition = Nothing,
           ActivatedAbility.name = Nothing,
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- CR 702.184a's whole ability, crew's neighbour above and levelUp's below.
@@ -2813,7 +2824,8 @@ station =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- CR 122.1's charge counter, spelled as a station card spells it. Not reserved by
@@ -2859,7 +2871,8 @@ levelUp cost =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- CR 702.107a's whole ability, levelUp's twin; the card names only the cost.
@@ -2890,7 +2903,8 @@ outlast cost =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- CR 702.6a's whole ability: "[Cost]: Attach this permanent to target creature
@@ -2954,7 +2968,8 @@ equip payload =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- The slot rule 702.6a's one target is chosen into, reinforceTarget's position.
@@ -3001,7 +3016,8 @@ fortify cost =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- The slot rule 702.67a's one target is chosen into, equipTarget's position.
@@ -3047,7 +3063,8 @@ reconfigure cost =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- The slot rule 702.151a's one target is chosen into, equipTarget's position.
@@ -3093,7 +3110,8 @@ reconfigureOff cost =
       ActivatedAbility.name = Nothing,
       -- Written by `mintedBy` at the roster, reconfigure's reason.
       ActivatedAbility.keyword = Nothing,
-      ActivatedAbility.copyability = Copyability.Copyable
+      ActivatedAbility.copyability = Copyability.Copyable,
+      ActivatedAbility.chosenPlayer = Nothing
     }
 
 -- CR 702.65a: "[Cost]: You may exchange this permanent with an Aura card in
@@ -3119,7 +3137,8 @@ auraSwap cost =
           -- Nothing here and written by `mintedBy` at the roster, the one place that
           -- knows the keyword by identity rather than by reconstructing it.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
 
 -- CR 601.3: the casting permissions rule 702 gives a card for holding a keyword.
@@ -7280,7 +7299,8 @@ predefinedArtifactToken name subtype mana effect =
           -- Nothing: the token's own printed ability (CR 111.10), not one a
           -- keyword grants the object it is on.
           ActivatedAbility.keyword = Nothing,
-          ActivatedAbility.copyability = Copyability.Copyable
+          ActivatedAbility.copyability = Copyability.Copyable,
+          ActivatedAbility.chosenPlayer = Nothing
         }
     ]
 

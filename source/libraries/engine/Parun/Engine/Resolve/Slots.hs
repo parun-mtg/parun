@@ -218,6 +218,7 @@ import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import Parun.Types.PlayerRef (PlayerRef)
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
+import qualified Parun.Types.PlayerSlot as PlayerSlot
 import qualified Parun.Types.PlayersWho as PlayersWho
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Power as Power
@@ -263,7 +264,6 @@ import Parun.Types.SlotArity (SlotArity)
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotCount as SlotCount
 import Parun.Types.SlotName (SlotName)
-import qualified Parun.Types.SlotPerPlayer as SlotPerPlayer
 import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.SpeedDecrease as SpeedDecrease
@@ -3581,7 +3581,7 @@ targetSlotSlots :: TargetSlot.TargetSlot -> Map.Map SlotName SlotArity
 targetSlotSlots slot =
   -- CR 601.2c's "that player" of a "for each opponent" slot is bound by the
   -- slot itself (Target.announcedSlots), so it is not a read of anything else.
-  maybe id (Map.delete . SlotPerPlayer.slot) (TargetSlot.perPlayer slot) $
+  maybe id (Map.delete . PlayerSlot.slot) (TargetSlot.perPlayer slot) $
     joinSlots
       [ poolSlot (TargetSlot.pool slot),
         -- Every slot the slot's own FILTER names -- CR 603.2's "target artifact or

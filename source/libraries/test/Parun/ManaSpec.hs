@@ -515,7 +515,8 @@ manaSpec s registry = Spec.describe s "Mana" $ do
               ActivatedAbility.condition = Nothing,
               ActivatedAbility.name = Nothing,
               ActivatedAbility.keyword = Nothing,
-              ActivatedAbility.copyability = Copyability.Copyable
+              ActivatedAbility.copyability = Copyability.Copyable,
+              ActivatedAbility.chosenPlayer = Nothing
             }
      in Spec.assertBool s (ManaAbility.isManaAbility ab) "mana ability"
 
@@ -535,7 +536,8 @@ manaSpec s registry = Spec.describe s "Mana" $ do
               ActivatedAbility.condition = Nothing,
               ActivatedAbility.name = Nothing,
               ActivatedAbility.keyword = Nothing,
-              ActivatedAbility.copyability = Copyability.Copyable
+              ActivatedAbility.copyability = Copyability.Copyable,
+              ActivatedAbility.chosenPlayer = Nothing
             }
      in Spec.assertBool s (not (ManaAbility.isManaAbility ab)) "targets -> not mana"
 
@@ -555,7 +557,8 @@ manaSpec s registry = Spec.describe s "Mana" $ do
               ActivatedAbility.condition = Nothing,
               ActivatedAbility.name = Nothing,
               ActivatedAbility.keyword = Nothing,
-              ActivatedAbility.copyability = Copyability.Copyable
+              ActivatedAbility.copyability = Copyability.Copyable,
+              ActivatedAbility.chosenPlayer = Nothing
             }
      in Spec.assertBool s (not (ManaAbility.isManaAbility ab)) "no mana produced -> not mana"
 
@@ -4874,7 +4877,7 @@ atLife n gs = gs {GameState.players = Map.adjust (\p -> p {Player.life = n}) S.a
 theAbility :: Printing.Printing -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable Nothing
 
 -- CR 106.3's count read off the BOARD rather than off the card: Cabal Coffers
 -- (Torment) prints "{2}, {T}: Add {B} for each Swamp you control." Oracle text

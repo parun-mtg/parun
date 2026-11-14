@@ -206,7 +206,8 @@ loyaltyAbility n effect =
       ActivatedAbility.condition = Nothing,
       ActivatedAbility.name = Nothing,
       ActivatedAbility.keyword = Nothing,
-      ActivatedAbility.copyability = Copyability.Copyable
+      ActivatedAbility.copyability = Copyability.Copyable,
+      ActivatedAbility.chosenPlayer = Nothing
     }
 
 -- | The token CR 701.47a or 701.71a creates.

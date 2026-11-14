@@ -453,7 +453,8 @@ activatedAbility c m =
       ActivatedAbility.condition = Nothing,
       ActivatedAbility.name = Nothing,
       ActivatedAbility.keyword = Nothing,
-      ActivatedAbility.copyability = Copyability.Copyable
+      ActivatedAbility.copyability = Copyability.Copyable,
+      ActivatedAbility.chosenPlayer = Nothing
     }
 
 triggeredAbility :: TriggerCondition.TriggerCondition -> Modal -> TriggeredAbility.TriggeredAbility Card.Card Ability

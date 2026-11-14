@@ -286,7 +286,7 @@ lockAbility keys = case drop 1 (Face.activatedAbilities (S.combinedFace keys)) o
   -- Unreachable: the printing has two. A no-mode ability with an unpayable cost
   -- keeps the helper total and is offered nowhere, so a card that lost its
   -- second ability fails the case rather than silently activating the first.
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.MkCost Nothing []) [] [] Nothing (Modal.MkModal Seq.empty (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.MkCost Nothing []) [] [] Nothing (Modal.MkModal Seq.empty (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable Nothing
 
 -- Whether that ability is on alice's menu, which is what says the board really
 -- is in CR 307.5's sorcery-speed window with the cost payable -- and so that a
@@ -324,7 +324,7 @@ activateKeys keys keysId answer gs =
 keyAbility :: Int -> Printing.Printing -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 keyAbility index key = case drop index (Face.activatedAbilities (S.combinedFace key)) of
   ability : _ -> ability
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.MkCost Nothing []) [] [] Nothing (Modal.MkModal Seq.empty (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.MkCost Nothing []) [] [] Nothing (Modal.MkModal Seq.empty (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable Nothing
 
 -- The board the three Skeleton Key cases share: bob's Room, a Balemurk Leech
 -- apiece for alice and bob, and alice's Skeleton Key. The Room is PLACED rather

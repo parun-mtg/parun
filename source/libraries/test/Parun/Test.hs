@@ -664,6 +664,7 @@ import qualified Parun.Codec.PlayerRefSpec
 import qualified Parun.Codec.PlayerRelationSpec
 import qualified Parun.Codec.PlayerSacrificesSpec
 import qualified Parun.Codec.PlayerScopeSpec
+import qualified Parun.Codec.PlayerSlotSpec
 import qualified Parun.Codec.PlayerSpec
 import qualified Parun.Codec.PlayerStaticAbilitySpec
 import qualified Parun.Codec.PlayerViewSpec
@@ -770,7 +771,6 @@ import qualified Parun.Codec.SkipPhaseSpec
 import qualified Parun.Codec.SkipWindowSpec
 import qualified Parun.Codec.SlotCountSpec
 import qualified Parun.Codec.SlotNameSpec
-import qualified Parun.Codec.SlotPerPlayerSpec
 import qualified Parun.Codec.SourceChoicesSpec
 import qualified Parun.Codec.SourceSpec
 import qualified Parun.Codec.SpecialActionSpec
@@ -1854,7 +1854,7 @@ spec s reference corpus = do
   Parun.Codec.SkipWindowSpec.spec s
   Parun.Codec.SlotCountSpec.spec s
   Parun.Codec.SlotNameSpec.spec s
-  Parun.Codec.SlotPerPlayerSpec.spec s
+  Parun.Codec.PlayerSlotSpec.spec s
   Parun.Codec.SourceChoicesSpec.spec s
   Parun.Codec.SourceSpec.spec s
   Parun.Codec.SpecialActionSpec.spec s

@@ -13,6 +13,7 @@ import qualified Parun.Codec.CostChoice as CostChoice
 import qualified Parun.Codec.DefinedX as DefinedX
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.Modal as Modal
+import qualified Parun.Codec.PlayerSlot as PlayerSlot
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -59,6 +60,9 @@ codec cardCodec abilityCodec = Fields.object $ do
   keyword <- Fields.defaulted "keyword" Nothing (Common.maybe Keyword.codec) ActivatedAbility.keyword
   -- CR 113.6g: emitted only for an ability that says it can't be copied.
   copyability <- Fields.defaulted "copyability" Copyability.Type.Copyable Copyability.codec ActivatedAbility.copyability
+  -- CR 115.10a: emitted only for an ability that chooses a player as it is
+  -- announced.
+  chosenPlayer <- Fields.defaulted "chosenPlayer" Nothing (Common.maybe PlayerSlot.codec) ActivatedAbility.chosenPlayer
   pure
     ActivatedAbility.MkActivatedAbility
       { ActivatedAbility.cost = cost,
@@ -71,5 +75,6 @@ codec cardCodec abilityCodec = Fields.object $ do
         ActivatedAbility.condition = condition,
         ActivatedAbility.name = name,
         ActivatedAbility.keyword = keyword,
-        ActivatedAbility.copyability = copyability
+        ActivatedAbility.copyability = copyability,
+        ActivatedAbility.chosenPlayer = chosenPlayer
       }

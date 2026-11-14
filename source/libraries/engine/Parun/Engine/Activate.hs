@@ -21,6 +21,7 @@ import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.Loyalty as Loyalty
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
+import qualified Parun.Engine.Players as Players
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Resolve.Common as Resolve
 import qualified Parun.Engine.Resolve.Effect as Resolve
@@ -53,6 +54,7 @@ import qualified Parun.Types.Payment as Payment
 import qualified Parun.Types.PaymentMoment as PaymentMoment
 import qualified Parun.Types.PaymentSubject as PaymentSubject
 import Parun.Types.PlayerId (PlayerId)
+import qualified Parun.Types.PlayerSlot as PlayerSlot
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import Parun.Types.Result (Result)
@@ -197,6 +199,16 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
       -- of the activation by a rejection below.
       Monad.when (Modal.facesDilemma chosenModes (ActivatedAbility.modal ability)) $
         State.modify' (Event.recordEvent (GameEvent.FacedDilemma (FacedDilemma.MkFacedDilemma pid abilId)))
+      -- CR 115.10a through CR 602.2b: the player the ability chooses as it is
+      -- announced -- Lodestone Bauble's "a player", which is not a target, so
+      -- hexproof and shroud do not refuse it (Players.chooseOne). Asked after
+      -- the modes and before X (Bargaining Table's ruling) and targets
+      -- (Lodestone Bauble's), and bound under its slot in every seed below, so
+      -- a pool's "that player's graveyard" reads it at CR 601.2c and CR 608.2b
+      -- alike. Nobody to choose rejects the activation below.
+      announcedPlayer <- traverse (\each -> (,) (PlayerSlot.slot each) <$> Players.chooseOne pid abilId Nothing (Players.offer pid gs (PlayerSlot.players each))) (ActivatedAbility.chosenPlayer ability)
+      let unchosen = any (Maybe.isNothing . snd) announcedPlayer
+          chosenSeed = Map.fromList [(slot, Binding.toPlayer who) | Just (slot, Just who) <- [announcedPlayer]]
       -- CR 602.2b routes the rest of the activation through CR 601.2b-i, so CR
       -- 601.2b's announcement of a variable cost (CR 107.3) governs an activation
       -- cost's {X} too, and it is asked HERE -- after the modes, before CR
@@ -233,7 +245,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
           --
           -- The map CR 601.2c is ANSWERED from is the second one below, taken once
           -- the X exists.
-          unannouncedSets = Target.legalSets StackObjectKind.ActivatedAbility (ActivatedAbility.name ability) (Just pid) True Map.empty srcId slots gs
+          unannouncedSets = Target.legalSets StackObjectKind.ActivatedAbility (ActivatedAbility.name ability) (Just pid) True chosenSeed srcId slots gs
           aimableUnannounced = [(Target.aimingRanges (ActivatedAbility.name ability) (Just pid) srcId Nothing slots unannouncedSets gs, fmap Activatable.recipientObjects unannouncedSets)]
           -- CR 101.1: the ceiling this ABILITY's own words put on the value about
           -- to be announced -- Blighted Nightmare's "X can't be greater than the
@@ -327,7 +339,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
           -- nothing while the seed carries the value, which is what makes flipping
           -- it here leave the suite green (Filter.boundUnannounced answers only
           -- where the seed cannot supply the number).
-          seed = Binding.fromChoices Map.empty mAmount Seq.empty
+          seed = Map.union chosenSeed (Binding.fromChoices Map.empty mAmount Seq.empty)
           sets = Target.legalSets StackObjectKind.ActivatedAbility (ActivatedAbility.name ability) (Just pid) False seed srcId slots gs
           aimable = [(Target.aimingRanges (ActivatedAbility.name ability) (Just pid) srcId (Just (Maybe.fromMaybe 0 mAmount)) slots sets gs, fmap Activatable.recipientObjects sets)]
           -- CR 601.4 via CR 602.2b: the chosen modes judged against the
@@ -366,7 +378,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
       -- one predicate over one cost instead of two spellings of when the gate
       -- applies.
       -- An answer outside the offered costs is rejected, ChooseCost's contract.
-      if undefinedX || overCeiling || underFloor || not (Modal.selectionSatisfiedBy legal settledSelection chosenModes) || (length offeredCosts > 1 && notElem printedCost offeredCosts) || not (Activatable.payableCost aimable stamp (ActivatedAbility.name ability) spendable pid srcId gs announcedAtX)
+      if unchosen || undefinedX || overCeiling || underFloor || not (Modal.selectionSatisfiedBy legal settledSelection chosenModes) || (length offeredCosts > 1 && notElem printedCost offeredCosts) || not (Activatable.payableCost aimable stamp (ActivatedAbility.name ability) spendable pid srcId gs announcedAtX)
         then reject -- the whole activation is a no-op
         else do
           -- CR 118.13a's announcement, which names an activated ability's
@@ -441,7 +453,7 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
               -- CR 201.5a: a granted ability named for its granter binds it too
               -- (Binding.setGranter), so CR 608.2h reads a granter that has left
               -- off its last known information.
-              State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setGranter (ActivatedAbility.name ability) (Binding.setAnnouncedTargets chosen (Binding.setThisAbility abilId (Binding.setYou pid (Binding.setTriggerSource srcId (Target.stampDefendingPlayers srcId chosen g (Binding.setDivisions divisions (Binding.setPaid (maybe Map.empty (Binding.paidObjects Binding.definingCard . Set.singleton . Recipient.ToObject) mDefining) (Binding.fromChoices chosen mAmount chosenModes))))))))}) abilId (GameState.objects g)})
+              State.modify' (\g -> g {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.setGranter (ActivatedAbility.name ability) (Binding.setAnnouncedTargets chosen (Binding.setThisAbility abilId (Binding.setYou pid (Binding.setTriggerSource srcId (Target.stampDefendingPlayers srcId chosen g (Binding.setDivisions divisions (Binding.setPaid (maybe Map.empty (Binding.paidObjects Binding.definingCard . Set.singleton . Recipient.ToObject) mDefining) (Map.union chosenSeed (Binding.fromChoices chosen mAmount chosenModes)))))))))}) abilId (GameState.objects g)})
               -- CR 601.2c's board, before CR 601.2g/h's window and payment can
               -- change it: what Event.becameTarget samples below.
               announced <- State.get

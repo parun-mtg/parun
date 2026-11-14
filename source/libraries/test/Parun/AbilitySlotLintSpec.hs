@@ -141,6 +141,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.PlayerScope as PlayerScope
+import qualified Parun.Types.PlayerSlot as PlayerSlot
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.Plus as Plus
 import qualified Parun.Types.Pool as Pool
@@ -428,7 +429,9 @@ activatedAbilityOffendsGiven armed ability =
         if Maybe.isJust (Binding.acquiredSource =<< ActivatedAbility.name ability)
           then Set.singleton Binding.grantingPermanent
           else Set.empty
-   in modalSlotsOffend armed (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, defining, granter, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, totalled, discarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
+      -- CR 115.10a: the player the activation announced (Lodestone Bauble).
+      chosen = foldMap (Set.singleton . PlayerSlot.slot) (ActivatedAbility.chosenPlayer ability)
+   in modalSlotsOffend armed (Set.unions [Set.fromList [Binding.triggerSource, Binding.you, Binding.thisAbility], announcedX, defining, granter, chosen, sacrificed, tapped, tappedForTotal, exiled, exiledPermanents, totalled, discarded, removed, payGateBound (ActivatedAbility.modal ability)]) (ActivatedAbility.modal ability)
 
 -- Does this cost tap permanents the payer CHOOSES? sacrificesAsCost's shape, and
 -- the same reason: CR 601.2h's payment binds Binding.tappedPermanent
@@ -647,15 +650,16 @@ armingEventSlots card =
 -- The third half: the reserved slot an ACTIVATED arming ability's own cost
 -- bound as it was paid (CR 400.7j), which Parun.Engine.Activate folds onto the
 -- ability and CR 603.7c then captures -- Calim, Djinn Emperor's reflexive "return
--- Calim from your graveyard" reading Binding.discardedCard. LOOSE about which
--- activated ability armed, armingTargetSlots' caveat.
+-- Calim from your graveyard" reading Binding.discardedCard -- and the player its
+-- announcement chose (CR 115.10a, Lodestone Bauble's "that player"). LOOSE about
+-- which activated ability armed, armingTargetSlots' caveat.
 armingCostSlots :: Face.Face Card.Type.Card -> Set.Set SlotName.SlotName
 armingCostSlots card =
   Set.unions
     ( fmap
         ( \ability ->
             let cost = ActivatedAbility.cost ability
-             in Set.fromList ([Binding.discardedCard | discardsAsCost cost] <> [Binding.exiledCard | exilesSelfAsCost cost])
+             in Set.fromList ([Binding.discardedCard | discardsAsCost cost] <> [Binding.exiledCard | exilesSelfAsCost cost] <> foldMap (pure . PlayerSlot.slot) (ActivatedAbility.chosenPlayer ability))
         )
         (Face.activatedAbilities card)
     )

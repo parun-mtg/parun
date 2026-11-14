@@ -67,6 +67,7 @@ import Parun.Types.PlayerEffect (PlayerEffect)
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerSlot as PlayerSlot
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
@@ -80,7 +81,6 @@ import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotCount as SlotCount
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.SlotName as SlotName
-import qualified Parun.Types.SlotPerPlayer as SlotPerPlayer
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.TargetCount as TargetCount
 import Parun.Types.TargetSlot (TargetSlot)
@@ -2683,7 +2683,7 @@ bakeSlot players slot =
 -- target-per-player scenarios the second.
 announcedSlots :: PlayerId -> ObjectId -> GameState -> Map SlotName TargetSlot -> Map SlotName TargetSlot
 announcedSlots controller source gs =
-  splitPerPlayer (\_ each -> List.filter (PlayerRelation.holds (Game.teams gs) (SlotPerPlayer.players each) controller) (Players.table (Plane.rangePerspective source controller gs) gs))
+  splitPerPlayer (\_ each -> List.filter (PlayerRelation.holds (Game.teams gs) (PlayerSlot.players each) controller) (Players.table (Plane.rangePerspective source controller gs) gs))
     . fmap narrowedAsCast
 
 -- CR 601.2c: the slot with its asCast restriction in its filter. Only this
@@ -2734,13 +2734,13 @@ boundCopies bound =
 
 -- Every perPlayer slot as its copies, one per player `playersOf` names. Every
 -- other slot unchanged.
-splitPerPlayer :: (SlotName -> SlotPerPlayer.SlotPerPlayer -> [PlayerId]) -> Map SlotName TargetSlot -> Map SlotName TargetSlot
+splitPerPlayer :: (SlotName -> PlayerSlot.PlayerSlot -> [PlayerId]) -> Map SlotName TargetSlot -> Map SlotName TargetSlot
 splitPerPlayer playersOf =
   let split name slot = case TargetSlot.perPlayer slot of
         Nothing -> Map.singleton name slot
         Just each ->
           Map.fromList
-            [ (Modal.Engine.perPlayerSlot name pid, bakePerPlayer (SlotPerPlayer.slot each) pid slot)
+            [ (Modal.Engine.perPlayerSlot name pid, bakePerPlayer (PlayerSlot.slot each) pid slot)
             | pid <- playersOf name each
             ]
    in Map.unions . Map.mapWithKey split
