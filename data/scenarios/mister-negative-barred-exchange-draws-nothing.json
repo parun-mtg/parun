@@ -155,6 +155,19 @@
     },
     {
       "check": {
+        "Count": {
+          "card": "Island",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
         "Life": {
           "life": 12,
           "player": "alice"
@@ -169,19 +182,6 @@
         "Life": {
           "life": 9,
           "player": "bob"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "Count": {
-          "card": "Island",
-          "count": 0,
-          "player": "alice",
-          "zone": "Hand"
         }
       },
       "player": "alice",
