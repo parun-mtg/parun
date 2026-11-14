@@ -1,0 +1,167 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Equip",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 1
+                }
+              ]
+            },
+            "quality": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        }
+      ],
+      "name": "The Dominion Bracelet",
+      "oracleText": "Equipped creature gets +1/+1 and has \"{15}, Exile The Dominion Bracelet: You control target opponent during their next turn. This ability costs {X} less to activate, where X is this creature's power. Activate only as a sorcery.\" (You see all cards that player could see and make all decisions for them.)\nEquip {1}",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Attached"
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 1
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            },
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Activated",
+                "value": {
+                  "cost": {
+                    "components": [
+                      {
+                        "type": "ExilePermanents",
+                        "value": {
+                          "count": 1,
+                          "whichPermanents": {
+                            "type": "IsBound",
+                            "value": "thatGrantingPermanent"
+                          }
+                        }
+                      }
+                    ],
+                    "mana": [
+                      {
+                        "type": "Generic",
+                        "value": 15
+                      }
+                    ]
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "ControlPlayerNext",
+                                "value": {
+                                  "during": "NextTurn",
+                                  "slot": "opponent"
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "targetSlots": {
+                          "opponent": {
+                            "filter": {
+                              "type": "IsPlayer",
+                              "value": "Opponent"
+                            },
+                            "pool": {
+                              "type": "Players"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "name": "dominate",
+                  "restrictions": [
+                    {
+                      "type": "SorcerySpeed"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Player",
+                "value": {
+                  "effect": {
+                    "type": "ModifyCost",
+                    "value": {
+                      "change": {
+                        "type": "Reduce",
+                        "value": {
+                          "amount": [
+                            {
+                              "type": "Generic",
+                              "value": 1
+                            }
+                          ]
+                        }
+                      },
+                      "matching": {
+                        "type": "IsSource"
+                      },
+                      "perEach": {
+                        "type": "Measure",
+                        "value": "Power"
+                      },
+                      "subject": {
+                        "type": "Activations",
+                        "value": {
+                          "whichAbility": "dominate"
+                        }
+                      }
+                    }
+                  },
+                  "scope": {
+                    "type": "You"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Equipment"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}
