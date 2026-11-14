@@ -693,6 +693,9 @@ joined context predicates = case predicates of
           -- Free: two sentences (Vraska's Final Mercy's "You lose 2 life.
           -- Empower Jace 6.").
           <> apart
+          -- Free: an imperative joined to "you" restated (Shinra
+          -- Reinforcements's "mill three cards and you gain 3 life").
+          <> imperativeAnd
     -- Free: two sentences (Afterlife Insurance), "and" (Bad Deal) or, after
     -- an imperative, ", then" (Macabre Waltz) or "and" (Sorcerer's Strongbox).
     | implied p || implied q -> apart <> together <> togetherX <> thenImperative <> andImperative <> imperativeAnd <> imperativeThen
