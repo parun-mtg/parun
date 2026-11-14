@@ -1,0 +1,30 @@
+{
+  "description": "CR 700.2a, 601.2b, 701.6a, 121.2: School Daze's chosen mode alone happens: Do Homework draws its caster three cards; Fight Crime counters the target spell, then draws its caster one card",
+  "note": "Bob casts one copy as Fight Crime against alice's Grizzly Bears and the other as Do Homework on alice's end step. Each library has distinct cards so each draw count shows; alice and carol draw nothing.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "manaPool": "GC", "hand": [{"card": "Grizzly Bears", "label": "bears"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}, {"card": "Island", "label": "i5"}, {"card": "Island", "label": "i6"}, {"card": "Island", "label": "i7"}, {"card": "Island", "label": "i8"}, {"card": "Island", "label": "i9"}, {"card": "Island", "label": "i10"}], "hand": [{"card": "School Daze", "label": "daze1"}, {"card": "School Daze", "label": "daze2"}], "library": [{"card": "Hill Giant", "label": "b1"}, {"card": "Goblin Piker", "label": "b2"}, {"card": "Savannah Lions", "label": "b3"}, {"card": "Shock", "label": "b4"}, {"card": "Giant Spider", "label": "b5"}, {"card": "Mind Stone", "label": "b6"}]},
+    {"name": "carol", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$bears"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$daze1", "modes": [1], "mana": ["$i1", "$i2", "$i3", "$i4", "$i5", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Graveyard", "is": ["Grizzly Bears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 0}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "bob", "zone": "Hand", "is": ["$daze2", "Hill Giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 0}}},
+    {"turn": 1, "step": "EndStep", "player": "bob", "do": {"Cast": {"object": "$daze2", "mana": ["$i6", "$i7", "$i8", "$i9", "$i10"]}}},
+    {"turn": 1, "step": "EndStep", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Stack", "is": ["School Daze#2"]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Zone", "player": "bob", "zone": "Hand", "is": ["Hill Giant", "Goblin Piker", "Savannah Lions", "Shock"]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"View": {"of": "Zone", "player": "bob", "zone": "Library", "is": ["$b5", "$b6"]}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 0}}},
+    {"turn": 1, "step": "EndStep", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Hand", "card": "Island", "count": 0}}}
+  ]
+}

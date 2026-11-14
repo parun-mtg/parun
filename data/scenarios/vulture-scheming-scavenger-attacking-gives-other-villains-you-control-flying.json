@@ -1,0 +1,17 @@
+{
+  "description": "CR 508.3a, 611.2a, 514.2: Vulture, Scheming Scavenger's attack trigger gives each other Villain its controller controls flying until end of turn, attacking or not",
+  "note": "Alice's Kraven's Cats is a Villain that stays home and gains flying; her Grizzly Bears is no Villain, bob's Kraven's Cats is not hers, and Vulture's own printed flying is its only instance.",
+  "board": {"active": "alice", "step": "BeginningOfCombat", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Vulture, Scheming Scavenger", "label": "vulture", "ready": true}, {"card": "Kraven's Cats", "label": "acats", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "bob", "battlefield": [{"card": "Kraven's Cats", "label": "bcats", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$vulture"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Keywords": {"object": "$acats", "keyword": {"type": "Flying"}, "count": 1}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Flying"}, "count": 0}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Keywords": {"object": "$bcats", "keyword": {"type": "Flying"}, "count": 0}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Keywords": {"object": "$vulture", "keyword": {"type": "Flying"}, "count": 1}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 16}}},
+    {"turn": 2, "step": "Upkeep", "player": "bob", "check": {"Keywords": {"object": "$acats", "keyword": {"type": "Flying"}, "count": 0}}}
+  ]
+}

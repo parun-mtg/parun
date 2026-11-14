@@ -1,0 +1,22 @@
+{
+  "description": "CR 602.5d, 701.21a, 701.23a, 701.20a, 701.24a: Radioactive Spider's {2}, sacrifice ability, only as a sorcery, finds a card that is both a Spider and a Hero, reveals it and puts it into hand, then shuffles",
+  "note": "The library holds Giant Spider (a Spider, no Hero), Daredevil (a Hero, no Spider) and Spectacular Spider-Man (both); only the last may be found. The same Forests are refused in the upkeep and pay in the main phase. Bob is shown the found card.",
+  "board": {"active": "alice", "step": "Upkeep", "seats": [
+    {"name": "alice", "battlefield": [{"card": "Radioactive Spider", "label": "spider", "ready": true}, {"card": "Forest", "label": "f1"}, {"card": "Forest", "label": "f2"}, {"card": "Forest", "label": "f3"}], "library": [{"card": "Island", "label": "top"}, {"card": "Giant Spider", "label": "giant"}, {"card": "Daredevil, Man Without Fear", "label": "dd"}, {"card": "Spectacular Spider-Man", "label": "spidey"}, {"card": "Island", "label": "bottom"}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "Upkeep", "player": "alice", "refuse": {"Activate": {"object": "$spider", "mana": ["$f1", "$f2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Activate": {"object": "$spider", "mana": ["$f1", "$f2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Radioactive Spider", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$f3", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "Search", "with": ["$giant"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "Search", "with": ["$dd"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Search", "with": ["$spidey"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "Shuffle", "with": ["$bottom", "$dd", "$giant", "$top"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Hand", "is": ["Spectacular Spider-Man"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Library", "is": ["Island#4", "Daredevil, Man Without Fear", "Giant Spider", "Island#5"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Witnessed", "player": "bob", "is": ["Spectacular Spider-Man"]}}}
+  ]
+}

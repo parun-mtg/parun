@@ -1,0 +1,45 @@
+{
+  "description": "CR 602.2, 602.5d, 115.1, 205.3m, 122.1a: Guy in the Chair's Web Support pays {2}{G} and taps to put a +1/+1 counter on target Spider, whoever controls it, never on a non-Spider, and only as a sorcery",
+  "note": "Alice's Giant Spider and bob's Mammoth Spider are both legal, so the target is asked; the Bears are refused, and the counter goes on bob's Spider. A second Guy, with three untapped Forests to pay, is refused in the beginning of combat step.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [{ "card": "Island" }, { "card": "Island" }],
+        "battlefield": [
+          { "card": "Guy in the Chair", "label": "g1", "ready": true },
+          { "card": "Guy in the Chair", "label": "g2", "ready": true },
+          { "card": "Forest", "label": "f1" },
+          { "card": "Forest", "label": "f2" },
+          { "card": "Forest", "label": "f3" },
+          { "card": "Forest", "label": "f4" },
+          { "card": "Forest", "label": "f5" },
+          { "card": "Forest", "label": "f6" },
+          { "card": "Giant Spider", "label": "spider" },
+          { "card": "Grizzly Bears", "label": "bears" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }],
+        "battlefield": [{ "card": "Mammoth Spider", "label": "mammoth" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": { "Activate": { "object": "$g1", "ability": 1, "targets": ["$bears"], "mana": ["$f1", "$f2", "$f3", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$g1", "ability": 1, "targets": ["$mammoth"], "mana": ["$f1", "$f2", "$f3", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$mammoth", "kind": { "type": "PlusOnePlusOne" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$mammoth", "power": 4, "toughness": 6 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$spider", "kind": { "type": "PlusOnePlusOne" }, "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "$bears", "kind": { "type": "PlusOnePlusOne" }, "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "$g1", "tapped": true } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "refuse": { "Activate": { "object": "$g2", "ability": 1, "targets": ["$spider"], "mana": ["$f4", "$f5", "$f6", null] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": { "Tapped": { "object": "$g2", "tapped": false } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Counters": { "object": "$spider", "kind": { "type": "PlusOnePlusOne" }, "count": 0 } } }
+  ]
+}

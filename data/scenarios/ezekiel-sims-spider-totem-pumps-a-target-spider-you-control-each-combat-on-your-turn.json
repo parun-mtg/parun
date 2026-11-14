@@ -1,0 +1,37 @@
+{
+  "description": "CR 603.2b, 603.3d, 115.1, 205.3m, 611.2a: at the beginning of combat on its controller's turn, Ezekiel Sims gives target Spider they control +2/+2 until end of turn; an opponent's Spider and a non-Spider are not targets",
+  "note": "Ezekiel itself and alice's Giant Spider are both legal, so the target is asked; bob's Mammoth Spider and alice's Grizzly Bears are refused. The pump is gone by bob's upkeep, and bob's own beginning of combat asks for no target.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [{ "card": "Island" }, { "card": "Island" }],
+        "battlefield": [
+          { "card": "Ezekiel Sims, Spider-Totem", "label": "ezekiel" },
+          { "card": "Giant Spider", "label": "spider" },
+          { "card": "Grizzly Bears", "label": "bears" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Island" }, { "card": "Island" }],
+        "battlefield": [{ "card": "Mammoth Spider", "label": "mammoth" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "refuse": { "ChooseTargets": { "target": ["$mammoth"] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "refuse": { "ChooseTargets": { "target": ["$bears"] } } },
+    { "turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": { "ChooseTargets": { "target": ["$spider"] } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$spider", "power": 4, "toughness": 6 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$ezekiel", "power": 3, "toughness": 5 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$mammoth", "power": 3, "toughness": 5 } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "PowerToughness": { "object": "$bears", "power": 2, "toughness": 2 } } },
+    { "turn": 2, "step": "Upkeep", "player": "bob", "check": { "PowerToughness": { "object": "$spider", "power": 2, "toughness": 4 } } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } },
+    { "turn": 2, "step": "PostcombatMain", "player": "bob", "check": { "PowerToughness": { "object": "$spider", "power": 2, "toughness": 4 } } },
+    { "turn": 2, "step": "PostcombatMain", "player": "bob", "check": { "PowerToughness": { "object": "$ezekiel", "power": 3, "toughness": 5 } } }
+  ]
+}
