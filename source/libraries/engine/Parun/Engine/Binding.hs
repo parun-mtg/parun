@@ -916,8 +916,9 @@ loyaltyRemoved = SlotName.MkSlotName (Text.pack "thatManyLoyaltyRemoved")
 -- CR 400.7d: the part of a spell's binding environment the permanent it
 -- becomes keeps -- "information about the spell ... including what costs were
 -- paid to cast that spell". Parun.Engine.Event.changeZoneAttaching writes it
--- onto the permanent, and Parun.Engine.Event.Trigger stamps it onto every
--- ability that permanent triggers. Vitu-Ghazi Inspector is the reader.
+-- onto the permanent, and Parun.Engine.Event.Trigger stamps
+-- triggeredCostRecord below onto every ability that permanent triggers.
+-- Vitu-Ghazi Inspector is the reader.
 --
 -- collectedEvidence, waterbendCost (Katara, Seeking Revenge) and
 -- returnedPermanent, which a permanent's own entry replacement reads through
@@ -927,6 +928,15 @@ loyaltyRemoved = SlotName.MkSlotName (Text.pack "thatManyLoyaltyRemoved")
 -- it. A permanent printing "if a [quality] was beheld" would want it here.
 paidCostRecord :: Map SlotName Binding -> Map SlotName Binding
 paidCostRecord bindings = Map.restrictKeys bindings (Set.fromList [collectedEvidence, waterbendCost, returnedPermanent])
+
+-- CR 400.7d / 609.7a: what of paidCostRecord an ability the permanent TRIGGERS
+-- carries. Not returnedPermanent: only the entry replacement reads it, and an
+-- ability on the stack holding it would refer to the returned creature, which
+-- no triggered text names. Parun.ScenarioSpec's "CR 609.7a a web-slung
+-- permanent's trigger does not refer to the creature returned for its cost"
+-- proves it.
+triggeredCostRecord :: Map SlotName Binding -> Map SlotName Binding
+triggeredCostRecord = Map.delete returnedPermanent . paidCostRecord
 
 -- CR 702.122b: the reserved slot under which the VEHICLE a creature just crewed
 -- is bound -- the "that Vehicle" in Gearshift Ace's "whenever this creature crews

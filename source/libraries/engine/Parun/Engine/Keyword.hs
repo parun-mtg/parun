@@ -3384,10 +3384,18 @@ beamMeUpCosts keywords =
 -- REGRESSION FENCE rather than a proved line: the suite's two spell-copying
 -- boards (Parun.CastSpec's and Parun.MutateSpec's Double Major) copy no suspended
 -- spell, so nothing observes this arm.
+--
+-- CR 702.188a's web-slinging is dropped for escape's reason: every card reading
+-- it asks whether it "was cast using web-slinging" (Scarlet Spider, Ben Reilly;
+-- Spiders-Man, Heroic Horde), never whether the cost was paid. Sneak's readers
+-- ask the latter, so sneak stays. Parun.ScenarioSpec's "CR 707.10 a Double
+-- Major copy of a web-slung Scarlet Spider was not cast using web-slinging"
+-- proves it.
 copiedCastUsing :: Maybe Keyword -> Maybe Keyword
 copiedCastUsing castUsing = case castUsing of
   Just (Keyword.Escape _) -> Nothing
   Just (Keyword.Suspend _) -> Nothing
+  Just (Keyword.WebSlinging _) -> Nothing
   _ -> castUsing
 
 -- CR 702.96b: was this the overload candidate? Rule 702.96b's "that spell won't

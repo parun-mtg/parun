@@ -832,7 +832,7 @@ data Object = MkObject
     -- `paidCosts`'s route. NOT a copiable value (CR 707.2): a Clone of an evoked
     -- permanent was not cast for that cost. A copy of the SPELL copies the
     -- alternative cost (CR 707.10) but isn't cast, so it keeps evoke's, dash's
-    -- and blitz's record and drops escape's (CR 702.138b) --
+    -- and blitz's record and drops escape's (CR 702.138b) and web-slinging's --
     -- Parun.Engine.Keyword.copiedCastUsing.
     castUsing :: Maybe Keyword.Keyword,
     -- | CR 400.7g: the ability an EFFECT granted this card that ALLOWED it to be
