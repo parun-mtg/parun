@@ -3,7 +3,7 @@ module Parun.Types.ExtraPhase where
 -- | CR 500.8: one phase an effect adds to a turn. The rule does not fix WHICH,
 -- and printed cards vary -- Relentless Assault adds a combat and a main phase,
 -- Aurelia, the Warleader only a combat phase, Sphinx of the Second Sun a
--- beginning phase.
+-- beginning phase, Obeka, Splitter of Seconds a beginning phase of one step.
 --
 -- A whole PHASE, never a step: Parun.Engine.Turn.expandExtraPhase inserts the
 -- steps each is made of, so the payload says what the card says and what a
@@ -11,6 +11,9 @@ module Parun.Types.ExtraPhase where
 data ExtraPhase
   = -- | CR 501.1's three steps.
     ExtraBeginning
+  | -- | CR 500.10: a beginning phase holding only its upkeep step, what an
+    -- added upkeep step after a phase is.
+    ExtraUpkeep
   | -- | CR 506.1's five steps.
     ExtraCombat
   | -- | CR 505.1a: an added main phase is a POSTCOMBAT main phase.

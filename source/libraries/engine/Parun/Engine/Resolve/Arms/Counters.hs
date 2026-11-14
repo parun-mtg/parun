@@ -1817,6 +1817,9 @@ phaseOut resolving source controller legal ref =
 -- Turn.splicePhases is handed TurnRegisters.phase because that is NOT the head of
 -- `remaining` when the resolving phase still has steps to come; CR 511.3 bounds
 -- the phase, and Turn.thisPhase is where that lives.
+--
+-- Not implemented: CR 500.10a's "you get" adding nothing on another player's
+-- turn (#7602).
 addPhases :: [ExtraPhase.ExtraPhase] -> Game ()
 addPhases extras =
   State.modify' $ \gs ->
