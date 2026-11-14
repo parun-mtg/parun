@@ -4451,6 +4451,7 @@ filterReads f = case f of
   -- CR 406.3a leaves a face-down exiled card no characteristics at all, so
   -- being one is not a characteristic either and no layer writes it.
   Filter.Type.IsExiledFaceDown -> Set.empty
+  Filter.Type.IsWarped -> Set.empty
   -- Reads nothing: CR 712.6c/e make which face is up the thing characteristics
   -- are read OFF rather than one of them, so no Modification writes Object.face.
   Filter.Type.Transformed -> Set.empty
@@ -4704,6 +4705,7 @@ filterReadsPeers f = case f of
   Filter.Type.IsTapped -> False
   Filter.Type.IsFaceDown -> False
   Filter.Type.IsExiledFaceDown -> False
+  Filter.Type.IsWarped -> False
   Filter.Type.Transformed -> False
   Filter.Type.IsInZone _ -> False
   Filter.Type.WasCastFrom _ -> False

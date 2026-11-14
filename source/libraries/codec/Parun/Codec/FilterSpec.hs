@@ -707,6 +707,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.IsExiledFaceDown
       " {\"type\":\"IsExiledFaceDown\"} "
+  Spec.it s "IsWarped" $
+    Common.assertCodec
+      s
+      codec
+      Filter.IsWarped
+      " {\"type\":\"IsWarped\"} "
   Spec.it s "Transformed" $
     Common.assertCodec
       s

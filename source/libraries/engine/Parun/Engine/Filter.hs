@@ -685,6 +685,10 @@ data View = MkView
     -- False for every candidate with no object behind it: a printed face, a
     -- player, an event snapshot. Each says so at its own site.
     exiledFaceDown :: Bool,
+    -- | CR 702.185b: the candidate is a warped card in exile, read straight
+    -- off Object.warped, which CR 400.7's new incarnation clears; False for
+    -- every candidate with no object behind it, `exiledFaceDown`'s posture.
+    warped :: Bool,
     -- | CR 701.27h's "transformed permanent": a double-faced permanent on the
     -- battlefield with its back face up. Not a characteristic either (CR
     -- 712.6c/e make which face is up the thing characteristics are read off), so
@@ -1114,6 +1118,7 @@ playerView pid =
       -- CR 406.2's exiled card is a CARD, and CR 109.1 makes a player none of
       -- those either.
       exiledFaceDown = False,
+      warped = False,
       -- CR 701.27h asks about a PERMANENT, and CR 109.1 makes a player none.
       transformed = False,
       -- CR 122.1 puts counters on an object OR a player, and a player's are
@@ -2780,6 +2785,7 @@ matches context view predicate = case predicate of
   -- CR 406.3, which is NOT the status one line up: CR 110.5d says the two have
   -- no correlation, and the fields differ accordingly.
   Filter.IsExiledFaceDown -> exiledFaceDown view
+  Filter.IsWarped -> warped view
   -- CR 701.27h, both exclusions inside the field: see the atom's own comment in
   -- Parun.Types.Filter, and the field below.
   Filter.Transformed -> transformed view
@@ -3283,6 +3289,7 @@ manaValueThresholds predicate = case predicate of
   Filter.IsTapped -> []
   Filter.IsFaceDown -> []
   Filter.IsExiledFaceDown -> []
+  Filter.IsWarped -> []
   Filter.Transformed -> []
   Filter.IsRingBearer -> []
   Filter.IsPaired -> []
@@ -3473,6 +3480,7 @@ statesAQuality predicate = case predicate of
   -- is itself a stated quality under CR 701.23b, and the trivial nest states it.
   Filter.RepresentedByCard _ -> True
   Filter.IsExiledFaceDown -> True
+  Filter.IsWarped -> True
   Filter.Transformed -> True
   Filter.IsRingBearer -> True
   Filter.IsPaired -> True
@@ -3643,6 +3651,7 @@ readsSourceValues predicate = case predicate of
   Filter.IsFaceDown -> False
   Filter.RepresentedByCard f -> readsSourceValues f
   Filter.IsExiledFaceDown -> False
+  Filter.IsWarped -> False
   Filter.Transformed -> False
   Filter.IsRingBearer -> False
   Filter.IsPaired -> False

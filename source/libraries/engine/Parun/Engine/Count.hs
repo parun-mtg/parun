@@ -1633,6 +1633,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- into exile, and a snapshot holds no object -- `faceDown` above's reason,
       -- one rule over.
       Filter.exiledFaceDown = False,
+      Filter.warped = False,
       -- CR 701.27h asks about a permanent ON THE BATTLEFIELD, and a snapshot is
       -- a record of a past event rather than an object standing on one -- there
       -- is no id here to ask which face is up. No card in the pool counts
