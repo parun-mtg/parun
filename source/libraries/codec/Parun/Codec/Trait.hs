@@ -17,6 +17,7 @@ codec =
       Arm.nullary "Controller" Trait.Controller,
       Arm.nullary "Sector" Trait.Sector,
       Arm.nullary "CreatureType" Trait.CreatureType,
+      Arm.nullary "LandType" Trait.LandType,
       Arm.optionalPayload "CardType" (Common.set CardType.codec) Trait.CardType (\x -> case x of Trait.CardType among -> Just among; _ -> Nothing)
     ]
 
@@ -28,4 +29,5 @@ tagOf x = case x of
   Trait.Controller -> "Controller"
   Trait.Sector -> "Sector"
   Trait.CreatureType -> "CreatureType"
+  Trait.LandType -> "LandType"
   Trait.CardType {} -> "CardType"

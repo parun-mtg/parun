@@ -59,14 +59,15 @@ data Filter keyword
   | HasSupertype Supertype.Supertype -- CR 205.4: the object's supertypes include this one.
   | HasColor Color.Color -- CR 105.2: the object's colours include this one.
   | -- | The candidate shares this trait with the anchored object (CR 105.2 /
-    -- 205.3m / 709.4a), as Parun.Engine.Filter.sharesAnchored reads each pair.
+    -- 205.3i / 205.3m / 709.4a), as Parun.Engine.Filter.sharesAnchored reads each
+    -- pair.
     --
     -- Not implemented: a pair the Context carries no anchored values for (Color,
     -- Owner, Controller or Sector at Bound, anything but CreatureType at a Bound
     -- narrowed to the candidate's controller, anything at one narrowed to its
     -- owner, anything but CreatureType at Evaluated,
-    -- CreatureType or Controller at Source, anything but Name or Controller at
-    -- AnyPermanent, anything but Controller at Host), which answers False and
+    -- CreatureType or Controller at Source, anything but Name, Controller or
+    -- LandType at AnyPermanent, anything but Controller at Host), which answers False and
     -- Parun.FilterPositionLintSpec keeps out of card data (#5636).
     Shares Trait.Trait (Anchor.Anchor (Filter keyword))
   | HasSubtype Subtype.Subtype -- CR 205.3: the object's subtypes include this one.

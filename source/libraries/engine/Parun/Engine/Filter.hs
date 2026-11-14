@@ -1996,8 +1996,8 @@ heldBy holder view = case holder of
   Holder.Owner -> owner view
   Holder.Caster -> castBy view
 
--- CR 105.2 / 205.3m / 709.4a: Filter.Shares' reading of each pair, as the test
--- of a candidate against the anchored object's values, or against each member's
+-- CR 105.2 / 205.3i / 205.3m / 709.4a: Filter.Shares' reading of each pair, as
+-- the test of a candidate against the anchored object's values, or against each member's
 -- of a group anchor. One comparison for every trait: a non-empty INTERSECTION.
 -- CR 105.2 and CR 709.4a make colours and names sets, CR 702.158e asks for a
 -- shared sector designation, and an owner is a set of at most one. A side with no value -- a colourless object, a nameless one
@@ -2017,6 +2017,7 @@ sharesAnchored trait anchor = case anchor of
     Trait.Sector -> Just (\context view -> meets (Sector.sectorsIn (designations view)) (sourceSectors context))
     Trait.CreatureType -> Nothing
     Trait.CardType _ -> Nothing
+    Trait.LandType -> Nothing
   -- The slot narrowed to the members the candidate's controller controls
   -- (Winnowing's "the chosen creature they control"), so a group's other
   -- members lend the candidate nothing. Bound's posture below for an unbound
@@ -2030,6 +2031,7 @@ sharesAnchored trait anchor = case anchor of
     Trait.Controller -> Nothing
     Trait.Sector -> Nothing
     Trait.CardType _ -> Nothing
+    Trait.LandType -> Nothing
   Anchor.Bound (Just Holder.Owner) _ -> Nothing
   Anchor.Bound (Just Holder.Caster) _ -> Nothing
   Anchor.Bound Nothing slot -> case trait of
@@ -2050,6 +2052,7 @@ sharesAnchored trait anchor = case anchor of
     -- on the candidate's side alone, which is enough, since a type outside them
     -- then has nothing to meet.
     Trait.CardType among -> Just (\context view -> maybe True (meets (cardTypesAmong among view)) (Map.lookup slot (slotCardTypes context)))
+    Trait.LandType -> Nothing
   Anchor.Evaluated -> case trait of
     -- The object the surrounding quantity is aimed at (CR 613.4c), and vacuously
     -- FALSE where nothing aims one: no CR 601.2c offer stands behind a Count to
@@ -2061,12 +2064,16 @@ sharesAnchored trait anchor = case anchor of
     Trait.Controller -> Nothing
     Trait.Sector -> Nothing
     Trait.CardType _ -> Nothing
+    Trait.LandType -> Nothing
   -- Some permanent the nest admits, matched in the OUTER context, so its "you"
   -- and "another" are the outer match's (Pattern Matcher's "another creature
   -- you control"). Vacuously False where nothing fills battlefieldViews.
   Anchor.AnyPermanent group -> case trait of
     Trait.Name -> Just (\context view -> any (\permanent -> matches context permanent group && meets (names view) (names permanent)) (battlefieldViews context))
     Trait.Controller -> Just (\context view -> any (\permanent -> matches context permanent group && meets (held view) (held permanent)) (battlefieldViews context))
+    -- CR 205.3i: every land type, not the basic ones alone, off each side's
+    -- subtypes, a permanent's projected (Hiveheart Shaman).
+    Trait.LandType -> Just (\context view -> any (\permanent -> matches context permanent group && meets (landTypes view) (landTypes permanent)) (battlefieldViews context))
     Trait.Color -> Nothing
     Trait.Owner -> Nothing
     Trait.Sector -> Nothing
@@ -2082,6 +2089,7 @@ sharesAnchored trait anchor = case anchor of
     Trait.Controller -> Nothing
     Trait.Sector -> Nothing
     Trait.CardType _ -> Nothing
+    Trait.LandType -> Nothing
   -- The candidate's own host, off attachedToView, so an attacher reached through
   -- Filter.HasAttached compares against the permanent it sits on: CR 700.9's
   -- "an Aura that is controlled by that permanent's controller" (Lion Umbra).
@@ -2093,9 +2101,11 @@ sharesAnchored trait anchor = case anchor of
     Trait.Sector -> Nothing
     Trait.CreatureType -> Nothing
     Trait.CardType _ -> Nothing
+    Trait.LandType -> Nothing
   where
     meets a b = not (Set.disjoint a b)
     held = foldMap Set.singleton . controller
+    landTypes = Set.filter Subtype.Engine.isLandType . subtypes
 
 -- CR 701.3a / 301.5a: does a candidate attached to this object relate to the
 -- anchor -- the match's source, or under CR 613.4c the object the surrounding
@@ -3518,6 +3528,7 @@ readsSourceValues predicate = case predicate of
       Trait.Sector -> False
       Trait.CreatureType -> False
       Trait.CardType _ -> False
+      Trait.LandType -> False
     Anchor.Bound _ _ -> False
     Anchor.Evaluated -> False
     Anchor.AnyPermanent group -> readsSourceValues group

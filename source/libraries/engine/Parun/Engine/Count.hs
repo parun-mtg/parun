@@ -614,8 +614,8 @@ aggregate quantityOf aggregation members = case aggregation of
   -- per value: an artifact creature both card-type groups (CR 205.2b), a
   -- multicoloured card each colour's (CR 105.2b), a changeling every creature
   -- type's through its projected subtypes (CR 702.73a). A member with no value
-  -- (a colourless one, CR 105.2c) joins none, nor does a land type or other
-  -- non-creature subtype (CR 205.3m). 0 over an empty set.
+  -- (a colourless one, CR 105.2c) joins none, nor does a subtype outside the
+  -- trait's family (CR 205.3i / 205.3m). 0 over an empty set.
   Aggregation.MostSharing trait -> case trait of
     Trait.CreatureType -> largestGroup (Set.filter Subtype.isCreatureType . Filter.subtypes)
     Trait.CardType among -> largestGroup (Filter.cardTypesAmong among)
@@ -624,6 +624,7 @@ aggregate quantityOf aggregation members = case aggregation of
     Trait.Owner -> largestGroup (foldMap Set.singleton . Filter.owner)
     Trait.Controller -> largestGroup (foldMap Set.singleton . Filter.controller)
     Trait.Sector -> largestGroup (Sector.sectorsIn . Filter.designations)
+    Trait.LandType -> largestGroup (Set.filter Subtype.isLandType . Filter.subtypes)
   -- CR 201.2b: the largest group in which every member has a name and no two
   -- share one. Single-named members contribute one per distinct name; a
   -- member with several names is tried in and out of the group, since taking

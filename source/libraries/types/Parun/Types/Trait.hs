@@ -24,6 +24,8 @@ data Trait
     Sector
   | -- | CR 205.3m: a creature type.
     CreatureType
+  | -- | CR 205.3i: a land type (Hiveheart Shaman).
+    LandType
   | -- | CR 205.2a: a card type, among the named ones where they are named (Gauntlets of Chaos's "one of those types").
     CardType (Maybe (Set.Set CardType.CardType))
   deriving (Eq, Ord, Show)
