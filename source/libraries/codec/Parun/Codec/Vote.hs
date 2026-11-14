@@ -16,9 +16,11 @@ codec = Fields.object $ do
   starter <- Fields.required "starter" PlayerRef.codec Vote.starter
   choices <- Fields.required "choices" VoteChoices.codec Vote.choices
   secret <- Fields.defaulted "secret" False Common.boolean Vote.secret
+  upToOne <- Fields.defaulted "upToOne" False Common.boolean Vote.upToOne
   pure
     Vote.MkVote
       { Vote.starter = starter,
         Vote.choices = choices,
-        Vote.secret = secret
+        Vote.secret = secret,
+        Vote.upToOne = upToOne
       }

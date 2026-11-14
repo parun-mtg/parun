@@ -34,10 +34,29 @@ spec s = Spec.describe s "Parun.Codec.Vote" $ do
                     VoteObjects.slot = SlotName.MkSlotName (Text.pack "elected"),
                     VoteObjects.anyVotes = False
                   },
-            Vote.secret = False
+            Vote.secret = False,
+            Vote.upToOne = False
           }
       )
       " {\"starter\":{\"type\":\"Relative\",\"value\":\"You\"},\"choices\":{\"type\":\"Objects\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"slot\":\"elected\"}}} "
+  Spec.it s "MkVote, Vault 11: Voter's Dilemma's secret vote for up to one creature" $
+    Common.assertCodec
+      s
+      Vote.codec
+      ( Vote.MkVote
+          { Vote.starter = PlayerRef.Relative PlayerRelation.You,
+            Vote.choices =
+              VoteChoices.Objects
+                VoteObjects.MkVoteObjects
+                  { VoteObjects.filter = Filter.HasCardType CardType.Creature,
+                    VoteObjects.slot = SlotName.MkSlotName (Text.pack "elected"),
+                    VoteObjects.anyVotes = False
+                  },
+            Vote.secret = True,
+            Vote.upToOne = True
+          }
+      )
+      " {\"starter\":{\"type\":\"Relative\",\"value\":\"You\"},\"choices\":{\"type\":\"Objects\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"slot\":\"elected\"}},\"secret\":true,\"upToOne\":true} "
   Spec.it s "MkVote, Trap the Trespassers' secret object vote binding every voted object" $
     Common.assertCodec
       s
@@ -51,7 +70,8 @@ spec s = Spec.describe s "Parun.Codec.Vote" $ do
                     VoteObjects.slot = SlotName.MkSlotName (Text.pack "elected"),
                     VoteObjects.anyVotes = True
                   },
-            Vote.secret = True
+            Vote.secret = True,
+            Vote.upToOne = False
           }
       )
       " {\"starter\":{\"type\":\"Relative\",\"value\":\"You\"},\"choices\":{\"type\":\"Objects\",\"value\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"slot\":\"elected\",\"anyVotes\":true}},\"secret\":true} "
@@ -66,7 +86,8 @@ spec s = Spec.describe s "Parun.Codec.Vote" $ do
                 ( SlotName.MkSlotName (Text.pack "time")
                     NonEmpty.:| [SlotName.MkSlotName (Text.pack "knowledge")]
                 ),
-            Vote.secret = False
+            Vote.secret = False,
+            Vote.upToOne = False
           }
       )
       " {\"starter\":{\"type\":\"Relative\",\"value\":\"You\"},\"choices\":{\"type\":\"Words\",\"value\":[\"time\",\"knowledge\"]}} "
@@ -82,7 +103,8 @@ spec s = Spec.describe s "Parun.Codec.Vote" $ do
                 ( SlotName.MkSlotName (Text.pack "truth")
                     NonEmpty.:| [SlotName.MkSlotName (Text.pack "consequences")]
                 ),
-            Vote.secret = True
+            Vote.secret = True,
+            Vote.upToOne = False
           }
       )
       " {\"starter\":{\"type\":\"Relative\",\"value\":\"You\"},\"choices\":{\"type\":\"Words\",\"value\":[\"truth\",\"consequences\"]},\"secret\":true} "
@@ -94,7 +116,8 @@ spec s = Spec.describe s "Parun.Codec.Vote" $ do
       ( Vote.MkVote
           { Vote.starter = PlayerRef.Relative PlayerRelation.You,
             Vote.choices = VoteChoices.Players VotePlayers.MkVotePlayers {VotePlayers.another = True, VotePlayers.slot = SlotName.MkSlotName (Text.pack "votes")},
-            Vote.secret = True
+            Vote.secret = True,
+            Vote.upToOne = False
           }
       )
       " {\"starter\":{\"type\":\"Relative\",\"value\":\"You\"},\"choices\":{\"type\":\"Players\",\"value\":{\"another\":true,\"slot\":\"votes\"}},\"secret\":true} "
@@ -106,7 +129,8 @@ spec s = Spec.describe s "Parun.Codec.Vote" $ do
       ( Vote.MkVote
           { Vote.starter = PlayerRef.Relative PlayerRelation.You,
             Vote.choices = VoteChoices.Players VotePlayers.MkVotePlayers {VotePlayers.another = False, VotePlayers.slot = SlotName.MkSlotName (Text.pack "votes")},
-            Vote.secret = False
+            Vote.secret = False,
+            Vote.upToOne = False
           }
       )
       " {\"starter\":{\"type\":\"Relative\",\"value\":\"You\"},\"choices\":{\"type\":\"Players\",\"value\":{\"slot\":\"votes\"}}} "

@@ -1003,9 +1003,9 @@ defaultAnswer p = case p of
   -- The same by permanent and kind, off the first permanent alone under a
   -- spread FromOne, whose offer holds only permanents carrying the count.
   Prompt.ChooseMixedCounterRemoval _ _ _ spread owed offered -> Cost.fillMixedInOrder spread owed offered
-  -- CR 701.38a: the prompt is only raised with two or more listed choices, and
-  -- every one of them is a legal vote.
-  Prompt.ChooseVote _ _ _ candidates -> NonEmpty.head candidates
+  -- CR 701.38a: every listed choice is a legal vote, and so is none where it
+  -- is offered.
+  Prompt.ChooseVote _ _ _ candidates abstain -> if abstain then Nothing else Just (NonEmpty.head candidates)
   -- CR 609.7a: the prompt is only raised with two or more sources matching the
   -- shield's printed properties, and every one of them is a legal choice.
   Prompt.ChooseDamageSource _ _ _ candidates -> NonEmpty.head candidates

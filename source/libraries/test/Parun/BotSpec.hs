@@ -557,7 +557,8 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "ring-bearers" (drawn (Prompt.ChooseRingBearer decider S.alice objects)) (every objects)
     Spec.assertEqWith s "rooms" (drawn (Prompt.ChooseRoom decider S.alice oid (RoomIndex.MkRoomIndex 1 NonEmpty.:| [RoomIndex.MkRoomIndex 2]))) (Set.fromList [RoomIndex.MkRoomIndex 1, RoomIndex.MkRoomIndex 2])
     Spec.assertEqWith s "stickers" (drawn (Prompt.ChooseSticker decider S.alice oid stickers)) (every stickers)
-    Spec.assertEqWith s "votes" (drawn (Prompt.ChooseVote decider S.alice oid votes)) (every votes)
+    Spec.assertEqWith s "votes" (drawn (Prompt.ChooseVote decider S.alice oid votes False)) (every (fmap Just votes))
+    Spec.assertEqWith s "votes or none where offered" (drawn (Prompt.ChooseVote decider S.alice oid votes True)) (Set.insert Nothing (every (fmap Just votes)))
 
   -- An index answers each of these: every position in the offer, equal
   -- entries included.

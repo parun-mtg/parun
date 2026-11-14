@@ -369,8 +369,9 @@ offerOf gs prompt = case prompt of
   Prompt.ChooseAmass _ _ source candidates -> choosing prompt "options" (Just source) [] (NonEmpty.toList candidates)
   Prompt.ChooseBlight _ _ source candidates -> choosing prompt "options" (Just source) [] (NonEmpty.toList candidates)
   Prompt.ChooseBehold _ _ source candidates -> choosing prompt "options" (Just source) [] (NonEmpty.toList candidates)
-  -- Every choice of one vote is of one kind (Parun.Types.VoteChoices).
-  Prompt.ChooseVote _ _ source choices -> choosing prompt (case NonEmpty.head choices of BallotChoice.ForPlayer _ -> "players"; _ -> "options") (Just source) [] (NonEmpty.toList choices)
+  -- Every choice of one vote is of one kind (Parun.Types.VoteChoices); then
+  -- no ballot where it is offered.
+  Prompt.ChooseVote _ _ source choices abstain -> choosing prompt (case NonEmpty.head choices of BallotChoice.ForPlayer _ -> "players"; _ -> "options") (Just source) [] (fmap Just (NonEmpty.toList choices) <> [Nothing | abstain])
   Prompt.ChooseCounterKind _ _ _ kinds -> choosing prompt "options" Nothing [] (NonEmpty.toList kinds)
   -- CR 122.5: the object the counters move off, and the one they move onto.
   Prompt.ChooseMovedCounterOrNone _ _ off onto kinds -> choosing prompt "options" Nothing [("off", object off), ("onto", object onto)] (orNone kinds)
