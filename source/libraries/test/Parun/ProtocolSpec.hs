@@ -91,6 +91,7 @@ import qualified Parun.Types.LandOrNonland as LandOrNonland
 import qualified Parun.Types.LearnMode as LearnMode
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.Looked as Looked
+import qualified Parun.Types.LoopMembers as LoopMembers
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
@@ -386,7 +387,7 @@ spec s registry = Spec.describe s "Protocol" $ do
         gs = Setup.emptyGame S.bothPlayers
         bounds prompt = fmap (\key -> field key (Protocol.offerOf gs prompt)) ["source", "least", "most"]
         sacrifices = Prompt.ChooseSacrifices alice S.alice o7 [o9, o11] 1 (Seq.singleton (S.bob, Set.singleton o7))
-        loop = Prompt.ChooseLoopMembers alice S.alice o7 [Recipient.ToCreature o9, Recipient.ToPlayer S.bob]
+        loop = Prompt.ChooseLoopMembers alice S.alice o7 LoopMembers.AnyNumber [Recipient.ToCreature o9, Recipient.ToPlayer S.bob]
     Spec.assertEqWith s "candidates read back as the answer" (fmap (Protocol.decodeAnswer sacrifices . R.Array) (field "among" (Protocol.offerOf gs sacrifices) >>= arrayOf)) (Just (Right (Set.fromList [o9, o11])))
     Spec.assertEqWith s "exactly the count" (bounds sacrifices) [Just (Protocol.object o7), Just (R.Number 1), Just (R.Number 1)]
     Spec.assertEqWith s "CR 101.4b what earlier choosers picked" (field "earlier" (Protocol.offerOf gs sacrifices)) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Array [Protocol.object o7]]]))
@@ -394,6 +395,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 702.167a one or more is a least" (bounds (Prompt.ChooseMaterials alice S.alice o7 [o9, o11] 1 True)) [Just (Protocol.object o7), Just (R.Number 1), Nothing]
     Spec.assertEqWith s "CR 702.122a a power threshold, unbounded" (fmap (\key -> field key (Protocol.offerOf gs (Prompt.ChooseTapsForTotalPower alice S.alice o7 [(o9, 2)] 3))) ["power", "least", "most"]) [Just (R.Number 3), Nothing, Nothing]
     Spec.assertEqWith s "any number up to the most" (bounds (Prompt.ChooseAnyNumber alice S.alice o7 AnyNumberOf.ToExile [o9, o11] (Just 1) Seq.empty)) [Just (Protocol.object o7), Just (R.Number 0), Just (R.Number 1)]
+    Spec.assertEqWith s "CR 608.2d one loop member is exactly one" (bounds (Prompt.ChooseLoopMembers alice S.alice o7 LoopMembers.One [Recipient.ToCreature o9, Recipient.ToPlayer S.bob])) [Just (Protocol.object o7), Just (R.Number 1), Just (R.Number 1)]
     Spec.assertEqWith s "recipients read back as the answer" (fmap (Protocol.decodeAnswer loop . R.Array) (field "among" (Protocol.offerOf gs loop) >>= arrayOf)) (Just (Right (Set.fromList [Recipient.ToCreature o9, Recipient.ToPlayer S.bob])))
 
   Spec.it s "a prompt answered by an index or an entry of what it lists offers each option as its answer, beside the entry it picks" $ do

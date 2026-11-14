@@ -85,6 +85,7 @@ import qualified Parun.Types.LandOrNonland as LandOrNonland
 import qualified Parun.Types.LearnMode as LearnMode
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeChange as LifeChange
+import qualified Parun.Types.LoopMembers as LoopMembers
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
@@ -584,7 +585,8 @@ spec s registry = Spec.describe s "Bot" $ do
     Spec.assertEqWith s "exiles" (drawn (Prompt.ChooseExilesFromGraveyard decider S.alice oid cards 2)) (groups (== 2))
     Spec.assertEqWith s "materials" (drawn (Prompt.ChooseMaterials decider S.alice oid cards 2 False)) (groups (== 2))
     Spec.assertEqWith s "one or more materials" (drawn (Prompt.ChooseMaterials decider S.alice oid cards 2 True)) (groups (>= 2))
-    Spec.assertEqWith s "loop members" (drawn (Prompt.ChooseLoopMembers decider S.alice oid recipients)) (Set.fromList (fmap Set.fromList (List.subsequences recipients)))
+    Spec.assertEqWith s "loop members" (drawn (Prompt.ChooseLoopMembers decider S.alice oid LoopMembers.AnyNumber recipients)) (Set.fromList (fmap Set.fromList (List.subsequences recipients)))
+    Spec.assertEqWith s "one loop member" (drawn (Prompt.ChooseLoopMembers decider S.alice oid LoopMembers.One recipients)) (Set.fromList (fmap Set.singleton recipients))
     Spec.assertEqWith s "proliferates" (drawn (Prompt.ChooseProliferate decider S.alice objects [S.alice, S.bob])) (Set.fromList [(Set.fromList os, Set.fromList ps) | os <- List.subsequences objects, ps <- List.subsequences [S.alice, S.bob]])
 
   -- CR 701.56a: each of two objects left alone, given a counter or losing one;

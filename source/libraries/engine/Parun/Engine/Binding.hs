@@ -1151,8 +1151,9 @@ castSpell = SlotName.MkSlotName (Text.pack "thatSpell")
 
 -- CR 115.1 / 601.2c: the reserved slot naming, as one group, every OBJECT the
 -- spell under `castSpell` targeted as it became cast or copied -- Storm,
--- Windrider's "those creatures". Players are left out: no printing names them
--- through it. Read off the stack object when the trigger binds, so a target
+-- Windrider's "those creatures" -- and, as a DealDamage `damaged` slot holds
+-- them, every PLAYER it targeted: Zevlor, Elturel Exile's "each other
+-- opponent". Read off the stack object when the trigger binds, so a target
 -- changed later (CR 115.7) is not seen (docs/decisions.md, "Which objects a
 -- cast trigger's "those creatures" names"). An empty group where the spell
 -- targets no object. Not a target, `castSpell`'s posture.
@@ -1627,10 +1628,12 @@ setCastSpell oid = Map.insert castSpell (toObject oid)
 setCastSpellX :: Natural -> Map SlotName Binding -> Map SlotName Binding
 setCastSpellX n = Map.insert castSpellX (toAmount n)
 
--- Bind a spell's object targets under the reserved castSpellTargets slot (CR
--- 115.1).
+-- Bind a spell's targets under the reserved castSpellTargets slot (CR 115.1):
+-- its objects as a group, its players as recipients.
 setCastSpellTargets :: Set Recipient -> Map SlotName Binding -> Map SlotName Binding
-setCastSpellTargets targets = Map.insert castSpellTargets (toObjects (Seq.fromList (Maybe.mapMaybe Recipient.objectOf (Set.toAscList targets))))
+setCastSpellTargets targets =
+  let players = Set.filter (Maybe.isJust . Recipient.playerOf) targets
+   in Map.insert castSpellTargets ((toObjects (Seq.fromList (Maybe.mapMaybe Recipient.objectOf (Set.toAscList targets)))) {Binding.targets = if Set.null players then Nothing else Just players})
 
 -- Bind an object under the reserved thisAbility slot (CR 602.2a, 603.3).
 setThisAbility :: ObjectId -> Map SlotName Binding -> Map SlotName Binding

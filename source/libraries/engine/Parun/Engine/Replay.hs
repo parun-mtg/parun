@@ -39,6 +39,7 @@ import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
 import qualified Parun.Types.GuessAnswer as GuessAnswer
 import qualified Parun.Types.KickerDecision as KickerDecision
 import qualified Parun.Types.LibraryPosition as LibraryPosition
+import qualified Parun.Types.LoopMembers as LoopMembers
 import qualified Parun.Types.MoveSpread as MoveSpread
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MutateSide as MutateSide
@@ -1293,9 +1294,9 @@ defaultAnswer p = case p of
   -- controller's to choose.
   Prompt.OrderForEach _ _ _ members -> zipWith const [0 ..] members
   -- Every candidate, ChooseAnyNumber's maximal subset: CR 608.2d
-  -- admits every subset here, so no answer can be illegal. A deterministic
-  -- fallback, not a recommendation.
-  Prompt.ChooseLoopMembers _ _ _ candidates -> Set.fromList candidates
+  -- admits every subset here, so no answer can be illegal. The first where one
+  -- is chosen. A deterministic fallback, not a recommendation.
+  Prompt.ChooseLoopMembers _ _ _ members candidates -> Set.fromList (case members of LoopMembers.One -> take 1 candidates; _ -> candidates)
   -- CR 700.3: every offered pile is one the chooser may take.
   Prompt.ChoosePile _ _ _ piles _ -> NonEmpty.head piles
   -- Stopping, so a transcript that ran out cannot loop forever.

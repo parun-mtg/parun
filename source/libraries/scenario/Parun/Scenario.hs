@@ -120,6 +120,7 @@ import qualified Parun.Types.Label as Label
 import qualified Parun.Types.LifeIs as LifeIs
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.Looked as Looked
+import qualified Parun.Types.LoopMembers as LoopMembers
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaType as ManaType
@@ -1120,7 +1121,7 @@ withinOffer prompt chosen = case prompt of
   Prompt.Type.ChooseExtraManaSource _ _ candidates -> all (`elem` candidates) chosen
   Prompt.Type.ChooseCopyTarget _ _ _ objects -> all (`elem` objects) chosen
   Prompt.Type.ChooseManaYield _ _ _ options -> chosen `elem` options
-  Prompt.Type.ChooseLoopMembers _ _ _ members -> all (`elem` members) chosen
+  Prompt.Type.ChooseLoopMembers _ _ _ howMany members -> all (`elem` members) chosen && (howMany /= LoopMembers.One || length chosen == 1)
   Prompt.Type.ChoosePile _ _ _ piles _ -> chosen `elem` piles
   Prompt.Type.ChooseFromOutsideTheGame _ _ cards least most -> all (`elem` fmap fst cards) chosen && least <= List.genericLength chosen && List.genericLength chosen <= most
   Prompt.Type.DeclareAttackers _ _ attackers -> all (`elem` attackers) chosen

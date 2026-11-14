@@ -98,6 +98,7 @@ import qualified Parun.Types.LandOrNonland as LandOrNonland
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.LoopMembers as LoopMembers
 import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaUnit as ManaUnit
@@ -515,7 +516,7 @@ offerOf gs prompt = case prompt of
   Prompt.ChooseAnyNumber _ _ source purpose candidates most earlier ->
     subset (Just source) [("purpose", R.Text (Text.pack (show purpose))), ("earlier", Reply.encode (Reply.seqOf (Reply.pairOf Reply.player (Reply.setOf Reply.object))) namer earlier)] (Just 0, most) (fmap object candidates)
   -- CR 608.2d.
-  Prompt.ChooseLoopMembers _ _ source members -> subset (Just source) [] (Just 0, Nothing) (fmap (Reply.encode Reply.recipient namer) members)
+  Prompt.ChooseLoopMembers _ _ source howMany members -> subset (Just source) [] (case howMany of LoopMembers.One -> exactly 1 members; _ -> (Just 0, Nothing)) (fmap (Reply.encode Reply.recipient namer) members)
   -- CR 700.2a: the legal modes by index, each named, as many as the selection
   -- takes, (CR 700.2d) whether one may be chosen again, and (CR 700.2i) each
   -- one's pawprints, the selection's `most` being their budget.
