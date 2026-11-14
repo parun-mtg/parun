@@ -4,7 +4,7 @@ import qualified Parun.Types.InZone as InZone
 import qualified Parun.Types.PlayerRef as PlayerRef
 
 -- | The payload of Parun.Types.Quantity's WasCastFrom arm: WHO cast the spell (CR
--- 601.2a) and WHICH zone it was cast out of (CR 400.1).
+-- 601.2a) and WHICH zone it was cast out of (CR 400.1), or any at all.
 --
 -- TWO references and not three. The rule distinguishes three roles -- the
 -- caster, the owner of the zone's copy and the owner of the card -- but CR 400.3
@@ -16,6 +16,8 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 -- Fblthp, the Lost's "was cast from your library" is @Relative AnyPlayer@ over your own.
 data CastFrom = MkCastFrom
   { caster :: PlayerRef.PlayerRef,
-    from :: InZone.InZone
+    -- | Nothing is CR 603.4's bare "if you cast it": cast from anywhere, outside
+    -- the game included (CR 400.11), which no Or over zones can enumerate.
+    from :: Maybe InZone.InZone
   }
   deriving (Eq, Ord, Show)
