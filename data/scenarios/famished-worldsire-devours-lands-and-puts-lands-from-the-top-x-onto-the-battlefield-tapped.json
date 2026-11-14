@@ -1,0 +1,367 @@
+{
+  "description": "CR 702.82c, 603.2, 608.2h, 701.24a: Famished Worldsire devours lands at three +1/+1 counters each, and its enter trigger looks at the top X cards of its controller's library, X being its power, and puts any number of land cards from among them onto the battlefield tapped, then shuffles",
+  "note": "Grizzly Bears is no land and cannot be devoured; two Plains make the Worldsire a 6/6, so the top six cards are looked at. The seventh, a Plains, is refused, as is the Grizzly Bears among the six; alice takes the Forest, Island and Swamp and leaves the Mountain.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "g0"
+          },
+          {
+            "card": "Forest",
+            "label": "g1"
+          },
+          {
+            "card": "Forest",
+            "label": "g2"
+          },
+          {
+            "card": "Forest",
+            "label": "g3"
+          },
+          {
+            "card": "Forest",
+            "label": "g4"
+          },
+          {
+            "card": "Forest",
+            "label": "g5"
+          },
+          {
+            "card": "Forest",
+            "label": "g6"
+          },
+          {
+            "card": "Forest",
+            "label": "g7"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Famished Worldsire",
+            "label": "worldsire"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest",
+            "label": "lf"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "lb"
+          },
+          {
+            "card": "Island",
+            "label": "li"
+          },
+          {
+            "card": "Mountain",
+            "label": "lm"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e0"
+          },
+          {
+            "card": "Swamp",
+            "label": "lsw"
+          },
+          {
+            "card": "Plains",
+            "label": "lp"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "e1"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberToSacrifice",
+          "with": [
+            "$bears"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberToSacrifice",
+          "with": [
+            "$p1",
+            "$p2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$worldsire",
+          "mana": [
+            "$g0",
+            "$g1",
+            "$g2",
+            "$g3",
+            "$g4",
+            "$g5",
+            "$g6",
+            "$g7",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "Famished Worldsire",
+          "power": 6,
+          "toughness": 6
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 2,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$lp"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$lb"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardsFromAmong",
+          "with": [
+            "$lf",
+            "$li",
+            "$lsw"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "OrderTimestamps": [
+          "Forest#9",
+          "Island#3",
+          "Swamp"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$lm",
+            "$lb",
+            "$e0",
+            "$lp",
+            "$e1"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 9,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Swamp",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "Island#3",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "Swamp",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      }
+    }
+  ]
+}
