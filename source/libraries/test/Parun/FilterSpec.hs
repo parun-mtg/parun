@@ -81,6 +81,8 @@ blackCreature =
       Filter.keywords = Set.singleton Keyword.Flying,
       Filter.power = Just 2,
       Filter.toughness = Just 2,
+      Filter.basePower = Just 2,
+      Filter.baseToughness = Just 2,
       Filter.intensity = Nothing,
       Filter.manaValue = Just 3,
       -- CR 202.1: a cost totalling the 3 above. No Parun.Types.Filter atom reads
@@ -193,6 +195,8 @@ devoidBigCreature =
       Filter.keywords = Set.empty,
       Filter.power = Just 5,
       Filter.toughness = Just 5,
+      Filter.basePower = Just 5,
+      Filter.baseToughness = Just 5,
       Filter.intensity = Nothing,
       Filter.manaValue = Just 5,
       -- CR 202.1: devoid, so the cost totalling the 5 above carries no coloured

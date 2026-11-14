@@ -3133,6 +3133,8 @@ applyEntryOption oid option gs =
         base
           { PC.power = Just (EntryOption.power option),
             PC.toughness = Just (EntryOption.toughness option),
+            PC.basePower = Just (EntryOption.power option),
+            PC.baseToughness = Just (EntryOption.toughness option),
             -- Defensive, not load-bearing: CR 208.2a and CR 208.2b are
             -- alternatives, so a card with a ChoiceOf has no
             -- characteristic-defining ability and this field is already Nothing.

@@ -149,6 +149,9 @@ viewOfCardLapsed lapsed face =
           Filter.power = printedPower face,
           -- CR 208.1's other half off the printed toughness box.
           Filter.toughness = printedToughness face,
+          -- CR 208.4b: no layer applies to a printed face.
+          Filter.basePower = printedPower face,
+          Filter.baseToughness = printedToughness face,
           -- The printed starting intensity; no intensify effect reaches a face.
           Filter.intensity = fmap toInteger (Face.startingIntensity face),
           -- CR 202.3: printed on the card, and rule 202.3 names no zone.
@@ -450,6 +453,8 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.keywords = Keyword.heldBy pc,
       Filter.power = PC.power pc,
       Filter.toughness = PC.toughness pc,
+      Filter.basePower = PC.basePower pc,
+      Filter.baseToughness = PC.baseToughness pc,
       Filter.intensity = PC.intensity pc,
       -- CR 202.3 / 707.2 off the PROJECTION: mana cost is copiable, so layer 1
       -- replaces it. The printed cost is read in baseCharacteristics.
@@ -1156,6 +1161,8 @@ applyCopyException this own snapshot exception = case exception of
     snapshot
       { PC.power = Just p,
         PC.toughness = Just t,
+        PC.basePower = Just p,
+        PC.baseToughness = Just t,
         PC.characteristicPT = Nothing
       }
   -- CR 707.9a: the gained abilities become part of the copiable values "along
@@ -1845,6 +1852,8 @@ noCharacteristics =
       PC.manaValue = Just 0,
       PC.power = Nothing,
       PC.toughness = Nothing,
+      PC.basePower = Nothing,
+      PC.baseToughness = Nothing,
       PC.loyalty = Nothing,
       PC.defense = Nothing,
       PC.intensity = Nothing,
@@ -1967,6 +1976,16 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
       -- group is what proves that.
       let seedViewOf = const Nothing
           seedContext = SourceContext.sourceContext seedViewOf gs (controllerOf oid gs) oid
+          -- Quantity.evaluate, not Quantity.determine: CR 208.2a's "use 0
+          -- instead" belongs to a CDA, so a printed star with none behind it is
+          -- Nothing. A star given its value by CR 208.2b reports Nothing off the
+          -- battlefield; one with a CDA is filled at layer 7a.
+          seedPower = case Face.power face of
+            Nothing -> Nothing
+            Just (Power.MkPower q) -> Quantity.evaluate seedViewOf seedContext gs oid q
+          seedToughness = case Face.toughness face of
+            Nothing -> Nothing
+            Just (Toughness.MkToughness q) -> Quantity.evaluate seedViewOf seedContext gs oid q
        in PC.MkProjectedCharacteristics
             { -- CR 709.4a: the names the object shows, which `face` cannot carry --
               -- Game.namesOf decides which halves show.
@@ -1996,16 +2015,10 @@ baseCharacteristics oid gs = case Game.faceOf oid gs of
               PC.manaValue = case Game.manaCostFacesOf oid gs of
                 faces | Seq.null faces -> Nothing
                 faces -> Just (sum (fmap Quantity.manaValueOf faces)),
-              -- Quantity.evaluate, not Quantity.determine: CR 208.2a's "use 0
-              -- instead" belongs to a CDA, so a printed star with none behind it is
-              -- Nothing. A star given its value by CR 208.2b reports Nothing off the
-              -- battlefield; one with a CDA is filled at layer 7a.
-              PC.power = case Face.power face of
-                Nothing -> Nothing
-                Just (Power.MkPower q) -> Quantity.evaluate seedViewOf seedContext gs oid q,
-              PC.toughness = case Face.toughness face of
-                Nothing -> Nothing
-                Just (Toughness.MkToughness q) -> Quantity.evaluate seedViewOf seedContext gs oid q,
+              PC.power = seedPower,
+              PC.toughness = seedToughness,
+              PC.basePower = seedPower,
+              PC.baseToughness = seedToughness,
               -- CR 306.5a: a literal number, copied through rather than evaluated.
               PC.loyalty = Face.loyalty face,
               -- CR 310.4a: a literal number, likewise.
@@ -2166,6 +2179,8 @@ withPrototype oid gs face pc = case (maybe False Object.prototyped (Game.lookupO
         PC.manaValue = Just (Quantity.manaCostValue (Prototype.cost frame)),
         PC.power = Just (Prototype.power frame),
         PC.toughness = Just (Prototype.toughness frame),
+        PC.basePower = Just (Prototype.power frame),
+        PC.baseToughness = Just (Prototype.toughness frame),
         -- CR 202.2 with rule 719.3b's second sentence. printedColorsOf's own
         -- shape, with the inset cost in place of the printed one: a colour
         -- indicator is a separate characteristic (CR 204.2) that rule 719.3b does
