@@ -124,6 +124,7 @@ import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StoredResult as StoredResult
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.ThrowResult as ThrowResult
@@ -414,7 +415,7 @@ spec s registry = Spec.describe s "Protocol" $ do
           answers <- traverse (Protocol.decodeAnswer prompt) options
           if all (Scenario.withinOffer prompt) answers then Right (answers, field "entries" offer) else Left (Text.pack "an option outside the offer")
         entries = Just . R.Array
-        tapped = ReplacementEntry.MkReplacementEntry looked (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource EntryRewrite.Tapped))
+        tapped = ReplacementEntry.MkReplacementEntry looked (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.EntersTapState TapState.Tapped)))
         hit = DamageEvent.MkDamageEvent o7 (Recipient.ToPlayer S.bob) 2 False False False 0 Nothing Nothing mempty False mempty DamageKind.Noncombat
         hidden = GameEvent.Looked (Looked.MkLooked looked (Projection.project looked gs) (Set.singleton S.bob))
         hillGiant = CardName.MkCardName (Text.pack "Hill Giant")

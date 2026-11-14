@@ -16,6 +16,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.WithCounters as WithCounters
 
 -- | CR 614.1c-d: how an entry replacement modifies the entry. Each arm names its
@@ -165,10 +166,8 @@ data EntryRewrite ability effect
     -- payload is the number of Phyrexian mana symbols life was paid for (CR
     -- 118.13a), rule 702.150a's "two" being the rule's own.
     Compleated Natural.Natural
-  | -- | CR 614.1d / Zof Bloodbog, Headless Skaab: "This permanent enters tapped",
-    -- stamped on the entering incarnation rather than routed through the tap
-    -- funnel, so no becomes-tapped event exists (CR 110.5b).
-    Tapped
+  | -- | CR 614.1d / 110.5b / Zof Bloodbog, Spelunking: enters with this tap status.
+    EntersTapState TapState.TapState
   | -- | CR 723.3a / 614.1d / Pompous Battlemage: "This creature enters prepared".
     Prepared
   | -- | CR 614.1c / Razorgrass Field, Rustic Clachan: "you may [price]. If you

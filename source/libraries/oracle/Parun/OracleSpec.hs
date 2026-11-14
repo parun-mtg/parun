@@ -966,7 +966,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- CR 614.1d: a static ability's replacement effect on the source's
   -- entering; one functioning only under a condition is not spelled out.
   Spec.it s "render prints a permanent entering tapped" $ do
-    let tapped = PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource EntryRewrite.Tapped)) Set.empty Nothing
+    let tapped = PrintedReplacement.MkPrintedReplacement Nothing (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.IsSource (EntryRewrite.EntersTapState TapState.Tapped))) Set.empty Nothing
     Spec.assertEq s (Just (Text.pack "Spark enters tapped.")) (Oracle.render (withFace (\f -> f {Face.replacementEffects = [tapped]})))
     Spec.assertEq s Nothing (Oracle.render (withFace (\f -> f {Face.replacementEffects = [tapped {PrintedReplacement.condition = Just (Condition.Compares (Compares.MkCompares (Quantity.Literal 1) Comparison.AtLeast (Quantity.Literal 1)))}]})))
 

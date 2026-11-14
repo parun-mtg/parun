@@ -1437,7 +1437,7 @@ admitsEntry gs oid rewrite = case rewrite of
   -- arm answers True, and admitting unconditionally places the same counters as
   -- admitting under rule 702.54a's condition would. CR 616.1's bucket is where
   -- they diverge, and a board does make that visible -- an opponent's Kismet
-  -- (EntryRewrite.Tapped) is a second CR 616.1e candidate for the entering
+  -- (EntryRewrite.EntersTapState) is a second CR 616.1e candidate for the entering
   -- Petrified Wood-Kin, so with nothing dealt this turn admitting the row leaves
   -- two rows to race and raises Prompt.ChooseReplacement, where refusing it under
   -- rule 702.54a's condition would leave one row and ask nobody. That prompt is
@@ -1472,7 +1472,7 @@ admitsEntry gs oid rewrite = case rewrite of
   -- CR 702.104a states no condition at all: the ability functions as the creature
   -- enters, and both of the questions it asks are players'.
   EntryRewrite.Tribute _ -> True
-  EntryRewrite.Tapped -> True
+  EntryRewrite.EntersTapState _ -> True
   -- CR 723.3a's first gate, "if that permanent has the alternative
   -- characteristics of a prepare spell", read off the copiable values the
   -- entry has settled so far (CR 723.2b).
@@ -1557,7 +1557,7 @@ entryCostOf rewrite = case rewrite of
   EntryRewrite.Amplify _ -> Nothing
   EntryRewrite.Tribute _ -> Nothing
   EntryRewrite.Compleated _ -> Nothing
-  EntryRewrite.Tapped -> Nothing
+  EntryRewrite.EntersTapState _ -> Nothing
   EntryRewrite.Prepared -> Nothing
   EntryRewrite.OrTapped _ -> Nothing
   EntryRewrite.PayAnyLife _ -> Nothing
@@ -2196,7 +2196,7 @@ bucketOfEffect re = case re of
   -- CR 614.1d is none of CR 616.1a-d either: a tap-state rewrite changes the
   -- STATUS the permanent enters with (CR 110.5b), never whose it is, what it
   -- copies or which face is up. So CR 616.1e.
-  ReplacementEffect.EntryR (EntryR.MkEntryR _ EntryRewrite.Tapped) -> ReplacementBucket.Other
+  ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.EntersTapState _)) -> ReplacementBucket.Other
   -- CR 723.3a's designation is none of CR 616.1a-d either: a marker, not
   -- control, a copy or a face. So CR 616.1e.
   ReplacementEffect.EntryR (EntryR.MkEntryR _ EntryRewrite.Prepared) -> ReplacementBucket.Other
@@ -2404,7 +2404,7 @@ readsApplier re = case re of
   -- CR 614.1d: no chooser at all, and no payload -- the rewrite sets one status on
   -- the object the event already named (CR 110.5b), so it applies the same way
   -- whoever's row is applying it. Two such rows are the same write twice.
-  ReplacementEffect.EntryR (EntryR.MkEntryR _ EntryRewrite.Tapped) -> False
+  ReplacementEffect.EntryR (EntryR.MkEntryR _ (EntryRewrite.EntersTapState _)) -> False
   -- CR 723.3a: Tapped's reason -- one marker on the object the event named, and
   -- CR 723.3a's second gate makes a second row a no-op.
   ReplacementEffect.EntryR (EntryR.MkEntryR _ EntryRewrite.Prepared) -> False
@@ -2979,7 +2979,7 @@ recordsAChoice effect = case effect of
     EntryRewrite.Amplify _ -> False
     EntryRewrite.Tribute _ -> False
     EntryRewrite.Compleated _ -> False
-    EntryRewrite.Tapped -> False
+    EntryRewrite.EntersTapState _ -> False
     EntryRewrite.Prepared -> False
     EntryRewrite.OrTapped _ -> False
     -- Records the amount, but spends life to do it.

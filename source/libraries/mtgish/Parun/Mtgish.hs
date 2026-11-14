@@ -169,6 +169,7 @@ import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Tap as Tap
+import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TheseDiscard as TheseDiscard
@@ -376,7 +377,7 @@ rule face n = case Node.tag n of
     Monad.unless (Node.tag p == "ThisPermanent") (Node.untranslated p)
     rewrites <- Common.asArray replacements >>= traverse Node.node
     case rewrites of
-      [r] | tapped r -> pure face {Face.replacementEffects = Face.replacementEffects face <> [entering EntryRewrite.Tapped]}
+      [r] | tapped r -> pure face {Face.replacementEffects = Face.replacementEffects face <> [entering (EntryRewrite.EntersTapState TapState.Tapped)]}
       [r] | Node.tag r == "EntersPrepared" && Maybe.isNothing (Node.args r) -> pure face {Face.replacementEffects = Face.replacementEffects face <> [entering EntryRewrite.Prepared]}
       [r] | Node.tag r == "Unless" -> do
         (conditionValue, inner) <- pair r
@@ -384,7 +385,7 @@ rule face n = case Node.tag n of
         Monad.unless (fmap tapped within == [True]) (Node.untranslated r)
         c <- Node.node conditionValue >>= intervening outermost
         failing <- maybe (Node.untranslated r) Right (Oracle.Trigger.unless c)
-        pure face {Face.replacementEffects = Face.replacementEffects face <> [(entering EntryRewrite.Tapped) {PrintedReplacement.condition = Just failing}]}
+        pure face {Face.replacementEffects = Face.replacementEffects face <> [(entering (EntryRewrite.EntersTapState TapState.Tapped)) {PrintedReplacement.condition = Just failing}]}
       r : _ -> Node.untranslated r
       [] -> Node.untranslated n
     where

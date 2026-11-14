@@ -1149,6 +1149,13 @@ assimilatedCards = SlotName.MkSlotName (Text.pack "thoseAssimilatedCards")
 castSpell :: SlotName
 castSpell = SlotName.MkSlotName (Text.pack "thatSpell")
 
+-- CR 305.1 / 614.1d: the reserved slot naming the land a play is putting onto
+-- the battlefield, read by the entry row a permission's rider installs for that
+-- one play (Parun.Engine.Cast.installLandEntry). Not a target, `castSpell`'s
+-- posture.
+playedLand :: SlotName
+playedLand = SlotName.MkSlotName (Text.pack "thatPlayedLand")
+
 -- CR 115.1 / 601.2c: the reserved slot naming, as one group, every OBJECT the
 -- spell under `castSpell` targeted as it became cast or copied -- Storm,
 -- Windrider's "those creatures". Players are left out: no printing names them

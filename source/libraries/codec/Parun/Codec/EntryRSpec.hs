@@ -9,6 +9,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.TapState as TapState
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.EntryR" $ do
@@ -19,7 +20,7 @@ spec s = Spec.describe s "Parun.Codec.EntryR" $ do
       (EntryR.codec (GrantedAbility.codec Card.codec) (Effect.codec Card.codec (GrantedAbility.codec Card.codec)))
       ( EntryR.MkEntryR
           { EntryR.matching = Filter.IsSource,
-            EntryR.rewrite = EntryRewrite.Tapped
+            EntryR.rewrite = EntryRewrite.EntersTapState TapState.Tapped
           }
       )
       " {\"matching\":{\"type\":\"IsSource\"},\"rewrite\":{\"type\":\"Tapped\"}} "
