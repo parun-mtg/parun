@@ -8,6 +8,7 @@ import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Oracle.Filter as Filter
 import qualified Parun.Oracle.Prose as Prose
@@ -387,7 +388,7 @@ object context determiner ref = case ref of
         text <- Filter.describe Filter.Plural permanent (Filter.merge p (Filter.MkPhrase [] [card] [from]))
         [MkReference (Text.pack "all " <> text) [] Filter.Plural []]
   ObjectRef.ChosenPermanents c
-    | ChosenPermanents.chooser c == PlayerRef.Relative PlayerRelation.You && ChosenPermanents.zone c == Zone.Battlefield && Maybe.isNothing (ChosenPermanents.total c) -> do
+    | ChosenPermanents.chooser c == PlayerRef.Relative PlayerRelation.You && ChosenPermanents.zone c == Zone.Battlefield && Set.null (ChosenPermanents.ownZones c) && Maybe.isNothing (ChosenPermanents.total c) -> do
         p <- Filter.phrase (ChosenPermanents.filter c) (keyword context)
         one <- Filter.describe Filter.Singular permanent p
         many <- Filter.describe Filter.Plural permanent p

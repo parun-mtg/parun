@@ -1281,7 +1281,9 @@ storedPlayerScope effect = case effect of
 -- Parun.Engine.Resolve.Slots.objectRefObjects answers [] for. ChosenPermanents
 -- splits on its count, since Effect.Pair takes one partner (CR 702.95a), and an
 -- exact count other than one is allowed nowhere: no gameplay test reaches it.
--- A choice out of another zone is its own question, whatever its count.
+-- A choice out of another zone is its own question, whatever its count, and so
+-- is one reaching into the chooser's own zones, which only a move's test (Lich's
+-- Mastery) reaches.
 -- ChosenCardFromAmong splits off its uncapped "any number", which only a
 -- reveal's test (Lead the Stampede) and a move's (Ransack) reach, and its pile
 -- split (CR 700.3), which only a move's test (Sphinx of Uthuun) reaches.
@@ -1304,6 +1306,7 @@ data Question
   | SeveralPermanents
   | PermanentsUpTo
   | OffBattlefield
+  | AcrossOwnZones
   deriving (Eq, Show, Enum, Bounded)
 
 -- Which question an ObjectRef arm puts, if any.
@@ -1349,6 +1352,7 @@ questionOf ref = case ref of
   ObjectRef.RandomCardInGraveyard {} -> Just RandomInGraveyard
   ObjectRef.AtRandom {} -> Just RandomAmong
   ObjectRef.ChosenPermanents choice -> case ChosenPermanents.count choice of
+    _ | not (Set.null (ChosenPermanents.ownZones choice)) -> Just AcrossOwnZones
     _ | ChosenPermanents.zone choice /= Zone.Battlefield -> Just OffBattlefield
     HowMany.Exactly (Quantity.Type.Literal 1) -> Just OnePermanent
     HowMany.Exactly _ -> Just SeveralPermanents
@@ -1372,9 +1376,10 @@ chooserRef = Maybe.isJust . questionOf
 -- ransack-sends-the-chosen-to-the-bottom-and-orders-the-rest reaches
 -- AnyCardsFromAmong, and
 -- cr-601-2f-gorex-exiles-any-number-of-creature-cards-and-returns-them-at-random
--- RandomAmong. OffBattlefield's ask is Parun.Engine.Resolve.Effect's
--- chosenPermanents, which Mirror of Fate's scenario reaches through
--- Effect.ChoosePermanents; no permanent opcode's test reaches it.
+-- RandomAmong, and the Lich's Mastery scenarios AcrossOwnZones.
+-- OffBattlefield's ask is Parun.Engine.Resolve.Effect's chosenPermanents,
+-- which Mirror of Fate's scenario reaches through Effect.ChoosePermanents; no
+-- permanent opcode's test reaches it.
 movedQuestions :: [Question]
 movedQuestions = filter (/= SeveralPermanents) [minBound .. maxBound]
 
@@ -2138,7 +2143,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           -- TRUE for one permanent however many match, and for a printed ceiling
           -- of one, TopOfLibrary's answer; FALSE, EachCardFromAmong's answer
           -- over the battlefield, where "any number" states no bound.
-          ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents _ _ count _ _) -> atMostOne count
+          ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents _ _ count _ _ _) -> atMostOne count
           -- FALSE: every attachment to a host moves, however many there are.
           ObjectRef.AttachedToBound _ -> False
           -- TRUE, InSlot's answer: what the slot's creature attacks.
@@ -2749,8 +2754,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         atRandom = ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Hand (PlayerRef.Relative PlayerRelation.You) anyCard (Quantity.Type.Literal 1))
         atRandomInGraveyard = ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) anyCard (Quantity.Type.Literal 1))
         sought = ObjectRef.RandomCard (RandomCard.MkRandomCard HiddenZone.Library (PlayerRef.Relative PlayerRelation.You) anyCard (Quantity.Type.Literal 1))
-        anyNumber = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) Nothing Zone.Battlefield)
-        onePermanent = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield)
+        anyNumber = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty)
+        onePermanent = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) HowMany.one Nothing Zone.Battlefield Set.empty)
         sourceAndOne = ObjectRef.AllOf (onePermanent NonEmpty.:| [ObjectRef.EachMatching Filter.Type.IsSource])
         moves ref = Effect.MoveToZone (MoveToZone.MkMoveToZone ref Zone.Battlefield EntryRiders.defaultValue Nothing Nothing LibraryPlacement.defaultValue Nothing)
         reveals ref = Effect.Reveal (Reveal.MkReveal ref Nothing Nothing)
@@ -2804,11 +2809,11 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let tokenCopies ref = Effect.CreateCopy (CreateCopy.MkCreateCopy (Quantity.Type.Literal 1) ref EntryRiders.defaultValue Nothing [] (PlayerRef.Relative PlayerRelation.You) False)
     Spec.assertEqWith s "a copy allows one card from among them and no other chosen arm" (inert (fmap tokenCopies [inGraveyard, inHand, fromAmong, atRandom, anyFromAmong])) [True, True, False, True, True]
     -- An exact count other than one has no gameplay test, so no site allows it.
-    let exactlyTwo = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Type.Literal 2)) Nothing Zone.Battlefield)
+    let exactlyTwo = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) (HowMany.Exactly (Quantity.Type.Literal 2)) Nothing Zone.Battlefield Set.empty)
     Spec.assertEqWith s "two exactly chosen permanents are allowed nowhere" (inert [moves exactlyTwo, Effect.Transform exactlyTwo, Effect.Untap exactlyTwo]) [True, True, True]
     -- A choice out of exile is not a battlefield question at any count, so the
     -- permanent opcodes refuse it and a move alone allows it.
-    let exiled count = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) count Nothing Zone.Exile)
+    let exiled count = ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents anyCard (PlayerRef.Relative PlayerRelation.You) count Nothing Zone.Exile Set.empty)
     Spec.assertEqWith
       s
       "an exile choice is allowed by a move alone"

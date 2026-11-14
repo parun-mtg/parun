@@ -1,5 +1,6 @@
 module Parun.Types.ChosenPermanents where
 
+import qualified Data.Set as Set
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.HowMany as HowMany
 import qualified Parun.Types.Keyword as Keyword
@@ -41,6 +42,10 @@ data ChosenPermanents = MkChosenPermanents
     total :: Maybe TotalCap.TotalCap,
     -- | CR 400.1: the shared zone the candidates are in -- the battlefield, or
     -- Mirror of Fate's exile. Parun.Codec.ChosenPermanents refuses any other.
-    zone :: Zone.Zone
+    zone :: Zone.Zone,
+    -- | CR 400.1: per-player zones whose cards, the chooser's own, are
+    -- candidates beside the shared zone's -- Lich's Mastery's "a card from
+    -- your hand or graveyard". Proved by the Lich's Mastery scenarios.
+    ownZones :: Set.Set Zone.Zone
   }
   deriving (Eq, Ord, Show)
