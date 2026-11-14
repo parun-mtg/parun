@@ -358,7 +358,15 @@ object context determiner ref = case ref of
             after <- traverse (Filter.agreeing Filter.Plural) (Filter.qualifiers p)
             let wording' = Text.unwords (Text.pack "each " <> text : after)
             [MkReference wording' [] Filter.Plural [] | wording' `notElem` fmap wording whole]
-       in whole <> apart <> conjoined
+          -- "each creature you control other than this creature" (Dawnstrike
+          -- Vanguard) for "each other creature you control".
+          otherThan = case f of
+            Filter.Type.And fs | elem (Filter.Type.Not Filter.Type.IsSource) fs -> do
+              p <- Filter.phrase (Filter.Type.And (filter (/= Filter.Type.Not Filter.Type.IsSource) fs)) (keyword context)
+              text <- Filter.describe Filter.Singular permanent p
+              [MkReference (Text.pack "each " <> text <> Text.pack " other than ~") [] Filter.Plural []]
+            _ -> []
+       in whole <> apart <> conjoined <> otherThan
     All -> do
       p <- Filter.phrase f (keyword context)
       text <- Filter.describe Filter.Plural permanent p
