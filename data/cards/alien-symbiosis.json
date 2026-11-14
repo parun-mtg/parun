@@ -1,0 +1,93 @@
+{
+  "faces": [
+    {
+      "castingPermissions": [
+        {
+          "type": "CastFromGraveyard",
+          "value": {
+            "additionalCosts": [
+              {
+                "type": "DiscardCards",
+                "value": {
+                  "count": {
+                    "type": "Fixed",
+                    "value": 1
+                  },
+                  "whichCards": {
+                    "type": "And",
+                    "value": []
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "enchant": [
+        {
+          "pool": {
+            "type": "Creatures"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Alien Symbiosis",
+      "oracleText": "Enchant creature\nEnchanted creature gets +1/+1, has menace, and is a Symbiote in addition to its other types.\nYou may cast this card from your graveyard by discarding a card in addition to paying its other costs.",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Attached"
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 1
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Menace"
+              }
+            },
+            {
+              "type": "CreatureSubtype",
+              "value": {
+                "mode": "InAddition",
+                "subtype": "Symbiote"
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

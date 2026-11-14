@@ -1,0 +1,243 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "w0",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "w1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "u0",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "u1",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "wearer",
+            "ready": true
+          },
+          {
+            "card": "Runeclaw Bear",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ],
+            "label": "countered",
+            "ready": true
+          },
+          {
+            "card": "Balduvian Bears",
+            "label": "foreign",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "plain",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Biorganic Carapace",
+            "label": "carapace"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "attached": "foreign",
+            "card": "Unholy Strength"
+          },
+          {
+            "card": "Grizzly Bears",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ],
+            "label": "bobs",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 700.9, 301.5: Biorganic Carapace attaches to the creature you choose as it enters, and the equipped creature's combat damage draws a card for each modified creature you control: itself, equipped, and one with a counter, not one wearing an opponent's Aura, a plain one or an opponent's creature with a counter",
+  "note": "Only the equipped creature attacks, so the granted trigger fires once; two cards are drawn, so the Swamp stays in the library.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$w0",
+            "$w1",
+            "$u0",
+            "$u1"
+          ],
+          "object": "$carapace"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$wearer"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$wearer",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$wearer"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Swamp",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}
