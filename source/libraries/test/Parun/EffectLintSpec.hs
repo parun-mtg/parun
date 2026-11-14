@@ -247,6 +247,7 @@ import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnFaceDown as TurnFaceDown
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
@@ -755,23 +756,24 @@ isPhaseR replacement = case replacement of
 -- PhaseR over a whole turn, static or floating, has no count of its own (a card
 -- writes a SkipPhase, whose `count` and `uses` are that count), and an Unlimited
 -- SkipPhase of a whole turn is never spent. An optional one (Time Vault) ends
--- when its controller declines, which CR 733.3 forces of a loop.
+-- when its controller declines, which CR 733.3 forces of a loop. One over extra
+-- turns only (Stranglehold) is spent with the entry it skips.
 turnSkipOffends :: Face.Face Card.Type.Card -> Bool
 turnSkipOffends card =
   any isTurnPhaseR (cardReplacementEffects card) || any unspentTurnSkip (cardAuthoredEffects card)
   where
     isTurnPhaseR replacement = case replacement of
-      ReplacementEffect.PhaseR (PhaseR.MkPhaseR phasePattern PhaseRewrite.Skip) -> PhasePattern.whichPhase phasePattern == SkipWindow.WholeTurn
+      ReplacementEffect.PhaseR (PhaseR.MkPhaseR phasePattern PhaseRewrite.Skip) -> PhasePattern.whichPhase phasePattern == SkipWindow.WholeTurn TurnKind.AnyTurn
       _ -> False
 
--- | A SkipPhase naming a whole turn and never spent.
+-- | A SkipPhase naming any whole turn and never spent.
 unspentTurnSkip :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 unspentTurnSkip = maybe False ((== Uses.Unlimited) . SkipPhase.uses) . turnSkip
 
--- | A SkipPhase naming a whole turn.
+-- | A SkipPhase naming any whole turn.
 turnSkip :: Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Maybe SkipPhase.SkipPhase
 turnSkip effect = case effect of
-  Effect.SkipPhase e | SkipPhase.selector e == SkipWindow.WholeTurn -> Just e
+  Effect.SkipPhase e | SkipPhase.selector e == SkipWindow.WholeTurn TurnKind.AnyTurn -> Just e
   _ -> Nothing
 
 -- phasePatternOffends one replacement class over, for the other fields the codec
@@ -3348,7 +3350,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
     let skips = Maybe.mapMaybe turnSkip (cardAuthoredEffects (S.combinedFace meditate))
         unlimited = fmap (\e -> Effect.SkipPhase e {SkipPhase.uses = Uses.Unlimited}) skips
         wholeTurn replacement = case replacement of
-          ReplacementEffect.PhaseR phasePattern -> ReplacementEffect.PhaseR phasePattern {PhaseR.phases = (PhaseR.phases phasePattern) {PhasePattern.whichPhase = SkipWindow.WholeTurn}}
+          ReplacementEffect.PhaseR phasePattern -> ReplacementEffect.PhaseR phasePattern {PhaseR.phases = (PhaseR.phases phasePattern) {PhasePattern.whichPhase = SkipWindow.WholeTurn TurnKind.AnyTurn}}
           other -> other
         hub = S.combinedFace eonHub
         baked = hub {Face.replacementEffects = fmap (\pr -> pr {PrintedReplacement.effect = wholeTurn (PrintedReplacement.effect pr)}) (Face.replacementEffects hub)}

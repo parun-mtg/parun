@@ -72,6 +72,7 @@ import qualified Parun.Types.SkipWindow as SkipWindow
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenR as TokenR
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
@@ -380,7 +381,7 @@ spec s =
           Common.assertCodec
             s
             codec
-            (ReplacementEffect.PhaseR (PhaseR.MkPhaseR PhasePattern.MkPhasePattern {PhasePattern.whichPhase = SkipWindow.WholeTurn, PhasePattern.whosePhase = ControllerRelation.Related PlayerRelation.You} (PhaseRewrite.MaySkipFor (Seq.singleton (Effect.Type.Proliferate Nothing)))))
+            (ReplacementEffect.PhaseR (PhaseR.MkPhaseR PhasePattern.MkPhasePattern {PhasePattern.whichPhase = SkipWindow.WholeTurn TurnKind.AnyTurn, PhasePattern.whosePhase = ControllerRelation.Related PlayerRelation.You} (PhaseRewrite.MaySkipFor (Seq.singleton (Effect.Type.Proliferate Nothing)))))
             " {\"type\":\"PhaseR\",\"value\":{\"whichPhase\":{\"type\":\"Turn\"},\"whosePhase\":{\"type\":\"You\"},\"rewrite\":{\"type\":\"MaySkipFor\",\"value\":[{\"type\":\"Proliferate\"}]}}} "
         -- CR 614.1e / 702.37b: megamorph's "as this permanent is turned face up, put a
         -- +1/+1 counter on it". Minted by Parun.Engine.Keyword rather than written by a

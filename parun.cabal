@@ -3721,6 +3721,7 @@ library types
     Parun.Types.TurnedFaceUp
     Parun.Types.TurnedUpOffDeck
     Parun.Types.TurnFaceDown
+    Parun.Types.TurnKind
     Parun.Types.TurnMarker
     Parun.Types.TurnOrdinal
     Parun.Types.TurnRegisters

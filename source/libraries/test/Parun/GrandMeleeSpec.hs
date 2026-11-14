@@ -150,6 +150,20 @@ spec s registry = Spec.describe s "GrandMelee" $ do
     Spec.assertEqWith s "the extra turn is pending" (length (GameState.extraTurns staged)) 1
     Spec.assertEqWith s "CR 807.4i seat 0's extra turn is passed over" (turnsAfter 5 staged) (fmap (\n -> (seat n, False)) [1, 5, 2, 6, 3])
 
+  -- CR 807.4i / 614.10: the same extra turn under seat 1's Stranglehold, which
+  -- skips an opponent's extra turn as it would begin, so the kept marker passes
+  -- on as it does for Meditate's skip above.
+  Spec.it s "CR 807.4i Stranglehold skips a kept marker's extra turn" $ do
+    forest <- S.printingOf s registry "Forest"
+    island <- S.printingOf s registry "Island"
+    capture <- S.printingOf s registry "Capture of Jingzhou"
+    stranglehold <- S.printingOf s registry "Stranglehold"
+    let (_, held) = S.addPermanent stranglehold (seat 1) (melee forest 8)
+        (captureId, withCapture) = S.addHandCard capture (seat 0) (S.landsFor island (seat 0) 5 held)
+        staged = snd (Engine.runGamePure S.identityAnswer (S.runPure S.identityAnswer (untilPhase Phase.PrecombatMain withCapture) (S.cast (seat 0) captureId)) Engine.priorityLoop)
+    Spec.assertEqWith s "the extra turn is pending" (length (GameState.extraTurns staged)) 1
+    Spec.assertEqWith s "CR 807.4i seat 0's extra turn is passed over" (turnsAfter 5 staged) (fmap (\n -> (seat n, False)) [1, 5, 2, 6, 3])
+
   -- CR 807.4i / 614.10a: the same cast by seat 4 on its first turn, which
   -- ends after seat 0's, seat 0's marker then waiting at seat 1, within three
   -- seats on seat 4's right. So seat 4 passes its marker on and takes the

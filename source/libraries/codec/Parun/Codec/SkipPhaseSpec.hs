@@ -10,6 +10,7 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SkipPhase as SkipPhase.Type
 import qualified Parun.Types.SkipWindow as SkipWindow
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.Uses as Uses
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -50,7 +51,7 @@ spec s = Spec.describe s "Parun.Codec.SkipPhase" $ do
       SkipPhase.codec
       ( SkipPhase.Type.MkSkipPhase
           { SkipPhase.Type.player = PlayerRef.Relative PlayerRelation.You,
-            SkipPhase.Type.selector = SkipWindow.WholeTurn,
+            SkipPhase.Type.selector = SkipWindow.WholeTurn TurnKind.AnyTurn,
             SkipPhase.Type.uses = Uses.Once,
             SkipPhase.Type.duration = Duration.Indefinite,
             SkipPhase.Type.count = Quantity.Literal 2

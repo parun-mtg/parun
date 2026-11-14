@@ -1,0 +1,59 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Stranglehold",
+      "oracleText": "Your opponents can't search libraries.\nIf an opponent would begin an extra turn, that player skips that turn instead.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "CantSearchLibraries",
+            "value": {
+              "cause": {
+                "type": "AnyPlayer"
+              },
+              "library": {
+                "type": "AnyPlayer"
+              }
+            }
+          },
+          "scope": {
+            "type": "Opponent"
+          }
+        }
+      ],
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "PhaseR",
+            "value": {
+              "whichPhase": {
+                "type": "ExtraTurn"
+              },
+              "whosePhase": {
+                "type": "Opponent"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

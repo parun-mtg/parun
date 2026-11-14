@@ -188,6 +188,7 @@ import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpR as TurnUpR
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
@@ -999,7 +1000,8 @@ matchesPrinted viewOf gs event candidate =
         -- (Stonehorn Dignitary) matches only the phase question Engine.runStep
         -- raises at that phase's first step, and one naming a step matches only
         -- the step question. That is what keeps CR 500.1's decomposition of a
-        -- phase into steps out of this comparison.
+        -- phase into steps out of this comparison. The one widening is
+        -- skipCovers': a skip of any turn takes an extra turn too.
         --
         -- The event's PlayerId is the ACTIVE player, or for a whole turn the
         -- player who would begin it, which is also whose step this is: every
@@ -1011,7 +1013,7 @@ matchesPrinted viewOf gs event candidate =
         -- CR 805.8: under the shared team turns option a skip naming any player
         -- on the active team is that team's, so a teammate's row matches too.
         (ReplacementEffect.PhaseR (PhaseR.MkPhaseR pat _), ProposedEvent.WouldBeginPhase selector pid) ->
-          PhasePattern.whichPhase pat == selector
+          skipCovers (PhasePattern.whichPhase pat) selector
             && any
               (\other -> Turn.sharesTurn gs pid other && matchesPlayer gs candidate (PhasePattern.whosePhase pat) other)
               (GameState.seating gs)
@@ -4927,6 +4929,14 @@ asTokens event = case event of
   ProposedEvent.WouldThrow _ -> Nothing
   ProposedEvent.WouldLoseGame {} -> Nothing
   ProposedEvent.WouldPlaneswalk {} -> Nothing
+
+-- CR 500.7 / 614.10a: whether a skip naming `named` takes the beginning the
+-- engine offers. A skip of any turn takes an extra turn too (Magosi, the
+-- Waterveil's ruling); every other window only itself.
+skipCovers :: SkipWindow -> SkipWindow -> Bool
+skipCovers named offered = case (named, offered) of
+  (SkipWindow.WholeTurn TurnKind.AnyTurn, SkipWindow.WholeTurn _) -> True
+  _ -> named == offered
 
 -- CR 500.11 / 614.1b: an extra turn is beginning, so the steps and phases IT
 -- skips become floating replacement effects, one per selector. Called by

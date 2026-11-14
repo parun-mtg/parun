@@ -12,6 +12,7 @@ import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.SkipWindow as SkipWindow
+import qualified Parun.Types.TurnKind as TurnKind
 
 -- PhaseSelector's own coverage is in Parun.Codec.PhaseSelectorSpec; the
 -- cases here are MkPhasePattern's own axis -- a symmetric `whosePhase`, the
@@ -50,7 +51,7 @@ spec s = Spec.describe s "Parun.Codec.PhasePattern" $ do
     Common.assertCodec
       s
       PhasePattern.codec
-      PhasePattern.MkPhasePattern {PhasePattern.whichPhase = SkipWindow.WholeTurn, PhasePattern.whosePhase = ControllerRelation.Among (Set.singleton (PlayerId.MkPlayerId 1))}
+      PhasePattern.MkPhasePattern {PhasePattern.whichPhase = SkipWindow.WholeTurn TurnKind.AnyTurn, PhasePattern.whosePhase = ControllerRelation.Among (Set.singleton (PlayerId.MkPlayerId 1))}
       " {\"whichPhase\":{\"type\":\"Turn\"},\"whosePhase\":{\"type\":\"Among\",\"value\":[1]}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PhasePattern.codec
