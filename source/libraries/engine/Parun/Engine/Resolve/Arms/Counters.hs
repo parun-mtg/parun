@@ -1185,7 +1185,7 @@ proliferate source controller legal targeted = case targeted of
     let recipients = Set.toList (Map.findWithDefault Set.empty slot legal)
         permanents = Maybe.mapMaybe Recipient.objectOf recipients
         players = [pid | Recipient.ToPlayer pid <- recipients]
-    Common.giveAnotherOfEachKind controller gs permanents players
+    Common.giveAnotherOfEachKind source controller gs permanents players
 
 -- CR 701.39a: "bolster N" -- put N +1/+1 counters on a creature you control
 -- with the least toughness, or tied for least. The prompt is raised only for a
