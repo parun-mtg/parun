@@ -1,0 +1,14 @@
+{
+  "description": "Dazzling Reflection gains life equal to the target's power as it resolves, then prevents that creature's next damage",
+  "note": "Bob's unblocked Grizzly Bears is the target: alice gains 2 on resolution and its 2 combat damage is prevented, so alice ends at 22.",
+  "board": {"active": "bob", "step": "BeginningOfCombat", "seats": [
+    {"name": "bob", "battlefield": [{"card": "Grizzly Bears", "label": "bears", "ready": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "alice", "battlefield": [{"card": "Plains", "label": "p1"}, {"card": "Plains", "label": "p2"}], "hand": [{"card": "Dazzling Reflection", "label": "dazzle"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": ["$bears"]}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": {"Cast": {"object": "$dazzle", "mana": ["$p1", "$p2"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "EndOfCombat", "player": "bob", "check": {"Life": {"player": "alice", "life": 22}}}
+  ]
+}
