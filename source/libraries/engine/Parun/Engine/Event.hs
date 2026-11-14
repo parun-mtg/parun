@@ -9618,8 +9618,8 @@ arrangeComponents pid dest components =
 -- CR 400.7g is implemented on Parun.Engine.Cast.keywordsBefore and
 -- Parun.Types.Object.castGrants rather than here.
 --
--- A land play (CarryOver.Played) runs `reenter` alone: an exile permission's
--- "each land played this way enters tapped" watches that one entry, as Boreal
+-- A land play (CarryOver.Played) runs `reenter` alone: a card's own play
+-- permission's "each land played this way enters tapped" watches that one entry, as Boreal
 -- Outrider's row watches a spell's.
 carryOver :: CarryOver.CarryOver -> ObjectId -> ObjectId -> Game ()
 carryOver carrying oldId newId = case carrying of

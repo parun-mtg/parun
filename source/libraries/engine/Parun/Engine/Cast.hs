@@ -2431,8 +2431,7 @@ isFlashPermission permission = case permission of
 -- about this one card for one player (Jace, Telepath Unbound's -3), read
 -- exactly as exile reads it (permitsPlayUnderPermission).
 --
--- Not implemented: that permission's riders on a graveyard card, and a land
--- played out of a graveyard under it (#5799).
+-- Not implemented: that permission's cost riders on a graveyard card (#7622).
 --
 -- Folding the second into the first would say the effect printed flashback onto
 -- every card in the graveyard, which is neither CR 702.34a's meaning nor a thing
@@ -2958,7 +2957,7 @@ castSpellWith perform timed offered applied widened pid oid name facing = Event.
                  in PlayerEffect.prohibitsAtManaValue pid oid manaValue board
                       || not (PlayerEffect.admitsAtManaValue pid permission oid manaValue board)
                       || (timed && flashRefusedAt pid oid name candidate manaValue board)
-          castProposed perform spending pid oid sid face castFrom preparedFor keywordsBefore candidates spent permissions (riders sid) (candidateAllowed pid oid proposed) refusedAt (ownExilePermission offered pid oid held) before
+          castProposed perform spending pid oid sid face castFrom preparedFor keywordsBefore candidates spent permissions (riders sid) (candidateAllowed pid oid proposed) refusedAt (ownPlayPermission [Zone.Exile, Zone.Graveyard] offered pid oid held) before
 
 -- CR 305.2a / 305.3: whether `pid` may play a land at all now -- it is their
 -- turn, and the lands they have played this turn fall short of the lands they
@@ -2993,11 +2992,11 @@ landDropOpen pid gs =
 -- first and enters with it up. NOT changeZoneEntering, where CR 712.11b turns a
 -- put-onto-the-battlefield instruction away: playing a land is a special action.
 --
--- CR 400.7i / 614.1d: a land played under an exile permission (rather than
--- under a player permission, or under the instruction of `offered`) enters as
--- that permission's `landEnters` says -- Lightstall Inquisitor's "each land
--- played this way enters tapped" -- through installLandEntry's row. A player
--- permission's rider is `riders` below.
+-- CR 400.7i / 614.1d: a land played under the card's own permission (rather
+-- than under a player permission, or under the instruction of `offered`)
+-- enters as that permission's `landEnters` says -- Lightstall Inquisitor's
+-- "each land played this way enters tapped" -- through installLandEntry's row.
+-- A player permission's rider is `riders` below.
 playLand :: Game () -> Bool -> PlayerId -> ObjectId -> Maybe CardName.CardName -> Game ()
 playLand settle offered pid oid mName = do
   -- CR 406.3a, the land half of the turn turnedUpForPlay states: a land played
@@ -3042,7 +3041,7 @@ playLand settle offered pid oid mName = do
     State.modify' (PlayerEffect.spendCastPermission pid (PlayerEffect.permissionSpent permission))
     -- CR 601.3: a land played under the card's own exile permission spends
     -- its budget, as a cast does.
-    Monad.when (Maybe.isNothing permission) (spendPlayBudget pid (Maybe.fromMaybe oid (Seq.lookup 0 moved)) (ownExilePermission offered pid oid held))
+    Monad.when (Maybe.isNothing permission) (spendPlayBudget pid (Maybe.fromMaybe oid (Seq.lookup 0 moved)) (ownPlayPermission [Zone.Exile] offered pid oid held))
     State.modify' (\g -> g {GameState.stored = (GameState.stored g) {StoredEffects.continuousEffects = concatMap riders (filter (`Set.member` GameState.battlefield g) (Foldable.toList moved)) <> StoredEffects.continuousEffects (GameState.stored g)}})
     -- CR 305.1 / 400.7i: the card was played, under its pre-move id and the
     -- permanent's.
@@ -3066,15 +3065,15 @@ playLand settle offered pid oid mName = do
   -- Ultimatum scenario proves it.
   State.modify' Trigger.fileBoards
 
--- CR 601.3: the exile permission a play of `oid` by `pid` is made under when
--- it names no other: the card's own, open to `pid` where the card lies, the
--- first of them, which is the chosen one on a board underHeld narrowed.
--- Nothing for a play an effect instructs (`offered`, CR 608.2g), which is made
--- under that effect -- a regression fence, no card in data/cards/ offering a
--- cast of a card a budgeted grant covers.
-ownExilePermission :: Bool -> PlayerId -> ObjectId -> GameState -> Maybe ExilePlayPermission.ExilePlayPermission
-ownExilePermission offered pid oid gs
-  | offered || Game.zoneOf oid gs /= Just Zone.Exile || not (permitsPlayUnderPermission pid oid gs) = Nothing
+-- CR 601.3: the permission a play of `oid` by `pid` is made under when it
+-- names no other: the card's own, open to `pid` where the card lies (one of
+-- `zones`), the first of them, which is the chosen one on a board underHeld
+-- narrowed. Nothing for a play an effect instructs (`offered`, CR 608.2g),
+-- which is made under that effect -- a regression fence, no card in
+-- data/cards/ offering a cast of a card a budgeted grant covers.
+ownPlayPermission :: [Zone.Zone] -> Bool -> PlayerId -> ObjectId -> GameState -> Maybe ExilePlayPermission.ExilePlayPermission
+ownPlayPermission zones offered pid oid gs
+  | offered || maybe True (`notElem` zones) (Game.zoneOf oid gs) || not (permitsPlayUnderPermission pid oid gs) = Nothing
   | otherwise = Maybe.listToMaybe (Expiry.openPermissions pid oid gs)
 
 -- CR 601.3: the permissions `oid` holds that a play of it by `pid` could be
@@ -3136,47 +3135,81 @@ spendPlayBudget pid played permission = Monad.forM_ (permission >>= ExilePlayPer
       adjust o = o {Object.playPermissions = Maybe.mapMaybe spend (Object.playPermissions o)}
   State.modify' (\gs -> gs {GameState.objects = foldr (Map.adjust adjust) (GameState.objects gs) (Set.toList (PlayBudget.covers budget))})
 
--- CR 400.7i / 614.1d: a land `pid` plays out of exile under the card's own
--- permission enters as ExilePlayPermission.landEnters says, as a replacement
--- effect: one floating EntryR row naming the land, which the move's
--- CarryOver.Played follows onto the permanent, so it competes under CR 616.1
--- with an "enter untapped" row (Spelunking's ruling, 2023-11-10). Installed for
--- this play alone, not bound to the card, so the card put onto the battlefield
--- by anything else enters untapped, as #2398 settled. Its timestamp, for playLand to
--- drop the row after the move; Nothing where no row is owed: a land anywhere
--- else, one that permission does not let `pid` play, or one it lets enter
--- untapped.
+-- CR 400.7i / 614.1d: a land `pid` plays out of exile or a graveyard under
+-- the card's own permission enters as ExilePlayPermission.landEnters says, as
+-- a replacement effect: one floating EntryR row naming the land
+-- (replacementRow), which the move's CarryOver.Played follows onto the
+-- permanent, so it competes under CR 616.1 with an "enter untapped" row
+-- (Spelunking's ruling, 2023-11-10).
+-- Installed for this play alone, not bound to the card, so the card put onto
+-- the battlefield by anything else enters untapped, as #2398 settled. Its
+-- timestamp, for playLand to drop the row after the move; Nothing where no row
+-- is owed: a land anywhere else, one that permission does not let `pid` play,
+-- or one it lets enter untapped.
 --
 -- The row's "you" is the permission's source's controller (CR 109.5), the
 -- player whose ability it is; CR 616.1's chooser is the land's controller
 -- either way. data/scenarios/cast-permission's Spelunking scenarios prove the
--- choice both ways.
+-- choice both ways, and
+-- kaldring-the-rimestaff-plays-a-snow-land-from-the-graveyard-that-enters-tapped
+-- the graveyard.
+--
+-- Not implemented: choosing a graveyard card's PlayFromGraveyard ability over
+-- this permission, which would skip the row (#7623).
 installLandEntry :: PlayerId -> ObjectId -> GameState -> Game (Maybe Timestamp.Timestamp)
 installLandEntry pid oid gs = case Game.lookupObject oid gs of
   Just obj
-    | Object.zone obj == Zone.Exile,
+    | Object.zone obj `elem` [Zone.Exile, Zone.Graveyard],
       permission : _ <- filter ((== PermissionVerb.Play) . ExilePlayPermission.verb) (Expiry.openPermissions pid oid gs),
       ExilePlayPermission.landEnters permission == TapState.Tapped -> do
         let src = ExilePlayPermission.source permission
         live <- State.get
-        let (ts, stamped) = Game.freshTimestamp live
-            active =
-              ActiveReplacement.MkActiveReplacement
-                { ActiveReplacement.effect = ReplacementEffect.EntryR (EntryR.MkEntryR (Filter.Type.IsBound Binding.playedLand) (EntryRewrite.EntersTapState TapState.Tapped)),
-                  ActiveReplacement.source = src,
-                  ActiveReplacement.controller = Maybe.fromMaybe pid (Projection.controllerOf src live),
-                  ActiveReplacement.timestamp = ts,
-                  ActiveReplacement.expiry = Expiry.Never,
-                  ActiveReplacement.uses = Uses.Once,
-                  ActiveReplacement.origin = ReplacementOrigin.Other,
-                  ActiveReplacement.condition = Nothing,
-                  ActiveReplacement.rider = Nothing,
-                  ActiveReplacement.slots = Map.singleton Binding.playedLand (Set.singleton oid),
-                  ActiveReplacement.choices = SourceContext.choicesOf (Game.acquisitionOf src live) src live
-                }
-        State.put stamped {GameState.stored = (GameState.stored stamped) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored stamped)}}
+        let (ts, stamped) = replacementRow src (Maybe.fromMaybe pid (Projection.controllerOf src live)) Binding.playedLand oid (EntryRewrite.EntersTapState TapState.Tapped) live
+        State.put stamped
         pure (Just ts)
   _ -> pure Nothing
+
+-- CR 400.7h / 614.1d: a spell `pid` casts under the card's own permission
+-- (`permission`, Nothing for one made under none) becomes a permanent that
+-- enters as ExilePlayPermission.spellEnters says -- Kaldring, the Rimestaff's
+-- "if you do, it enters tapped" -- through one floating EntryR row naming the
+-- spell, which Parun.Engine.Event.reenter follows onto the permanent.
+-- installLandEntry's "you", and installPermissionEntry's uses and expiry.
+-- kaldring-the-rimestaff-casts-a-snow-creature-from-the-graveyard-that-enters-tapped
+-- proves it.
+--
+-- Not implemented: choosing a graveyard card's PlayFromGraveyard ability over
+-- this permission, which would skip the row (#7623).
+installSpellEntry :: PlayerId -> Maybe ExilePlayPermission.ExilePlayPermission -> ObjectId -> GameState -> GameState
+installSpellEntry pid permission spell gs = case permission of
+  Just held
+    | ExilePlayPermission.spellEnters held == TapState.Tapped ->
+        let src = ExilePlayPermission.source held
+         in snd (replacementRow src (Maybe.fromMaybe pid (Projection.controllerOf src gs)) Binding.castSpell spell (EntryRewrite.EntersTapState TapState.Tapped) gs)
+  _ -> gs
+
+-- CR 614.1d / 614.3: one floating EntryR row from `src`, controlled by
+-- `controller`, rewriting the entry of the object `slot` binds to `oid`, and
+-- the timestamp it was stored at. Uses.Once with expiry Never, since the
+-- object enters once and the rider states no duration.
+replacementRow :: ObjectId -> PlayerId -> SlotName.SlotName -> ObjectId -> EntryRewrite.EntryRewrite (GrantedAbility.GrantedAbility Card.Type.Card) (Effect.Effect Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)) -> GameState -> (Timestamp.Timestamp, GameState)
+replacementRow src controller slot oid rewrite gs =
+  let (ts, stamped) = Game.freshTimestamp gs
+      active =
+        ActiveReplacement.MkActiveReplacement
+          { ActiveReplacement.effect = ReplacementEffect.EntryR (EntryR.MkEntryR (Filter.Type.IsBound slot) rewrite),
+            ActiveReplacement.source = src,
+            ActiveReplacement.controller = controller,
+            ActiveReplacement.timestamp = ts,
+            ActiveReplacement.expiry = Expiry.Never,
+            ActiveReplacement.uses = Uses.Once,
+            ActiveReplacement.origin = ReplacementOrigin.Other,
+            ActiveReplacement.condition = Nothing,
+            ActiveReplacement.rider = Nothing,
+            ActiveReplacement.slots = Map.singleton slot (Set.singleton oid),
+            ActiveReplacement.choices = SourceContext.choicesOf (Game.acquisitionOf src gs) src gs
+          }
+   in (ts, stamped {GameState.stored = (GameState.stored stamped) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored stamped)}})
 
 -- CR 601.3: PlayerEffect.castPermissionOptions for a cast of `oid` out of
 -- `zone`, open without a grant where the card carries a permission of its own
@@ -3410,22 +3443,7 @@ installPermissionEntry :: PlayerId -> Maybe (ObjectId, CastFromZone.CastFromZone
 installPermissionEntry caster permission spell gs = case permission of
   Just (src, grant)
     | Just counters <- CastFromZone.entersWith grant ->
-        let (ts, gs1) = Game.freshTimestamp gs
-            active =
-              ActiveReplacement.MkActiveReplacement
-                { ActiveReplacement.effect = ReplacementEffect.EntryR (EntryR.MkEntryR (Filter.Type.IsBound Binding.castSpell) (EntryRewrite.WithCounters counters)),
-                  ActiveReplacement.source = src,
-                  ActiveReplacement.controller = caster,
-                  ActiveReplacement.timestamp = ts,
-                  ActiveReplacement.expiry = Expiry.Never,
-                  ActiveReplacement.uses = Uses.Once,
-                  ActiveReplacement.origin = ReplacementOrigin.Other,
-                  ActiveReplacement.condition = Nothing,
-                  ActiveReplacement.rider = Nothing,
-                  ActiveReplacement.slots = Map.singleton Binding.castSpell (Set.singleton spell),
-                  ActiveReplacement.choices = SourceContext.choicesOf (Game.acquisitionOf src gs) src gs
-                }
-         in gs1 {GameState.stored = (GameState.stored gs1) {StoredEffects.replacements = active : StoredEffects.replacements (GameState.stored gs1)}}
+        snd (replacementRow src caster Binding.castSpell spell (EntryRewrite.WithCounters counters) gs)
   _ -> gs
 
 -- CR 601.2a / 106.6: the pooled units baked with this card as their source's
@@ -3709,7 +3727,7 @@ textChangedSpell oid gs face = case Projection.textChangesAffecting oid gs of
 -- `allowed` is candidateAllowed on the proposal board, which a permission's
 -- alternative cost (underAlternative) is judged by once laid over a candidate.
 castProposed :: ManaAbilityPerformer.ManaAbilityPerformer -> ManaSpending -> PlayerId -> ObjectId -> ObjectId -> Face.Face Card.Type.Card -> Maybe Zone.Zone -> Maybe ObjectId -> Set Keyword -> [CandidateCost.CandidateCost] -> (Maybe Keyword -> [ActivePlayerEffect.ActivePlayerEffect]) -> (Maybe Keyword -> Maybe [Maybe (ObjectId, CastFromZone.CastFromZone)]) -> (Maybe (ObjectId, CastFromZone.CastFromZone) -> [ContinuousEffect.ContinuousEffect Card.Type.Card]) -> (CandidateCost.CandidateCost -> Bool) -> (CandidateCost.CandidateCost -> Maybe (ObjectId, CastFromZone.CastFromZone) -> Integer -> Bool) -> Maybe ExilePlayPermission.ExilePlayPermission -> GameState -> Game ()
-castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor keywordsBefore candidateCosts spent permissions riders allowed refusedAt exilePermission before = do
+castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor keywordsBefore candidateCosts spent permissions riders allowed refusedAt ownHeld before = do
   -- CR 118.14: until the announcement settles which permission the cast is made
   -- under (permissionUsed below), every question asks about SOME permission.
   let spending = foldr (widerSpending . PlayerEffect.permissionSpending) baseSpending (foldMap (Maybe.fromMaybe [] . permissions . CandidateCost.keyword) candidateCosts)
@@ -3718,6 +3736,9 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
       -- reads them (proposedUnder), and the stamp gives them only to a cast
       -- made under that permission.
       held = foldMap ExilePlayPermission.keywords exilePermission
+      -- The card's own permission where the card lay in exile. Its keywords
+      -- and budget on a graveyard card are not implemented (#7622).
+      exilePermission = if castFrom == Just Zone.Exile then ownHeld else Nothing
   -- CR 700.2e: who chooses the modes, settled first -- the caster where
   -- several players could (Players.chooseOne, elided at one) -- and bound on the
   -- spell, so every step below reads the face as that player's "that player"
@@ -4573,6 +4594,9 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- CR 614.1d: so is its entry rider, as a row naming the
                           -- spell.
                           State.modify' (installPermissionEntry pid permissionUsed sid)
+                          -- CR 400.7h: and, made under the card's own
+                          -- permission, that permission's.
+                          Monad.when (not ownPermission && Maybe.isNothing permissionUsed) (State.modify' (installSpellEntry pid ownHeld sid))
                           -- CR 702.33h: for each sticker kicker paid, the caster
                           -- gets {TK}, then may put a sticker on the spell, which
                           -- CR 123.3b allows only on a spell they own (Sticker.place).

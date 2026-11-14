@@ -42,6 +42,7 @@ codec = Fields.object $ do
   verb <- Fields.defaulted "verb" PermissionVerb.Type.Play PermissionVerb.codec GrantPlayFromExile.verb
   increase <- Fields.defaulted "increase" 0 Common.natural GrantPlayFromExile.increase
   landEnters <- Fields.defaulted "landEnters" TapState.Type.Untapped TapState.codec GrantPlayFromExile.landEnters
+  spellEnters <- Fields.defaulted "spellEnters" TapState.Type.Untapped TapState.codec GrantPlayFromExile.spellEnters
   upTo <- Fields.defaulted "upTo" Nothing (Common.maybe PlayAllowance.codec) GrantPlayFromExile.upTo
   keywords <- Fields.defaulted "keywords" [] (Common.list Keyword.codec) GrantPlayFromExile.keywords
   zone <- Fields.defaulted "zone" GrantZone.Type.Exile GrantZone.codec GrantPlayFromExile.zone
@@ -56,6 +57,7 @@ codec = Fields.object $ do
         GrantPlayFromExile.verb = verb,
         GrantPlayFromExile.increase = increase,
         GrantPlayFromExile.landEnters = landEnters,
+        GrantPlayFromExile.spellEnters = spellEnters,
         GrantPlayFromExile.upTo = upTo,
         GrantPlayFromExile.keywords = keywords,
         GrantPlayFromExile.zone = zone
