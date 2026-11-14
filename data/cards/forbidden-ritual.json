@@ -1,0 +1,157 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Forbidden Ritual",
+      "oracleText": "Sacrifice a nontoken permanent. If you do, target opponent loses 2 life unless that player sacrifices a permanent of their choice or discards a card. You may repeat this process any number of times.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Repeat",
+                    "value": {
+                      "body": [
+                        {
+                          "type": "PlayerSacrifices",
+                          "value": {
+                            "filter": {
+                              "type": "Not",
+                              "value": {
+                                "type": "IsToken"
+                              }
+                            },
+                            "permanents": "sacrificed",
+                            "players": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        },
+                        {
+                          "type": "ForEach",
+                          "value": {
+                            "body": [
+                              {
+                                "type": "LoseLife",
+                                "value": {
+                                  "player": {
+                                    "type": "InSlot",
+                                    "value": "target"
+                                  },
+                                  "quantity": {
+                                    "type": "Literal",
+                                    "value": 2
+                                  }
+                                }
+                              }
+                            ],
+                            "payGate": {
+                              "branch": "IfNotPaid",
+                              "cost": {
+                                "components": [
+                                  {
+                                    "type": "Sacrifice",
+                                    "value": {
+                                      "count": {
+                                        "type": "Fixed",
+                                        "value": 1
+                                      },
+                                      "whichPermanents": {
+                                        "type": "And",
+                                        "value": []
+                                      }
+                                    }
+                                  }
+                                ],
+                                "mana": []
+                              },
+                              "orCosts": [
+                                {
+                                  "components": [
+                                    {
+                                      "type": "DiscardCards",
+                                      "value": {
+                                        "count": {
+                                          "type": "Fixed",
+                                          "value": 1
+                                        },
+                                        "whichCards": {
+                                          "type": "And",
+                                          "value": []
+                                        }
+                                      }
+                                    }
+                                  ],
+                                  "mana": []
+                                }
+                              ],
+                              "payer": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            },
+                            "ref": {
+                              "type": "InSlot",
+                              "value": "sacrificed"
+                            },
+                            "slot": "offering"
+                          }
+                        }
+                      ],
+                      "chooser": {
+                        "type": "Relative",
+                        "value": "You"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "targetSlots": {
+              "target": {
+                "filter": {
+                  "type": "IsPlayer",
+                  "value": "Opponent"
+                },
+                "pool": {
+                  "type": "Players"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Sorcery"
+        ]
+      }
+    }
+  ]
+}
