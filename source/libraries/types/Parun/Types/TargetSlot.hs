@@ -5,11 +5,11 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerSlot as PlayerSlot
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.SlotName as SlotName
-import qualified Parun.Types.SlotPerPlayer as SlotPerPlayer
 import qualified Parun.Types.TargetCount as TargetCount
 import qualified Parun.Types.Together as Together
 import qualified Parun.Types.TotalCap as TotalCap
@@ -112,7 +112,7 @@ data TargetSlot = MkTargetSlot
     -- | CR 601.2c: "for each opponent, ... target ... that player controls" --
     -- the slot announced once per player, each copy with its own "that player"
     -- (Parun.Engine.Target.announcedSlots). Nothing is one ordinary slot.
-    perPlayer :: Maybe SlotPerPlayer.SlotPerPlayer,
+    perPlayer :: Maybe PlayerSlot.PlayerSlot,
     -- | CR 601.2d: the total the caster divides among this slot's targets as
     -- the spell is cast, each target getting at least one (Forked Lightning's
     -- "4 damage divided as you choose"); Quantity.Share reads a target's part.
@@ -170,4 +170,4 @@ chosenBy who slot = slot {chooser = Just who}
 -- CR 601.2c's "for each opponent": the same slot announced once per player the
 -- relation names, `thatPlayer` naming that player for the slot's own Filter and pool.
 forEachPlayer :: PlayerRelation.PlayerRelation -> SlotName.SlotName -> TargetSlot -> TargetSlot
-forEachPlayer relation thatPlayer slot = slot {perPlayer = Just (SlotPerPlayer.MkSlotPerPlayer relation thatPlayer)}
+forEachPlayer relation thatPlayer slot = slot {perPlayer = Just (PlayerSlot.MkPlayerSlot relation thatPlayer)}

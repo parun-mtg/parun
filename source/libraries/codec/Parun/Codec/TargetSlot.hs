@@ -6,10 +6,10 @@ import qualified Data.Map.Strict as Map
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.PlayerRef as PlayerRef
+import qualified Parun.Codec.PlayerSlot as PlayerSlot
 import qualified Parun.Codec.Pool as Pool
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.SlotCount as SlotCount
-import qualified Parun.Codec.SlotPerPlayer as SlotPerPlayer
 import qualified Parun.Codec.Together as Together
 import qualified Parun.Codec.TotalCap as TotalCap
 import qualified Parun.JsonCodec.Codec as Codec
@@ -45,7 +45,7 @@ codec = Fields.object $ do
   count <- Fields.defaulted "count" (SlotCount.Printed TargetCount.one) SlotCount.codec TargetSlot.count
   amount <- Fields.defaulted "amount" Nothing (Common.maybe Quantity.codec) TargetSlot.amount
   chooser <- Fields.defaulted "chooser" Nothing (Common.maybe PlayerRef.codec) TargetSlot.chooser
-  perPlayer <- Fields.defaulted "perPlayer" Nothing (Common.maybe SlotPerPlayer.codec) TargetSlot.perPlayer
+  perPlayer <- Fields.defaulted "perPlayer" Nothing (Common.maybe PlayerSlot.codec) TargetSlot.perPlayer
   divided <- Fields.defaulted "divided" Nothing (Common.maybe Quantity.codec) TargetSlot.divided
   together <- Fields.defaulted "together" Nothing (Common.maybe Together.codec) TargetSlot.together
   total <- Fields.defaulted "total" Nothing (Common.maybe TotalCap.codec) TargetSlot.total

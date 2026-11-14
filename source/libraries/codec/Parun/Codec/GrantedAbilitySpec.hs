@@ -85,6 +85,7 @@ spec s = Spec.describe s "Parun.Codec.GrantedAbility" $ do
               Nothing
               Nothing
               Copyability.Copyable
+              Nothing
           )
       )
       " {\"type\":\"Activated\",\"value\":{\"cost\":{\"mana\":null,\"components\":[{\"type\":\"TapThis\"}]},\"modal\":{\"modes\":[{}]}}} "

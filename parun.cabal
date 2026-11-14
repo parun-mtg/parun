@@ -1419,6 +1419,8 @@ library codec
     Parun.Codec.PlayerSacrificesSpec
     Parun.Codec.PlayerScope
     Parun.Codec.PlayerScopeSpec
+    Parun.Codec.PlayerSlot
+    Parun.Codec.PlayerSlotSpec
     Parun.Codec.PlayerSpec
     Parun.Codec.PlayerStaticAbility
     Parun.Codec.PlayerStaticAbilitySpec
@@ -1644,8 +1646,6 @@ library codec
     Parun.Codec.SlotCountSpec
     Parun.Codec.SlotName
     Parun.Codec.SlotNameSpec
-    Parun.Codec.SlotPerPlayer
-    Parun.Codec.SlotPerPlayerSpec
     Parun.Codec.Source
     Parun.Codec.SourceChoices
     Parun.Codec.SourceChoicesSpec
@@ -3475,6 +3475,7 @@ library types
     Parun.Types.PlayerRelation
     Parun.Types.PlayerSacrifices
     Parun.Types.PlayerScope
+    Parun.Types.PlayerSlot
     Parun.Types.PlayerStaticAbility
     Parun.Types.PlayersWho
     Parun.Types.PlayerView
@@ -3607,7 +3608,6 @@ library types
     Parun.Types.SlotArity
     Parun.Types.SlotCount
     Parun.Types.SlotName
-    Parun.Types.SlotPerPlayer
     Parun.Types.Snapshots
     Parun.Types.Source
     Parun.Types.SourceChoices

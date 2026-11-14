@@ -1603,7 +1603,7 @@ denethorBoard s registry = do
       (srcId, gs1) = S.addPermanent denethor S.alice lands
       ability = case Face.activatedAbilities (S.combinedFace denethor) of
         ab : _ -> ab
-        [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Mint.oneModeOf Map.empty Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
+        [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Mint.oneModeOf Map.empty Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable Nothing
   pure
     ( ability,
       srcId,

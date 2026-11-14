@@ -134,7 +134,7 @@ chooseNoModes p = case p of
 theAbility :: Printing.Printing -> ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 theAbility p = case Face.activatedAbilities (S.combinedFace p) of
   ab : _ -> ab
-  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable
+  [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Mint.oneMode Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable Nothing
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Activate" $ do
@@ -400,7 +400,8 @@ spec s registry = Spec.describe s "Parun.Engine.Activate" $ do
               ActivatedAbility.condition = Nothing,
               ActivatedAbility.name = Nothing,
               ActivatedAbility.keyword = Nothing,
-              ActivatedAbility.copyability = Copyability.Copyable
+              ActivatedAbility.copyability = Copyability.Copyable,
+              ActivatedAbility.chosenPlayer = Nothing
             }
     Spec.assertBool s (not (Activatable.activatable S.alice srcId costlyAbility gs1)) "one Mountain cannot pay {2}"
 
@@ -1063,6 +1064,7 @@ cyclingSpec s registry = Spec.describe s "Cycling" $ do
             Nothing
             Nothing
             Copyability.Copyable
+            Nothing
         after = S.runPure chooseNoModes gs (Activate.activateAbility S.alice oid twoModes)
     Spec.assertEqWith s "the activation was rejected: nothing on the stack" (TurnRegisters.stack (GameState.turn after)) []
     Spec.assertEqWith s "so no reveal survives it either" (S.revealsOf after) []

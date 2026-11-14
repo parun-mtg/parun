@@ -33,7 +33,7 @@
 -- its CopyClause, CopyException, WithCounters, EntryRiders with its
 -- EntryAttack, EntryBlock, EntryController and EntryHost, FaceDownState and
 -- FaceDownCharacteristics, CharacteristicPT, and TargetSlot with its Pool,
--- SlotCount and SlotPerPlayer, CastingPermission, ActivationRestriction, and
+-- SlotCount and PlayerSlot, CastingPermission, ActivationRestriction, and
 -- PayGate with its CostChoice, MovedKinds, RemovalCount, LibraryPlacement
 -- with its ArrangedArrival, and Modification with its CardAbilities,
 -- FullText, SetBasePowerToughness and ModifyPowerToughness) is matched there
@@ -826,7 +826,8 @@ abilityVisitors asking onCard onAbility onEffect =
       Children.abilityReplacement = Const.Const . replacementEffectNames asking onCard onAbility onEffect,
       Children.abilityFilter = Const.Const . filterNames asking,
       Children.abilityRules = Const.Const . ruleAbilitiesNames asking,
-      Children.abilitySpendMana = Const.Const . spendManaAsThoughNames asking
+      Children.abilitySpendMana = Const.Const . spendManaAsThoughNames asking,
+      Children.abilitySlot = Const.Const . slotNames asking
     }
 
 handActionNames :: (Monoid r) => Asking r -> (card -> r) -> HandAction.HandAction card -> r

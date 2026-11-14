@@ -10,6 +10,7 @@ import qualified Parun.Types.CostChoice as CostChoice
 import qualified Parun.Types.DefinedX as DefinedX
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Modal as Modal
+import qualified Parun.Types.PlayerSlot as PlayerSlot
 import qualified Parun.Types.Quantity as Quantity
 
 -- | CR 602.1 / 700.2 / 602.2b: "[cost]: [effect]", modal-capable. VALUE-typed:
@@ -162,6 +163,11 @@ data ActivatedAbility card ability = MkActivatedAbility
     keyword :: Maybe Keyword.Keyword,
     -- | CR 113.6g: whether an effect may copy this ability once it is on the
     -- stack -- Gogo, Master of Mimicry's "This ability can't be copied".
-    copyability :: Copyability.Copyability
+    copyability :: Copyability.Copyability,
+    -- | CR 115.10a / 602.2b: the player the activator chooses as the ability is
+    -- announced, before its targets, bound under the slot for them to read --
+    -- Lodestone Bauble's "from a player's graveyard", not a target, so hexproof
+    -- does not refuse it. Nothing for every other ability.
+    chosenPlayer :: Maybe PlayerSlot.PlayerSlot
   }
   deriving (Eq, Ord, Show)

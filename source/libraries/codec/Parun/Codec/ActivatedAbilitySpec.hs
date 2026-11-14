@@ -38,6 +38,7 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerSlot as PlayerSlot
 import qualified Parun.Types.Pool as Pool
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.SlotName as SlotName
@@ -64,12 +65,12 @@ toJson = Codec.encode codec
 fromJson :: Value.Value -> Either Text.Text (ActivatedAbility.ActivatedAbility Text.Text Text.Text)
 fromJson = Codec.decode codec
 
--- One constructor, so five cases: rule 702.6a's equip ability as
+-- One constructor, so a case per key: rule 702.6a's equip ability as
 -- Parun.Engine.Keyword mints it, carrying CR 602.5d's SorcerySpeed clause, CR
 -- 117.1b's default of no clause at all,
 -- whose key is elided, Kongming's Contraptions' TWO clauses, which is what
 -- the key being an array is for, the same equip ability carrying the stamp
--- its minter put on it, and a cost choice (CR 602.2b).
+-- its minter put on it, a cost choice (CR 602.2b), a defined X and an announced player.
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
   Spec.it s "MkActivatedAbility, rule 702.6a's equip ability" $
@@ -99,6 +100,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           Copyability.Copyable
+          Nothing
       )
       " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]},\"modal\":{\"modes\":[{\"clauses\":[{\"effects\":[{\"type\":\"Attach\",\"value\":\"target\"}]}],\"targetSlots\":{\"target\":{\"pool\":{\"type\":\"Creatures\"},\"filter\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}}}}]},\"restrictions\":[{\"type\":\"SorcerySpeed\"}]} "
   -- CR 602.2b: a choice printed inside the activation cost, Bullseye, Death
@@ -120,6 +122,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           Copyability.Copyable
+          Nothing
       )
       " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":3}],\"components\":[{\"type\":\"TapThis\"}]},\"costChoices\":[[{\"mana\":[],\"components\":[{\"type\":\"PayLife\",\"value\":{\"type\":\"Fixed\",\"value\":2}}]},{\"mana\":[{\"type\":\"Generic\",\"value\":1}]}]],\"modal\":{\"modes\":[{}]}} "
   -- CR 113.6g: Gogo, Master of Mimicry's "This ability can't be copied".
@@ -140,6 +143,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           Copyability.CantBeCopied
+          Nothing
       )
       " {\"cost\":{\"mana\":[],\"components\":[{\"type\":\"TapThis\"}]},\"modal\":{\"modes\":[{}]},\"copyability\":\"CantBeCopied\"} "
   -- CR 602.5's conjunction, in the JSON: two clauses in printed order, which is
@@ -163,6 +167,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           Copyability.Copyable
+          Nothing
       )
       " {\"cost\":{\"mana\":null,\"components\":[{\"type\":\"TapThis\"}]},\"modal\":{\"modes\":[{}]},\"restrictions\":[{\"type\":\"DuringPhase\",\"value\":{\"window\":{\"type\":\"Step\",\"value\":{\"type\":\"Combat\",\"value\":\"DeclareAttackers\"}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}}},{\"type\":\"AttackedThisStep\"}]} "
   -- CR 702.6a: the stamp Parun.Engine.Keyword.mintedBy writes, which is the one
@@ -186,6 +191,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           (Just (Keyword.Equip (Equip.MkEquip (Cost.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1])) []) Nothing EquipTarget.Creature Nothing)))
           Copyability.Copyable
+          Nothing
       )
       " {\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]},\"modal\":{\"modes\":[{}]},\"restrictions\":[{\"type\":\"SorcerySpeed\"}],\"keyword\":{\"type\":\"Equip\",\"value\":{\"cost\":{\"mana\":[{\"type\":\"Generic\",\"value\":1}]},\"quality\":null}}} "
   -- CR 117.1b: no rider is the default for nearly every ability, so the key
@@ -207,6 +213,7 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           Copyability.Copyable
+          Nothing
       )
       " {\"cost\":{\"mana\":null},\"modal\":{\"modes\":[{}]}} "
   -- CR 107.3c: Soul Foundry's "X is the mana value of that card" is the key's
@@ -228,5 +235,27 @@ spec s = Spec.describe s "Parun.Codec.ActivatedAbility" $ do
           Nothing
           Nothing
           Copyability.Copyable
+          Nothing
       )
       " {\"cost\":{\"mana\":null},\"definedX\":{\"quantity\":{\"type\":\"Literal\",\"value\":2}},\"modal\":{\"modes\":[{}]}} "
+  -- CR 115.10a: Lodestone Bauble's "a player", chosen as it is announced.
+  Spec.it s "an ability's announced player choice round-trips" $
+    Common.assertJsonCodec
+      s
+      toJson
+      fromJson
+      ( ActivatedAbility.MkActivatedAbility
+          (Cost.MkCost Nothing [])
+          []
+          []
+          Nothing
+          (Modal.MkModal (Seq.singleton (Mode.MkMode Seq.empty Map.empty)) (ModeSelection.ChooseExactly 1) ModeMemory.NoMemory Seq.empty)
+          []
+          (Activator.Related PlayerRelation.You)
+          Nothing
+          Nothing
+          Nothing
+          Copyability.Copyable
+          (Just (PlayerSlot.MkPlayerSlot PlayerRelation.AnyPlayer (SlotName.MkSlotName (Text.pack "player"))))
+      )
+      " {\"cost\":{\"mana\":null},\"modal\":{\"modes\":[{}]},\"chosenPlayer\":{\"players\":\"AnyPlayer\",\"slot\":\"player\"}} "
