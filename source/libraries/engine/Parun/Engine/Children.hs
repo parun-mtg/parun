@@ -2470,6 +2470,7 @@ instructionRewriteChildren c rewrite = case rewrite of
   InstructionRewrite.DrawInstead -> pure rewrite
   InstructionRewrite.RollD20Instead -> pure rewrite
   InstructionRewrite.DrawFirst -> pure rewrite
+  InstructionRewrite.ReturnSourceInstead -> pure rewrite
   InstructionRewrite.SetTo _ -> pure rewrite
 
 -- | What a planeswalk replacement does (CR 701.31).

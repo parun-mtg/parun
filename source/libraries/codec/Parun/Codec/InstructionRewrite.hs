@@ -14,7 +14,8 @@ codec =
       Arm.nullary "DrawInstead" InstructionRewrite.DrawInstead,
       Arm.nullary "RollD20Instead" InstructionRewrite.RollD20Instead,
       Arm.nullary "DrawFirst" InstructionRewrite.DrawFirst,
-      Arm.payload "SetTo" Common.natural InstructionRewrite.SetTo (\x -> case x of InstructionRewrite.SetTo y -> Just y; _ -> Nothing)
+      Arm.payload "SetTo" Common.natural InstructionRewrite.SetTo (\x -> case x of InstructionRewrite.SetTo y -> Just y; _ -> Nothing),
+      Arm.nullary "ReturnSourceInstead" InstructionRewrite.ReturnSourceInstead
     ]
 
 tagOf :: InstructionRewrite.InstructionRewrite -> String
@@ -24,3 +25,4 @@ tagOf x = case x of
   InstructionRewrite.RollD20Instead -> "RollD20Instead"
   InstructionRewrite.DrawFirst -> "DrawFirst"
   InstructionRewrite.SetTo {} -> "SetTo"
+  InstructionRewrite.ReturnSourceInstead -> "ReturnSourceInstead"
