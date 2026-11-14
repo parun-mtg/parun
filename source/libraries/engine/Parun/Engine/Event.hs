@@ -4972,7 +4972,7 @@ apply settle batch applied batchPrevented candidate event =
       -- never by this row again (CR 614.5): a Words of Worship gain stands.
       LifeGainRewrite.DrawInstead -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
-        Monad.void (drawSeries settle (spentWith candidate applied) pid n)
+        Monad.void (drawSeries DrawKind.Other settle (spentWith candidate applied) pid n)
         pure Nothing
       -- CR 614.6 with CR 119.3: Tainted Remedy's "loses that much life
       -- instead", LifeLossRewrite.GainInstead's arm the other direction. The
@@ -5201,7 +5201,7 @@ apply settle batch applied batchPrevented candidate event =
       -- 614.5): a second Archive doubles each, so two draw four (its ruling).
       DrawRewrite.DrawInstead n -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
-        Monad.void (drawSeries settle (spentWith candidate applied) pid n)
+        Monad.void (drawSeries DrawKind.Other settle (spentWith candidate applied) pid n)
         pure Nothing
       -- CR 614.1a / 701.9a: Chains of Mephistopheles' "that player discards a
       -- card instead. If the player discards a card this way, they draw a card.
@@ -5227,7 +5227,7 @@ apply settle batch applied batchPrevented candidate event =
         discarded <- asEffect (maybe (pure Seq.empty) (discardReturning settle DiscardCause.ByEffect pid) picked)
         if null discarded
           then asEffect (Monad.void (millFrom settle pid 1))
-          else Monad.void (drawSeries settle (spentWith candidate applied) pid 1)
+          else Monad.void (drawSeries DrawKind.Other settle (spentWith candidate applied) pid 1)
         pure Nothing
       -- CR 614.1a / 701.20e: Aladdin's Lamp. Run here rather than queued, so the
       -- inner draw is offered only to the rows CR 614.5 leaves it (a second Lamp,
@@ -5252,7 +5252,7 @@ apply settle batch applied batchPrevented candidate event =
           _ -> pure rest
         Monad.forM_ (reverse ordered) $ \oid ->
           changeZoneAttaching settle Nothing Set.empty oid Zone.Library LibraryPosition.Bottom Nothing TapState.Untapped Map.empty Nothing Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty
-        Monad.void (drawSeries settle (spentWith candidate applied) pid 1)
+        Monad.void (drawSeries DrawKind.Other settle (spentWith candidate applied) pid 1)
         pure Nothing
       -- CR 614.10: Island Sanctuary's "instead you may skip that draw. If you do,
       -- [these effects]". The decider is the drawer, Dredge's posture; declining
@@ -5310,15 +5310,17 @@ apply settle batch applied batchPrevented candidate event =
     -- draw where the row's controller IS the instructed player, which the pool's
     -- one producer never is -- its pattern is ControllerRelation.Related Opponent.
     --
-    -- Each of these is an individual draw through `drawSeries`, so CR 616.1g's inner
-    -- events still raise their own WouldDraw and a per-draw row (Words of Worship)
-    -- still applies to them.
+    -- Each of these is an instruction to draw a card (CR 121.2a), so Quantum
+    -- Riddler's "if you would draw one or more cards" reaches it unless it already
+    -- applied to the event this replaces (CR 614.5), and CR 616.1g's inner events
+    -- still raise their own WouldDraw, so a per-draw row (Words of Worship) still
+    -- applies to them.
     (ReplacementEffect.DrawCountR (DrawCountR.MkDrawCountR _ _ rewrite), ProposedEvent.WouldPerform PlayerInstruction.DrawCards _ pid _) -> case rewrite of
       DrawCountRewrite.EachDrawOne -> do
         Replacement.consume (ReplacementCandidate.identity candidate)
         gs <- State.get
         let drawers = filter (\p -> p == pid || Just p == ReplacementCandidate.controller candidate) (Game.apnapOrder gs)
-        Monad.forM_ drawers $ \drawer -> drawSeries settle Set.empty drawer 1
+        Monad.forM_ drawers $ \drawer -> drawInstruction settle DrawKind.Other (spentWith candidate applied) drawer 1
         pure Nothing
     -- Unreachable: `applies` admits DrawCountR only against a draw instruction.
     (ReplacementEffect.DrawCountR {}, _) -> pure (Just event)
@@ -7333,7 +7335,7 @@ performRewritten settle candidate event rewrite = case event of
       pure (Just (ProposedEvent.WouldPerform instruction performer pid count))
     InstructionRewrite.DrawInstead -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
-      drawInstruction pid n
+      drawInstruction settle DrawKind.Other Set.empty pid n
       pure Nothing
     -- Leader, Super-Genius's "instead you draw a card, then that creature
     -- connives": the row's controller (CR 109.5) draws through CR 121.2a's
@@ -7341,7 +7343,7 @@ performRewritten settle candidate event rewrite = case event of
     -- the row's "you" names nobody, so nobody draws.
     InstructionRewrite.DrawFirst -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
-      Foldable.for_ (ReplacementCandidate.controller candidate) (`drawInstruction` 1)
+      Foldable.for_ (ReplacementCandidate.controller candidate) (\drawer -> drawInstruction settle DrawKind.Other Set.empty drawer 1)
       pure (Just event)
     -- Unreachable: Parun.EffectLintSpec's "no card pairs an instruction with
     -- a rewrite the engine cannot carry out" confines RollD20Instead to a
@@ -7359,10 +7361,6 @@ performRewritten settle candidate event rewrite = case event of
           pure Nothing
         else pure (Just event)
   _ -> pure (Just event)
-  where
-    drawInstruction drawer count = do
-      outcome <- applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing drawer count)
-      Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards) (uncurry (drawSeries settle Set.empty))
 
 -- Pokey, the Scallywagg's and Retriever Phoenix's "you may" (CR 614.1a), asked
 -- of the row's controller, whose flip, roll or learn its "you" watches; spent
@@ -11673,22 +11671,36 @@ drawCard settle pid = Monad.void (drawCardSpentReturning DrawKind.Other settle S
 -- below, and is handed down to the replacement loop, so a sequence a
 -- replacement makes in one draw's place (Alhammarret's Archive's two) settles
 -- the same way. A drawer who has left the game draws no more (CR 800.4a).
--- `spent` is drawCardSpentReturning's, and so are the ids it answers.
-drawSeries :: Game () -> Set CandidateId -> PlayerId -> Natural -> Game [ObjectId]
-drawSeries settle spent pid n = Maybe.catMaybes <$> Monad.replicateM (Natural.toIntSaturating n) one
+-- `spent` is drawCardSpentReturning's, and so are the ids it answers. `first`
+-- is the first draw's kind, every later one's being DrawKind.Other: a draw step
+-- whose one draw a replacement made several still draws its turn-based card
+-- first (CR 504.1).
+drawSeries :: DrawKind.DrawKind -> Game () -> Set CandidateId -> PlayerId -> Natural -> Game [ObjectId]
+drawSeries first settle spent pid n = Maybe.catMaybes <$> traverse one (List.genericTake n (first : List.repeat DrawKind.Other))
   where
-    one = do
+    one kind = do
       playing <- State.gets (List.elem pid . Game.stillPlaying)
       if playing
-        then drawCardSpentReturning DrawKind.Other settle spent pid <* settle
+        then drawCardSpentReturning kind settle spent pid <* settle
         else pure Nothing
 
--- CR 504.1: the active player's turn-based draw in their draw step. `settle`
--- is drawSeries', for a sequence a replacement makes in its place, and is run
--- after the draw as well, so what a replacement queued in its place is done
--- before a teammate's draw (CR 805.6a).
+-- CR 121.2a: an instruction to draw `n` cards is one replaceable event, settled
+-- before any of CR 121.2's individual draws (CR 616.1g), and the count it leaves
+-- standing is then drawn one at a time. `first` is drawSeries', and `spent` is
+-- applyReplacementsIn's, for an instruction a replacement makes in an event's
+-- place (CR 614.5).
+drawInstruction :: Game () -> DrawKind.DrawKind -> Set CandidateId -> PlayerId -> Natural -> Game ()
+drawInstruction settle first spent pid n = do
+  outcome <- applyReplacementsIn settle Nothing Set.empty spent (ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid n)
+  Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards) (uncurry (drawSeries first settle Set.empty))
+
+-- CR 504.1: the active player's turn-based draw in their draw step, an
+-- instruction to draw one card (CR 121.2a), so Quantum Riddler's "if you would
+-- draw one or more cards" reaches it. `settle` is drawSeries', for a sequence a
+-- replacement makes in its place, and is run after the draw as well, so what a
+-- replacement queued in its place is done before a teammate's draw (CR 805.6a).
 drawForTurn :: Game () -> PlayerId -> Game ()
-drawForTurn settle pid = Monad.void (drawCardSpentReturning (DrawKind.TurnBased pid) settle Set.empty pid) <* settle
+drawForTurn settle pid = drawInstruction settle (DrawKind.TurnBased pid) Set.empty pid 1 <* settle
 
 -- CR 121.2d / 805.6a: run `act` for each of these players, each about to
 -- perform their draws -- the active team's in whatever order that team likes,

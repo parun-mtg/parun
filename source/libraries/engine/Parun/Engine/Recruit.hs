@@ -30,22 +30,20 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
-import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Counterability as Counterability
+import qualified Parun.Types.DrawKind as DrawKind
 import qualified Parun.Types.Face as Face
 import Parun.Types.Game (Game)
 import qualified Parun.Types.Layout as Layout
 import Parun.Types.PlayerId (PlayerId)
-import qualified Parun.Types.PlayerInstruction as PlayerInstruction
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Power as Power
 import qualified Parun.Types.Prompt as Prompt
-import qualified Parun.Types.ProposedEvent as ProposedEvent
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
@@ -164,10 +162,8 @@ soldierToken =
 -- `settle` is Event.drawSeries' (CR 614.11a).
 recruit :: Game () -> PlayerId -> Game ()
 recruit settle pid = do
-  -- CR 121.2a: the one-card draw is one replaceable instruction, Effect.Draw's
-  -- arm line for line.
-  outcome <- Event.applyReplacementsIn settle Nothing Set.empty Set.empty (ProposedEvent.WouldPerform PlayerInstruction.DrawCards Nothing pid 1)
-  Monad.forM_ (outcome >>= Replacement.asPerformed PlayerInstruction.DrawCards) (uncurry (Event.drawSeries settle Set.empty))
+  -- CR 121.2a: the one-card draw is one replaceable instruction.
+  Event.drawInstruction settle DrawKind.Other Set.empty pid 1
   drawn <- State.get
   let held = Game.cardsIn Zone.Hand pid drawn
   chosen <- case held of

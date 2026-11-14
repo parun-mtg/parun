@@ -26,6 +26,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.DiscardCause as DiscardCause
+import qualified Parun.Types.DrawKind as DrawKind
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.FromOutsideTheGame as FromOutsideTheGame
 import Parun.Types.Game (Game)
@@ -124,6 +125,7 @@ learnOnce settle pid resolving source = do
         -- 701.48a's "you may discard a card. If you do, draw" makes the discard a
         -- CR 118.12 cost paid on resolution, and a cost is not an effect.
         Event.discard settle DiscardCause.Ordinary pid discarded
-        -- CR 121.1, through the draw funnel, so CR 121.4's empty library and CR
-        -- 614's draw replacements both get their opportunity.
-        Event.drawCard settle pid
+        -- CR 121.2a: an instruction to draw a card, through the draw funnel, so
+        -- CR 121.4's empty library and CR 614's draw replacements, the
+        -- instruction's own included, all get their opportunity.
+        Event.drawInstruction settle DrawKind.Other Set.empty pid 1
