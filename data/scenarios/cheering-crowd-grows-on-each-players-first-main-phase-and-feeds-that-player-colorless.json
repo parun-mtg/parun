@@ -1,0 +1,187 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Cheering Crowd",
+            "label": "crowd",
+            "counters": [
+              {
+                "key": {"type": "PlusOnePlusOne"},
+                "value": 1
+              }
+            ]
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "Cheering Crowd lets the player whose first main phase it is grow it; that player, not its controller, adds {C} for each counter on it, and a player who declines adds nothing",
+  "timeline": [
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": "Pass"
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "do": {
+        "ChooseOptional": "Exercises"
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$crowd"
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "bob",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            },
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1,
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": []
+        }
+      }
+    },
+    {
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": "Pass"
+    },
+    {
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "do": {
+        "ChooseOptional": "Declines"
+      }
+    },
+    {
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$crowd"
+        }
+      }
+    },
+    {
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 2,
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "carol",
+          "is": []
+        }
+      }
+    }
+  ]
+}
