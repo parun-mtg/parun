@@ -1,0 +1,39 @@
+{
+  "description": "Mysterio's Phantasm: whenever it attacks, its controller mills exactly one card; vigilance leaves it untapped.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Mysterio's Phantasm", "label": "phantasm", "ready": true }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Mountain" },
+          { "card": "Forest" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          { "card": "Plains" },
+          { "card": "Swamp" },
+          { "card": "Grizzly Bears" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$phantasm"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $phantasm"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Graveyard", "is": ["Island"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Library", "is": ["Mountain", "Forest"] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "View": { "of": "Zone", "player": "bob", "zone": "Graveyard", "is": [] } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Tapped": { "object": "$phantasm", "tapped": false } } },
+    { "turn": 1, "step": "PostcombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 19 } } }
+  ],
+  "note": "Alice's library is three distinct cards, so the milled one is named and the count is exact; bob's graveyard stays empty, so the mill is the controller's."
+}

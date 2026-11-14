@@ -1,0 +1,45 @@
+{
+  "description": "Ominous Asylum enters tapped, and later taps for {B} or {R} but not {W}.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "hand": [
+          { "card": "Ominous Asylum", "label": "asylum" },
+          { "card": "Savannah Lions", "label": "lions" },
+          { "card": "Typhoid Rats", "label": "rats" },
+          { "card": "Raging Goblin", "label": "goblin" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$asylum" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Tapped": { "object": "Ominous Asylum", "tapped": true } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "refuse": { "Cast": { "object": "$lions", "mana": ["Ominous Asylum"] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$rats", "mana": ["Ominous Asylum"], "yields": [[{ "manaType": { "type": "Colored", "value": "Black" }, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null }]] } } },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 3, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Typhoid Rats", "count": 1 } } },
+    { "turn": 5, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$goblin", "mana": ["Ominous Asylum"], "yields": [[{ "manaType": { "type": "Colored", "value": "Red" }, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null }]] } } },
+    { "turn": 5, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 5, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Raging Goblin", "count": 1 } } }
+  ],
+  "note": "Its {4}, {T}: Surveil 1 shares Suburban Sanctuary's wording and scenario. The untapped Asylum pays Typhoid Rats' {B} and Raging Goblin's {R}, never Savannah Lions' {W}."
+}

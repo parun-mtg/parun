@@ -1,0 +1,71 @@
+{
+  "description": "Prowler, Clawed Thief connives when another Villain alice controls enters, and not for itself, a non-Villain, or bob's Villain.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "i1", "ready": true },
+          { "card": "Island", "label": "i2", "ready": true },
+          { "card": "Swamp", "label": "s1", "ready": true },
+          { "card": "Swamp", "label": "s2", "ready": true },
+          { "card": "Forest", "label": "f1", "ready": true },
+          { "card": "Forest", "label": "f2", "ready": true }
+        ],
+        "hand": [
+          { "card": "Prowler, Clawed Thief", "label": "prowler" },
+          { "card": "Grizzly Bears", "label": "bears" },
+          { "card": "Aerial Doombot", "label": "doombot" },
+          { "card": "Divination", "label": "div" }
+        ],
+        "library": [
+          { "card": "Plains" },
+          { "card": "Mountain" },
+          { "card": "Mountain" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Swamp", "label": "bs1", "ready": true },
+          { "card": "Swamp", "label": "bs2", "ready": true }
+        ],
+        "hand": [
+          { "card": "Common Crook", "label": "crook" }
+        ],
+        "library": [
+          { "card": "Island" },
+          { "card": "Island" },
+          { "card": "Island" }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$prowler", "mana": ["$f1", "$i1", "$s1", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Prowler, Clawed Thief", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$bears", "mana": ["$s2", "$f2", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$doombot", "mana": ["$i2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of Prowler, Clawed Thief"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseDiscard", "with": ["$div"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Hand", "is": ["Plains"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Graveyard", "is": ["Divination"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Counters": { "object": "Prowler, Clawed Thief", "kind": { "type": "PlusOnePlusOne" }, "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "PowerToughness": { "object": "Prowler, Clawed Thief", "power": 3, "toughness": 4 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$crook", "mana": ["$bs1", "$bs2"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Common Crook", "count": 1 } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "Counters": { "object": "Prowler, Clawed Thief", "kind": { "type": "PlusOnePlusOne" }, "count": 1 } } }
+  ],
+  "note": "Prowler's own entry, Grizzly Bears (no Villain) and bob's Common Crook (a Villain bob controls) put nothing on the stack; Aerial Doombot (a Villain alice controls) does, and the connive draws the Plains, discards the nonland Divination and puts one counter on Prowler."
+}
