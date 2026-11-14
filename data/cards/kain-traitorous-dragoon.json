@@ -15,7 +15,7 @@
         }
       ],
       "name": "Kain, Traitorous Dragoon",
-      "oracleText": "Jump \u2014 During your turn, Kain has flying.\nWhenever Kain deals combat damage to a player, that player gains control of Kain. If they do, you draw that many cards, create that many tapped Treasure tokens, then lose that much life.",
+      "oracleText": "Jump — During your turn, Kain has flying.\nWhenever Kain deals combat damage to a player, that player gains control of Kain. If they do, you draw that many cards, create that many tapped Treasure tokens, then lose that much life.",
       "power": {
         "type": "Literal",
         "value": 2
@@ -89,8 +89,10 @@
                             "type": "Indefinite"
                           },
                           "ref": {
-                            "type": "InSlot",
-                            "value": "self"
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "IsSource"
+                            }
                           },
                           "to": {
                             "type": "InSlot",
