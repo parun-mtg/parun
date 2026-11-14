@@ -1209,8 +1209,14 @@ lastKnownView peers oid gs lastKnown =
           Filter.dealtDamageTo = dealtDamageTo oid gs,
           Filter.dealtDamageEarlier = dealtDamageEarlier oid gs,
           -- CR 603.10a: what was attached to it as it left, which the next CR
-          -- 704.5m/n pass clears from the live board before triggers are placed.
-          Filter.attachedViews = Maybe.mapMaybe peers (Set.toList (LastKnown.attached lastKnown)),
+          -- 704.5m/n pass clears from the live board before triggers are placed:
+          -- an attacher that has left too read as it last existed (CR 608.2h),
+          -- and each seated on this host, so CR 700.9's Host controller compares
+          -- against it. Costume Closet's scenario proves both.
+          Filter.attachedViews =
+            fmap
+              (\attacher -> attacher {Filter.attachedToView = Just (lastKnownView peers oid gs lastKnown)})
+              (Maybe.mapMaybe (orLastKnown peers gs) (Set.toList (LastKnown.attached lastKnown))),
           -- CR 303.4b: the host's id as it left, the live builder's Game.hostOf.
           Filter.attachedTo = LastKnown.host lastKnown
         }

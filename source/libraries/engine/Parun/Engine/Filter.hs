@@ -503,7 +503,8 @@ data View = MkView
     -- for CR 110.1's reason:
     -- an object that has left is no longer a permanent and no longer attached to
     -- anything, the stale window CR 704.5m closes on the next state-based-action
-    -- pass.
+    -- pass. A departed candidate's are instead what was attached as it left,
+    -- each as it last existed (Count.lastKnownView, CR 603.10a).
     --
     -- Recursive, and therefore LAZY, for `attachedToView`'s reason and with its
     -- termination argument unchanged: the elements come from the same `peers`
