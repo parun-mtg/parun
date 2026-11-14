@@ -178,8 +178,8 @@ zeroToughness pc =
 -- having loyalty 0 and be buried. CR 122.1e confines the reading to
 -- planeswalkers.
 --
--- A controller under Parun.Types.PlayerEffect.StateBasedActionDoesntApply
--- ZeroLoyalty keeps its planeswalkers (Sanctum Lurker).
+-- A planeswalker its controller's Parun.Types.PlayerEffect.StateBasedActionDoesntApply
+-- ZeroLoyalty matches is kept (Sanctum Lurker).
 zeroLoyalty :: GameState -> PC.ProjectedCharacteristics -> ObjectId -> Bool
 zeroLoyalty gs pc oid =
   Set.member CardType.Planeswalker (PC.cardTypes pc)
@@ -188,7 +188,7 @@ zeroLoyalty gs pc oid =
       Just obj -> Projection.loyaltyOf pc obj == 0
     && case Projection.controllerOf oid gs of
       Nothing -> True
-      Just controller -> not (PlayerEffect.stateBasedActionDoesntApplyTo StateBasedAction.ZeroLoyalty controller gs)
+      Just controller -> not (PlayerEffect.stateBasedActionDoesntApplyTo StateBasedAction.ZeroLoyalty controller oid gs)
 
 -- CR 704.5g/h: a creature destroyed by lethal marked damage or by a deathtouch
 -- source. A DESTRUCTION -- indestructible-gated (CR 702.12b) and regeneration-
@@ -553,8 +553,9 @@ stillLegalEnchant pools gs source slot recipient = case (slot, recipient) of
 -- three. Partial overlap needs no special handling anyway: CR 704.3 repeats the
 -- check, so whatever survives is re-grouped against the new board.
 --
--- A controller under Parun.Types.PlayerEffect.StateBasedActionDoesntApply
--- LegendRule keys nothing, since every member of a group shares its controller.
+-- A permanent its controller's Parun.Types.PlayerEffect.StateBasedActionDoesntApply
+-- LegendRule matches keys nothing: Spider-Verse's rulings (2025-09-19) keep a
+-- Spider out of its name's group, neither counted nor offered.
 legendGroups :: Map.Map ObjectId PC.ProjectedCharacteristics -> GameState -> [(PlayerId, NonEmpty.NonEmpty ObjectId)]
 legendGroups pcs gs =
   let legendary oid = case Map.lookup oid pcs of
@@ -564,7 +565,7 @@ legendGroups pcs gs =
               case Projection.controllerOf oid gs of
                 Nothing -> []
                 Just controller
-                  | PlayerEffect.stateBasedActionDoesntApplyTo StateBasedAction.LegendRule controller gs -> []
+                  | PlayerEffect.stateBasedActionDoesntApplyTo StateBasedAction.LegendRule controller oid gs -> []
                   | otherwise -> fmap (\name -> ((controller, name), [oid])) (Set.toList (PC.names pc))
           | otherwise -> []
       keyed = concatMap legendary (Set.toList (GameState.battlefield gs))

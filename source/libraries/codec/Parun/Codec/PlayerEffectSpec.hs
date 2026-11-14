@@ -425,8 +425,15 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.StateBasedActionDoesntApply StateBasedAction.LegendRule)
-      " {\"type\":\"StateBasedActionDoesntApply\",\"value\":\"LegendRule\"} "
+      (PlayerEffect.StateBasedActionDoesntApply StateBasedAction.LegendRule (Filter.And []))
+      " {\"type\":\"StateBasedActionDoesntApply\",\"value\":{\"action\":\"LegendRule\"}} "
+  -- CR 704.5j / Spider-Verse.
+  Spec.it s "StateBasedActionDoesntApply with a filter" $
+    Common.assertCodec
+      s
+      PlayerEffect.codec
+      (PlayerEffect.StateBasedActionDoesntApply StateBasedAction.LegendRule (Filter.Not (Filter.And [])))
+      " {\"type\":\"StateBasedActionDoesntApply\",\"value\":{\"action\":\"LegendRule\",\"matching\":{\"type\":\"Not\",\"value\":{\"type\":\"And\",\"value\":[]}}}} "
   -- CR 701.32 / All in Good Time.
   Spec.it s "CantSetSchemesInMotion" $
     Common.assertCodec

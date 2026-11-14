@@ -179,9 +179,10 @@ data PlayerEffect
   | -- | CR 614.1a / 701.23f / Aven Mindcensor: this player searches only that
     -- many of a library's top cards instead of the library.
     SearchesTopOfLibraries Natural.Natural
-  | -- | CR 704.5i / 704.5j / Hall of Echoes, Sanctum Lurker: the state-based
-    -- action doesn't apply to permanents this player controls.
-    StateBasedActionDoesntApply StateBasedAction.StateBasedAction
+  | -- | CR 704.5i / 704.5j / Hall of Echoes, Sanctum Lurker, Spider-Verse: the
+    -- state-based action doesn't apply to permanents this player controls
+    -- matching the filter.
+    StateBasedActionDoesntApply StateBasedAction.StateBasedAction (Filter.Filter Keyword.Keyword)
   | -- | CR 701.32 / 904.9 / All in Good Time: schemes can't be set in motion.
     CantSetSchemesInMotion
   | -- | CR 603.6a / 603.2d / 613.11 / Hushwing Gryff, Yarok, the Desecrated:

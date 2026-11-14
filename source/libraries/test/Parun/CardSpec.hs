@@ -4024,9 +4024,9 @@ playerEffectFilters playerEffect = case playerEffect of
   -- CR 702.16a's quality IS a Filter the card writes (The Stasis Coffin's
   -- rule 702.16j "everything"), so it is linted like every other written one.
   PlayerEffect.HasProtectionFrom f -> [f]
-  -- CR 726 names no quality either: the designation has no parts (Jared
-  -- Carthalion, True Heir).
-  PlayerEffect.StateBasedActionDoesntApply _ -> []
+  -- The permanents an exemption reaches are a Filter the card writes
+  -- (Spider-Verse's Spiders).
+  PlayerEffect.StateBasedActionDoesntApply _ exempted -> [exempted]
   PlayerEffect.CantSetSchemesInMotion -> []
   PlayerEffect.EntriesTrigger e -> [EntriesTrigger.entrants e]
   PlayerEffect.AdditionalTriggers bearers -> [bearers]
