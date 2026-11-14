@@ -3514,6 +3514,7 @@ modificationChildren c modification = case modification of
     Modification.GainKeywordAtManaCost <$> case costKeyword of
       CostKeyword.Flashback -> pure costKeyword
       CostKeyword.Scavenge -> pure costKeyword
+      CostKeyword.Unearth -> pure costKeyword
       CostKeyword.Embalm -> pure costKeyword
       CostKeyword.Encore -> pure costKeyword
       CostKeyword.Disguise -> pure costKeyword
