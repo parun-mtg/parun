@@ -17,6 +17,7 @@ import qualified Parun.Types.CombatDeclaration as CombatDeclaration
 import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostSubject as CostSubject
+import qualified Parun.Types.CountedAgainst as CountedAgainst
 import qualified Parun.Types.CounterProhibition as CounterProhibition
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DrawReveal as DrawReveal
@@ -88,7 +89,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells (Filter.Not (Filter.HasCardType CardType.Creature)) Nothing Nothing Nothing Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 1]))))
+      (PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells (Filter.Not (Filter.HasCardType CardType.Creature)) Nothing Nothing Nothing CountedAgainst.ChangeSource Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 1]))))
       " {\"type\":\"ModifyCost\",\"value\":{\"subject\":{\"type\":\"Spells\"},\"matching\":{\"type\":\"Not\",\"value\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}},\"change\":{\"type\":\"Increase\",\"value\":[{\"type\":\"Generic\",\"value\":1}]}}} "
   -- CR 305.2 / Exploration.
   Spec.it s "PlayAdditionalLands, Exploration's one" $

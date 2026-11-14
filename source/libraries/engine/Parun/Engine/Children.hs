@@ -2213,13 +2213,14 @@ onlyFirstChildren c counted turn = playerLooksBack c counted *> playerTurn c tur
 
 -- | A cost modifier's children (CR 601.2f, 602.2b).
 costModifierChildren :: (Applicative f) => PlayerEffectChildren f -> CostModifier.CostModifier -> f CostModifier.CostModifier
-costModifierChildren c (CostModifier.MkCostModifier subject matching whichTargets perTarget perEach onlyFirst change) =
+costModifierChildren c (CostModifier.MkCostModifier subject matching whichTargets perTarget perEach countedAgainst onlyFirst change) =
   CostModifier.MkCostModifier
     <$> costSubjectChildren c subject
     <*> playerFilter c matching
     <*> traverse (playerFilter c) whichTargets
     <*> traverse (perTargetChildren c) perTarget
     <*> traverse (playerQuantity c) perEach
+    <*> pure countedAgainst
     <*> traverse (onlyFirstChildren c (costSubjectHistory subject)) onlyFirst
     <*> costChangeChildren c change
 

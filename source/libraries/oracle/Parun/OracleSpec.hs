@@ -56,6 +56,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.Count as Count
+import qualified Parun.Types.CountedAgainst as CountedAgainst
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterKind as CounterKind
@@ -1047,7 +1048,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
 
   -- CR 601.2f: spells of a description cost more to cast.
   Spec.it s "render prints a rule making spells cost more to cast" $ do
-    let tax relation f = withFace (\g -> g {Face.playerAbilities = [PlayerStaticAbility.MkPlayerStaticAbility (PlayerScope.Related relation) Nothing Nothing (PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells f Nothing Nothing Nothing Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 2]))))]})
+    let tax relation f = withFace (\g -> g {Face.playerAbilities = [PlayerStaticAbility.MkPlayerStaticAbility (PlayerScope.Related relation) Nothing Nothing (PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells f Nothing Nothing Nothing CountedAgainst.ChangeSource Nothing (CostChange.Increase (ManaCost.MkManaCost [ManaSymbol.Generic 2]))))]})
     Spec.assertEq s (Just (Text.pack "Red spells cost {2} more to cast.")) (Oracle.render (tax PlayerRelation.AnyPlayer (Filter.HasColor Color.Red)))
     Spec.assertEq s (Just (Text.pack "Noncreature spells your opponents cast cost {2} more to cast.")) (Oracle.render (tax PlayerRelation.Opponent (Filter.Not (Filter.HasCardType CardType.Creature))))
     Spec.assertEq s Nothing (Oracle.render (tax PlayerRelation.AnyPlayer (Filter.Or [Filter.HasCardType CardType.Artifact, Filter.HasCardType CardType.Enchantment])))

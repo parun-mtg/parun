@@ -71,6 +71,7 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostSubject as CostSubject
 import qualified Parun.Types.Count as Count
+import qualified Parun.Types.CountedAgainst as CountedAgainst
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counter as Counter
 import qualified Parun.Types.CounterKind as CounterKind
@@ -558,7 +559,7 @@ playerRule n = case Node.tag n of
     k <- case (Cost.mana c, Cost.components c) of
       (Just m, []) | not (null (ManaCost.unwrap m)), all plain (ManaCost.unwrap m) -> Right m
       _ -> Node.untranslated n
-    Right (PlayerEffect.ModifyCost CostModifier.MkCostModifier {CostModifier.subject = CostSubject.Spells, CostModifier.matching = Maybe.fromMaybe (Filter.And []) f, CostModifier.whichTargets = Nothing, CostModifier.perTarget = Nothing, CostModifier.perEach = Nothing, CostModifier.onlyFirst = Nothing, CostModifier.change = CostChange.Increase k})
+    Right (PlayerEffect.ModifyCost CostModifier.MkCostModifier {CostModifier.subject = CostSubject.Spells, CostModifier.matching = Maybe.fromMaybe (Filter.And []) f, CostModifier.whichTargets = Nothing, CostModifier.perTarget = Nothing, CostModifier.perEach = Nothing, CostModifier.countedAgainst = CountedAgainst.ChangeSource, CostModifier.onlyFirst = Nothing, CostModifier.change = CostChange.Increase k})
   _ -> Node.untranslated n
   where
     -- Generic and typed symbols: a hybrid, Phyrexian or {X} symbol in an

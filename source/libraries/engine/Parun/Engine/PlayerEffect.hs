@@ -78,6 +78,7 @@ import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostSubject as CostSubject
+import qualified Parun.Types.CountedAgainst as CountedAgainst
 import qualified Parun.Types.CounterProhibition as CounterProhibition
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DrawReveal as DrawReveal
@@ -1791,10 +1792,10 @@ spellCostAdjustments targets pid oid gs =
 -- Additions are CONCATENATED rather than resolved between, because two effects
 -- each adding a cost both add it, and each keeps its SCALE for
 -- Parun.Engine.Cost.plusComponents to cash against the cost being adjusted.
-modifierAdjustments :: [(RowSource, CostModifier.CostModifier)] -> (RowSource -> Filter Keyword -> Bool) -> (RowSource -> PerTarget.PerTarget -> Natural) -> (RowSource -> Quantity.Type.Quantity -> Natural) -> CostAdjustments
+modifierAdjustments :: [(RowSource, CostModifier.CostModifier)] -> (RowSource -> Filter Keyword -> Bool) -> (RowSource -> PerTarget.PerTarget -> Natural) -> (RowSource -> CountedAgainst.CountedAgainst -> Quantity.Type.Quantity -> Natural) -> CostAdjustments
 modifierAdjustments rows aims counted each =
   let applying' =
-        [ (source, modifier, maybe 1 (counted source) (CostModifier.perTarget modifier) * maybe 1 (each source) (CostModifier.perEach modifier))
+        [ (source, modifier, maybe 1 (counted source) (CostModifier.perTarget modifier) * maybe 1 (each source (CostModifier.countedAgainst modifier)) (CostModifier.perEach modifier))
         | (source, modifier) <- rows,
           maybe True (aims source) (CostModifier.whichTargets modifier)
         ]
@@ -1877,15 +1878,20 @@ amountFramed pid source amount oid gs context = case amount of
      in context {Filter.slotAmount = Quantity.evaluate (Projection.fullView gs) you gs against quantity}
 
 -- CR 601.2f: how many times a `perEach` cost change applies -- its Quantity read
--- as the total is determined, against the row's SOURCE (CR 113.7, Animar, Soul
--- of Elements' "for each +1/+1 counter on Animar") with `targetPerspective`'s
--- "you" (Henzie "Toolbox" Torre's "you've cast your commander"). Against the
--- object paying where the row names no source. A negative or undeterminable
--- count applies the change no times, Cost.selfReductions' floor.
-perEachCount :: PlayerId -> ObjectId -> GameState -> RowSource -> Quantity.Type.Quantity -> Natural
-perEachCount pid oid gs source quantity =
-  let context = contextFor (Just (targetPerspective pid source gs)) source gs
-      against = Maybe.fromMaybe oid (RowSource.object source)
+-- as the total is determined. ChangeSource reads it against the row's SOURCE
+-- (CR 113.7, Animar, Soul of Elements' "for each +1/+1 counter on Animar") with
+-- `targetPerspective`'s "you" (Henzie "Toolbox" Torre's "you've cast your
+-- commander"), against the object paying where the row names no source.
+-- PaidFor reads it against the spell or activation source `oid`, with the
+-- paying player `pid` as "you" (CR 109.5): Hum of the Radix's "for each artifact
+-- its controller controls", which Parun.CostSpec proves on a board where the
+-- two perspectives part. A negative or undeterminable count applies the change
+-- no times, Cost.selfReductions' floor.
+perEachCount :: PlayerId -> ObjectId -> GameState -> RowSource -> CountedAgainst.CountedAgainst -> Quantity.Type.Quantity -> Natural
+perEachCount pid oid gs source countedAgainst quantity =
+  let (context, against) = case countedAgainst of
+        CountedAgainst.ChangeSource -> (contextFor (Just (targetPerspective pid source gs)) source gs, Maybe.fromMaybe oid (RowSource.object source))
+        CountedAgainst.PaidFor -> (contextFor (Just pid) (liveSource (Just oid)) gs, oid)
    in maybe 0 Integer.toNaturalSaturating (Quantity.evaluate (Projection.fullView gs) context gs against quantity)
 
 -- Does one announced target count towards a per-target change? perTargetCount's
@@ -1901,11 +1907,9 @@ perTargetMatches pid source gs wanted r =
 -- control" true of every creature, and not the paying player, who is Kopala's
 -- opponent. Parun.CostSpec's kopalaSpec on three seats proves it.
 --
--- perEachCount reads its count with the same "you", a fence rather than a
--- proof: every `perEach` row in `data/cards/` is scoped to "you", so the
--- source's controller is the paying player. Not implemented: a count read
--- against the caster or the spell being cast, Damping Sphere's "that player"
--- (#5155).
+-- perEachCount reads a ChangeSource count with the same "you", a fence rather
+-- than a proof: every such `perEach` row in `data/cards/` is scoped to "you", so
+-- the source's controller is the paying player.
 --
 -- The paying player where the source has no controller to read -- a stored
 -- row whose spell has left the stack -- which coincides with the source's

@@ -27,6 +27,7 @@ import qualified Parun.Types.CombatRestriction as CombatRestriction
 import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostSubject as CostSubject
+import qualified Parun.Types.CountedAgainst as CountedAgainst
 import qualified Parun.Types.Duration as Duration
 import qualified Parun.Types.EntryR as EntryR
 import qualified Parun.Types.EntryRewrite as EntryRewrite
@@ -369,7 +370,7 @@ combatRestrictions context attached enchants rs = case rs of
 -- out here.
 playerRule :: Target.Context -> PlayerStaticAbility.PlayerStaticAbility -> [Text.Text]
 playerRule context a = case a of
-  PlayerStaticAbility.MkPlayerStaticAbility (PlayerScope.Related relation) Nothing Nothing (PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells f Nothing Nothing Nothing Nothing (CostChange.Increase k)))
+  PlayerStaticAbility.MkPlayerStaticAbility (PlayerScope.Related relation) Nothing Nothing (PlayerEffect.ModifyCost (CostModifier.MkCostModifier CostSubject.Spells f Nothing Nothing Nothing CountedAgainst.ChangeSource Nothing (CostChange.Increase k)))
     | not (null (ManaCost.unwrap k)),
       not (any disjoined (conjuncts f)) -> do
         casters <- case relation of

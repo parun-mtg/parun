@@ -259,6 +259,7 @@ import qualified Parun.Codec.CostSubjectSpec
 import qualified Parun.Codec.CouldProduceSpec
 import qualified Parun.Codec.CountIsSpec
 import qualified Parun.Codec.CountSpec
+import qualified Parun.Codec.CountedAgainstSpec
 import qualified Parun.Codec.CountedDiscardSpec
 import qualified Parun.Codec.CounterChangeSpec
 import qualified Parun.Codec.CounterDestinationSpec
@@ -1359,6 +1360,7 @@ spec s reference corpus = do
   Parun.Codec.CounterSubjectSpec.spec s
   Parun.Codec.CountIsSpec.spec s
   Parun.Codec.CountSpec.spec s
+  Parun.Codec.CountedAgainstSpec.spec s
   Parun.Codec.CraftSpec.spec s
   Parun.Codec.CreateCopySpec.spec s
   Parun.Codec.CreateEmblemSpec.spec s

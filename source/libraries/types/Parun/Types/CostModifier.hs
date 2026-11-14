@@ -2,6 +2,7 @@ module Parun.Types.CostModifier where
 
 import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostSubject as CostSubject
+import qualified Parun.Types.CountedAgainst as CountedAgainst
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PerTarget as PerTarget
@@ -36,12 +37,14 @@ data CostModifier = MkCostModifier
     -- Blades' "for each +1/+1 counter on the creature it targets".
     perTarget :: Maybe PerTarget.PerTarget,
     -- | CR 601.2f: when Just, the change applies this many times, read as the
-    -- total is determined against the effect's source -- Henzie "Toolbox"
+    -- total is determined against `countedAgainst` -- Henzie "Toolbox"
     -- Torre's "{1} less for each time you've cast your commander". Multiplies
     -- `perTarget`'s count where both are given. A resolving effect storing the
     -- change fixes it then (CR 608.2h), Mutated Cultist's "for each counter
     -- removed this way"; its scenarios prove it.
     perEach :: Maybe Quantity.Quantity,
+    -- | What `perEach` is counted against, and whose "you" it reads.
+    countedAgainst :: CountedAgainst.CountedAgainst,
     -- | Professor Hojo's "the FIRST activated ability you activate during your
     -- turn" and Shadow in the Warp's "the first creature spell you cast each
     -- turn": Just a scope applies the change only in a turn the scope admits,
