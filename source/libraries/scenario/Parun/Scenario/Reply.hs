@@ -496,6 +496,6 @@ shapeOf prompt = case prompt of
   Prompt.AnnouncePhyrexianPayment {} -> named [PhyrexianPayment.PaysMana, PhyrexianPayment.PaysLife]
   Prompt.AnnounceHybridPayment {} -> named [HybridPayment.PaysTyped, HybridPayment.PaysGeneric]
   Prompt.AnnounceHybridHalf {} -> viaCodec Codec.ManaType.codec
-  Prompt.ChooseReductionHalf {} -> viaCodec Codec.ManaSymbol.codec
+  Prompt.ChooseHybridHalf {} -> viaCodec Codec.ManaSymbol.codec
   Prompt.FlipCoin {} -> viaCodec Codec.CoinFace.codec
   Prompt.ChooseReducedCost {} -> viaCodec Codec.ManaCost.codec

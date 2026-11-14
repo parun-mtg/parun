@@ -142,8 +142,6 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Gift as Gift
 import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
 import qualified Parun.Types.Holder as Holder
-import qualified Parun.Types.Hybrid as Hybrid
-import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordInstance as KeywordInstance
@@ -1420,13 +1418,13 @@ activationAdjustments = PlayerEffect.activationCostAdjustments
 
 -- Every way CR 118.7e's choice could resolve the reductions that apply --
 -- `announceReductions` below with the prompt replaced by the list of halves,
--- sharing `reductionHalvesOf` so the two cannot offer different ones. The GATE's
+-- sharing `Mana.hybridHalvesOf` so the two cannot offer different ones. The GATE's
 -- shape: nobody has been asked yet, so the honest question is whether SOME
 -- resolution pays (CR 601.2f). One entry where no reduction holds a hybrid
 -- symbol, at most 2^(hybrid symbols) otherwise.
 adjustmentResolutions :: CostAdjustments.CostAdjustments -> [CostAdjustments.CostAdjustments]
 adjustmentResolutions adjustments =
-  let resolveOne symbol = case reductionHalvesOf symbol of
+  let resolveOne symbol = case Mana.hybridHalvesOf symbol of
         Nothing -> [symbol]
         Just [] -> [symbol]
         Just halves -> halves
@@ -2220,14 +2218,14 @@ announce subject spending pid oid total_ printed = do
 -- it will be applied to, and a different cost could rank the orders differently.
 announceReductions :: PlayerId -> ObjectId -> GameState -> Cost Keyword.Type.Keyword -> CostAdjustments.CostAdjustments -> Game CostAdjustments.CostAdjustments
 announceReductions pid oid gs cost adjustments =
-  let chooseOne symbol = case reductionHalvesOf symbol of
+  let chooseOne symbol = case Mana.hybridHalvesOf symbol of
         -- Not a hybrid symbol, so CR 118.7e has nothing to ask about it.
         Nothing -> pure symbol
-        -- Unreachable: reductionHalvesOf answers Just only where it has halves
+        -- Unreachable: Mana.hybridHalvesOf answers Just only where it has halves
         -- to offer. Left rather than made partial, and the symbol survives.
         -- Through Game.chooseAmong. The degenerate `Hybrid t t` offers one
         -- half, so the answer cannot be observed and nothing is asked.
-        Just halves -> Maybe.fromMaybe symbol <$> Game.chooseAmong (\decider who -> Prompt.ChooseReductionHalf decider who oid symbol) pid halves
+        Just halves -> Maybe.fromMaybe symbol <$> Game.chooseAmong (\decider who -> Prompt.ChooseHybridHalf decider who oid symbol) pid halves
       chooseAll reduction =
         fmap
           (\xs -> reduction {AppliedReduction.amount = ManaCost.MkManaCost xs})
@@ -2253,35 +2251,6 @@ announceReductions pid oid gs cost adjustments =
               -- FILTERED, NOT TRUSTED, `chooseOne`'s posture again: an answer that
               -- is not one of the offered totals falls back to the cheapest.
               pure (maybe (fst first) fst (List.find ((==) answer . snd) (first : others)))
-
--- CR 118.7e's "one half of that symbol", written as the reduction each half
--- would be: a coloured or colourless half is an OfType, a generic half a
--- Generic. Nothing for every symbol with one way to reduce, and DEDUPLICATED so
--- the degenerate `Hybrid t t` offers one half, not two.
---
--- CR 107.4f's Phyrexian symbol is NOT here: CR 118.7f gives such a reduction one
--- mana of the symbol's colour with no choice, which reducingManaTypeOf reads
--- directly. The HYBRID Phyrexian symbol is here, as its two colours: CR 107.4g
--- makes it a Phyrexian symbol, so CR 118.7f gives one mana of its colour, CR
--- 107.4f makes that colour either of two, and CR 118.7e and 601.2f give the choice
--- to the payer. Its 2 life is no half: both rules reduce only by mana.
-reductionHalvesOf :: ManaSymbol.ManaSymbol -> Maybe [ManaSymbol.ManaSymbol]
-reductionHalvesOf symbol = case symbol of
-  ManaSymbol.Generic _ -> Nothing
-  ManaSymbol.OfType _ -> Nothing
-  ManaSymbol.Hybrid (Hybrid.MkHybrid a b) -> Just (ListUtils.nubOrd [ManaSymbol.OfType a, ManaSymbol.OfType b])
-  ManaSymbol.MonocoloredHybrid manaType ->
-    Just [ManaSymbol.OfType manaType, ManaSymbol.Generic Mana.monocoloredHybridGeneric]
-  ManaSymbol.Phyrexian _ -> Nothing
-  ManaSymbol.HybridPhyrexian (HybridPhyrexian.MkHybridPhyrexian a b) ->
-    Just (ListUtils.nubOrd [ManaSymbol.OfType (ManaType.Colored a), ManaSymbol.OfType (ManaType.Colored b)])
-  ManaSymbol.Snow -> Nothing
-  -- {X} offers no halves to choose between, CR 107.3 making it a value a player
-  -- announces rather than a way of paying one symbol. Reached with the symbol
-  -- still unsubstituted wherever a PRINTED cost is read ahead of any
-  -- announcement, which grantedForetellCost does; a cost being TOTALLED never
-  -- carries one, CR 601.2b preceding CR 601.2f.
-  ManaSymbol.Variable -> Nothing
 
 -- CR 302.6: does paying this cost put the object's ability behind the
 -- summoning-sickness gate? The CLASSIFICATION Parun.Engine.Activate reads.
@@ -8205,7 +8174,7 @@ applyAdjustments adjustments cost =
         ManaSymbol.MonocoloredHybrid _ -> 0
         -- CR 118.7f gives a Phyrexian reduction to the typed side whole.
         ManaSymbol.Phyrexian _ -> 0
-        -- Neither of its halves is generic mana (reductionHalvesOf).
+        -- Neither of its halves is generic mana (Mana.hybridHalvesOf).
         ManaSymbol.HybridPhyrexian _ -> 0
         -- CR 118.7g: a snow-symbol reduction is that much GENERIC mana. THE arm
         -- this side exists for; CR 107.4h is about the other side.
@@ -8267,7 +8236,7 @@ applyAdjustments adjustments cost =
         -- the player nothing, the symbol naming exactly one colour.
         ManaSymbol.Phyrexian color -> Just (ManaType.Colored color)
         -- The hybrid arms' reason: its two colours are halves the payer chooses
-        -- between (reductionHalvesOf), so one still spelled {G/U/P} is unasked.
+        -- between (Mana.hybridHalvesOf), so one still spelled {G/U/P} is unasked.
         ManaSymbol.HybridPhyrexian _ -> Nothing
         -- CR 118.7g makes an {S} reduction GENERIC mana, so reducingGenericOf's
         -- Snow arm is where it lands.

@@ -3708,6 +3708,7 @@ manaProductionChildren c production = case production of
   ManaProduction.Circled -> pure production
   ManaProduction.DraftNoted _ -> pure production
   ManaProduction.EachColorAmong among -> fmap ManaProduction.EachColorAmong (manaCriterion c among)
+  ManaProduction.ManaCostOf among -> fmap ManaProduction.ManaCostOf (manaCriterion c among)
 
 -- | A spending restriction's children (CR 106.6). Whether it prohibits and
 -- whether it pays generic costs are left as they are.

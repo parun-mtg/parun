@@ -50,7 +50,7 @@
       "player": "alice",
       "do": {
         "Answer": {
-          "prompt": "ChooseReductionHalf",
+          "prompt": "ChooseHybridHalf",
           "with": {
             "type": "OfType",
             "value": {

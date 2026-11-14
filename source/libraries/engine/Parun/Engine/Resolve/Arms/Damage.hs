@@ -592,6 +592,25 @@ addMana resolving source controller legal (ManaAddition.MkManaAddition ref produ
             State.modify' (Mana.addMana pid (fmap unitOf manaTypes))
             recordAdded pid (Set.fromList manaTypes)
             choose manaTypes
+    -- CR 106.8: each hybrid symbol asks the recipient which half it adds, once
+    -- per unit of the count, in printed order; Elemental Resonance's ruling
+    -- (2006-05-01) lets {W/U}{W/U} add {W}{U}. The recipients are asked as
+    -- Offers' are.
+    Mana.PerSymbol symbols ->
+      let named = playerRefPlayers legal resolving source controller gs0 ref
+          ordered = filter (\pid -> List.elem pid named) (Game.apnapOrder gs0)
+          recipients = ordered <> filter (\pid -> List.notElem pid ordered) named
+          added pid (symbol, halves@(first NonEmpty.:| others)) = case others of
+            [] -> pure (snd first)
+            _ -> do
+              half <- Maybe.fromMaybe (fst first) <$> Game.chooseAmong (\decider who -> Prompt.ChooseHybridHalf decider who resolving symbol) pid (fmap fst (NonEmpty.toList halves))
+              pure (maybe (snd first) snd (List.find ((==) half . fst) (NonEmpty.toList halves)))
+       in Monad.forM_ recipients $ \pid -> do
+            manaTypes <- concat <$> Monad.replicateM howMany (concat <$> traverse (added pid) symbols)
+            Monad.unless (null manaTypes) $ do
+              State.modify' (Mana.addMana pid (fmap unitOf manaTypes))
+              recordAdded pid (Set.fromList manaTypes)
+              choose manaTypes
 
 -- CR 608.2c's instruction, carried out by somebody other than this spell's
 -- controller: Drain Power's first sentence has the TARGETED player activate a

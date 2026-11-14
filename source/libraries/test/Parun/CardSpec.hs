@@ -5044,6 +5044,7 @@ manaProductionFilters production = case production of
   ManaProduction.Circled -> []
   ManaProduction.DraftNoted _ -> []
   ManaProduction.EachColorAmong among -> [among]
+  ManaProduction.ManaCostOf among -> [among]
 
 -- AddMana's and Firebend's shared payload: CR 106.7's group, CR 106.6's
 -- restriction, rider and spend trigger.

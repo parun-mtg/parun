@@ -114,6 +114,7 @@ import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
@@ -537,23 +538,23 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{W/U} offers {W} and {U}"
-        (Cost.reductionHalvesOf (ManaSymbol.Hybrid (Hybrid.MkHybrid (ManaType.Colored Color.White) (ManaType.Colored Color.Blue))))
+        (Mana.hybridHalvesOf (ManaSymbol.Hybrid (Hybrid.MkHybrid (ManaType.Colored Color.White) (ManaType.Colored Color.Blue))))
         (Just [white, blue])
       Spec.assertEqWith
         s
         "{2/B} offers {B} and {2}"
-        (Cost.reductionHalvesOf (ManaSymbol.MonocoloredHybrid (ManaType.Colored Color.Black)))
+        (Mana.hybridHalvesOf (ManaSymbol.MonocoloredHybrid (ManaType.Colored Color.Black)))
         (Just [black, ManaSymbol.Generic 2])
 
     -- CR 107.4f's hybrid Phyrexian symbol offers its two colours and not its 2
-    -- life (Cost.reductionHalvesOf says why). The scenarios
+    -- life (Mana.hybridHalvesOf says why). The scenarios
     -- cr-118-7e-a-g-u-p-reduction-* and cr-118-7e-the-same-g-u-p-reduction-*
     -- prove each half against Synthetic Hybrid Phyrexian Discount.
     Spec.it s "CR 118.7e a hybrid Phyrexian reduction offers its two colours" $
       Spec.assertEqWith
         s
         "{G/U/P} offers {G} and {U}"
-        (Cost.reductionHalvesOf (ManaSymbol.HybridPhyrexian (HybridPhyrexian.MkHybridPhyrexian Color.Green Color.Blue)))
+        (Mana.hybridHalvesOf (ManaSymbol.HybridPhyrexian (HybridPhyrexian.MkHybridPhyrexian Color.Green Color.Blue)))
         (Just [green, blue])
 
     -- The symbols CR 118.7e does NOT reach, and each for its own reason: a
@@ -562,10 +563,10 @@ adjustmentSpec s =
     -- and CR 118.7g makes an {S} reduction generic mana. A Just here would put a
     -- prompt in front of a player with nothing to decide.
     Spec.it s "a symbol with no halves is not asked about" $ do
-      Spec.assertEqWith s "{1}" (Cost.reductionHalvesOf (ManaSymbol.Generic 1)) Nothing
-      Spec.assertEqWith s "{G}" (Cost.reductionHalvesOf green) Nothing
-      Spec.assertEqWith s "{G/P}" (Cost.reductionHalvesOf phyrexianGreen) Nothing
-      Spec.assertEqWith s "{S}" (Cost.reductionHalvesOf ManaSymbol.Snow) Nothing
+      Spec.assertEqWith s "{1}" (Mana.hybridHalvesOf (ManaSymbol.Generic 1)) Nothing
+      Spec.assertEqWith s "{G}" (Mana.hybridHalvesOf green) Nothing
+      Spec.assertEqWith s "{G/P}" (Mana.hybridHalvesOf phyrexianGreen) Nothing
+      Spec.assertEqWith s "{S}" (Mana.hybridHalvesOf ManaSymbol.Snow) Nothing
 
     -- Parun.Types.ManaSymbol calls `Hybrid t t` degenerate rather than illegal,
     -- and no card prints one. Both halves are the same symbol, so there is
@@ -575,7 +576,7 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{W/W} offers {W}"
-        (Cost.reductionHalvesOf (ManaSymbol.Hybrid (Hybrid.MkHybrid (ManaType.Colored Color.White) (ManaType.Colored Color.White))))
+        (Mana.hybridHalvesOf (ManaSymbol.Hybrid (Hybrid.MkHybrid (ManaType.Colored Color.White) (ManaType.Colored Color.White))))
         (Just [white])
 
     -- Both halves of a colour/colour hybrid really do bite a cost that prints
@@ -1593,7 +1594,7 @@ snowDiscountSpec s registry =
           paid = S.runPure S.identityAnswer gs (S.cast S.alice cubId)
       Spec.assertEqWith s "one Forest tapped, not two" (S.tappedCount S.alice paid) 1
 
--- Answers CR 118.7e's Prompt.ChooseReductionHalf with `half` whenever it is on
+-- Answers CR 118.7e's Prompt.ChooseHybridHalf with `half` whenever it is on
 -- offer, and defers everything else to S.identityAnswer -- the `announces` shape
 -- Parun.ManaSpec uses for CR 118.13a's announcements.
 --
@@ -1602,7 +1603,7 @@ snowDiscountSpec s registry =
 -- first one instead, and the two cases would stop disagreeing.
 takesHalf :: ManaSymbol.ManaSymbol -> Prompt.Prompt r -> r
 takesHalf half p = case p of
-  Prompt.ChooseReductionHalf _ _ _ _ offers ->
+  Prompt.ChooseHybridHalf _ _ _ _ offers ->
     if elem half offers then half else NonEmpty.head offers
   _ -> S.identityAnswer p
 

@@ -83,4 +83,6 @@ data ManaProduction
     DraftNoted CardName.CardName
   | -- | CR 105.2 / 106.1a: one mana of each colour among the permanents the filter matches, no choice in it (Bloom Tender).
     EachColorAmong (Filter.Filter Keyword.Keyword)
+  | -- | CR 106.8-106.11: the mana the mana costs of the permanents the filter matches represent, a half chosen per hybrid symbol (Elemental Resonance).
+    ManaCostOf (Filter.Filter Keyword.Keyword)
   deriving (Eq, Ord, Show)

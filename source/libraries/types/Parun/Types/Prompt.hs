@@ -1072,10 +1072,11 @@ data Prompt r where
   -- floats -- proven by Parun.ManaSpec's "CR 601.2b whichever half of {G\/U} is
   -- announced, the OTHER floats" Gyre Engineer case.
   AnnounceHybridHalf :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> ManaSymbol.ManaSymbol -> NonEmpty.NonEmpty ManaType.ManaType -> Prompt ManaType.ManaType
-  -- | CR 118.7e: which half of a hybrid symbol a cost reduction is applied as,
-  -- at CR 601.2f, answered with the resulting symbol; not filtered by
-  -- payability, and elided only for the degenerate `Hybrid t t`.
-  ChooseReductionHalf :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> ManaSymbol.ManaSymbol -> NonEmpty.NonEmpty ManaSymbol.ManaSymbol -> Prompt ManaSymbol.ManaSymbol
+  -- | CR 118.7e / 106.8: which half of a hybrid symbol a cost reduction is
+  -- applied as at CR 601.2f, or an effect adds, answered with the resulting
+  -- symbol; not filtered by payability, and elided only for the degenerate
+  -- `Hybrid t t`.
+  ChooseHybridHalf :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> ManaSymbol.ManaSymbol -> NonEmpty.NonEmpty ManaSymbol.ManaSymbol -> Prompt ManaSymbol.ManaSymbol
   -- | CR 601.2f: which of the totals the cost reductions' orders reach the
   -- payer takes, cheapest first (Parun.Engine.Cost.applyAdjustments); raised
   -- only where two totals differ, and not filtered by payability.
