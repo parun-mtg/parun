@@ -3,14 +3,14 @@
     {
       "keywords": [
         {
+          "type": "Flying"
+        },
+        {
           "type": "Affinity",
           "value": {
             "type": "HasCardType",
             "value": "Artifact"
           }
-        },
-        {
-          "type": "Flying"
         }
       ],
       "manaCost": [

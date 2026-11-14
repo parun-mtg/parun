@@ -194,8 +194,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Human",
-          "Cleric"
+          "Cleric",
+          "Human"
         ],
         "supertypes": [
           "Legendary"
