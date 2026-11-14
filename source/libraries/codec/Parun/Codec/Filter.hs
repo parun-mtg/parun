@@ -5,6 +5,7 @@ import qualified Data.Typeable as Typeable
 import qualified Numeric.Natural as Natural
 import qualified Parun.Codec.AbilityKind as AbilityKind
 import qualified Parun.Codec.ActivationCriteria as ActivationCriteria
+import qualified Parun.Codec.Actor as Actor
 import qualified Parun.Codec.AloneAmong as AloneAmong
 import qualified Parun.Codec.Anchor as Anchor
 import qualified Parun.Codec.BlockRole as BlockRole
@@ -144,7 +145,7 @@ codec keywordCodec =
       Arm.nullary "DeclaredAttackerThisCombat" Filter.DeclaredAttackerThisCombat,
       Arm.nullary "DeclaredBlockerThisCombat" Filter.DeclaredBlockerThisCombat,
       Arm.payload "LeftLibraryThisTurn" LibraryDeparture.codec Filter.LeftLibraryThisTurn (\x -> case x of Filter.LeftLibraryThisTurn y -> Just y; _ -> Nothing),
-      Arm.nullary "CrewedSourceThisTurn" Filter.CrewedSourceThisTurn,
+      Arm.payload "CrewedThisTurn" Actor.codec Filter.CrewedThisTurn (\x -> case x of Filter.CrewedThisTurn y -> Just y; _ -> Nothing),
       Arm.nullary "ConvokedSourceThisTurn" Filter.ConvokedSourceThisTurn,
       Arm.nullary "SaddledSourceThisTurn" Filter.SaddledSourceThisTurn,
       Arm.payload "CantPayKeywordCost" KeywordCostPart.codec Filter.CantPayKeywordCost (\x -> case x of Filter.CantPayKeywordCost y -> Just y; _ -> Nothing),
@@ -358,7 +359,7 @@ tagOf x = case x of
   Filter.DeclaredAttackerThisCombat {} -> "DeclaredAttackerThisCombat"
   Filter.DeclaredBlockerThisCombat {} -> "DeclaredBlockerThisCombat"
   Filter.LeftLibraryThisTurn {} -> "LeftLibraryThisTurn"
-  Filter.CrewedSourceThisTurn {} -> "CrewedSourceThisTurn"
+  Filter.CrewedThisTurn {} -> "CrewedThisTurn"
   Filter.ConvokedSourceThisTurn {} -> "ConvokedSourceThisTurn"
   Filter.SaddledSourceThisTurn {} -> "SaddledSourceThisTurn"
   Filter.CantPayKeywordCost {} -> "CantPayKeywordCost"

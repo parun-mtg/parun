@@ -235,7 +235,7 @@ objects pcs gs a b =
 -- 120.1), crewed it (CR 702.122c), convoked it or the spell it was (CR
 -- 702.51c, 400.7d), and saddled it (CR 702.171c). Each is a relation atom's
 -- answer read off ANOTHER object's view with this one as the source --
--- DealtDamageTo's Source party, CrewedSourceThisTurn,
+-- DealtDamageTo's Source party, CrewedThisTurn,
 -- ConvokedSourceThisTurn, SaddledSourceThisTurn -- so two candidates whose own
 -- views agree are still different options when these differ. Compared rather
 -- than searched, so two objects the same creature damaged stay alike.

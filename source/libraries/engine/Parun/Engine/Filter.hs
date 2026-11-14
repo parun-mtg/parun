@@ -25,6 +25,7 @@ import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
+import qualified Parun.Types.Actor as Actor
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
@@ -40,7 +41,6 @@ import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
-import qualified Parun.Types.DamageDealer as DamageDealer
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
@@ -412,12 +412,13 @@ data View = MkView
     arrivalSinceOwnLastTurn :: Map.Map PlayerId.PlayerId MovedBetween.MovedBetween,
     -- CR 702.122c: which objects did this candidate crew earlier this turn? The
     -- same log the three fields above read, and LAZY for their reason -- nothing
-    -- forces it unless a Filter contains CrewedSourceThisTurn.
+    -- forces it unless a Filter contains CrewedThisTurn.
     --
     -- The VEHICLES rather than a Bool, because rule 702.122c's relation has two
     -- ends: this half is the candidate's, and the other end -- which Vehicle the
     -- card means by "it" -- is the source on the Context, which the builders that
-    -- fill this field do not hold.
+    -- fill this field do not hold. Context.sourceCrewed is the same half for the
+    -- source.
     crewedThisTurn :: Set.Set ObjectId.ObjectId,
     -- CR 702.51c: which spells did this candidate convoke earlier this turn, and
     -- which permanents did those spells become? The same log the fields above
@@ -432,7 +433,7 @@ data View = MkView
     convokedThisTurn :: Set.Set ObjectId.ObjectId,
     -- CR 702.171c: which Mounts did this candidate saddle earlier this turn?
     -- `crewedThisTurn` above's shape and laziness, one keyword over, and a field
-    -- of its own so a saddler never satisfies CrewedSourceThisTurn.
+    -- of its own so a saddler never satisfies CrewedThisTurn.
     saddledThisTurn :: Set.Set ObjectId.ObjectId,
     -- CR 122.6 / 122.6a: who put which kinds of counters on this candidate
     -- earlier this turn? Every GameEvent.CountersPut naming it, LAZY for
@@ -1268,6 +1269,10 @@ data Context = MkContext
     -- CR 120.1 / 400.7: the same for every earlier turn, View.dealtDamageEarlier's
     -- answer for the source. Filled with sourceMeasures.
     sourceDealtDamageEarlier :: Set.Set (Recipient.Recipient, DamageKind.DamageKind, Set.Set CardType.CardType),
+    -- CR 702.122c: the Vehicles the SOURCE crewed this turn, for CrewedThisTurn's
+    -- Source crewer. View.crewedThisTurn's answer for the source. Filled with
+    -- sourceMeasures, and lazy for its reason.
+    sourceCrewed :: Set.Set ObjectId.ObjectId,
     -- CR 202.3, the computed half: the number the TARGET SLOT being matched
     -- names as its bound, for the Measures atom's EnclosingAmount operand --
     -- Celestine, the Living Saint's "where X is the amount of life you gained
@@ -1947,7 +1952,7 @@ data Context = MkContext
 -- here owes both halves of the same pair: which way its unfilled read answers,
 -- and what holds a card to the positions that fill it.
 contextFor :: Teams.Teams -> Maybe PlayerId.PlayerId -> Maybe ObjectId.ObjectId -> Context
-contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
+contextFor t p s = MkContext {teams = t, perspective = p, source = s, sourceMeasures = Map.empty, sourceColors = Set.empty, sourceSectors = Set.empty, sourceNames = Set.empty, sourceDealtDamage = Set.empty, sourceDealtDamageEarlier = Set.empty, sourceCrewed = Set.empty, slotAmount = Nothing, defendingPlayers = [], activePlayers = [], recipient = Nothing, shares = Map.empty, slotObjects = Map.empty, cantPayKeywordCost = Map.empty, slotNames = Map.empty, slotControllers = Map.empty, slotHostControllers = Map.empty, subjectHostCardTypes = Set.empty, slotCreatureTypes = Map.empty, slotCardTypes = Map.empty, slotColors = Map.empty, slotMeasures = Map.empty, slotPlayers = Map.empty, boundAmounts = Map.empty, slotStickers = Map.empty, slotVotes = Map.empty, boundUnannounced = False, sourceAttachedTo = Nothing, evaluated = Nothing, evaluatedCreatureTypes = Nothing, commanderCreatureTypes = Set.empty, sourceEntrants = Set.empty, sourceCountered = Map.empty, sourceOwner = Nothing, sourceChosenNames = Map.empty, carrierChosenPlayer = Nothing, aimingController = Nothing, sourceChosenColors = Set.empty, draftNotes = Map.empty, exiledBeforeGame = Map.empty, playerCounters = Map.empty, sourceChosenSubtype = Nothing, sourceChosenCardType = Nothing, sourceChosenNumber = Nothing, sourceLastExiled = Nothing, sourceExiled = Map.empty, sourceAcquisition = Nothing, reader = Nothing, candidateMeasures = Nothing, battlefieldViews = Seq.empty, zeroMissingPowerToughness = False}
 
 -- contextFor over a game: its teams (CR 102.4), its active players (CR 102.1,
 -- 805.4a), its draft notes (CR 905.2b), what was exiled before it (CR
@@ -2674,7 +2679,7 @@ matches context view predicate = case predicate of
   -- CR 700.10: the same look-back over CR 602.2's activation log, so the
   -- answer holds once the ability is gone or its activator has left the game.
   Filter.ActivatedThisTurn -> activatedThisTurn view
-  -- CR 120.1 / 608.2i: the same look-back asked of a RELATION, CrewedSourceThisTurn's
+  -- CR 120.1 / 608.2i: the same look-back asked of a RELATION, CrewedThisTurn's
   -- split -- the candidate's own field says whom it dealt damage to, and the
   -- party says which of them the card names. The source is the id it had, so a
   -- dies trigger's "it" still finds the damage (CR 603.10a) -- Parun.DamageSpec's
@@ -2709,8 +2714,8 @@ matches context view predicate = case predicate of
           DamagedParty.Another cardType -> Set.member cardType damagedTypes && Recipient.objectOf damaged /= dealerId
         hit (damaged, dealtKind, damagedTypes) = toParty damaged damagedTypes && all (== dealtKind) wanted
         (thisTurn, allEarlier, dealerId) = case dealer of
-          DamageDealer.Candidate -> (dealtDamageTo view, dealtDamageEarlier view, identity view)
-          DamageDealer.Source -> (sourceDealtDamage context, sourceDealtDamageEarlier context, source context)
+          Actor.Candidate -> (dealtDamageTo view, dealtDamageEarlier view, identity view)
+          Actor.Source -> (sourceDealtDamage context, sourceDealtDamageEarlier context, source context)
         earlier = case window of
           Lookback.ThisTurn -> Set.empty
           Lookback.AsThisObject -> allEarlier
@@ -2737,12 +2742,18 @@ matches context view predicate = case predicate of
     Just you -> any (\(putter, placed) -> all (== placed) kind && PlayerRelation.holds (teams context) relation you putter) (countersPutThisTurn view)
     Nothing -> False
   -- CR 702.122c: the same look-back asked of a RELATION rather than of one
-  -- subject -- the candidate's own field says which Vehicles it crewed, and the
-  -- SOURCE on the context says which one the card's "it" names. Vacuously False
-  -- for a context with no source, where "crewed it" names nothing at all.
-  Filter.CrewedSourceThisTurn -> case source context of
-    Just src -> Set.member src (crewedThisTurn view)
-    Nothing -> False
+  -- subject. A Candidate crewer: the candidate's own field says which Vehicles
+  -- it crewed, and the SOURCE on the context says which one the card's "it"
+  -- names. A Source crewer: the context says which Vehicles the source crewed,
+  -- and the candidate's identity is the Vehicle asked about. Vacuously False for
+  -- a context with no source, or a candidate with no identity, where the
+  -- relation names nothing at all. The Balthier and Fran scenarios under
+  -- data/scenarios/crew prove the Source crewer.
+  Filter.CrewedThisTurn crewer -> case crewer of
+    Actor.Candidate -> case source context of
+      Just src -> Set.member src (crewedThisTurn view)
+      Nothing -> False
+    Actor.Source -> Maybe.isJust (source context) && maybe False (`Set.member` sourceCrewed context) (identity view)
   -- CR 702.51c: the sibling above's relation one keyword over -- the candidate's
   -- own field says which spells it convoked and which permanents those became,
   -- and the SOURCE on the context says which one the card's "it" names.
@@ -2750,7 +2761,7 @@ matches context view predicate = case predicate of
   Filter.ConvokedSourceThisTurn -> case source context of
     Just src -> Set.member src (convokedThisTurn view)
     Nothing -> False
-  -- CR 702.171c: CrewedSourceThisTurn's relation one keyword over, read off
+  -- CR 702.171c: CrewedThisTurn's relation one keyword over, read off
   -- its own field.
   Filter.SaddledSourceThisTurn -> case source context of
     Just src -> Set.member src (saddledThisTurn view)
@@ -3325,7 +3336,7 @@ manaValueThresholds predicate = case predicate of
   Filter.DealtDamageTo _ -> []
   Filter.EnteredThisTurn _ -> []
   Filter.CountersPutThisTurn _ _ -> []
-  Filter.CrewedSourceThisTurn -> []
+  Filter.CrewedThisTurn _ -> []
   Filter.ConvokedSourceThisTurn -> []
   Filter.SaddledSourceThisTurn -> []
   Filter.ControlledSinceTurnBegan -> []
@@ -3511,7 +3522,7 @@ statesAQuality predicate = case predicate of
   Filter.DealtDamageTo _ -> True
   Filter.EnteredThisTurn _ -> True
   Filter.CountersPutThisTurn _ _ -> True
-  Filter.CrewedSourceThisTurn -> True
+  Filter.CrewedThisTurn _ -> True
   Filter.ConvokedSourceThisTurn -> True
   Filter.SaddledSourceThisTurn -> True
   Filter.ControlledSinceTurnBegan -> True
@@ -3699,7 +3710,7 @@ readsSourceValues predicate = case predicate of
   Filter.DealtDamageTo _ -> False
   Filter.EnteredThisTurn _ -> False
   Filter.CountersPutThisTurn _ _ -> False
-  Filter.CrewedSourceThisTurn -> False
+  Filter.CrewedThisTurn _ -> False
   Filter.ConvokedSourceThisTurn -> False
   Filter.SaddledSourceThisTurn -> False
   Filter.ControlledSinceTurnBegan -> False

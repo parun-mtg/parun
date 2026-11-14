@@ -1346,8 +1346,9 @@ activatedThisTurn :: ObjectId -> GameState -> Bool
 activatedThisTurn oid gs = any ((== oid) . ObjectSnapshot.object . PastActivation.source) (TurnRegisters.activationsThisTurn (GameState.turn gs))
 
 -- CR 702.122c / 608.2i: the Vehicles this object crewed this turn -- the half of
--- the relation a candidate can answer; Parun.Engine.Filter's
--- CrewedSourceThisTurn compares them against the source it is evaluating for.
+-- the relation one object can answer; Parun.Engine.Filter's CrewedThisTurn
+-- compares a candidate's against the source, or the source's against the
+-- candidate.
 -- GameEvent.Crewed is written as the cost is paid, so a crew ability that never
 -- resolves still leaves the relation behind.
 crewedThisTurn :: ObjectId -> GameState -> Set.Set ObjectId

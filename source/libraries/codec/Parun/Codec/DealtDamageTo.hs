@@ -2,14 +2,14 @@
 
 module Parun.Codec.DealtDamageTo where
 
-import qualified Parun.Codec.DamageDealer as DamageDealer
+import qualified Parun.Codec.Actor as Actor
 import qualified Parun.Codec.DamageKind as DamageKind
 import qualified Parun.Codec.DamagedParty as DamagedParty
 import qualified Parun.Codec.Lookback as Lookback
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
-import qualified Parun.Types.DamageDealer as DamageDealer.Type
+import qualified Parun.Types.Actor as Actor.Type
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Lookback as Lookback.Type
 
@@ -21,5 +21,5 @@ codec = Fields.object $ do
   party <- Fields.required "party" DamagedParty.codec DealtDamageTo.party
   kind <- Fields.defaulted "kind" Nothing (Common.maybe DamageKind.codec) DealtDamageTo.kind
   window <- Fields.defaulted "window" Lookback.Type.ThisTurn Lookback.codec DealtDamageTo.window
-  dealer <- Fields.defaulted "dealer" DamageDealer.Type.Candidate DamageDealer.codec DealtDamageTo.dealer
+  dealer <- Fields.defaulted "dealer" Actor.Type.Candidate Actor.codec DealtDamageTo.dealer
   pure DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = party, DealtDamageTo.kind = kind, DealtDamageTo.window = window, DealtDamageTo.dealer = dealer}

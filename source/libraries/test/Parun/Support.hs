@@ -2010,7 +2010,7 @@ stubView table oid =
                 Filter.arrivalThisTurn = Nothing,
                 Filter.arrivalSinceOwnLastTurn = Map.empty,
                 -- CR 702.122c: the table registers no crewing, and no Count in
-                -- the pool filters by one, so CrewedSourceThisTurn is vacuously
+                -- the pool filters by one, so CrewedThisTurn is vacuously
                 -- False against this stub.
                 Filter.crewedThisTurn = Set.empty,
                 -- CR 702.51c: the table registers no convoking either, the

@@ -1,6 +1,6 @@
 module Parun.Types.DealtDamageTo where
 
-import qualified Parun.Types.DamageDealer as DamageDealer
+import qualified Parun.Types.Actor as Actor
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.Lookback as Lookback
@@ -15,6 +15,6 @@ data DealtDamageTo = MkDealtDamageTo
     -- | The turn in progress, or every turn the candidate has been this object.
     window :: Lookback.Lookback,
     -- | Whose damage is asked about: the candidate's, or the source's.
-    dealer :: DamageDealer.DamageDealer
+    dealer :: Actor.Actor
   }
   deriving (Eq, Ord, Show)

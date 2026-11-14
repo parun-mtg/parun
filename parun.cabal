@@ -160,6 +160,8 @@ library codec
     Parun.Codec.ActivePlayerEffectSpec
     Parun.Codec.ActiveReplacement
     Parun.Codec.ActiveReplacementSpec
+    Parun.Codec.Actor
+    Parun.Codec.ActorSpec
     Parun.Codec.Affected
     Parun.Codec.AffectedPlayers
     Parun.Codec.AffectedPlayersSpec
@@ -659,8 +661,6 @@ library codec
     Parun.Codec.CrewRoleSpec
     Parun.Codec.Cycling
     Parun.Codec.CyclingSpec
-    Parun.Codec.DamageDealer
-    Parun.Codec.DamageDealerSpec
     Parun.Codec.DamageDirection
     Parun.Codec.DamageDirectionSpec
     Parun.Codec.DamagedParty
@@ -2761,6 +2761,7 @@ library types
     Parun.Types.ActiveObjectProhibition
     Parun.Types.ActivePlayerEffect
     Parun.Types.ActiveReplacement
+    Parun.Types.Actor
     Parun.Types.Affected
     Parun.Types.AffectedPlayers
     Parun.Types.AffectedUnless
@@ -3043,7 +3044,6 @@ library types
     Parun.Types.Crewing
     Parun.Types.CrewRole
     Parun.Types.Cycling
-    Parun.Types.DamageDealer
     Parun.Types.DamageDirection
     Parun.Types.DamagedParty
     Parun.Types.DamageEvent

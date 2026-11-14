@@ -10,6 +10,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
+import qualified Parun.Types.Actor as Actor
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
@@ -25,7 +26,6 @@ import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Cycling as Cycling
-import qualified Parun.Types.DamageDealer as DamageDealer
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagedParty as DamagedParty
@@ -1898,34 +1898,45 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
   -- and the context together rather than one flag. Vehicle 11 is the source on
   -- every case below and Vehicle 12 the one the candidate crewed instead, so
   -- "crewed it" and "crewed a Vehicle" answer differently here.
-  Spec.describe s "CrewedSourceThisTurn" $ do
+  Spec.describe s "CrewedThisTurn" $ do
     let crewedBy ns = blackCreature {Filter.crewedThisTurn = Set.fromList (fmap ObjectId.MkObjectId ns)}
         asked n = self {Filter.source = Just (ObjectId.MkObjectId n)}
 
     Spec.it s "matches a creature that crewed the source this turn" $ do
-      Spec.assertBool s (Filter.matches (asked 11) (crewedBy [11]) Filter.Type.CrewedSourceThisTurn) "crewed it"
+      Spec.assertBool s (Filter.matches (asked 11) (crewedBy [11]) (Filter.Type.CrewedThisTurn Actor.Candidate)) "crewed it"
 
     Spec.it s "does not match a creature that crewed another Vehicle" $ do
-      Spec.assertBool s (not (Filter.matches (asked 11) (crewedBy [12]) Filter.Type.CrewedSourceThisTurn)) "crewed something else"
+      Spec.assertBool s (not (Filter.matches (asked 11) (crewedBy [12]) (Filter.Type.CrewedThisTurn Actor.Candidate))) "crewed something else"
 
     Spec.it s "does not match a creature that crewed nothing" $ do
-      Spec.assertBool s (not (Filter.matches (asked 11) blackCreature Filter.Type.CrewedSourceThisTurn)) "crewed nothing"
+      Spec.assertBool s (not (Filter.matches (asked 11) blackCreature (Filter.Type.CrewedThisTurn Actor.Candidate))) "crewed nothing"
 
     -- Membership and not one crewing: CR 702.122c's relation admits a creature
     -- that paid for two crew abilities this turn, and each Vehicle asks for
     -- itself.
     Spec.it s "matches on any of several crewings" $ do
-      Spec.assertBool s (Filter.matches (asked 11) (crewedBy [11, 12]) Filter.Type.CrewedSourceThisTurn) "the first Vehicle"
-      Spec.assertBool s (Filter.matches (asked 12) (crewedBy [11, 12]) Filter.Type.CrewedSourceThisTurn) "and the second"
+      Spec.assertBool s (Filter.matches (asked 11) (crewedBy [11, 12]) (Filter.Type.CrewedThisTurn Actor.Candidate)) "the first Vehicle"
+      Spec.assertBool s (Filter.matches (asked 12) (crewedBy [11, 12]) (Filter.Type.CrewedThisTurn Actor.Candidate)) "and the second"
 
     -- The vacuous direction: with no source there is no "it" for the relation's
     -- other end, whatever the candidate crewed.
     Spec.it s "is vacuously false where the context has no source" $ do
-      Spec.assertBool s (not (Filter.matches self (crewedBy [11]) Filter.Type.CrewedSourceThisTurn)) "no source"
+      Spec.assertBool s (not (Filter.matches self (crewedBy [11]) (Filter.Type.CrewedThisTurn Actor.Candidate))) "no source"
 
     -- CR 702.122b crews with a CREATURE, and a player is not one.
     Spec.it s "a player candidate is vacuously false" $ do
-      Spec.assertBool s (not (Filter.matches (asked 11) aPlayer Filter.Type.CrewedSourceThisTurn)) "player"
+      Spec.assertBool s (not (Filter.matches (asked 11) aPlayer (Filter.Type.CrewedThisTurn Actor.Candidate))) "player"
+
+    -- The Source crewer turns the relation round: creature 11 is the source,
+    -- the candidate a Vehicle it crewed or not, read off the context.
+    Spec.it s "a Source crewer matches a Vehicle the source crewed this turn" $ do
+      let crewing ns = (asked 11) {Filter.sourceCrewed = Set.fromList (fmap ObjectId.MkObjectId ns)}
+          vehicle n = blackCreature {Filter.identity = Just (ObjectId.MkObjectId n)}
+          byIt = Filter.Type.CrewedThisTurn Actor.Source
+      Spec.assertBool s (Filter.matches (crewing [12]) (vehicle 12) byIt) "crewed by it"
+      Spec.assertBool s (not (Filter.matches (crewing [13]) (vehicle 12) byIt)) "it crewed another Vehicle"
+      Spec.assertBool s (not (Filter.matches (asked 11) (vehicle 12) byIt)) "it crewed nothing"
+      Spec.assertBool s (not (Filter.matches (crewing [12]) (crewedBy [11]) byIt)) "the candidate crewed it instead"
 
   -- CR 702.51c relates TWO objects, the sibling above's shape: object 21 is the
   -- source on every case below and object 22 the one the candidate convoked
@@ -1960,7 +1971,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.it s "a player candidate is vacuously false" $ do
       Spec.assertBool s (not (Filter.matches (asked 21) aPlayer Filter.Type.ConvokedSourceThisTurn)) "player"
 
-  -- CR 702.171c, the CrewedSourceThisTurn group's shape: Mount 31 is the source
+  -- CR 702.171c, the CrewedThisTurn group's shape: Mount 31 is the source
   -- and Mount 32 the one the candidate saddled instead. The last case is the
   -- separation from crew, in both directions.
   Spec.describe s "SaddledSourceThisTurn" $ do
@@ -1980,7 +1991,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
       Spec.assertBool s (not (Filter.matches (asked 31) aPlayer Filter.Type.SaddledSourceThisTurn)) "player"
 
     Spec.it s "saddling is not crewing, nor crewing saddling" $ do
-      Spec.assertBool s (not (Filter.matches (asked 31) (saddledBy [31]) Filter.Type.CrewedSourceThisTurn)) "a saddler did not crew it"
+      Spec.assertBool s (not (Filter.matches (asked 31) (saddledBy [31]) (Filter.Type.CrewedThisTurn Actor.Candidate))) "a saddler did not crew it"
       Spec.assertBool s (not (Filter.matches (asked 31) (blackCreature {Filter.crewedThisTurn = Set.singleton (ObjectId.MkObjectId 31)}) Filter.Type.SaddledSourceThisTurn)) "a crewer did not saddle it"
 
   Spec.describe s "DealtDamageThisTurn" $ do
@@ -2028,13 +2039,13 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     Spec.it s "is not implied by being dealt damage" $ do
       Spec.assertBool s (not (Filter.matches self (aPlayer {Filter.dealtDamageThisTurn = [aDamage]}) Filter.Type.LostLifeThisTurn)) "dealt damage"
 
-  -- CR 120.1, the CrewedSourceThisTurn group's split: object 31 is the source,
+  -- CR 120.1, the CrewedThisTurn group's split: object 31 is the source,
   -- player 0 the perspective, and player 1 someone else. Parun.DamageSpec's
   -- Brine Hag and Reciprocate cases are where a real board fills the field.
   Spec.describe s "DealtDamageTo" $ do
     let damaged rs = blackCreature {Filter.dealtDamageTo = Set.fromList (fmap (\r -> (r, DamageKind.Noncombat, Set.empty)) rs)}
         asked n = self {Filter.source = Just (ObjectId.MkObjectId n)}
-        to party = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = party, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = DamageDealer.Candidate}
+        to party = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = party, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = Actor.Candidate}
         toSource = to DamagedParty.Source
         toYou = to (DamagedParty.Related PlayerRelation.You)
         toOpponent = to (DamagedParty.Related PlayerRelation.Opponent)
@@ -2053,7 +2064,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
 
     -- CR 510.2: combat damage alone, Witch-king of Angmar's narrowing.
     Spec.it s "a combat kind admits only combat damage" $ do
-      let combatToYou = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Related PlayerRelation.You, DealtDamageTo.kind = Just DamageKind.Combat, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = DamageDealer.Candidate}
+      let combatToYou = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Related PlayerRelation.You, DealtDamageTo.kind = Just DamageKind.Combat, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = Actor.Candidate}
           dealt k = blackCreature {Filter.dealtDamageTo = Set.singleton (player 0, k, Set.empty)}
       Spec.assertBool s (Filter.matches self (dealt DamageKind.Combat) combatToYou) "combat damage"
       Spec.assertBool s (not (Filter.matches self (dealt DamageKind.Noncombat) combatToYou)) "noncombat damage"
@@ -2068,7 +2079,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
 
     -- CR 400.7: an earlier turn's damage counts only as this object.
     Spec.it s "AsThisObject adds the earlier turns' damage" $ do
-      let ever = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Anyone, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.AsThisObject, DealtDamageTo.dealer = DamageDealer.Candidate}
+      let ever = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Anyone, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.AsThisObject, DealtDamageTo.dealer = Actor.Candidate}
           earlier = blackCreature {Filter.dealtDamageEarlier = Set.singleton (player 1, DamageKind.Combat, Set.empty)}
       Spec.assertBool s (Filter.matches self earlier ever) "an earlier turn's"
       Spec.assertBool s (Filter.matches self (damaged [creature 33]) ever) "this turn's"
@@ -2078,7 +2089,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- creature". Its scenarios under data/scenarios/damage fill the context off a
     -- real log; the earlier turns' half has no card, so this is its only proof.
     Spec.describe s "the source's damage to the candidate's holder" $ do
-      let bySource party window = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = party, DealtDamageTo.kind = Just DamageKind.Combat, DealtDamageTo.window = window, DealtDamageTo.dealer = DamageDealer.Source}
+      let bySource party window = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = party, DealtDamageTo.kind = Just DamageKind.Combat, DealtDamageTo.window = window, DealtDamageTo.dealer = Actor.Source}
           controllerHit = bySource (DamagedParty.HolderOfCandidate Holder.Controller) Lookback.ThisTurn
           ownerHit = bySource (DamagedParty.HolderOfCandidate Holder.Owner) Lookback.ThisTurn
           hit r k = self {Filter.sourceDealtDamage = Set.singleton (r, k, Set.empty)}

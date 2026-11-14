@@ -9,6 +9,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
+import qualified Parun.Types.Actor as Actor
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
@@ -21,7 +22,6 @@ import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
-import qualified Parun.Types.DamageDealer as DamageDealer
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Designation as Designation
@@ -423,12 +423,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.CouldAttackThisTurn
       " {\"type\":\"CouldAttackThisTurn\"} "
-  Spec.it s "CrewedSourceThisTurn" $
+  Spec.it s "CrewedThisTurn" $
     Common.assertCodec
       s
       codec
-      Filter.CrewedSourceThisTurn
-      " {\"type\":\"CrewedSourceThisTurn\"} "
+      (Filter.CrewedThisTurn Actor.Source)
+      " {\"type\":\"CrewedThisTurn\",\"value\":\"Source\"} "
   Spec.it s "ConvokedSourceThisTurn" $
     Common.assertCodec
       s
@@ -511,7 +511,7 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
     Common.assertCodec
       s
       codec
-      (Filter.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Source, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = DamageDealer.Candidate})
+      (Filter.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Source, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = Actor.Candidate})
       " {\"type\":\"DealtDamageTo\",\"value\":{\"party\":{\"type\":\"Source\"}}} "
   Spec.it s "EnteredThisTurn" $
     Common.assertCodec
