@@ -844,7 +844,7 @@ grantPlayFromExile resolving source controller legal (GrantPlayFromExile.MkGrant
                       -- CR 601.3: one budget over every object granted,
                       -- so a play of any of them spends it for all, told
                       -- from another grant's by its stamp.
-                      ExilePlayPermission.budget = fmap (\n -> PlayBudget.MkPlayBudget n (Set.fromList targets) stamp) upTo,
+                      ExilePlayPermission.budget = fmap (\allowance -> PlayBudget.MkPlayBudget allowance (Set.fromList targets) stamp) upTo,
                       -- CR 400.7h, carried from the opcode unread;
                       -- Parun.Engine.Cast.castGrantsOf acts on it.
                       ExilePlayPermission.keywords = keywords

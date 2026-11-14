@@ -9,6 +9,7 @@ import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.PermissionVerb as PermissionVerb
+import qualified Parun.Types.PlayAllowance as PlayAllowance
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.TapState as TapState
 
@@ -60,10 +61,9 @@ data GrantPlayFromExile = MkGrantPlayFromExile
     -- | CR 400.7i / 614.1d: how a land played under it enters -- Lightstall
     -- Inquisitor\'s "each land played this way enters tapped".
     landEnters :: TapState.TapState,
-    -- | CR 601.3: how many of the covered cards may be played under it, all
-    -- told -- March of Reckless Joy\'s "you may play up to two of those
-    -- cards". Nothing is every one of them.
-    upTo :: Maybe Natural.Natural,
+    -- | CR 601.3: how many of the covered cards may be played under it.
+    -- Nothing is every one of them.
+    upTo :: Maybe PlayAllowance.PlayAllowance,
     -- | CR 400.7h / 613.1f: the keywords each spell cast under it has --
     -- Durnan of the Yawning Portal\'s "that spell has undaunted".
     keywords :: [Keyword.Keyword],

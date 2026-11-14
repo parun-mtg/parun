@@ -10,6 +10,7 @@ import qualified Parun.Codec.ManaSpending as ManaSpending
 import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.PermissionCost as PermissionCost
 import qualified Parun.Codec.PermissionVerb as PermissionVerb
+import qualified Parun.Codec.PlayAllowance as PlayAllowance
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.Codec.TapState as TapState
 import qualified Parun.JsonCodec.Codec as Codec
@@ -41,7 +42,7 @@ codec = Fields.object $ do
   verb <- Fields.defaulted "verb" PermissionVerb.Type.Play PermissionVerb.codec GrantPlayFromExile.verb
   increase <- Fields.defaulted "increase" 0 Common.natural GrantPlayFromExile.increase
   landEnters <- Fields.defaulted "landEnters" TapState.Type.Untapped TapState.codec GrantPlayFromExile.landEnters
-  upTo <- Fields.defaulted "upTo" Nothing (Common.maybe Common.natural) GrantPlayFromExile.upTo
+  upTo <- Fields.defaulted "upTo" Nothing (Common.maybe PlayAllowance.codec) GrantPlayFromExile.upTo
   keywords <- Fields.defaulted "keywords" [] (Common.list Keyword.codec) GrantPlayFromExile.keywords
   zone <- Fields.defaulted "zone" GrantZone.Type.Exile GrantZone.codec GrantPlayFromExile.zone
   pure

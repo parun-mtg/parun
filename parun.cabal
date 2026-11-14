@@ -1366,6 +1366,8 @@ library codec
     Parun.Codec.PlaneswalkRewrite
     Parun.Codec.PlaneswalkRewriteSpec
     Parun.Codec.PlaneswalkRSpec
+    Parun.Codec.PlayAllowance
+    Parun.Codec.PlayAllowanceSpec
     Parun.Codec.PlayBudget
     Parun.Codec.PlayBudgetSpec
     Parun.Codec.Player
@@ -3422,6 +3424,7 @@ library types
     Parun.Types.PlaneswalkCause
     Parun.Types.PlaneswalkR
     Parun.Types.PlaneswalkRewrite
+    Parun.Types.PlayAllowance
     Parun.Types.PlayBudget
     Parun.Types.Player
     Parun.Types.PlayerActed

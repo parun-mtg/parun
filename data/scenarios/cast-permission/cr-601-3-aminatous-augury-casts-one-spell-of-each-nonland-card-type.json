@@ -1,0 +1,71 @@
+{
+  "description": "CR 601.3 Aminatou's Augury lets one spell of each nonland card type be cast free: Ornithopter cast as an artifact spends the artifact and leaves the creature, so Mind Stone is no longer offered and Grizzly Bears is",
+  "note": "The land goes onto the battlefield as the Augury resolves; Seat of the Synod, a land with another type, is never offered. Ornithopter is an artifact creature, so casting it asks which type it spends. Blaze is cast free at X = 0 and deals nothing, and Village Rites still takes its additional sacrifice. Hill Giant, a second creature, is not offered once Grizzly Bears spent the creature.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "i1", "ready": true },
+          { "card": "Island", "label": "i2", "ready": true },
+          { "card": "Island", "label": "i3", "ready": true },
+          { "card": "Island", "label": "i4", "ready": true },
+          { "card": "Island", "label": "i5", "ready": true },
+          { "card": "Island", "label": "i6", "ready": true },
+          { "card": "Island", "label": "i7", "ready": true },
+          { "card": "Island", "label": "i8", "ready": true }
+        ],
+        "hand": [{ "card": "Aminatou's Augury", "label": "augury" }],
+        "library": [
+          { "card": "Plains" },
+          { "card": "Seat of the Synod" },
+          { "card": "Ornithopter" },
+          { "card": "Grizzly Bears" },
+          { "card": "Mind Stone" },
+          { "card": "Blaze" },
+          { "card": "Village Rites" },
+          { "card": "Hill Giant" },
+          { "card": "Swamp" },
+          { "card": "Swamp" },
+          { "card": "Swamp" }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [{ "card": "Ogre Sentry" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$augury", "mana": ["$i1", "$i2", "$i3", "$i4", "$i5", "$i6", "$i7", "$i8"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseOptional": "Exercises" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardFromAmong", "with": "Plains" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Plains", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "Cast Ornithopter", "Cast Grizzly Bears", "Cast Mind Stone", "Cast Blaze", "Cast Hill Giant", "ActivateManaAbility Plains"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "Ornithopter" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardType", "with": "Artifact" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "Cast Grizzly Bears", "Cast Blaze", "Cast Village Rites", "Cast Hill Giant", "ActivateManaAbility Plains"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "Grizzly Bears" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "Cast Blaze", "Cast Village Rites", "ActivateManaAbility Plains"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "Blaze", "targets": ["$bob"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "bob", "life": 20 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "Village Rites" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseSacrifices", "with": ["Grizzly Bears"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "PlayLand Swamp#2", "PlayLand Swamp#3", "ActivateManaAbility Plains"] } } }
+  ],
+  "final": [
+    { "Count": { "player": "alice", "zone": "Exile", "card": "Mind Stone", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Exile", "card": "Hill Giant", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Exile", "card": "Seat of the Synod", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Battlefield", "card": "Ornithopter", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1 } },
+    { "Count": { "player": "alice", "zone": "Hand", "card": "Swamp", "count": 2 } }
+  ]
+}

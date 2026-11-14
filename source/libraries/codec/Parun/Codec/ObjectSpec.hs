@@ -43,6 +43,7 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PermissionCost as PermissionCost
 import qualified Parun.Types.PermissionVerb as PermissionVerb
+import qualified Parun.Types.PlayAllowance as PlayAllowance
 import qualified Parun.Types.PlayBudget as PlayBudget
 import qualified Parun.Types.PlayPermissionOrigin as PlayPermissionOrigin
 import qualified Parun.Types.PlayerChoice as PlayerChoice
@@ -157,7 +158,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
                   ExilePlayPermission.verb = PermissionVerb.Cast,
                   ExilePlayPermission.increase = 1,
                   ExilePlayPermission.landEnters = TapState.Tapped,
-                  ExilePlayPermission.budget = Just (PlayBudget.MkPlayBudget 2 (Set.fromList [ObjectId.MkObjectId 30, ObjectId.MkObjectId 31]) (Timestamp.MkTimestamp 32)),
+                  ExilePlayPermission.budget = Just (PlayBudget.MkPlayBudget (PlayAllowance.Plays 2) (Set.fromList [ObjectId.MkObjectId 30, ObjectId.MkObjectId 31]) (Timestamp.MkTimestamp 32)),
                   ExilePlayPermission.keywords = [Keyword.Undaunted]
                 }
             ],
@@ -236,7 +237,7 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
           <> ",\"timestamp\":10,\"face\":\"Delver of Secrets\",\"turnedOverAt\":11"
           <> ",\"worldSince\":12"
           <> ",\"playPermissions\":[{\"player\":13,\"source\":14,\"expiry\":{\"type\":\"AtCleanup\"}"
-          <> ",\"spending\":\"AnyType\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Cast\",\"increase\":1,\"landEnters\":\"Tapped\",\"budget\":{\"remaining\":2,\"covers\":[30,31],\"granted\":32},\"keywords\":[{\"type\":\"Undaunted\"}]}]"
+          <> ",\"spending\":\"AnyType\",\"alternativeCost\":{\"type\":\"InsteadOfManaCost\",\"value\":[]},\"condition\":null,\"origin\":\"Granted\",\"verb\":\"Cast\",\"increase\":1,\"landEnters\":\"Tapped\",\"budget\":{\"remaining\":{\"type\":\"Plays\",\"value\":2},\"covers\":[30,31],\"granted\":32},\"keywords\":[{\"type\":\"Undaunted\"}]}]"
           <> ",\"plotted\":0,\"foretold\":15"
           <> ",\"foretellCostReduction\":[{\"type\":\"Generic\",\"value\":29}]"
           <> ",\"warped\":28,\"preparedCopyOf\":26"
