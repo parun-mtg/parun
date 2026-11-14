@@ -807,7 +807,8 @@ candidateCostsGiven permitted pid name oid gs =
               -- CR 702.185a: warp, evoked's offer with ONE ZONE. Rule 702.185a's
               -- first static ability says "you may cast this card FROM YOUR
               -- HAND", where evoke's, dash's and blitz's name none, so this is
-              -- joined at the hand arm below rather than into `ordinary`. That
+              -- joined at the hand arm below rather than into `ordinary`, and at
+              -- the graveyard arm only under a permission naming it. That
               -- is what keeps a warped card in exile priced at its printed cost:
               -- rule 702.185a's second ability grants that cast a PERMISSION and
               -- states no cost of its own.
@@ -1106,6 +1107,10 @@ candidateCostsGiven permitted pid name oid gs =
                                then ordinary
                                else filter usingPermitted ordinary
                            )
+                        -- CR 601.3: rule 702.185a's cost names the hand, so only a
+                        -- permission naming warp (Timeline Culler's "using its warp
+                        -- ability") offers it here.
+                        <> filter usingPermitted warped
                 -- CR 702.170d: a PLOTTED card is cast "without paying its mana
                 -- cost", CR 118.9's alternative cost. INSTEAD of the printed cost,
                 -- rule 702.170d being the only thing permitting this cast. CR
