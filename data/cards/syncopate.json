@@ -1,0 +1,74 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Variable"
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Syncopate",
+      "oracleText": "Counter target spell unless its controller pays {X}. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
+      "spell": {
+        "modes": [
+          {
+            "clauses": [
+              {
+                "effects": [
+                  {
+                    "type": "Counter",
+                    "value": {
+                      "instead": {
+                        "zone": "Exile"
+                      },
+                      "ref": {
+                        "type": "InSlot",
+                        "value": "spell"
+                      }
+                    }
+                  }
+                ],
+                "payGate": {
+                  "branch": "IfNotPaid",
+                  "cost": {
+                    "mana": [
+                      {
+                        "type": "Variable"
+                      }
+                    ]
+                  },
+                  "payer": {
+                    "type": "HolderOfBound",
+                    "value": {
+                      "holder": "Controller",
+                      "hop": "Itself",
+                      "slot": "spell"
+                    }
+                  }
+                }
+              }
+            ],
+            "targetSlots": {
+              "spell": {
+                "pool": {
+                  "type": "Spells"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "typeLine": {
+        "types": [
+          "Instant"
+        ]
+      }
+    }
+  ]
+}

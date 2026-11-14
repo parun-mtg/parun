@@ -1,0 +1,25 @@
+{
+  "description": "CR 701.25a / 608.2c / 118.12: Swallowed by Leviathan surveils 2 first, then asks the chosen spell's controller for {1} per card in its controller's graveyard, counted after the surveil",
+  "note": "alice's graveyard holds 1 card and she surveils both Swamp and Forest into it, so bob pays 3, not 1; bob's 2-card and carol's 5-card graveyards rule out counting the wrong player's. bob pays with three of his four Islands and the Piker resolves.",
+  "board": {"active": "bob", "step": "PrecombatMain", "seats": [
+    {"name": "bob", "battlefield": [{"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}, {"card": "Island", "label": "bi1"}, {"card": "Island", "label": "bi2"}, {"card": "Island", "label": "bi3"}, {"card": "Island", "label": "bi4"}], "hand": [{"card": "Goblin Piker", "label": "piker"}], "graveyard": [{"card": "Plains"}, {"card": "Plains"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "carol", "graveyard": [{"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}, {"card": "Plains"}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+    {"name": "alice", "battlefield": [{"card": "Island", "label": "ai1"}, {"card": "Island", "label": "ai2"}, {"card": "Island", "label": "ai3"}], "hand": [{"card": "Swallowed by Leviathan", "label": "swallow"}], "graveyard": [{"card": "Plains"}], "library": [{"card": "Swamp"}, {"card": "Forest"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Cast": {"object": "$piker", "mana": ["$m1", "$m2", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$swallow", "mana": ["$ai1", "$ai2", "$ai3"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseSurveil", "with": [["Swamp", "Forest"], []]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "source": "Swallowed by Leviathan", "do": {"ChooseToPay": {"decision": "Pays", "mana": ["$bi1", "$bi2", "$bi3", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"View": {"of": "ManaPool", "player": "bob", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Tapped": {"object": "$bi3", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Tapped": {"object": "$bi4", "tapped": false}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Swamp", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Forest", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Stack", "card": "Goblin Piker", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Goblin Piker", "count": 1}}}
+  ]
+}
