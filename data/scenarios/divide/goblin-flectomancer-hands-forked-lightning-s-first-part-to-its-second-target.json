@@ -1,0 +1,183 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "mountain1"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain2"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain3"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain4"
+          },
+          {
+            "card": "Goblin Flectomancer",
+            "label": "flectomancer"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Forked Lightning",
+            "label": "lightning"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Craw Wurm",
+            "label": "wurm-a"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm-b"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm-c"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 115.7a / 115.7f Goblin Flectomancer moving Forked Lightning's first target onto its second hands the second the first's part, unasked",
+  "note": "Alice divides 4 damage 3 onto the first Wurm and 1 onto the second, then changes the targets to the second and third Wurms. Every target must move, so the first moves to the second, carrying its 3, and the second to the third, carrying its 1: the only division left, so nobody is asked.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain1",
+            "$mountain2",
+            "$mountain3",
+            "$mountain4"
+          ],
+          "object": "$lightning",
+          "targets": [
+            "$wurm-a",
+            "$wurm-b"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDivision",
+          "with": [
+            [
+              [
+                "Creature",
+                "$wurm-a"
+              ],
+              3
+            ],
+            [
+              [
+                "Creature",
+                "$wurm-b"
+              ],
+              1
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$flectomancer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "creatures": [
+            "$wurm-b",
+            "$wurm-c"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 0,
+          "object": "$wurm-a"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 3,
+          "object": "$wurm-b"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 1,
+          "object": "$wurm-c"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
