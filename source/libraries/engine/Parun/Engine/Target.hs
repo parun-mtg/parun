@@ -367,8 +367,14 @@ admittedListGiven reader pools perspective unannounced bindings acquisition sour
         -- CR 601.2c / 608.2b: an OfEachOtherCandidate operand compares against
         -- the rest of what the slot admits (Filter.amongCandidates), before
         -- CR 702's targeting restrictions cut it -- Topple's "greatest power
-        -- among creatures on the battlefield" counts a hexproof creature.
-        Just f -> Filter.amongCandidates context snd f offered
+        -- among creatures on the battlefield" counts a hexproof creature. CR
+        -- 801.11's range cut comes first: the spell sees nothing outside its
+        -- controller's range, so neither does the comparison.
+        Just f
+          | Filter.comparesCandidates f ->
+              let reach = perspective >>= \you -> Plane.rangePerspective source you gs
+               in Filter.amongCandidates context snd f (filter (\(recipient, _) -> all (\you -> inRangeGiven grants you recipient gs) reach) offered)
+          | otherwise -> Filter.amongCandidates context snd f offered
 
 -- THE Filter.Context a target SLOT's own filter is matched against. Extracted
 -- from admittedGiven so that CR 608.2h's departed host (lastKnownAdmits below)
