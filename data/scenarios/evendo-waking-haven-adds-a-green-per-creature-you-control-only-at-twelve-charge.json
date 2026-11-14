@@ -1,0 +1,38 @@
+{
+  "description": "CR 702.184a, 722.2a, 106.4: Evendo, Waking Haven's twelve-plus ability, {G} and {T}, adds {G} for each creature its controller controls, and is not offered below twelve charge counters",
+  "note": "Alice controls three creatures and bob two, so the ability adds three green, not five; the second Evendo holds eleven charge counters and yields only its plain {G}, one of the two floating green pays the ability's {G}, so the pool goes from two to four rather than five, and three of them cast Leatherback Baloth.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "G",
+        "battlefield": [
+          {"card": "Evendo, Waking Haven", "label": "e1", "counters": [{"key": {"type": "Named", "value": "charge"}, "value": 12}]},
+          {"card": "Evendo, Waking Haven", "label": "e2", "counters": [{"key": {"type": "Named", "value": "charge"}, "value": 11}]},
+          {"card": "Grizzly Bears"},
+          {"card": "Runeclaw Bear"},
+          {"card": "Hill Giant"}
+        ],
+        "hand": [{"card": "Leatherback Baloth", "label": "baloth"}],
+        "library": [{"card": "Island"}, {"card": "Island"}]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{"card": "Grizzly Bears"}, {"card": "Centaur Courser"}],
+        "library": [{"card": "Island"}, {"card": "Island"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $e2"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType":{"type":"Colored","value":"Green"},"tags":[],"retention":"Ordinary","restriction":null,"rider":null,"sourceChoices":null}, {"manaType":{"type":"Colored","value":"Green"},"tags":[],"retention":"Ordinary","restriction":null,"rider":null,"sourceChoices":null}]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Take": {"action": "ActivateManaAbility $e1", "mana": [null], "yields": [[{"manaType":{"type":"Colored","value":"Green"},"tags":[],"retention":"Ordinary","restriction":null,"rider":null,"sourceChoices":null}, {"manaType":{"type":"Colored","value":"Green"},"tags":[],"retention":"Ordinary","restriction":null,"rider":null,"sourceChoices":null}, {"manaType":{"type":"Colored","value":"Green"},"tags":[],"retention":"Ordinary","restriction":null,"rider":null,"sourceChoices":null}]]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "ManaPool", "player": "alice", "is": [{"manaType":{"type":"Colored","value":"Green"},"tags":[],"retention":"Ordinary","restriction":null,"rider":null,"sourceChoices":null}, {"manaType":{"type":"Colored","value":"Green"},"tags":[],"retention":"Ordinary","restriction":null,"rider":null,"sourceChoices":null}, {"manaType":{"type":"Colored","value":"Green"},"tags":[],"retention":"Ordinary","restriction":null,"rider":null,"sourceChoices":null}, {"manaType":{"type":"Colored","value":"Green"},"tags":[],"retention":"Ordinary","restriction":null,"rider":null,"sourceChoices":null}]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Tapped": {"object": "$e1", "tapped": true}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$baloth", "mana": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"card": "Leatherback Baloth", "count": 1, "player": "alice", "zone": "Battlefield"}}}
+  ]
+}

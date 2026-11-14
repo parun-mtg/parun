@@ -1,0 +1,197 @@
+{
+  "description": "CR 120.3, 107.3, 608.2h: Focus Fire deals X damage to target attacking or blocking creature, X being 2 plus the number of creatures and Spacecraft its controller controls",
+  "note": "Alice controls Grizzly Bears, an eight-charge Fell Gravship that is both a creature and a Spacecraft and counts once, and a Lumen-Class Frigate with no charge counters that is a Spacecraft but no creature; her Mind Stone and bob's creatures do not count, so X is 5 and not 4, 6 or 7. Bob's Hill Giant is not attacking and is refused as the target; of his two attackers, the 9/9 Bygone Colossus is dealt 5 and Runeclaw Bear nothing.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Fell Gravship",
+            "label": "grav",
+            "counters": [
+              {
+                "key": {
+                  "type": "Named",
+                  "value": "charge"
+                },
+                "value": 8
+              }
+            ]
+          },
+          {
+            "card": "Lumen-Class Frigate",
+            "label": "frigate"
+          },
+          {
+            "card": "Mind Stone"
+          },
+          {
+            "card": "Plains",
+            "label": "plains"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Focus Fire",
+            "label": "fire"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Bygone Colossus",
+            "label": "colossus",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          },
+          {
+            "card": "Runeclaw Bear",
+            "label": "bear",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "bob",
+      "do": {
+        "Attack": [
+          "$colossus",
+          "$bear"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Types": {
+          "object": "$frigate",
+          "types": [
+            "Artifact"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Types": {
+          "object": "$grav",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$fire",
+          "targets": [
+            "$giant"
+          ],
+          "mana": [
+            "$plains",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$fire",
+          "targets": [
+            "$colossus"
+          ],
+          "mana": [
+            "$plains",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$colossus",
+          "damage": 5
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$giant",
+          "damage": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$bear",
+          "damage": 0
+        }
+      }
+    }
+  ]
+}
