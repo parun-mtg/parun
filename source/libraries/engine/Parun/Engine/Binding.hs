@@ -919,12 +919,14 @@ loyaltyRemoved = SlotName.MkSlotName (Text.pack "thatManyLoyaltyRemoved")
 -- onto the permanent, and Parun.Engine.Event.Trigger stamps it onto every
 -- ability that permanent triggers. Vitu-Ghazi Inspector is the reader.
 --
--- collectedEvidence and waterbendCost (Katara, Seeking Revenge): beheldObject
+-- collectedEvidence, waterbendCost (Katara, Seeking Revenge) and
+-- returnedPermanent, which a permanent's own entry replacement reads through
+-- Parun.Engine.Replacement.collect (Scarlet Spider, Ben Reilly): beheldObject
 -- is the other slot a cost binds for a later "if" to read, and Scryfall
 -- `o:beheld -t:instant -t:sorcery`, 2026-09-25, returns no permanent that reads
 -- it. A permanent printing "if a [quality] was beheld" would want it here.
 paidCostRecord :: Map SlotName Binding -> Map SlotName Binding
-paidCostRecord bindings = Map.restrictKeys bindings (Set.fromList [collectedEvidence, waterbendCost])
+paidCostRecord bindings = Map.restrictKeys bindings (Set.fromList [collectedEvidence, waterbendCost, returnedPermanent])
 
 -- CR 702.122b: the reserved slot under which the VEHICLE a creature just crewed
 -- is bound -- the "that Vehicle" in Gearshift Ace's "whenever this creature crews

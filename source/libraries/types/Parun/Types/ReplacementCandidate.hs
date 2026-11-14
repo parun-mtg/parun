@@ -66,8 +66,9 @@ data ReplacementCandidate = MkReplacementCandidate
     rider :: Maybe PreventionRider.PreventionRider,
     -- | The installing resolution's slot bindings, copied off a FLOATING row (see
     -- Parun.Types.ActiveReplacement) so this instance's own Filters can be read in
-    -- a context that knows them. Empty for a permanent's static replacement
-    -- ability, which has no resolution behind it to have bound anything.
+    -- a context that knows them. For a permanent's static replacement ability,
+    -- which has no resolution behind it, the objects of its source's CR 400.7d
+    -- cost record (Parun.Engine.Binding.paidCostRecord).
     slots :: Map.Map SlotName.SlotName (Set.Set ObjectId.ObjectId),
     -- | CR 608.2h: a stored effect's baked source choices, read in place of
     -- `source`'s own; Nothing reads them live.
