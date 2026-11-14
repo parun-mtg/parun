@@ -173,6 +173,10 @@ data CostComponent keyword
     -- the paying player's graveyard matching the Filter, which CR 404.2's fixed
     -- order identifies without a prompt.
     ExileTopFromGraveyard (Filter.Filter keyword)
+  | -- | CR 406.4 as a cost / Void Maw, Oracle of Dust: put one exiled card
+    -- matching the Filter into its owner's graveyard, chosen by the payer or, out
+    -- of a face-down pile they may not look at, drawn at random.
+    PutExiledIntoGraveyard (Filter.Filter keyword)
   | -- | CR 701.59a as a cost / Forensic Researcher: the paying player exiles any
     -- number of cards from their own graveyard whose total mana value reaches
     -- this number.

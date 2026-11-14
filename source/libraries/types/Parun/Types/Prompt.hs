@@ -832,7 +832,9 @@ data Prompt r where
   -- takes, any of them possibly empty (CR 700.3d). Elided where the piles are
   -- alike. The object is the effect's source, or the one the choice is for
   -- (Effect.ChooseGroup's `about`). Answers as Response.ChosePile. The Seq is
-  -- ChooseAnyNumber's.
+  -- ChooseAnyNumber's. Also CR 406.4: which exiled card, or which face-down pile
+  -- to draw one out of, pays a CostComponent.PutExiledIntoGraveyard, a card the
+  -- payer may name being a pile of one.
   ChoosePile :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty (Set.Set ObjectId.ObjectId) -> Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId) -> Prompt (Set.Set ObjectId.ObjectId)
   -- | CR 608.2d: which one of the matching permanents a resolving effect acts
   -- on (Parun.Types.ChosenPermanents at HowMany.Exactly), asked once per pick;

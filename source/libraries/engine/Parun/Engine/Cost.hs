@@ -46,6 +46,7 @@ import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Detain as Detain
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Trigger as Trigger
+import qualified Parun.Engine.Exile as Exile
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Forage as Forage
@@ -70,6 +71,7 @@ import qualified Parun.Engine.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Engine.Snapshot as Snapshot
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.Summoning as Summoning
+import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.UntapRestriction as UntapRestriction
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
@@ -2033,6 +2035,7 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.ExileCardsFromGraveyard exile -> ExileCardsFromGraveyard.count exile == announced
   CostComponent.ExileMaterials {} -> False
   CostComponent.ExileTopFromGraveyard _ -> False
+  CostComponent.PutExiledIntoGraveyard _ -> False
   CostComponent.CollectEvidence _ -> False
   CostComponent.CollectEvidenceOfTargets -> False
   CostComponent.ExileCardsTotalling _ -> False
@@ -2394,7 +2397,7 @@ componentStatesHiddenQuality component = case component of
   -- on, so no card is described and the player has none to fail to find.
   CostComponent.DiscardThis _ -> False
   -- Cards, but in a PUBLIC zone (CR 400.2), so the first conjunct fails however
-  -- specific the filter is: the battlefield, then the graveyard.
+  -- specific the filter is: the battlefield, then the graveyard, then exile.
   CostComponent.Sacrifice {} -> False
   CostComponent.TapForTotalPower {} -> False
   CostComponent.TapPermanents {} -> False
@@ -2404,6 +2407,7 @@ componentStatesHiddenQuality component = case component of
   CostComponent.ExileCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
   CostComponent.ExileTopFromGraveyard _ -> False
+  CostComponent.PutExiledIntoGraveyard _ -> False
   CostComponent.CollectEvidence _ -> False
   CostComponent.CollectEvidenceOfTargets -> False
   CostComponent.ExileCardsTotalling _ -> False
@@ -2676,6 +2680,33 @@ materialCandidates slots pid oid criterion gs =
 topExileCandidate :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> Maybe ObjectId
 topExileCandidate slots pid oid criterion gs =
   Maybe.listToMaybe (reverse (exileCandidates slots pid oid criterion gs))
+
+-- The cards a PutExiledIntoGraveyard component may take: every card in exile
+-- the criterion admits, ascending, whoever owns it. A face-down card has no
+-- characteristics (CR 406.3a), so only a public fact admits one -- its owner,
+-- or its link to the source (CR 607.2a).
+exiledCandidatesGiven :: Snapshot.Snapshot -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [ObjectId]
+exiledCandidatesGiven board slots pid oid criterion gs =
+  let context = Projection.framedBy oid gs (Projection.contextWithSlots gs (Just pid) (Just oid) slots)
+   in filter (\candidate -> Filter.matches context (Snapshot.views board candidate) criterion) (Set.toAscList (GameState.exile gs))
+
+-- CR 406.4's offer to the payer of a PutExiledIntoGraveyard component: each
+-- candidate they may look at as itself, and each face-down pile holding a
+-- candidate they may not as the whole pile, the draw being over every card in it
+-- (Target.pileMembers).
+exiledOffer :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> [Set.Set ObjectId]
+exiledOffer slots pid oid criterion gs =
+  let candidates = exiledCandidatesGiven (Snapshot.onDemand gs) slots pid oid criterion gs
+      option candidate
+        | Exile.mayChoose (Just pid) candidate gs = Set.singleton candidate
+        | otherwise = maybe (Set.singleton candidate) (\pile -> Set.fromList (Target.pileMembers (Just pid) pile gs)) (Exile.pileOf candidate gs)
+   in ListUtils.nubOrd (fmap option candidates)
+
+-- CR 601.2h's random half, asked of a PutExiledIntoGraveyard component: does
+-- the payer's offer hold a pile they would draw out of at random (CR 406.4)?
+drawsFromPile :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> Filter.Type.Filter Keyword.Type.Keyword -> GameState -> Bool
+drawsFromPile slots pid oid criterion gs =
+  any (\candidate -> not (Exile.mayChoose (Just pid) candidate gs)) (exiledCandidatesGiven (Snapshot.onDemand gs) slots pid oid criterion gs)
 
 -- CR 701.59a's collect evidence N as the threshold exile it is: the WHOLE
 -- graveyard by mana value -- "any number of cards from your graveyard" names no
@@ -3073,6 +3104,10 @@ claimOfGiven board slots pid oid component gs =
         -- A pool of at most ONE, CR 404.2's order having picked it.
         CostComponent.ExileTopFromGraveyard criterion ->
           claim (ClaimAxis.Removal Zone.Graveyard) (Set.fromList (Maybe.maybeToList (topExileCandidate slots pid oid criterion gs))) 1
+        -- Every exiled card the criterion admits, a face-down one included: CR
+        -- 406.4 reaches it through its pile, so it is a card the payment can spend.
+        CostComponent.PutExiledIntoGraveyard criterion ->
+          claim (ClaimAxis.Removal Zone.Exile) (Set.fromList (exiledCandidatesGiven board slots pid oid criterion gs)) 1
         CostComponent.ExileThisFrom zone -> claim (ClaimAxis.Removal zone) itself 1
         -- CR 701.17a spends cards out of the paying player's own library, so the pool
         -- is that library and the count is how many the mill takes -- the ZONE keying a
@@ -3616,6 +3651,7 @@ uncountedCeiling pid oid claims gs component = case component of
   -- UNDERSTATEMENT and the header's safe direction.
   CostComponent.ExileMaterials {} -> Just 1
   CostComponent.ExileTopFromGraveyard _ -> Nothing
+  CostComponent.PutExiledIntoGraveyard _ -> Nothing
   CostComponent.ExileThisFrom _ -> Nothing
   CostComponent.ExileThis -> Nothing
   -- Counted by `objectCeiling` too, the library being this claim's pool.
@@ -4040,6 +4076,7 @@ targetComputed component = case component of
   CostComponent.ExileCardsFromGraveyard _ -> False
   CostComponent.ExileMaterials _ -> False
   CostComponent.ExileTopFromGraveyard _ -> False
+  CostComponent.PutExiledIntoGraveyard _ -> False
   CostComponent.ExileCardsFromHand {} -> False
   CostComponent.RevealCardsFromHand _ -> False
   CostComponent.Behold _ -> False
@@ -4095,6 +4132,7 @@ announcedRecord component = case component of
   CostComponent.ExileCardsFromGraveyard _ -> Nothing
   CostComponent.ExileMaterials _ -> Nothing
   CostComponent.ExileTopFromGraveyard _ -> Nothing
+  CostComponent.PutExiledIntoGraveyard _ -> Nothing
   CostComponent.ExileCardsFromHand {} -> Nothing
   CostComponent.RevealCardsFromHand _ -> Nothing
   CostComponent.Behold _ -> Just Binding.beheldObject
@@ -4163,6 +4201,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.ExileCardsFromGraveyard {} -> 0
   CostComponent.ExileMaterials {} -> 0
   CostComponent.ExileTopFromGraveyard _ -> 0
+  CostComponent.PutExiledIntoGraveyard _ -> 0
   CostComponent.CollectEvidence _ -> 0
   CostComponent.CollectEvidenceOfTargets -> 0
   CostComponent.ExileCardsTotalling _ -> 0
@@ -4219,6 +4258,7 @@ energyOwedByComponent component = case component of
   CostComponent.ExileCardsFromGraveyard {} -> 0
   CostComponent.ExileMaterials {} -> 0
   CostComponent.ExileTopFromGraveyard _ -> 0
+  CostComponent.PutExiledIntoGraveyard _ -> 0
   CostComponent.CollectEvidence _ -> 0
   CostComponent.CollectEvidenceOfTargets -> 0
   CostComponent.ExileCardsTotalling _ -> 0
@@ -4285,6 +4325,7 @@ countersOwedByComponent component = case component of
   CostComponent.ExileCardsFromGraveyard {} -> []
   CostComponent.ExileMaterials {} -> []
   CostComponent.ExileTopFromGraveyard _ -> []
+  CostComponent.PutExiledIntoGraveyard _ -> []
   CostComponent.CollectEvidence _ -> []
   CostComponent.CollectEvidenceOfTargets -> []
   CostComponent.ExileCardsTotalling _ -> []
@@ -4493,6 +4534,9 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- since the top one is then determined.
   CostComponent.ExileTopFromGraveyard criterion ->
     Maybe.isJust (topExileCandidate slots pid oid criterion gs)
+  -- CR 118.3: payable only if exile holds a card the criterion admits.
+  CostComponent.PutExiledIntoGraveyard criterion ->
+    not (null (exiledCandidatesGiven board slots pid oid criterion gs))
   -- CR 107.14 / CR 118.3: payable only if the player has at least that many
   -- energy counters.
   CostComponent.PayEnergy amount -> payableAnnounced amount (Game.energyOf pid gs >=)
@@ -4824,6 +4868,7 @@ criteriaOf component = case component of
   CostComponent.ExileCardsTotalling exile -> [ExileCardsTotalling.whichCards exile]
   CostComponent.ExileMaterials materials -> [ExileMaterials.whichObjects materials]
   CostComponent.ExileTopFromGraveyard criterion -> [criterion]
+  CostComponent.PutExiledIntoGraveyard criterion -> [criterion]
   CostComponent.RemoveCounters remove -> [CountersFromPermanents.whichPermanent remove]
   -- No criterion: rule 701.59a describes the cards by a TOTAL and by nothing else,
   -- so this belongs with the amount-carrying arms below.
@@ -5844,7 +5889,8 @@ shownCard = Event.shownCard . LoggedEvent.event
 -- is not a permutation of the offered indices.
 payComponents :: ManaAbilityPerformer.ManaAbilityPerformer -> PaymentMoment.PaymentMoment -> Maybe ObjectId -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> [CostComponent.CostComponent Keyword.Type.Keyword] -> Game Payment.Payment
 payComponents perform moment paidFor slots pid oid components = do
-  let (second, first) = List.partition paidInSecondPass components
+  gs <- State.get
+  let (second, first) = List.partition (paidInSecondPass slots pid oid gs) components
   outcome <- payPass perform moment paidFor slots pid oid first
   case outcome of
     Payment.Unpaid -> pure Payment.Unpaid
@@ -5879,14 +5925,18 @@ movesLast components =
 -- involve random elements or moving objects from the library to a public zone"
 -- being the first, and this the rest?
 --
--- CostComponent.FlipCoin and a random CostComponent.DiscardCards are the RANDOM
--- half's arms; nothing in Parun.Types.CostComponent rolls a die, so every other
+-- CostComponent.FlipCoin, a random CostComponent.DiscardCards and a
+-- CostComponent.PutExiledIntoGraveyard drawn out of a pile are the RANDOM half's
+-- arms; nothing in Parun.Types.CostComponent rolls a die, so every other
 -- answer below is decided by the library half alone. One predicate for both,
 -- because rule 601.2h's two criteria select one pass between them.
 --
 -- EXHAUSTIVE with no wildcard, `orderSensitive`'s posture and for its reason.
-paidInSecondPass :: CostComponent.CostComponent Keyword.Type.Keyword -> Bool
-paidInSecondPass component = case component of
+--
+-- Asked of the board and the payer because PutExiledIntoGraveyard is random for
+-- one payer and not another (CR 406.4).
+paidInSecondPass :: Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> GameState -> CostComponent.CostComponent Keyword.Type.Keyword -> Bool
+paidInSecondPass slots pid oid gs component = case component of
   -- CR 701.17a moves cards from a library to a graveyard, and CR 400.2 makes the
   -- one hidden and the other public.
   CostComponent.MillCards _ -> True
@@ -5915,6 +5965,11 @@ paidInSecondPass component = case component of
   CostComponent.CollectEvidenceOfTargets -> False
   CostComponent.ExileCardsTotalling _ -> False
   CostComponent.ExileCardsFromHand {} -> False
+  -- CR 601.2h's RANDOM half where CR 406.4 would have the payer draw out of a
+  -- pile, and the first pass where every candidate is one they may name.
+  -- Parun.CostSpec's "CR 601.2h a draw out of a face-down pile is paid after a
+  -- chosen discard" proves it.
+  CostComponent.PutExiledIntoGraveyard criterion -> drawsFromPile slots pid oid criterion gs
   -- These move no object at all.
   CostComponent.TapThis -> False
   CostComponent.UntapThis -> False
@@ -6048,6 +6103,7 @@ sourceOnly component = case component of
   CostComponent.ExileCardsFromGraveyard {} -> Nothing
   CostComponent.ExileMaterials {} -> Nothing
   CostComponent.ExileTopFromGraveyard _ -> Nothing
+  CostComponent.PutExiledIntoGraveyard _ -> Nothing
   CostComponent.CollectEvidence _ -> Nothing
   CostComponent.CollectEvidenceOfTargets -> Nothing
   CostComponent.ExileCardsTotalling _ -> Nothing
@@ -6102,6 +6158,7 @@ orderSensitive component = case component of
   CostComponent.ExileCardsFromGraveyard {} -> True
   CostComponent.ExileMaterials {} -> True
   CostComponent.ExileTopFromGraveyard _ -> True
+  CostComponent.PutExiledIntoGraveyard _ -> True
   CostComponent.CollectEvidence _ -> True
   CostComponent.CollectEvidenceOfTargets -> True
   CostComponent.ExileCardsTotalling _ -> True
@@ -8026,6 +8083,25 @@ payPayable perform moment paidFor slots pid oid component = case component of
       Just candidate -> do
         Event.changeZone (ManaAbilityPerformer.settle perform) candidate Zone.Exile
         pure bindsNothing
+
+  -- CR 406.4: the payer picks a card they may look at, or a face-down pile, out
+  -- of which a card is drawn at random (Prompt.RandomObject). Elided only at one
+  -- option. The draw is over the whole pile, rule 406.4's "from within that
+  -- pile", so the drawn card is judged by the criterion afterwards, Target's
+  -- drawFromPiles posture: a card it refuses leaves the cost unpaid.
+  --
+  -- CR 400.3 sends the card to its OWNER's graveyard, which Event.changeZone's
+  -- graveyard is, so Oracle of Dust's "that player's graveyard" needs no slot.
+  CostComponent.PutExiledIntoGraveyard criterion -> do
+    gs <- State.get
+    let candidates = exiledCandidatesGiven (Snapshot.onDemand gs) slots pid oid criterion gs
+    picked <- Game.chooseAmong (\decider asked offered -> Prompt.ChoosePile decider asked oid offered Seq.empty) pid (exiledOffer slots pid oid criterion gs)
+    drawn <- traverse (Game.drawAmong Prompt.RandomObject . Set.toAscList) picked
+    case Monad.join drawn of
+      Just card | elem card candidates -> do
+        Event.changeZone (ManaAbilityPerformer.settle perform) card Zone.Graveyard
+        pure bindsNothing
+      _ -> pure Payment.Unpaid
 
 -- The arithmetic half, pure and board-free.
 --

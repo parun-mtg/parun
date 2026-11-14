@@ -3144,6 +3144,7 @@ costComponentFilters component = case component of
   -- CR 406.2 again: Circling Vultures' "the top creature card of your
   -- graveyard".
   CostComponent.ExileTopFromGraveyard f -> [f]
+  CostComponent.PutExiledIntoGraveyard f -> [f]
   -- CR 701.59a carries no filter: the cards are described by a total mana value.
   CostComponent.CollectEvidence _ -> []
   CostComponent.CollectEvidenceOfTargets -> []
