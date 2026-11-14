@@ -2339,10 +2339,15 @@ armMatches bindings board atEvent beforeEvent gs bearer you cond event = case co
     damageBy watched oid = case watched of
       ActingPermanent.Self -> oid == bearer
       ActingPermanent.Matching f -> maybe False (\view -> Filter.matches bearerContext (ProjectionView.lastZoned gs oid view) f) (postEventView board gs oid)
-    -- CR 120.1: is the damage's recipient one this DamageRecipient admits?
+    -- CR 120.1: is the damage's recipient one this DamageRecipient admits? A
+    -- permanent's qualifier reads it as damageBy reads the source, off CR
+    -- 603.10's sample, so a recipient the damage killed still answers. Scenario
+    -- acidic-dagger-triggers-for-a-non-wall-creature-the-damage-killed.
     damagedIs target recipient = case recipient of
       DamageRecipient.Player relation -> maybe False (PlayerRelation.holds (Game.teams gs) relation you) (Recipient.playerOf target)
-      DamageRecipient.Permanent cardType -> Set.member cardType (Projection.damagedCardTypes gs target)
+      DamageRecipient.Permanent cardType qualifier ->
+        Set.member cardType (Projection.damagedCardTypes gs target)
+          && maybe False (\oid -> maybe False (\view -> Filter.matches bearerContext (ProjectionView.lastZoned gs oid view) qualifier) (postEventView board gs oid)) (Recipient.objectOf target)
 
 -- CR 106.12a's second half: did an activation that produced @produced@ produce
 -- the mana this condition specified? The narrowing half of the

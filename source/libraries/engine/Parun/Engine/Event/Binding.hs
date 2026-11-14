@@ -1927,4 +1927,4 @@ namesRecipients watched = (any isPlayer recipients, not (all isPlayer recipients
     recipients = Set.toList (DamageTrigger.recipients watched)
     isPlayer r = case r of
       DamageRecipient.Player _ -> True
-      DamageRecipient.Permanent _ -> False
+      DamageRecipient.Permanent {} -> False
