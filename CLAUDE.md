@@ -118,8 +118,8 @@ to agents as written. What it doesn't say:
 
 - A change under `data/cards/` runs `script/with-build-lock.sh cabal run -v0
   parun -- oracle`, which syncs the `data/oracle-unrendered/` markers, then the
-  tests `-p Parun.Ingest -p Parun.Engine.Card.Lint` before the push: the
-  pool-wide checks no scenario reaches, which turn CI red most often.
+  tests `-p Parun.Ingest -p Parun.Engine.Card.Lint -p Parun.Cards` before the
+  push: the pool-wide checks no scenario reaches, which turn CI red most often.
 
 - Mark the PR ready once the self-review's fixes are pushed and the tests
   your change reaches are green, report it, and stop: don't wait for CI,

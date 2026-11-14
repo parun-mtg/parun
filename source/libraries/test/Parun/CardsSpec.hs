@@ -6,10 +6,17 @@ module Parun.CardsSpec where
 import qualified Control.Monad as Monad
 import qualified Control.Monad.IO.Class as MonadIO
 import qualified Data.ByteString as ByteString
+import qualified Data.Maybe as Maybe
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Encoding
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.Printing as Printing
+import qualified Parun.Json.Array as Array
+import qualified Parun.Json.Object as Object
+import qualified Parun.Json.Pair as Pair
+import qualified Parun.Json.String as String
+import qualified Parun.Json.Value as Value
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonSchema.Define as Define
@@ -68,9 +75,32 @@ checkFile s root schema path = do
               -- pretty-printed (`jq -S .`) while Common.render emits compact output, so
               -- this can never quietly regress into a byte comparison: every file would
               -- fail at once.
+              -- The paths that differ come first, so a failure names the field
+              -- rather than printing both cards whole.
               let encoded = Codec.encode Printing.codec p
+              Spec.assertEqWith s (path <> ": re-encoded, then on file") (differences "$" encoded value) []
               Spec.assertEqWith s path (Common.sortKeys encoded) (Common.sortKeys value)
               -- And the other way: the printing's encoding decodes back to it,
               -- straight and through the text it renders to.
               Spec.assertEqWith s (path <> ": round trip") (Codec.decode Printing.codec encoded) (Right p)
               Spec.assertEqWith s (path <> ": round trip through text") (Common.parse (Common.render encoded) >>= Codec.decode Printing.codec) (Right p)
+
+-- | Where two JSON values part, as (path, left, right) with each side rendered;
+-- Nothing is a side lacking the path. Objects are compared by key, arrays by
+-- index.
+differences :: String -> Value.Value -> Value.Value -> [(String, Maybe Text.Text, Maybe Text.Text)]
+differences at left right = case (left, right) of
+  (Value.Object l, Value.Object r) ->
+    let fields o = [(Text.unpack (String.unwrap (Pair.name f)), Pair.value f) | f <- Object.unwrap o]
+        ls = fields l
+        rs = fields r
+     in concatMap (\k -> side (at <> "." <> k) (lookup k ls) (lookup k rs)) (Set.toList (Set.fromList (fmap fst (ls <> rs))))
+  (Value.Array l, Value.Array r) ->
+    let ls = Array.unwrap l
+        rs = Array.unwrap r
+        index i = Maybe.listToMaybe . drop i
+     in concatMap (\i -> side (at <> "[" <> show i <> "]") (index i ls) (index i rs)) [0 .. max (length ls) (length rs) - 1]
+  _ -> if left == right then [] else [(at, Just (Common.render left), Just (Common.render right))]
+  where
+    side path (Just a) (Just b) = differences path a b
+    side path a b = [(path, fmap Common.render a, fmap Common.render b)]
