@@ -35,8 +35,9 @@ import qualified Parun.Types.Subtype as Subtype
 -- sharing the prepare spell Seed Suture, whose name is therefore no card's,
 -- Bumper Cars, whose printings light different numbers (CR 718.1), and
 -- Cryptic Spires and The Prismatic Piper, which take a choice as their deck is
--- built (CR 207.5, 903.4b), with `printings` for its printing table and the
--- sticker sheets parun ships.
+-- built (CR 207.5, 903.4b), SP//dr, Piloted by Peni, whose one face's name
+-- holds "//", with `printings` for its printing table and the sticker sheets
+-- parun ships.
 withPool :: String -> (Registry.Registry IO -> IO a) -> IO a
 withPool label action = do
   sheets <- StickerSheets.defaultRoot >>= StickerSheets.loadRoot
@@ -48,8 +49,9 @@ withPool label action = do
   cars <- S.committedJson "bumper-cars.json"
   spires <- S.committedJson "cryptic-spires.json"
   piper <- S.committedJson "the-prismatic-piper.json"
+  spdr <- S.committedJson "sp-dr-piloted-by-peni.json"
   noted <- traverse (\file -> fmap ((,) file) (S.committedJson file)) ["regicide.json", "smuggler-captain.json", "paliano-vanguard.json", "cogwork-tracker.json"]
-  S.withCorpusDir label ([("goblin-piker.json", piker), ("wax-wane.json", waxWane), (angelFile, angel), ("emergency-phytomedic-seed-suture.json", phytomedic), ("bumper-cars.json", cars), ("cryptic-spires.json", spires), ("the-prismatic-piper.json", piper)] <> noted) (Registry.fileRegistry Monad.>=> action . withData bySlug)
+  S.withCorpusDir label ([("goblin-piker.json", piker), ("wax-wane.json", waxWane), (angelFile, angel), ("emergency-phytomedic-seed-suture.json", phytomedic), ("bumper-cars.json", cars), ("cryptic-spires.json", spires), ("the-prismatic-piper.json", piper), ("sp-dr-piloted-by-peni.json", spdr)] <> noted) (Registry.fileRegistry Monad.>=> action . withData bySlug)
   where
     angelFile = "blossom-blessed-angel-seed-suture.json"
     withData bySlug registry = registry {Registry.printings = printings, Registry.stickerSheets = bySlug}
@@ -144,6 +146,16 @@ spec s = Spec.describe s "Parun.DeckList" $ do
       Spec.assertEqWith s "the printed spelling is that same deck" (fmap DeckList.sound spaced) (Right (Right half))
       unspaced <- DeckList.parse registry (Text.pack "3 Wax//Wane\n")
       Spec.assertEqWith s "and so is the unspaced spelling" (fmap DeckList.sound unspaced) (Right (Right half))
+
+  -- A face's own name may hold "//"; it names that card rather than two
+  -- halves, neither of which is a name, and renders back the same.
+  Spec.it s "a name holding \"//\" that a face prints resolves whole"
+    . withPool "slashed"
+    $ \registry -> do
+      deck <- deckOf s "slashed" registry "1 SP//dr, Piloted by Peni\n"
+      Spec.assertEqWith s "the one card" (entriesOf (Deck.cards deck)) [(Text.pack "SP//dr, Piloted by Peni", 1)]
+      again <- deckOf s "slashed-again" registry (Text.unpack (DeckList.render (Registry.printings registry) Nothing deck))
+      Spec.assertEqWith s "and its render parses back" again deck
 
   -- A joined name whose halves are two cards names no one card. Without this
   -- the parser could take the first half and silently drop the rest, which
