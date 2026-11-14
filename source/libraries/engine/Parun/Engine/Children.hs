@@ -306,6 +306,7 @@ import qualified Parun.Types.ManaProduction as ManaProduction
 import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaRestriction as ManaRestriction
 import qualified Parun.Types.ManaRider as ManaRider
+import qualified Parun.Types.ManaRiderEffect as ManaRiderEffect
 import qualified Parun.Types.ManaSpecification as ManaSpecification
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Measures as Measures
@@ -3606,7 +3607,11 @@ data ManaChildren f = MkManaChildren
     -- | The mana a spend-as-though clause speaks about (CR 609.4b), whole.
     manaSpent :: ManaFilter.ManaFilter -> f ManaFilter.ManaFilter,
     -- | The types a spend-as-though clause lets that mana pay as (CR 609.4b), whole.
-    manaAsThough :: Set.Set ManaType.ManaType -> f (Set.Set ManaType.ManaType)
+    manaAsThough :: Set.Set ManaType.ManaType -> f (Set.Set ManaType.ManaType),
+    -- | The keyword a rider grants the spell its mana paid for (CR 106.6).
+    manaKeyword :: Keyword.Keyword -> f Keyword.Keyword,
+    -- | How long a rider's grant lasts (CR 611.2).
+    manaDuration :: Duration.Duration -> f Duration.Duration
   }
 
 -- | Every child of a mana payload left as it is: the base a walk overrides.
@@ -3619,7 +3624,9 @@ manaLeaves =
       manaSlot = pure,
       manaDesignator = pure,
       manaSpent = pure,
-      manaAsThough = pure
+      manaAsThough = pure,
+      manaKeyword = pure,
+      manaDuration = pure
     }
 
 -- | A mana addition's children (CR 106.1). Its retention is left as it is.
@@ -3665,10 +3672,16 @@ manaRestrictionChildren c (ManaRestriction.MkManaRestriction casts activations k
     <*> pure prohibits
     <*> pure paysGeneric
 
--- | A mana rider's children (CR 106.6). Its effect is left as it is.
+-- | A mana rider's children (CR 106.6).
 manaRiderChildren :: (Applicative f) => ManaChildren f -> ManaRider.ManaRider -> f ManaRider.ManaRider
 manaRiderChildren c (ManaRider.MkManaRider condition effect) =
-  ManaRider.MkManaRider <$> manaCriterion c condition <*> pure effect
+  ManaRider.MkManaRider <$> manaCriterion c condition <*> manaRiderEffectChildren c effect
+
+-- | A mana rider's payload's children (CR 106.6).
+manaRiderEffectChildren :: (Applicative f) => ManaChildren f -> ManaRiderEffect.ManaRiderEffect -> f ManaRiderEffect.ManaRiderEffect
+manaRiderEffectChildren c effect = case effect of
+  ManaRiderEffect.CantBeCountered -> pure effect
+  ManaRiderEffect.GainsKeyword granted lasting -> ManaRiderEffect.GainsKeyword <$> manaKeyword c granted <*> manaDuration c lasting
 
 -- | A spend-as-though clause's children (CR 609.4b). Whether it is the only
 -- way that mana pays is left as it is.

@@ -63,7 +63,9 @@
                             }
                           },
                           "rider": {
-                            "effect": "CantBeCountered"
+                            "effect": {
+                              "type": "CantBeCountered"
+                            }
                           }
                         }
                       }

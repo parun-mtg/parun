@@ -326,6 +326,7 @@ import qualified Parun.Types.ManaR as ManaR
 import qualified Parun.Types.ManaRestriction as ManaRestriction
 import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaRider as ManaRider
+import qualified Parun.Types.ManaRiderEffect as ManaRiderEffect
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
@@ -4978,6 +4979,13 @@ restrictionFilters restriction =
 manaRiderFilters :: ManaRider.ManaRider -> [Filter.Type.Filter Keyword.Keyword]
 manaRiderFilters rider = [ManaRider.condition rider]
 
+-- What a rider's grant carries: its keyword's and its duration's Filters,
+-- framed as each frames its own.
+manaRiderEffectFilters :: ManaRiderEffect.ManaRiderEffect -> [(Framing, Filter.Type.Filter Keyword.Keyword)]
+manaRiderEffectFilters effect = case effect of
+  ManaRiderEffect.CantBeCountered -> []
+  ManaRiderEffect.GainsKeyword keyword duration -> keywordFilters keyword <> durationFilters duration
+
 -- The predicate CR 106.7's "could produce" carries, or "each color among".
 manaProductionFilters :: ManaProduction.ManaProduction -> [Filter.Type.Filter Keyword.Keyword]
 manaProductionFilters production = case production of
@@ -5001,6 +5009,7 @@ manaAdditionFilters addition =
   unframed (manaProductionFilters (ManaAddition.production addition))
     <> fmap ((,) ManaRestrictionFramed) (concatMap restrictionFilters (Maybe.maybeToList (ManaAddition.restriction addition)))
     <> fmap ((,) SpentOnFramed) (concatMap manaRiderFilters (Maybe.maybeToList (ManaAddition.rider addition)))
+    <> foldMap (manaRiderEffectFilters . ManaRider.effect) (ManaAddition.rider addition)
     <> fmap ((,) SpentOnFramed . WhenSpent.casts) (Maybe.maybeToList (ManaAddition.whenSpent addition))
 
 -- Every Filter one effect carries, paired with its Framing. Two arms answer

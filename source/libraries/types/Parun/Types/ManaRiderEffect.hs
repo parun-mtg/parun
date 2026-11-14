@@ -1,5 +1,8 @@
 module Parun.Types.ManaRiderEffect where
 
+import qualified Parun.Types.Duration as Duration
+import qualified Parun.Types.Keyword as Keyword
+
 -- | CR 106.6's second shape, reduced to its payload: WHAT a mana-producing
 -- effect does to the spell or ability its mana is spent on, once the rider's
 -- condition (Parun.Types.ManaRider) has matched.
@@ -36,12 +39,13 @@ data ManaRiderEffect
     -- installs; it names one spell only through a slot a later cast binds
     -- (Savage Summoning), and no resolution installs a row here.
     CantBeCountered
-  | -- | CR 702.10 for a duration CR 514.2 ends: the spell the mana paid for
-    -- gains haste until end of turn. Generator Servant's "if that mana is spent
-    -- on a creature spell, it gains haste until end of turn" is the printing.
+  | -- | CR 611.2: the spell the mana paid for gains this keyword for this
+    -- duration. Generator Servant's "it gains haste until end of turn" and
+    -- Domri, Chaos Bringer's "it gains riot" (Duration.Indefinite) are the
+    -- printings.
     --
     -- The grant rides CR 400.7a onto the permanent the spell becomes
     -- (Parun.Engine.Event.carryOver), which is what makes it observable at all --
     -- a haste on a spell is nothing.
-    GainsHasteUntilEndOfTurn
-  deriving (Bounded, Enum, Eq, Ord, Show)
+    GainsKeyword Keyword.Keyword Duration.Duration
+  deriving (Eq, Ord, Show)

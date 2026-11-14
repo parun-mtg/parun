@@ -220,7 +220,9 @@ manaRewrites pairs =
     { Children.manaCriterion = Identity.Identity . Filter.rewrite pairs,
       Children.manaQuantity = Identity.Identity . rewriteQuantity pairs,
       Children.manaSpent = Identity.Identity . rewriteManaFilter pairs,
-      Children.manaAsThough = Identity.Identity . rewriteAsThough pairs
+      Children.manaAsThough = Identity.Identity . rewriteAsThough pairs,
+      Children.manaKeyword = Identity.Identity . Filter.rewriteKeyword pairs,
+      Children.manaDuration = Identity.Identity . rewriteDuration pairs
     }
 
 -- CR 612's word swap over an effect's AST: Parun.Engine.Children's traversal

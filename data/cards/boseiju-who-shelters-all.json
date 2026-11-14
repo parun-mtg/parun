@@ -47,7 +47,9 @@
                                 }
                               ]
                             },
-                            "effect": "CantBeCountered"
+                            "effect": {
+                              "type": "CantBeCountered"
+                            }
                           }
                         }
                       }
