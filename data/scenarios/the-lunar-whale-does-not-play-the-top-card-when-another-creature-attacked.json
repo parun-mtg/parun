@@ -1,0 +1,110 @@
+{
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "The Lunar Whale",
+            "label": "whale",
+            "ready": true
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain",
+            "label": "mtn"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "CR 611.3a: another creature attacking does not let alice play her top card; only The Lunar Whale having attacked does",
+  "note": "Pair of the-lunar-whale-plays-the-top-card-of-the-library-once-it-has-attacked: Savannah Lions attacks and the uncrewed Whale stays home, so the Mountain is still refused after combat.",
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$lions"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 18
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "refuse": {
+        "PlayLand": "$mtn"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Mountain",
+          "count": 0
+        }
+      }
+    }
+  ]
+}
