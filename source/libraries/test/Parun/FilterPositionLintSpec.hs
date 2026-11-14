@@ -1620,6 +1620,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Alpine Moon", 1), -- its static ability's affected set
         ("Vexing Arcanix", 3), -- its two moves' ObjectRefs and its damage clause's gate
         ("Booby Trap", 1), -- its trigger condition
+        ("The Clone Saga", 1), -- its delayed trigger's condition, read after the Saga is gone
         ("Pithing Needle", 1), -- its activation prohibition's affected set
         ("Phyrexian Revoker", 1), -- its activation prohibition's affected set
         ("Petrified Hamlet", 2), -- its activation prohibition's and static ability's affected sets
