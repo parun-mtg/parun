@@ -91,6 +91,7 @@ import qualified Parun.Types.CopyClause as CopyClause
 import qualified Parun.Types.CopyStackObject as CopyStackObject
 import qualified Parun.Types.CostBasis as CostBasis
 import qualified Parun.Types.CostChoice as CostChoice
+import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.CountedDiscard as CountedDiscard
 import qualified Parun.Types.Counter as Counter
@@ -1027,7 +1028,9 @@ productionPlayerRefs production = case production of
   ManaProduction.DraftNoted _ -> []
   ManaProduction.EachColorAmong _ -> []
 
--- The slot a production reads: only the tapped permanent's types name one.
+-- The slots a production reads: the tapped permanent's types, and the
+-- objects a "could produce" filter names (Squandered Resources' sacrificed
+-- land, CR 106.7).
 productionSlots :: ManaProduction.ManaProduction -> Map.Map SlotName SlotArity
 productionSlots production = case production of
   ManaProduction.OfType _ -> Map.empty
@@ -1036,7 +1039,7 @@ productionSlots production = case production of
   ManaProduction.Chosen -> Map.empty
   ManaProduction.SnowSymbol -> Map.empty
   ManaProduction.Noted -> Map.empty
-  ManaProduction.CouldProduce _ -> Map.empty
+  ManaProduction.CouldProduce could -> filterSlotsOf (CouldProduce.among could)
   ManaProduction.Pooled _ -> Map.empty
   ManaProduction.ProducedByTapped -> oneSlot Binding.manaSource
   ManaProduction.InCommanderIdentity -> Map.empty

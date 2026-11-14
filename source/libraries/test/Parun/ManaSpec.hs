@@ -2188,6 +2188,86 @@ foodChainSpec s registry = Spec.describe s "Food Chain" $ do
 
 -- Answers Prompt.ChooseSacrifices with `victim` alone, and defers everything
 -- else to S.identityAnswer.
+-- CR 106.7 / 608.2h: Squandered Resources' "Sacrifice a land: Add one mana of
+-- any type the sacrificed land could produce." The type is read off the land
+-- the cost sacrificed, as it last was, and chosen once the cost is paid.
+squanderedResourcesSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+squanderedResourcesSpec s registry = Spec.describe s "Squandered Resources" $ do
+  let beside landName = do
+        squandered <- S.printingOf s registry "Squandered Resources"
+        land <- S.printingOf s registry landName
+        let (squanderedId, g1) = S.addPermanent squandered S.alice (Setup.emptyGame S.bothPlayers)
+            (landId, gs) = S.addPermanent land S.alice g1
+        pure (squanderedId, landId, gs)
+      countOf name = S.countOnBattlefieldByName (CardName.MkCardName (Text.pack name)) S.alice
+      -- Sacrifices `victim`, picks the yield of `manaType`, and records every
+      -- candidate the yield prompt offered.
+      squandering :: ObjectId.ObjectId -> ManaType.ManaType -> Prompt.Prompt r -> State.State [[ManaType.ManaType]] r
+      squandering victim manaType p = case p of
+        Prompt.ChooseSacrifices _ _ _ candidates _ _ -> pure (Set.filter (== victim) (Set.fromList candidates))
+        Prompt.ChooseManaYield _ _ _ candidates -> do
+          State.modify' (<> fmap (fmap ManaUnit.manaType . Mana.yieldUnits) (NonEmpty.toList candidates))
+          pure (Maybe.fromMaybe (NonEmpty.head candidates) (List.find (all ((== manaType) . ManaUnit.manaType) . Mana.yieldUnits) (NonEmpty.toList candidates)))
+        _ -> pure (S.identityAnswer p)
+      activated victim manaType oid gs = State.runState (Engine.runGame (squandering victim manaType) gs (S.tapForMana oid)) []
+      holding printing gs =
+        let (held, oid) =
+              S.handOne
+                printing
+                ( gs
+                    { GameState.turn =
+                        (GameState.turn gs)
+                          { TurnRegisters.phase = Phase.PrecombatMain,
+                            TurnRegisters.remaining = Seq.empty
+                          }
+                    }
+                )
+         in S.castable S.alice oid held
+      blue = ManaType.Colored Color.Blue
+      black = ManaType.Colored Color.Black
+
+  Spec.it s "CR 106.7 sacrificing an Island adds {U}, and a Forest {G}" $ do
+    (islandSource, island, islandBoard) <- beside "Island"
+    (forestSource, forest, forestBoard) <- beside "Forest"
+    Spec.assertEqWith s "the Island could produce {U}" (tappedFor (sacrificing island) islandSource islandBoard) [blue]
+    Spec.assertEqWith s "the Forest could produce {G}" (tappedFor (sacrificing forest) forestSource forestBoard) [ManaType.Colored Color.Green]
+    Spec.assertEqWith s "and the Island goes" (countOf "Island" (S.runPure (sacrificing island) islandBoard (S.tapForMana islandSource))) 0
+
+  -- CR 105.4's choice comes after the cost: Underground Sea could produce {U}
+  -- or {B}, and nothing could be offered before the land was picked.
+  Spec.it s "CR 106.7 sacrificing Underground Sea asks between {U} and {B} once it is gone" $ do
+    (source, sea, board) <- beside "Underground Sea"
+    let ((_, afterBlack), asked) = activated sea black source board
+        ((_, afterBlue), _) = activated sea blue source board
+    Spec.assertEqWith s "{U} and {B} were offered" asked [[blue], [black]]
+    Spec.assertEqWith s "{B} when {B} is the answer" (poolTypes S.alice afterBlack) [black]
+    Spec.assertEqWith s "{U} when {U} is" (poolTypes S.alice afterBlue) [blue]
+    Spec.assertEqWith s "and the Sea is gone" (countOf "Underground Sea" afterBlack) 0
+
+  -- The card's ruling: a land that could produce no mana may still be
+  -- sacrificed, and adds none (CR 106.5).
+  Spec.it s "CR 106.5 sacrificing Evolving Wilds adds no mana, and the Wilds still goes" $ do
+    (source, wilds, board) <- beside "Evolving Wilds"
+    let after = S.runPure (sacrificing wilds) board (S.tapForMana source)
+    Spec.assertEqWith s "no mana" (poolTypes S.alice after) []
+    Spec.assertEqWith s "the Wilds was sacrificed" (countOf "Evolving Wilds" after) 0
+
+  -- CR 601.2g's offer counts the sacrificed land's types: {U} beside an
+  -- Island, and not beside a Forest, the one difference between the boards.
+  -- Each land is tapped, so Squandered Resources is the only source; CR
+  -- 106.7 ignores whether the land could pay its own {T}.
+  Spec.it s "CR 601.2g Merfolk of the Pearl Trident is cast off a tapped Island Squandered Resources sacrifices" $ do
+    merfolk <- S.printingOf s registry "Merfolk of the Pearl Trident"
+    (_, island, untappedIsland) <- beside "Island"
+    (_, forest, untappedForest) <- beside "Forest"
+    let islandBoard = S.tapObject island untappedIsland
+        forestBoard = S.tapObject forest untappedForest
+        resolved = castFrom (sacrificing island) islandBoard merfolk
+    Spec.assertBool s (holding merfolk islandBoard) "{U} is offered beside an Island"
+    Spec.assertBool s (not (holding merfolk forestBoard)) "and not beside a Forest"
+    Spec.assertEqWith s "the Merfolk resolved" (countOf "Merfolk of the Pearl Trident" resolved) 1
+    Spec.assertEqWith s "the Island paid for it" (countOf "Island" resolved) 0
+
 sacrificing :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 sacrificing victim p = case p of
   Prompt.ChooseSacrifices _ _ _ candidates _ _ -> Set.filter (== victim) (Set.fromList candidates)
@@ -4383,6 +4463,7 @@ spec s registry = Spec.describe s "Parun.Engine.Mana" $ do
   phyrexianTowerSpec s registry
   priestOfYawgmothSpec s registry
   foodChainSpec s registry
+  squanderedResourcesSpec s registry
   bloodPetSpec s registry
   ashnodsAltarSpec s registry
   workhorseSpec s registry
