@@ -1,0 +1,63 @@
+{
+  "description": "The Wandering Minstrel's beginning-of-combat trigger, with four Towns and an Island, creates nothing",
+  "note": "The pair of the five-Town scenario, one Town short.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "The Wandering Minstrel",
+            "label": "minstrel"
+          },
+          {
+            "card": "Adventurer's Inn"
+          },
+          {
+            "card": "Adventurer's Inn"
+          },
+          {
+            "card": "Adventurer's Inn"
+          },
+          {
+            "card": "Adventurer's Inn"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PostcombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Elemental Token",
+          "count": 0
+        }
+      }
+    }
+  ]
+}

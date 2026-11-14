@@ -1,0 +1,79 @@
+{
+  "description": "The Wandering Minstrel's beginning-of-combat trigger, with five Towns, creates a 2/2 Elemental that is all five colours",
+  "note": "The pair with four Towns shows the intervening if; the Island shows the count is of Towns, not lands.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "The Wandering Minstrel",
+            "label": "minstrel"
+          },
+          {
+            "card": "Adventurer's Inn"
+          },
+          {
+            "card": "Adventurer's Inn"
+          },
+          {
+            "card": "Adventurer's Inn"
+          },
+          {
+            "card": "Adventurer's Inn"
+          },
+          {
+            "card": "Adventurer's Inn"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Elemental Token",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "BeginningOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Colors",
+          "object": "Elemental Token",
+          "is": [
+            "White",
+            "Blue",
+            "Black",
+            "Red",
+            "Green"
+          ]
+        }
+      }
+    }
+  ]
+}
