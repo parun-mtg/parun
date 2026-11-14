@@ -7,6 +7,7 @@ import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.SkipWindow as SkipWindow.Type
+import qualified Parun.Types.TurnKind as TurnKind
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.SkipWindow" $ do
@@ -38,7 +39,13 @@ spec s = Spec.describe s "Parun.Codec.SkipWindow" $ do
     Common.assertCodec
       s
       SkipWindow.codec
-      SkipWindow.Type.WholeTurn
+      (SkipWindow.Type.WholeTurn TurnKind.AnyTurn)
       " {\"type\":\"Turn\"} "
+  Spec.it s "ExtraTurn" $
+    Common.assertCodec
+      s
+      SkipWindow.codec
+      (SkipWindow.Type.WholeTurn TurnKind.ExtraTurn)
+      " {\"type\":\"ExtraTurn\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s SkipWindow.codec

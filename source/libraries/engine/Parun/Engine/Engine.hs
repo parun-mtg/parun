@@ -160,6 +160,7 @@ import qualified Parun.Types.TriggerLimit as TriggerLimit
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
+import qualified Parun.Types.TurnKind as TurnKind
 import qualified Parun.Types.TurnMarker as TurnMarker
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnResume as TurnResume
@@ -2028,7 +2029,7 @@ takeOrdinaryTurn = do
           -- CR 614.10a: Magosi, the Waterveil's ruling makes a pending extra
           -- turn "your next turn" whatever order the effects resolved in, so
           -- it is asked here before the seating order is.
-          begins <- Event.beginsPhase SkipWindow.WholeTurn taker
+          begins <- Event.beginsPhase (SkipWindow.WholeTurn TurnKind.ExtraTurn) taker
           if begins
             then -- CR 500.11: this turn's OWN skips (Savor the Moment) come
             -- into being as it begins, and only on this branch -- neither a
@@ -2089,7 +2090,7 @@ beginMarked marker = do
       -- have begun".
       departedSeats = GrandMelee.departedRightOf pid begun
   State.put (List.foldl' (flip wouldHaveBegun) begun departedSeats)
-  begins <- Event.beginsPhase SkipWindow.WholeTurn pid
+  begins <- Event.beginsPhase (SkipWindow.WholeTurn (maybe TurnKind.AnyTurn (const TurnKind.ExtraTurn) entry)) pid
   if not begins
     then State.modify' (GrandMelee.passTurn (TurnMarker.number marker))
     else State.modify' $ \g ->
@@ -2258,7 +2259,7 @@ walkToNextTurn seatsLeft anchor seat = do
       else
         if List.elem next playing
           then do
-            begins <- Event.beginsPhase SkipWindow.WholeTurn next
+            begins <- Event.beginsPhase (SkipWindow.WholeTurn TurnKind.AnyTurn) next
             if begins
               then -- CR 500.7 / 103.1: this turn IS the ordinary rotation, so
               -- there is nothing left to remember.
