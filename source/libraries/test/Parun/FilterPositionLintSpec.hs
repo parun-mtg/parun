@@ -63,6 +63,8 @@ import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseCardName as ChooseCardName
 import qualified Parun.Types.ChooseQuality as ChooseQuality
+import qualified Parun.Types.Chooser as Chooser
+import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
 import qualified Parun.Types.ChosenPermanents as ChosenPermanents
 import qualified Parun.Types.ChosenQuality as ChosenQuality
 import qualified Parun.Types.Clause as Clause
@@ -555,14 +557,17 @@ enclosingAmountOffends card = snd (enclosingAmountCounts card) /= 0
 otherCandidateTag :: Text.Text
 otherCandidateTag = Text.pack "OfEachOtherCandidate"
 
--- How many of those operands sit in an edict's or a chosen permanent's own
--- filter, and how many anywhere else. Filter.amongCandidates is the one filler
--- of Filter.Context.candidateMeasures, called for an edict's pool and the
--- battlefield's -- Parun.Engine.Resolve.Slots.chosenCandidates' other zones
--- never call it -- so the operand anywhere else, a choice out of exile
--- included, is a silent False. Counted off the encoding for
+-- How many of those operands sit in a position that gathers a pool, and how
+-- many anywhere else. Filter.amongCandidates is the one filler of
+-- Filter.Context.candidateMeasures, called for an edict's pool, a battlefield
+-- choice's, a target slot's (Parun.Engine.Target.admittedListGiven), a choice
+-- out of a hand, and one out of graveyards the controller makes
+-- (Parun.Engine.Resolve.Common.graveyardCards) -- so the operand anywhere else,
+-- a choice out of exile and a trigger's filter included, is a silent False.
+-- Counted off the encoding for
 -- amountedSlotAtoms' reason: the position is the enclosing PlayerSacrifices,
--- ChoosePermanents or ChosenPermanents, which no Framing names.
+-- ChoosePermanents, ChosenPermanents, ChosenCardInHand, ChosenCardInGraveyard
+-- or target slot, which no Framing names.
 otherCandidateCounts :: Face.Face Card.Type.Card -> (Int, Int)
 otherCandidateCounts card =
   let encoded = Codec.encode (Face.Codec.codec Card.codec) card
@@ -575,16 +580,25 @@ otherCandidateCounts card =
               field name v = case v of
                 Value.Object x -> [Pair.value pair | pair <- Object.unwrap x, String.unwrap (Pair.name pair) == Text.pack name]
                 _ -> []
+              slotFilters v = case v of
+                Value.Object x -> concatMap (field "filter" . Pair.value) (Object.unwrap x)
+                _ -> []
               -- A choice's zone is defaulted, so only the battlefield's omits it.
               onBattlefield = filter (null . field "zone")
+              -- A graveyard choice's chooser, only the controller's gathering one pool.
+              byController = filter (any (any (\t -> case t of Value.String x -> String.unwrap x == Text.pack "TheController"; _ -> False) . field "type") . field "chooser")
               positioned
-                | typed "PlayerSacrifices" = Just (concatMap (field "filter") (keyed "value"))
+                | typed "PlayerSacrifices" || typed "ChosenCardInHand" = Just (concatMap (field "filter") (keyed "value"))
+                | typed "ChosenCardInGraveyard" = Just (concatMap (field "filter") (byController (keyed "value")))
                 | typed "ChosenPermanents" = Just (concatMap (field "filter") (onBattlefield (keyed "value")))
                 | typed "ChoosePermanents" = Just (concatMap (field "filter") (onBattlefield (concatMap (field "permanents") (keyed "value"))))
                 | otherwise = Nothing
+              -- A target slot's own filter (CR 601.2c, 608.2b), beside
+              -- whatever else the object holds.
+              nonSlot = filter (\pair -> String.unwrap (Pair.name pair) /= Text.pack "targetSlots") pairs
            in case positioned of
                 Just filters -> sum (fmap (jsonAtoms otherCandidateTag) filters)
-                Nothing -> sum (fmap (edicts . Pair.value) pairs)
+                Nothing -> sum (fmap (jsonAtoms otherCandidateTag) (concatMap slotFilters (keyed "targetSlots"))) + sum (fmap (edicts . Pair.value) nonSlot)
         Value.String _ -> 0
         Value.Null _ -> 0
         Value.Boolean _ -> 0
@@ -2090,20 +2104,23 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> ability
         permitting = (S.combinedFace maralen) {Face.playerAbilities = fmap struck (Face.playerAbilities (S.combinedFace maralen))}
     Spec.assertEqWith s "a cast permission naming no amount is an offence" (enclosingAmountCounts permitting) (0, 1)
-  -- CR 608.2d's other-candidates operand is answerable only in an edict's or a
-  -- chosen permanent's own filter. See otherCandidateCounts.
-  Spec.it s "CR 608.2d no card compares against other candidates outside an edict or a chosen permanent" $ do
+  -- CR 608.2d's other-candidates operand is answerable only where a choice
+  -- gathers a pool. See otherCandidateCounts.
+  Spec.it s "CR 608.2d no card compares against other candidates outside a choice's pool" $ do
     ps <- S.allPrintings s corpus
     let offenders = filter (anyFace ((/= 0) . snd . otherCandidateCounts) . Printing.card) ps
-    Spec.assertEqWith s "the operand sits only in an edict's or a chosen permanent's filter" (fmap (S.nameOf . Printing.card) offenders) []
+    Spec.assertEqWith s "the operand sits only in a choice's or a target slot's filter" (fmap (S.nameOf . Printing.card) offenders) []
     -- NOT vacuous: these author it, and are accepted -- each with how many.
     -- Juxtapose writes two, one per ChoosePermanents.
     let authors :: [(String, Int)]
         authors =
-          [ ("Break Under Pressure", 1),
+          [ ("Blot Out", 1),
+            ("Break Under Pressure", 1),
             ("Consume", 1),
             ("Consumed by Greed", 1),
             ("Crackling Doom", 1),
+            ("Desecrator Hag", 1), -- a ChosenCardInGraveyard
+            ("Draconic Fealty", 1), -- a ChosenCardInHand
             ("Drop of Honey", 1),
             ("End of the Hunt", 1),
             ("Extract a Confession", 1),
@@ -2121,29 +2138,43 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("Shadowgrange Archfiend", 1),
             ("Soul Shatter", 1),
             ("Tariff", 1),
+            ("Topple", 1), -- a target slot
             ("Summon: Valefor", 1),
             ("The Dining Car", 1),
             ("Witch-king, Bringer of Ruin", 1)
           ]
-    assertAuthors s registry pool "each author's operands are in its edict or chosen permanents" (otherCandidateCounts . surveyedFace) authors
-    -- The rejected side: the same atom in a target slot's filter.
+    assertAuthors s registry pool "each author's operands are in a choice's or a target slot's filter" (otherCandidateCounts . surveyedFace) authors
+    -- The rejected side: the same atom in a trigger's filter, which gathers no
+    -- pool (gap #7401, Kraven the Hunter).
     piker <- S.printingOf s registry "Goblin Piker"
     let atom = Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.Measures (Measures.MkMeasures Measure.Power Comparison.AtLeast (Operand.OfEachOtherCandidate Measure.Power))]
-        planted =
+        planted = (S.combinedFace piker) {Face.triggeredAbilities = [oneEffectTrigger (TriggerCondition.Enters (EntersTrigger.matching atom)) (Effect.Draw (Draw.MkDraw (PlayerRef.InSlot Binding.you) (Quantity.Type.Literal 1) Nothing))]}
+    Spec.assertEqWith s "a planted atom in a trigger's filter is an offence" (otherCandidateCounts planted) (0, 1)
+    -- And in a target slot's filter, and a chosen permanent's on the
+    -- battlefield, but not in exile: chosenCandidates' exile arm never calls
+    -- Filter.amongCandidates.
+    let targeting =
           (S.combinedFace piker)
             { Face.spell =
                 Mint.oneModeTargeting (Map.singleton (SlotName.MkSlotName (Text.pack "target")) (TargetSlot.required Pool.Creatures (Just atom))) Seq.empty
             }
-    Spec.assertEqWith s "a planted atom in a target slot is an offence" (otherCandidateCounts planted) (0, 1)
-    -- And in a chosen permanent's own filter, the pair differing in the zone
-    -- alone: chosenCandidates' exile arm never calls Filter.amongCandidates.
-    let choosing zone =
+        choosing zone =
           (S.combinedFace piker)
             { Face.spell =
                 Mint.oneMode (Seq.singleton (Effect.Destroy (Destroy.MkDestroy (ObjectRef.ChosenPermanents (ChosenPermanents.MkChosenPermanents atom (PlayerRef.InSlot Binding.you) HowMany.one Nothing zone)) Regenerability.Regenerable Nothing Nothing Nothing)))
             }
-    Spec.assertEqWith s "the atom in a battlefield choice's filter is accepted" (otherCandidateCounts (choosing Zone.Battlefield)) (1, 0)
+    Spec.assertEqWith s "the atom in a target slot's filter is accepted" (otherCandidateCounts targeting) (1, 0)
+    Spec.assertEqWith s "and in a battlefield choice's filter" (otherCandidateCounts (choosing Zone.Battlefield)) (1, 0)
     Spec.assertEqWith s "and in an exile choice's filter is an offence" (otherCandidateCounts (choosing Zone.Exile)) (0, 1)
+    -- And in a graveyard choice's, the pair differing in the chooser alone:
+    -- only the controller's choice gathers one pool (Resolve.Common.graveyardCards).
+    let fromGraveyard chooser =
+          (S.combinedFace piker)
+            { Face.spell =
+                Mint.oneMode (Seq.singleton (Effect.Destroy (Destroy.MkDestroy (ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser (ZoneScope.Scoped (PlayerScope.Related PlayerRelation.You)) atom HowMany.one)) Regenerability.Regenerable Nothing Nothing Nothing)))
+            }
+    Spec.assertEqWith s "the atom in the controller's graveyard choice is accepted" (otherCandidateCounts (fromGraveyard Chooser.TheController)) (1, 0)
+    Spec.assertEqWith s "and in each scoped player's is an offence" (otherCandidateCounts (fromGraveyard Chooser.EachInScope)) (0, 1)
   -- CR 303.4b's Filter.IsHostOfSource is CR 709.4a's atom one axis over again:
   -- answerable only in the positions `hostFramed` admits. See hostOfSourceOffends for the two offences.
   Spec.it s "CR 303.4b no card asks IsHostOfSource where the source's host is unknown" $ do

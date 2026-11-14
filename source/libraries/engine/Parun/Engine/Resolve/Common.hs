@@ -1070,7 +1070,11 @@ alreadyTurnedFor resolving victim gs =
 -- 404.2), which no rule makes a batch's processing order.
 graveyardCards :: Filter.Context -> Map.Map SlotName (Set Recipient) -> ObjectId -> PlayerId -> GameState -> ZoneScope.ZoneScope -> Filter.Type.Filter Keyword.Type.Keyword -> [ObjectId]
 graveyardCards context bindings source controller gs scope filter_ =
-  concatMap (\pid -> graveyardCardsOf context gs pid filter_) (Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) bindings scope gs)
+  -- CR 608.2d: an OfEachOtherCandidate operand compares across every graveyard
+  -- named (Filter.amongCandidates): Desecrator Hag's scenario under
+  -- data/scenarios proves it.
+  Filter.amongCandidates context (Projection.viewsOf gs) filter_ $
+    concatMap (\pid -> List.sort (Game.cardsIn Zone.Graveyard pid gs)) (Target.zoneScopePlayers (Plane.rangePerspective source controller gs) (Just controller) bindings scope gs)
 
 -- One-card picks folded into one set per run of a single chooser, the shape
 -- Prompt.ChooseAnyNumber names earlier picks in.

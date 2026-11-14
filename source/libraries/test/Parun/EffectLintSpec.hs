@@ -1490,7 +1490,10 @@ effectObjectRefs effect =
         Effect.Connive (Connive.MkConnive _ ref) -> read_ [ref]
         Effect.Discard subject -> case subject of
           Discard.Counted {} -> []
-          Discard.These (TheseDiscard.MkTheseDiscard ref _) -> [(shownQuestions, ref)]
+          -- And Draconic Fealty's "target player discards a card with the
+          -- greatest mana value", the discarding player choosing in their hand
+          -- (CR 701.9b), asked by Resolve.Common.chooseCardsInHand.
+          Discard.These (TheseDiscard.MkTheseDiscard ref _) -> [(CardInHand : shownQuestions, ref)]
           Discard.AnyNumber {} -> []
         Effect.LoseLife {} -> []
         Effect.GainLife {} -> []
@@ -2749,13 +2752,13 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
       "CR 701.20a's reveal allows from-among, at-random and a hand's chosen cards (Blackmail), and not a graveyard's"
       (inert (fmap reveals [inGraveyard, inHand, fromAmong, atRandom]))
       [True, False, False, False]
-    -- CR 701.9b's two exceptions over Discard.These: Duress's from-among and
-    -- Hymn to Tourach's at-random.
+    -- CR 701.9b's two exceptions over Discard.These, Duress's from-among and
+    -- Hymn to Tourach's at-random, and its own choice in a hand (Draconic Fealty).
     Spec.assertEqWith
       s
-      "CR 701.9b's discard allows from-among and at-random, and neither zone-keyed chosen arm"
+      "CR 701.9b's discard allows a hand's chosen cards, from-among and at-random, and not a graveyard's"
       (inert (fmap discardsThese [inGraveyard, inHand, fromAmong, atRandom]))
-      [True, True, False, False]
+      [True, False, False, False]
     -- Tovolar, Dire Overlord's opcode. CR 701.27a turns over PERMANENTS, so it
     -- allows the battlefield questions and NONE of the four card-shaped arms.
     Spec.assertEqWith

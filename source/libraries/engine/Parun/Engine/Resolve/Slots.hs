@@ -3300,16 +3300,16 @@ graveyardCardsOf context gs pid filter_ =
 
 -- The cards in ONE player's hand matching the filter: graveyardCardsOf one zone
 -- over. The filter is matched in THIS EFFECT's context, so `controller` is CR
--- 109.5's "you" rather than whoever is choosing.
+-- 109.5's "you" rather than whoever is choosing. An OfEachOtherCandidate operand
+-- compares within this one hand (CR 608.2d, Filter.amongCandidates): Draconic
+-- Fealty's "a card with the greatest mana value among cards in their hand".
 --
 -- NOT sorted, where the graveyard sibling sorts: the candidates keep the zone's
 -- own order, which no rule reads (CR 402.3). Narrowing must not reorder.
 handCardsOf :: Filter.Context -> GameState -> PlayerId -> Filter.Type.Filter Keyword.Type.Keyword -> [ObjectId]
 handCardsOf context gs pid filter_ =
   let viewOf = Projection.viewsOf gs
-   in filter
-        (\oid -> Filter.matches context (viewOf oid) filter_)
-        (Game.cardsIn Zone.Hand pid gs)
+   in Filter.amongCandidates context viewOf filter_ (Game.cardsIn Zone.Hand pid gs)
 
 -- The cards in ONE player's library matching the filter: handCardsOf one
 -- hidden zone over, and SORTED, graveyardCardsOf's order: CR 401.2 keeps the

@@ -7,6 +7,7 @@ import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Monoid as Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
@@ -1794,15 +1795,17 @@ data Context = MkContext
     -- CR 608.2d: every candidate the enclosing choice offers, with its
     -- measures, for the Measures atom's OfEachOtherCandidate operand. Filled by
     -- amongCandidates, whose callers are an edict's pool
-    -- (Parun.Engine.Replacement.sacrificeCandidates) and the battlefield's
-    -- (Parun.Engine.Resolve.Slots.battlefieldMatching); Nothing everywhere else,
+    -- (Parun.Engine.Replacement.sacrificeCandidates), the battlefield's
+    -- (Parun.Engine.Resolve.Slots.battlefieldMatching), a target slot's
+    -- (Parun.Engine.Target.admittedListGiven), a hand's
+    -- (Parun.Engine.Resolve.Slots.handCardsOf) and the graveyards' its
+    -- controller chooses from (Parun.Engine.Resolve.Common.graveyardCards);
+    -- Nothing everywhere else,
     -- so the operand is vacuously False there, and Parun.FilterPositionLintSpec
-    -- keeps a card to an edict's filter or a chosen permanent's. `Just
-    -- Map.empty` is the pool-gathering read: with no other candidate to compare
-    -- against, every comparison holds.
+    -- keeps a card to those positions. `Just Map.empty` is the pool-gathering
+    -- read: with no other candidate to compare against, every comparison holds.
     --
-    -- Not implemented: the operand in a target slot, a discard or any other
-    -- choice's pool (#5514).
+    -- Not implemented: the operand in a trigger's filter (#7401).
     candidateMeasures :: Maybe (Map.Map ObjectId.ObjectId (Map.Map Measure.Measure Integer)),
     -- CR 109.2: the projected view of every permanent, for Shares at
     -- Anchor.AnyPermanent. Filled lazily by Parun.Engine.Projection.framedBySlots;
@@ -1910,13 +1913,23 @@ measuresOf view = Map.fromList [(measure, n) | measure <- [minBound .. maxBound]
 -- against every other one (Operand.OfEachOtherCandidate) -- "the greatest power
 -- among creatures that player controls". The pool is what the choice would
 -- offer were the comparison absent, gathered with every such comparison holding
--- (`Just Map.empty`), then narrowed by them. A Filter without the operand
--- answers the same on both passes. In the order given.
-amongCandidates :: Context -> (ObjectId.ObjectId -> View) -> Filter.Filter Keyword.Type.Keyword -> [ObjectId.ObjectId] -> [ObjectId.ObjectId]
-amongCandidates context viewOf filter_ candidates =
-  let against pool oid = matches context {candidateMeasures = Just pool} (viewOf oid) filter_
-      pooled = filter (against Map.empty) candidates
-   in filter (against (Map.fromList [(oid, measuresOf (viewOf oid)) | oid <- pooled])) pooled
+-- (`Just Map.empty`), then narrowed by them. A Filter without the operand is
+-- matched once, lazily, as a plain `filter` would. In the order given; a
+-- candidate whose view has no identity (a player) is never in the pool.
+amongCandidates :: Context -> (a -> View) -> Filter.Filter Keyword.Type.Keyword -> [a] -> [a]
+amongCandidates context viewOf filter_ candidates
+  | comparesCandidates filter_ =
+      let against pool candidate = matches context {candidateMeasures = Just pool} (viewOf candidate) filter_
+          pooled = filter (against Map.empty) candidates
+       in filter (against (Map.fromList [(oid, measuresOf view) | candidate <- pooled, let view = viewOf candidate, Just oid <- [identity view]])) pooled
+  | otherwise = filter (\candidate -> matches context (viewOf candidate) filter_) candidates
+
+-- Does the Filter carry an Operand.OfEachOtherCandidate anywhere, so that
+-- amongCandidates must gather a pool?
+comparesCandidates :: Filter.Filter keyword -> Bool
+comparesCandidates predicate = case predicate of
+  Filter.Measures (Measures.MkMeasures _ _ (Operand.OfEachOtherCandidate _)) -> True
+  _ -> Monoid.getAny (Const.getConst (Children.filterChildren (Children.descending (Const.Const . Monoid.Any . comparesCandidates)) predicate))
 
 -- CR 208.1 / 202.3: the number a Measure names on a view, Nothing where the
 -- object has none (CR 208.3's noncreature, a player).

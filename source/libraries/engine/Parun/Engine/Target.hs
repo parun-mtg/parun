@@ -339,7 +339,7 @@ admittedListGiven reader pools perspective unannounced bindings acquisition sour
       -- projection and one grant walk rather than taking two of each -- and, one
       -- level further out, so that a whole enumeration shares one of each (#716).
       -- Thunks, so a slot that asks neither question pays for neither.
-      keep recipient = case recipient of
+      viewOf recipient = case recipient of
         -- CR 115.1: a player candidate is narrowed too ("target opponent"), by a
         -- Filter that asks about the player rather than about an object -- the
         -- IsPlayer atom (#168). Every object-shaped atom is vacuously False
@@ -350,19 +350,23 @@ admittedListGiven reader pools perspective unannounced bindings acquisition sour
         -- atom CR 120.1 lets a player answer -- was this seat dealt damage this
         -- turn (Needle Drop) -- is read off the board here as it is in the
         -- Scope.OverPlayers fold, rather than going vacuously False.
-        Recipient.ToPlayer pid -> against (Count.playerView gs pid)
-        Recipient.ToCreature oid -> against (Projection.viewOfObjectGiven pcs grants oid gs)
-        Recipient.ToPlaneswalker oid -> against (Projection.viewOfObjectGiven pcs grants oid gs)
-        Recipient.ToBattle oid -> against (Projection.viewOfObjectGiven pcs grants oid gs)
-        Recipient.ToObject oid -> against (Projection.viewOfObjectGiven pcs grants oid gs)
+        Recipient.ToPlayer pid -> Just (Count.playerView gs pid)
+        Recipient.ToCreature oid -> Just (Projection.viewOfObjectGiven pcs grants oid gs)
+        Recipient.ToPlaneswalker oid -> Just (Projection.viewOfObjectGiven pcs grants oid gs)
+        Recipient.ToBattle oid -> Just (Projection.viewOfObjectGiven pcs grants oid gs)
+        Recipient.ToObject oid -> Just (Projection.viewOfObjectGiven pcs grants oid gs)
         -- Unreachable: no pool holds a pile. CR 406.4's pile is substituted into
         -- the OFFER by piledOffer, after this narrowing has run over the cards
         -- it stands for.
-        Recipient.ToPile _ -> False
-      against view = case narrowing of
-        Nothing -> True
-        Just f -> Filter.matches context view f
-   in filter keep (Set.toAscList (basePoolGiven pools context (Binding.targetsOf bindings) pool gs))
+        Recipient.ToPile _ -> Nothing
+      offered = [(recipient, view) | recipient <- Set.toAscList (basePoolGiven pools context (Binding.targetsOf bindings) pool gs), Just view <- [viewOf recipient]]
+   in fmap fst $ case narrowing of
+        Nothing -> offered
+        -- CR 601.2c / 608.2b: an OfEachOtherCandidate operand compares against
+        -- the rest of what the slot admits (Filter.amongCandidates), before
+        -- CR 702's targeting restrictions cut it -- Topple's "greatest power
+        -- among creatures on the battlefield" counts a hexproof creature.
+        Just f -> Filter.amongCandidates context snd f offered
 
 -- THE Filter.Context a target SLOT's own filter is matched against. Extracted
 -- from admittedGiven so that CR 608.2h's departed host (lastKnownAdmits below)
