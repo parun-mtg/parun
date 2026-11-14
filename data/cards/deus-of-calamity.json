@@ -1,0 +1,161 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Red"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "Green"
+            }
+          }
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Red"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "Green"
+            }
+          }
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Red"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "Green"
+            }
+          }
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Red"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "Green"
+            }
+          }
+        },
+        {
+          "type": "Hybrid",
+          "value": {
+            "left": {
+              "type": "Colored",
+              "value": "Red"
+            },
+            "right": {
+              "type": "Colored",
+              "value": "Green"
+            }
+          }
+        }
+      ],
+      "name": "Deus of Calamity",
+      "oracleText": "Trample\nWhenever this creature deals 6 or more damage to an opponent, destroy target land that player controls.",
+      "power": {
+        "type": "Literal",
+        "value": 6
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 6
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "DealsDamage",
+            "value": {
+              "actor": {
+                "type": "Self"
+              },
+              "atLeast": 6,
+              "recipients": [
+                {
+                  "type": "Player",
+                  "value": "Opponent"
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Destroy",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "regenerability": "Regenerable"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Land"
+                        },
+                        {
+                          "type": "HeldByBound",
+                          "value": {
+                            "holder": "Controller",
+                            "slot": "thatPlayer"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Avatar",
+          "Spirit"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

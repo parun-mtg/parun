@@ -18,13 +18,20 @@ spec s = Spec.describe s "Parun.Codec.DamageTrigger" $ do
     Common.assertCodec
       s
       DamageTrigger.codec
-      (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing Set.empty)
+      (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing Set.empty 0)
       " {\"actor\":{\"type\":\"Self\"}} "
   -- Garruk's Harbinger's "combat damage to a player or planeswalker".
   Spec.it s "a kind and recipients write their keys" $
     Common.assertCodec
       s
       DamageTrigger.codec
-      (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.fromList [DamageRecipient.Player PlayerRelation.AnyPlayer, DamageRecipient.Permanent CardType.Planeswalker]))
+      (DamageTrigger.MkDamageTrigger ActingPermanent.Self (Just DamageKind.Combat) (Set.fromList [DamageRecipient.Player PlayerRelation.AnyPlayer, DamageRecipient.Permanent CardType.Planeswalker]) 0)
       " {\"actor\":{\"type\":\"Self\"},\"kind\":\"Combat\",\"recipients\":[{\"type\":\"Player\",\"value\":\"AnyPlayer\"},{\"type\":\"Permanent\",\"value\":\"Planeswalker\"}]} "
+  -- Spinneret and Spiderling's "deals 4 or more damage".
+  Spec.it s "a floor writes its key" $
+    Common.assertCodec
+      s
+      DamageTrigger.codec
+      (DamageTrigger.MkDamageTrigger ActingPermanent.Self Nothing Set.empty 4)
+      " {\"actor\":{\"type\":\"Self\"},\"atLeast\":4} "
   Spec.it s "has a schema" $ Common.assertHasSchema s DamageTrigger.codec

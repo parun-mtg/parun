@@ -3796,7 +3796,7 @@ interveningHolds live pending =
       bindings = case PendingTrigger.source pending of
         TriggerSource.OfObject bearer -> Binding.setTriggerSource bearer (PendingTrigger.bindings pending)
         TriggerSource.Sourceless -> PendingTrigger.bindings pending
-   in case TriggeredAbility.intervening (PendingTrigger.ability pending) of
+   in dealtEnough pending && case TriggeredAbility.intervening (PendingTrigger.ability pending) of
         Nothing -> True
         Just cond ->
           Condition.holds
@@ -3809,6 +3809,26 @@ interveningHolds live pending =
             gs
             oid
             cond
+
+-- CR 603.2 / 120.1: a damage trigger's floor ("deals 4 or more damage") is
+-- part of its trigger event, read off the event's `thatMuch`, which
+-- batchBindings has summed over a CR 603.2c batch. Decided beside the CR 603.4
+-- check because the floor can only be read once the batch is joined, and
+-- `interveningHolds` is the one gate every gatherer runs after that; it is no
+-- intervening "if", so Stack's CR 608.2a re-check does not repeat it.
+-- data/scenarios/spinneret-and-spiderling-exiles-for-4-damage-not-3-and-grows-attacking-with-two-spiders.json
+-- proves it.
+dealtEnough :: PendingTrigger -> Bool
+dealtEnough pending = Maybe.fromMaybe 0 (Binding.amountOf Binding.eventAmount (PendingTrigger.bindings pending)) >= damageFloor (TriggeredAbility.condition (PendingTrigger.ability pending))
+
+-- The least damage a condition's trigger event deals: an AnyOf's least
+-- disjunct's, since the floor binds only the disjunct printing it.
+damageFloor :: TriggerCondition -> Natural
+damageFloor cond = case cond of
+  TriggerCondition.DealsDamage watched -> DamageTrigger.atLeast watched
+  TriggerCondition.CausedBy narrowed -> damageFloor (CausedBy.condition narrowed)
+  TriggerCondition.AnyOf conditions -> maybe 0 minimum (NonEmpty.nonEmpty (fmap damageFloor conditions))
+  _ -> 0
 
 -- CR 603.4's "when the trigger event occurs": the board `fileBoards` filed
 -- under the event's group (`gameAfter`). An ability no event fired (a reflexive

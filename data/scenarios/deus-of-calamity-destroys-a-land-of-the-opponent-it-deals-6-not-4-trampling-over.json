@@ -1,0 +1,26 @@
+{
+  "description": "CR 603.2, 120.1: Deus of Calamity trampling 4 over a blocker into bob triggers nothing though the step dealt 6; 6 to bob destroys a land bob controls, not carol's",
+  "note": "The blocked attack deals 6 in one CR 510.2 step, 4 of it to bob: the floor reads the damage to the opponent, as Deus's 'in increments of 6 or more' ruling asks.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Deus of Calamity", "label": "deus", "ready": true}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Mountain", "label": "bobland"}, {"card": "Swamp", "label": "bobswamp"}]},
+    {"name": "carol", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Forest", "label": "carolland"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$deus"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseAttackTarget", "with": ["Player", "bob"]}}},
+    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$bears": ["$deus"]}}},
+    {"turn": 1, "step": "CombatDamage", "player": "alice", "do": {"Answer": {"prompt": "AssignCombatDamage", "with": [[["Creature", "$bears"], 2], [["Player", "bob"], 4]]}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 16}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Mountain", "count": 1}}},
+    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$deus"]}},
+    {"turn": 4, "step": "DeclareAttackers", "player": "alice", "do": {"Answer": {"prompt": "ChooseAttackTarget", "with": ["Player", "bob"]}}},
+    {"turn": 4, "step": "CombatDamage", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$carolland"]}}},
+    {"turn": 4, "step": "CombatDamage", "player": "alice", "do": {"ChooseTargets": {"target": ["$bobland"]}}},
+    {"turn": 4, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 10}}},
+    {"turn": 4, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Mountain", "count": 1}}},
+    {"turn": 4, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Swamp", "count": 1}}},
+    {"turn": 4, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Forest", "count": 1}}}
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "description": "CR 603.2, 120.1: Spinneret and Spiderling's 3 combat damage triggers nothing; attacking beside a second Spider puts a +1/+1 counter on it, and its 4 then exiles alice's top card, which she plays",
+  "note": "Turn 1 attacks with Spinneret alone, so its counter count stays 2 and it deals 3. Turn 3 adds Arachnoid; the counter makes it 4/5 before damage. The Forest is second in the library so turn 3's draw takes the Island above it.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "library": [{"card": "Island"}, {"card": "Forest"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Spinneret and Spiderling", "label": "sp", "ready": true, "counters": [{"key": {"type": "PlusOnePlusOne"}, "value": 2}]}, {"card": "Arachnoid", "label": "arach", "ready": true}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$sp"]}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Exile", "is": []}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Counters": {"object": "$sp", "kind": {"type": "PlusOnePlusOne"}, "count": 2}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$sp", "$arach"]}},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "check": {"Counters": {"object": "$sp", "kind": {"type": "PlusOnePlusOne"}, "count": 3}}},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 11}}},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Exile", "is": ["Forest"]}}},
+    {"turn": 3, "step": "PostcombatMain", "player": "alice", "do": {"PlayLand": "Forest"}},
+    {"turn": 3, "step": "PostcombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Forest", "count": 1}}}
+  ]
+}

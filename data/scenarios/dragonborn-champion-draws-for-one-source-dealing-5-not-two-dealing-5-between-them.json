@@ -1,0 +1,16 @@
+{
+  "description": "CR 603.2, 120.1: Hill Giant's 3 and Grizzly Bears' 2 to bob draw nothing; Dragonborn Champion's own 5 draws alice a card",
+  "note": "The floor is each source's damage to one player, so two sources summing to 5 in one combat damage step do not reach it.",
+  "board": {"active": "alice", "step": "PrecombatMain", "seats": [
+    {"name": "alice", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}], "battlefield": [{"card": "Dragonborn Champion", "label": "champ", "ready": true}, {"card": "Hill Giant", "label": "giant", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}]},
+    {"name": "bob", "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}, {"card": "Island"}]}
+  ]},
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$giant", "$bears"]}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 15}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 0}}},
+    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$champ"]}},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 10}}},
+    {"turn": 3, "step": "EndOfCombat", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Island", "count": 2}}}
+  ]
+}
