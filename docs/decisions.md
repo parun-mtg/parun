@@ -884,6 +884,30 @@ Entries are ordered by the first rule each cites.
   board".
 - **Issue**: none.
 
+## Whose mana value Runadi's X reads
+
+- **Question**: Runadi, Behemoth Caller's cast trigger: "that creature enters
+  with X additional +1/+1 counters on it, where X is its mana value minus 4".
+  Is "its mana value" the spell's as the trigger resolves, or the permanent's
+  as it enters? They differ for an {X} spell (CR 202.3e) and for a creature
+  entering as a copy (CR 707.5).
+- **Rules**: CR 608.2h, 614.12, 202.3e, 707.5, 107.1b; CR of 2026-11-06. The
+  card has no rulings.
+- **Decision**: The spell's, fixed as the trigger resolves. The trigger is
+  about the spell cast, and CR 608.2h settles information an effect needs from
+  an object once, as the effect is applied: the resolution installing the
+  replacement. Hungering Hydra cast with X = 4 enters with one additional
+  counter; Vesuvan Doppelganger gets one whatever it copies.
+- **Rejected**: The permanent's, read as the replacement applies. CR 614.12
+  says which replacements apply to an entering permanent and how, judged from
+  the permanent; it does not move when a number a resolved effect already
+  needed is read. It would count an {X} creature's X as 0 (CR 202.3e), most
+  often flooring Runadi's X to 0 (CR 107.1b).
+- **Site**: `Parun.Engine.Resolve.Arms.Objects`'s `bakeAmount`, which settles
+  every `EntryR` counter count naming a slot as the row is installed, proved by
+  the scenario `runadi-behemoth-caller-reads-an-x-spells-mana-value-as-cast`.
+- **Issue**: #5703.
+
 ## How a mana of any type rider combines with an only-clause
 
 - **Question**: Celestial Dawn lets other mana be spent "only as though it were

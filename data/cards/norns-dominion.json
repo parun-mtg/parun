@@ -34,8 +34,10 @@
                                   "value": {
                                     "type": "HasCounters",
                                     "value": {
-                                      "type": "Named",
-                                      "value": "fate"
+                                      "kind": {
+                                        "type": "Named",
+                                        "value": "fate"
+                                      }
                                     }
                                   }
                                 }

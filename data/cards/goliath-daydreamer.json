@@ -162,8 +162,10 @@
                                 {
                                   "type": "HasCounters",
                                   "value": {
-                                    "type": "Named",
-                                    "value": "dream"
+                                    "kind": {
+                                      "type": "Named",
+                                      "value": "dream"
+                                    }
                                   }
                                 }
                               ]

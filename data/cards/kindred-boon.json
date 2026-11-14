@@ -135,8 +135,10 @@
                 {
                   "type": "HasCounters",
                   "value": {
-                    "type": "Named",
-                    "value": "divinity"
+                    "kind": {
+                      "type": "Named",
+                      "value": "divinity"
+                    }
                   }
                 }
               ]

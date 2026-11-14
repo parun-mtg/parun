@@ -2824,7 +2824,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         anywhere = ObjectRef.EachMatching (Filter.Type.HasCardType CardType.Creature)
         -- NESTED: the atom reached by descending an ordinary Filter, which the
         -- walk stops at.
-        nested = filterSlotsReadSingly (Filter.Type.HasCounters kind)
+        nested = filterSlotsReadSingly (Filter.Type.HasCounters 1 kind)
         -- TOP-LEVEL: the same keyword, the same atom, handed back by
         -- counterKindFilters as its own (KeywordFramed, f) pair -- the route that
         -- used to disagree.

@@ -64,8 +64,10 @@
                                         {
                                           "type": "HasCounters",
                                           "value": {
-                                            "type": "Named",
-                                            "value": "mire"
+                                            "kind": {
+                                              "type": "Named",
+                                              "value": "mire"
+                                            }
                                           }
                                         }
                                       ]
@@ -215,8 +217,10 @@
                                 {
                                   "type": "HasCounters",
                                   "value": {
-                                    "type": "Named",
-                                    "value": "mire"
+                                    "kind": {
+                                      "type": "Named",
+                                      "value": "mire"
+                                    }
                                   }
                                 }
                               ]

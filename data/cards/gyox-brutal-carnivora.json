@@ -127,8 +127,10 @@
                     {
                       "type": "HasCounters",
                       "value": {
-                        "type": "Named",
-                        "value": "oil"
+                        "kind": {
+                          "type": "Named",
+                          "value": "oil"
+                        }
                       }
                     }
                   ]

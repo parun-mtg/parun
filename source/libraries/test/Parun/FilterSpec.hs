@@ -2705,17 +2705,17 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
   -- a counter belongs to no player.
   Spec.describe s "HasCounters" $ do
     Spec.it s "matches a permanent bearing that kind" $ do
-      Spec.assertBool s (Filter.matches self counteredCreature (Filter.Type.HasCounters CounterKind.PlusOnePlusOne)) "+1/+1"
+      Spec.assertBool s (Filter.matches self counteredCreature (Filter.Type.HasCounters 1 CounterKind.PlusOnePlusOne)) "+1/+1"
 
     -- The kind is not decoration: the same view bears lore counters and no -1/-1.
     Spec.it s "does not match on a kind it does not bear" $ do
-      Spec.assertBool s (not (Filter.matches self counteredCreature (Filter.Type.HasCounters CounterKind.MinusOneMinusOne))) "-1/-1"
+      Spec.assertBool s (not (Filter.matches self counteredCreature (Filter.Type.HasCounters 1 CounterKind.MinusOneMinusOne))) "-1/-1"
 
     Spec.it s "does not match a permanent with no counters at all" $ do
-      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.HasCounters CounterKind.PlusOnePlusOne))) "none"
+      Spec.assertBool s (not (Filter.matches self blackCreature (Filter.Type.HasCounters 1 CounterKind.PlusOnePlusOne))) "none"
 
     Spec.it s "a player candidate is vacuously false" $ do
-      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.HasCounters CounterKind.PlusOnePlusOne))) "player"
+      Spec.assertBool s (not (Filter.matches self aPlayer (Filter.Type.HasCounters 1 CounterKind.PlusOnePlusOne))) "player"
 
   -- CR 122.1 again with no kind to look up. The gameplay-level proof is
   -- Parun.TargetSpec's Razorfin Abolisher group; these cases are the plumbing
@@ -2726,7 +2726,7 @@ spec s = Spec.describe s "Parun.Engine.Filter" $ do
     -- mistake would answer False here.
     Spec.it s "matches a permanent bearing counters of any kind at all" $ do
       Spec.assertBool s (Filter.matches self counteredCreature Filter.Type.HasCountersOfAnyKind) "any kind"
-      Spec.assertBool s (not (Filter.matches self counteredCreature (Filter.Type.HasCounters CounterKind.MinusOneMinusOne))) "not that kind"
+      Spec.assertBool s (not (Filter.matches self counteredCreature (Filter.Type.HasCounters 1 CounterKind.MinusOneMinusOne))) "not that kind"
 
     Spec.it s "does not match a permanent with no counters at all" $ do
       Spec.assertBool s (not (Filter.matches self blackCreature Filter.Type.HasCountersOfAnyKind)) "none"

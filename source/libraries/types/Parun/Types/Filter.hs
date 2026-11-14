@@ -631,11 +631,11 @@ data Filter keyword
     -- designation of the object an evaluation is aimed at, and not what CR
     -- 701.60c hangs off a designation. Uncharacteristic for IsRingBearer's reason.
     HasDesignation Designation.Designation
-  | -- | CR 122.1: does the CANDIDATE have one or more counters of this kind on
-    -- it? "One or more" and not a count, which is what every printing asks.
-    -- Uncharacteristic: CR 109.3's list has no counters in it, and the P/T a
-    -- +1/+1 counter grants is CR 613.4c's, applied over the top of this.
-    HasCounters (CounterKind.CounterKind keyword)
+  | -- | CR 122.1: does the CANDIDATE have at least that many counters of this
+    -- kind on it (Runadi, Behemoth Caller's "three or more")? Uncharacteristic:
+    -- CR 109.3's list has no counters in it, and the P/T a +1/+1 counter grants
+    -- is CR 613.4c's, applied over the top of this.
+    HasCounters Natural.Natural (CounterKind.CounterKind keyword)
   | -- | CR 122.1 again, kind-agnostic: does the CANDIDATE have one or more
     -- counters on it of ANY kind? Not spellable as an Or over the kinds, CR
     -- 122.1b's keyword counters making CounterKind unenumerable, and a separate

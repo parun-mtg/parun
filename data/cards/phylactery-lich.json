@@ -110,8 +110,10 @@
                         {
                           "type": "HasCounters",
                           "value": {
-                            "type": "Named",
-                            "value": "phylactery"
+                            "kind": {
+                              "type": "Named",
+                              "value": "phylactery"
+                            }
                           }
                         },
                         {

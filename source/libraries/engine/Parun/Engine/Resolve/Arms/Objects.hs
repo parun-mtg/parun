@@ -102,6 +102,8 @@ import qualified Parun.Types.DrawRewrite as DrawRewrite
 import Parun.Types.Effect (Effect)
 import qualified Parun.Types.EntryBlock as EntryBlock
 import qualified Parun.Types.EntryHost as EntryHost
+import qualified Parun.Types.EntryR as EntryR
+import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.EntryRiders as EntryRiders
 import qualified Parun.Types.ExileHaunting as ExileHaunting
 import qualified Parun.Types.Exploited as Exploited
@@ -171,6 +173,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Undesignate as Undesignate
 import qualified Parun.Types.Uses as Uses
+import qualified Parun.Types.WithCounters as WithCounters
 import qualified Parun.Types.Zone as Zone
 
 create :: Game () -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Map.Map SlotName (Set Recipient) -> Create.Create Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Game ()
@@ -1076,7 +1079,9 @@ replace resolving source controller legal (Replace.MkReplace duration uses origi
 -- CR 608.2h: Power Leak's ceiling, "where X is the amount of mana that player
 -- paid this way". CR 107.3a: Aladdin's Lamp's look count. The scenarios
 -- power-leak-still-prevents-when-the-aura-has-left and
--- aladdins-lamp-keeps-its-x-after-it-has-left prove them.
+-- aladdins-lamp-keeps-its-x-after-it-has-left prove them. An entry row's
+-- counter count is settled likewise, reading the spell rather than the
+-- permanent: docs/decisions.md, "Whose mana value Runadi's X reads".
 bakeAmount :: (Quantity.Type.Quantity -> Maybe Integer) -> ReplacementEffect.ReplacementEffect card ability effect -> ReplacementEffect.ReplacementEffect card ability effect
 bakeAmount evaluate re = case re of
   ReplacementEffect.DamageR damage@DamageR.MkDamageR {DamageR.rewrite = DamageRewrite.PreventUpTo quantity}
@@ -1085,6 +1090,8 @@ bakeAmount evaluate re = case re of
   ReplacementEffect.DrawR draw@DrawR.MkDrawR {DrawR.rewrite = DrawRewrite.KeepOneOfTopThenDraw quantity}
     | Just literal <- settled quantity ->
         ReplacementEffect.DrawR draw {DrawR.rewrite = DrawRewrite.KeepOneOfTopThenDraw literal}
+  ReplacementEffect.EntryR entry@EntryR.MkEntryR {EntryR.rewrite = EntryRewrite.WithCounters (WithCounters.MkWithCounters counters)} ->
+    ReplacementEffect.EntryR entry {EntryR.rewrite = EntryRewrite.WithCounters (WithCounters.MkWithCounters (fmap (\quantity -> Maybe.fromMaybe quantity (settled quantity)) counters))}
   _ -> re
   where
     settled quantity
