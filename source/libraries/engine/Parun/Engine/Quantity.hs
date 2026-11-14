@@ -1207,7 +1207,7 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
           pure (if elem owner pids && entered then 1 else 0)
         -- CR 601.2a / 400.3 read as a 0/1: was the object this evaluation is aimed at
         -- cast, by a player the payload's `caster` names, out of a copy of the zone its
-        -- `from` names?
+        -- `from` names, if it names one?
         --
         -- Two hops rather than one, because CR 400.7 puts a whole object between the
         -- cast and the entry: the spell the card became is ZoneChange.departed of the
@@ -1241,8 +1241,8 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- (EnteredFrom) is what covers it.
         Quantity.WasCastFrom castFrom -> do
           oid <- mOid
-          let inZone = CastFrom.from castFrom
-          pids <- playersOf (InZone.player inZone)
+          -- An absent zone constrains neither the zone nor its owner (CR 603.4).
+          zoneOwners <- traverse (playersOf . InZone.player) (CastFrom.from castFrom)
           casters <- playersOf (CastFrom.caster castFrom)
           owner <- Filter.owner =<< viewOf oid
           -- CR 400.7d's "as it resolved": the arrival must be the spell's own
@@ -1259,10 +1259,10 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
                 ]
               castFromZone cast =
                 elem (SpellWasCast.spell cast) spells
-                  && SpellWasCast.zone cast == Just (InZone.zone inZone)
+                  && all (\inZone -> SpellWasCast.zone cast == Just (InZone.zone inZone)) (CastFrom.from castFrom)
                   && elem (SpellWasCast.player cast) casters
               wasCast = any (maybe False castFromZone . Game.castOf . LoggedEvent.event) (TurnRegisters.events (GameState.turn gs))
-          pure (if elem owner pids && wasCast then 1 else 0)
+          pure (if all (elem owner) zoneOwners && wasCast then 1 else 0)
         -- CR 509.1g: how many creatures are blocking the object this
         -- evaluation is aimed at, less the skipped count, floored at 0 -- one for rule
         -- 702.23a's "beyond the first", none for Gang of Elk's "each creature

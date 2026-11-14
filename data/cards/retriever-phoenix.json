@@ -58,119 +58,18 @@
             "value": {}
           },
           "intervening": {
-            "type": "Any",
-            "value": [
-              {
-                "type": "Compares",
-                "value": {
-                  "comparison": "AtLeast",
-                  "measured": {
-                    "type": "WasCastFrom",
-                    "value": {
-                      "from": {
-                        "player": {
-                          "type": "Relative",
-                          "value": "AnyPlayer"
-                        },
-                        "zone": "Hand"
-                      }
-                    }
-                  },
-                  "threshold": {
-                    "type": "Literal",
-                    "value": 1
-                  }
-                }
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "WasCastFrom",
+                "value": {}
               },
-              {
-                "type": "Compares",
-                "value": {
-                  "comparison": "AtLeast",
-                  "measured": {
-                    "type": "WasCastFrom",
-                    "value": {
-                      "from": {
-                        "player": {
-                          "type": "Relative",
-                          "value": "AnyPlayer"
-                        },
-                        "zone": "Library"
-                      }
-                    }
-                  },
-                  "threshold": {
-                    "type": "Literal",
-                    "value": 1
-                  }
-                }
-              },
-              {
-                "type": "Compares",
-                "value": {
-                  "comparison": "AtLeast",
-                  "measured": {
-                    "type": "WasCastFrom",
-                    "value": {
-                      "from": {
-                        "player": {
-                          "type": "Relative",
-                          "value": "AnyPlayer"
-                        },
-                        "zone": "Graveyard"
-                      }
-                    }
-                  },
-                  "threshold": {
-                    "type": "Literal",
-                    "value": 1
-                  }
-                }
-              },
-              {
-                "type": "Compares",
-                "value": {
-                  "comparison": "AtLeast",
-                  "measured": {
-                    "type": "WasCastFrom",
-                    "value": {
-                      "from": {
-                        "player": {
-                          "type": "Relative",
-                          "value": "AnyPlayer"
-                        },
-                        "zone": "Exile"
-                      }
-                    }
-                  },
-                  "threshold": {
-                    "type": "Literal",
-                    "value": 1
-                  }
-                }
-              },
-              {
-                "type": "Compares",
-                "value": {
-                  "comparison": "AtLeast",
-                  "measured": {
-                    "type": "WasCastFrom",
-                    "value": {
-                      "from": {
-                        "player": {
-                          "type": "Relative",
-                          "value": "AnyPlayer"
-                        },
-                        "zone": "Command"
-                      }
-                    }
-                  },
-                  "threshold": {
-                    "type": "Literal",
-                    "value": 1
-                  }
-                }
+              "threshold": {
+                "type": "Literal",
+                "value": 1
               }
-            ]
+            }
           },
           "modal": {
             "modes": [

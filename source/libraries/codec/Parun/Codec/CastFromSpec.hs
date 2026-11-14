@@ -28,7 +28,7 @@ spec s = Spec.describe s "Parun.Codec.CastFrom" $ do
       CastFrom.codec
       ( CastFrom.MkCastFrom
           { CastFrom.caster = PlayerRef.Relative PlayerRelation.You,
-            CastFrom.from = InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You)
+            CastFrom.from = Just $ InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You)
           }
       )
       " {\"from\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"zone\":\"Graveyard\"}} "
@@ -41,7 +41,7 @@ spec s = Spec.describe s "Parun.Codec.CastFrom" $ do
       CastFrom.codec
       ( CastFrom.MkCastFrom
           { CastFrom.caster = PlayerRef.Relative PlayerRelation.You,
-            CastFrom.from = InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.AnyPlayer)
+            CastFrom.from = Just $ InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.AnyPlayer)
           }
       )
       " {\"from\":{\"player\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"},\"zone\":\"Graveyard\"}} "
@@ -54,10 +54,22 @@ spec s = Spec.describe s "Parun.Codec.CastFrom" $ do
       CastFrom.codec
       ( CastFrom.MkCastFrom
           { CastFrom.caster = PlayerRef.Relative PlayerRelation.AnyPlayer,
-            CastFrom.from = InZone.MkInZone Zone.Library (PlayerRef.Relative PlayerRelation.You)
+            CastFrom.from = Just $ InZone.MkInZone Zone.Library (PlayerRef.Relative PlayerRelation.You)
           }
       )
       " {\"caster\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"},\"from\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"zone\":\"Library\"}} "
+  -- Null Summoner's "if you cast it" (CR 603.4): cast from anywhere, outside the
+  -- game included (CR 400.11), so the zone is elided rather than enumerated.
+  Spec.it s "elides an absent zone" $
+    Common.assertCodec
+      s
+      CastFrom.codec
+      ( CastFrom.MkCastFrom
+          { CastFrom.caster = PlayerRef.Relative PlayerRelation.You,
+            CastFrom.from = Nothing
+          }
+      )
+      " {} "
   -- CR 400.1's invariant is inherited rather than restated: `from` is
   -- Parun.Codec.InZone's codec, so the pairing it rejects is rejected here. The
   -- accepted payload above and this one differ in the ZONE alone.

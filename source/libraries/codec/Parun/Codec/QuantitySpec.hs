@@ -905,7 +905,7 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.WasCastFrom (CastFrom.MkCastFrom (PlayerRef.Relative PlayerRelation.You) (InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You))))
+      (Quantity.WasCastFrom (CastFrom.MkCastFrom (PlayerRef.Relative PlayerRelation.You) (Just $ InZone.MkInZone Zone.Graveyard (PlayerRef.Relative PlayerRelation.You))))
       " {\"type\":\"WasCastFrom\",\"value\":{\"from\":{\"player\":{\"type\":\"Relative\",\"value\":\"You\"},\"zone\":\"Graveyard\"}}} "
   -- CR 509.1g with only the skip on the wire: the object is the one the
   -- quantity is evaluated against.
