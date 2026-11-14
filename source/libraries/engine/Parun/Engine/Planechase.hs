@@ -29,6 +29,7 @@ import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Mint as Mint
+import qualified Parun.Engine.MoveDuration as MoveDuration
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
@@ -200,12 +201,14 @@ isPlaneswalkingAbility oid gs = case fmap Object.source (Game.lookupObject oid g
 -- It records the GameEvent.TurnedUpOffDeck that CR 312.5's "When you
 -- encounter" and CR 701.31d's "When you planeswalk to" and "away from" trigger
 -- on, naming the cards `away` held face up, and ends every effect lasting
--- "until a player planeswalks". CR 103.7's starting plane is turned up by
+-- "until a player planeswalks", marking every CR 610.3 and 610.4 watch on it
+-- (Parun.Engine.MoveDuration.markPlaneswalked). CR 103.7's starting plane is turned up by
 -- turnUpTop alone, CR 901.5 letting nothing trigger.
 encounterTop :: PlayerId -> Set.Set ObjectId -> Game ()
 encounterTop pid away = do
   turned <- turnUpTop pid
   Monad.forM_ turned $ \oid -> do
+    State.modify' MoveDuration.markPlaneswalked
     State.modify' (Event.recordEvent (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Planar pid oid away)))
     State.modify' (Expiry.sweep Expiry.Planeswalked)
 
@@ -219,6 +222,7 @@ encounterTop pid away = do
 encounterAll :: PlayerId -> [ObjectId] -> Set.Set ObjectId -> Game ()
 encounterAll pid cards away = do
   turned <- Monad.filterM (turnUp pid) cards
+  Monad.unless (null turned) (State.modify' MoveDuration.markPlaneswalked)
   Monad.forM_ (zip turned (away : repeat Set.empty)) $ \(oid, from) ->
     State.modify' (Event.recordEvent (GameEvent.TurnedUpOffDeck (TurnedUpOffDeck.MkTurnedUpOffDeck SideDeck.Planar pid oid from)))
   Monad.unless (null turned) (State.modify' (Expiry.sweep Expiry.Planeswalked))

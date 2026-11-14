@@ -248,6 +248,7 @@ codec =
       -- there is nothing on the wire: the turn is the log's extent rather than a
       -- window a card could state, as for CardsDiscardedThisTurn above.
       Arm.nullary "EnteredThisTurn" Quantity.EnteredThisTurn,
+      Arm.payload "PlaneswalkedTo" PlayerRef.codec Quantity.PlaneswalkedTo (\x -> case x of Quantity.PlaneswalkedTo y -> Just y; _ -> Nothing),
       -- CR 400.7's origin zone with the InZone a Count's scope carries -- so
       -- Parun.Codec.InZone.undividedShared rejects a shared zone scoped to one
       -- player here exactly as it does there.
@@ -381,6 +382,7 @@ tagOf x = case x of
   Quantity.CompletedDungeon {} -> "CompletedDungeon"
   Quantity.DraftNotes {} -> "DraftNotes"
   Quantity.EnteredThisTurn {} -> "EnteredThisTurn"
+  Quantity.PlaneswalkedTo {} -> "PlaneswalkedTo"
   Quantity.EnteredFrom {} -> "EnteredFrom"
   Quantity.WasCastFrom {} -> "WasCastFrom"
   Quantity.BlockersBeyond {} -> "BlockersBeyond"

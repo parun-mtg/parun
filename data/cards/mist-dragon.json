@@ -104,8 +104,10 @@
                       {
                         "type": "PhaseOut",
                         "value": {
-                          "type": "InSlot",
-                          "value": "self"
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
                         }
                       }
                     ]

@@ -19,6 +19,8 @@
 -- cost payment, the trigger gatherer -- gets rule 702.26b's answer without
 -- knowing phasing exists. Only the rules on the far side of the "except" name
 -- the new field (Parun.Types.GameState.phasedOut), and they are: this module,
+-- CR 901.11's planeswalk marking a CR 610.4 row due
+-- (Parun.Engine.MoveDuration.markPlaneswalked),
 -- CR 702.26k's leaves-the-game clause in
 -- Parun.Engine.Game.removeFromZones, CR 702.26e's resolution-time freeze in
 -- Parun.Engine.Resolve.Common.frozenAffected, CR 702.26n's reschedule below,
@@ -53,12 +55,14 @@
 --
 -- Either of two things starts a phase-out, and `phaseOutSet` is both of their
 -- one performer: CR 502.1's turn-based action, and Effect.PhaseOut -- Reality
--- Ripple's "target artifact, creature, or land phases out" -- resolved by
--- Parun.Engine.Resolve. It goes through no zone-change funnel, which is CR
--- 702.26d; what it records is one GameEvent.PermanentActed per permanent that
--- phased (PermanentAction.PhaseOut and PhaseIn), for CR 603.2's "whenever this
--- phases out", with the board before the phasing filed for CR 603.10b's
--- look-back (Parun.Engine.Event.fileBoardBefore).
+-- Ripple's "target artifact, creature, or land phases out", or Unyaro's "phase
+-- out until a player planeswalks" (CR 610.4, a PhasedOut.Until row that
+-- `phaseInDue` returns) -- resolved by Parun.Engine.Resolve. It goes through no
+-- zone-change funnel, which is CR 702.26d; what it records is one
+-- GameEvent.PermanentActed per permanent that phased (PermanentAction.PhaseOut
+-- and PhaseIn), for CR 603.2's "whenever this phases out", with the board before
+-- the phasing filed for CR 603.10b's look-back
+-- (Parun.Engine.Event.fileBoardBefore).
 --
 -- CR 702.26n's second sentence is the third thing this module maintains, and the
 -- one schedule that is not read off the untap step's own player: a permanent
@@ -98,6 +102,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.MoveDuration as MoveDuration
 import qualified Parun.Engine.Prepare as Prepare
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
@@ -114,6 +119,7 @@ import qualified Parun.Types.PhasedOut as PhasedOut
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prohibition as Prohibition
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Zone as Zone
 
@@ -155,7 +161,7 @@ phasingEvent pid gs =
       -- Guarded so a step where nothing phases opens no event group.
       phased
         | null returning && null leaving = gs
-        | otherwise = Event.simultaneouslyPure (\g -> recordActs PermanentAction.PhaseIn returning (foldr (phaseIn pid) (phaseOutSet pid (Set.fromList leaving) g) returning)) gs
+        | otherwise = Event.simultaneouslyPure (\g -> recordActs PermanentAction.PhaseIn returning (foldr phaseIn (phaseOutSet pid Nothing (Set.fromList leaving) g) returning)) gs
    in foldr Prepare.mintOnPhasedIn phased returning
 
 -- | CR 702.26b: `hosts` phase out, and -- CR 702.26g -- so does everything
@@ -178,8 +184,12 @@ phasingEvent pid gs =
 -- Records a PermanentAction.PhaseOut for everything in `leaving`, indirect
 -- riders included (CR 702.26g phases them out too), as one event group, and
 -- files the board before it (CR 603.10b).
-phaseOutSet :: PlayerId -> Set.Set ObjectId -> GameState -> GameState
-phaseOutSet fallback hosts gs =
+--
+-- `ending` is CR 610.4's "until": Nothing puts the direct rows on CR 702.26a's
+-- untap-step schedule, Just an ending on PhasedOut.Until's. The indirect rows
+-- are CR 702.26g's either way, riding back with their host.
+phaseOutSet :: PlayerId -> Maybe ReturnEnding.ReturnEnding -> Set.Set ObjectId -> GameState -> GameState
+phaseOutSet fallback ending hosts gs =
   let leaving = draggedAlong hosts gs
       -- CR 702.26h: an object that would phase out both ways just phases out
       -- indirectly, which is exactly "its host is leaving too" -- so this is
@@ -197,7 +207,7 @@ phaseOutSet fallback hosts gs =
         -- an opponent's creature phases it back in at THAT player's untap step.
         -- For the turn-based action the two coincide, phasingOut having filtered
         -- on control.
-        | otherwise = PhasedOut.Directly (heldBy fallback oid gs)
+        | otherwise = maybe PhasedOut.Directly (\e under -> PhasedOut.Until under (Just e)) ending (heldBy fallback oid gs)
       gone = foldr (\oid -> phaseOut (status oid) oid) gs (Set.toAscList leaving)
    in if Set.null leaving
         then gs
@@ -315,12 +325,56 @@ isIndirect status = case status of
   PhasedOut.Indirectly _ -> True
   -- CR 702.26n reschedules a DIRECT row and changes nothing else about it.
   PhasedOut.Orphaned _ -> False
+  PhasedOut.Until _ _ -> False
 
+-- CR 610.4a: an Until row is off the untap step's schedule, so it is never
+-- orphaned either -- CR 702.26n reschedules rule 702.26a's.
 isOrphaned :: PhasedOut.PhasedOut -> Bool
 isOrphaned status = case status of
   PhasedOut.Directly _ -> False
   PhasedOut.Indirectly _ -> False
   PhasedOut.Orphaned _ -> True
+  PhasedOut.Until _ _ -> False
+
+-- | CR 610.4: the second one-shot effect, for every Until row whose stated
+-- event has happened -- each permanent phases in, and CR 702.26g's indirect
+-- riders with it. Run in the settle loop beside
+-- Parun.Engine.MoveDuration.returnDue, rule 610.3's twin, and for that
+-- function's reasons: no player can observe the board between the event and
+-- the next settle, and the phase-in is not a triggered ability.
+--
+-- CR 610.4d: the phase-ins created after one event are one event, so they are
+-- batched by the event group their ending happened in
+-- (Parun.Engine.MoveDuration.dueIn), earlier groups first.
+--
+-- A permanent a stored prohibition holds (CR 101.2) does not phase in, and its
+-- row's ending is spent, since rule 610.4 creates the second one-shot effect
+-- once: it stays phased out until some other effect phases it in (CR 610.4a).
+-- What rides on it stays with it.
+phaseInDue :: GameState -> (Bool, GameState)
+phaseInDue gs =
+  let rows = GameState.phasedOut gs
+      batches =
+        Map.fromListWith
+          (flip (<>))
+          [ (maybe (Right ()) Left group, [oid])
+          | (oid, PhasedOut.Until _ (Just ending)) <- Map.toList rows,
+            Just group <- [MoveDuration.dueIn ending gs]
+          ]
+      indirect = Map.keysSet (Map.filter isIndirect rows)
+      spent row = case row of
+        PhasedOut.Until under _ -> PhasedOut.Until under Nothing
+        _ -> row
+      spend g oid = g {GameState.phasedOut = Map.adjust spent oid (GameState.phasedOut g)}
+      batch g due =
+        let held = RestrictedCreatures.prohibited Prohibition.PhaseIn due g
+            returning = Set.toAscList (closeOver indirect (Set.difference (Set.fromList due) held) g)
+            heldSpent = List.foldl' spend g (Set.toList held)
+            phased
+              | null returning = heldSpent
+              | otherwise = Event.simultaneouslyPure (\g' -> recordActs PermanentAction.PhaseIn returning (foldr phaseIn g' returning)) heldSpent
+         in foldr Prepare.mintOnPhasedIn phased returning
+   in if Map.null batches then (False, gs) else (True, List.foldl' batch gs (Map.elems batches))
 
 -- | CR 702.26n's second sentence, at the moment CR 800.4k decides `pid`'s turn
 -- does not begin: every row on rule 702.26a's schedule for a player who has left
@@ -364,13 +418,6 @@ phaseOut status oid gs =
 -- CR 702.26c: status becomes "phased in", and "the game once again treats it as
 -- though it exists".
 --
--- The player is redundant on this side -- the row is deleted whole, and which
--- player it named decided nothing here -- and is taken anyway so the pair reads
--- as one operation. It is not the returning permanent's controller either:
--- CR 702.26g brings an indirectly phased-out Aura back at the untap step of the
--- player whose creature it is on, which need not be the player who controls the
--- Aura.
---
 -- No combat counterpart to phaseOut's removal: CR 506.4 has no clause putting
 -- anything back, and the untap step is not a combat phase.
 --
@@ -382,8 +429,8 @@ phaseOut status oid gs =
 -- that trigger on a permanent becoming attached or unattached do not trigger on
 -- its phasing in or out. Parun.PhasingSpec holds the fence, beside the one that
 -- keeps GameEvent.BecameAttached out of the same function.
-phaseIn :: PlayerId -> ObjectId -> GameState -> GameState
-phaseIn _ oid gs =
+phaseIn :: ObjectId -> GameState -> GameState
+phaseIn oid gs =
   let -- CR 702.26i names only the DIRECT rows, and the restriction is the rule's
       -- and not a shortcut: an indirect row (CR 702.26g) comes back on its host's
       -- own schedule, in the same event as that host, so asking whether the host
@@ -394,6 +441,9 @@ phaseIn _ oid gs =
         -- An orphaned row IS a direct row (CR 702.26n reschedules it and
         -- nothing more), so rule 702.26i names it and it takes the same test.
         Just (PhasedOut.Orphaned _) -> not (hostRemains oid gs)
+        -- CR 610.4's phase-in is a direct row's too: rule 702.26i names any
+        -- attachment that phased out directly.
+        Just (PhasedOut.Until _ _) -> not (hostRemains oid gs)
         Nothing -> False
       detach o = o {Object.attachedTo = Nothing}
    in gs
@@ -467,4 +517,13 @@ phasedOutStatus oid gs = Map.lookup oid (GameState.phasedOut gs)
 -- | Who controlled a phased-out permanent when it phased out, or Nothing if it
 -- is not phased out. CR 702.26a's comparand, exposed for specs.
 phasedOutUnder :: ObjectId -> GameState -> Maybe PlayerId
-phasedOutUnder oid gs = fmap PhasedOut.under (phasedOutStatus oid gs)
+phasedOutUnder oid gs = fmap storedPlayer (phasedOutStatus oid gs)
+
+-- | The player a row stores: who controlled the permanent when it phased out
+-- (CR 702.26a), whichever schedule the row is on.
+storedPlayer :: PhasedOut.PhasedOut -> PlayerId
+storedPlayer row = case row of
+  PhasedOut.Directly pid -> pid
+  PhasedOut.Indirectly pid -> pid
+  PhasedOut.Orphaned pid -> pid
+  PhasedOut.Until pid _ -> pid

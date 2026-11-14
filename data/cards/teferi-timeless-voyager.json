@@ -140,22 +140,24 @@
                       {
                         "type": "PhaseOut",
                         "value": {
-                          "type": "EachMatching",
-                          "value": {
-                            "type": "And",
-                            "value": [
-                              {
-                                "type": "HasCardType",
-                                "value": "Creature"
-                              },
-                              {
-                                "type": "HeldByBound",
-                                "value": {
-                                  "holder": "Controller",
-                                  "slot": "target"
+                          "ref": {
+                            "type": "EachMatching",
+                            "value": {
+                              "type": "And",
+                              "value": [
+                                {
+                                  "type": "HasCardType",
+                                  "value": "Creature"
+                                },
+                                {
+                                  "type": "HeldByBound",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "slot": "target"
+                                  }
                                 }
-                              }
-                            ]
+                              ]
+                            }
                           }
                         }
                       }

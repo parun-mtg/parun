@@ -101,12 +101,14 @@
                   {
                     "type": "PhaseOut",
                     "value": {
-                      "type": "EachMatching",
-                      "value": {
-                        "type": "HeldBy",
+                      "ref": {
+                        "type": "EachMatching",
                         "value": {
-                          "holder": "Controller",
-                          "relation": "You"
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
                         }
                       }
                     }

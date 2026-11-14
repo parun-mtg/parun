@@ -23,5 +23,18 @@ spec s = Spec.describe s "Parun.Codec.ReturnEnding" $ do
       ReturnEnding.codec
       (ReturnEnding.OpponentCrowned (MonarchWatch.MkMonarchWatch {MonarchWatch.controller = PlayerId.MkPlayerId 2, MonarchWatch.due = Just (EventGroup.MkEventGroup 7)}))
       " {\"type\":\"OpponentCrowned\",\"value\":{\"controller\":2,\"due\":7}} "
+  -- CR 901.11: armed undischarged, then marked with the planeswalk's group.
+  Spec.it s "Planeswalked before a planeswalk" $
+    Common.assertCodec
+      s
+      ReturnEnding.codec
+      (ReturnEnding.Planeswalked Nothing)
+      " {\"type\":\"Planeswalked\",\"value\":null} "
+  Spec.it s "Planeswalked after one" $
+    Common.assertCodec
+      s
+      ReturnEnding.codec
+      (ReturnEnding.Planeswalked (Just (EventGroup.MkEventGroup 4)))
+      " {\"type\":\"Planeswalked\",\"value\":4} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s ReturnEnding.codec

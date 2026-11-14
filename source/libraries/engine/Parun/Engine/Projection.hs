@@ -5147,6 +5147,7 @@ quantityReads q = case q of
   Quantity.Type.CompletedDungeon {} -> Set.empty
   Quantity.Type.DraftNotes {} -> Set.empty
   Quantity.Type.EnteredThisTurn -> Set.empty
+  Quantity.Type.PlaneswalkedTo _ -> Set.empty
   Quantity.Type.EnteredFrom _ -> Set.empty
   Quantity.Type.WasCastFrom _ -> Set.empty
   Quantity.Type.BlockersBeyond _ -> Set.empty

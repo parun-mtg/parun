@@ -366,6 +366,9 @@ data Quantity
   | -- | CR 400.7 / 608.2i: 1 if the object this quantity is evaluated against
     -- entered the battlefield this turn, else 0, read off TurnRegisters.events.
     EnteredThisTurn
+  | -- | CR 901.11b / 608.2i: 1 if that player planeswalked to the object this
+    -- quantity is evaluated against this turn, else 0, read off TurnRegisters.events.
+    PlaneswalkedTo PlayerRef.PlayerRef
   | -- | CR 615.5: how much damage the source's own prevention effect has stopped, read off GameState.damagePreventedBy (Sacred Boon).
     DamagePreventedThisWay
   | -- | CR 400.7 / 400.3: did the object this quantity is evaluated against enter

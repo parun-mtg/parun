@@ -1,11 +1,13 @@
--- CR 610.3: a zone change a card makes "until" a specified event, which is one
--- one-shot effect with a duration rather than a pair of abilities.
+-- CR 610.3 / 610.4: a zone change or phase-out a card makes "until" a specified
+-- event, which is one one-shot effect with a duration rather than a pair of
+-- abilities.
 --
 -- Two halves live here: the EVENT -- has the duration's specified event
--- happened? -- which both the resolver's CR 610.3a/b gate and the sweep below
--- ask, and the SECOND ONE-SHOT EFFECT that rule 610.3 creates immediately after
--- that event, for every watch in GameState.movedUntil, written by
--- Parun.Engine.Resolve's MoveToZone arm whatever the duration.
+-- happened? -- which the resolver's CR 610.3a/b and 610.4b/c gates and both
+-- sweeps ask, and rule 610.3's SECOND ONE-SHOT EFFECT, for every watch in
+-- GameState.movedUntil, written by Parun.Engine.Resolve's MoveToZone arm whatever
+-- the duration. Rule 610.4's is Parun.Engine.Phasing.phaseInDue, over the
+-- PhasedOut.Until rows the PhaseOut arm writes.
 --
 -- THE INVARIANT: the closed half. Nothing here reads which card or which effect
 -- moved the object -- a MoveDuration is a classification the resolver hands over,
@@ -18,6 +20,7 @@ import qualified Data.Foldable as Foldable
 import qualified Data.Map.Strict as Map
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import Parun.Types.EventGroup (EventGroup)
 import Parun.Types.Game (Game)
 import qualified Parun.Types.GameEvent as GameEvent
@@ -31,11 +34,14 @@ import qualified Parun.Types.MoveDuration as MoveDuration.Type
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
+import qualified Parun.Types.PhasedOut as PhasedOut
 import Parun.Types.PlayerId (PlayerId)
 import Parun.Types.ReturnEnding (ReturnEnding)
 import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.ReturnWatch as ReturnWatch
+import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.TurnedUpOffDeck as TurnedUpOffDeck
 import qualified Parun.Types.Zone as Zone
 
 -- | CR 610.3's specified event, as a question about the board: has this object
@@ -86,6 +92,14 @@ hasHappened duration resolving source controller gs = case duration of
             _ -> False
         )
         (TurnRegisters.events (GameState.turn gs))
+  -- CR 901.11's planeswalk is a GameEvent.TurnedUpOffDeck off a planar deck,
+  -- looked for the way a crowning is.
+  MoveDuration.Type.UntilAPlayerPlaneswalks -> case Map.lookup resolving (TurnRegisters.stackedIn (GameState.turn gs)) of
+    Nothing -> False
+    Just since ->
+      any
+        (\logged -> LoggedEvent.group logged >= since && isPlaneswalk (LoggedEvent.event logged))
+        (TurnRegisters.events (GameState.turn gs))
 
 -- | The watch a move with this duration arms, for the move's source and the
 -- effect's controller. CR 726's watch is armed undischarged whoever holds the
@@ -96,6 +110,43 @@ endingOf duration source controller = case duration of
   MoveDuration.Type.UntilSourceLeavesTheBattlefield -> ReturnEnding.SourceLeaves source
   MoveDuration.Type.UntilAnOpponentBecomesTheMonarch ->
     ReturnEnding.OpponentCrowned MonarchWatch.MkMonarchWatch {MonarchWatch.controller = controller, MonarchWatch.due = Nothing}
+  MoveDuration.Type.UntilAPlayerPlaneswalks -> ReturnEnding.Planeswalked Nothing
+
+-- | CR 901.11: a planeswalk is a card moved off a planar deck and turned face up.
+isPlaneswalk :: GameEvent.GameEvent -> Bool
+isPlaneswalk event = case event of
+  GameEvent.TurnedUpOffDeck turned -> TurnedUpOffDeck.deck turned == SideDeck.Planar
+  _ -> False
+
+-- | CR 901.11: a player is about to planeswalk, so every "until a player
+-- planeswalks" watch not yet due is marked with the event group the planeswalk
+-- is recorded in -- CR 610.3's moves and CR 610.4's phase-outs alike. Called
+-- ahead of the GameEvent.TurnedUpOffDeck, as Parun.Engine.Monarch.crown marks a
+-- crowning watch, so a planeswalk between two settles is not missed.
+markPlaneswalked :: GameState -> GameState
+markPlaneswalked gs =
+  let group = Bookkeeping.nextEventGroup (GameState.bookkeeping gs)
+      mark ending = case ending of
+        ReturnEnding.Planeswalked Nothing -> ReturnEnding.Planeswalked (Just group)
+        _ -> ending
+      markRow row = case row of
+        PhasedOut.Until under ending -> PhasedOut.Until under (fmap mark ending)
+        _ -> row
+   in gs
+        { GameState.movedUntil = fmap (\watch -> watch {ReturnWatch.ending = mark (ReturnWatch.ending watch)}) (GameState.movedUntil gs),
+          GameState.phasedOut = fmap markRow (GameState.phasedOut gs)
+        }
+
+-- | Nothing while this ending's event has not happened; Just the group it
+-- happened in otherwise, which is Nothing for a source with no logged
+-- departure. CR 610.3's returns and CR 610.4's phase-ins both read it.
+dueIn :: ReturnEnding -> GameState -> Maybe (Maybe EventGroup)
+dueIn ending gs = case ending of
+  ReturnEnding.SourceLeaves source
+    | hasLeftTheBattlefield source gs -> Just (departedIn source gs)
+    | otherwise -> Nothing
+  ReturnEnding.OpponentCrowned crowned -> fmap Just (MonarchWatch.due crowned)
+  ReturnEnding.Planeswalked due -> fmap Just due
 
 -- | CR 610.3: perform the second one-shot effect for every "until" whose
 -- specified event has happened, returning each object to the zone it came from.
@@ -138,20 +189,13 @@ endingOf duration source controller = case duration of
 returnDue :: Game () -> Game Bool
 returnDue settle = do
   gs <- State.get
-  let -- Nothing while the event has not happened; Just the group it happened
-      -- in otherwise, which is Nothing for a source with no logged departure.
-      dueIn watch = case ReturnWatch.ending watch of
-        ReturnEnding.SourceLeaves source
-          | hasLeftTheBattlefield source gs -> Just (departedIn source gs)
-          | otherwise -> Nothing
-        ReturnEnding.OpponentCrowned crowned -> fmap Just (MonarchWatch.due crowned)
-      -- Left before Right, so a logged event's returns precede the unlogged.
+  let -- Left before Right, so a logged event's returns precede the unlogged.
       batches =
         Map.fromListWith
           (flip (<>))
           [ (maybe (Right ()) Left group, [(oid, ReturnWatch.zone watch)])
           | (oid, watch) <- Map.toList (GameState.movedUntil gs),
-            Just group <- [dueIn watch]
+            Just group <- [dueIn (ReturnWatch.ending watch) gs]
           ]
       discharge g oid = g {GameState.movedUntil = Map.delete oid (GameState.movedUntil g)}
   if Map.null batches
