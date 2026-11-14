@@ -2003,8 +2003,9 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     -- repeated mode's computed bound measures its own occurrence's sibling
     -- slot"); Blighted Nightmare and
     -- Tameshi, Reality Architect, on ACTIVATED abilities, whose X CR 602.2b
-    -- announces; and Sundering Archaic, whose bound is the colors of mana spent to
-    -- cast its source (CR 601.2h).
+    -- announces; Sundering Archaic, whose bound is the colors of mana spent to
+    -- cast its source (CR 601.2h); and Astelli Reclaimer, whose bound is the
+    -- amount of it.
     --
     -- Exactly, against the mana value: Chthonian Nightmare, Tamiyo, Compleated
     -- Sage, Synthetic Counted, Announced, Wide, Paired, Total and Divided
@@ -2042,6 +2043,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Synthetic Measured Refrain", 1),
         ("Blighted Nightmare", 1),
         ("Sundering Archaic", 1),
+        ("Astelli Reclaimer", 1),
         ("Tameshi, Reality Architect", 1),
         ("Chthonian Nightmare", 1),
         ("Tamiyo, Compleated Sage", 1),

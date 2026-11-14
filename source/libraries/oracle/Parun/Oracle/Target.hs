@@ -564,12 +564,19 @@ counted c one many = concatMap andOr $ case c of
   _ -> []
 
 -- | Free: a plural instant-or-sorcery head reads "and/or" (Scholar of the Ages,
--- Ghitu Lavarunner).
+-- Ghitu Lavarunner), as does any plural disjunction of target cards
+-- (Archenemy's Charm's "one or two target creature and/or planeswalker cards").
 andOr :: (Text.Text, Filter.Number) -> [(Text.Text, Filter.Number)]
 andOr (words', Filter.Plural)
   | Text.isInfixOf orCards words' = [(words', Filter.Plural), (Text.replace orCards (Text.pack "instant and/or sorcery cards") words', Filter.Plural)]
+  | (before, after) <- Text.breakOnEnd (Text.pack "target ") words',
+    not (Text.null before),
+    Text.isInfixOf orWord after,
+    Text.isInfixOf (Text.pack " cards") after =
+      [(words', Filter.Plural), (before <> Text.replace orWord (Text.pack " and/or ") after, Filter.Plural)]
   where
     orCards = Text.pack "instant or sorcery cards"
+    orWord = Text.pack " or "
 andOr other = [other]
 
 -- | Which graveyards cards are in, as words after their noun: "from your
