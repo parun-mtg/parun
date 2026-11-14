@@ -22,6 +22,7 @@ import qualified Parun.Play.Key as Key
 import qualified Parun.Play.Record as Record
 import qualified Parun.Play.Render as Render
 import qualified Parun.Registry as Registry
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Format as Format
 import qualified Parun.Types.GameState as GameState
@@ -34,7 +35,6 @@ import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified System.Console.GetOpt as GetOpt
-import qualified System.Directory as Directory
 import qualified System.Exit as Exit
 import qualified System.IO as IO
 import qualified Text.Read as Read

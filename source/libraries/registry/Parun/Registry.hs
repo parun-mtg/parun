@@ -45,13 +45,13 @@ import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Slug as Slug
 import qualified Parun.StickerSheets as StickerSheets
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.PrintingTable as PrintingTable
 import qualified Parun.Types.StickerSheet as StickerSheet
 import qualified Paths_parun as Paths
-import qualified System.Directory as Directory
 
 -- Nothing says only that no card has that name, and the caller supplied the
 -- name (#649). A lookup that reaches a file the registry cannot use answers

@@ -18,11 +18,11 @@ import qualified Parun.Exceptions.MissingRoot as MissingRoot
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
+import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Printing as Printing
-import qualified System.Directory as Directory
 
 -- A registry over a throwaway corpus, handing the case both the root (for the
 -- one case that removes a file from it) and the registry itself.

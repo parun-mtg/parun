@@ -8,6 +8,8 @@
     - GADTs
     - RankNTypes
     - ScopedTypeVariables
+  - name: Trustworthy # a wrapper for a module GHC can't check as Safe
+    within: ["Parun.Trustworthy.**"]
 
 # Hint groups beyond the default set.
 # dollar:     prefer `f . g $ h x` over `f $ g $ h x`

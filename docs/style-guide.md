@@ -8,7 +8,7 @@ in review. Above all, prefer clarity over cleverness.
 wherever HLint can state one, and is configured not to suggest against the
 rest. What follows is what it cannot state, or cannot state in full. Code
 compiles under `-Weverything -Werror` (`pedantic`), less the `-Wno-*` list in
-`parun.cabal`'s `common library` stanza.
+`parun.cabal`'s `common component` stanza.
 
 ## Modules and imports
 
