@@ -11,7 +11,7 @@ import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.CardSelection as CardSelection.Type
 import qualified Parun.Types.DiscardCards as DiscardCards
 
--- | A bare object keyed by the record's field names, Parun.Codec.ExileCardsFromGraveyard's
+-- | A bare object keyed by the record's field names, Parun.Codec.MoveCardsFromGraveyard's
 -- shape. The keyword codec is a PARAMETER; see Parun.Codec.Filter's header.
 codec :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (DiscardCards.DiscardCards keyword)
 codec keywordCodec = Fields.object $ do

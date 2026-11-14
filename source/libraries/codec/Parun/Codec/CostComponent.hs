@@ -9,12 +9,12 @@ import qualified Parun.Codec.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Codec.CountersOnPayer as CountersOnPayer
 import qualified Parun.Codec.CountersOnThis as CountersOnThis
 import qualified Parun.Codec.DiscardCards as DiscardCards
-import qualified Parun.Codec.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Codec.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Codec.ExileMaterials as ExileMaterials
 import qualified Parun.Codec.ExilePermanents as ExilePermanents
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Gift as Gift
+import qualified Parun.Codec.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Codec.ReturnPermanents as ReturnPermanents
 import qualified Parun.Codec.Sacrifice as Sacrifice
 import qualified Parun.Codec.SubtypeFamily as SubtypeFamily
@@ -75,7 +75,7 @@ codec keywordCodec =
       Arm.nullary "FlipCoin" CostComponent.FlipCoin,
       Arm.payload "ExileThisFrom" Zone.codec CostComponent.ExileThisFrom (\x -> case x of CostComponent.ExileThisFrom y -> Just y; _ -> Nothing),
       Arm.nullary "ExileThis" CostComponent.ExileThis,
-      Arm.payload "ExileCardsFromGraveyard" (ExileCardsFromGraveyard.codec keywordCodec) CostComponent.ExileCardsFromGraveyard (\x -> case x of CostComponent.ExileCardsFromGraveyard y -> Just y; _ -> Nothing),
+      Arm.payload "MoveCardsFromGraveyard" (MoveCardsFromGraveyard.codec keywordCodec) CostComponent.MoveCardsFromGraveyard (\x -> case x of CostComponent.MoveCardsFromGraveyard y -> Just y; _ -> Nothing),
       Arm.payload "ExileMaterials" (ExileMaterials.codec keywordCodec) CostComponent.ExileMaterials (\x -> case x of CostComponent.ExileMaterials y -> Just y; _ -> Nothing),
       Arm.payload "CollectEvidence" Common.natural CostComponent.CollectEvidence (\x -> case x of CostComponent.CollectEvidence y -> Just y; _ -> Nothing),
       Arm.nullary "CollectEvidenceOfTargets" CostComponent.CollectEvidenceOfTargets,
@@ -123,7 +123,7 @@ tagOf x = case x of
   CostComponent.FlipCoin {} -> "FlipCoin"
   CostComponent.ExileThisFrom {} -> "ExileThisFrom"
   CostComponent.ExileThis {} -> "ExileThis"
-  CostComponent.ExileCardsFromGraveyard {} -> "ExileCardsFromGraveyard"
+  CostComponent.MoveCardsFromGraveyard {} -> "MoveCardsFromGraveyard"
   CostComponent.ExileMaterials {} -> "ExileMaterials"
   CostComponent.CollectEvidence {} -> "CollectEvidence"
   CostComponent.CollectEvidenceOfTargets {} -> "CollectEvidenceOfTargets"

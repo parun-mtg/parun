@@ -871,8 +871,6 @@ library codec
     Parun.Codec.ExchangeValuesSpec
     Parun.Codec.ExchangeZones
     Parun.Codec.ExchangeZonesSpec
-    Parun.Codec.ExileCardsFromGraveyard
-    Parun.Codec.ExileCardsFromGraveyardSpec
     Parun.Codec.ExileCardsTotalling
     Parun.Codec.ExileCardsTotallingSpec
     Parun.Codec.ExiledPile
@@ -975,6 +973,8 @@ library codec
     Parun.Codec.GrantPlayFromExileSpec
     Parun.Codec.GrantZone
     Parun.Codec.GrantZoneSpec
+    Parun.Codec.GraveyardCostDestination
+    Parun.Codec.GraveyardCostDestinationSpec
     Parun.Codec.GraveyardOrder
     Parun.Codec.GraveyardOrderSpec
     Parun.Codec.Grouping
@@ -1212,6 +1212,8 @@ library codec
     Parun.Codec.MorphVariant
     Parun.Codec.MorphVariantSpec
     Parun.Codec.Move
+    Parun.Codec.MoveCardsFromGraveyard
+    Parun.Codec.MoveCardsFromGraveyardSpec
     Parun.Codec.MoveCounters
     Parun.Codec.MoveCountersSpec
     Parun.Codec.Moved
@@ -3149,7 +3151,6 @@ library types
     Parun.Types.ExchangeSides
     Parun.Types.ExchangeValues
     Parun.Types.ExchangeZones
-    Parun.Types.ExileCardsFromGraveyard
     Parun.Types.ExileCardsTotalling
     Parun.Types.ExiledPile
     Parun.Types.ExileFromGraveyard
@@ -3208,6 +3209,7 @@ library types
     Parun.Types.GrantPlayFromExile
     Parun.Types.GrantZone
     Parun.Types.GraveyardArrangement
+    Parun.Types.GraveyardCostDestination
     Parun.Types.GraveyardOrder
     Parun.Types.Grouping
     Parun.Types.Guess
@@ -3353,6 +3355,7 @@ library types
     Parun.Types.Morph
     Parun.Types.MorphVariant
     Parun.Types.Move
+    Parun.Types.MoveCardsFromGraveyard
     Parun.Types.MoveCounters
     Parun.Types.Moved
     Parun.Types.MovedBetween

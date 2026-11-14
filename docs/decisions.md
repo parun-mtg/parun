@@ -429,6 +429,23 @@ Entries are ordered by the first rule each cites.
   shorter name takes the word at its end".
 - **Issue**: #4901.
 
+## Who orders the cards a cost puts on the bottom of a library
+
+- **Question**: Gurzigost's upkeep cost puts two cards from your graveyard on
+  the bottom of your library. CR 401.4 lets the owner arrange cards that an
+  effect puts in one position, but a cost is no effect. In what order do they
+  go?
+- **Rules**: CR 401.4, 118.12, 118.12a; Library of Leng's ruling of 2004-10-04
+  ("costs aren't effects"); Gurzigost's rulings don't say; CR of 2026-11-06.
+- **Decision**: CR 401.4's order: the owner, who is also the payer, arranges
+  them.
+- **Rejected**: an order the engine fixes, such as the graveyard's or the
+  choosing order: no rule picks one, so it would make the player's choice.
+- **Site**: `Parun.Engine.Cost`'s `payPayable` arm for
+  `MoveCardsFromGraveyard`, proved by the scenario
+  `gurzigost-puts-two-graveyard-cards-on-the-bottom-of-your-library-to-stay`.
+- **Issue**: #5472.
+
 ## Whether a library's held-back top card is its top card
 
 - **Question**: CR 401.5 holds back a library's new top card while a spell is

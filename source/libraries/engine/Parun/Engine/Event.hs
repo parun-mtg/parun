@@ -9630,7 +9630,7 @@ referTo oldId newId gs =
 -- carryOver's CR 607.2q half: a card exiled to pay the cost of a permanent spell
 -- is linked to the permanent that spell becomes, so a link naming the spell
 -- names the permanent instead. Parun.Engine.Cost.payComponent's BeholdAndExile
--- and ExileCardsFromGraveyard arms are the writers; Parun.CostSpec's Champion of
+-- and MoveCardsFromGraveyard arms are the writers; Parun.CostSpec's Champion of
 -- the Weird group and Skyway Robber's scenarios are the proofs.
 relink :: ObjectId -> ObjectId -> ExileLink.ExileLink -> ExileLink.ExileLink
 relink oldId newId link =

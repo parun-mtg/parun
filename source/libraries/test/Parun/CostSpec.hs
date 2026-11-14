@@ -835,7 +835,7 @@ headlessSkaabBoard island headlessSkaab seeds =
 -- payment and the spell becoming cast, so there is no window for a response to
 -- open in. The first is the "exactly one" case below.
 --
--- The gate card for CostComponent.ExileCardsFromGraveyard, the first component
+-- The gate card for CostComponent.MoveCardsFromGraveyard, the first component
 -- that exiles a CHOSEN card from a zone. Two assertions are kept deliberately
 -- apart in every negative leg: castability is asked DIRECTLY, and the cast is
 -- then attempted -- a cost that is offered and merely goes unpaid leaves an

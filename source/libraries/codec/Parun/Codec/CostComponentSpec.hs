@@ -23,13 +23,14 @@ import qualified Parun.Types.CountersOnPayer as CountersOnPayer
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
-import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Gift as Gift
+import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
@@ -271,12 +272,12 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
       codec
       CostComponent.ExileThis
       " {\"type\":\"ExileThis\"} "
-  Spec.it s "ExileCardsFromGraveyard" $
+  Spec.it s "MoveCardsFromGraveyard" $
     Common.assertCodec
       s
       codec
-      (CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Fixed 1) (Filter.HasCardType CardType.Creature)))
-      " {\"type\":\"ExileCardsFromGraveyard\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichCards\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
+      (CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed 1) (Filter.HasCardType CardType.Creature) GraveyardCostDestination.Exile))
+      " {\"type\":\"MoveCardsFromGraveyard\",\"value\":{\"count\":{\"type\":\"Fixed\",\"value\":1},\"whichCards\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- CR 702.167a's [materials], which CR 702.167b reads across two zones -- a
   -- separate tag from the arm above, whose pool is the graveyard alone.
   Spec.it s "ExileMaterials" $

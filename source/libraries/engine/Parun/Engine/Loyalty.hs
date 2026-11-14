@@ -91,7 +91,7 @@ loyaltyAmountOf component = case component of
   CostComponent.VariableAtLeast _ -> Nothing
   CostComponent.ExileThisFrom _ -> Nothing
   CostComponent.ExileThis -> Nothing
-  CostComponent.ExileCardsFromGraveyard {} -> Nothing
+  CostComponent.MoveCardsFromGraveyard {} -> Nothing
   CostComponent.ExileMaterials {} -> Nothing
   CostComponent.ExileTopFromGraveyard _ -> Nothing
   CostComponent.CollectEvidence _ -> Nothing

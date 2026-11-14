@@ -400,7 +400,6 @@ import qualified Parun.Codec.ExchangeSidesSpec
 import qualified Parun.Codec.ExchangeValuesSpec
 import qualified Parun.Codec.ExchangeZonesSpec
 import qualified Parun.Codec.ExchangedValueSpec
-import qualified Parun.Codec.ExileCardsFromGraveyardSpec
 import qualified Parun.Codec.ExileCardsTotallingSpec
 import qualified Parun.Codec.ExileFromGraveyardSpec
 import qualified Parun.Codec.ExileHauntingSpec
@@ -451,6 +450,7 @@ import qualified Parun.Codec.GrantLookAtExiledSpec
 import qualified Parun.Codec.GrantPlayFromExileSpec
 import qualified Parun.Codec.GrantZoneSpec
 import qualified Parun.Codec.GrantedAbilitySpec
+import qualified Parun.Codec.GraveyardCostDestinationSpec
 import qualified Parun.Codec.GraveyardOrderSpec
 import qualified Parun.Codec.GuessSpec
 import qualified Parun.Codec.HalfUnlockedSpec
@@ -566,6 +566,7 @@ import qualified Parun.Codec.MonarchTargetSpec
 import qualified Parun.Codec.MonarchWatchSpec
 import qualified Parun.Codec.MorphSpec
 import qualified Parun.Codec.MorphVariantSpec
+import qualified Parun.Codec.MoveCardsFromGraveyardSpec
 import qualified Parun.Codec.MoveCountersSpec
 import qualified Parun.Codec.MoveDurationSpec
 import qualified Parun.Codec.MoveManaSpec
@@ -1485,7 +1486,7 @@ spec s reference corpus = do
   Parun.Codec.ExchangeSidesSpec.spec s
   Parun.Codec.ExchangeValuesSpec.spec s
   Parun.Codec.ExchangeZonesSpec.spec s
-  Parun.Codec.ExileCardsFromGraveyardSpec.spec s
+  Parun.Codec.MoveCardsFromGraveyardSpec.spec s
   Parun.Codec.ExileCardsTotallingSpec.spec s
   Parun.Codec.CardsFromHandSpec.spec s
   Parun.Codec.CardAbilitiesSpec.spec s
@@ -1572,6 +1573,7 @@ spec s reference corpus = do
   Parun.Codec.LibraryDepthSpec.spec s
   Parun.Codec.LibraryPlacementSpec.spec s
   Parun.Codec.LibraryPositionSpec.spec s
+  Parun.Codec.GraveyardCostDestinationSpec.spec s
   Parun.Codec.LifeChangeSpec.spec s
   Parun.Codec.LifeGainRewriteSpec.spec s
   Parun.Codec.LifeGainRSpec.spec s

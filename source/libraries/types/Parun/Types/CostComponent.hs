@@ -10,12 +10,12 @@ import qualified Parun.Types.CountersOnPayer as CountersOnPayer
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
-import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Gift as Gift
+import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
@@ -151,17 +151,17 @@ data CostComponent keyword
   | -- | CR 406.2 as a cost, from the other zone / Brittle Effigy: exile the
     -- permanent the cost is on, off the battlefield.
     ExileThis
-  | -- | CR 406.2 in its choosing form / Headless Skaab: exile this many cards
-    -- matching the Filter from the paying player's own graveyard (CR 400.3, CR
-    -- 108.4), which the payer chooses.
-    ExileCardsFromGraveyard (ExileCardsFromGraveyard.ExileCardsFromGraveyard keyword)
+  | -- | CR 406.2 in its choosing form / Headless Skaab, Gurzigost: exile this many
+    -- cards matching the Filter from the paying player's own graveyard (CR 400.3,
+    -- CR 108.4), which the payer chooses, or put them on the bottom of their library.
+    MoveCardsFromGraveyard (MoveCardsFromGraveyard.MoveCardsFromGraveyard keyword)
   | -- | CR 702.167a's [materials] / Tithing Blade: exile this many objects --
     -- or, where the payload says so, at least this many -- matching the Filter
     -- from among the permanents the paying player controls and the cards in their
     -- own graveyard, which the payer chooses.
     --
     -- A TWO-ZONE choice, Behold's shape below one zone over, and that is why this
-    -- is not ExileCardsFromGraveyard with a wider criterion: rule 702.167b makes
+    -- is not MoveCardsFromGraveyard with a wider criterion: rule 702.167b makes
     -- ONE criterion read over the battlefield and the graveyard at once, an
     -- exception to rule 109.2. Parun.Engine.Cost.materialCandidates is the union
     -- and Prompt.ChooseMaterials the ask.
@@ -179,7 +179,7 @@ data CostComponent keyword
     --
     -- A THRESHOLD on an aggregate and not a count, TapForTotalPower's shape one
     -- zone over: how many cards a payment exiles is not settled until the payer
-    -- picks them, which is why this is not ExileCardsFromGraveyard with a number.
+    -- picks them, which is why this is not MoveCardsFromGraveyard with a number.
     -- CR 701.59b is what makes it unpayable below the threshold.
     --
     -- BINDS the exiled cards under Parun.Engine.Binding.collectedEvidence, which

@@ -9,9 +9,9 @@ import qualified Parun.Types.Filter as Filter
 -- together.
 --
 -- PARAMETRIC in the keyword for the Filter it carries, exactly as
--- Parun.Types.ExileCardsFromGraveyard is.
+-- Parun.Types.MoveCardsFromGraveyard is.
 --
--- count is Parun.Types.ExileCardsFromGraveyard's reading where orMore is False:
+-- count is Parun.Types.MoveCardsFromGraveyard's reading where orMore is False:
 -- the objects are chosen and counted exactly, which is Tithing Blade's "Craft
 -- with creature". Where orMore is True it is a MINIMUM and the payer says how
 -- many above it to exile, which is rule 702.167a's "[materials] is a description

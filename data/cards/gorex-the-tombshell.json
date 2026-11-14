@@ -3,7 +3,7 @@
     {
       "additionalCosts": [
         {
-          "type": "ExileCardsFromGraveyard",
+          "type": "MoveCardsFromGraveyard",
           "value": {
             "count": {
               "type": "Announced",

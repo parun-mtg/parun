@@ -21,13 +21,14 @@ import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnPayer as CountersOnPayer
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DiscardCards as DiscardCards
-import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.Filter as Filter.Type
+import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.TapPermanents as TapPermanents
@@ -157,10 +158,12 @@ component self named c = case c of
     p <- ListUtils.nubOrd (Filter.phrase f named <> Filter.phraseJoining Filter.Inclusive f named)
     tapped <- some (toInteger n) permanent p
     [Text.pack "Tap " <> tapped <> (if sharing then Text.pack " that share a creature type" else Text.empty)]
-  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Fixed n) f) -> do
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) f destination) -> do
     p <- Filter.phrase f named
-    exiled <- some (toInteger n) card (Filter.merge p (Filter.MkPhrase [] [card] []))
-    [Text.pack "Exile " <> exiled <> Text.pack " from your graveyard"]
+    moved <- some (toInteger n) card (Filter.merge p (Filter.MkPhrase [] [card] []))
+    case destination of
+      GraveyardCostDestination.Exile -> [Text.pack "Exile " <> moved <> Text.pack " from your graveyard"]
+      GraveyardCostDestination.LibraryBottom -> [Text.pack "Put " <> moved <> Text.pack " from your graveyard on the bottom of your library"]
   CostComponent.RemoveCountersFromThis (CountersOnThis.MkCountersOnThis kind (CostAmount.Fixed n) Nothing) -> do
     word <- counterWord named kind
     removed <- counted (word <> Text.pack " ") (toInteger n)

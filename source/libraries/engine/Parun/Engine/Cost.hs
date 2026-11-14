@@ -123,7 +123,6 @@ import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Emerge as Emerge
-import qualified Parun.Types.ExileCardsFromGraveyard as ExileCardsFromGraveyard
 import qualified Parun.Types.ExileCardsTotalling as ExileCardsTotalling
 import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.ExileMaterials as ExileMaterials
@@ -139,6 +138,7 @@ import qualified Parun.Types.GameEvent as GameEvent
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Gift as Gift
+import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
@@ -163,6 +163,7 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.ManaWindow as ManaWindow
+import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectCount as ObjectCount
 import Parun.Types.ObjectId (ObjectId)
@@ -1737,7 +1738,7 @@ substituteComponent :: Keyword.Substitute -> Natural -> CostComponent.CostCompon
 substituteComponent substitute n = case substitute of
   Keyword.TapUntapped criterion -> CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) criterion False)
   Keyword.TapToConvoke criterion -> CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed n) criterion False)
-  Keyword.ExileFromGraveyard criterion -> CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Fixed n) criterion)
+  Keyword.ExileFromGraveyard criterion -> CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) criterion GraveyardCostDestination.Exile)
 
 -- The components an offer's substitutes are paid as, `substituteComponent` over
 -- each.
@@ -2030,7 +2031,7 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
   -- One card per exile out of a finite graveyard, Sacrifice's reason.
-  CostComponent.ExileCardsFromGraveyard exile -> ExileCardsFromGraveyard.count exile == announced
+  CostComponent.MoveCardsFromGraveyard exile -> MoveCardsFromGraveyard.count exile == announced
   CostComponent.ExileMaterials {} -> False
   CostComponent.ExileTopFromGraveyard _ -> False
   CostComponent.CollectEvidence _ -> False
@@ -2401,7 +2402,7 @@ componentStatesHiddenQuality component = case component of
   CostComponent.ReturnPermanents {} -> False
   CostComponent.ExilePermanents {} -> False
   CostComponent.ExileThisFrom _ -> False
-  CostComponent.ExileCardsFromGraveyard {} -> False
+  CostComponent.MoveCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
   CostComponent.ExileTopFromGraveyard _ -> False
   CostComponent.CollectEvidence _ -> False
@@ -2427,7 +2428,7 @@ componentStatesHiddenQuality component = case component of
   CostComponent.PutCountersOnPayer _ -> False
   CostComponent.Blight _ -> False
   -- Cards, but in PUBLIC zones (CR 400.2) on both halves of rule 701.61a, so the
-  -- first conjunct fails -- the Sacrifice and ExileCardsFromGraveyard arms above,
+  -- first conjunct fails -- the Sacrifice and MoveCardsFromGraveyard arms above,
   -- for their reason. Rule 701.61a states no quality either way.
   CostComponent.Forage -> False
   CostComponent.FlipCoin -> False
@@ -2616,7 +2617,7 @@ revealPaying paidFor pid card = do
     Just sid -> Event.stampReveal (RevealWindow.WhileOnStack sid) card
     Nothing -> pure ()
 
--- The cards this player may exile to pay an ExileCardsFromGraveyard component:
+-- The cards this player may move to pay a MoveCardsFromGraveyard component:
 -- their OWN graveyard, in its own order, narrowed by the criterion. Per-owner by
 -- CR 400.3 with CR 108.4, a card in a graveyard having no controller.
 --
@@ -2719,7 +2720,7 @@ tallyValueGiven tally viewOf candidate =
 -- the pool or falls short. The total is summed over the answer as given, and the
 -- candidates are read HERE so an earlier component of the same cost that emptied
 -- the graveyard refuses this one. The exile goes through Event.changeZonesTogether,
--- ExileCardsFromGraveyard's route. Answers the cards chosen and the exile
+-- MoveCardsFromGraveyard's route. Answers the cards chosen and the exile
 -- incarnations that arrived.
 exileTotalling :: ManaAbilityPerformer.ManaAbilityPerformer -> Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) -> PlayerId -> ObjectId -> ExileCardsTotalling.ExileCardsTotalling Keyword.Type.Keyword -> Game (Maybe (Set.Set ObjectId, [ObjectId]))
 exileTotalling perform slots pid oid (ExileCardsTotalling.MkExileCardsTotalling n tally criterion) = do
@@ -3053,10 +3054,10 @@ claimOfGiven board slots pid oid component gs =
           claim (ClaimAxis.Removal Zone.Hand) (Set.fromList (exileFromHandCandidates slots pid oid criterion gs)) n
         -- Nothing until CR 601.2b fixes the count, Sacrifice's arm.
         CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand (CostAmount.Announced _) _) -> Nothing
-        CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Fixed n) criterion) ->
+        CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Fixed n) criterion _) ->
           claim (ClaimAxis.Removal Zone.Graveyard) (Set.fromList (exileCandidatesGiven board slots pid oid criterion gs)) n
         -- Nothing until CR 601.2b fixes the count, Sacrifice's arm.
-        CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard (CostAmount.Announced _) _) -> Nothing
+        CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard (CostAmount.Announced _) _ _) -> Nothing
         -- The same graveyard pool and the same axis, as ONE selection reaching the
         -- threshold rather than the component's number of cards: the number is a
         -- THRESHOLD on the cards' total tally, so which cards a payment exiles is
@@ -3610,7 +3611,7 @@ uncountedCeiling pid oid claims gs component = case component of
   CostComponent.DiscardThis _ -> Nothing
   CostComponent.PutCardFromHandOntoBattlefield _ -> Nothing
   CostComponent.ExileCardsFromHand {} -> Nothing
-  CostComponent.ExileCardsFromGraveyard {} -> Nothing
+  CostComponent.MoveCardsFromGraveyard {} -> Nothing
   -- 1, and counted by none of the four totals: `claimOf` states no claim for
   -- this component either, Forage's answer below and for its reason. An
   -- UNDERSTATEMENT and the header's safe direction.
@@ -4037,7 +4038,7 @@ targetComputed component = case component of
   CostComponent.FlipCoin -> False
   CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
-  CostComponent.ExileCardsFromGraveyard _ -> False
+  CostComponent.MoveCardsFromGraveyard _ -> False
   CostComponent.ExileMaterials _ -> False
   CostComponent.ExileTopFromGraveyard _ -> False
   CostComponent.ExileCardsFromHand {} -> False
@@ -4092,7 +4093,7 @@ announcedRecord component = case component of
   CostComponent.FlipCoin -> Nothing
   CostComponent.ExileThisFrom _ -> Nothing
   CostComponent.ExileThis -> Nothing
-  CostComponent.ExileCardsFromGraveyard _ -> Nothing
+  CostComponent.MoveCardsFromGraveyard _ -> Nothing
   CostComponent.ExileMaterials _ -> Nothing
   CostComponent.ExileTopFromGraveyard _ -> Nothing
   CostComponent.ExileCardsFromHand {} -> Nothing
@@ -4160,7 +4161,7 @@ lifeOwedByComponent pid gs component = case component of
   CostComponent.VariableAtLeast _ -> 0
   CostComponent.ExileThisFrom _ -> 0
   CostComponent.ExileThis -> 0
-  CostComponent.ExileCardsFromGraveyard {} -> 0
+  CostComponent.MoveCardsFromGraveyard {} -> 0
   CostComponent.ExileMaterials {} -> 0
   CostComponent.ExileTopFromGraveyard _ -> 0
   CostComponent.CollectEvidence _ -> 0
@@ -4216,7 +4217,7 @@ energyOwedByComponent component = case component of
   CostComponent.VariableAtLeast _ -> 0
   CostComponent.ExileThisFrom _ -> 0
   CostComponent.ExileThis -> 0
-  CostComponent.ExileCardsFromGraveyard {} -> 0
+  CostComponent.MoveCardsFromGraveyard {} -> 0
   CostComponent.ExileMaterials {} -> 0
   CostComponent.ExileTopFromGraveyard _ -> 0
   CostComponent.CollectEvidence _ -> 0
@@ -4282,7 +4283,7 @@ countersOwedByComponent component = case component of
   CostComponent.VariableAtLeast _ -> []
   CostComponent.ExileThisFrom _ -> []
   CostComponent.ExileThis -> []
-  CostComponent.ExileCardsFromGraveyard {} -> []
+  CostComponent.MoveCardsFromGraveyard {} -> []
   CostComponent.ExileMaterials {} -> []
   CostComponent.ExileTopFromGraveyard _ -> []
   CostComponent.CollectEvidence _ -> []
@@ -4469,7 +4470,7 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- many matching cards. Headless Skaab with an empty graveyard is never OFFERED
   -- rather than merely unpaid, which is what puts the additional cost INSIDE the
   -- total cost as CR 601.2f says. This component ALONE, Sacrifice's caveat.
-  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard amount criterion) ->
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard amount criterion _) ->
     payableAnnounced amount (\n -> Natural.length (exileCandidatesGiven board slots pid oid criterion gs) >= n)
   -- CR 118.3: the arm above over CR 702.167a's two pools at once, so that a craft
   -- ability is not OFFERED where the battlefield and the graveyard together hold
@@ -4820,7 +4821,7 @@ criteriaOf component = case component of
   CostComponent.RevealCardsFromHand reveal -> [CardsFromHand.whichCards reveal]
   CostComponent.Behold behold -> [Behold.whichObjects behold]
   CostComponent.BeholdAndExile criterion -> [criterion]
-  CostComponent.ExileCardsFromGraveyard exile -> [ExileCardsFromGraveyard.whichCards exile]
+  CostComponent.MoveCardsFromGraveyard exile -> [MoveCardsFromGraveyard.whichCards exile]
   CostComponent.ExileCardsTotalling exile -> [ExileCardsTotalling.whichCards exile]
   CostComponent.ExileMaterials materials -> [ExileMaterials.whichObjects materials]
   CostComponent.ExileTopFromGraveyard criterion -> [criterion]
@@ -5714,7 +5715,7 @@ announceToll pid charges = do
 -- naming the permanent it is on -- Parun.Types.CostComponent's SacrificeThis and
 -- TapThis, which would make two equal lists name two different permanents; the
 -- pool's tolls are Exalted Dragon's Sacrifice, Hollow Warrior's TapPermanents,
--- the Synthetic Tithes' MillCards, ExileCardsFromGraveyard and
+-- the Synthetic Tithes' MillCards, MoveCardsFromGraveyard and
 -- RevealTopOfLibrary, and Sphere of Safety's counted mana, and none of them does.
 --
 -- BOTH conjuncts are FENCES rather than proven behaviour, `orderObservable`'s
@@ -5908,7 +5909,7 @@ paidInSecondPass component = case component of
   CostComponent.ExilePermanents {} -> False
   CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
-  CostComponent.ExileCardsFromGraveyard {} -> False
+  CostComponent.MoveCardsFromGraveyard {} -> False
   CostComponent.ExileMaterials {} -> False
   CostComponent.ExileTopFromGraveyard _ -> False
   CostComponent.CollectEvidence _ -> False
@@ -6045,7 +6046,7 @@ sourceOnly component = case component of
   CostComponent.ExilePermanents {} -> Nothing
   CostComponent.DiscardCards {} -> Nothing
   CostComponent.PutCardFromHandOntoBattlefield _ -> Nothing
-  CostComponent.ExileCardsFromGraveyard {} -> Nothing
+  CostComponent.MoveCardsFromGraveyard {} -> Nothing
   CostComponent.ExileMaterials {} -> Nothing
   CostComponent.ExileTopFromGraveyard _ -> Nothing
   CostComponent.CollectEvidence _ -> Nothing
@@ -6099,7 +6100,7 @@ orderSensitive component = case component of
   CostComponent.DiscardCards {} -> True
   CostComponent.DiscardThis _ -> True
   CostComponent.PutCardFromHandOntoBattlefield _ -> True
-  CostComponent.ExileCardsFromGraveyard {} -> True
+  CostComponent.MoveCardsFromGraveyard {} -> True
   CostComponent.ExileMaterials {} -> True
   CostComponent.ExileTopFromGraveyard _ -> True
   CostComponent.CollectEvidence _ -> True
@@ -7255,7 +7256,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- no-op.
   --
   -- The sacrifices are ONE event on ONE board (Event.sacrificeAll),
-  -- ExileCardsFromGraveyard's reason below. Parun.CostSpec's "CR 601.2h Phyrexian
+  -- MoveCardsFromGraveyard's reason below. Parun.CostSpec's "CR 601.2h Phyrexian
   -- Tribute's two sacrifices grow Vengeful Townsfolk once" proves the event, and
   -- its Anafenza case the board.
   --
@@ -7502,7 +7503,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- One card is asked as Prompt.ChooseCardInHand, the arm above's prompt; more
   -- are asked at once as Prompt.ChooseExiles, ExilePermanents' elision and
   -- reject-not-repair posture, and exiled as ONE event (Event.changeZonesTogether),
-  -- ExileCardsFromGraveyard's reason.
+  -- MoveCardsFromGraveyard's reason.
   CostComponent.ExileCardsFromHand (CardsFromHand.MkCardsFromHand amount criterion) -> paidAnnounced amount $ \n -> do
     gs <- State.get
     let candidates = exileFromHandCandidates slots pid oid criterion gs
@@ -7923,6 +7924,11 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- CR 406.2's move again, for CHOSEN cards: the payer picks which, so this is a
   -- prompt. Elided only when forced, Sacrifice's elision.
   --
+  -- Gurzigost's cards go to the library's bottom instead, in an order their owner
+  -- (the payer, CR 400.3) states (docs/decisions.md, "Who orders the cards a
+  -- cost puts on the bottom of a library"): asked at two or more, answered from
+  -- the bottom inward and moved in reverse, Resolve.Common.settleArrivals' order.
+  --
   -- Reject-not-repair, Sacrifice's posture verbatim. The candidates are read
   -- ONCE, before the prompt, so the answer is checked against the same list the
   -- player was offered.
@@ -7941,7 +7947,7 @@ payPayable perform moment paidFor slots pid oid component = case component of
   --
   -- A count of 0 (Gorex, the Tombshell announcing none) has the empty set as
   -- its one answer, so nothing is asked.
-  CostComponent.ExileCardsFromGraveyard (ExileCardsFromGraveyard.MkExileCardsFromGraveyard amount criterion) -> paidAnnounced amount $ \n -> do
+  CostComponent.MoveCardsFromGraveyard (MoveCardsFromGraveyard.MkMoveCardsFromGraveyard amount criterion destination) -> paidAnnounced amount $ \n -> do
     gs <- State.get
     let candidates = exileCandidates slots pid oid criterion gs
         decider = Decide.deciderFor pid gs
@@ -7954,8 +7960,18 @@ payPayable perform moment paidFor slots pid oid component = case component of
             else Game.choose (Prompt.ChooseExilesFromGraveyard decider pid oid candidates n)
     if Set.isSubsetOf chosen (Set.fromList candidates) && Natural.length chosen == n
       then do
-        arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) (fmap (\c -> (c, Zone.Exile)) (Set.toAscList chosen))
-        Monad.when (paidFor == Just oid) $ do
+        moves <- case destination of
+          GraveyardCostDestination.Exile -> pure (fmap (\c -> (c, Zone.Exile)) (Set.toAscList chosen))
+          GraveyardCostDestination.LibraryBottom -> do
+            ordered <- case Set.toAscList chosen of
+              batch@(_ : _ : _) -> do
+                asked <- State.get
+                order <- Game.choose (Prompt.ArrangeLibraryArrivals (Decide.deciderFor pid asked) pid LibraryPosition.Bottom batch)
+                pure (Game.permute batch order)
+              batch -> pure batch
+            pure (fmap (\c -> (c, Zone.Library)) (reverse ordered))
+        arrived <- Event.changeZonesTogether (ManaAbilityPerformer.settle perform) moves
+        Monad.when (paidFor == Just oid && destination == GraveyardCostDestination.Exile) $ do
           let link = ExileLink.MkExileLink {ExileLink.source = oid, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False}
           State.modify' (\g -> g {GameState.exiledWith = foldr (`Map.insert` link) (GameState.exiledWith g) (foldMap Foldable.toList arrived)})
         pure bindsNothing

@@ -50,12 +50,14 @@ import qualified Parun.Types.ForEachNumber as ForEachNumber
 import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.GraveyardCostDestination as GraveyardCostDestination
 import qualified Parun.Types.HiddenZone as HiddenZone
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaAdded as ManaAdded
 import qualified Parun.Types.ManaAddedCause as ManaAddedCause
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.Meld as Meld
+import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.MoveToZone as MoveToZone
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.RandomCard as RandomCard
@@ -237,8 +239,7 @@ triggersFromMana condition = case condition of
 -- new component owes an answer here, and -Werror is what makes it.
 costMovesLibraryCard :: CostComponent.CostComponent Keyword.Keyword -> Bool
 costMovesLibraryCard component = case component of
-  -- CR 701.17a moves the cards out of the paying player's library. The one True
-  -- arm in the vocabulary, and the whole reason this function exists.
+  -- CR 701.17a moves the cards out of the paying player's library.
   CostComponent.MillCards _ -> True
   -- CR 701.20a shows the cards and CR 701.20b leaves them in the library.
   CostComponent.RevealTopOfLibrary _ -> False
@@ -254,7 +255,9 @@ costMovesLibraryCard component = case component of
   CostComponent.ExilePermanents {} -> False
   CostComponent.ExileThisFrom _ -> False
   CostComponent.ExileThis -> False
-  CostComponent.ExileCardsFromGraveyard {} -> False
+  -- Gurzigost's cost puts the cards INTO a library. A fence: no mana ability
+  -- prints this cost, so no test observes the answer.
+  CostComponent.MoveCardsFromGraveyard move -> MoveCardsFromGraveyard.destination move == GraveyardCostDestination.LibraryBottom
   CostComponent.ExileMaterials {} -> False
   CostComponent.ExileTopFromGraveyard _ -> False
   CostComponent.CollectEvidence _ -> False
