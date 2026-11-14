@@ -843,6 +843,7 @@ import qualified Parun.Codec.TriggerLimitSpec
 import qualified Parun.Codec.TriggerSourceSpec
 import qualified Parun.Codec.TriggeredAbilitySourceSpec
 import qualified Parun.Codec.TriggeredAbilitySpec
+import qualified Parun.Codec.TriggeringMoveSpec
 import qualified Parun.Codec.TurnFaceDownSpec
 import qualified Parun.Codec.TurnMarkerSpec
 import qualified Parun.Codec.TurnRegistersSpec
@@ -1922,6 +1923,7 @@ spec s reference corpus = do
   Parun.Codec.TriggerConditionSpec.spec s
   Parun.Codec.TriggeredAbilitySourceSpec.spec s
   Parun.Codec.TriggeredAbilitySpec.spec s
+  Parun.Codec.TriggeringMoveSpec.spec s
   Parun.Codec.TriggerFrequencySpec.spec s
   Parun.Codec.TriggerLimitSpec.spec s
   Parun.Codec.SpentOnSpec.spec s

@@ -189,9 +189,11 @@ data PlayerEffect
     StateBasedActionDoesntApply StateBasedAction.StateBasedAction (Filter.Filter Keyword.Keyword)
   | -- | CR 701.32 / 904.9 / All in Good Time: schemes can't be set in motion.
     CantSetSchemesInMotion
-  | -- | CR 603.6a / 603.2d / 613.11 / Hushwing Gryff, Yarok, the Desecrated:
-    -- how entries change the triggering of this player's abilities.
-    -- Not implemented: the same for a creature dying (Hushbringer) (#5725).
+  | -- | CR 603.6a / 603.2d / 700.4 / 613.11 / Hushwing Gryff, Yarok, the
+    -- Desecrated, Hushbringer: how entries or deaths change the triggering of
+    -- this player's abilities.
+    -- Not implemented: a death triggering an ability an additional time
+    -- (Teysa Karlov) (#7564).
     EntriesTrigger EntriesTrigger.EntriesTrigger
   | -- | CR 603.2d / Sanctum of All, Harmonic Prodigy: a triggered ability of a
     -- permanent matching the filter, whatever its event, triggers an additional

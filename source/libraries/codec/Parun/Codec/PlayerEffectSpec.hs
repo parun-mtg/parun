@@ -65,6 +65,7 @@ import qualified Parun.Types.StateBasedAction as StateBasedAction
 import qualified Parun.Types.StatedFlip as StatedFlip
 import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
+import qualified Parun.Types.TriggeringMove as TriggeringMove
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.Zone as Zone
 
@@ -462,7 +463,7 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.EntriesTrigger EntriesTrigger.MkEntriesTrigger {EntriesTrigger.entrants = Filter.And [], EntriesTrigger.triggering = EntryTriggering.AnAdditionalTime})
+      (PlayerEffect.EntriesTrigger EntriesTrigger.MkEntriesTrigger {EntriesTrigger.entrants = Filter.And [], EntriesTrigger.move = TriggeringMove.Entering, EntriesTrigger.triggering = EntryTriggering.AnAdditionalTime})
       " {\"type\":\"EntriesTrigger\",\"value\":{\"entrants\":{\"type\":\"And\",\"value\":[]},\"triggering\":\"AnAdditionalTime\"}} "
   -- CR 724.2 / Opposition Agent.
   Spec.it s "ControlledWhileSearching" $

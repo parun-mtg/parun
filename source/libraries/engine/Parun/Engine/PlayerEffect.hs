@@ -156,6 +156,7 @@ import qualified Parun.Types.TapForMana as TapForMana
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.Teams as Teams
 import Parun.Types.Timestamp (Timestamp)
+import qualified Parun.Types.TriggeringMove as TriggeringMove
 import qualified Parun.Types.TurnOrdinal as TurnOrdinal
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
@@ -1329,10 +1330,17 @@ schemesCantBeSetInMotion gs =
 -- effect's source entering beside it, or being it, counts (Hushwing Gryff's and
 -- Yarok, the Desecrated's rulings).
 entryTriggerings :: PlayerId -> ObjectId -> GameState -> [EntryTriggering.EntryTriggering]
-entryTriggerings pid entrant gs =
+entryTriggerings pid entrant gs = moveTriggerings TriggeringMove.Entering pid entrant gs gs
+
+-- CR 603.6a / 603.2d / 700.4 / 613.11 / 101.2: how the effects applying to
+-- `pid` in `effects` change the triggering of `pid`'s abilities that `subject`
+-- making `move` causes to trigger, one entry per effect admitting it, with
+-- `subject` read off `board`.
+moveTriggerings :: TriggeringMove.TriggeringMove -> PlayerId -> ObjectId -> GameState -> GameState -> [EntryTriggering.EntryTriggering]
+moveTriggerings move pid subject effects board =
   let triggering (source, effect) = case effect of
         PlayerEffect.EntriesTrigger entries ->
-          if matchesObjectFrom source (EntriesTrigger.entrants entries) entrant gs
+          if EntriesTrigger.move entries == move && matchesObjectFrom source (EntriesTrigger.entrants entries) subject board
             then Just (EntriesTrigger.triggering entries)
             else Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -1391,13 +1399,21 @@ entryTriggerings pid entrant gs =
         PlayerEffect.RevealsDraw _ -> Nothing
         PlayerEffect.Precluded _ -> Nothing
         PlayerEffect.Shows _ -> Nothing
-   in Maybe.mapMaybe triggering (applying pid gs)
+   in Maybe.mapMaybe triggering (applying pid effects)
 
 -- CR 603.6a / 613.11: does an effect keep `entrant` entering from triggering
 -- `pid`'s abilities (Hushwing Gryff)? Parun.Engine.Event.Match.entryTriggers is
 -- the reader.
 silencesEntry :: PlayerId -> ObjectId -> GameState -> Bool
 silencesEntry pid entrant gs = elem EntryTriggering.NoTrigger (entryTriggerings pid entrant gs)
+
+-- CR 700.4 / 613.11: does an effect applying to `pid` in `effects` keep
+-- `dying` dying from triggering `pid`'s abilities (Hushbringer)? `before` is
+-- the game immediately before the death, so the permanent is read as it last
+-- existed on the battlefield (Hushbringer's ruling on an animated land).
+-- Parun.Engine.Event.Match.deathTriggers is the reader.
+silencesDeath :: PlayerId -> ObjectId -> GameState -> GameState -> Bool
+silencesDeath pid dying effects before = elem EntryTriggering.NoTrigger (moveTriggerings TriggeringMove.Dying pid dying effects before)
 
 -- CR 603.2d: how many additional times each of `pid`'s abilities that
 -- `entrant` entering causes to trigger triggers, one per effect (Yarok, the

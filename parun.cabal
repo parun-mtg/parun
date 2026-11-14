@@ -1790,6 +1790,8 @@ library codec
     Parun.Codec.TriggeredAbilitySpec
     Parun.Codec.TriggerFrequency
     Parun.Codec.TriggerFrequencySpec
+    Parun.Codec.TriggeringMove
+    Parun.Codec.TriggeringMoveSpec
     Parun.Codec.TriggerLimit
     Parun.Codec.TriggerLimitSpec
     Parun.Codec.TriggerSource
@@ -3699,6 +3701,7 @@ library types
     Parun.Types.TriggeredAbilitySource
     Parun.Types.TriggerEntry
     Parun.Types.TriggerFrequency
+    Parun.Types.TriggeringMove
     Parun.Types.TriggerLimit
     Parun.Types.TriggerSource
     Parun.Types.TurnedFaceUp
