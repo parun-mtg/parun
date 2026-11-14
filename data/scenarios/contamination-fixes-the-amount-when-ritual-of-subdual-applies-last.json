@@ -1,0 +1,107 @@
+{
+  "description": "CR 106.12b / 616.1: under Contamination and Ritual of Subdual, Ancient Tomb applying Ritual last produces one {C}, not {C}{C}",
+  "note": "Ritual of Subdual keeps the amount and Contamination fixes it at one, so whichever the player applies last the land makes one mana: {B}, or {C} as here. The answer names one {C}, which matches no option if the Ritual's outcome kept the printed amount.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Contamination"
+          },
+          {
+            "card": "Ritual of Subdual"
+          },
+          {
+            "card": "Ancient Tomb",
+            "label": "ancient-tomb"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Take": {
+          "action": "ActivateManaAbility $ancient-tomb",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colorless"
+                },
+                "tags": [],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colorless"
+              },
+              "tags": [],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "Life": {
+        "player": "alice",
+        "life": 18
+      }
+    }
+  ]
+}
