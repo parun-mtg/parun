@@ -1794,6 +1794,7 @@ library codec
     Parun.Codec.TurnFaceDownSpec
     Parun.Codec.TurnMarker
     Parun.Codec.TurnMarkerSpec
+    Parun.Codec.TurnOrdinal
     Parun.Codec.TurnRegisters
     Parun.Codec.TurnRegistersSpec
     Parun.Codec.TurnResume
@@ -3676,6 +3677,7 @@ library types
     Parun.Types.TurnedUpOffDeck
     Parun.Types.TurnFaceDown
     Parun.Types.TurnMarker
+    Parun.Types.TurnOrdinal
     Parun.Types.TurnRegisters
     Parun.Types.TurnResume
     Parun.Types.TurnRole

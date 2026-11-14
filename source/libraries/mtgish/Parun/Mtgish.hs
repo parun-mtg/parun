@@ -559,7 +559,7 @@ playerRule n = case Node.tag n of
     k <- case (Cost.mana c, Cost.components c) of
       (Just m, []) | not (null (ManaCost.unwrap m)), all plain (ManaCost.unwrap m) -> Right m
       _ -> Node.untranslated n
-    Right (PlayerEffect.ModifyCost CostModifier.MkCostModifier {CostModifier.subject = CostSubject.Spells, CostModifier.matching = Maybe.fromMaybe (Filter.And []) f, CostModifier.whichTargets = Nothing, CostModifier.perTarget = Nothing, CostModifier.perEach = Nothing, CostModifier.countedAgainst = CountedAgainst.ChangeSource, CostModifier.onlyFirst = Nothing, CostModifier.change = CostChange.Increase k})
+    Right (PlayerEffect.ModifyCost CostModifier.MkCostModifier {CostModifier.subject = CostSubject.Spells, CostModifier.matching = Maybe.fromMaybe (Filter.And []) f, CostModifier.whichTargets = Nothing, CostModifier.perTarget = Nothing, CostModifier.perEach = Nothing, CostModifier.countedAgainst = CountedAgainst.ChangeSource, CostModifier.onlyNth = Nothing, CostModifier.change = CostChange.Increase k})
   _ -> Node.untranslated n
   where
     -- Generic and typed symbols: a hybrid, Phyrexian or {X} symbol in an

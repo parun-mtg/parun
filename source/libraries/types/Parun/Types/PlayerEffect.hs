@@ -129,7 +129,7 @@ data PlayerEffect
     HasProtectionFrom (Filter.Filter Keyword.Keyword)
   | -- | CR 601.3b / Vedalken Orrery: this player may cast a matching spell as
     -- though it had flash; given a scope, only the first matching spell they
-    -- cast in a turn it admits, as Parun.Types.CostModifier.onlyFirst reads
+    -- cast in a turn it admits, as Parun.Types.CostModifier.onlyNth reads
     -- (Radagast of Rhosgobel).
     CastAsThoughItHadFlash (Filter.Filter Keyword.Keyword) (Maybe TurnScope.TurnScope)
   | -- | CR 601.1a / 601.3b / Scout's Warning: this player may PLAY a matching card

@@ -55,11 +55,14 @@
                   }
                 ]
               },
-              "onlyFirst": {
-                "type": "PlayersTurn",
-                "value": {
-                  "type": "Relative",
-                  "value": "You"
+              "onlyNth": {
+                "ordinal": 1,
+                "scope": {
+                  "type": "PlayersTurn",
+                  "value": {
+                    "type": "Relative",
+                    "value": "You"
+                  }
                 }
               },
               "subject": {
