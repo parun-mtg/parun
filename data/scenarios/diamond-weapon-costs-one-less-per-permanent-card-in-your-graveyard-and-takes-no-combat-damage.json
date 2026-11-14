@@ -1,0 +1,15 @@
+{
+  "description":"CR 601.2f, 110.4a, 615.1: Diamond Weapon costs {1} less for each permanent card in its controller's graveyard, and is dealt no combat damage",
+  "note":"An artifact, a creature, an enchantment and a land card take {4} off; the instant does not, nor do bob's permanent cards. Five Forests pay {3}{G}{G} with nothing left floating. On bob's turn it blocks his live Hill Giant, takes no damage and kills it.",
+  "board":{"active":"alice","step":"PrecombatMain","seats":[{"name":"alice","battlefield":[{"card":"Forest","label":"f1"},{"card":"Forest","label":"f2"},{"card":"Forest","label":"f3"},{"card":"Forest","label":"f4"},{"card":"Forest","label":"f5"}],"hand":[{"card":"Diamond Weapon","label":"weapon"}],"graveyard":[{"card":"Darksteel Relic"},{"card":"Grizzly Bears"},{"card":"Pacifism"},{"card":"Swamp"},{"card":"Shock"}],"library":[{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"}]},{"name":"bob","battlefield":[{"card":"Hill Giant","label":"attacker","ready":true}],"graveyard":[{"card":"Hill Giant"},{"card":"Ornithopter"}],"library":[{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"},{"card":"Island"}]}]},
+  "timeline": [
+    {"turn":1,"step":"PrecombatMain","player":"alice","do":{"Cast":{"object":"$weapon","mana":["$f1","$f2","$f3","$f4","$f5"]}}},
+    {"turn":1,"step":"PrecombatMain","player":"alice","check":{"View":{"of":"ManaPool","is":[],"player":"alice"}}},
+    {"turn":1,"step":"PrecombatMain","player":"alice","do":"Pass"},
+    {"turn":1,"step":"PrecombatMain","player":"alice","check":{"Count":{"player":"alice","zone":"Battlefield","card":"Diamond Weapon","count":1}}},
+    {"turn":2,"step":"DeclareAttackers","player":"bob","do":{"Attack":["$attacker"]}},
+    {"turn":2,"step":"DeclareBlockers","player":"alice","do":{"Block":{"Diamond Weapon":["$attacker"]}}},
+    {"turn":2,"step":"CombatDamage","player":"bob","check":{"Damage":{"object":"Diamond Weapon","damage":0}}},
+    {"turn":2,"step":"CombatDamage","player":"bob","check":{"Count":{"player":"bob","zone":"Graveyard","card":"Hill Giant","count":2}}}
+  ]
+}
