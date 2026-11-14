@@ -3,8 +3,11 @@ module Parun.Codec.PhasedOutSpec where
 import qualified Parun.Codec.PhasedOut as PhasedOut
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.EventGroup as EventGroup
+import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.ReturnEnding as ReturnEnding
 
 -- | Each arm under a DIFFERENT seat, so an encoder that wrote a constant tag
 -- with the right payload, or the right tag with a constant payload, fails.
@@ -34,5 +37,25 @@ spec s = Spec.describe s "Parun.Codec.PhasedOut" $ do
       PhasedOut.codec
       (PhasedOut.Orphaned (PlayerId.MkPlayerId 3))
       " {\"type\":\"Orphaned\",\"value\":3} "
+  -- CR 610.4: off the untap step's schedule until the ending happens.
+  Spec.it s "Until" $
+    Common.assertCodec
+      s
+      PhasedOut.codec
+      (PhasedOut.Until (PlayerId.MkPlayerId 4) (Just (ReturnEnding.Planeswalked (Just (EventGroup.MkEventGroup 5)))))
+      " {\"type\":\"Until\",\"value\":{\"ending\":{\"type\":\"Planeswalked\",\"value\":5},\"under\":4}} "
+  -- CR 610.4 / 101.2: the phase-in was held, so no ending is left.
+  Spec.it s "Until with its ending spent" $
+    Common.assertCodec
+      s
+      PhasedOut.codec
+      (PhasedOut.Until (PlayerId.MkPlayerId 1) Nothing)
+      " {\"type\":\"Until\",\"value\":{\"under\":1}} "
+  Spec.it s "Until against a source leaving" $
+    Common.assertCodec
+      s
+      PhasedOut.codec
+      (PhasedOut.Until (PlayerId.MkPlayerId 2) (Just (ReturnEnding.SourceLeaves (ObjectId.MkObjectId 6))))
+      " {\"type\":\"Until\",\"value\":{\"ending\":{\"type\":\"SourceLeaves\",\"value\":6},\"under\":2}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s PhasedOut.codec

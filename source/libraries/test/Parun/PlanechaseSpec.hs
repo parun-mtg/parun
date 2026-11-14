@@ -26,6 +26,7 @@ import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Expiry as Expiry
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.Phasing as Phasing
 import qualified Parun.Engine.Planechase as Planechase
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Projection as Projection
@@ -40,6 +41,7 @@ import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action.Type
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BallotChoice as BallotChoice
+import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
@@ -69,6 +71,7 @@ import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.Phase as Phase
+import qualified Parun.Types.PhasedOut as PhasedOut
 import qualified Parun.Types.PlaneswalkCause as PlaneswalkCause
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
@@ -78,6 +81,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
@@ -1201,6 +1205,77 @@ planeswalkSpec s registry = Spec.describe s "CR 901.11" $ do
     Spec.assertBool s (not (mayAttack bobsTurn)) "CR 611.2a after chaos and alice's cleanup, it may not"
     Spec.assertBool s (mayAttack walked) "CR 901.11 once bob planeswalks, it may again"
     Spec.assertEqWith s "bob walked to his Tazeem" (faceUpNames walked) [cardName "Tazeem"]
+
+  -- Unyaro: "At the beginning of your end step, if you planeswalked to Unyaro
+  -- this turn, untap all creatures. They phase out until a player
+  -- planeswalks." alice walks off Tazeem onto Unyaro with her tapped Grizzly
+  -- Bears and bob's Savannah Lions, wearing her Pacifism, on the battlefield.
+  -- At her end step both creatures untap and phase out until a player
+  -- planeswalks (CR 610.4), the Aura indirectly (CR 702.26g); no untap step
+  -- brings them back (CR 610.4a); bob's planeswalk on his turn does.
+  Spec.it s "CR 610.4 Unyaro phases every creature out until a player planeswalks" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    lions <- S.printingOf s registry "Savannah Lions"
+    pacifism <- S.printingOf s registry "Pacifism"
+    board <- seatedPlanarBoard s registry S.alice [(S.alice, ["Tazeem", "Unyaro"]), (S.bob, ["Panopticon"])]
+    let (bear, b1) = S.addPermanent bears S.alice (inMain S.alice board)
+        (lion, b2) = S.addPermanent lions S.bob b1
+        (aura, b3) = S.addPermanent pacifism S.alice b2
+        stocked = S.tapObject bear (S.attach aura lion b3)
+        ended = endStep S.alice (rollAndResolve 6 stocked)
+        untap pid gs = S.runPure S.identityAnswer gs {GameState.turn = (GameState.turn gs) {TurnRegisters.activePlayer = pid}} (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
+        bobsTurn = untap S.bob (inMain S.bob (S.runPure S.identityAnswer (Expiry.dropAtCleanup ended) Engine.handoffTurn))
+        walked = S.runPure (rolling 6) bobsTurn (Planechase.roll S.manaPerformer S.bob >> Engine.priorityLoop)
+        present gs = fmap (`Set.member` GameState.battlefield gs) [bear, lion, aura]
+    Spec.assertEqWith s "alice walked to Unyaro" (faceUpNames ended) [cardName "Unyaro"]
+    Spec.assertEqWith s "CR 702.26b at her end step all three are gone" (present ended) [False, False, False]
+    Spec.assertBool s (not (Game.isTapped bear ended)) "CR 701.26b the Bears untapped first"
+    Spec.assertEqWith s "CR 610.4a bob's untap step and alice's bring nothing back" (present (untap S.alice bobsTurn)) [False, False, False]
+    Spec.assertEqWith s "bob walked to Panopticon" (faceUpNames walked) [cardName "Panopticon"]
+    Spec.assertEqWith s "CR 610.4 once bob planeswalks, all three phase in" (present walked) [True, True, True]
+    Spec.assertEqWith s "CR 702.26g the Pacifism still enchanting the Lions" (Game.lookupObject aura walked >>= Object.attachedTo) (Just (Recipient.ToCreature lion))
+    Spec.assertEqWith s "CR 610.4 the Bears phased out until a planeswalk, under alice" (Phasing.phasedOutStatus bear ended) (Just (PhasedOut.Until S.alice (Just (ReturnEnding.Planeswalked Nothing))))
+    Spec.assertEqWith s "and the Lions under bob" (Phasing.phasedOutStatus lion ended) (Just (PhasedOut.Until S.bob (Just (ReturnEnding.Planeswalked Nothing))))
+    Spec.assertEqWith s "CR 702.26g the Pacifism phased out indirectly" (Phasing.phasedOutStatus aura ended) (Just (PhasedOut.Indirectly S.alice))
+
+  -- CR 603.4: starting on Unyaro (CR 901.5) is not planeswalking to it, which
+  -- CR 901.11 begins after the game has started, so the end step leaves alice's
+  -- tapped Grizzly Bears alone.
+  Spec.it s "CR 603.4 Unyaro does nothing at the end of a turn nobody planeswalked to it" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    board <- planarBoard s registry ["Unyaro", "Tazeem"]
+    let (bear, stocked) = S.addPermanent bears S.alice (inMain S.alice board)
+        ended = endStep S.alice (S.tapObject bear stocked)
+    Spec.assertBool s (Set.member bear (GameState.battlefield ended)) "the Bears stay on the battlefield"
+    Spec.assertBool s (Game.isTapped bear ended) "and stay tapped"
+
+  -- CR 610.4c: alice planeswalks away to Celestine Reef, which has no
+  -- planeswalk trigger, with Unyaro's end-step trigger on the stack. Its "if" still holds, the planeswalk to Unyaro being in the log, so
+  -- her Grizzly Bears untap; the planeswalk happened after the trigger, so they
+  -- do not phase out.
+  Spec.it s "CR 610.4c a planeswalk after Unyaro's trigger leaves the creatures in" $ do
+    bears <- S.printingOf s registry "Grizzly Bears"
+    board <- planarBoard s registry ["Tazeem", "Unyaro", "Celestine Reef"]
+    let (bear, stocked) = S.addPermanent bears S.alice (inMain S.alice board)
+        walked = rollAndResolve 6 (S.tapObject bear stocked)
+        step = Phase.Ending EndingStep.EndStep
+        begun = Event.recordEvent (GameEvent.StepBegan (StepBegan.MkStepBegan step S.alice)) walked {GameState.turn = (GameState.turn walked) {TurnRegisters.phase = step, TurnRegisters.priority = Just S.alice}}
+        stacked = S.runPure S.identityAnswer begun Engine.settleForPriority
+        resolved = S.runPure S.identityAnswer stacked (Planechase.planeswalk PlaneswalkCause.Instruction Nothing S.alice >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
+        unwalked = S.runPure S.identityAnswer stacked (Stack.resolveTop >> Engine.settleForPriority)
+    Spec.assertEqWith s "the trigger is on the stack" (length (Game.allStacks stacked)) 1
+    Spec.assertBool s (not (Set.member bear (GameState.battlefield unwalked))) "with no planeswalk, the Bears phase out"
+    Spec.assertBool s (Set.member bear (GameState.battlefield resolved)) "CR 610.4c after one, they stay"
+    Spec.assertBool s (not (Game.isTapped bear resolved)) "CR 603.4 though the untap still happened"
+
+  -- Unyaro's chaos ability: two 2/2 white and blue Knights with vigilance.
+  Spec.it s "CR 311.7 Unyaro's chaos makes two white and blue Knights with vigilance" $ do
+    board <- planarBoard s registry ["Unyaro", "Tazeem"]
+    let chaos = rollAndResolve 5 (inMain S.alice board)
+        knights = named "Knight Token" chaos
+    Spec.assertEqWith s "alice has two Knights" (fmap (`Projection.controllerOf` chaos) knights) [Just S.alice, Just S.alice]
+    Spec.assertBool s (all (\k -> Projection.hasKeyword Keyword.Vigilance k chaos) knights) "each with vigilance"
+    Spec.assertEqWith s "white and blue" (fmap (`Projection.colorsOf` chaos) knights) (replicate 2 (Set.fromList [Color.White, Color.Blue]))
 
   -- Agyrem's first two abilities: a white creature that dies comes back to the
   -- battlefield under its OWNER's control at the next end step, a nonwhite one

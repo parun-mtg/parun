@@ -56,6 +56,8 @@ data HistoryRead
     Moves
   | -- | Planar die rolls (CR 901.9).
     PlanarRolls
+  | -- | Planeswalks (CR 901.11).
+    Planeswalks
   | -- | Abilities that resolved (CR 608.2).
     Resolutions
   | -- | Permanents sacrificed (CR 701.21a).

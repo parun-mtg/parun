@@ -436,6 +436,7 @@ records reading event = case reading of
   HistoryRead.Mills -> milled event
   HistoryRead.Moves -> moved event
   HistoryRead.PlanarRolls -> planarDieRolled event
+  HistoryRead.Planeswalks -> MoveDuration.isPlaneswalk event
   HistoryRead.Resolutions -> Maybe.isJust (Game.abilityResolved event)
   HistoryRead.Sacrifices -> sacrificed event
   HistoryRead.Saddles -> saddled event

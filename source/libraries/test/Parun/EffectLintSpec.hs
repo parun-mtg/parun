@@ -180,6 +180,7 @@ import qualified Parun.Types.PayObligation as PayObligation
 import qualified Parun.Types.PerformerR as PerformerR
 import qualified Parun.Types.PermanentActed as PermanentActed
 import qualified Parun.Types.PermissionLimit as PermissionLimit
+import qualified Parun.Types.PhaseOut as PhaseOut
 import qualified Parun.Types.PhasePattern as PhasePattern
 import qualified Parun.Types.PhaseR as PhaseR
 import qualified Parun.Types.PhaseRewrite as PhaseRewrite
@@ -400,6 +401,7 @@ printedBoxQuantity quantity = case quantity of
   Quantity.Type.CompletedDungeon {} -> False
   Quantity.Type.DraftNotes {} -> False
   Quantity.Type.EnteredThisTurn -> False
+  Quantity.Type.PlaneswalkedTo _ -> False
   Quantity.Type.EnteredFrom {} -> False
   Quantity.Type.WasCastFrom {} -> False
   Quantity.Type.BlockersBeyond _ -> False
@@ -1607,7 +1609,7 @@ effectObjectRefs effect =
         Effect.Flip ref -> read_ [ref]
         -- A plain READ: Parun.Engine.Resolve's Meld arm sweeps the ref and asks nothing.
         Effect.Meld (Meld.MkMeld ref _) -> read_ [ref]
-        Effect.PhaseOut ref -> read_ [ref]
+        Effect.PhaseOut (PhaseOut.MkPhaseOut ref _duration) -> read_ [ref]
         Effect.AddPhases {} -> []
         Effect.EndTurn -> []
         Effect.EndCombatPhase -> []

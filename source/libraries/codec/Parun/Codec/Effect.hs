@@ -97,6 +97,7 @@ import qualified Parun.Codec.NextDamageInstance as NextDamageInstance
 import qualified Parun.Codec.ObjectRef as ObjectRef
 import qualified Parun.Codec.OfferCast as OfferCast
 import qualified Parun.Codec.PermanentActed as PermanentActed
+import qualified Parun.Codec.PhaseOut as PhaseOut
 import qualified Parun.Codec.PlayerCounters as PlayerCounters
 import qualified Parun.Codec.PlayerQuantity as PlayerQuantity
 import qualified Parun.Codec.PlayerRef as PlayerRef
@@ -281,7 +282,7 @@ codec cardCodec abilityCodec =
           Arm.payload "Convert" ObjectRef.codec Effect.Convert (\x -> case x of Effect.Convert y -> Just y; _ -> Nothing),
           Arm.payload "Flip" ObjectRef.codec Effect.Flip (\x -> case x of Effect.Flip y -> Just y; _ -> Nothing),
           Arm.payload "Meld" meldCodec Effect.Meld (\x -> case x of Effect.Meld y -> Just y; _ -> Nothing),
-          Arm.payload "PhaseOut" ObjectRef.codec Effect.PhaseOut (\x -> case x of Effect.PhaseOut y -> Just y; _ -> Nothing),
+          Arm.payload "PhaseOut" PhaseOut.codec Effect.PhaseOut (\x -> case x of Effect.PhaseOut y -> Just y; _ -> Nothing),
           Arm.payload "AddPhases" (Common.list ExtraPhase.codec) Effect.AddPhases (\x -> case x of Effect.AddPhases y -> Just y; _ -> Nothing),
           Arm.nullary "EndTurn" Effect.EndTurn,
           Arm.nullary "EndCombatPhase" Effect.EndCombatPhase,

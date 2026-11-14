@@ -932,6 +932,7 @@ moveDurationNames :: (Monoid r) => Asking r -> MoveDuration.MoveDuration -> r
 moveDurationNames asking x = case x of
   MoveDuration.UntilSourceLeavesTheBattlefield -> mempty
   MoveDuration.UntilAnOpponentBecomesTheMonarch -> history asking HistoryRead.MonarchChanges
+  MoveDuration.UntilAPlayerPlaneswalks -> history asking HistoryRead.Planeswalks
 
 movedKindsNames :: (Monoid r) => Asking r -> MovedKinds.MovedKinds -> r
 movedKindsNames asking = Const.getConst . Children.movedKindsChildren (countVisitors asking)
@@ -1092,6 +1093,7 @@ quantityNames asking x =
         Quantity.SpellsCastUsingThisTurn _ -> history asking HistoryRead.Casts
         Quantity.PhasesBegunThisTurn _ -> history asking HistoryRead.StepBegins
         Quantity.EnteredThisTurn -> history asking HistoryRead.Entries
+        Quantity.PlaneswalkedTo _ -> history asking HistoryRead.Planeswalks
         Quantity.EnteredFrom _ -> history asking HistoryRead.Entries
         Quantity.WasCastFrom _ -> history asking HistoryRead.Entries <> history asking HistoryRead.Casts
         _ -> mempty

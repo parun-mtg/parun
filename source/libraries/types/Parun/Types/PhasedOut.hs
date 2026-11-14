@@ -1,6 +1,7 @@
 module Parun.Types.PhasedOut where
 
 import qualified Parun.Types.PlayerId as PlayerId
+import qualified Parun.Types.ReturnEnding as ReturnEnding
 
 -- | CR 702.26b's status, plus the one distinction CR 702.26g draws between the
 -- two ways of reaching it. Every phased-out permanent carries the player who
@@ -26,12 +27,19 @@ import qualified Parun.Types.PlayerId as PlayerId
 -- that seat, because CR 702.26a defines it as who controlled the permanent when
 -- it phased out and Parun.Engine.Phasing.phasedOutUnder answers that question.
 --
+-- `Until` is CR 610.4's: an effect phased the permanent out "until" an event,
+-- so CR 610.4a takes it off rule 702.26a's schedule and the phase-in waits for
+-- `ending`. Nothing once that phase-in was held (CR 101.2): rule 610.4 creates
+-- the second one-shot effect once, so the permanent stays phased out until
+-- another effect phases it in.
+--
 -- What is deliberately NOT stored is the host an indirect row came in with.
 -- Object.attachedTo already names it and phasing does not clear that field (CR
 -- 702.26i needs it intact), so a second copy here could only drift out of step
 -- with the first.
 data PhasedOut
-  = Directly {under :: PlayerId.PlayerId}
-  | Indirectly {under :: PlayerId.PlayerId}
-  | Orphaned {under :: PlayerId.PlayerId}
+  = Directly PlayerId.PlayerId
+  | Indirectly PlayerId.PlayerId
+  | Orphaned PlayerId.PlayerId
+  | Until PlayerId.PlayerId (Maybe ReturnEnding.ReturnEnding)
   deriving (Eq, Ord, Show)
