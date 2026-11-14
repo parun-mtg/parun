@@ -303,7 +303,7 @@ roll perform pid = do
       State.modify' (Event.recordEvent (GameEvent.PlayerActed (PlayerActed.MkPlayerActed PlayerAction.RollDice pid)))
       State.modify' (Event.recordEvent (GameEvent.PlanarDieRolled (PlanarDieRolled.MkPlanarDieRolled pid (faceOf rolled))))
       -- CR 901.9b: the chaos symbol makes chaos ensue.
-      Monad.when (faceOf rolled == PlanarDieFace.Chaos) (State.modify' (Event.recordEvent GameEvent.ChaosEnsued))
+      Monad.when (faceOf rolled == PlanarDieFace.Chaos) (State.modify' (Event.recordEvent (GameEvent.ChaosEnsued Nothing)))
 
 -- | CR 901.8: the planeswalking ability, paired with each player, for
 -- Parun.Engine.Event.Trigger.inherentTriggers. Planechase games have it; it "has

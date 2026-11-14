@@ -1393,7 +1393,7 @@ ponderSpec s registry = Spec.describe s "PutBackInOrder" $ do
   -- pair differs in the ref's count alone, on one board.
   Spec.it s "CR 401.4 one card is one order and raises no prompt, where two do" $ do
     (_, _, board) <- ponderBoard s registry
-    let topOf n = Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal n))) (PlayerRef.Relative PlayerRelation.You))
+    let topOf n = Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal n) Nothing)) (PlayerRef.Relative PlayerRelation.You) Nothing)
         counting :: Prompt.Prompt r -> State.State Int r
         counting p = case p of
           Prompt.ArrangeLibraryCards {} -> do

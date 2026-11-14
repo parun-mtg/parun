@@ -654,7 +654,10 @@ spec s = Spec.describe s "Parun.Codec.GameEvent" $ do
       " {\"type\":\"TurnedUpOffDeck\",\"value\":{\"card\":7,\"deck\":\"Scheme\",\"player\":1}} "
   -- CR 311.7.
   Spec.it s "ChaosEnsued" $
-    Common.assertCodec s GameEvent.codec GameEvent.ChaosEnsued " {\"type\":\"ChaosEnsued\"} "
+    Common.assertCodec s GameEvent.codec (GameEvent.ChaosEnsued Nothing) " {\"type\":\"ChaosEnsued\"} "
+  -- CR 311.7's last case: for one plane card.
+  Spec.it s "ChaosEnsued for an object" $
+    Common.assertCodec s GameEvent.codec (GameEvent.ChaosEnsued (Just (ObjectId.MkObjectId 7))) " {\"type\":\"ChaosEnsued\",\"value\":7} "
   -- CR 701.57b.
   Spec.it s "Discovered" $
     Common.assertCodec

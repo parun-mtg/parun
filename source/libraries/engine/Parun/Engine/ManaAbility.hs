@@ -63,6 +63,8 @@ import qualified Parun.Types.Repeat as Repeat
 import qualified Parun.Types.RepeatIf as RepeatIf
 import qualified Parun.Types.SetClassLevel as SetClassLevel
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
+import qualified Parun.Types.TopOfLibrary as TopOfLibrary
+import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.Zone as Zone
@@ -351,7 +353,7 @@ manaProduced effect = case effect of
   Effect.TemptWithTheRing -> Nothing
   Effect.OpenAttraction -> Nothing
   Effect.Planeswalk -> Nothing
-  Effect.ChaosEnsues -> Nothing
+  Effect.ChaosEnsues {} -> Nothing
   Effect.Abandon -> Nothing
   Effect.SetInMotion _ -> Nothing
   Effect.ClaimPrize -> Nothing
@@ -560,7 +562,7 @@ playerChoice effect = case effect of
   Effect.TemptWithTheRing -> Nothing
   Effect.OpenAttraction -> Nothing
   Effect.Planeswalk -> Nothing
-  Effect.ChaosEnsues -> Nothing
+  Effect.ChaosEnsues {} -> Nothing
   Effect.Abandon -> Nothing
   Effect.SetInMotion _ -> Nothing
   Effect.ClaimPrize -> Nothing
@@ -821,7 +823,7 @@ movesLibraryCard effect = case effect of
   Effect.OpenAttraction -> False
   Effect.Assemble {} -> False
   Effect.Planeswalk -> False
-  Effect.ChaosEnsues -> False
+  Effect.ChaosEnsues {} -> False
   Effect.Abandon -> False
   Effect.SetInMotion _ -> False
   Effect.ClaimPrize -> False
@@ -1025,10 +1027,11 @@ movesLibraryCard effect = case effect of
 -- and Effect.Meld, whose destination is fixed at the battlefield.
 refReachesLibrary :: ObjectRef.ObjectRef -> Bool
 refReachesLibrary ref = case ref of
-  ObjectRef.TopOfLibrary {} -> True
-  -- TRUE for the arm above's reason: the cards are named by their POSITION in
-  -- a library, whatever ends the walk that finds them.
-  ObjectRef.TopOfLibraryUntil {} -> True
+  -- A library's top, and not a side deck's: no side deck is a library.
+  ObjectRef.TopOfLibrary top -> Maybe.isNothing (TopOfLibrary.deck top)
+  -- The arm above's reason: the cards are named by their POSITION in a
+  -- library, whatever ends the walk that finds them.
+  ObjectRef.TopOfLibraryUntil walk -> Maybe.isNothing (TopOfLibraryUntil.deck walk)
   -- TRUE, one of the two sweeping arms that are: CR 605.1a's fourth clause asks
   -- whether the effect moves a card to or from a LIBRARY, and this one names
   -- every card in the resolving controller's. A regression fence rather than a

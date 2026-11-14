@@ -3718,7 +3718,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.Assemble _ -> null (Game.sideDeckOf SideDeck.Contraption controller gs)
   -- CR 701.31a: only the planar controller of a Planechase game planeswalks.
   Effect.Planeswalk -> not (Planechase.canPlaneswalk controller gs)
-  Effect.ChaosEnsues -> False
+  Effect.ChaosEnsues {} -> False
   -- CR 701.33a: only a face-up ongoing scheme may be abandoned.
   Effect.Abandon -> not (Archenemy.canAbandon source gs)
   -- CR 101.2 / 614.17c: All in Good Time's prohibition is not this question's.
@@ -4657,12 +4657,13 @@ reorderLibrary :: PlayerId -> [ObjectId] -> [ObjectId] -> GameState -> GameState
 reorderLibrary pid placed order gs =
   Event.forgetAllShown placed gs {GameState.library = Map.insert pid (Seq.fromList order) (GameState.library gs)}
 
--- `arranger` puts the cards `cards` names back into `owner`'s library, in an
--- order they state, at the positions those cards already occupy: CR 401.4's
+-- `arranger` puts the cards `cards` names back into a pile -- `holder`'s
+-- library, or their side deck of a kind -- in an order they state: at the
+-- positions those cards already occupy, or moved to a stated end. CR 401.4's
 -- owner for a search's find, the instruction's player (CR 608.2c) for
 -- Effect.ArrangeInLibrary.
 --
--- The library is REWRITTEN rather than funnelled through Event.changeZone, for
+-- The pile is REWRITTEN rather than funnelled through Event.changeZone, for
 -- decideScry's reason one rule over: nothing crosses a zone boundary, so CR 400.7
 -- mints no new incarnation and the ids the prompt named are the ids that move;
 -- CR 701.20d / 701.20e's new objects come after (reorderLibrary).
@@ -4674,18 +4675,39 @@ reorderLibrary pid placed order gs =
 -- else -- a player who knows the order of the top two cards of their library
 -- can tell the two answers apart at their next draw.
 --
--- The cards are taken in LIBRARY order (top first) rather than in the order the
+-- The cards are taken in PILE order (top first) rather than in the order the
 -- reference swept them, which is what makes the answer's indices mean what
--- Prompt.ArrangeLibraryCards says they mean. A card the reference named that has
--- left the library since (CR 603.7c) is simply not among them.
-arrangeInLibrary :: PlayerId -> [ObjectId] -> PlayerId -> Game ()
-arrangeInLibrary arranger cards owner = do
+-- Prompt.ArrangeLibraryCards says they mean; Prompt.ArrangeLibraryArrivals
+-- reads from the stated end inward. A card the reference named that has left
+-- the pile since (CR 603.7c) is simply not among them.
+arrangeInLibrary :: PlayerId -> [ObjectId] -> Maybe LibraryPosition.LibraryPosition -> (Maybe SideDeck.SideDeck, PlayerId) -> Game ()
+arrangeInLibrary arranger cards end (deck, holder) = do
   gs <- State.get
-  let whole = Game.zoneMembers Zone.Library owner gs
+  let whole = maybe (Game.zoneMembers Zone.Library holder gs) (\kind -> Game.sideDeckOf kind holder gs) deck
       moving = filter (\oid -> List.elem oid cards) whole
-  Monad.when (length moving > 1) $ do
-    answer <- Game.choose (Prompt.ArrangeLibraryCards (Decide.deciderFor arranger gs) arranger moving)
-    State.modify' (reorderLibrary owner moving (refill whole moving (Game.permute moving answer)))
+      rest = filter (\oid -> List.notElem oid moving) whole
+      batch = if end == Just LibraryPosition.Bottom then reverse moving else moving
+      prompt = case end of
+        Nothing -> Prompt.ArrangeLibraryCards (Decide.deciderFor arranger gs) arranger batch
+        Just position -> Prompt.ArrangeLibraryArrivals (Decide.deciderFor arranger gs) arranger position batch
+  arranged <- if length moving > 1 then Game.permute batch <$> Game.choose prompt else pure batch
+  let order = case end of
+        Nothing -> refill whole moving arranged
+        Just LibraryPosition.Top -> arranged <> rest
+        Just LibraryPosition.Bottom -> rest <> reverse arranged
+      write = case deck of
+        Nothing -> reorderLibrary holder moving order
+        Just kind -> Game.overSideDecks kind (Map.insert holder (Seq.fromList order))
+  Monad.when (length moving > (if Maybe.isJust end then 0 else 1)) (State.modify' write)
+
+-- The pile a card lies in, as arrangeInLibrary names one: its owner's library,
+-- or the side deck holding it (CR 901.15c: under the single planar deck option,
+-- the communal one's holder).
+pileOf :: ObjectId -> GameState -> Maybe (Maybe SideDeck.SideDeck, PlayerId)
+pileOf oid gs = case Game.lookupObject oid gs of
+  Just obj
+    | Object.zone obj == Zone.Library -> Just (Nothing, Object.owner obj)
+  _ -> Maybe.listToMaybe [(Just kind, holder) | (kind, decks) <- Map.toList (GameState.sideDecks gs), (holder, pile) <- Map.toList decks, List.elem oid pile]
 
 -- Put `ordered` back at the positions `moving` occupies in `whole`, leaving
 -- every other card where it was. Game.permute answers a permutation of `moving`

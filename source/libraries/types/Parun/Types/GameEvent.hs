@@ -471,8 +471,9 @@ data GameEvent
     -- off it and turned it face up.
     TurnedUpOffDeck TurnedUpOffDeck.TurnedUpOffDeck
   | -- | CR 311.7: chaos ensued, by the planar die's chaos symbol (CR 901.9b) or a
-    -- resolving spell or ability saying so.
-    ChaosEnsued
+    -- resolving spell or ability saying so; for the one plane card named, where
+    -- it ensued for a particular object.
+    ChaosEnsued (Maybe ObjectId.ObjectId)
   | -- | CR 717.2a: a permanent's class level BECAME something -- the level BEFORE
     -- and the level AFTER, CountersPut's shape and for CR 715.2b's reason, since
     -- "becomes level N" is a threshold crossing. Recorded by Parun.Engine.Resolve's

@@ -1154,7 +1154,7 @@ search settle performManaAbility runSubgame resolving source controller legal (S
             then do
               onTop <- concat <$> traverse (\oid -> Foldable.toList <$> Event.changeZoneAttaching settle Nothing Set.empty oid Zone.Library LibraryPosition.Top Nothing TapState.Untapped Map.empty Nothing Nothing Facing.FaceUp False CarryOver.NotCarried False Seq.empty) (reverse arrivals)
               owners <- State.gets (\gs -> ListUtils.nubOrd (Maybe.mapMaybe (\oid -> fmap Object.owner (Game.lookupObject oid gs)) onTop))
-              Monad.forM_ owners (\owner -> Common.arrangeInLibrary owner onTop owner)
+              Monad.forM_ owners (\owner -> Common.arrangeInLibrary owner onTop Nothing (Nothing, owner))
               pure onTop
             else pure arrivals
         -- CR 608.2c: "that card" in a later clause, or in a delayed ability

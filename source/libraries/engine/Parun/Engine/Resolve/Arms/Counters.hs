@@ -1433,8 +1433,14 @@ planeswalk resolving controller = do
   gs <- State.get
   Planechase.planeswalk (if Planechase.isPlaneswalkingAbility resolving gs then PlaneswalkCause.PlanarDie else PlaneswalkCause.Instruction) controller
 
-chaosEnsues :: Game ()
-chaosEnsues = State.modify' (Event.recordEvent GameEvent.ChaosEnsued)
+-- CR 311.7: chaos ensues, or ensues for each object the ObjectRef names as
+-- this instruction is reached (CR 608.2c), one event each.
+chaosEnsues :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> Maybe ObjectRef -> Game ()
+chaosEnsues resolving source controller legal ref = case ref of
+  Nothing -> State.modify' (Event.recordEvent (GameEvent.ChaosEnsued Nothing))
+  Just r -> do
+    gs <- State.get
+    Monad.mapM_ (State.modify' . Event.recordEvent . GameEvent.ChaosEnsued . Just) (objectRefObjects legal resolving controller source gs r)
 
 abandon :: ObjectId -> Game ()
 abandon = Archenemy.abandon

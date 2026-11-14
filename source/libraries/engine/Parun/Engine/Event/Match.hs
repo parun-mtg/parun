@@ -2188,11 +2188,12 @@ armMatches bindings board atEvent beforeEvent gs bearer you cond event = case co
         && maybe False (Set.member Subtype.Attraction . PC.subtypes . BattlefieldCandidate.characteristics) (Map.lookup bearer board)
     _ -> False
   -- CR 311.7: chaos ensued, whether the planar die's chaos symbol (CR 901.9b)
-  -- or a resolving spell or ability said so.
-  --
-  -- Not implemented: chaos ensuing for one particular object (#5100).
+  -- or a resolving spell or ability said so; chaos ensuing for one particular
+  -- object reaches that object's chaos ability alone (The Fertile Lands of
+  -- Saulvinia's ruling). eventTriggersGiven's `chaosEnsuedOn` offers a plane
+  -- still in its planar deck.
   TriggerCondition.ChaosEnsues -> case event of
-    GameEvent.ChaosEnsued -> True
+    GameEvent.ChaosEnsued on -> maybe True (== bearer) on
     _ -> False
   -- CR 901.8 / 901.9c: the roller, read against CR 109.5's "you" as
   -- PlayerActs does, rolled the Planeswalker symbol.

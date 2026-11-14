@@ -20,7 +20,7 @@ spec s = Spec.describe s "Parun.Codec.LookAt" $ do
       s
       LookAt.codec
       ( LookAt.MkLookAt
-          (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1)))
+          (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))
           (SlotName.MkSlotName (Text.pack "looked"))
           (PlayerRef.Relative PlayerRelation.You)
       )
@@ -31,7 +31,7 @@ spec s = Spec.describe s "Parun.Codec.LookAt" $ do
       s
       LookAt.codec
       ( LookAt.MkLookAt
-          (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1)))
+          (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 1) Nothing))
           (SlotName.MkSlotName (Text.pack "looked"))
           (PlayerRef.Relative PlayerRelation.Opponent)
       )

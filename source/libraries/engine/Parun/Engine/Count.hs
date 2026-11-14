@@ -984,7 +984,7 @@ snapshotView viewOf gs shape event = case event of
   GameEvent.RolledToVisit _ -> Nothing
   GameEvent.PlanarDieRolled _ -> Nothing
   GameEvent.TurnedUpOffDeck _ -> Nothing
-  GameEvent.ChaosEnsued -> Nothing
+  GameEvent.ChaosEnsued _ -> Nothing
   GameEvent.ClassLevelSet _ -> Nothing
   GameEvent.Plotted _ -> Nothing
   GameEvent.BecameAttacked _ -> Nothing

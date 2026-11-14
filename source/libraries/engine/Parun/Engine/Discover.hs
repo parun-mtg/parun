@@ -72,7 +72,7 @@ process n =
     atMostN = Filter.Measures Measures.MkMeasures {Measures.measure = Measure.ManaValue, Measures.comparison = Comparison.AtMost, Measures.operand = Operand.Literal n}
     stopsOn :: Filter.Filter Keyword.Keyword
     stopsOn = Filter.And [Filter.Not (Filter.HasCardType CardType.Land), atMostN]
-    walk = TopOfLibraryUntil.MkTopOfLibraryUntil {TopOfLibraryUntil.player = you, TopOfLibraryUntil.filter = stopsOn, TopOfLibraryUntil.weight = Quantity.Literal 1, TopOfLibraryUntil.count = Quantity.Literal 1}
+    walk = TopOfLibraryUntil.MkTopOfLibraryUntil {TopOfLibraryUntil.player = you, TopOfLibraryUntil.filter = stopsOn, TopOfLibraryUntil.weight = Quantity.Literal 1, TopOfLibraryUntil.count = Quantity.Literal 1, TopOfLibraryUntil.deck = Nothing}
     discovered = ObjectRef.EachCardFromAmong EachCardFromAmong.MkEachCardFromAmong {EachCardFromAmong.slot = Binding.discoveredCards, EachCardFromAmong.filter = stopsOn}
     free =
       CastOffer.MkCastOffer

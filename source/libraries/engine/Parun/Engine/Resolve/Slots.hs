@@ -254,6 +254,7 @@ import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetOwner as SetOwner
 import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
+import qualified Parun.Types.SideDeck as SideDeck
 import qualified Parun.Types.SkipPhase as SkipPhase
 import Parun.Types.SlotArity (SlotArity)
 import qualified Parun.Types.SlotArity as SlotArity
@@ -559,11 +560,11 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- The seat is objectRefPlayerRefs' half, joined at the head (Deflecting
   -- Palm's HolderOfBound); the narrowing Filter is a read like a sweep's.
   ObjectRef.Players (PlayersWho.MkPlayersWho _ who) -> foldMap filterSlotsOf who
-  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count) -> quantitySlots count
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count _) -> quantitySlots count
   -- The arm above's count, and each match's weight: the SEAT is
   -- objectRefPlayerRefs' half. What a MATCH is is a Filter, whose reads are
   -- joined as a sweep's are.
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ filter_ weight count) -> joinSlots [filterSlotsOf filter_, quantitySlots weight, quantitySlots count]
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ filter_ weight count _) -> joinSlots [filterSlotsOf filter_, quantitySlots weight, quantitySlots count]
   -- No count and no filter, so the SEAT is the whole read -- and it is
   -- objectRefPlayerRefs' half, reported by the fold this case is joined into.
   ObjectRef.TopOfGraveyard _ -> Map.empty
@@ -650,10 +651,10 @@ objectRefQuantities ref = case ref of
   ObjectRef.EachOnStack _ -> []
   -- A seat, never a count.
   ObjectRef.Players _ -> []
-  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count) -> [count]
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count _) -> [count]
   -- The arm above's count, measured in MATCHES rather than in cards, and what
   -- each match weighs.
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ _ weight count) -> [weight, count]
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil _ _ weight count _) -> [weight, count]
   -- CR 404.1's top card is ONE card, so the graveyard arm states no depth at all.
   ObjectRef.TopOfGraveyard _ -> []
   -- How many cards each chooser picks out of a graveyard or a hand -- Fall of
@@ -706,8 +707,8 @@ objectRefPlayerRefs ref = case ref of
   ObjectRef.EachOnStack _ -> []
   -- The reference IS a seat, so it is its own whole answer here.
   ObjectRef.Players (PlayersWho.MkPlayersWho player _) -> [player]
-  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player _) -> [player]
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil player _ _ _) -> [player]
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player _ _) -> [player]
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil player _ _ _ _) -> [player]
   -- Whose graveyard, the two library walks' own read over CR 400.1's other
   -- per-player zone.
   ObjectRef.TopOfGraveyard player -> [player]
@@ -832,7 +833,7 @@ effectPlayerRefs effect = case effect of
   Effect.AsYouCascade {} -> []
   Effect.Explore {} -> []
   Effect.Assemble {} -> []
-  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary _ chooser) -> [chooser]
+  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary _ chooser _) -> [chooser]
   Effect.Connive {} -> []
   Effect.Discard subject -> case subject of
     Discard.Counted (CountedDiscard.MkCountedDiscard ref _ _) -> [ref]
@@ -965,7 +966,7 @@ effectPlayerRefs effect = case effect of
   Effect.TemptWithTheRing -> []
   Effect.OpenAttraction -> []
   Effect.Planeswalk -> []
-  Effect.ChaosEnsues -> []
+  Effect.ChaosEnsues {} -> []
   Effect.Abandon -> []
   Effect.SetInMotion _ -> []
   Effect.ClaimPrize -> []
@@ -1173,7 +1174,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.TemptWithTheRing -> Map.empty
   Effect.OpenAttraction -> Map.empty
   Effect.Planeswalk -> Map.empty
-  Effect.ChaosEnsues -> Map.empty
+  Effect.ChaosEnsues {} -> Map.empty
   Effect.Abandon -> Map.empty
   Effect.SetInMotion _ -> Map.empty
   Effect.ClaimPrize -> Map.empty
@@ -2081,7 +2082,7 @@ ownSlotsAreExhaustive effect = case effect of
   Effect.TemptWithTheRing -> True
   Effect.OpenAttraction -> True
   Effect.Planeswalk -> True
-  Effect.ChaosEnsues -> True
+  Effect.ChaosEnsues {} -> True
   Effect.Abandon -> True
   Effect.SetInMotion _ -> True
   Effect.ClaimPrize -> True
@@ -2390,7 +2391,7 @@ hasRead wanted =
         Effect.TemptWithTheRing -> False
         Effect.OpenAttraction -> False
         Effect.Planeswalk -> False
-        Effect.ChaosEnsues -> False
+        Effect.ChaosEnsues {} -> False
         Effect.Abandon -> False
         Effect.SetInMotion _ -> False
         Effect.ClaimPrize -> False
@@ -2696,7 +2697,7 @@ boundSlots effect = case effect of
   Effect.TemptWithTheRing -> Set.empty
   Effect.OpenAttraction -> Set.empty
   Effect.Planeswalk -> Set.empty
-  Effect.ChaosEnsues -> Set.empty
+  Effect.ChaosEnsues {} -> Set.empty
   Effect.Abandon -> Set.empty
   Effect.SetInMotion _ -> Set.empty
   Effect.ClaimPrize -> Set.empty
@@ -3212,13 +3213,13 @@ objectRefObjects legal resolving controller source gs ref = case ref of
   -- CARDS, so a token waiting in the library for CR 704.5d (CR 111.7) is passed
   -- over rather than counted towards the depth -- Warp World's 2009-10-01 ruling.
   -- Proved by data/scenarios/warp-world-counts-a-token-but-reveals-only-cards.json.
-  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player count) ->
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player count deck) ->
     let named = playerRefPlayers legal resolving source controller gs player
         viewOf = effectViewOf resolving source legal gs
         context = effectContext gs resolving controller source legal (slotBindings resolving gs)
         depth pid = maybe 0 Integer.toNaturalSaturating (Quantity.evaluateFor viewOf (context {Filter.recipient = Just pid}) gs resolving source (Quantity.forCandidate pid count))
      in concatMap
-          (\pid -> List.genericTake (depth pid) (libraryCards pid gs))
+          (\pid -> List.genericTake (depth pid) (deckCards deck pid gs))
           (filter (`elem` named) (Game.apnapOrder gs))
   -- The arm above's walk with its Quantity counting MATCHES rather than cards:
   -- the same prefix of CR 401.2's ordered pile taken from its head (CR 121.1),
@@ -3244,7 +3245,7 @@ objectRefObjects legal resolving controller source gs ref = case ref of
   -- Filter is matched against each card's own projection as the walk reaches it
   -- (CR 608.2c) -- the context is this resolution's, so a filter reading a slot
   -- this resolution bound sees it. Cards only, the arm above's reason.
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil player filter_ weight count) ->
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil player filter_ weight count deck) ->
     let named = playerRefPlayers legal resolving source controller gs player
         viewOf = effectViewOf resolving source legal gs
         context = effectContext gs resolving controller source legal (slotBindings resolving gs)
@@ -3258,7 +3259,7 @@ objectRefObjects legal resolving controller source gs ref = case ref of
             else case oids of
               [] -> []
               oid : rest -> oid : walkDown (if matches oid then remaining - min remaining (weighs oid) else remaining) rest
-        walk pid = walkDown wanted (libraryCards pid gs)
+        walk pid = walkDown wanted (deckCards deck pid gs)
      in concatMap walk (filter (`elem` named) (Game.apnapOrder gs))
   -- CR 404.1's ordered pile, whose top is the NEWEST arrival -- the LAST member,
   -- the opposite end from the two library walks above, because
@@ -3298,6 +3299,13 @@ objectRefObjects legal resolving controller source gs ref = case ref of
 -- is there until CR 704.5d removes it (CR 111.7), and is not a card.
 libraryCards :: PlayerId -> GameState -> [ObjectId]
 libraryCards = Game.cardsIn Zone.Library
+
+-- The cards in one player's library, or in their side deck of this kind, top
+-- first (CR 401.2 / 901.3).
+deckCards :: Maybe SideDeck.SideDeck -> PlayerId -> GameState -> [ObjectId]
+deckCards deck pid gs = case deck of
+  Nothing -> libraryCards pid gs
+  Just kind -> Game.sideDeckOf kind (Plane.deckHolder kind pid gs) gs
 
 -- The cards in ONE player's graveyard matching the filter, in ascending
 -- ObjectId. The filter is matched in THIS EFFECT's context -- the caller's, so

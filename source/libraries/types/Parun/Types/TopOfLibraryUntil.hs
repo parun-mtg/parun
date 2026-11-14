@@ -4,6 +4,7 @@ import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.SideDeck as SideDeck
 
 -- | The top of a library (CR 401.2, CR 121.1) walked down to and INCLUDING the
 -- card whose match ENDS the walk, named by whose library, by what a match is,
@@ -33,6 +34,9 @@ data TopOfLibraryUntil = MkTopOfLibraryUntil
     -- | What one match adds to the tally, read against that card's projection;
     -- an unevaluable or negative weight adds nothing (CR 107.2, 107.1b).
     weight :: Quantity.Quantity,
-    count :: Quantity.Quantity
+    count :: Quantity.Quantity,
+    -- | Nothing for the library; a side deck's top otherwise (CR 901.3 / 311.7:
+    -- The Fertile Lands of Saulvinia's "until you reveal a plane card").
+    deck :: Maybe SideDeck.SideDeck
   }
   deriving (Eq, Ord, Show)

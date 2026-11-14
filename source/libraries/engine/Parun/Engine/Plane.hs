@@ -52,6 +52,11 @@ planarDeckHolder pid gs
   | GameSettings.singlePlanarDeck (MatchScope.settings (GameState.match gs)) = maybe pid fst (Map.lookupMin (Game.sideDecksOf SideDeck.Planar gs))
   | otherwise = pid
 
+-- | The seat whose GameState.sideDecks entry holds this player's side deck of
+-- this kind: planarDeckHolder for the planar deck, the player otherwise.
+deckHolder :: SideDeck.SideDeck -> PlayerId -> GameState -> PlayerId
+deckHolder kind pid gs = if kind == SideDeck.Planar then planarDeckHolder pid gs else pid
+
 -- | CR 901.10 / 901.10b: the owner of the phenomenon card this object is a
 -- triggered ability from, or a copy of one (CR 707.10b), and Nothing for any
 -- other object. Through last-known information, since the rule asks it once the

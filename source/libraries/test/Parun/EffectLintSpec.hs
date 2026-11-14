@@ -1440,7 +1440,7 @@ effectObjectRefs effect =
         Effect.TemptWithTheRing -> []
         Effect.OpenAttraction -> []
         Effect.Planeswalk -> []
-        Effect.ChaosEnsues -> []
+        Effect.ChaosEnsues ref -> read_ (Maybe.maybeToList ref)
         Effect.Abandon -> []
         Effect.SetInMotion ref -> read_ [ref]
         Effect.ClaimPrize -> []
@@ -1486,7 +1486,7 @@ effectObjectRefs effect =
         Effect.AsYouCascade slot -> read_ [ObjectRef.InSlot slot]
         Effect.Explore ref -> read_ [ref]
         Effect.Assemble ref -> read_ (Maybe.maybeToList ref)
-        Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref _) -> read_ [ref]
+        Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref _ _) -> read_ [ref]
         Effect.Connive (Connive.MkConnive _ ref) -> read_ [ref]
         Effect.Discard subject -> case subject of
           Discard.Counted {} -> []
@@ -2060,7 +2060,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           ObjectRef.EachAbility _ -> False
           ObjectRef.EachOnStack _ -> False
           ObjectRef.Players _ -> False
-          ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player depth) -> case depth of
+          ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player depth _) -> case depth of
             Quantity.Type.Literal n -> n <= 1 && namesOneSeat player
             _ -> False
           -- FALSE however narrow the seat and however small the count: a walk
@@ -2464,7 +2464,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
         -- is the ARM of the reference.
         gaining ref = Effect.GainLife (PlayerQuantity.MkPlayerQuantity ref (Quantity.Type.Literal 1))
         -- The same reference NESTED IN AN OBJECTREF, CR 400.1's per-seat walk.
-        revealing ref = Effect.Reveal (Reveal.MkReveal (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary ref (Quantity.Type.Literal 1))) Nothing Nothing)
+        revealing ref = Effect.Reveal (Reveal.MkReveal (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary ref (Quantity.Type.Literal 1) Nothing)) Nothing Nothing)
         -- CR 608.2h's arm anywhere a PlayerRef sits in an effect, which is the
         -- corpus half of this leg. A wildcard because it is a presence probe:
         -- every other arm is not this one, however many there come to be.

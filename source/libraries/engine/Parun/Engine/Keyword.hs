@@ -5471,7 +5471,7 @@ ingest =
   let effect =
         Effect.MoveToZone
           ( MoveToZone.MkMoveToZone
-              (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.InSlot Binding.triggerPlayer) (Quantity.Literal 1)))
+              (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.InSlot Binding.triggerPlayer) (Quantity.Literal 1) Nothing))
               Zone.Exile
               EntryRiders.defaultValue
               Nothing
@@ -7388,7 +7388,7 @@ hideaway n =
       look =
         Effect.LookAt
           ( LookAt.MkLookAt
-              (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal (toInteger n))))
+              (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal (toInteger n)) Nothing))
               hideawaySeen
               (PlayerRef.Relative PlayerRelation.You)
           )
@@ -8012,7 +8012,7 @@ cascade =
       exile =
         Effect.MoveToZone
           ( MoveToZone.MkMoveToZone
-              (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) match (Quantity.Literal 1) (Quantity.Literal 1)))
+              (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) match (Quantity.Literal 1) (Quantity.Literal 1) Nothing))
               Zone.Exile
               plain
               (Just cascadeExiled)
@@ -8116,7 +8116,7 @@ ripple n =
       show_ =
         Effect.Reveal
           ( Reveal.MkReveal
-              (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal (toInteger n))))
+              (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal (toInteger n)) Nothing))
               (Just rippleRevealed)
               Nothing
           )

@@ -1047,7 +1047,7 @@ effectChildren c effect = case effect of
     fmap (\rewritten -> Effect.FromOutsideTheGame (FromOutsideTheGame.MkFromOutsideTheGame count upTo destination rewritten reveal differentIn pick)) (onFilter c filter_)
   Effect.ExileThisSpell -> pure effect
   Effect.LookAt (LookAt.MkLookAt ref named looker) -> fmap Effect.LookAt (LookAt.MkLookAt <$> onObjectRef c ref <*> onSlot c named <*> onPlayer c looker)
-  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref chooser) -> fmap Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary <$> onObjectRef c ref <*> onPlayer c chooser)
+  Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary ref chooser end) -> fmap Effect.ArrangeInLibrary (ArrangeInLibrary.MkArrangeInLibrary <$> onObjectRef c ref <*> onPlayer c chooser <*> pure end)
   Effect.Scry x -> fmap Effect.Scry (playerQuantityChildren c x)
   Effect.Surveil (Surveil.MkSurveil who quantity named) -> fmap Effect.Surveil (Surveil.MkSurveil <$> onPlayer c who <*> onQuantity c quantity <*> traverse (onSlot c) named)
   Effect.Fateseal x -> fmap Effect.Fateseal (playerQuantityChildren c x)
@@ -1245,7 +1245,7 @@ effectChildren c effect = case effect of
   Effect.OpenAttraction -> pure effect
   Effect.Assemble ref -> fmap Effect.Assemble (traverse (onObjectRef c) ref)
   Effect.Planeswalk -> pure effect
-  Effect.ChaosEnsues -> pure effect
+  Effect.ChaosEnsues ref -> fmap Effect.ChaosEnsues (traverse (onObjectRef c) ref)
   Effect.Abandon -> pure effect
   Effect.SetInMotion ref -> fmap Effect.SetInMotion (onObjectRef c ref)
   Effect.ClaimPrize -> pure effect
@@ -3254,8 +3254,8 @@ objectRefChildren c ref = case ref of
   ObjectRef.EachAbility filter_ -> ObjectRef.EachAbility <$> refFilter c filter_
   ObjectRef.EachOnStack filter_ -> ObjectRef.EachOnStack <$> refFilter c filter_
   ObjectRef.Players (PlayersWho.MkPlayersWho players who) -> fmap ObjectRef.Players (PlayersWho.MkPlayersWho <$> refPlayer c players <*> traverse (refFilter c) who)
-  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary seat count) -> fmap ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary <$> refPlayer c seat <*> refQuantity c count)
-  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil seat filter_ weight count) -> fmap ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil <$> refPlayer c seat <*> refFilter c filter_ <*> refQuantity c weight <*> refQuantity c count)
+  ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary seat count deck) -> fmap ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary <$> refPlayer c seat <*> refQuantity c count <*> pure deck)
+  ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil seat filter_ weight count deck) -> fmap ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil <$> refPlayer c seat <*> refFilter c filter_ <*> refQuantity c weight <*> refQuantity c count <*> pure deck)
   ObjectRef.TopOfGraveyard seat -> ObjectRef.TopOfGraveyard <$> refPlayer c seat
   ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard chooser players filter_ count) ->
     fmap ObjectRef.ChosenCardInGraveyard (ChosenCardInGraveyard.MkChosenCardInGraveyard <$> refChooser c chooser <*> refZones c players <*> refFilter c filter_ <*> howManyChildren (refQuantity c) count)

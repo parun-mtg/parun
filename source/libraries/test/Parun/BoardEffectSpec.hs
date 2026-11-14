@@ -1353,7 +1353,7 @@ communeWithLavaSpec s registry =
               -- A slotless reveal: the planted Quantity is in the ref's depth,
               -- and the bind slot is a separate position this case says nothing
               -- about.
-              depthOf q = Effect.Reveal (Reveal.MkReveal (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q)) Nothing Nothing)
+              depthOf q = Effect.Reveal (Reveal.MkReveal (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q Nothing)) Nothing Nothing)
           -- SlotArity.Amount and not One: the depth reads the slot's amount
           -- rather than an object, so the entry is a read with no arity claim on
           -- it (Parun.Engine.Resolve.Slots.quantitySlots).
@@ -1390,7 +1390,7 @@ communeWithLavaSpec s registry =
           let damageDepthOf q =
                 Effect.DealDamage
                   ( DealDamage.MkDealDamage
-                      (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q)) (Quantity.Literal 1)))
+                      (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q Nothing)) (Quantity.Literal 1)))
                       Nothing
                       Nothing
                       Nothing
@@ -1417,7 +1417,7 @@ communeWithLavaSpec s registry =
           let giverDepthOf q =
                 Effect.MoveCounters
                   ( MoveCounters.MkMoveCounters
-                      (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q))
+                      (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) q Nothing))
                       (MovedKinds.EveryOfKind CounterKind.PlusOnePlusOne)
                       Nothing
                       (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "recipient")))

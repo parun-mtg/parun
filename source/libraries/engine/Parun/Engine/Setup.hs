@@ -539,7 +539,7 @@ createInSideDeck kind pid printingId = do
 intoSideDeck :: SideDeck.SideDeck -> PlayerId -> ObjectId -> GameState -> GameState
 intoSideDeck kind pid oid gs =
   let moved = Game.removeFromZones oid gs
-      holder = if kind == SideDeck.Planar then Plane.planarDeckHolder pid gs else pid
+      holder = Plane.deckHolder kind pid gs
    in Game.overSideDecks
         kind
         (Map.insertWith (flip (Seq.><)) holder (Seq.singleton oid))
