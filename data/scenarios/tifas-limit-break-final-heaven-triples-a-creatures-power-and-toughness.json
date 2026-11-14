@@ -1,0 +1,59 @@
+{
+  "description": "Tifa's Limit Break cast for its Final Heaven tier triples target creature's power and toughness until end of turn",
+  "note": "CR 701.11b: alice's Giant Spider, a 2/4, gets +4/+8 and is 6/12; the other tiers would make it 4/6 or 4/8. Bob's Hill Giant gives the target prompt a second candidate. The spider is 2/4 again at bob's turn.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Giant Spider", "label": "spider" },
+          { "card": "Forest", "label": "f1" },
+          { "card": "Forest", "label": "f2" },
+          { "card": "Forest", "label": "f3" },
+          { "card": "Forest", "label": "f4" },
+          { "card": "Forest", "label": "f5" },
+          { "card": "Forest", "label": "f6" },
+          { "card": "Forest", "label": "f7" },
+          { "card": "Forest", "label": "f8" }
+        ],
+        "hand": [{ "card": "Tifa's Limit Break", "label": "limit" }],
+        "library": [{ "card": "Forest" }, { "card": "Forest" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [{ "card": "Hill Giant", "label": "giant" }],
+        "library": [{ "card": "Forest" }, { "card": "Forest" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$limit",
+          "mana": ["$f1", "$f2", "$f3", "$f4", "$f5", "$f6", "$f7", "$f8"],
+          "modes": [2],
+          "targets": ["$spider"]
+        }
+      }
+    },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": { "PowerToughness": { "object": "$spider", "power": 6, "toughness": 12 } }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "bob",
+      "check": { "PowerToughness": { "object": "$spider", "power": 2, "toughness": 4 } }
+    }
+  ]
+}
