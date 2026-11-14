@@ -80,7 +80,8 @@ designatedPlayers = Turn.roleHolders TurnRole.Defending
 -- So does Projection.framedBy for a source's own ability; the CR 613 layer fold,
 -- below Projection, frames through Parun.Engine.SourceContext.framedWith with its
 -- own bounded view.
--- Parun.CombatEffectSpec's LastKnownDefendingPlayer group is those two falsifiers.
+-- data/scenarios/planeswalker-combat's "swathcutter-giant" and "gaeas-liege"
+-- scenarios prove the two.
 --
 -- CR 506.4 is why the lookup serves CR 802.2a's PRESENT tense on its own: a
 -- planeswalker whose controller changes is removed from combat, so "controls" and

@@ -94,7 +94,8 @@
           },
           {
             "card": "Forest",
-            "label": "bf1"
+            "label": "bf1",
+            "tapped": true
           }
         ],
         "hand": [
@@ -145,7 +146,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 508.5 / 506.4e / 310.9d whole cards: Gaea's Liege attacking, as a planeswalker, a Siege that is only a battle now counts its protector's Forests, not its controller's",
-  "note": "Three seats, every opponent defending (CR 802.2). bob's Invasion of Dominaria, carol protecting it, is made a 5/5 artifact creature (Liquimetal Coating, Skilled Animator) and a planeswalker (Planeswalkerificate) on his turn. On alice's turn Gaea's Liege, 2/2 on her two Forests, attacks it as a planeswalker and counts bob's one Forest. Magnetic Theft then attaches Luxior, Giada's Gift: no planeswalker, still a battle being attacked (CR 506.4e), so carol, its protector, is the defending player relative to it (CR 310.9d), and the Liege's layer 7b effect counts her three Forests (CR 508.5).",
+  "note": "Three seats, every opponent defending (CR 802.2). bob's Invasion of Dominaria, carol protecting it, is made a 5/5 artifact creature (Liquimetal Coating, Skilled Animator) and a planeswalker (Planeswalkerificate) on his turn. On alice's turn Gaea's Liege, 2/2 on her two Forests, attacks it as a planeswalker and counts bob's one Forest. bob's Forest starts tapped, so it pays for nothing. Magnetic Theft then attaches Luxior, Giada's Gift: no planeswalker, still a battle being attacked (CR 506.4e), so carol, its protector, is the defending player relative to it (CR 310.9d), and the Liege's layer 7b effect counts her three Forests (CR 508.5).",
   "timeline": [
     {
       "do": {
@@ -323,7 +324,8 @@
       "do": {
         "Cast": {
           "mana": [
-            "$mtn"
+            "$mtn",
+            null
           ],
           "object": "$theft",
           "targetsBySlot": {
