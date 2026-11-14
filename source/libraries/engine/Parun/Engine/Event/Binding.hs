@@ -263,7 +263,9 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- controls". One seat each per member, and one each per trigger:
   -- `batchPartition` below is what splits the batch by both. No damaged player
   -- for "to one or more players" (Forth Eorlingas!), whose occurrence spans
-  -- every player the step damaged, so `batchPartition` leaves it whole.
+  -- every player the step damaged, so `batchPartition` leaves it whole. No
+  -- controller where the filter names none (Witch-king of Angmar), whose
+  -- occurrence spans every damager's controller likewise.
   --
   -- Unconditional given a match: that matcher answers False for a damager with
   -- no view or a recipient that is no player, and a permanent's view always
@@ -274,7 +276,8 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   (TriggerCondition.PermanentsDealDamageToPlayer p, GameEvent.DamageDealt ev) ->
     let damager = DamageEvent.source ev
         damaged = if PermanentsDealDamageToPlayer.oneOrMorePlayers p then Nothing else Recipient.playerOf (DamageEvent.target ev)
-     in maybe id Binding.setTriggerPlayer damaged (maybe id Binding.setDamagersController (Filter.controller =<< postEventView board gs damager) Map.empty)
+        controller = if PermanentsDealDamageToPlayer.anyController p then Nothing else Filter.controller =<< postEventView board gs damager
+     in maybe id Binding.setTriggerPlayer damaged (maybe id Binding.setDamagersController controller Map.empty)
   -- CR 726.2's "its controller becomes the monarch": the damaging creature,
   -- under the reserved trigger-source slot Effect.BecomeMonarch's
   -- ControllerOfSource reads. The abilities have no source (CR 726.2), and no
@@ -862,8 +865,8 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
 -- batch-scoped condition, whose group is one occurrence whole.
 --
 -- For PermanentsDealDamageToPlayer, the damagers' controller and the
--- damaged player. The controller because each printing in data/cards/ names
--- it -- "you control", "an opponent controls" -- and Norn's Decree's "one or
+-- damaged player. The controller where the printing names it -- "you
+-- control", "an opponent controls" -- since Norn's Decree's "one or
 -- more creatures AN OPPONENT controls" is one occurrence per opponent whose
 -- creatures connected, CR 727.2's "a player controls" grouped the same way
 -- below. The damaged player because CR
@@ -871,13 +874,12 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
 -- a player" is one occurrence per player hit: Feline Sovereign's "that player
 -- controls" and The Raven's Warning's "that player's hand" name one seat.
 -- Not for "to one or more players" (Forth Eorlingas!), whose eventBindings arm
--- stamps no damaged player.
+-- stamps no damaged player, nor for a filter naming no controller (Witch-king
+-- of Angmar), whose arm stamps no controller.
 -- data/scenarios/card-trigger/cr-603-2c-feline-sovereign-triggers-once-per-player-its-cats-hit.json
--- proves the split.
---
--- Not implemented: a batch naming no controller, one occurrence whoever's
--- creatures connected -- Starscream, Power Hungry's "one or more creatures deal
--- combat damage to you" (#4473).
+-- proves the split, and
+-- data/scenarios/card-trigger/cr-603-2c-witch-king-triggers-once-whoever-controls-the-damagers.json
+-- the whole.
 batchPartition :: TriggerCondition -> Map.Map SlotName.SlotName Binding -> Seq.Seq (Either PlayerId ObjectId)
 batchPartition cond bindings = case cond of
   -- One occurrence per damager: Noble Purpose's "a creature you control deals
@@ -1567,10 +1569,12 @@ eventBindingSlots cond = case cond of
   -- 603.2c), so they are the seats every member of an occurrence shares. Norn's
   -- Decree's "that opponent" reads the first, Feline Sovereign's "that player"
   -- the second. The controller alone for "to one or more players", which names
-  -- no one damaged player.
-  TriggerCondition.PermanentsDealDamageToPlayer p
-    | PermanentsDealDamageToPlayer.oneOrMorePlayers p -> Set.singleton Binding.damagersController
-    | otherwise -> Set.fromList [Binding.damagersController, Binding.triggerPlayer]
+  -- no one damaged player, and no controller for a filter naming none.
+  TriggerCondition.PermanentsDealDamageToPlayer p ->
+    Set.fromList
+      ( [Binding.damagersController | not (PermanentsDealDamageToPlayer.anyController p)]
+          <> [Binding.triggerPlayer | not (PermanentsDealDamageToPlayer.oneOrMorePlayers p)]
+      )
   -- CR 726.2's damaging creature, and CR 727.2's with its controller beside it:
   -- both unconditional given a match, which admits only a creature in the
   -- event's sample, whose view always carries its controller.

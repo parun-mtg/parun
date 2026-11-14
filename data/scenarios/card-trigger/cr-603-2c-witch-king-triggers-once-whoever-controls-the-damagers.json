@@ -1,0 +1,46 @@
+{
+  "description": "CR 603.2c Witch-king of Angmar triggers once when two players' creatures deal combat damage to its controller in one step",
+  "note": "bob's Bears hit alice, and Harm's Way sends carol's blocker's combat damage to alice in the same step, so two players' creatures damage her at once. One trigger: bob sacrifices his Bears, carol's blocker is already dead to the Giant, and the Ring tempts alice once.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Witch-king of Angmar", "label": "witchking", "ready": true }],
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Grizzly Bears", "label": "bears", "ready": true },
+          { "card": "Hill Giant", "label": "giant", "ready": true },
+          { "card": "Plains", "label": "w" }
+        ],
+        "hand": [{ "card": "Harm's Way", "label": "way" }],
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }]
+      },
+      {
+        "name": "carol",
+        "battlefield": [{ "card": "Grizzly Bears", "label": "blocker", "ready": true }],
+        "library": [{ "card": "Swamp" }, { "card": "Swamp" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": ["$bears", "$giant"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "source": "$bears", "do": { "ChooseAttackTarget": "$alice" } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "bob", "source": "$giant", "do": { "ChooseAttackTarget": "$carol" } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "alice", "do": { "Block": {} } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "carol", "do": { "Block": { "$blocker": ["$giant"] } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "do": { "Cast": { "object": "$way", "mana": ["$w"], "targets": ["$alice"] } } },
+    { "turn": 1, "step": "DeclareBlockers", "player": "bob", "do": { "Answer": { "prompt": "ChooseDamageSource", "with": "$blocker" } } },
+    { "turn": 1, "step": "CombatDamage", "player": "bob", "check": { "View": { "of": "Stack", "is": ["trigger of $witchking"] } } },
+    { "turn": 1, "step": "CombatDamage", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "EndOfCombat", "player": "bob", "check": { "Life": { "player": "alice", "life": 16 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "bob", "check": { "Damage": { "object": "$giant", "damage": 0 } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "bob", "check": { "View": { "of": "Zone", "player": "bob", "zone": "Battlefield", "is": ["$giant", "$w"] } } },
+    { "turn": 1, "step": "EndOfCombat", "player": "bob", "check": { "View": { "of": "RingBearer", "object": "$witchking", "is": "alice" } } }
+  ]
+}
