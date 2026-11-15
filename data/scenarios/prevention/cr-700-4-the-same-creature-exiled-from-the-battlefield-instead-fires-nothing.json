@@ -1,0 +1,122 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Whippoorwill",
+            "label": "bird",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "named"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "bystander"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Plains",
+            "label": "land"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Swords to Plowshares",
+            "label": "spell"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 700.4 the same creature exiled from the battlefield instead fires nothing",
+  "note": "Whippoorwill's \"when the creature dies this turn\" watches a death (CR 700.4), and Swords to Plowshares exiling the named Piker from the battlefield is none, so nothing reaches the stack. The --control file kills it with Shock instead and the trigger fires.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$f1",
+            "$f2",
+            null
+          ],
+          "object": "$bird",
+          "targets": [
+            "$named"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$land"
+          ],
+          "object": "$spell",
+          "targets": [
+            "$named"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Goblin Piker",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

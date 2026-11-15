@@ -6,59 +6,59 @@
         "battlefield": [
           {
             "card": "Island",
-            "label": "island1"
+            "label": "island-1"
           },
           {
             "card": "Island",
-            "label": "island2"
+            "label": "island-2"
           },
           {
             "card": "Island",
-            "label": "island3"
+            "label": "island-3"
           },
           {
             "card": "Island",
-            "label": "island4"
+            "label": "island-4"
           },
           {
             "card": "Island",
-            "label": "island5"
+            "label": "island-5"
           },
           {
             "card": "Island",
-            "label": "island6"
+            "label": "island-6"
           },
           {
             "card": "Island",
-            "label": "island7"
+            "label": "island-7"
           },
           {
             "card": "Island",
-            "label": "island8"
+            "label": "island-8"
           },
           {
             "card": "Island",
-            "label": "island9"
+            "label": "island-9"
           },
           {
             "card": "Island",
-            "label": "island10"
+            "label": "island-10"
           },
           {
             "card": "Mountain",
-            "label": "amountain1"
+            "label": "mountain-1"
           },
           {
             "card": "Mountain",
-            "label": "amountain2"
+            "label": "mountain-2"
           },
           {
             "card": "Plains",
-            "label": "plains1"
+            "label": "plains-1"
           },
           {
             "card": "Plains",
-            "label": "plains2"
+            "label": "plains-2"
           }
         ],
         "hand": [
@@ -72,19 +72,19 @@
           },
           {
             "card": "Mending Hands",
-            "label": "hands1"
+            "label": "hands-1"
           },
           {
             "card": "Mending Hands",
-            "label": "hands2"
+            "label": "hands-2"
           },
           {
             "card": "Mending Hands",
-            "label": "hands3"
+            "label": "hands-3"
           },
           {
             "card": "Mending Hands",
-            "label": "hands4"
+            "label": "hands-4"
           }
         ],
         "library": [
@@ -125,33 +125,33 @@
         "battlefield": [
           {
             "card": "Mountain",
-            "label": "m1"
+            "label": "bmountain-1"
           },
           {
             "card": "Mountain",
-            "label": "m2"
+            "label": "bmountain-2"
           },
           {
             "card": "Mountain",
-            "label": "m3"
+            "label": "bmountain-3"
           }
         ],
         "hand": [
           {
             "card": "Lightning Bolt",
-            "label": "bolt1"
+            "label": "bolt-1"
           },
           {
             "card": "Lightning Bolt",
-            "label": "bolt2"
+            "label": "bolt-2"
           },
           {
             "card": "Lightning Bolt",
-            "label": "bolt3"
+            "label": "bolt-3"
           },
           {
             "card": "Lightning Bolt",
-            "label": "bolt4"
+            "label": "bolt-4"
           }
         ],
         "library": [
@@ -192,7 +192,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 500.7 damage can't be prevented during the Gambit's own extra turn, and on no other",
-  "note": "alice casts Alchemist's Gambit for its cleave cost, then Time Warp on herself: Time Warp's turn (2) is taken first, the Gambit's (3) after it, then bob's (4). On each of turns 1-4 alice shields herself with Mending Hands and bob Lightning Bolts her: the 3 is prevented on the turn the Gambit resolved, on Time Warp's turn and on bob's turn, and lands only on the Gambit's own turn, ruling out a 'during your next turn' reading. Cleaved, no loss clause: the game is still going on turn 4. The Gambit exiled itself while Time Warp went to the graveyard. The Haskell test's read of the stored row's cleanup drop is an internal store and has no restatement.",
+  "note": "Alchemist's Gambit, cleaved, creates extra turn A; Time Warp, cast after it, creates extra turn B, which is taken first (CR 500.7). Each turn alice shields herself with Mending Hands and bob Bolts her at the end step: the 3 is prevented on the turn the Gambit resolved, on B (turn 2), and on bob's turn 4 after A, and lands only on A (turn 3). A 'during your next turn' reading would open the window on B. Cleaved, the loss clause is gone, so alice takes turn 5. Bob's three Mountains don't untap until his own turn 4.",
   "timeline": [
     {
       "do": {
@@ -225,13 +225,13 @@
             }
           ],
           "mana": [
-            "$island1",
-            "$island2",
-            "$island3",
-            "$island4",
-            "$island5",
-            "$island6",
-            "$amountain1",
+            "$island-1",
+            "$island-2",
+            "$island-3",
+            "$island-4",
+            "$island-5",
+            "$island-6",
+            "$mountain-1",
             null
           ],
           "object": "$gambit"
@@ -251,11 +251,11 @@
       "do": {
         "Cast": {
           "mana": [
-            "$island7",
-            "$island8",
-            "$island9",
-            "$island10",
-            "$amountain2",
+            "$island-7",
+            "$island-8",
+            "$island-9",
+            "$island-10",
+            "$mountain-2",
             null
           ],
           "object": "$warp",
@@ -275,12 +275,33 @@
       "turn": 1
     },
     {
-      "check": {
-        "View": {
-          "is": [
-            "Alchemist's Gambit"
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains-1",
+            null
           ],
-          "of": "Zone",
+          "object": "$hands-1",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Alchemist's Gambit",
+          "count": 1,
           "player": "alice",
           "zone": "Exile"
         }
@@ -291,11 +312,9 @@
     },
     {
       "check": {
-        "View": {
-          "is": [
-            "Time Warp"
-          ],
-          "of": "Zone",
+        "Count": {
+          "card": "Time Warp",
+          "count": 1,
           "player": "alice",
           "zone": "Graveyard"
         }
@@ -308,40 +327,23 @@
       "do": {
         "Cast": {
           "mana": [
-            "$plains1",
+            "$bmountain-1",
             null
           ],
-          "object": "$hands1",
-          "targets": [
-            "$alice"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": "Pass",
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "do": {
-        "Cast": {
-          "mana": [
-            "$m1",
-            null
-          ],
-          "object": "$bolt1",
+          "object": "$bolt-1",
           "targets": [
             "$alice"
           ]
         }
       },
       "player": "bob",
-      "step": "BeginningOfCombat",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "EndStep",
       "turn": 1
     },
     {
@@ -351,18 +353,29 @@
           "player": "alice"
         }
       },
-      "player": "alice",
-      "step": "PostcombatMain",
+      "player": "bob",
+      "step": "EndStep",
       "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "of": "ActivePlayer"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
       "do": {
         "Cast": {
           "mana": [
-            "$plains1",
+            "$plains-1",
             null
           ],
-          "object": "$hands2",
+          "object": "$hands-2",
           "targets": [
             "$alice"
           ]
@@ -382,17 +395,34 @@
       "do": {
         "Cast": {
           "mana": [
-            "$m2",
+            "$bmountain-2",
             null
           ],
-          "object": "$bolt2",
+          "object": "$bolt-2",
           "targets": [
             "$alice"
           ]
         }
       },
       "player": "bob",
-      "step": "DrawStep",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "alice"
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
       "turn": 2
     },
     {
@@ -403,28 +433,17 @@
         }
       },
       "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 2
-    },
-    {
-      "check": {
-        "Life": {
-          "life": 20,
-          "player": "alice"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 2
+      "step": "Upkeep",
+      "turn": 3
     },
     {
       "do": {
         "Cast": {
           "mana": [
-            "$plains1",
+            "$plains-1",
             null
           ],
-          "object": "$hands3",
+          "object": "$hands-3",
           "targets": [
             "$alice"
           ]
@@ -444,27 +463,22 @@
       "do": {
         "Cast": {
           "mana": [
-            "$m3"
+            "$bmountain-3"
           ],
-          "object": "$bolt3",
+          "object": "$bolt-3",
           "targets": [
             "$alice"
           ]
         }
       },
       "player": "bob",
-      "step": "DrawStep",
+      "step": "EndStep",
       "turn": 3
     },
     {
-      "check": {
-        "View": {
-          "is": "alice",
-          "of": "ActivePlayer"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
+      "do": "Pass",
+      "player": "bob",
+      "step": "EndStep",
       "turn": 3
     },
     {
@@ -474,49 +488,9 @@
           "player": "alice"
         }
       },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 3
-    },
-    {
-      "do": {
-        "Cast": {
-          "mana": [
-            "$plains2",
-            null
-          ],
-          "object": "$hands4",
-          "targets": [
-            "$alice"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "Upkeep",
-      "turn": 4
-    },
-    {
-      "do": "Pass",
-      "player": "alice",
-      "step": "Upkeep",
-      "turn": 4
-    },
-    {
-      "do": {
-        "Cast": {
-          "mana": [
-            "$m1",
-            null
-          ],
-          "object": "$bolt4",
-          "targets": [
-            "$alice"
-          ]
-        }
-      },
       "player": "bob",
-      "step": "DrawStep",
-      "turn": 4
+      "step": "EndStep",
+      "turn": 3
     },
     {
       "check": {
@@ -526,7 +500,53 @@
         }
       },
       "player": "bob",
-      "step": "PrecombatMain",
+      "step": "Upkeep",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains-2",
+            null
+          ],
+          "object": "$hands-4",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$bmountain-1",
+            null
+          ],
+          "object": "$bolt-4",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "EndStep",
       "turn": 4
     },
     {
@@ -537,19 +557,19 @@
         }
       },
       "player": "bob",
-      "step": "PrecombatMain",
+      "step": "EndStep",
       "turn": 4
     },
     {
       "check": {
         "View": {
-          "is": null,
-          "of": "Result"
+          "is": "alice",
+          "of": "ActivePlayer"
         }
       },
-      "player": "bob",
-      "step": "PrecombatMain",
-      "turn": 4
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 5
     }
   ]
 }

@@ -1,0 +1,112 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i4",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          }
+        ],
+        "exile": [
+          {
+            "card": "Aloe Alchemist",
+            "label": "aloe"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Djinn of Fool's Fall",
+            "label": "djinn"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.170a plotting another card does not fire an exiled Aloe Alchemist",
+  "note": "Aloe Alchemist sits in alice's exile, where its \"when this card becomes plotted\" is looked for, while she plots Djinn of Fool's Fall, which prints no such trigger: the plot names the Djinn, so nothing reaches the stack and her Goblin Piker stays 2/1. special-action/cr-702-170c-an-effect-makes-an-exiled-card-plotted-stamp-and-event-alike plots the Alchemist itself.",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "Plot $djinn",
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$aloe",
+            "Djinn of Fool's Fall"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 2,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

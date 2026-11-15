@@ -35,58 +35,37 @@
           },
           {
             "card": "Island",
-            "label": "island1"
+            "label": "island-1"
           },
           {
             "card": "Island",
-            "label": "island2"
+            "label": "island-2"
           },
           {
             "card": "Island",
-            "label": "island3"
+            "label": "island-3"
           },
           {
             "card": "Island",
-            "label": "island4"
+            "label": "island-4"
           },
           {
             "card": "Island",
-            "label": "island5"
+            "label": "island-5"
           },
           {
             "card": "Island",
-            "label": "island6"
+            "label": "island-6"
           }
         ],
         "hand": [
           {
+            "card": "Time Stop",
+            "label": "stop"
+          },
+          {
             "card": "Burst Lightning",
             "label": "hers"
-          },
-          {
-            "card": "Time Stop",
-            "label": "time-stop"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
           }
         ],
         "library": [
@@ -137,10 +116,6 @@
           {
             "card": "Mountain",
             "label": "bmountain2"
-          },
-          {
-            "card": "Megrim",
-            "label": "megrim"
           }
         ],
         "hand": [
@@ -191,7 +166,7 @@
     "step": "BeginningOfCombat"
   },
   "description": "CR 725.1d ending the turn during combat expires that phase's effects",
-  "note": "The CR 725.2d file's board with Time Stop for Mandate of Peace: alice animates Jade Statue (3/6 Golem until end of combat) after attackers are declared, and ends the turn in the declare blockers step over bob's Burst Lightning. Eight cards in hand make her discard in cleanup, and bob's Megrim triggers on it, so CR 514.3a gives the cleanup step a priority round: there, after the turn jumped straight to cleanup (no combat damage reached bob), the Statue is a plain artifact with no creature type, so no power or toughness. Read in cleanup, since an end-of-combat expiry the turn's end missed would otherwise survive past CR 514.2.",
+  "note": "The board of the CR 725.2d Mandate of Peace files, with Time Stop in its place and six Islands to pay for it: alice's Piker attacks and bob's blocks, alice animates Jade Statue (3/6 Golem until end of combat) after attackers are declared, bob casts a Burst Lightning at alice, and alice ends the turn over it in the declare blockers step. Ending the turn ends the combat phase too, so the animation expires with it; read at bob's upkeep, since the turn's own end has no until-end-of-combat sweep and an effect the jump stranded would still be in force there.",
   "timeline": [
     {
       "do": {
@@ -295,15 +270,15 @@
       "do": {
         "Cast": {
           "mana": [
-            "$island1",
-            "$island2",
-            "$island3",
-            "$island4",
-            "$island5",
-            "$island6",
+            "$island-1",
+            "$island-2",
+            "$island-3",
+            "$island-4",
+            "$island-5",
+            "$island-6",
             null
           ],
-          "object": "$time-stop"
+          "object": "$stop"
         }
       },
       "player": "alice",
@@ -311,41 +286,15 @@
       "turn": 1
     },
     {
-      "do": {
-        "Answer": {
-          "prompt": "ChooseDiscard",
-          "with": [
-            "$hers"
-          ]
-        }
-      },
-      "player": "alice",
-      "step": "Cleanup",
-      "turn": 1
-    },
-    {
       "check": {
         "View": {
-          "is": "Cleanup",
-          "of": "Step"
+          "is": "bob",
+          "of": "ActivePlayer"
         }
       },
-      "player": "alice",
-      "step": "Cleanup",
-      "turn": 1
-    },
-    {
-      "check": {
-        "View": {
-          "is": [
-            "trigger of $megrim"
-          ],
-          "of": "Stack"
-        }
-      },
-      "player": "alice",
-      "step": "Cleanup",
-      "turn": 1
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
       "check": {
@@ -356,9 +305,9 @@
           ]
         }
       },
-      "player": "alice",
-      "step": "Cleanup",
-      "turn": 1
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
       "check": {
@@ -367,20 +316,9 @@
           "subtypes": []
         }
       },
-      "player": "alice",
-      "step": "Cleanup",
-      "turn": 1
-    },
-    {
-      "check": {
-        "Life": {
-          "life": 20,
-          "player": "bob"
-        }
-      },
-      "player": "alice",
-      "step": "Cleanup",
-      "turn": 1
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     }
   ]
 }

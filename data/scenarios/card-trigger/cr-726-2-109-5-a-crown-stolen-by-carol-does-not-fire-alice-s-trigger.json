@@ -1,0 +1,171 @@
+{
+  "board": {
+    "active": "carol",
+    "monarch": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Custodi Lich",
+            "label": "lich"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Bird Maiden",
+            "label": "maiden"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Bog Wraith",
+            "label": "wraith",
+            "ready": true
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 726.2/109.5 a crown stolen by carol does not fire alice's trigger",
+  "note": "carol's Bog Wraith deals combat damage to bob, the monarch, so CR 726.2 crowns carol; alice's Custodi Lich watches for \"you\" becoming the monarch (CR 109.5) and stays silent: no target prompt (one would fail the run), and bob keeps both creatures. Three seats, so the crown can land on somebody who is neither the Lich's controller nor the edict's victim.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$wraith"
+        ]
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "bob"
+        }
+      },
+      "player": "carol",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Monarch": {
+          "player": "bob"
+        }
+      },
+      "player": "carol",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Monarch": {
+          "player": "carol"
+        }
+      },
+      "player": "carol",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "carol",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Goblin Piker",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "carol",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Bird Maiden",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "carol",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Bog Wraith",
+          "count": 1,
+          "player": "carol",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "carol",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Custodi Lich",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "carol",
+      "step": "CombatDamage",
+      "turn": 1
+    }
+  ]
+}

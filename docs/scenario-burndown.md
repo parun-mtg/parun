@@ -146,17 +146,17 @@ out: grep for them.
 
 ### `CardTriggerSpec`
 
-- CR 109.5 you control: an opponent's 2/1 entering gives alice nothing | `check:helper-experienceOf`
-- CR 508.3d a declare attackers step with no attackers adds nothing | `check:helper-bobsTurn` `check:helper-sentAt`
-- CR 508.3d a declare attackers step with no attackers is not attacking | `check:helper-answering` `check:helper-sentAt`
-- CR 508.3e a Seifer the defending player controls is silent | `check:other-Goad.goadedBy`
-- CR 508.3e attacking a planeswalker that player controls leaves it silent | `check:other-Goad.goadedBy`
-- CR 603.4 raid: an attack aimed at a planeswalker by a creature that then died still discards | `check:combat`
-- CR 603.4 the clause fails when the declaration went at a third player | `check:events`
-- CR 603.7 Ray of Command whole card: the borrowed creature is TAPPED when control reverts at cleanup, and Act of Treason's is not | `check:delayed-triggers`
-- CR 702.170a plotting another card does not fire an exiled Aloe Alchemist | `check:events`
-- CR 726.2/109.5 a crown stolen by carol does not fire alice's trigger | `check:creature-count` `check:events` `check:helper-combatDamageTo` `check:helper-targetsPlayer` `check:other-S.soleFaceName`
-- CR 726.3 a player who is ALREADY the monarch does not become the monarch, so the Lich's edict stays silent | `check:creature-count` `check:events` `check:helper-targetsPlayer`
+- ~~CR 109.5 you control: an opponent's 2/1 entering gives alice nothing | `check:helper-experienceOf`~~
+- ~~CR 508.3d a declare attackers step with no attackers adds nothing | `check:helper-bobsTurn` `check:helper-sentAt`~~
+- ~~CR 508.3d a declare attackers step with no attackers is not attacking | `check:helper-answering` `check:helper-sentAt`~~
+- ~~CR 508.3e a Seifer the defending player controls is silent | `check:other-Goad.goadedBy`~~
+- ~~CR 508.3e attacking a planeswalker that player controls leaves it silent | `check:other-Goad.goadedBy`~~
+- ~~CR 603.4 raid: an attack aimed at a planeswalker by a creature that then died still discards | `check:combat`~~
+- ~~CR 603.4 the clause fails when the declaration went at a third player | `check:events`~~
+- ~~CR 603.7 Ray of Command whole card: the borrowed creature is TAPPED when control reverts at cleanup, and Act of Treason's is not | `check:delayed-triggers`~~
+- ~~CR 702.170a plotting another card does not fire an exiled Aloe Alchemist | `check:events`~~
+- ~~CR 726.2/109.5 a crown stolen by carol does not fire alice's trigger | `check:creature-count` `check:events` `check:helper-combatDamageTo` `check:helper-targetsPlayer` `check:other-S.soleFaceName`~~
+- ~~CR 726.3 a player who is ALREADY the monarch does not become the monarch, so the Lich's edict stays silent | `check:creature-count` `check:events` `check:helper-targetsPlayer`~~
 
 ### `CastPermissionSpec`
 
@@ -696,11 +696,11 @@ out: grep for them.
 
 ### `InvestigateSpec`
 
-- CR 609.3 an empty hand reveals nothing and casts nothing | `check:helper-board` `check:helper-bobsHand` `check:helper-revealed` `check:helper-rolling`
-- CR 701.20a a random reveal shows the card randomness named, not the first in hand | `check:events`
-- CR 701.20a and the middle card, which no fixed reading of the hand reaches | `check:events`
-- CR 701.20a the same board with a different roll reveals a different card | `check:events`
-- CR 701.60a a spell ends the designation, and CR 701.60c's menace and can't-block end with it | `board:object-designations`
+- ~~CR 609.3 an empty hand reveals nothing and casts nothing | `check:helper-board` `check:helper-bobsHand` `check:helper-revealed` `check:helper-rolling`~~
+- ~~CR 701.20a a random reveal shows the card randomness named, not the first in hand | `check:events`~~
+- ~~CR 701.20a and the middle card, which no fixed reading of the hand reaches | `check:events`~~
+- ~~CR 701.20a the same board with a different roll reveals a different card | `check:events`~~
+- ~~CR 701.60a a spell ends the designation, and CR 701.60c's menace and can't-block end with it | `board:object-designations`~~
 
 ### `KeywordTriggerSpec`
 
@@ -787,17 +787,17 @@ out: grep for them.
 
 ### `ManaSpec`
 
-- CR 106.12a a basic land tapped for the CHOSEN colour adds the Gauntlet's additional mana | `board:object-chosencolor`
-- CR 106.13 the pool crosses whole, and its production tags with it
-- CR 106.13 the targeted player loses life for the mana Drain Power takes
-- CR 302.6 a stolen Llanowar Elves is not a mana source for the thief | `check:other-Cost.manaActivations` `check:other-Mana.manaSources` `check:other-Projection.controls`
-- CR 500.5/613.4c whole card: the green Omnath keeps is the green that keeps it big | `check:helper-poolSize`
-- CR 605.1b a land's ability adding the chosen colour with no tap adds Caged Sun's additional mana | `board:object-chosencolor`
-- CR 605.3a a mana ability whose cost holds mana may be activated inside the window | `move:nested-cost-order` `check:prompt-payload`
-- CR 605.3a the order the batch is activated in is the targeted player's | `check:mana-pool`
-- CR 605.5a mana a land's ability adds as it RESOLVES fires Caged Sun, whose trigger then uses the stack | `board:object-chosencolor`
-- CR 607.2d a Coldsteel Heart placed with no colour chosen produces nothing | `check:helper-tappedFor` `check:other-Cost.manaActivations` `check:other-Mana.canPay` `check:other-Mana.manaTypesOf` `check:other-Object.chosenColor`
-- CR 607.2d a Coldsteel Heart that chose blue offers blue and nothing else | `board:object-chosencolor`
+- ~~CR 106.12a a basic land tapped for the CHOSEN colour adds the Gauntlet's additional mana | `board:object-chosencolor`~~
+- ~~CR 106.13 the pool crosses whole, and its production tags with it~~
+- ~~CR 106.13 the targeted player loses life for the mana Drain Power takes~~
+- ~~CR 302.6 a stolen Llanowar Elves is not a mana source for the thief | `check:other-Cost.manaActivations` `check:other-Mana.manaSources` `check:other-Projection.controls`~~
+- ~~CR 500.5/613.4c whole card: the green Omnath keeps is the green that keeps it big | `check:helper-poolSize`~~
+- ~~CR 605.1b a land's ability adding the chosen colour with no tap adds Caged Sun's additional mana | `board:object-chosencolor`~~
+- ~~CR 605.3a a mana ability whose cost holds mana may be activated inside the window | `move:nested-cost-order` `check:prompt-payload`~~
+- ~~CR 605.3a the order the batch is activated in is the targeted player's | `check:mana-pool`~~
+- ~~CR 605.5a mana a land's ability adds as it RESOLVES fires Caged Sun, whose trigger then uses the stack | `board:object-chosencolor`~~
+- ~~CR 607.2d a Coldsteel Heart placed with no colour chosen produces nothing | `check:helper-tappedFor` `check:other-Cost.manaActivations` `check:other-Mana.canPay` `check:other-Mana.manaTypesOf` `check:other-Object.chosenColor`~~
+- ~~CR 607.2d a Coldsteel Heart that chose blue offers blue and nothing else | `board:object-chosencolor`~~
 
 ### `ManaSymbolSpec`
 
@@ -806,11 +806,11 @@ out: grep for them.
 
 ### `MassEffectSpec`
 
-- CR 608.2d Carth the Lion's reveal is not offered without a planeswalker among them | `check:helper-namesIn` `check:helper-revealed`
-- CR 608.2d the second choice is made among the cards the first left | `check:prompt-candidates`
-- CR 608.2d two cards are taken from among the seven, both of them chosen | `check:prompt-candidates`
-- CR 701.17c the return chooses among the milled cards, not among the graveyard | `check:prompt-candidates`
-- CR 701.20e the choice ranges over the matching revealed cards, not over all five | `check:prompt-candidates`
+- ~~CR 608.2d Carth the Lion's reveal is not offered without a planeswalker among them | `check:helper-namesIn` `check:helper-revealed`~~
+- ~~CR 608.2d the second choice is made among the cards the first left | `check:prompt-candidates`~~
+- ~~CR 608.2d two cards are taken from among the seven, both of them chosen | `check:prompt-candidates`~~
+- ~~CR 701.17c the return chooses among the milled cards, not among the graveyard | `check:prompt-candidates`~~
+- ~~CR 701.20e the choice ranges over the matching revealed cards, not over all five | `check:prompt-candidates`~~
 
 ### `MeldSpec`
 
@@ -839,9 +839,9 @@ out: grep for them.
 
 ### `ModalSpec`
 
-- CR 608.2b the damage mode fizzles when its only target leaves before resolution | `check:events`
-- casting the damage mode binds the 'damaged' slot, never 'wall' | `check:bindings`
-- no legal mode removes the trigger from the stack (CR 603.3c) | `check:helper-nothing`
+- ~~CR 608.2b the damage mode fizzles when its only target leaves before resolution | `check:events`~~
+- ~~casting the damage mode binds the 'damaged' slot, never 'wall' | `check:bindings`~~
+- ~~no legal mode removes the trigger from the stack (CR 603.3c) | `check:helper-nothing`~~
 
 ### `MoveCounterSpec`
 
@@ -974,21 +974,21 @@ out: grep for them.
 
 ### `PreventionSpec`
 
-- CR 400.7c the shield follows the chosen permanent spell onto the battlefield | `check:prompt-offers`
-- CR 603.7 the creature the resolution named is exiled when it dies, and no other is | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`
-- CR 603.7b the entry is gone by the next turn, so the same death exiles nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`
-- CR 609.7a a slot the installing resolution bound but the row never names is not offered
-- CR 609.7a a source only a waiting ability still refers to is offered, and shields the damage it deals
-- CR 609.7a a source only a waiting delayed trigger still refers to is offered | `board:delayed-trigger` `board:entered-with` `board:graveyard`
-- CR 609.7a a source only a waiting row's captured slot still names is offered
-- CR 609.7a a source only a waiting shield's baked field still names is offered
-- CR 609.7a an activated ability a waiting delayed trigger still names is not offered as a source | `board:delayed-trigger`
-- CR 609.7a an object bound by an unrelated clause of the row's own resolution is not offered | `check:prompt-payload`
-- CR 611.2c the shield covers whatever matches its description when the damage would happen | `board:combat` `board:replacement`
-- CR 614.1b Eon Hub replaces the upkeep step with nothing | `check:helper-began` `check:other-TurnRegisters.remaining`
-- CR 615.7 a shield naming NO source watches every source, and asks nothing | `check:helper-answersFor` `check:helper-chosenSourcesIn` `check:other-Stack.resolveTop`
-- CR 615.7 a shield that covers the whole batch asks nothing | `check:helper-amounts` `check:helper-answersFor` `check:helper-wasAskedToAllocateDamage` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`
-- CR 700.4 the same creature exiled from the battlefield instead fires nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`
+- ~~CR 400.7c the shield follows the chosen permanent spell onto the battlefield | `check:prompt-offers`~~
+- ~~CR 603.7 the creature the resolution named is exiled when it dies, and no other is | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`~~
+- ~~CR 603.7b the entry is gone by the next turn, so the same death exiles nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`~~
+- ~~CR 609.7a a slot the installing resolution bound but the row never names is not offered~~
+- ~~CR 609.7a a source only a waiting ability still refers to is offered, and shields the damage it deals~~
+- ~~CR 609.7a a source only a waiting delayed trigger still refers to is offered | `board:delayed-trigger` `board:entered-with` `board:graveyard`~~
+- ~~CR 609.7a a source only a waiting row's captured slot still names is offered~~
+- ~~CR 609.7a a source only a waiting shield's baked field still names is offered~~
+- ~~CR 609.7a an activated ability a waiting delayed trigger still names is not offered as a source | `board:delayed-trigger`~~
+- ~~CR 609.7a an object bound by an unrelated clause of the row's own resolution is not offered | `check:prompt-payload`~~
+- ~~CR 611.2c the shield covers whatever matches its description when the damage would happen | `board:combat` `board:replacement`~~
+- ~~CR 614.1b Eon Hub replaces the upkeep step with nothing | `check:helper-began` `check:other-TurnRegisters.remaining`~~
+- ~~CR 615.7 a shield naming NO source watches every source, and asks nothing | `check:helper-answersFor` `check:helper-chosenSourcesIn` `check:other-Stack.resolveTop`~~
+- ~~CR 615.7 a shield that covers the whole batch asks nothing | `check:helper-amounts` `check:helper-answersFor` `check:helper-wasAskedToAllocateDamage` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`~~
+- ~~CR 700.4 the same creature exiled from the battlefield instead fires nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`~~
 
 ### `ProjectionSpec`
 
@@ -1153,24 +1153,24 @@ out: grep for them.
 
 ### `TurnSpec`
 
-- CR 500.5a an until-end-of-combat effect expires though the end of combat step never ran | `check:other-StoredEffects.continuousEffects`
+- ~~CR 500.5a an until-end-of-combat effect expires though the end of combat step never ran | `check:other-StoredEffects.continuousEffects`~~
 - ~~CR 500.7 damage can't be prevented during the Gambit's own extra turn, and on no other | `check:player-effects`~~
-- CR 500.7 several extra turns from one effect are added in APNAP order | `check:extra-turns`
-- CR 500.7 the skip stays on Savor's own extra turn, not on a later-created one | `board:extraturns` `board:extraturnunderway` `board:turnanchor`
-- CR 500.8 Aurelia's added combat phase goes AFTER this one, not inside it | `check:other-TurnRegisters.remaining` `check:other-Turn.expandExtraPhase`
-- CR 508.8 a creature put onto the battlefield attacking keeps the two steps | `check:combat` `check:other-Combat.skipEmptyCombat` `check:other-TurnRegisters.remaining`
-- CR 511.3 combat is emptied though the end of combat step never ran | `check:other-Turn.afterBlockersDeclared`
-- CR 511.3 the control end of combat step runs, and the phase's end sweeps anyway | `check:other-Turn.afterBlockersDeclared`
+- ~~CR 500.7 several extra turns from one effect are added in APNAP order | `check:extra-turns`~~
+- ~~CR 500.7 the skip stays on Savor's own extra turn, not on a later-created one | `board:extraturns` `board:extraturnunderway` `board:turnanchor`~~
+- ~~CR 500.8 Aurelia's added combat phase goes AFTER this one, not inside it | `check:other-TurnRegisters.remaining` `check:other-Turn.expandExtraPhase`~~
+- ~~CR 508.8 a creature put onto the battlefield attacking keeps the two steps | `check:combat` `check:other-Combat.skipEmptyCombat` `check:other-TurnRegisters.remaining`~~
+- ~~CR 511.3 combat is emptied though the end of combat step never ran | `check:other-Turn.afterBlockersDeclared`~~
+- ~~CR 511.3 the control end of combat step runs, and the phase's end sweeps anyway | `check:other-Turn.afterBlockersDeclared`~~
 - ~~CR 603.7a uncleaved, alice loses at the end step of the unpreventable extra turn~~
-- CR 614.10a the end of combat step never begins, and the phase ends anyway | `check:helper-began` `check:other-TurnRegisters.remaining`
+- ~~CR 614.10a the end of combat step never begins, and the phase ends anyway | `check:helper-began` `check:other-TurnRegisters.remaining`~~
 - ~~CR 725.1d ending the turn during combat expires that phase's effects~~
-- CR 725.1d ending the turn skips straight to the cleanup step
-- CR 725.1f no player gets priority once the turn has ended | `check:prompt-count`
-- CR 725.2d ending the combat phase skips straight to the next phase
-- CR 725.2f no player gets priority once the combat phase has ended | `check:prompt-count`
-- CR 725.2g ending the combat phase outside one does nothing | `board:combat` `board:continuous-effect`
-- advance on an empty schedule hands off the turn | `check:other-TurnRegisters.remaining` `check:other-TurnRegisters.turnNumber` `check:other-Turn.firstPhase` `check:other-Turn.laterPhases`
-- advance pops the schedule head into the current phase | `check:other-TurnRegisters.remaining`
+- ~~CR 725.1d ending the turn skips straight to the cleanup step~~
+- ~~CR 725.1f no player gets priority once the turn has ended | `check:prompt-count`~~
+- ~~CR 725.2d ending the combat phase skips straight to the next phase~~
+- ~~CR 725.2f no player gets priority once the combat phase has ended | `check:prompt-count`~~
+- ~~CR 725.2g ending the combat phase outside one does nothing | `board:combat` `board:continuous-effect`~~
+- ~~advance on an empty schedule hands off the turn | `check:other-TurnRegisters.remaining` `check:other-TurnRegisters.turnNumber` `check:other-Turn.firstPhase` `check:other-Turn.laterPhases`~~
+- ~~advance pops the schedule head into the current phase | `check:other-TurnRegisters.remaining`~~
 
 ### `UntapRestrictionSpec`
 
