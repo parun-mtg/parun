@@ -75,7 +75,12 @@ data DealDamage = MkDealDamage
     -- instead. Every one deals in the one batch (CR 608.2f), the slot's case
     -- above:
     -- data/scenarios/judgment-of-alexander-a-shield-is-divided-between-the-commanders.json
-    -- proves it. Parun.Codec.DealDamage refuses it without a `dealer`.
+    -- proves it. Dealers named by several target slots join here the same way,
+    -- Graceful Takedown's enchanted creatures and other creature as one
+    -- ObjectRef.AllOf:
+    -- data/scenarios/graceful-takedown-a-shield-is-divided-between-its-two-slots-dealers.json
+    -- proves the one batch. Parun.Codec.DealDamage refuses it without a
+    -- `dealer`.
     dealers :: Maybe ObjectRef.ObjectRef,
     -- | WHERE THE EXCESS GOES -- CR 120.4a's first sentence, which happens only
     -- when "an effect that's causing damage to be dealt STATES that excess
