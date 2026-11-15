@@ -53,8 +53,9 @@ data Condition
     -- value -- so it folds into neither one Compares nor an Any.
     --
     -- `All []` is True, the fold's unit, which is Filter's `And []` one type over.
-    -- There is still no Not: Dose of Dawnglow's "if it isn't your main phase"
-    -- is an Any over CR 500.1's other windows.
+    -- There is still no Not: "it's not your turn" is Quantity.IsActivePlayer at
+    -- 0 (Zealous Display), and Dose of Dawnglow's "if it isn't your main phase"
+    -- an Any of that and CR 500.1's other windows.
     All [Condition]
   | -- | True while the turn is inside this phase or step of the turns its scope
     -- names, "your" being the reader's perspective (CR 500.1, CR 109.5).
