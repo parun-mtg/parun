@@ -458,28 +458,6 @@ spec s registry = Spec.describe s "Meld" $ do
         -- 701.42a's opcode reads (CR 400.7j).
         Spec.assertEqWith s "and the pair still melds into Hanweir, the Writhing Township" (S.countOnBattlefieldByName townshipName S.alice after) 1
       abilities -> Spec.assertFailure s ("expected three activated abilities on Hanweir Battlements, got " <> show (length abilities))
-  -- CR 701.42c's own example, with Hanweir in place of Midnight Scavengers: the
-  -- counterpart is a TOKEN copy of Hanweir Garrison, which CR 701.42b bars from
-  -- melding (CR 108.2 makes a token no card at all). The card's own "exile them"
-  -- still happens, so both objects reach exile, the meld writes nothing, and CR
-  -- 111.8 removes the token at the next state-based check.
-  Spec.it s "CR 701.42b/701.42c a token counterpart melds nothing, and the land stays exiled" $ do
-    battlements <- S.printingOf s registry "Hanweir Battlements"
-    garrison <- S.printingOf s registry "Hanweir Garrison"
-    mountain <- S.printingOf s registry "Mountain"
-    let (bId, g1) = S.addPermanent battlements S.alice (Setup.emptyGame S.bothPlayers)
-        (_, g2) = S.addToken (Printing.card garrison) S.alice g1
-        board = readyFor mountain g2
-    case Projection.abilitiesOf bId board of
-      [_, _, melding] -> do
-        let after = S.runPure (sparing bId S.identityAnswer) board (do Activate.activateAbility S.alice bId melding; Stack.resolveTop)
-        Spec.assertEqWith s "CR 701.42c both objects stay in the zone the exile left them in" (List.sort (exileNames after)) (List.sort [S.nameOf (Printing.card battlements), S.nameOf (Printing.card garrison)])
-        Spec.assertEqWith s "CR 701.42b nothing melded" (S.countOnBattlefieldByName townshipName S.alice after) 0
-        -- CR 111.8: a token that has left the battlefield ceases to exist the next
-        -- time state-based actions are checked. The land is a card and stays.
-        Spec.assertEqWith s "CR 111.8 the token ceases and the land is left exiled alone" (exileNames (S.settleSba after)) [S.nameOf (Printing.card battlements)]
-      abilities -> Spec.assertFailure s ("expected three activated abilities on Hanweir Battlements, got " <> show (length abilities))
-
   -- CR 701.42b: "meld cards that don't form a meld pair can't be melded", and
   -- CR 701.42c leaves them where they are. The opcode alone, over two meld cards
   -- of DIFFERENT pairs; the case above it with Hanweir Garrison in the second

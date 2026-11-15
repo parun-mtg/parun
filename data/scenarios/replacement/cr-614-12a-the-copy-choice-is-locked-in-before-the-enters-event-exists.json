@@ -23,6 +23,10 @@
           {
             "card": "Goblin Piker",
             "label": "piker"
+          },
+          {
+            "card": "Foundry Street Denizen",
+            "label": "denizen"
           }
         ],
         "hand": [
@@ -40,7 +44,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 614.12a the copy choice is locked in BEFORE the enters event exists",
-  "note": "alice casts Clone with her Goblin Piker to copy and names the Piker as it enters. At her first priority after the Clone resolves it is already a 2/1 Goblin Piker on the battlefield, with no further settling between: the CR 707.5 choice was made before it entered (CR 614.12a), not applied afterwards. The Haskell test's read right as the spell resolved, before the game settles for priority, is no priority state and is restated at that first priority.",
+  "note": "alice casts Clone and names her Goblin Piker as it enters. Foundry Street Denizen triggers only on a red creature entering, so its trigger shows the Clone entered already a red Goblin Piker: the CR 707.5 choice was made before the enters event (CR 614.12a). A Clone that entered blue and became the Piker afterwards would not trigger it.",
   "timeline": [
     {
       "do": {
@@ -59,6 +63,12 @@
       "turn": 1
     },
     {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "ChooseCopyTarget": "$piker"
       },
@@ -69,8 +79,39 @@
     {
       "check": {
         "View": {
+          "is": [
+            "trigger of $denizen"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
           "is": [],
           "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$denizen",
+          "power": 2,
+          "toughness": 1
         }
       },
       "player": "alice",

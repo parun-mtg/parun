@@ -2452,23 +2452,9 @@ damageSourceSpec s registry = Spec.describe s "DamageSource" $ do
     Spec.assertEqWith s "two damage marked on the Wall" (S.damageOf wall after) (Just 2)
     Spec.assertEqWith s "and no lifelink to pay" (S.lifeOf S.alice after) (Just 20)
     Spec.assertBool s (S.onBattlefield wall (S.settleSba after)) "the Wall survives"
-  -- CR 702.2b reads the SOURCE's deathtouch, and one damage kills a 0/8 only if
-  -- the source is the Rat. The rider is captured at deal time
-  -- (DamageEvent.dealtByDeathtouch), so this also pins that the redirected id is
-  -- what damageEvent read the keywords off.
-  Spec.it s "CR 702.2b a Typhoid Rats' one damage destroys the 0/8 Wall" $ do
-    forest <- S.printingOf s registry "Forest"
-    rabidBite <- S.printingOf s registry "Rabid Bite"
-    rats <- S.printingOf s registry "Typhoid Rats"
-    wallOfStone <- S.printingOf s registry "Wall of Stone"
-    let (ratId, wall, after) = biteBoard forest rabidBite rats wallOfStone
-    -- The observer first, for the reason the lifelink case above puts it first.
-    Spec.assertBool s (not (S.onBattlefield wall (S.settleSba after))) "CR 704.5h destroyed the Wall"
-    Spec.assertEqWith s "one damage, not two" (S.damageOf wall after) (Just 1)
-    Spec.assertEqWith s "the deal-time rider read the Rat" (fmap DamageEvent.dealtByDeathtouch (S.damageEventsOf after)) [True]
-    Spec.assertEqWith s "and the Rat dealt it" (fmap DamageEvent.source (S.damageEventsOf after)) [ratId]
-  -- The paired control for that one: another 1/1, so the same one damage, and
-  -- the only difference is the keyword.
+  -- The paired control for
+  -- data/scenarios/damage/cr-702-2b-a-typhoid-rats-one-damage-destroys-the-0-8-wall.json:
+  -- another 1/1, so the same one damage, and the only difference is the keyword.
   Spec.it s "CR 702.2b Llanowar Elves' one damage leaves the Wall standing" $ do
     forest <- S.printingOf s registry "Forest"
     rabidBite <- S.printingOf s registry "Rabid Bite"
@@ -2537,51 +2523,6 @@ excessDamageSpec s registry = Spec.describe s "ExcessDamage" $ do
     Spec.assertEqWith s "CR 120.6: 1 was lethal, so 1 is what is marked" (S.damageOf pikerId after) (Just 1)
     Spec.assertEqWith s "and the spell's controller took none of it" (S.lifeOf S.alice after) (S.lifeOf S.alice before)
     Spec.assertBool s (not (S.onBattlefield pikerId (S.settleSba after))) "CR 704.5g: 1 is still lethal to a 2/1"
-  -- CR 120.4a's last clause: "if the first permanent has multiple card types
-  -- from among the list of creature, planeswalker, and battle, the excess damage
-  -- is the greatest of the calculated amounts for each of the card types it
-  -- has." The animated Jace Beleren of the CreatureAndPlaneswalker group above
-  -- is the board that HAS two of them, with one damage marked on him so that the
-  -- two bars differ: CR 120.6's lethal damage is 3 - 1 = 2, and CR 306.5c's
-  -- loyalty is 3. The greatest excess is therefore 2, off the LOWER bar -- and 1
-  -- off the higher one, which is what reading the rule the other way round
-  -- gives.
-  Spec.it s "CR 120.4a the excess is the greatest across the card types the permanent has" $ do
-    island <- S.printingOf s registry "Island"
-    mountain <- S.printingOf s registry "Mountain"
-    jace <- S.printingOf s registry "Jace Beleren"
-    march <- S.printingOf s registry "March of the Machines"
-    coating <- S.printingOf s registry "Liquimetal Coating"
-    flameSpill <- S.printingOf s registry "Flame Spill"
-    let (handGs, jaceInHand) = S.handOne jace (S.landsInPlay island 3)
-        board = S.runPure S.identityAnswer handGs (do S.cast S.alice jaceInHand; Stack.resolveTop)
-        jaceId = permanentNamed "Jace Beleren" board
-        (_, withMarch) = S.addPermanent march S.alice board
-        (coatingId, withCoating) = S.addPermanent coating S.alice withMarch
-        ready =
-          Game.overTurn
-            ( \registers ->
-                registers
-                  { TurnRegisters.priority = Just S.alice
-                  }
-            )
-            (S.landsFor mountain S.alice 3 withCoating)
-
-    case Face.activatedAbilities (S.combinedFace coating) of
-      coat : _ -> do
-        let coated = S.runPure (aimedAt jaceId) ready (do Activate.activateAbility S.alice coatingId coat; Stack.resolveTop)
-            (before, spellId) = S.handOne flameSpill (S.markDamage jaceId 1 coated)
-            after = S.runPure (aimedAt jaceId) before (do S.cast S.alice spellId; Stack.resolveTop)
-        Spec.assertEqWith s "CR 120.4a: 2 is excess, the greatest of the two card types' amounts" (S.lifeOf S.alice after) (fmap (subtract 2) (S.lifeOf S.alice before))
-        Spec.assertEqWith s "so 2 of the 4 stayed, on top of the 1 already marked" (S.damageOf jaceId after) (Just 3)
-        Spec.assertEqWith s "CR 120.3c: and those 2 took two loyalty counters off" (S.counterOf CounterKind.Loyalty jaceId after) 1
-        -- The preconditions the arithmetic above rests on, asserted after it so
-        -- that no mutation of the rewrite is absorbed here first.
-        Spec.assertBool s (Projection.isCreatureOf jaceId before) "CR 205.1b: the Coating and March made him a creature"
-        Spec.assertBool s (Set.member CardType.Planeswalker (Projection.cardTypesOf jaceId before)) "and he is still a planeswalker"
-        Spec.assertEqWith s "a 3/3 with 1 marked, so CR 120.6's bar is 2" (S.powerToughnessOf jaceId before) (Just (3, 3))
-        Spec.assertEqWith s "CR 306.5c: while his loyalty is 3" (S.counterOf CounterKind.Loyalty jaceId before) 3
-      _ -> Spec.assertFailure s "Liquimetal Coating should print an activated ability"
   Spec.it s "CR 120.4a/120.6 the bar is lethal damage, not toughness" $ do
     mountain <- S.printingOf s registry "Mountain"
     flameSpill <- S.printingOf s registry "Flame Spill"

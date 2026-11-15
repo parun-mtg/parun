@@ -1,10 +1,8 @@
 {
-  "description": "CR 115.6 Rat Out aimed at a creature shrinks it and still makes the Rat",
-  "note": "The zero-target file's board with a Grizzly Bears for the Piker, so the -1/-1 leaves a 1/1 standing at the priority check (the Haskell test's 2/1 Piker would be 1/0 only before state-based actions bury it). Rat Out names the Bears: it is 1/1 and the Rat is made all the same.",
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Swamp",
@@ -16,68 +14,70 @@
             "card": "Rat Out",
             "label": "rat-out"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Grizzly Bears",
             "label": "bears"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
-    "active": "alice",
     "step": "PrecombatMain"
   },
+  "description": "CR 115.6 Rat Out aimed at a creature shrinks it and still makes the Rat",
+  "note": "The zero-target file's board with a Grizzly Bears for the Piker, so the -1/-1 leaves a 1/1 standing at the priority check (the Haskell test's 2/1 Piker would be 1/0 only before state-based actions bury it). Rat Out names the Bears: it is 1/1 and the Rat is made all the same.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$rat-out",
           "mana": [
             "$swamp"
           ],
+          "object": "$rat-out",
           "targets": [
             "$bears"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 1,
           "toughness": 1
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
           "card": "Rat Token",
-          "count": 1
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

@@ -1,10 +1,8 @@
 {
-  "description": "CR 603.7a uncleaved, alice loses at the end step of the unpreventable extra turn",
-  "note": "Alchemist's Gambit cast for its printed {1}{R}{R} keeps the bracketed clause. In the extra turn (turn 2, alice's) Mending Hands on alice does not stop bob's Lightning Bolt: 17. At that turn's end step the delayed loss trigger is on the stack with the game still going, and resolving it ends the game with bob the winner.",
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Island",
@@ -100,10 +98,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Mountain",
@@ -155,26 +153,28 @@
           {
             "card": "Mountain"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
-    "active": "alice",
     "step": "PrecombatMain"
   },
+  "description": "CR 603.7a uncleaved, alice loses at the end step of the unpreventable extra turn",
+  "final": [
+    {
+      "View": {
+        "is": {
+          "won": "bob"
+        },
+        "of": "Result"
+      }
+    }
+  ],
+  "note": "Alchemist's Gambit cast for its printed {1}{R}{R} keeps the bracketed clause. In the extra turn (turn 2, alice's) Mending Hands on alice does not stop bob's Lightning Bolt: 17. At that turn's end step the delayed loss trigger is on the stack with the game still going, and resolving it ends the game with bob the winner.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$gambit",
-          "mana": [
-            "$island1",
-            "$amountain1",
-            "$amountain2",
-            null
-          ],
           "cost": [
             {
               "type": "Generic",
@@ -194,126 +194,126 @@
                 "value": "Red"
               }
             }
-          ]
+          ],
+          "mana": [
+            "$island1",
+            "$amountain1",
+            "$amountain2",
+            null
+          ],
+          "object": "$gambit"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Zone",
-          "player": "alice",
-          "zone": "Exile",
           "is": [
             "Alchemist's Gambit"
-          ]
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Exile"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$hands1",
           "mana": [
             "$plains1",
             null
           ],
+          "object": "$hands1",
           "targets": [
             "$alice"
           ]
         }
-      }
-    },
-    {
-      "turn": 2,
-      "step": "Upkeep",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "DrawStep",
-      "player": "bob",
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
       "do": {
         "Cast": {
-          "object": "$bolt1",
           "mana": [
             "$m1",
             null
           ],
+          "object": "$bolt1",
           "targets": [
             "$alice"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "DrawStep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "ActivePlayer",
-          "is": "alice"
+          "is": "alice",
+          "of": "ActivePlayer"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 17
+          "life": 17,
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of Alchemist's Gambit"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Result",
-          "is": null
+          "is": null,
+          "of": "Result"
         }
-      }
-    }
-  ],
-  "final": [
-    {
-      "View": {
-        "of": "Result",
-        "is": {
-          "won": "bob"
-        }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 2
     }
   ]
 }

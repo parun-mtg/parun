@@ -1,10 +1,8 @@
 {
-  "description": "CR 603.10 a permanent that arrived after a death and left again does not witness it",
-  "note": "alice's Zulaport Cutthroat carries a +1/+1 counter, so it stands as a 1/1 under Night of Souls' Betrayal. Come Back Wrong destroys it and returns it without the counter (CR 400.7) as a 0/0, which state-based actions bury: two deaths in two batches with the arrival between them. At alice's next priority exactly two Cutthroat triggers are on the stack, not a third for the returned Cutthroat witnessing the death before it arrived, and resolved they move one life each way.",
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Swamp",
@@ -24,7 +22,6 @@
           },
           {
             "card": "Zulaport Cutthroat",
-            "label": "cutthroat",
             "counters": [
               {
                 "key": {
@@ -32,7 +29,8 @@
                 },
                 "value": 1
               }
-            ]
+            ],
+            "label": "cutthroat"
           }
         ],
         "hand": [
@@ -40,146 +38,148 @@
             "card": "Come Back Wrong",
             "label": "spell"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
         "name": "bob"
       }
     ],
-    "active": "alice",
     "step": "PrecombatMain"
   },
+  "description": "CR 603.10 a permanent that arrived after a death and left again does not witness it",
+  "note": "alice's Zulaport Cutthroat carries a +1/+1 counter, so it stands as a 1/1 under Night of Souls' Betrayal. Come Back Wrong destroys it and returns it without the counter (CR 400.7) as a 0/0, which state-based actions bury: two deaths in two batches with the arrival between them. At alice's next priority exactly two Cutthroat triggers are on the stack, not a third for the returned Cutthroat witnessing the death before it arrived, and resolved they move one life each way.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$spell",
           "mana": [
             "$swamp1",
             "$swamp2",
             "$swamp3"
-          ]
+          ],
+          "object": "$spell"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "OrderTriggers": [
           "departed Zulaport Cutthroat",
           "departed Zulaport Cutthroat#3"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
-            "trigger of departed Zulaport Cutthroat#2",
+            "trigger of Zulaport Cutthroat",
             "trigger of $cutthroat"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
-          "player": "alice",
-          "zone": "Battlefield",
           "card": "Zulaport Cutthroat",
-          "count": 0
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Zone",
-          "player": "alice",
-          "zone": "Graveyard",
           "is": [
             "Come Back Wrong",
             "Zulaport Cutthroat"
-          ]
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 20
+          "life": 20,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
-          "is": []
+          "is": [],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 18
+          "life": 18,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 22
+          "life": 22,
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

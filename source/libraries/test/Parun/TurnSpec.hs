@@ -26,8 +26,6 @@ import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Combat as Combat
-import qualified Parun.Engine.Cost as Cost
-import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
@@ -41,15 +39,10 @@ import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.BeginningStep as BeginningStep
-import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
-import qualified Parun.Types.Cost as Cost.Type
-import qualified Parun.Types.DamageEvent as DamageEvent
-import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.ExtraPhase as ExtraPhase
@@ -58,9 +51,6 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
-import qualified Parun.Types.ManaCost as ManaCost
-import qualified Parun.Types.ManaSymbol as ManaSymbol
-import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Object as Object
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectId as ObjectId
@@ -991,105 +981,6 @@ thatTurnSpec s registry = Spec.describe s "ThatExtraTurn" $ do
     Spec.assertEqWith s "Final Fortune's is turn 3, and alice's" (TurnRegisters.turnNumber (GameState.turn atFortuneTurn), TurnRegisters.activePlayer (GameState.turn atFortuneTurn)) (3, S.alice)
     Spec.assertEqWith s "and alice loses at its end step" (Game.stillPlaying afterFortuneTurn) [S.bob]
 
--- CR 611.2a / 500.7 / 615.12: a continuous effect lasting "during that turn",
--- the extra turn the same spell created, through Alchemist's Gambit ({1}{R}{R}
--- Sorcery, "Cleave {4}{U}{U}{R} / Take an extra turn after this one. During
--- that turn, damage can't be prevented. [At the beginning of that turn's end
--- step, you lose the game.] / Exile Alchemist's Gambit." -- Oracle verified on
--- Scryfall 2026-09-28).
---
--- Every reading is asked the same question, off one helper: alice shields her
--- Goblin Piker with Mending Hands ("Prevent the next 4 damage that would be
--- dealt to any target this turn") and bob's Piker deals it 3. Prevented, the
--- Piker carries 0; unpreventable, it carries 3.
-gambitSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-gambitSpec s registry = Spec.describe s "AlchemistsGambit" $ do
-  let boardOf = do
-        island <- S.printingOf s registry "Island"
-        mountain <- S.printingOf s registry "Mountain"
-        plains <- S.printingOf s registry "Plains"
-        gambit <- S.printingOf s registry "Alchemist's Gambit"
-        warp <- S.printingOf s registry "Time Warp"
-        piker <- S.printingOf s registry "Goblin Piker"
-        mending <- S.printingOf s registry "Mending Hands"
-        -- Twelve lands: the cleave cost {4}{U}{U}{R} and Time Warp's {3}{U}{U}
-        -- exactly, and two Mountains so the printed {1}{R}{R} is payable too.
-        let lands = S.landsFor mountain S.alice 2 (S.landsInPlay island 10)
-            (target, g1) = S.addPermanent piker S.alice lands
-            (striker, g2) = S.addPermanent piker S.bob g1
-            (gambitId, g3) = S.addHandCard gambit S.alice g2
-            (warpId, g4) = S.addHandCard warp S.alice g3
-            stock g pid = List.foldl' (\g5 _ -> snd (S.addLibraryCard piker pid g5)) g [1 .. (10 :: Int)]
-            gs =
-              (stock (stock g4 S.alice) S.bob)
-                { GameState.turn =
-                    (GameState.turn (stock (stock g4 S.alice) S.bob))
-                      { TurnRegisters.phase = Phase.PrecombatMain,
-                        TurnRegisters.activePlayer = S.alice,
-                        TurnRegisters.priority = Just S.alice,
-                        TurnRegisters.remaining = S.phasesAfter Phase.PrecombatMain
-                      }
-                }
-            -- A fresh untapped Plains pays for the shield on whatever turn this
-            -- is asked, so the answer never rests on whose lands untapped.
-            struck g =
-              let (g6, shield) = S.handOne mending (S.landsFor plains S.alice 1 g)
-                  shielded = castAndResolveWith (aimCreature target) shield g6
-                  hit = DamageEvent.MkDamageEvent striker (Recipient.ToCreature target) 3 0 False False False 0 Nothing Nothing mempty False mempty mempty Nothing mempty DamageKind.Noncombat
-               in S.damageOf target (S.runPure S.identityAnswer shielded (Damage.applyDamage (pure ()) [hit]))
-        pure (gs, gambitId, warpId, struck)
-  -- THE PROVING CASE. The Gambit, cleaved, creates extra turn A; Time Warp,
-  -- cast after it, creates extra turn B, which CR 500.7 takes first. "That
-  -- turn" is A alone: the damage is prevented on the turn the spell resolved,
-  -- on B, and on bob's turn after A, and lands in full only on A. A "during
-  -- your next turn" reading would open the window on B instead.
-  Spec.it s "CR 500.7 damage can't be prevented during the Gambit's own extra turn, and on no other" $ do
-    (gs, gambitId, warpId, struck) <- boardOf
-    let resolved = castAndResolveWith (aimPlayer S.alice) warpId (castAndResolveWith (payingFor gambitCleave) gambitId gs)
-        atWarpTurn = runTurns 1 resolved
-        atGambitTurn = runTurns 1 atWarpTurn
-        atBobsTurn = runTurns 1 atGambitTurn
-    Spec.assertEqWith s "during the Gambit's turn the 3 cannot be prevented" (struck atGambitTurn) (Just 3)
-    Spec.assertEqWith s "during Time Warp's turn, taken first, the shield prevents it" (struck atWarpTurn) (Just 0)
-    Spec.assertEqWith s "on the turn the Gambit resolved, the window has not begun" (struck resolved) (Just 0)
-    Spec.assertEqWith s "and on bob's turn after it, the window has closed" (struck atBobsTurn) (Just 0)
-    -- Hygiene rather than behaviour: `begun` alone decides whether the row
-    -- applies, so only the store shows that its turn's cleanup dropped it.
-    Spec.assertEqWith s "the row is dropped at the cleanup of the Gambit's turn, not before" (length (StoredEffects.playerEffects (GameState.stored atGambitTurn)), StoredEffects.playerEffects (GameState.stored atBobsTurn)) (1, [])
-    Spec.assertEqWith s "Time Warp's turn is turn 2 and the Gambit's turn 3, both alice's" (fmap (\g -> (TurnRegisters.turnNumber (GameState.turn g), TurnRegisters.activePlayer (GameState.turn g))) [atWarpTurn, atGambitTurn, atBobsTurn]) [(2, S.alice), (3, S.alice), (4, S.bob)]
-    Spec.assertBool s (S.alice `elem` Game.stillPlaying atBobsTurn) "CR 702.148a cleaved, the loss clause is gone and alice survives"
-    Spec.assertEqWith s "the Gambit exiled itself" (length (Game.zoneMembers Zone.Exile S.alice resolved), length (Game.zoneMembers Zone.Graveyard S.alice resolved)) (1, 1)
-  -- The printed cost keeps the bracketed clause: the extra turn is still the
-  -- unpreventable one, and alice loses at its end step.
-  Spec.it s "CR 603.7a uncleaved, alice loses at the end step of the unpreventable extra turn" $ do
-    (gs, gambitId, _, struck) <- boardOf
-    let resolved = castAndResolveWith (payingFor gambitCost) gambitId gs
-        atExtra = runTurns 1 resolved
-        afterExtra = runTurns 1 atExtra
-    Spec.assertEqWith s "the extra turn's 3 cannot be prevented" (struck atExtra) (Just 3)
-    Spec.assertEqWith s "alice loses at its end step" (TurnRegisters.phase (GameState.turn afterExtra), Game.stillPlaying afterExtra) (Phase.Ending EndingStep.EndStep, [S.bob])
-
--- Alchemist's Gambit's printed {1}{R}{R} and its cleave {4}{U}{U}{R}.
-gambitCost, gambitCleave :: [ManaSymbol.ManaSymbol]
-gambitCost = [ManaSymbol.Generic 1, theRed, theRed]
-gambitCleave = [ManaSymbol.Generic 4, theBlue, theBlue, theRed]
-
-theRed, theBlue :: ManaSymbol.ManaSymbol
-theRed = ManaSymbol.OfType (ManaType.Colored Color.Red)
-theBlue = ManaSymbol.OfType (ManaType.Colored Color.Blue)
-
--- CR 601.2b / 702.148a: pay the offered cost whose mana is `wanted`.
-payingFor :: [ManaSymbol.ManaSymbol] -> Prompt.Prompt r -> r
-payingFor wanted p = case p of
-  Prompt.ChooseCost _ _ _ candidates _ ->
-    Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just (ManaCost.MkManaCost wanted)) . Cost.Type.mana . CandidateCost.cost) candidates)
-  _ -> S.identityAnswer p
-
-aimCreature :: ObjectId -> Prompt.Prompt r -> r
-aimCreature oid p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToCreature oid))) sets
-  _ -> S.identityAnswer p
-
 -- Casts the first castable spell offered and passes otherwise, deferring every
 -- other prompt to S.identityAnswer. This is the CR 725.1f discriminator: under a
 -- correct implementation alice never gets a priority window with an empty stack
@@ -1304,13 +1195,6 @@ castingMandate spell p = case p of
     [] -> Action.Pass
   _ -> S.aggressiveAnswer p
 
--- The same board with Time Stop and the six untapped Islands its {4}{U}{U}
--- wants. CR 725.1d's "the current phase and/or step ends" is CR 725.2d's clause
--- on a different phase, and this board is where an "until end of combat" effect
--- exists to observe it; the arms are separate, so both are asserted.
-withTimeStop :: Printing.Printing -> Printing.Printing -> GameState.GameState -> (ObjectId, GameState.GameState)
-withTimeStop island timeStop gs = S.addHandCard timeStop S.alice (S.landsFor island S.alice 6 gs)
-
 -- The board as the postcombat main phase begins, WITHOUT running it -- the
 -- moment CR 725.2d's expiry and the ordinary CR 500.5a sweep disagree. Read at
 -- the end of the turn the two agree, CR 514.2 having dropped everything.
@@ -1337,19 +1221,6 @@ endCombatPhaseSpec s registry = Spec.describe s "EndTheCombatPhase" $ do
     ((gs, _, _, spell, _, _), _, _) <- board
     let phases = snd (runTurn (castingMandate spell) gs)
     Spec.assertEqWith s "the combat damage and end of combat steps never ran" phases [Phase.Combat CombatStep.DeclareBlockers, Phase.PostcombatMain, Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]
-  -- CR 725.1d's half of the same clause, on the same board: ending the TURN
-  -- during combat ends that combat phase too, so its expiries expire. Read as the
-  -- cleanup step begins, since CR 514.2's own sweep does not reach an
-  -- Expiry.AtEndOf and the two implementations agree nowhere later.
-  Spec.it s "CR 725.1d ending the turn during combat expires that phase's effects" $ do
-    ((gs, jade, _, _, _, _), _, _) <- board
-    island <- S.printingOf s registry "Island"
-    timeStop <- S.printingOf s registry "Time Stop"
-    let (stop, staged) = withTimeStop island timeStop gs
-        after = S.runToStep (Phase.Ending EndingStep.Cleanup) (castingMandate stop) staged
-    Spec.assertEqWith s "the turn jumped to the cleanup step" (TurnRegisters.phase (GameState.turn after)) (Phase.Ending EndingStep.Cleanup)
-    Spec.assertBool s (not (Projection.isCreatureOf jade after)) "and Jade Statue is no longer a creature"
-    Spec.assertEqWith s "with no power or toughness" (S.powerToughnessOf jade after) Nothing
   -- CR 725.2f: no player gets priority during the process. The seats that were
   -- offered an action in the declare blockers step, in order -- alice casts,
   -- alice passes, bob passes, and the process runs with the round closed. An
@@ -1524,7 +1395,6 @@ spec s registry = Spec.describe s "Parun.Engine.Turn" $ do
   extraTurnSpec s registry
   turnScopedSkipSpec s registry
   thatTurnSpec s registry
-  gambitSpec s registry
   endTurnSpec s registry
   endCombatPhaseSpec s registry
   skippedEndOfCombatSpec s registry

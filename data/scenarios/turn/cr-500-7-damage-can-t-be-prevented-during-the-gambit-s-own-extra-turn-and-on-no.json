@@ -1,10 +1,8 @@
 {
-  "description": "CR 500.7 damage can't be prevented during the Gambit's own extra turn, and on no other",
-  "note": "alice casts Alchemist's Gambit for its cleave cost, then Time Warp on herself: Time Warp's turn (2) is taken first, the Gambit's (3) after it, then bob's (4). On each of turns 1-4 alice shields herself with Mending Hands and bob Lightning Bolts her: the 3 is prevented on the turn the Gambit resolved, on Time Warp's turn and on bob's turn, and lands only on the Gambit's own turn, ruling out a 'during your next turn' reading. Cleaved, no loss clause: the game is still going on turn 4. The Gambit exiled itself while Time Warp went to the graveyard. The Haskell test's read of the stored row's cleanup drop is an internal store and has no restatement.",
   "board": {
+    "active": "alice",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Island",
@@ -120,10 +118,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Mountain",
@@ -187,30 +185,18 @@
           {
             "card": "Mountain"
           }
-        ]
+        ],
+        "name": "bob"
       }
     ],
-    "active": "alice",
     "step": "PrecombatMain"
   },
+  "description": "CR 500.7 damage can't be prevented during the Gambit's own extra turn, and on no other",
+  "note": "alice casts Alchemist's Gambit for its cleave cost, then Time Warp on herself: Time Warp's turn (2) is taken first, the Gambit's (3) after it, then bob's (4). On each of turns 1-4 alice shields herself with Mending Hands and bob Lightning Bolts her: the 3 is prevented on the turn the Gambit resolved, on Time Warp's turn and on bob's turn, and lands only on the Gambit's own turn, ruling out a 'during your next turn' reading. Cleaved, no loss clause: the game is still going on turn 4. The Gambit exiled itself while Time Warp went to the graveyard. The Haskell test's read of the stored row's cleanup drop is an internal store and has no restatement.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$gambit",
-          "mana": [
-            "$island1",
-            "$island2",
-            "$island3",
-            "$island4",
-            "$island5",
-            "$island6",
-            "$amountain1",
-            null
-          ],
           "cost": [
             {
               "type": "Generic",
@@ -237,23 +223,33 @@
                 "value": "Red"
               }
             }
-          ]
+          ],
+          "mana": [
+            "$island1",
+            "$island2",
+            "$island3",
+            "$island4",
+            "$island5",
+            "$island6",
+            "$amountain1",
+            null
+          ],
+          "object": "$gambit"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$warp",
           "mana": [
             "$island7",
             "$island8",
@@ -262,295 +258,298 @@
             "$amountain2",
             null
           ],
+          "object": "$warp",
           "targets": [
             "$alice"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Zone",
-          "player": "alice",
-          "zone": "Exile",
           "is": [
             "Alchemist's Gambit"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "check": {
-        "View": {
+          ],
           "of": "Zone",
           "player": "alice",
-          "zone": "Graveyard",
-          "is": [
-            "Time Warp"
-          ]
+          "zone": "Exile"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "check": {
+        "View": {
+          "is": [
+            "Time Warp"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
       "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "Cast": {
-          "object": "$hands1",
           "mana": [
             "$plains1",
             null
           ],
+          "object": "$hands1",
           "targets": [
             "$alice"
           ]
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "bob",
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": {
         "Cast": {
-          "object": "$bolt1",
           "mana": [
             "$m1",
             null
           ],
+          "object": "$bolt1",
           "targets": [
             "$alice"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 20
+          "life": 20,
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$hands2",
           "mana": [
             "$plains1",
             null
           ],
+          "object": "$hands2",
           "targets": [
             "$alice"
           ]
         }
-      }
-    },
-    {
-      "turn": 2,
-      "step": "Upkeep",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "DrawStep",
-      "player": "bob",
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
       "do": {
         "Cast": {
-          "object": "$bolt2",
           "mana": [
             "$m2",
             null
           ],
+          "object": "$bolt2",
           "targets": [
             "$alice"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "DrawStep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "ActivePlayer",
-          "is": "alice"
+          "is": "alice",
+          "of": "ActivePlayer"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 20
+          "life": 20,
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 3,
-      "step": "Upkeep",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$hands3",
           "mana": [
             "$plains1",
             null
           ],
+          "object": "$hands3",
           "targets": [
             "$alice"
           ]
         }
-      }
-    },
-    {
-      "turn": 3,
-      "step": "Upkeep",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "Upkeep",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "DrawStep",
-      "player": "bob",
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 3
+    },
+    {
       "do": {
         "Cast": {
-          "object": "$bolt3",
           "mana": [
-            "$m3",
-            null
+            "$m3"
           ],
+          "object": "$bolt3",
           "targets": [
             "$alice"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "DrawStep",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "ActivePlayer",
-          "is": "alice"
+          "is": "alice",
+          "of": "ActivePlayer"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 3,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 17
+          "life": 17,
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
     },
     {
-      "turn": 4,
-      "step": "Upkeep",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$hands4",
           "mana": [
             "$plains2",
             null
           ],
+          "object": "$hands4",
           "targets": [
             "$alice"
           ]
         }
-      }
-    },
-    {
-      "turn": 4,
-      "step": "Upkeep",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "Upkeep",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "DrawStep",
-      "player": "bob",
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 4
+    },
+    {
       "do": {
         "Cast": {
-          "object": "$bolt4",
           "mana": [
             "$m1",
             null
           ],
+          "object": "$bolt4",
           "targets": [
             "$alice"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "DrawStep",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "View": {
-          "of": "ActivePlayer",
-          "is": "bob"
+          "is": "bob",
+          "of": "ActivePlayer"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 17
+          "life": 17,
+          "player": "alice"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 4
     },
     {
-      "turn": 4,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "View": {
-          "of": "Result",
-          "is": null
+          "is": null,
+          "of": "Result"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 4
     }
   ]
 }

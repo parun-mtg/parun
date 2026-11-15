@@ -36,7 +36,7 @@ import qualified Parun.Engine.Resolve.Common as Common
 import qualified Parun.Engine.Room as Room
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
-import Parun.ManaSpec (alicePermanents, atLife, castFrom, isActivationOf, optionOfTypes, paysColors, poolSize, poolUnits, prefersSource, recordingManaSources, theAbility)
+import Parun.ManaSpec (alicePermanents, atLife, castFrom, optionOfTypes, paysColors, poolSize, poolUnits, prefersSource, recordingManaSources, theAbility)
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -58,7 +58,6 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.Combat as Combat.Type
-import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.Condition as Condition
@@ -71,7 +70,6 @@ import qualified Parun.Types.Count as Count
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DelayedTrigger as DelayedTrigger
-import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownReason as FaceDownReason
@@ -856,82 +854,6 @@ carolMain gs =
 poolOf :: PlayerId.PlayerId -> GameState.GameState -> [ManaUnit.ManaUnit]
 poolOf pid gs = case Game.poolOf pid gs of
   Mana.Type.MkMana units -> units
-
--- CR 500.5a's unit-axis half, and ManaRetention's second non-Ordinary arm.
--- Avatar Roku, Firebender ({3}{R}{R}{R} Legendary Creature -- Human Avatar 6/6,
--- "Whenever a player attacks, add six {R}. Until end of combat, you don't lose
--- this mana as steps end. {R}{R}{R}: Target creature gets +3/+0 until end of
--- turn") is the printing. Nothing is omitted from the card, so parun's Roku is
--- neither stricter nor weaker than printed; Parun.EventTriggerSpec's group of the
--- same name covers the OTHER sentence, CR 508.3d's "a player" payload.
---
--- The retention rides the UNIT and not CR 613.11's player axis, for Shizuko's
--- reason above: "this mana" is the six units this ability added, and a seventh
--- red in the same pool is lost at the first step end.
-avatarRokuSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-avatarRokuSpec s registry =
-  let withPriority gs =
-        gs
-          { GameState.turn =
-              (GameState.turn gs)
-                { TurnRegisters.priority = Just S.alice
-                }
-          }
-      -- Declares attackers and blockers and PASSES on every action (identityAnswer
-      -- answers Prompt.ChooseAction with Pass, and aggressiveAnswer defers to it),
-      -- so nothing is spent and each moment's pool is read clean.
-      passing :: Prompt.Prompt r -> r
-      passing = S.aggressiveAnswer
-      fixture = do
-        roku <- S.printingOf s registry "Avatar Roku, Firebender"
-        piker <- S.printingOf s registry "Goblin Piker"
-        case S.combatBoardOf [roku] [piker] of
-          (gs, [rokuId], [pikerId]) -> pure (Just (rokuId, pikerId, gs))
-          _ -> pure Nothing
-   in Spec.describe s "Avatar Roku, Firebender" $ do
-        -- CR 725.1d: Time Stop ({4}{U}{U} Instant, "End
-        -- the turn.") ends the current phase as well as the step, and the game
-        -- skips straight to the cleanup step. The retention is scoped to the
-        -- combat phase, which has just ended, so the mana goes at that step's own
-        -- CR 500.5 sweep and does NOT wait for CR 514.2.
-        --
-        -- Read as the cleanup step begins and BEFORE it runs, which is the whole
-        -- discrimination: Mana.endManaRetention would end any retention still
-        -- standing at that step's start, so a board read after the cleanup step
-        -- had run would find an empty pool under both readings.
-        --
-        -- BOB casts it: {4}{U}{U} is six mana, and alice paying any of it out of
-        -- the retained {R} would leave her under {R}{R}{R} whatever the sweep did.
-        Spec.it s "CR 725.1d ending the turn during combat takes the retained mana before cleanup" $ do
-          built <- fixture
-          case built of
-            Just (rokuId, _, gs) -> do
-              island <- S.printingOf s registry "Island"
-              timeStop <- S.printingOf s registry "Time Stop"
-              let (spell, staged) = S.addHandCard timeStop S.bob (S.landsFor island S.bob 6 gs)
-                  blockers = withPriority (S.runToStep (Phase.Combat CombatStep.DeclareBlockers) passing staged)
-                  after = S.runPure (castingOnly spell) blockers Engine.runStep
-              Spec.assertEqWith s "the six retained {R} are there when the step begins" (poolOf S.alice blockers) (replicate 6 retainedRed)
-              Spec.assertEqWith s "the game jumped to the cleanup step" (TurnRegisters.phase (GameState.turn after)) (Phase.Ending EndingStep.Cleanup)
-              Spec.assertBool s (not (any (isActivationOf rokuId) (Action.legalActions S.alice (withPriority after)))) "and alice may no longer activate Roku off it"
-              Spec.assertEqWith s "the pool says the same thing" (poolOf S.alice after) []
-            Nothing -> Spec.assertFailure s "fixture should give alice a Roku and bob a Piker"
-
--- Casts that one object the first time it is offered and passes otherwise,
--- leaving every combat decision to S.aggressiveAnswer. Pinned to the OBJECT
--- rather than to "the first cast on offer", so a mutation cannot be repaired by
--- the answerer finding some other legal spell.
-castingOnly :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-castingOnly spell p = case p of
-  Prompt.ChooseAction _ _ actions -> case filter (S.isCastOf spell) actions of
-    h : _ -> h
-    [] -> Action.Type.Pass
-  _ -> S.aggressiveAnswer p
-
--- A {R} whose ManaAddition stamped UntilEndOfCombat onto it -- Roku's, and
--- rule 702.189a's.
-retainedRed :: ManaUnit.ManaUnit
-retainedRed = plainRed {ManaUnit.retention = ManaRetention.UntilEndOfCombat}
 
 -- CR 106.6: mana that carries a restriction on what it may be spent on. Geosurge
 -- ({R}{R}{R}{R} Sorcery, "Add {R}{R}{R}{R}{R}{R}{R}. Spend this mana only to cast
@@ -2537,7 +2459,6 @@ spec s registry = Spec.describe s "Parun.Engine.Mana" $ do
   burningTreeSpec s registry
   stadiumVendorsSpec s registry
   shizukoSpec s registry
-  avatarRokuSpec s registry
   geosurgeSpec s registry
   workshopSpec s registry
   lastingSpringSpec s registry

@@ -1,12 +1,8 @@
 {
-  "description": "CR 725.1d ending the turn during combat expires that phase's effects",
-  "note": "The CR 725.2d file's board with Time Stop for Mandate of Peace: alice animates Jade Statue (3/6 Golem until end of combat) after attackers are declared, and ends the turn in the declare blockers step over bob's Burst Lightning. Eight cards in hand make her discard in cleanup, and bob's Megrim triggers on it, so CR 514.3a gives the cleanup step a priority round: there, after the turn jumped straight to cleanup (no combat damage reached bob), the Statue is a plain artifact with no creature type, so no power or toughness. Read in cleanup, since an end-of-combat expiry the turn's end missed would otherwise survive past CR 514.2.",
   "board": {
     "active": "alice",
-    "step": "BeginningOfCombat",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Goblin Piker",
@@ -124,10 +120,10 @@
           {
             "card": "Mountain"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Goblin Piker",
@@ -188,64 +184,65 @@
           {
             "card": "Mountain"
           }
-        ]
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "BeginningOfCombat"
   },
+  "description": "CR 725.1d ending the turn during combat expires that phase's effects",
+  "note": "The CR 725.2d file's board with Time Stop for Mandate of Peace: alice animates Jade Statue (3/6 Golem until end of combat) after attackers are declared, and ends the turn in the declare blockers step over bob's Burst Lightning. Eight cards in hand make her discard in cleanup, and bob's Megrim triggers on it, so CR 514.3a gives the cleanup step a priority round: there, after the turn jumped straight to cleanup (no combat damage reached bob), the Statue is a plain artifact with no creature type, so no power or toughness. Read in cleanup, since an end-of-combat expiry the turn's end missed would otherwise survive past CR 514.2.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": [
           "$attacker"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "bob",
       "do": {
         "Block": {
           "$blocker": [
             "$attacker"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$jade",
           "mana": [
             "$plains1",
             "$plains2",
             null
-          ]
+          ],
+          "object": "$jade"
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareBlockers",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "DeclareBlockers",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
       "player": "bob",
-      "do": "Pass"
+      "step": "DeclareBlockers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "alice",
       "check": {
         "Types": {
           "object": "$jade",
@@ -254,50 +251,49 @@
             "Creature"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$jade",
           "power": 3,
           "toughness": 6
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareBlockers",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "DeclareBlockers",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "DeclareBlockers",
-      "player": "bob",
+      "turn": 1
+    },
+    {
       "do": {
         "Cast": {
-          "object": "$stacked",
-          "targets": [
-            "$alice"
-          ],
           "mana": [
             "$bmountain1",
             null
+          ],
+          "object": "$stacked",
+          "targets": [
+            "$alice"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareBlockers",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$time-stop",
           "mana": [
             "$island1",
             "$island2",
@@ -306,14 +302,15 @@
             "$island5",
             "$island6",
             null
-          ]
+          ],
+          "object": "$time-stop"
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Cleanup",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseDiscard",
@@ -321,36 +318,36 @@
             "$hers"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Cleanup",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Step",
-          "is": "Cleanup"
+          "is": "Cleanup",
+          "of": "Step"
         }
-      }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Cleanup",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Stack",
           "is": [
             "trigger of $megrim"
-          ]
+          ],
+          "of": "Stack"
         }
-      }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Cleanup",
-      "player": "alice",
       "check": {
         "Types": {
           "object": "$jade",
@@ -358,29 +355,32 @@
             "Artifact"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Cleanup",
-      "player": "alice",
       "check": {
         "Subtypes": {
           "object": "$jade",
           "subtypes": []
         }
-      }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "Cleanup",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 20
+          "life": 20,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "Cleanup",
+      "turn": 1
     }
   ]
 }
