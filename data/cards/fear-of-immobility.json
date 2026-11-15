@@ -35,7 +35,17 @@
               {
                 "clauses": [
                   {
-                    "effects": []
+                    "effects": [
+                      {
+                        "type": "Tap",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
                   },
                   {
                     "condition": {
