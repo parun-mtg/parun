@@ -1,0 +1,135 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "p1",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p2",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "p3",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ancient Imperiosaur",
+            "label": "dino"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 400.7d / 702.51c Ancient Imperiosaur convoked by three creatures enters with six +1/+1 counters",
+  "final": [
+    {
+      "Counters": {
+        "count": 6,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "Ancient Imperiosaur"
+      }
+    },
+    {
+      "PowerToughness": {
+        "object": "Ancient Imperiosaur",
+        "power": 12,
+        "toughness": 12
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$p1",
+        "tapped": true
+      }
+    },
+    {
+      "Tapped": {
+        "object": "$p3",
+        "tapped": true
+      }
+    }
+  ],
+  "note": "Three Goblin Pikers pay {3} of its {5}{G}{G} and four Forests the rest. Its entry counts the convokers before the stack-to-battlefield move is logged, so reading the cast only off that move would give 0.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "cost": [
+            {
+              "type": "Generic",
+              "value": 2
+            },
+            {
+              "type": "OfType",
+              "value": {
+                "type": "Colored",
+                "value": "Green"
+              }
+            },
+            {
+              "type": "OfType",
+              "value": {
+                "type": "Colored",
+                "value": "Green"
+              }
+            }
+          ],
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4"
+          ],
+          "object": "$dino"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

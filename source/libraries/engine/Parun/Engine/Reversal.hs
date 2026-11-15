@@ -116,6 +116,7 @@ withoutAnnouncement before entry closed = do
   pendingEntryEffects <- seqOf (StoredEffects.pendingEntryEffects . GameState.stored)
   enteringBeside <- setOf (Scratch.enteringBeside . GameState.scratch)
   enteringSubjects <- mapOf (Scratch.enteringSubjects . GameState.scratch)
+  enteringSpells <- mapOf (Scratch.enteringSpells . GameState.scratch)
   enteredFrom <- mapOf (Scratch.enteredFrom . GameState.scratch)
   enteringPending <- mapOf (Scratch.enteringPending . GameState.scratch)
   refusedEntries <- one (Scratch.refusedEntries . GameState.scratch)
@@ -280,6 +281,7 @@ withoutAnnouncement before entry closed = do
               Scratch.ambientAmounts = ambientAmounts,
               Scratch.enteringBeside = enteringBeside,
               Scratch.enteringSubjects = enteringSubjects,
+              Scratch.enteringSpells = enteringSpells,
               Scratch.enteredFrom = enteredFrom,
               Scratch.enteringPending = enteringPending,
               Scratch.refusedEntries = refusedEntries,

@@ -167,6 +167,7 @@ codec resolve = Fields.object $ do
   pendingEntryEffects <- Fields.defaulted "pendingEntryEffects" Seq.empty (Common.seq PendingEntryEffect.codec) (StoredEffects.pendingEntryEffects . GameState.stored)
   enteringBeside <- Fields.defaulted "enteringBeside" Set.empty (Common.set ObjectId.codec) (Scratch.enteringBeside . GameState.scratch)
   enteringSubjects <- Fields.defaulted "enteringSubjects" Map.empty (Common.naturalMap ObjectId.codec (Common.maybe EntryOrigin.codec)) (Scratch.enteringSubjects . GameState.scratch)
+  enteringSpells <- Fields.defaulted "enteringSpells" Map.empty (Common.naturalMap ObjectId.codec ObjectId.codec) (Scratch.enteringSpells . GameState.scratch)
   enteredFrom <- Fields.defaulted "enteredFrom" Map.empty (Common.naturalMap ObjectId.codec EntryOrigin.codec) (Scratch.enteredFrom . GameState.scratch)
   enteringPending <- Fields.defaulted "enteringPending" Map.empty (Common.naturalMap ObjectId.codec PlayerId.codec) (Scratch.enteringPending . GameState.scratch)
   refusedEntries <- Fields.defaulted "refusedEntries" Nothing (Common.maybe (Common.set ObjectId.codec)) (Scratch.refusedEntries . GameState.scratch)
@@ -271,6 +272,7 @@ codec resolve = Fields.object $ do
               Scratch.ambientAmounts = ambientAmounts,
               Scratch.enteringBeside = enteringBeside,
               Scratch.enteringSubjects = enteringSubjects,
+              Scratch.enteringSpells = enteringSpells,
               Scratch.enteredFrom = enteredFrom,
               Scratch.enteringPending = enteringPending,
               Scratch.refusedEntries = refusedEntries,
