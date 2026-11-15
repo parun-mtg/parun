@@ -108,8 +108,8 @@
       ],
       "typeLine": {
         "subtypes": [
-          "Human",
-          "Clown"
+          "Clown",
+          "Human"
         ],
         "types": [
           "Creature"
