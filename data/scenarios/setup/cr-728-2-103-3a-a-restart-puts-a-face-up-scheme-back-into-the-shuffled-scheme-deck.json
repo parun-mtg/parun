@@ -1,0 +1,228 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "command": [
+          {
+            "card": "The Very Soil Shall Shake",
+            "label": "soil"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Forest",
+            "label": "f5"
+          },
+          {
+            "card": "Forest",
+            "label": "f6"
+          },
+          {
+            "card": "Forest",
+            "label": "f7"
+          },
+          {
+            "card": "Forest",
+            "label": "f8"
+          }
+        ],
+        "life": 13,
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Scheme",
+            "value": [
+              {
+                "card": "Look Skyward and Despair",
+                "label": "look"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Karn Liberated",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 14
+              }
+            ],
+            "label": "karn"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "i1"
+          }
+        ],
+        "life": 7,
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain",
+    "turn": 2
+  },
+  "description": "CR 728.2 / 103.3a a restart puts a face-up scheme back into the shuffled scheme deck",
+  "final": [
+    {
+      "View": {
+        "is": [],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Command"
+      }
+    },
+    {
+      "Life": {
+        "life": 40,
+        "player": "alice"
+      }
+    },
+    {
+      "Life": {
+        "life": 20,
+        "player": "bob"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "$f8"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Library"
+      }
+    },
+    {
+      "Count": {
+        "card": "Forest",
+        "count": 7,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "CR 728.2 / 103.3a: bob restarts with Karn Liberated at 14 loyalty, so the ongoing Very Soil alice had face up is back in her scheme deck, which the third shuffle's answer names with Look Skyward. CR 103.4e: she is still the archenemy, starting at 40, and bob at 20; both start the old game at other totals so the reset shows.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$soil"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 2,
+          "object": "$karn"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Karn Liberated",
+            "$i1"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4",
+            "$f5",
+            "$f6",
+            "$f7",
+            "$f8"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$look",
+            "$soil"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      },
+      "player": "bob",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    }
+  ]
+}
