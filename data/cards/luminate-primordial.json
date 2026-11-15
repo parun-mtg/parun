@@ -86,7 +86,6 @@
                               }
                             }
                           ],
-                          "members": "Every",
                           "ref": {
                             "type": "InSlot",
                             "value": "target"

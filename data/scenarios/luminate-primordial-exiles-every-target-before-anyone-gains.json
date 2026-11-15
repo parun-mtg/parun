@@ -93,8 +93,10 @@
     {
       "do": {
         "ChooseTargets": {
-          "target": [
-            "$bob-maw",
+          "target#player1": [
+            "$bob-maw"
+          ],
+          "target#player2": [
             "$carol-maw"
           ]
         }
