@@ -1,0 +1,170 @@
+{
+  "description": "CR 609.7a the evidence the Inspector collected is not a source it refers to",
+  "note": "Two Acidic Soils (mana value 3 each) total 6, enough to collect evidence 6; ChooseCost's candidate 0 collects, 1 declines. The Inspector spell's cost binds only whether evidence was collected (CR 701.59c), so the exiled Soils are no object it refers to: bob answers with Healing Grace, and naming a Soil as its source is refused already, while the Piker is offered.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Vitu-Ghazi Inspector",
+            "label": "inspector"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Acidic Soil",
+            "label": "soil"
+          },
+          {
+            "card": "Acidic Soil",
+            "label": "soil-2"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "plains",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Healing Grace",
+            "label": "grace"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCost",
+          "with": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$inspector",
+          "mana": [
+            "$forest",
+            "$swamp"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExilesTotalling",
+          "with": [
+            "$soil",
+            "$soil-2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Cast": {
+          "object": "$grace",
+          "targets": [
+            "$piker"
+          ],
+          "mana": [
+            "$plains"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseDamageSource",
+          "with": "Acidic Soil"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDamageSource",
+          "with": "$piker"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$piker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 23
+        }
+      }
+    }
+  ]
+}

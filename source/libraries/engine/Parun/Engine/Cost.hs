@@ -7659,8 +7659,9 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- BINDS the objects under Binding.beheldObject, which is what CR 701.4b's "if a
   -- [quality] was beheld" is read off -- through Quantity.WasBound, which asks
   -- whether the slot is bound and never goes back to the board for the quality.
-  -- Osseous Exhale is the card, and Parun.CostSpec's "CR 701.4b the quality is
-  -- the one the object had when it was beheld" is the proof.
+  -- Osseous Exhale is the card, and the scenario
+  -- cr-701-4b-beholding-a-dragon-card-in-hand-gains-the-2-life-too, whose Dragon
+  -- is in a hidden zone, is the proof.
   --
   -- Where Behold.chosenType asks, the payer first chooses a type among
   -- `beholdableTypes`, as part of paying (CR 601.2h), written to `oid` as
@@ -8108,8 +8109,9 @@ payPayable perform moment paidFor slots pid oid component = case component of
   --
   -- BINDS the exiled cards under Binding.collectedEvidence, which is what CR
   -- 701.59c's linked "if evidence was collected" is read off, through
-  -- Quantity.WasBound -- Behold's route above. Parun.CostSpec's Vitu-Ghazi
-  -- Inspector group is the proof.
+  -- Quantity.WasBound -- Behold's route above. The scenario
+  -- cr-701-59c-vitu-ghazi-inspector-s-enters-ability-reads-the-evidence-its-spell-collected
+  -- is the proof.
   CostComponent.CollectEvidence n -> do
     exiled <- exileTotalling perform slots pid oid (evidenceExile n)
     case exiled of

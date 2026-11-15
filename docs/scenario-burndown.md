@@ -374,39 +374,39 @@ out: grep for them.
 
 ### `CostSpec`
 
-- CR 101.1 an announced waterbend X of 0 is refused, and 1 is not | `move:ChooseX-out-of-bounds`
-- CR 101.4b the helper is asked on the board the caster's answer left | `check:other-GameState.lastChoice`
+- ~~CR 101.1 an announced waterbend X of 0 is refused, and 1 is not | `move:ChooseX-out-of-bounds`~~
+- ~~CR 101.4b the helper is asked on the board the caster's answer left | `check:other-GameState.lastChoice`~~
 - CR 107.3a/601.2h the announced X is divided among creatures and the target gets -X/-X | `check:prompt-payload`
-- CR 118.1 / 613.4c the cost removes the +1/+1 counter, so the 3/3 becomes a 2/2 that cannot pay again | `check:helper-counterRemovalsOf` `check:other-Event.removeCounters`
-- CR 118.3 no untapped creature means no payment | `check:helper-isTapped` `check:helper-pooledFrom` `check:other-Cost.canPayComponent`
-- CR 118.3 the Altar eats the Ignus before its own return is paid | `move:ActivateManaAbility`
+- ~~CR 118.1 / 613.4c the cost removes the +1/+1 counter, so the 3/3 becomes a 2/2 that cannot pay again | `check:helper-counterRemovalsOf` `check:other-Event.removeCounters`~~
+- ~~CR 118.3 no untapped creature means no payment | `check:helper-isTapped` `check:helper-pooledFrom` `check:other-Cost.canPayComponent`~~
+- ~~CR 118.3 the Altar eats the Ignus before its own return is paid | `move:ActivateManaAbility`~~
 - CR 118.3 the ChooseX bound is the counters the creatures carry between them | `check:prompt-payload`
-- CR 118.6 paying an unpayable cost changes nothing | `check:tapped-count`
-- CR 118.6 the pay-energy ability is payable at two energy, not at one, and grows the Cub
-- CR 118.8b declining to behold gains nothing
-- CR 118.8d a creature cast with its additional waterbend {5} enters with mana value 2 | `check:mana-value`
+- ~~CR 118.6 paying an unpayable cost changes nothing | `check:tapped-count`~~
+- ~~CR 118.6 the pay-energy ability is payable at two energy, not at one, and grows the Cub~~
+- ~~CR 118.8b declining to behold gains nothing~~
+- ~~CR 118.8d a creature cast with its additional waterbend {5} enters with mana value 2 | `check:mana-value`~~
 - CR 122.1 / 601.2h the payer divides the three counters by creature and by kind | `check:prompt-payload`
 - CR 122.1 / 601.2h the payer picks the kind of the one counter | `check:prompt-payload`
-- CR 601.2f a different tapped creature is a different amount of damage | `check:helper-isTapped`
-- CR 601.2g the mana window opens before the payer says how much of a Siege Wurm's cost is convoked | `check:prompt-order`
-- CR 601.2h an answer of the wrong size pays nothing at all
+- ~~CR 601.2f a different tapped creature is a different amount of damage | `check:helper-isTapped`~~
+- ~~CR 601.2g the mana window opens before the payer says how much of a Siege Wurm's cost is convoked | `check:prompt-order`~~
+- ~~CR 601.2h an answer of the wrong size pays nothing at all~~
 - CR 601.2h the payer chooses how many counters come off, and the token is that big | `check:prompt-payload`
 - CR 601.2h the payer chooses which creature the +1/+1 counter comes off, and the ability then draws | `check:events` `check:prompt-payload`
 - CR 601.2h the payer divides the two counters among creatures, one off each of two | `check:prompt-payload`
-- CR 608.2h the ability reads the power of the creature its own cost tapped | `check:helper-isTapped`
-- CR 609.7a the evidence the Inspector collected is not a source it refers to
-- CR 701.17a a card milled to pay a cost was milled this turn | `check:other-Filter.LeftLibraryThisTurn`
-- CR 701.4a a Dragon card in hand pays the cost | `check:events`
-- CR 701.4a a Dragon on the battlefield pays the cost | `check:events`
-- CR 701.4b beholding a Dragon card in hand gains the 2 life too
-- CR 701.4b beholding a Dragon permanent gains the 2 life
-- CR 701.59a Evidence Examiner investigates when the Inspector's cost collects evidence
-- CR 701.59b a graveyard totalling 2 cannot collect evidence 3 | `check:helper-collectsEvidenceFrom`
-- CR 701.59c Vitu-Ghazi Inspector's enters ability reads the evidence its spell collected
-- CR 704.5a paying the last 2 life is legal and loses the game | `check:other-GameState.players` `check:other-Player.status`
-- CR 734.1 a nested window's mana abilities are the payer's to keep | `move:ActivateManaAbility`
-- CR 734.1 a refused assisted cast asks the helper too, and each keeps only their own | `check:prompt-order`
-- CR 734.1 an activator who keeps the mana abilities keeps both lands tapped and both mana floating | `check:other-TurnRegisters.activatedThisTurn`
+- ~~CR 608.2h the ability reads the power of the creature its own cost tapped | `check:helper-isTapped`~~
+- ~~CR 609.7a the evidence the Inspector collected is not a source it refers to~~
+- ~~CR 701.17a a card milled to pay a cost was milled this turn | `check:other-Filter.LeftLibraryThisTurn`~~
+- ~~CR 701.4a a Dragon card in hand pays the cost | `check:events`~~
+- ~~CR 701.4a a Dragon on the battlefield pays the cost | `check:events`~~
+- ~~CR 701.4b beholding a Dragon card in hand gains the 2 life too~~
+- ~~CR 701.4b beholding a Dragon permanent gains the 2 life~~
+- ~~CR 701.59a Evidence Examiner investigates when the Inspector's cost collects evidence~~
+- ~~CR 701.59b a graveyard totalling 2 cannot collect evidence 3 | `check:helper-collectsEvidenceFrom`~~
+- ~~CR 701.59c Vitu-Ghazi Inspector's enters ability reads the evidence its spell collected~~
+- ~~CR 704.5a paying the last 2 life is legal and loses the game | `check:other-GameState.players` `check:other-Player.status`~~
+- ~~CR 734.1 a nested window's mana abilities are the payer's to keep | `move:ActivateManaAbility`~~
+- ~~CR 734.1 a refused assisted cast asks the helper too, and each keeps only their own | `check:prompt-order`~~
+- ~~CR 734.1 an activator who keeps the mana abilities keeps both lands tapped and both mana floating | `check:other-TurnRegisters.activatedThisTurn`~~
 
 ### `CountSpec`
 

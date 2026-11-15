@@ -73,7 +73,9 @@ loyaltyAmountOf component = case component of
   -- and a Just here would ration Barkhide Troll's ability to once a turn (CR
   -- 606.3), gate it on the sorcery window and feed it to `combineLoyalty` (CR
   -- 606.5). Removing a +1\/+1 counter is none of that. Proven, not a fence:
-  -- Parun.CostSpec's Barkhide Troll cases both redden on a Just here.
+  -- Parun.CostSpec's Barkhide Troll case and the scenario
+  -- cr-118-1-613-4c-the-cost-removes-the-1-1-counter-so-the-3-3-becomes-a-2-2-that-cannot-pay-again
+  -- both redden on a Just here.
   CostComponent.RemoveCountersFromThis _ -> Nothing
   -- Nothing, the arm above's reason unchanged by the counters coming off
   -- another permanent: CR 606.4's loyalty symbol is what makes a loyalty

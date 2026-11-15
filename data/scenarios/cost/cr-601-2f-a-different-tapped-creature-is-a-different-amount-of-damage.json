@@ -1,0 +1,121 @@
+{
+  "description": "CR 601.2f a different tapped creature is a different amount of damage",
+  "note": "The Griffin attacks, which taps it and makes it the only attacking flier the ability admits, so its target is bound unasked; that leaves the {T}-cost's \"untapped creature\" one candidate, so nobody picks the creature whose power is read. Three Forests are exactly {3}. Glistener Elf in the Hill Giant's place changes the damage to its 1 and nothing else, so the 2/3 Griffin survives.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Decorated Griffin",
+            "label": "griffin",
+            "ready": true
+          },
+          {
+            "card": "Glistener Elf",
+            "label": "elf",
+            "ready": true
+          },
+          {
+            "card": "Unerring Sling",
+            "label": "sling",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-2",
+            "ready": true
+          },
+          {
+            "card": "Forest",
+            "label": "forest-3",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$griffin"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$sling",
+          "ability": 0,
+          "mana": [
+            "$forest",
+            "$forest-2",
+            "$forest-3"
+          ],
+          "costOrder": [
+            0,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$elf",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$griffin",
+          "damage": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Decorated Griffin",
+          "count": 1
+        }
+      }
+    }
+  ]
+}

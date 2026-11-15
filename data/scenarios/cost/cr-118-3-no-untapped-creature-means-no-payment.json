@@ -1,0 +1,91 @@
+{
+  "description": "CR 118.3 no untapped creature means no payment",
+  "note": "Both Hill Giants are tapped, so the Drum's \"Tap an untapped creature you control\" has nothing to offer and its mana ability is refused, leaving the Drum untapped and nothing floating. The control untaps both on the same board, and the Drum pays.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Springleaf Drum",
+            "label": "drum",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true,
+            "tapped": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "other",
+            "ready": true,
+            "tapped": true
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Take": {
+          "action": "ActivateManaAbility $drum",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Green"
+                },
+                "tags": [
+                  "Artifact"
+                ],
+                "retention": "Ordinary",
+                "restriction": null,
+                "rider": null,
+                "sourceChoices": null
+              }
+            ]
+          ],
+          "costOrder": [
+            0,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$drum",
+          "tapped": false
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": []
+        }
+      }
+    }
+  ]
+}

@@ -2038,10 +2038,10 @@ sourceObjectOf src = case src of
 --
 -- Binding.collectedEvidence is the SECOND slot dropped, for the same kind of
 -- reason: it records whether evidence was collected, which is all CR 701.59c's
--- linked text asks, and no text names the exiled cards through it.
--- Parun.CostSpec's "CR 609.7a the evidence the Inspector collected is not a
--- source it refers to" proves it. The other paid-cost slots stay, whether or
--- not the effect reads them again: the cost's own words refer to the object it
+-- linked text asks, and no text names the exiled cards through it. The scenario
+-- cr-609-7a-the-evidence-the-inspector-collected-is-not-a-source-it-refers-to
+-- proves it. The other paid-cost slots stay, whether or not the effect reads
+-- them again: the cost's own words refer to the object it
 -- paid with ("Sacrifice a creature", "Discard a creature card"), and the
 -- ability on the stack carries that text. Fling and Necromancer's Stockpile
 -- read theirs again; Cho-Arrim Alchemist's discarded card is a source it
