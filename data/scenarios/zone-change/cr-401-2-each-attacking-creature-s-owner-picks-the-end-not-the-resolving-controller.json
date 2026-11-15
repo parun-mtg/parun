@@ -1,0 +1,228 @@
+{
+  "description": "CR 401.2 each attacking creature's OWNER picks the end, not the resolving controller",
+  "note": "alice attacks with her own Goblin Piker and bob's Hill Giant, which she controls. Aetherspouts asks each creature's owner, in APNAP order: alice sends her Piker to the bottom and bob his Giant to the top. Each end gets one card, so nobody arranges a batch (CR 401.4).",
+  "board": {
+    "active": "alice",
+    "step": "DeclareAttackers",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Island",
+            "label": "island-2"
+          },
+          {
+            "card": "Island",
+            "label": "island-3"
+          },
+          {
+            "card": "Island",
+            "label": "island-4"
+          },
+          {
+            "card": "Island",
+            "label": "island-5"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Aetherspouts",
+            "label": "aetherspouts"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true,
+            "controller": "alice"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$piker",
+          "$giant"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseLibraryEnd",
+          "with": "Bottom"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseLibraryEnd",
+          "with": "Top"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$aetherspouts",
+          "mana": [
+            "$island",
+            "$island-2",
+            "$island-3",
+            "$island-4",
+            "$island-5"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Asked",
+          "is": [
+            [
+              "alice",
+              "DeclareAttackers"
+            ],
+            [
+              "alice",
+              "ChooseManaSource"
+            ],
+            [
+              "alice",
+              "ChooseManaSource"
+            ],
+            [
+              "alice",
+              "ChooseManaSource"
+            ],
+            [
+              "alice",
+              "ChooseManaSource"
+            ],
+            [
+              "alice",
+              "ChooseManaSource"
+            ],
+            [
+              "alice",
+              "ChooseLibraryEnd"
+            ],
+            [
+              "bob",
+              "ChooseLibraryEnd"
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Battlefield",
+          "is": [
+            "$island",
+            "$island-2",
+            "$island-3",
+            "$island-4",
+            "$island-5"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library",
+          "is": [
+            "Island#6",
+            "Island#7",
+            "Goblin Piker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library",
+          "is": [
+            "Hill Giant",
+            "Island#8",
+            "Island#9"
+          ]
+        }
+      }
+    }
+  ]
+}

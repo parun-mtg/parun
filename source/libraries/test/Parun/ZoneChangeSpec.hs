@@ -17,7 +17,6 @@ import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
-import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Departure as Departure
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -43,7 +42,6 @@ import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GraveyardArrangement as GraveyardArrangement
 import qualified Parun.Types.GraveyardOrder as GraveyardOrder
-import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
@@ -750,165 +748,6 @@ zoneChangeSpec s registry = Spec.describe s "ZoneChange" $ do
     Spec.assertEqWith s "alice's graveyard holds her own piker" (namesIn Zone.Graveyard S.alice after) [Just (S.printingName piker)]
     Spec.assertEqWith s "carol's graveyard holds her own rats" (namesIn Zone.Graveyard S.carol after) [Just (S.printingName rats)]
     Spec.assertEqWith s "CR 101.4: asked in turn order from the active player, not the controller" asked [S.alice, S.carol]
-
--- CR 401.7's "Nth from the top": Temporal Cleansing leaves the depth or the
--- bottom to the OWNER, Oust states the depth, and Unexpectedly Absent reads it
--- off X. Every board aims at a creature bob OWNS and alice CONTROLS, so the
--- owner and the controller are different seats.
-libraryDepthSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-libraryDepthSpec s registry = Spec.describe s "LibraryDepth" $ do
-  let -- bob's Goblin Piker under alice's control, bob's library seeded with
-      -- the given names (the LAST is the top), and the spell in alice's hand
-      -- over three Islands and three Plains.
-      depthBoard spellName libraryNames = do
-        island <- S.printingOf s registry "Island"
-        plains <- S.printingOf s registry "Plains"
-        piker <- S.printingOf s registry "Goblin Piker"
-        spell <- S.printingOf s registry spellName
-        seeded <- traverse (S.printingOf s registry) libraryNames
-        let (pikerId, g1) = S.addPermanent piker S.bob (S.landsFor plains S.alice 3 (S.landsInPlay island 3))
-            g2 = S.giveControl pikerId S.alice g1
-            (libraryIds, g3) = List.foldl' (\(ids, g) p -> let (oid, g') = S.addLibraryCard p S.bob g in (oid : ids, g')) ([], g2) seeded
-            (gs, spellId) = S.handOne spell g3
-        pure (gs, spellId, pikerId, libraryIds)
-      -- Cast and resolve, recording every ChooseLibraryEnd as (who, how many
-      -- above the upper option) and answering it with `end`.
-      castAt :: ObjectId.ObjectId -> Natural -> LibraryPosition.LibraryPosition -> GameState.GameState -> ObjectId.ObjectId -> (GameState.GameState, [(PlayerId.PlayerId, Natural)])
-      castAt pikerId x end gs spellId =
-        let answerer :: Prompt.Prompt r -> State.State [(PlayerId.PlayerId, Natural)] r
-            answerer p = case p of
-              -- Filtered from the offer: a Permanents pool offers no ToCreature.
-              Prompt.ChooseTargets _ _ _ sets -> pure (fmap (Set.filter ((== Just pikerId) . Recipient.objectOf) . snd) sets)
-              Prompt.ChooseX {} -> pure x
-              Prompt.ChooseLibraryEnd _ pid _ above -> do
-                State.modify (<> [(pid, above)])
-                pure end
-              _ -> pure (S.identityAnswer p)
-         in State.runState
-              ( fmap snd . Engine.runGame answerer gs $ do
-                  S.cast S.alice spellId
-                  Stack.resolveTop
-              )
-              []
-      named = Just . CardName.MkCardName . Text.pack
-  Spec.it s "CR 401.7 Temporal Cleansing: the OWNER picks second from the top, and it lands under the top card" $ do
-    (gs, spellId, pikerId, _) <- depthBoard "Temporal Cleansing" ["Lightning Bolt", "Unsummon", "Griptide"]
-    let (after, asked) = castAt pikerId 0 LibraryPosition.Top gs spellId
-    Spec.assertEqWith s "bob's library, top first" (namesIn Zone.Library S.bob after) (fmap named ["Griptide", "Goblin Piker", "Unsummon", "Lightning Bolt"])
-    Spec.assertEqWith s "the owner was asked, offered one card above the upper option" asked [(S.bob, 1)]
-
--- Every question Aetherspouts raises: which object each owner was asked to place
--- (CR 401.2), and which batch each owner was asked to arrange (CR 401.4).
-type SpoutsLog = ([(PlayerId.PlayerId, ObjectId.ObjectId)], [(PlayerId.PlayerId, LibraryPosition.LibraryPosition, [ObjectId.ObjectId])])
-
--- alice is mid-combat attacking with `mine` creatures she owns and `stolen`
--- creatures BOB owns under her control, holds an Aetherspouts and the five
--- Islands that pay for it, and both libraries are two cards deep so an arrival
--- at either end is distinguishable from one at the other.
---
--- The stolen creature is what makes a ONE-COMBAT board hold two owners at all:
--- CR 508.1a says "the active player chooses which creatures THAT THEY CONTROL
--- ... will attack", so every attacker in one combat shares a controller and only
--- separating owner from controller can put two owners' cards in the batch.
--- S.giveControl also settles it under alice, which is that rule's second
--- sentence ("controlled by the active player continuously since the turn
--- began").
-spoutsBoard :: Printing.Printing -> Printing.Printing -> [Printing.Printing] -> [Printing.Printing] -> (GameState.GameState, ObjectId.ObjectId, [ObjectId.ObjectId], [ObjectId.ObjectId])
-spoutsBoard island spouts mine stolen =
-  let addAll pid ps gs = List.foldl' (\(ids, g) p -> let (oid, g1) = S.addPermanent p pid g in (ids <> [oid], g1)) ([], gs) ps
-      (gs0, ours, _) = S.combatBoardOf mine []
-      (theirs, gs1) = addAll S.bob stolen gs0
-      gs2 = List.foldl' (\g oid -> S.giveControl oid S.alice g) gs1 theirs
-      withLands = List.foldl' (\g _ -> snd (S.addPermanent island S.alice g)) gs2 [1 :: Int .. 5]
-      stocked = List.foldl' (\g pid -> snd (S.addLibraryCard island pid (snd (S.addLibraryCard island pid g)))) withLands [S.alice, S.bob]
-      (withCard, spell) = S.handOne spouts stocked
-   in ( -- handOne parks its state in a precombat main phase; this board is
-        -- mid-combat, the way Parun.MassEffectSpec's trumpetBoard restores it.
-        withCard
-          { GameState.turn =
-              (GameState.turn withCard)
-                { TurnRegisters.phase = TurnRegisters.phase (GameState.turn gs0),
-                  TurnRegisters.priority = TurnRegisters.priority (GameState.turn gs0)
-                }
-          },
-        spell,
-        ours,
-        theirs
-      )
-
--- Declare alice's attack, then cast and resolve the Aetherspouts under an
--- answerer that records every question it is asked.
---
--- `end` picks each owner's answer BY WHO IS ASKED, which is the whole point of
--- the two-owner board: an implementation that raised the prompt with the
--- resolving CONTROLLER would hand both cards the same end.
-castSpouts :: (PlayerId.PlayerId -> LibraryPosition.LibraryPosition) -> [Natural] -> GameState.GameState -> ObjectId.ObjectId -> (GameState.GameState, SpoutsLog)
-castSpouts end arrangement board spell =
-  let attacking = S.runPure S.aggressiveAnswer board (Combat.declareAttackers S.manaPerformer S.alice)
-      answerer :: Prompt.Prompt r -> State.State SpoutsLog r
-      answerer p = case p of
-        Prompt.ChooseLibraryEnd _ pid oid _ -> do
-          State.modify (\(ends, arrs) -> (ends <> [(pid, oid)], arrs))
-          pure (end pid)
-        Prompt.ArrangeLibraryArrivals _ pid position oids -> do
-          State.modify (\(ends, arrs) -> (ends, arrs <> [(pid, position, oids)]))
-          pure arrangement
-        _ -> pure (S.identityAnswer p)
-   in State.runState
-        ( fmap snd . Engine.runGame answerer attacking $ do
-            S.cast S.alice spell
-            Stack.resolveTop
-        )
-        ([], [])
-
--- Aetherspouts ({3}{U}{U} instant, "For each attacking creature, its owner puts
--- it on their choice of the top or bottom of their library"): the pool's
--- producer for a library end the OWNER picks (CR 401.2, #1035), and a producer
--- for CR 401.4's arrangement of two or more cards reaching one end at once
--- (#990) -- Surging Dementia's ripple states its end and still hands over the
--- arrangement, so it reaches that half too. WotC's own 2014-07-18 ruling on the
--- card states both halves.
---
--- Nothing here bears on the order SoulfireEruption's group asks about: CR 608.2f's
--- secondary sentence is guarded by "if
--- the action can't be processed simultaneously", and CR 401.4 gives a library
--- destination its own rule with its own decider -- so a correct Aetherspouts
--- SCREENS the sweep order off rather than exposing it.
-aetherspoutsSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-aetherspoutsSpec s registry = Spec.describe s "Aetherspouts" $ do
-  -- The claim: the end each creature goes to is decided by that creature's
-  -- OWNER, not by the spell's controller and not by the engine. alice controls
-  -- both attackers; bob owns one of them, and only he can send it to the top.
-  Spec.it s "CR 401.2 each attacking creature's OWNER picks the end, not the resolving controller" $ do
-    island <- S.printingOf s registry "Island"
-    piker <- S.printingOf s registry "Goblin Piker"
-    giant <- S.printingOf s registry "Hill Giant"
-    spouts <- S.printingOf s registry "Aetherspouts"
-    let (board, spell, ours, theirs) = spoutsBoard island spouts [piker] [giant]
-        (after, (ends, arrangements)) = castSpouts (\pid -> if pid == S.bob then LibraryPosition.Top else LibraryPosition.Bottom) [] board spell
-        -- By NAME, through `namesIn`: CR 400.7 mints a fresh id at the
-        -- destination, so a library arrival is never the id it had on the
-        -- battlefield. That is also why the two attackers are two different
-        -- printings -- two Pikers would be indistinguishable at either end.
-        bobs = namesIn Zone.Library S.bob after
-        alices = namesIn Zone.Library S.alice after
-    -- Without this the sweep could have found nothing and every assertion below
-    -- would pass vacuously.
-    Spec.assertEqWith s "both attackers left the battlefield" (filter (`S.onBattlefield` after) (ours <> theirs)) []
-    Spec.assertEqWith s "each creature's own owner was asked, once, in the sweep's APNAP order" ends (fmap ((,) S.alice) ours <> fmap ((,) S.bob) theirs)
-    -- One card per (owner, end) group, so CR 401.4 has nothing to arrange. The
-    -- negative half of the elision pair; the positive is the next test.
-    Spec.assertEqWith s "and nobody was asked to arrange a batch of one" arrangements []
-    Spec.assertEqWith s "each library grew by exactly its owner's card" (length bobs, length alices) (3, 3)
-    -- The discriminating half. An implementation that ignored the answers would
-    -- fall back on LibraryPosition.defaultValue and put everything on the
-    -- BOTTOM, so it is bob's Giant at the TOP that catches it -- a
-    -- both-cards-to-the-bottom board would pass for the wrong reason.
-    Spec.assertEqWith
-      s
-      "bob answered Top so his Giant heads his library; alice answered Bottom so her Piker is last in hers"
-      (take 1 bobs <> drop 2 alices)
-      [Just (S.printingName giant), Just (S.printingName piker)]
 
 drawCardSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 drawCardSpec s registry = Spec.describe s "DrawCard" $ do
@@ -1707,8 +1546,6 @@ spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   anyNumberDiscardSpec s registry
   elkinLairSpec s registry
   nextUpkeepSpec s registry
-  libraryDepthSpec s registry
-  aetherspoutsSpec s registry
   drawCardSpec s registry
   loseLifeSpec s registry
   exchangeValuesSpec s registry

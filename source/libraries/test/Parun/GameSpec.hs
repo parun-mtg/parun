@@ -728,8 +728,8 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
   -- proven.
   --
   -- The intervening "if there haven't been any subgames this match" (CR 603.4)
-  -- IS transcribed, over MatchScope.subgamesThisMatch; the case below this one is
-  -- what proves it, as the same board with the tally already at 1.
+  -- IS transcribed, over MatchScope.subgamesThisMatch; the case below proves it,
+  -- on this board with the tally already at 1.
   --
   -- "An opponent" is not transcribed either, and that one IS a rules equivalence:
   -- CR 508.1a lets only the active player's creatures attack, CR 506.2 and CR
@@ -738,35 +738,11 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
   -- combat damage a creature deals to a player is always dealt to its
   -- controller's opponent (Parun.KeywordTriggerSpec's Questing Beast case makes
   -- the same reading of the same printed phrase).
-  Spec.it s "CR 730.1a/730.1b #137 gameplay: a TRIGGERED ability plays the subgame, and CR 730.1b's winner is bound" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    sindbad <- S.printingOf s registry "Shahrazad and Sindbad"
-    let (before, placed, after) = sindbadCombat mountain sindbad 0
-        isRoll r = case r of
-          Response.DeterminedFirstPlayer _ -> True
-          _ -> False
-        rolls = length (filter isRoll (snd (Replay.record sindbadAnswer placed Engine.priorityLoop)))
-    -- The fixture's own preconditions, asserted rather than assumed: neither can
-    -- be reddened by the runner under test.
-    Spec.assertEqWith s "three distinct life totals" (S.lifeOf S.alice before, S.lifeOf S.bob before, S.lifeOf S.carol before) (Just 20, Just 13, Just 9)
-    Spec.assertEqWith s "and three distinct libraries, only carol's able to survive a 7-card opening hand (CR 730.3)" (librarySize S.alice before, librarySize S.bob before, librarySize S.carol before) (6, 4, 8)
-    -- THE proving assertion, at gameplay level: the ability's subgame had a
-    -- winner, and CR 730.1b's "each player who doesn't win" excluded her.
-    Spec.assertEqWith s "CR 730.1b: carol won the ability's subgame, so she pays nothing" (S.lifeOf S.carol after) (Just 9)
-    Spec.assertEqWith s "alice did not win: 20 halves to 10" (S.lifeOf S.alice after) (Just 10)
-    Spec.assertEqWith s "nor did bob, who pays half of the 10 the Sindbad's 3 left him on" (S.lifeOf S.bob after) (Just 5)
-    -- The subgame was really PLAYED, not reported drawn: CR 730.2's roll is asked
-    -- once, from the main game, and only a subgame asks it.
-    Spec.assertEqWith s "CR 730.2: the ability's subgame determined a first player" rolls 1
-    Spec.assertEqWith s "CR 730.5: alice's cards funnelled back into her main-game library" (librarySize S.alice after) 6
-    Spec.assertEqWith s "and bob's" (librarySize S.bob after) 4
-    Spec.assertEqWith s "and carol's" (librarySize S.carol after) 8
-    Spec.assertEqWith s "the trigger resolved and left the stack" (TurnRegisters.stack (GameState.turn after)) []
-    Spec.assertEqWith s "CR 730.1a: the subgame did not decide the main game" (GameState.result after) Nothing
-    Spec.assertEqWith s "CR 100.6a: the subgame it played is on the match's books, in the resumed main game" (MatchScope.subgamesThisMatch (GameState.match after)) 1
-    Spec.assertEqWith s "CR 730.1a: the main game resumes as the match's first game of two" (MatchScope.gameNumber (GameState.match after), MatchScope.gamesThisMatch (GameState.match after)) (1, 2)
-
-  -- CR 603.4 over CR 100.6a: the SAME board as the case above with exactly one
+  --
+  -- The trigger playing its subgame on this board is the scenario
+  -- game/cr-730-1a-730-1b-gameplay-a-triggered-ability-plays-the-subgame-and-cr-730-1b-s-winner-is-bound.json.
+  --
+  -- CR 603.4 over CR 100.6a: the SAME board as that scenario with exactly one
   -- thing different -- the match has already had a subgame -- so Shahrazad and
   -- Sindbad's intervening "if there haven't been any subgames this match" is
   -- false and the ability does not trigger at all. Same combat, same damage,

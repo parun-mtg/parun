@@ -24,11 +24,11 @@
 -- is not the hand, Research for a count other than one, Extrapolate the
 -- Impossible for CR 201.2b's different names and an opponent's pick among the
 -- revealed cards, Turtles Forever for a search's finds out there revealed
--- for an opponent to split, and, in four cases, a Shahrazad
--- subgame for CR 730.4's main game -- Living Wish reaching two main-game
--- creatures, then Death Wish reaching a main-game Titania's Song (CR 604.2's
--- handover), then Burning Wish reaching the resolving Shahrazad itself (CR
--- 730.5), then Burning Wish reaching a main-game graveyard (CR 730.4a).
+-- for an opponent to split, and a Shahrazad subgame for CR 730.4's main
+-- game -- Burning Wish reaching a main-game graveyard (CR 730.4a). Living
+-- Wish reaching two main-game creatures, Death Wish reaching a main-game
+-- Titania's Song and Burning Wish reaching the resolving Shahrazad are
+-- scenarios under data/scenarios/outside-the-game.
 --
 -- The last group takes the OTHER road in: Ring of Ma'rûf's CR 614.6 draw
 -- replacement, whose rewrite reaches the same `bringInto` the resolution arm
@@ -73,7 +73,6 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.CounterKind as CounterKind
-import qualified Parun.Types.CountersPlaced as CountersPlaced
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.DrawR as DrawR
 import qualified Parun.Types.DrawRewrite as DrawRewrite
@@ -87,11 +86,9 @@ import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LeftTheGame as LeftTheGame
-import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.MatchScope as MatchScope
 import qualified Parun.Types.MergeComponent as MergeComponent
-import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
@@ -117,7 +114,6 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
-import qualified Parun.Types.ZoneChange as ZoneChange
 
 -- alice, four untapped lands of one printing, one wish in hand, and the given
 -- multiset of printings outside the game.
@@ -180,11 +176,6 @@ stockLibrary printing n pid gs0 =
 plusOneCounters :: ObjectId.ObjectId -> GameState.GameState -> Natural.Natural
 plusOneCounters oid gs =
   maybe 0 (Map.findWithDefault 0 CounterKind.PlusOnePlusOne . Object.counters) (Game.lookupObject oid gs)
-
--- Where in the log the first event a predicate admits sits, so a case can compare
--- WHEN two things were recorded and not merely that both were.
-eventIndex :: (GameEvent.GameEvent -> Bool) -> GameState.GameState -> Maybe Int
-eventIndex predicate gs = List.findIndex (predicate . LoggedEvent.event) (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
 
 -- alice's Hanweir Battlements and Hanweir Garrison put onto `base` and melded
 -- into Hanweir, the Writhing Township (CR 701.42a), answering the township's id
@@ -610,7 +601,8 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
   -- takes the township. One permanent leaves the main game (CR 713.8e), and
   -- its two cards are what the subgame hands back to her main-game library.
   --
-  -- The sizing is the Death Wish case's: one wish and eight Forests, so she
+  -- The sizing is the Death Wish scenario's
+  -- (outside-the-game/cr-604-2-730-4a-gameplay-death-wish-takes-titania-s-song-out-of-the-main-game-and-its-effect-goes-on-applying-there.json): one wish and eight Forests, so she
   -- holds the wish by turn 5 with three lands down, and bob decks on turn 6.
   -- Her main-game Plains and Mountains are lands outside the subgame too, so
   -- the offer has a choice in it; the answerer pins the township by id.
@@ -657,260 +649,6 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     Spec.assertEqWith s "CR 730.4a: it is gone from the main game" (Map.member township (GameState.objects after)) False
     Spec.assertEqWith s "and neither card is on her battlefield" (hanweirIn Zone.Battlefield) []
     Spec.assertEqWith s "CR 730.1b: alice won the subgame, so only bob paid" (S.lifeOf S.alice after, S.lifeOf S.bob after) (Just 20, Just 10)
-  -- CR 730.4 / 730.4a / 730.5, the whole road at gameplay level and the case #152
-  -- is about. alice casts Shahrazad in the main game; inside the subgame she casts
-  -- Living Wish ({1}{G} sorcery, "You may reveal a creature or land card you own
-  -- from outside the game and put it into your hand. Exile Living Wish.") twice
-  -- and takes one of her main-game Goblin Pikers each time. Each Piker leaves the
-  -- MAIN GAME as it crosses (CR 730.4a), and bob's Super Shredder ("whenever
-  -- another permanent leaves the battlefield, put a +1/+1 counter on Super
-  -- Shredder") is the main-game ability that watches it go.
-  --
-  -- TWO crossings and not one. A single crossing cannot tell a batch read against
-  -- one frozen board from a batch read against the running one (CR 608.2h), which
-  -- is the distinction Setup.applyCrossings' fold draws; it is also what makes
-  -- the wish be cast twice, so a pool spent by the first cast would show up here.
-  --
-  -- The sizing, which is what the fixture is built around: alice starts the
-  -- subgame (CR 730.2), so she skips her first draw (CR 103.8a) and her turns are
-  -- 1, 3 and 5. One land per turn (CR 305.2) puts her second land down on turn 3,
-  -- which is the first turn the {1}{G} wish is castable, and the second wish waits
-  -- for turn 5. Both libraries hold nine cards: seven go to an opening hand, so
-  -- bob draws his last two on turns 2 and 4 and draws from an empty library on
-  -- turn 6, which ends the subgame under CR 704.5b -- one turn after alice's
-  -- second cast. Nine is also over CR 730.3's seven, so neither player decks
-  -- during setup. alice's nine are the two wishes and seven Forests; whichever end
-  -- the shuffle answer leaves them at she holds both wishes by turn 5, since seven
-  -- opening cards plus her turn-3 and turn-5 draws are her whole library.
-  --
-  -- The Plains she cast Shahrazad with are LANDS she owns on the main-game
-  -- battlefield, so CR 730.4 offers them to the wish alongside the Pikers; the
-  -- answerer names a Piker rather than taking the head of the offer.
-  Spec.it s "CR 730.4/730.4a/730.5 gameplay: Living Wish takes two main-game creatures out of a Shahrazad subgame, and the triggers wait for the main game" $ do
-    plains <- S.printingOf s registry "Plains"
-    forest <- S.printingOf s registry "Forest"
-    mountain <- S.printingOf s registry "Mountain"
-    shahrazad <- S.printingOf s registry "Shahrazad"
-    livingWish <- S.printingOf s registry "Living Wish"
-    piker <- S.printingOf s registry "Goblin Piker"
-    shredder <- S.printingOf s registry "Super Shredder"
-    let g0 = Setup.emptyGame S.bothPlayers
-        (firstPiker, g1) = S.addPermanent piker S.alice g0
-        (secondPiker, g2) = S.addPermanent piker S.alice g1
-        (shredderId, g3) = S.addPermanent shredder S.bob g2
-        g4 = S.landsFor plains S.alice 2 g3
-        g5 = stockLibrary mountain 9 S.bob (stockLibrary forest 7 S.alice (stockLibrary livingWish 2 S.alice g4))
-        (_shahrazadId, g6) = S.addHandCard shahrazad S.alice g5
-        before =
-          g6
-            { GameState.turn =
-                (GameState.turn g6)
-                  { TurnRegisters.activePlayer = S.alice,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.alice
-                  }
-            }
-        isPiker candidate = case candidate of
-          OutsideCard.InAnotherGame oid -> oid == firstPiker || oid == secondPiker
-          OutsideCard.InPool _ -> False
-        answer :: Prompt.Prompt r -> r
-        answer p = case p of
-          -- Living Wish's printed "may" (CR 608.2d), taken both times.
-          Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-          -- The fallback is unreachable while a Piker is still offered, and is not
-          -- a silent one: taking the head of the offer takes a PLAINS, which
-          -- crosses instead, so the battlefield and library assertions below both
-          -- redden rather than the case passing on the wrong card.
-          Prompt.ChooseFromOutsideTheGame _ _ offered _ _ ->
-            [Maybe.fromMaybe (fst (NonEmpty.head offered)) (List.find isPiker (fmap fst (NonEmpty.toList offered)))]
-          -- CR 730.2's roll, answered so the turn count above is the one played.
-          Prompt.RandomFirstPlayer _ -> S.alice
-          _ -> S.castAnswer p
-        after = snd (Engine.runGamePure answer before Engine.priorityLoop)
-        -- Scoped to bob, the player CR 730.1b makes pay: today he is the only
-        -- main-game life-loser, but an unscoped match would also catch alice's.
-        isLifeLoss e = case e of
-          GameEvent.LifeLost change -> LifeChange.player change == S.bob
-          _ -> False
-        isShredderCounter e = case e of
-          GameEvent.CountersPut change -> CountersPlaced.object change == shredderId
-          _ -> False
-        -- CR 608.2n: "as the final part of an instant or sorcery spell's
-        -- resolution, the spell is put into its owner's graveyard" -- so this is
-        -- the moment CR 730.5 calls the spell FINISHING resolving, and the only
-        -- stack-to-graveyard move in the main game's log (Living Wish exiles
-        -- itself inside the subgame, whose log is its own, and a resolved ability
-        -- ceases to exist rather than moving).
-        isSpellFinishing e = case e of
-          GameEvent.Moved (Moved.MkMoved zc _ _ _ _ _ _ _ _) -> ZoneChange.from zc == Zone.Stack && ZoneChange.to zc == Zone.Graveyard
-          _ -> False
-        -- CR 730.5's last sentence, read off the one log all three are recorded
-        -- in. The chain: Shahrazad's own LoseLife clause runs during resolution,
-        -- the spell then leaves the stack, and only after that can the trigger go
-        -- on the stack and place its counter.
-        resolutionThenTrigger = case (eventIndex isLifeLoss after, eventIndex isSpellFinishing after, eventIndex isShredderCounter after) of
-          (Just loss, Just finished, Just counter) -> Just (loss < finished, finished < counter)
-          _ -> Nothing
-    -- The fixture's own preconditions, which the runner under test cannot redden.
-    Spec.assertEqWith s "both of alice's creatures start on the main-game battlefield" (Set.member firstPiker (GameState.battlefield before), Set.member secondPiker (GameState.battlefield before)) (True, True)
-    Spec.assertEqWith s "and bob's Super Shredder starts with no counters" (plusOneCounters shredderId before) 0
-    Spec.assertEqWith s "CR 730.4: both main-game creatures left the main game for the subgame" (Set.member firstPiker (GameState.battlefield after), Set.member secondPiker (GameState.battlefield after)) (False, False)
-    Spec.assertEqWith s "CR 730.4a: Super Shredder's leaves-the-battlefield trigger resolved once per crossing" (plusOneCounters shredderId after) 2
-    Spec.assertEqWith s "CR 608.2n/730.5: the trigger's counter lands only after Shahrazad's last clause AND after the spell left the stack" resolutionThenTrigger (Just (True, True))
-    Spec.assertEqWith s "CR 730.5: the cards the wishes took come back to her main-game library" (length (filter (== piker) (printingsIn Zone.Library S.alice after))) 2
-    Spec.assertEqWith s "CR 730.5: and the subgame's own cards -- the wishes it exiled included -- came back with them" (length (printingsIn Zone.Library S.alice after)) 11
-    -- CR 730.1b: alice won the subgame (bob decked), so she is the one player the
-    -- follow-on LoseLife excludes. 20 halves to 10.
-    Spec.assertEqWith s "CR 730.1b: only bob paid, which is how the subgame ended" (S.lifeOf S.alice after, S.lifeOf S.bob after) (Just 20, Just 10)
-    Spec.assertEqWith s "CR 730.1a: the subgame did not decide the main game" (GameState.result after) Nothing
-  -- CR 604.2's exception on the crossing road, and the case #2459 named.
-  -- Titania's Song ({3}{G} enchantment, "Each noncreature artifact loses all
-  -- abilities and becomes an artifact creature with power and toughness each
-  -- equal to its mana value. If this enchantment leaves the battlefield, this
-  -- effect continues until end of turn."): CR 604.2 ends a static ability's
-  -- effect when its permanent leaves the battlefield, and this card's own text
-  -- overrides that. CR 730.4a takes the enchantment out of the main game, which
-  -- IS leaving the battlefield, so the effect has to go on applying in the main
-  -- game the subgame was played inside -- exactly as it does on CR 800.4a's road
-  -- out of the game (Parun.DepartureSpec).
-  --
-  -- Death Wish ({1}{B}{B} sorcery, "You may put a card you own from outside the
-  -- game into your hand. You lose half your life, rounded up. Exile Death Wish.")
-  -- is the producer, and its unrestricted filter is why: #2459 was filed reading
-  -- the pool's wishes as naming a card type apiece, but Death Wish names none, so
-  -- CR 730.4 offers it a main-game ENCHANTMENT. The Death Wish case further up
-  -- proves the same filter admits an ordinary sorcery out of the POOL.
-  --
-  -- Jade Statue ({4} artifact) is the probe: a noncreature artifact of mana value
-  -- 4, so an animated one is a 4/4 and an un-animated one is no creature at all.
-  --
-  -- The sizing is the case above's, one wish instead of two: alice starts the
-  -- subgame (CR 730.2) so her turns are 1, 3 and 5, and three Swamps are down on
-  -- turn 5, which is the first turn the {1}{B}{B} wish is castable. Nine cards
-  -- each: bob draws his last two on turns 2 and 4 and draws from an empty library
-  -- on turn 6, ending the subgame one turn after alice's cast. alice's nine are
-  -- the wish and eight Swamps, so whichever end the shuffle leaves the wish at
-  -- she holds it by turn 5.
-  Spec.it s "CR 604.2/730.4a gameplay: Death Wish takes Titania's Song out of the main game and its effect goes on applying there" $ do
-    plains <- S.printingOf s registry "Plains"
-    swamp <- S.printingOf s registry "Swamp"
-    mountain <- S.printingOf s registry "Mountain"
-    shahrazad <- S.printingOf s registry "Shahrazad"
-    deathWish <- S.printingOf s registry "Death Wish"
-    titaniasSong <- S.printingOf s registry "Titania's Song"
-    jadeStatue <- S.printingOf s registry "Jade Statue"
-    let g0 = Setup.emptyGame S.bothPlayers
-        (songId, g1) = S.addPermanent titaniasSong S.alice g0
-        (statueId, g2) = S.addPermanent jadeStatue S.alice g1
-        g3 = S.landsFor plains S.alice 2 g2
-        g4 = stockLibrary mountain 9 S.bob (stockLibrary swamp 8 S.alice (stockLibrary deathWish 1 S.alice g3))
-        (_shahrazadId, g5) = S.addHandCard shahrazad S.alice g4
-        before =
-          g5
-            { GameState.turn =
-                (GameState.turn g5)
-                  { TurnRegisters.activePlayer = S.alice,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.alice
-                  }
-            }
-        answer :: Prompt.Prompt r -> r
-        answer p = case p of
-          -- Death Wish's printed "may" (CR 608.2d).
-          Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-          -- Pinned to the Song by id. The offer also holds her two Plains and the
-          -- Jade Statue, so an answerer taking the head of it would cross a
-          -- different card and every assertion below would redden rather than the
-          -- case passing on the wrong one.
-          Prompt.ChooseFromOutsideTheGame _ _ offered _ _ ->
-            [Maybe.fromMaybe (fst (NonEmpty.head offered)) (List.find (== OutsideCard.InAnotherGame songId) (fmap fst (NonEmpty.toList offered)))]
-          -- CR 730.2's roll, answered so the turn count above is the one played.
-          Prompt.RandomFirstPlayer _ -> S.alice
-          _ -> S.castAnswer p
-        after = snd (Engine.runGamePure answer before Engine.priorityLoop)
-    -- The fixture's own preconditions, read off the board before anything runs,
-    -- so the runner under test cannot redden them: the Song really was animating
-    -- the Statue in the main game, which is what makes "continues" mean anything.
-    Spec.assertEqWith s "CR 613.4b the Song animates the Statue as a 4/4 before the subgame" (S.powerToughnessOf statueId before) (Just (4, 4))
-    Spec.assertEqWith s "and both are on the main game's battlefield" (Set.member songId (GameState.battlefield before), Set.member statueId (GameState.battlefield before)) (True, True)
-    -- The gameplay-level claim, ahead of every proxy below it.
-    Spec.assertEqWith s "CR 604.2: the Song's effect goes on applying in the main game, so the Statue is still a 4/4" (S.powerToughnessOf statueId after) (Just (4, 4))
-    Spec.assertBool s (Projection.isCreatureOf statueId after) "CR 611.2a: and still an artifact creature"
-    -- What the claim rests on: the Song genuinely left, and the handover is a
-    -- stored effect rather than the Song still projecting from the battlefield.
-    Spec.assertEqWith s "CR 730.4a: the wish took the Song out of the main game entirely" (Map.member songId (GameState.objects after)) False
-    Spec.assertEqWith s "CR 604.2/611.2c: the continuing effect is stored, one per part of the ability" (length (StoredEffects.continuousEffects (GameState.stored after))) 4
-    Spec.assertEqWith s "CR 730.5: the Song comes back to her main-game library" (List.elem titaniasSong (printingsIn Zone.Library S.alice after)) True
-    Spec.assertEqWith s "CR 730.1b: alice won the subgame, so only bob paid" (S.lifeOf S.alice after, S.lifeOf S.bob after) (Just 20, Just 10)
-  -- CR 730.5's second sentence, the one the case above does not reach: "the spell
-  -- or ability that created the subgame finishes resolving, EVEN IF IT WAS
-  -- CREATED BY A SPELL CARD THAT'S NO LONGER ON THE STACK". alice casts Shahrazad
-  -- in the main game; inside the subgame she casts Burning Wish ({1}{R} sorcery,
-  -- "You may reveal a sorcery card you own from outside the game and put it into
-  -- your hand. Exile Burning Wish.") and names the Shahrazad that is resolving.
-  -- CR 730.4 offers it -- the main game's stack is outside the subgame like every
-  -- other main-game zone -- so Setup.applyCrossings deletes the main game's own
-  -- Shahrazad object and funnelBack files the subgame's incarnation in alice's
-  -- main-game library.
-  --
-  -- What CR 730.5 then requires is that Shahrazad's SECOND effect still runs with
-  -- the winner it bound. bob decks, so alice wins, and "each player who doesn't
-  -- win the subgame loses half their life" must reach bob alone.
-  --
-  -- THE DISCRIMINATING QUANTITY IS THE WINNER'S LIFE, not the loser's: bob halves
-  -- under either reading. A resolution that lost its winner binding leaves
-  -- PlayerRef.EachPlayerExcept excluding nobody, and alice halves too.
-  --
-  -- The sizing is the case above's, one wish instead of two. alice starts the
-  -- subgame (CR 730.2) so she skips her first draw (CR 103.8a) and her turns are
-  -- 1, 3 and 5; nine cards each means seven go to an opening hand and bob draws
-  -- from an empty library on turn 6, which ends the subgame under CR 704.5b.
-  -- alice's nine are one Burning Wish and eight Mountains, so by turn 5 she has
-  -- drawn her whole library and holds the wish whatever the shuffle did, with
-  -- three lands down against its {1}{R}. Nine is over CR 730.3's seven, so
-  -- neither player decks during setup.
-  Spec.it s "CR 730.5 gameplay: a wish that takes the resolving Shahrazad itself still finishes resolving with the winner it bound" $ do
-    plains <- S.printingOf s registry "Plains"
-    mountain <- S.printingOf s registry "Mountain"
-    shahrazad <- S.printingOf s registry "Shahrazad"
-    burningWish <- S.printingOf s registry "Burning Wish"
-    let g0 = Setup.emptyGame S.bothPlayers
-        g1 = S.landsFor plains S.alice 2 g0
-        g2 = stockLibrary mountain 9 S.bob (stockLibrary mountain 8 S.alice (stockLibrary burningWish 1 S.alice g1))
-        (_shahrazadId, g3) = S.addHandCard shahrazad S.alice g2
-        before =
-          g3
-            { GameState.turn =
-                (GameState.turn g3)
-                  { TurnRegisters.activePlayer = S.alice,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.alice
-                  }
-            }
-        isFromAnotherGame candidate = case candidate of
-          OutsideCard.InAnotherGame _ -> True
-          OutsideCard.InPool _ -> False
-        answer :: Prompt.Prompt r -> r
-        answer p = case p of
-          -- Burning Wish's printed "may" (CR 608.2d), taken.
-          Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-          -- The main-game Shahrazad is the only sorcery alice owns outside the
-          -- subgame -- her main-game Plains are lands and her pool is empty -- so
-          -- this names it. The fallback is not silent: taking the head of an offer
-          -- that held anything else would leave Shahrazad's card in the main game
-          -- rather than in her library, which the second assertion reddens on.
-          Prompt.ChooseFromOutsideTheGame _ _ offered _ _ ->
-            [Maybe.fromMaybe (fst (NonEmpty.head offered)) (List.find isFromAnotherGame (fmap fst (NonEmpty.toList offered)))]
-          -- CR 730.2's roll, answered so the turn count above is the one played.
-          Prompt.RandomFirstPlayer _ -> S.alice
-          _ -> S.castAnswer p
-        after = snd (Engine.runGamePure answer before Engine.priorityLoop)
-    Spec.assertEqWith s "the fixture starts both seats at twenty" (S.lifeOf S.alice before, S.lifeOf S.bob before) (Just 20, Just 20)
-    Spec.assertEqWith s "CR 730.5: the resolution finishes with the winner it bound -- alice won and is excluded, bob alone halves" (S.lifeOf S.alice after, S.lifeOf S.bob after) (Just 20, Just 10)
-    Spec.assertEqWith s "CR 730.4/730.5: the wish really took the resolving Shahrazad, which came back to alice's main-game library" (length (filter (== shahrazad) (printingsIn Zone.Library S.alice after))) 1
-    Spec.assertEqWith s "CR 400.7/608.2n: and so it is in no main-game graveyard" (printingsIn Zone.Graveyard S.alice after) []
-    Spec.assertEqWith s "CR 730.1a: the subgame did not decide the main game" (GameState.result after) Nothing
-
   -- CR 730.4a's wider half: main-game abilities "trigger on objects leaving a
   -- main-game ZONE", not only the battlefield. alice's Spirit Mascot ({R}{W}
   -- creature, "Whenever one or more cards leave your graveyard, put a +1/+1
@@ -923,8 +661,9 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
   -- leaving her graveyard, and the Mascot gets its counter once the main game
   -- resumes; taking Shahrazad is a card leaving the STACK, and it gets none.
   --
-  -- The sizing is the Shahrazad-taking case above's, which this board's
-  -- second leg repeats.
+  -- The sizing is the Shahrazad-taking scenario's, which this board's second
+  -- leg repeats:
+  -- outside-the-game/cr-730-5-gameplay-a-wish-that-takes-the-resolving-shahrazad-itself-still-finishes-resolving-with-the-winner-it-bound.json.
   Spec.it s "CR 730.4a gameplay: Burning Wish takes a card out of a main-game graveyard and Spirit Mascot sees it leave" $ do
     plains <- S.printingOf s registry "Plains"
     mountain <- S.printingOf s registry "Mountain"
@@ -986,7 +725,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
   --
   -- A PAIR differing in the wish's "may" alone: declined, the Tithe stays on
   -- the stack and the same gains are read off a live object. The sizing is the
-  -- Shahrazad-taking case above's.
+  -- Shahrazad-taking scenario's, named in the Spirit Mascot case above.
   Spec.it s "CR 730.5 gameplay: a subgame spell whose card a wish took still reads the die it rolled and counts who didn't win" $ do
     plains <- S.printingOf s registry "Plains"
     mountain <- S.printingOf s registry "Mountain"
@@ -1326,7 +1065,7 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
   -- answerer takes the Breezekeeper if offered, so the reading the rule rejects
   -- reddens every assertion below.
   --
-  -- The sizing is the Death Wish case's: one {1}{G} wish and eight Forests for
+  -- The sizing is the Death Wish scenario's: one {1}{G} wish and eight Forests for
   -- alice, castable on her turn 3, and bob decks on turn 6.
   Spec.it s "CR 702.26b/730.4 gameplay: a subgame's Living Wish is not offered a phased-out Breezekeeper" $ do
     plains <- S.printingOf s registry "Plains"

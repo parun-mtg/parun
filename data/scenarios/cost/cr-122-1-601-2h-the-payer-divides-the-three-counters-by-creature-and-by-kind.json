@@ -1,0 +1,303 @@
+{
+  "description": "CR 122.1 / 601.2h the payer divides the three counters by creature and by kind",
+  "note": "Tayam's ability removes three counters of any kind from among creatures alice controls, offered by creature and by kind. She takes the Piker's vigilance counter and both of the Giant's +1/+1 counters; the Piker keeps its +1/+1 counter. The ability mills three Divinations and returns the graveyard's Goblin Piker, the one permanent card of mana value 3 or less, which Tayam's first ability gives a vigilance counter.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Tayam, Luminous Enigma",
+            "label": "tayam"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "counters": [
+              {
+                "key": {
+                  "type": "Keyword",
+                  "value": {
+                    "type": "Vigilance"
+                  }
+                },
+                "value": 1
+              },
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ]
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 2
+              }
+            ]
+          }
+        ],
+        "manaPool": "BBB",
+        "graveyard": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Hill Giant"
+          }
+        ],
+        "library": [
+          {
+            "card": "Divination"
+          },
+          {
+            "card": "Divination"
+          },
+          {
+            "card": "Divination"
+          },
+          {
+            "card": "Divination"
+          },
+          {
+            "card": "Divination"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "bobs-giant",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 3
+              },
+              {
+                "key": {
+                  "type": "Keyword",
+                  "value": {
+                    "type": "Vigilance"
+                  }
+                },
+                "value": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseMixedCounterRemoval",
+            "offer": {
+              "source": "$tayam",
+              "least": 3,
+              "most": 3,
+              "amounts": [
+                [
+                  "$piker",
+                  [
+                    [
+                      {
+                        "type": "PlusOnePlusOne"
+                      },
+                      1
+                    ],
+                    [
+                      {
+                        "type": "Keyword",
+                        "value": {
+                          "type": "Vigilance"
+                        }
+                      },
+                      1
+                    ]
+                  ]
+                ],
+                [
+                  "$giant",
+                  [
+                    [
+                      {
+                        "type": "PlusOnePlusOne"
+                      },
+                      2
+                    ]
+                  ]
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseMixedCounterRemoval",
+          "with": [
+            [
+              "$piker",
+              [
+                [
+                  {
+                    "type": "Keyword",
+                    "value": {
+                      "type": "Vigilance"
+                    }
+                  },
+                  1
+                ]
+              ]
+            ],
+            [
+              "$giant",
+              [
+                [
+                  {
+                    "type": "PlusOnePlusOne"
+                  },
+                  2
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$tayam",
+          "ability": 0,
+          "mana": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$piker",
+          "kind": {
+            "type": "Keyword",
+            "value": {
+              "type": "Vigilance"
+            }
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$piker",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$giant",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Goblin Piker",
+          "count": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "Goblin Piker#2",
+          "kind": {
+            "type": "Keyword",
+            "value": {
+              "type": "Vigilance"
+            }
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library",
+          "is": [
+            "Divination",
+            "Divination#2"
+          ]
+        }
+      }
+    }
+  ]
+}
