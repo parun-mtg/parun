@@ -927,7 +927,7 @@ playerRefPositions =
         ("player-sacrifices", Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices (plantedPlayer "ps") Nothing (Filter.Type.And []) one Nothing), [plantedPlayer "ps"]),
         ("flip-coin", Effect.FlipCoin FlipCoin.MkFlipCoin {FlipCoin.count = one, FlipCoin.reading = CoinReading.Heads, FlipCoin.slot = SlotName.MkSlotName (Text.pack "fc"), FlipCoin.misses = Nothing, FlipCoin.flipper = plantedPlayer "fc"}, [plantedPlayer "fc"]),
         ("choose-card-name", Effect.ChooseCardName (ChooseCardName.MkChooseCardName (plantedPlayer "cn") (Filter.Type.And []) Nothing), [plantedPlayer "cn"]),
-        ("for-each-starting-with", Effect.ForEach (ForEach.MkForEach (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing)) LoopMembers.Every (SlotName.MkSlotName (Text.pack "each")) Seq.empty False Nothing (Just (plantedPlayer "fe-start"))), [plantedPlayer "fe-start"]),
+        ("for-each-starting-with", Effect.ForEach (ForEach.MkForEach (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing)) LoopMembers.Every (SlotName.MkSlotName (Text.pack "each")) Seq.empty False Nothing (Just (plantedPlayer "fe-start"))), [plantedPlayer "fe-start"]),
         ("repeat", Effect.Repeat (Repeat.MkRepeat (plantedPlayer "rp-chooser") Seq.empty Nothing (Just (plantedPlayer "rp-other")) Seq.empty), [plantedPlayer "rp-chooser", plantedPlayer "rp-other"]),
         ("choose-number", Effect.ChooseNumber (ChooseNumber.MkChooseNumber (SlotName.MkSlotName (Text.pack "number")) Nothing (plantedPlayer "cn-chooser")), [plantedPlayer "cn-chooser"]),
         ("offer-cast", Effect.OfferCast (OfferCast.MkOfferCast (plantedRef "oc-ref") (plantedPlayer "oc-caster") CastObligation.Optional PermissionVerb.Cast CastOffer.defaultValue CastRepetition.Once False False Nothing), [plantedPlayer "oc-caster"]),
@@ -3361,8 +3361,9 @@ objectRefFilters ref = case ref of
   ObjectRef.EachOnStack f -> unframed [f]
   -- The PlayerRef names players by relation, by slot or through CR 108.4's
   -- controller, never by characteristics; Disorder's "who controls a white
-  -- creature" is the narrowing Filter, matched against each player.
-  ObjectRef.Players (PlayersWho.MkPlayersWho _ who) -> unframed (Foldable.toList who)
+  -- creature" is the narrowing Filter, matched against each player. A
+  -- narrowing Condition's Quantities go through refFilters, TopOfLibrary's way.
+  ObjectRef.Players (PlayersWho.MkPlayersWho _ who _) -> unframed (Foldable.toList who) <> refFilters ref
   -- Count on Luck's "the top card of your library" names a POSITION, so it states
   -- no Filter of its own, and its PlayerRef names players. Its DEPTH is a
   -- Quantity, which reaches one through a Count -- "the top X cards" where X is
@@ -6704,7 +6705,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
      in Spec.assertEqWith
           s
           "the dealer slot is read"
-          (Map.keysSet (Resolve.slotsOf (Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing)) (Quantity.Type.Literal 3))) (Just ghost) Nothing Nothing Nothing Nothing Nothing))))
+          (Map.keysSet (Resolve.slotsOf (Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing)) (Quantity.Type.Literal 3))) (Just ghost) Nothing Nothing Nothing Nothing Nothing))))
           (Set.singleton ghost)
   -- CR 608.2h: a stored cost change's `perEach` is fixed as it is stored
   -- (Mutated Cultist's tallies), so what it counts with is read like any other

@@ -114,7 +114,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.Players PlayersWho.MkPlayersWho {PlayersWho.players = PlayerRef.Relative PlayerRelation.Opponent, PlayersWho.who = Nothing})
+      (ObjectRef.Players PlayersWho.MkPlayersWho {PlayersWho.players = PlayerRef.Relative PlayerRelation.Opponent, PlayersWho.who = Nothing, PlayersWho.whose = Nothing})
       " {\"type\":\"Players\",\"value\":{\"players\":{\"type\":\"Relative\",\"value\":\"Opponent\"}}} "
   -- A seat named through an object a slot holds: Deflecting Palm's "that
   -- source's controller".
@@ -122,7 +122,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.Players PlayersWho.MkPlayersWho {PlayersWho.players = PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "thatDamageSource")), PlayersWho.who = Nothing})
+      (ObjectRef.Players PlayersWho.MkPlayersWho {PlayersWho.players = PlayerRef.HolderOfBound Holder.Controller Hop.Itself (SlotName.MkSlotName (Text.pack "thatDamageSource")), PlayersWho.who = Nothing, PlayersWho.whose = Nothing})
       " {\"type\":\"Players\",\"value\":{\"players\":{\"type\":\"HolderOfBound\",\"value\":{\"holder\":\"Controller\",\"hop\":\"Itself\",\"slot\":\"thatDamageSource\"}}}} "
   -- Nullary for a rule rather than an economy: CR
   -- 400.2 makes a hand hidden, so this arm names only the resolving
@@ -505,7 +505,7 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
                 Codec.encode ObjectRef.codec (ObjectRef.EachSpell (Filter.Not Filter.IsSource)),
                 Codec.encode ObjectRef.codec (ObjectRef.EachAbility (Filter.Not Filter.IsSource)),
                 Codec.encode ObjectRef.codec (ObjectRef.EachOnStack (Filter.Not Filter.IsSource)),
-                Codec.encode ObjectRef.codec (ObjectRef.Players PlayersWho.MkPlayersWho {PlayersWho.players = PlayerRef.Relative PlayerRelation.You, PlayersWho.who = Nothing}),
+                Codec.encode ObjectRef.codec (ObjectRef.Players PlayersWho.MkPlayersWho {PlayersWho.players = PlayerRef.Relative PlayerRelation.You, PlayersWho.who = Nothing, PlayersWho.whose = Nothing}),
                 Codec.encode ObjectRef.codec (ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 3) Nothing)),
                 Codec.encode ObjectRef.codec (ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil (PlayerRef.Relative PlayerRelation.You) (Filter.Not (Filter.HasCardType CardType.Land)) (Quantity.Literal 1) (Quantity.Literal 1) Nothing)),
                 Codec.encode ObjectRef.codec (ObjectRef.TopOfGraveyard (PlayerRef.Relative PlayerRelation.You)),

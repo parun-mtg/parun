@@ -59,7 +59,7 @@ spec s = Spec.describe s "Parun.Codec.DealDamage" $ do
                       DamagePart.quantity = Quantity.Literal 3
                     },
                   DamagePart.MkDamagePart
-                    { DamagePart.ref = ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing),
+                    { DamagePart.ref = ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing),
                       DamagePart.quantity = Quantity.Literal 2
                     }
                 ],

@@ -1568,8 +1568,8 @@ damageRecipient context value = do
     "EachPlayer" -> do
       relation <- Node.argument n >>= players
       case relation of
-        PlayerRelation.AnyPlayer -> Right (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative relation) Nothing))
-        PlayerRelation.Opponent -> Right (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative relation) Nothing))
+        PlayerRelation.AnyPlayer -> Right (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative relation) Nothing Nothing))
+        PlayerRelation.Opponent -> Right (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative relation) Nothing Nothing))
         _ -> Node.untranslated n
     t | Just s <- Map.lookup t (references context) -> Right (ObjectRef.InSlot s)
     _ -> Node.untranslated n

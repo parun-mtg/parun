@@ -379,6 +379,7 @@ objectRefRewrites pairs =
   Children.objectRefLeaves
     { Children.refFilter = Identity.Identity . Filter.rewrite pairs,
       Children.refQuantity = Identity.Identity . rewriteQuantity pairs,
+      Children.refCondition = Identity.Identity . rewriteCondition pairs,
       Children.refNested = Identity.Identity . rewriteObjectRef pairs
     }
 
