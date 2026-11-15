@@ -1,0 +1,123 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Shimatsu the Bloodcloaked",
+            "commander": true,
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ],
+            "label": "shimatsu"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island1"
+          },
+          {
+            "card": "Synthetic Hand Interdiction",
+            "label": "interdiction"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Unsummon",
+            "label": "bounce"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 616.1e/903.9b the owner may apply the offer before a card's redirect",
+  "final": [
+    {
+      "Count": {
+        "card": "Shimatsu the Bloodcloaked",
+        "count": 1,
+        "player": "alice",
+        "zone": "Command"
+      }
+    },
+    {
+      "Count": {
+        "card": "Shimatsu the Bloodcloaked",
+        "count": 0,
+        "player": "alice",
+        "zone": "Exile"
+      }
+    }
+  ],
+  "note": "Synthetic Hand Interdiction's exile competes with CR 903.9b's offer for Unsummon's bounce; accepting the offer for the creature on the battlefield sends it straight to the command zone.",
+  "timeline": [
+    {
+      "check": {
+        "Count": {
+          "card": "Shimatsu the Bloodcloaked",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Shimatsu the Bloodcloaked",
+          "count": 0,
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island1"
+          ],
+          "object": "$bounce"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReturnCommander",
+          "with": "Returns"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    }
+  ]
+}

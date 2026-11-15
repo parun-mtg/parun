@@ -14,14 +14,15 @@
 -- permission Parun.Engine.Exile.mayLookAt answers, the pile
 -- Parun.Engine.Exile.pileOf sorts a card into and Parun.Engine.Target's piledOffer
 -- offers instead, and the draw drawFromPiles takes out of it, taken over the
--- WHOLE pile, elided at a one-card pile, filtered back against the pile and asked
--- with Game.ask rather than Game.choose (CR 104.4b), and revealed only once a
--- cast or activation is paid for -- and
+-- WHOLE pile, asked with Game.ask rather than Game.choose (CR 104.4b), and
+-- revealed only once a cast or activation is paid for -- and
 -- ObjectRef.EachCardInYourHand as Parun.Engine.Resolve sweeps it.
 --
--- CR 406.4's separate piles are read off the same Ignorant Bliss: one casting
--- makes one pile of what it hid, two castings make two, and which pile a chooser
--- names is which card the draw can hand them.
+-- The readings a scenario can play and check live in data/scenarios/exile: CR
+-- 406.4's separate piles, its draw elided at a one-card pile and filtered back
+-- against the pile, the foretold card's turn face up, Extract Power's looker,
+-- Runic Repetition's flashback slot, and Windbrisk Heights' hideaway, look and
+-- play ability.
 --
 -- Gameplay-level, off three producers that exile face down and differ in exactly
 -- the permission. Ignorant Bliss {1}{R} Instant -- "Exile all cards from your
@@ -31,11 +32,7 @@
 -- permission for the LOOKER, who owns only one of them. Synthetic
 -- Blind Reclamation's unqualified "target exiled card" is what reads the
 -- difference back out, and Riftsweeper's printed "face-up exiled card" is the
--- third reading -- a card whose own words refuse what rule 406.4 offers. Runic
--- Repetition is the fourth: a restriction a pile only half satisfies, which is
--- what the draw runs over the whole pile for. Windbrisk Heights is the reading
--- no spell reaches: CR 702.75a's keyword names the permanent's controller, and
--- rule 406.3 then keeps the look with every seat that read has ever named.
+-- third reading -- a card whose own words refuse what rule 406.4 offers.
 -- Synthetic Ledger Glimpse's "target card you own in exile" is the owner-scoped
 -- slot a draw out of Extract Power's two-owner pile can land outside of.
 --
@@ -43,7 +40,6 @@
 -- holds the same cards either way, and only how they got there differs.
 module Parun.ExileSpec where
 
-import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
@@ -62,7 +58,6 @@ import qualified Parun.Engine.Foretell as Foretell
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Modal as Modal
 import qualified Parun.Engine.PlayerView as PlayerView
-import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Engine.Target as Target
@@ -98,7 +93,6 @@ import qualified Parun.Types.SeatView as SeatView
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StoredEffects as StoredEffects
-import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
@@ -108,7 +102,6 @@ import qualified Parun.Types.Zone as Zone
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Face-down exile" $ do
   foretold s registry
-  runicRepetition s registry
   extractPower s registry
   glimpseRefusedDraws s registry
   windbriskHeights s registry
@@ -146,25 +139,6 @@ spec s registry = Spec.describe s "Face-down exile" $ do
             (Target.legalRecipients StackObjectKind.Spell (Just S.alice) S.noSource theSlot board)
             (Set.fromList (fmap Recipient.ToObject (Set.toList (GameState.exile board))))
         Nothing -> Spec.assertFailure s "Synthetic Blind Reclamation should print one target slot"
-    -- CR 406.4's second half at gameplay level, and the only board in the tree
-    -- with a pile of MORE THAN ONE card -- Ignorant Bliss exiles a whole hand in
-    -- one go, where each foretold card is a pile of its own (CR 702.143e). So the
-    -- draw is a real draw here: the answerer takes the pile, randomness is
-    -- answered with the LAST of the two cards it holds, and which card left exile
-    -- is what tells that answer from the first one.
-    Spec.it s "CR 406.4 choosing the pile shuffles the card the random draw named, not the other one" $ do
-      (drawn, other, board) <- pileBoard s registry
-      sentry <- S.printingOf s registry "Ogre Sentry"
-      let after = S.runPure S.identityAnswer board Engine.priorityLoop
-      Spec.assertEqWith
-        s
-        "the card the draw named joined its owner's library, and the other card of its pile did not"
-        (namesIn Zone.Library S.alice after)
-        (Set.fromList [drawn, S.printingName sentry])
-      -- Proxies, AFTER the behaviour so neither can absorb a mutation: the spell
-      -- did resolve, and it took exactly one card out of exile.
-      Spec.assertEqWith s "the other card of the pile is the one still in exile face down" (namesOf (faceDownExiled after) after) (Set.singleton other)
-      Spec.assertEqWith s "one card left exile, of the three that were there" (Set.size (GameState.exile after)) 2
     -- CR 406.4's last sentence, read through each seat's PlayerView, the view a
     -- client is handed: the card the draw named is not revealed until the cost
     -- is paid, and is then revealed to both seats (docs/synthetic-readings.md,
@@ -190,88 +164,6 @@ spec s registry = Spec.describe s "Face-down exile" $ do
           let ((_, after), seen) = State.runState (Engine.runGameAsked watchingPayment before (Activate.activateAbility S.alice reclaimerId ability)) Nothing
           revealedOncePaid s drawn other before after seen
         _ -> Spec.assertFailure s "Synthetic Blind Reclaimer should state one activated ability"
-    -- CR 406.4's FIRST sentence, which the case above leaves untested: "face-down
-    -- cards in exile should be kept in separate piles based on when they were
-    -- exiled and how they were exiled". Two castings of Ignorant Bliss are two
-    -- instructions at two times, so the three cards they hide are two piles and
-    -- not one, and a chooser who may not look picks WHICH pile to draw out of.
-    --
-    -- The pile that is named holds ONE card and it is not the one a merged pile
-    -- would hand over: the answerer takes the draw's LAST candidate, which over
-    -- the first casting's pile is Goblin Piker and over all three cards is the
-    -- last card the second casting hid. So the card that reaches alice's library
-    -- is what tells two piles from one.
-    Spec.it s "CR 406.4 two castings of one spell make two piles, and the draw comes out of the pile that was named" $ do
-      (pile, hidden, spellId, board) <- twoPileBoard s registry
-      sentry <- S.printingOf s registry "Ogre Sentry"
-      reclamation <- S.printingOf s registry "Synthetic Blind Reclamation"
-      case (pile, S.spellTargetSlot reclamation) of
-        (Just firstPile, Just theSlot) -> do
-          let after = S.runPure S.identityAnswer (S.runPure (throughPileOf firstPile) board (S.cast S.alice spellId)) Engine.priorityLoop
-          Spec.assertEqWith
-            s
-            "the one card of the named pile joined alice's library, and neither card of the other pile did"
-            (namesIn Zone.Library S.alice after)
-            (Set.fromList [hidden, S.printingName sentry])
-          -- Proxies, AFTER the behaviour so neither can absorb a mutation: the
-          -- three hidden cards reach the offer as two candidates, and the spell
-          -- took one card out of exile.
-          Spec.assertEqWith s "all three cards are hidden in exile" (length (faceDownExiled board)) 3
-          Spec.assertEqWith s "and they are offered as the two piles the two castings made" (Set.size (offerTo S.alice theSlot board)) 2
-          Spec.assertEqWith s "the other pile's two cards are still in exile" (Set.size (GameState.exile after)) 2
-        _ -> Spec.assertFailure s "the first casting should make a pile, and Synthetic Blind Reclamation print one target slot"
-    -- CR 406.4's draw is a QUESTION only where the pile holds more than one
-    -- card, which is CLAUDE.md's second invariant: where the rules leave nothing
-    -- to ask, don't prompt. A pair of piles on ONE board differing in exactly
-    -- that -- the first casting of Ignorant Bliss hid one card, the second hid
-    -- two -- so a board with no pile at all cannot pass for "not asked".
-    --
-    -- CR 702.143e is why this is not a corner: every foretold card is a pile of
-    -- its own, so every draw out of one would otherwise raise a prompt with one
-    -- candidate.
-    Spec.it s "CR 406.4 a pile of one card is drawn from without asking, and a pile of two is asked about" $ do
-      (pile, hidden, spellId, board) <- twoPileBoard s registry
-      sentry <- S.printingOf s registry "Ogre Sentry"
-      case (pile, otherPileThan pile board) of
-        (Just onePile, Just twoPile) -> do
-          let draws named = State.execState (Engine.runGame (countingDraws named) board (S.cast S.alice spellId)) (0 :: Int)
-          Spec.assertEqWith s "the pile of one card leaves nothing to draw, so the draw is not raised" (draws onePile) 0
-          Spec.assertEqWith s "the pile of two on the same board is a real draw, and is asked about once" (draws twoPile) 1
-          -- Proxies, AFTER the behaviour so neither can absorb a mutation: the
-          -- elided draw still hands over the pile's one card, which is what
-          -- makes the two options indistinguishable.
-          let after = S.runPure S.identityAnswer (S.runPure (throughPileOf onePile) board (S.cast S.alice spellId)) Engine.priorityLoop
-          Spec.assertEqWith s "and the unasked pile's one card is still what the draw hands over" (namesIn Zone.Library S.alice after) (Set.fromList [hidden, S.printingName sentry])
-          Spec.assertEqWith s "the two piles hold one card and two" (fmap (length . membersOfPile board) [onePile, twoPile]) [1, 2]
-        _ -> Spec.assertFailure s "the two castings should make two piles"
-    -- CR 406.4's draw is answered by the interpreter, so the answer is FILTERED
-    -- back against the pile rather than trusted -- the posture
-    -- Parun.Engine.Resolve's RandomObject and RandomPlayer arms and
-    -- Parun.Engine.Engine's RandomFirstPlayer all take.
-    --
-    -- The smuggled card is the OTHER pile's, which is the reading a legality
-    -- check cannot catch: rule 406.4 keeps every exiled card a legal target
-    -- (the case above), so Target.selectionLegal admits it and only this filter
-    -- refuses it.
-    Spec.it s "CR 406.4 a draw answered with a card outside the named pile falls back to a card in it" $ do
-      (pile, hidden, spellId, board) <- twoPileBoard s registry
-      sentry <- S.printingOf s registry "Ogre Sentry"
-      case (pile, otherPileThan pile board) of
-        (Just onePile, Just twoPile) -> case (membersOfPile board onePile, membersOfPile board twoPile) of
-          ([smuggled], firstOfTwo : _) -> do
-            let after = S.runPure S.identityAnswer (S.runPure (namingOutside twoPile smuggled) board (S.cast S.alice spellId)) Engine.priorityLoop
-            Spec.assertEqWith
-              s
-              "the card that joined alice's library is the named pile's own, not the card the answer smuggled in"
-              (namesIn Zone.Library S.alice after)
-              (Set.insert (S.printingName sentry) (namesOf [firstOfTwo] board))
-            -- Proxies, AFTER the behaviour so neither can absorb a mutation: the
-            -- smuggled card is the whole of the other pile and stayed put, and
-            -- the spell took one card out of exile.
-            Spec.assertBool s (Set.member hidden (namesOf (faceDownExiled after) after)) "the smuggled card, the whole of the other pile, is still hidden in exile"
-            Spec.assertEqWith s "and one card of the three left exile" (Set.size (GameState.exile after)) 2
-          _ -> Spec.assertFailure s "the first casting should make a pile of one card and the second a pile of two"
-        _ -> Spec.assertFailure s "the two castings should make two piles"
     -- CR 104.4b, Parun.InvestigateSpec's random reveal one rule over: being asked
     -- for randomness is not being offered a CHOICE, so CR 406.4's draw goes
     -- through Game.ask and leaves Bookkeeping.lastChoice alone. Otherwise a loop
@@ -433,12 +325,9 @@ spec s registry = Spec.describe s "Face-down exile" $ do
 -- LOOK into a permission to CHOOSE: "the player may choose a specific face-down
 -- card only if the player is allowed to look at that card".
 --
--- ONE board, cast twice. alice foretells Augury Raven and bob has an Ogre Sentry
--- exiled face up, so exile holds two cards under either reading and a pool that
--- had simply lost its exile candidates could not pass. Both players then cast the
--- same instant with the SAME answerer, aimed at the foretold card: alice reaches
--- it and bob's aim falls through to the face-up card, which is CR 406.4's whole
--- content and the one thing the two casts differ in.
+-- ONE board: alice foretells Augury Raven and bob has an Ogre Sentry exiled face
+-- up, so exile holds two cards under either reading and a pool that had simply
+-- lost its exile candidates could not pass.
 foretold :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 foretold s registry = Spec.describe s "Augury Raven" $ do
   -- CR 702.143f: a departing player reveals every face-down foretold card they
@@ -465,29 +354,10 @@ foretold s registry = Spec.describe s "Augury Raven" $ do
         Spec.assertEqWith s "CR 702.143f alice revealed her foretold card" (revealsIn (concede foretoldGs)) [(S.alice, ravenId)]
         Spec.assertEqWith s "a card in her hand leaving with her reveals nothing" (revealsIn (concede before)) []
       _ -> Spec.assertFailure s "setup: the Raven was not foretold"
-  Spec.it s "CR 406.4 the owner of a foretold card shuffles it out of exile and an opponent aiming at it by name gets the face-up one" $ do
-    (downId, upId, aliceSpell, bobSpell, board) <- foretoldBoard s registry
-    let aliceAfter = resolveCast S.alice aliceSpell downId board
-        bobAfter = resolveCast S.bob bobSpell downId board
-    Spec.assertEqWith
-      s
-      "alice may look at her foretold card, so her spell takes it and leaves the face-up one"
-      (Set.toList (GameState.exile aliceAfter))
-      [upId]
-    Spec.assertEqWith
-      s
-      "bob may not, so the same spell aimed the same way takes the face-up card instead"
-      (Set.toList (GameState.exile bobAfter))
-      [downId]
-    -- Two proxies AFTER the behaviour, so neither can absorb a mutation: the
-    -- shuffle is into the chosen card's OWNER's library, so the two casts stock
-    -- different libraries.
-    Spec.assertEqWith s "the card alice took went to her own library" (length (Game.zoneMembers Zone.Library S.alice aliceAfter)) 1
-    Spec.assertEqWith s "and the card bob took went to bob's, its owner's" (length (Game.zoneMembers Zone.Library S.bob bobAfter)) 1
-  -- The same permission read off the pool rather than off a resolution, and the
-  -- third leg is what keeps CR 406.4's permission and Riftsweeper's printed
-  -- qualifier from being one question: rule 406.4 OFFERS alice her foretold card,
-  -- and Riftsweeper's own "face-up exiled card" then refuses it.
+  -- The permission read off the pool, and the third leg is what keeps CR
+  -- 406.4's permission and Riftsweeper's printed qualifier from being one
+  -- question: rule 406.4 OFFERS alice her foretold card, and Riftsweeper's own
+  -- "face-up exiled card" then refuses it.
   Spec.it s "CR 406.4 the pool names a face-down exiled card to a player who may look at it, and offers the others its pile" $ do
     reclamation <- S.printingOf s registry "Synthetic Blind Reclamation"
     riftsweeper <- S.printingOf s registry "Riftsweeper"
@@ -514,81 +384,11 @@ foretold s registry = Spec.describe s "Augury Raven" $ do
           (offerTo S.alice faceUpOnly board)
           (Set.singleton (Recipient.ToObject upId))
       _ -> Spec.assertFailure s "Riftsweeper and Synthetic Blind Reclamation should each print one target slot"
-  -- CR 406.3a's OTHER sentence, the one that keeps the blank from reaching the
-  -- announcement: "the card is turned face up just before the player announces
-  -- that they are playing the card". Read off the PRICE, through Thalia,
-  -- Guardian of Thraben's "noncreature spells cost {1} more to cast": a foretold
-  -- Augury Raven is a creature card only once the turn has happened, CR 406.3a
-  -- otherwise leaving it with no card type at all -- which is not Creature, so
-  -- the tax would apply and the two Islands the foretelling left standing would
-  -- not pay it.
-  --
-  -- THE TAX IS LIVE ON THIS BOARD, which is the second case: the same two
-  -- Islands cannot cast the Think Twice in alice's hand, a {1}{U} sorcery Thalia
-  -- does tax. So the Raven's cast is the creature exception rather than a Thalia
-  -- that reached nothing.
-  Spec.it s "CR 406.3a the foretold card is turned face up as it is cast, so the noncreature tax passes it by" $ do
-    raven <- S.printingOf s registry "Augury Raven"
-    (ravenId, thinkId, board) <- thaliaForetoldBoard s registry
-    let resolved = S.runPure S.castAnswer board (S.cast S.alice ravenId >> Stack.resolveTop)
-    Spec.assertBool s (S.castable S.alice ravenId board) "the foretold Raven is offered at its untaxed {1}{U}, the two Islands the special action left standing"
-    Spec.assertBool s (not (S.castable S.alice thinkId board)) "the control: the same two Islands do not pay Thalia's taxed {2}{U} for the noncreature sorcery in her hand"
-    -- Proxies, AFTER the behaviour: the offer taken reaches the battlefield,
-    -- exile is empty because the Raven left it, and all four Islands are down --
-    -- {2} for the special action, {1}{U} for the cast, with none left over.
-    Spec.assertEqWith s "the Raven resolved onto the battlefield" (S.countOnBattlefieldByName (S.printingName raven) S.alice resolved) 1
-    Spec.assertEqWith s "exile is empty" (length (GameState.exile resolved)) 0
-    Spec.assertEqWith s "and all four Islands are tapped" (S.tappedCount S.alice resolved) 4
-
--- alice foretells Augury Raven off two of her four Islands (CR 116.2h) with
--- Thalia, Guardian of Thraben already on the battlefield, and the turn is
--- advanced so CR 702.143a's "after the current turn has ended" is satisfied. Her
--- library is stocked so CR 104.3c never fires.
---
--- Returns the foretold card in exile, the Think Twice still in her hand, and the
--- board.
-thaliaForetoldBoard ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  m (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-thaliaForetoldBoard s registry = do
-  island <- S.printingOf s registry "Island"
-  raven <- S.printingOf s registry "Augury Raven"
-  thalia <- S.printingOf s registry "Thalia, Guardian of Thraben"
-  think <- S.printingOf s registry "Think Twice"
-  sentry <- S.printingOf s registry "Ogre Sentry"
-  let (handRaven, g1) = S.addHandCard raven S.alice (S.landsInPlay island 4)
-      (_, g2) = S.addPermanent thalia S.alice g1
-      (thinkId, g3) = S.addHandCard think S.alice g2
-      (_, g4) = S.addLibraryCard sentry S.alice g3
-      before =
-        g4
-          { GameState.turn =
-              (GameState.turn g4)
-                { TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-      foretoldGs = S.runPure S.identityAnswer before (Foretell.foretell S.manaPerformer S.alice handRaven)
-      later =
-        foretoldGs
-          { GameState.turn =
-              (GameState.turn foretoldGs)
-                { TurnRegisters.turnNumber = TurnRegisters.turnNumber (GameState.turn foretoldGs) + 1
-                }
-          }
-      ravenId = case faceDownExiled later of
-        [only] -> only
-        _ -> S.noSource
-  pure (ravenId, thinkId, later)
 
 -- alice holds four Islands and foretells Augury Raven off two of them (CR
 -- 116.2h), leaving exactly the {1}{U} her copy of the instant costs; bob holds
 -- two Islands and a copy of his own. An Ogre Sentry sits in exile face up under
--- bob, so the pool is never empty and the shuffle's destination tells the two
--- cards apart by owner.
+-- bob, so the pool is never empty.
 --
 -- Returns the face-down foretold card, the face-up one, and each player's spell.
 foretoldBoard ::
@@ -636,41 +436,16 @@ foretoldBoard s registry = do
 -- owner may name none of them.
 --
 -- The card is transcribed whole: its GrantPlayFromExile carries CR 118.9's
--- waiver, which the second case below proves by casting one of the exiled cards
--- off a board with no untapped land on it.
+-- waiver, which the case below proves by casting one of the exiled cards off a
+-- board with no untapped land on it.
 --
 -- CR 406.3a's turn face up rides Parun.Engine.Cast.turnedUpForPlay, so both
--- cards are offered and cast with their characteristics back; the Augury Raven
--- group above is what proves the turn. CR 110.5d keeps that apart from
--- Object.facing, which `proposedFace` branches on and no exile rider writes.
-extractPower :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+-- cards are offered and cast with their characteristics back; the foretold
+-- card's Thalia scenario in data/scenarios/exile is what proves the turn. CR
+-- 110.5d keeps that apart from Object.facing, which `proposedFace` branches on
+-- and no exile rider writes.
+extractPower :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 extractPower s registry = Spec.describe s "Extract Power" $ do
-  Spec.it s "CR 406.3 the player the exiling instruction let look names both cards, and the owner who was shown nothing gets their pile" $ do
-    reclamation <- S.printingOf s registry "Synthetic Blind Reclamation"
-    board <- castExtractPower s registry
-    case S.spellTargetSlot reclamation of
-      Just theSlot -> do
-        Spec.assertEqWith
-          s
-          "alice looked at both cards as they were exiled, so both are offered to her by name -- bob's included"
-          (offerTo S.alice theSlot board)
-          (Set.fromList (fmap Recipient.ToObject (faceDownExiled board)))
-        Spec.assertEqWith
-          s
-          "bob was shown nothing, so neither card is offered to him by name, his own included (CR 406.4)"
-          (offerTo S.bob theSlot board)
-          (Set.fromList (fmap firstDraw (pilesIn board)))
-        -- Proxies, AFTER the two behavioural assertions so neither can absorb a
-        -- mutation: one instruction hid two cards, so they are ONE pile, and
-        -- both seats own one of them.
-        Spec.assertEqWith s "two cards were exiled face down, one from each library" (length (faceDownExiled board)) 2
-        Spec.assertEqWith s "and one instruction hid them, so they are one pile" (length (pilesIn board)) 1
-        Spec.assertEqWith
-          s
-          "the two cards are owned by different seats, so ownership cannot be what the offer read"
-          (Set.fromList (Maybe.mapMaybe (\oid -> fmap Object.owner (Game.lookupObject oid board)) (faceDownExiled board)))
-          (Set.fromList [S.alice, S.bob])
-      Nothing -> Spec.assertFailure s "Synthetic Blind Reclamation should print one target slot"
   -- CR 118.9's other clause of the same sentence: "You may play them WITHOUT
   -- PAYING THEIR MANA COSTS for as long as they remain exiled". The permission
   -- Parun.Engine.Cost prices the cast from is the only thing making it legal, so
@@ -812,228 +587,10 @@ castExtractPower s registry = do
 -- Clause.condition comparing Quantity.AttackersDeclaredThisTurn against 3,
 -- under PermissionVerb.Play so a hidden land is offered as CR 305.2a's land play.
 --
--- Where Extract Power above tells the look apart from OWNERSHIP, this group
--- tells it apart from CONTROL OF THE SPELL: the looker is named by a keyword
--- ability nobody cast.
-windbriskHeights :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+-- The hideaway's look and the ability's link and threshold are scenarios in
+-- data/scenarios/exile; this group keeps Null Chamber's prohibition.
+windbriskHeights :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 windbriskHeights s registry = Spec.describe s "Windbrisk Heights" $ do
-  Spec.it s "CR 702.75a hideaway 4 hides the card its controller named and bottoms the other three, and only she may name it afterwards" $ do
-    reclamation <- S.printingOf s registry "Synthetic Blind Reclamation"
-    (fifth, hidden, bottomed, _, board) <- playHeights s registry Nothing
-    case S.spellTargetSlot reclamation of
-      Just theSlot -> do
-        Spec.assertEqWith
-          s
-          "the card alice named out of the four she looked at is the one in exile face down"
-          (namesOf (faceDownExiled board) board)
-          (Set.singleton hidden)
-        Spec.assertEqWith
-          s
-          "the other three sit under the card the look never reached, in the order the random-order channel handed back"
-          (orderedNames (Game.zoneMembers Zone.Library S.alice board) board)
-          (fifth : bottomed)
-        Spec.assertEqWith
-          s
-          "and alice, who controls the land that exiled it, is the one seat offered the card by name"
-          (offerTo S.alice theSlot board)
-          (Set.fromList (fmap Recipient.ToObject (faceDownExiled board)))
-        -- Proxies, AFTER the three behavioural assertions so none of them can
-        -- absorb a mutation: bob is the seat rule 702.75a does not name, and one
-        -- card of the four went to exile rather than four or none.
-        Spec.assertEqWith
-          s
-          "bob controls nothing that exiled it, so he is offered the pile instead (CR 406.4)"
-          (offerTo S.bob theSlot board)
-          (Set.fromList (fmap firstDraw (pilesIn board)))
-        Spec.assertEqWith s "exactly one card is in exile face down" (length (faceDownExiled board)) 1
-      Nothing -> Spec.assertFailure s "Synthetic Blind Reclamation should print one target slot"
-
-  -- CR 702.75a's granted ability names whoever controls the exiling permanent
-  -- when the question is ASKED, so a steal moves the look with the land.
-  -- Confiscate {4}{U}{U} Enchantment -- Aura -- "Enchant permanent / You control
-  -- enchanted permanent" (Oracle text checked 2026-09-09) -- is the pool's steal
-  -- that reaches a land; it is placed and attached rather than cast, control of
-  -- the land being all the rule reads.
-  --
-  -- Alice keeps her look through the steal, and CR 406.3 is why: she was
-  -- instructed to look at the four cards and then exiled one of them face down,
-  -- which is that rule's own continuing permission and owes the land nothing.
-  Spec.it s "CR 702.75a the look follows control of the land that exiled the card, and CR 406.3's does not" $ do
-    reclamation <- S.printingOf s registry "Synthetic Blind Reclamation"
-    confiscate <- S.printingOf s registry "Confiscate"
-    (_, _, _, land, board) <- playHeights s registry Nothing
-    let stolen = steal confiscate land board
-    case S.spellTargetSlot reclamation of
-      Just theSlot -> do
-        Spec.assertEqWith
-          s
-          "bob, who controls the land now, is offered the card it exiled by name"
-          (offerTo S.bob theSlot stolen)
-          (Set.fromList (fmap Recipient.ToObject (faceDownExiled stolen)))
-        Spec.assertEqWith
-          s
-          "CR 406.3 and alice, who looked at the card before exiling it face down, still is"
-          (offerTo S.alice theSlot stolen)
-          (Set.fromList (fmap Recipient.ToObject (faceDownExiled stolen)))
-        -- Proxies, AFTER the behaviour: control really moved, and the same board
-        -- offered bob the pile before it did.
-        Spec.assertEqWith s "CR 613.1b the Aura moved control of the land" (Projection.controllerOf land stolen) (Just S.bob)
-        Spec.assertEqWith
-          s
-          "and before the steal bob was offered the pile instead (CR 406.4)"
-          (offerTo S.bob theSlot board)
-          (Set.fromList (fmap firstDraw (pilesIn board)))
-      Nothing -> Spec.assertFailure s "Synthetic Blind Reclamation should print one target slot"
-
-  -- THE COPY TRIPWIRE for the read above, as a PAIR of boards differing in which
-  -- land bob takes: the Vesuva that copied Windbrisk Heights and exiled the card,
-  -- or the Windbrisk Heights it copied, which exiled nothing. Rule 702.75a names
-  -- "the permanent that exiled this card" and not a permanent with hideaway, so
-  -- only the first gives bob the look.
-  Spec.it s "CR 707.2 the look follows the copy that exiled the card, not the Windbrisk Heights it copied" $ do
-    reclamation <- S.printingOf s registry "Synthetic Blind Reclamation"
-    confiscate <- S.printingOf s registry "Confiscate"
-    (_, _, _, copy, board) <- playHeights s registry (Just "Vesuva")
-    let copied = case Set.toList (Set.delete copy (GameState.battlefield board)) of
-          [only] -> only
-          _ -> S.noSource
-        tookCopy = steal confiscate copy board
-        tookCopied = steal confiscate copied board
-    case S.spellTargetSlot reclamation of
-      Just theSlot -> do
-        Spec.assertEqWith
-          s
-          "taking the copy whose hideaway exiled the card hands bob the look"
-          (offerTo S.bob theSlot tookCopy)
-          (Set.fromList (fmap Recipient.ToObject (faceDownExiled tookCopy)))
-        Spec.assertEqWith
-          s
-          "taking the land it copied leaves him the pile (CR 406.4)"
-          (offerTo S.bob theSlot tookCopied)
-          (Set.fromList (fmap firstDraw (pilesIn tookCopied)))
-        -- Proxy, AFTER the pair: both boards really moved control, so what they
-        -- differ in is which permanent bob took.
-        Spec.assertEqWith
-          s
-          "CR 613.1b both steals landed"
-          [Projection.controllerOf copy tookCopy, Projection.controllerOf copied tookCopied]
-          [Just S.bob, Just S.bob]
-      Nothing -> Spec.assertFailure s "Synthetic Blind Reclamation should print one target slot"
-
-  -- CR 406.3's second sentence, the STICKY half of the live read above: "once a
-  -- player is allowed to look at a card exiled face down, that player may
-  -- continue to look at that card until it leaves the exile zone ... even if the
-  -- instruction allowing the player to do so no longer applies". Bob's look came
-  -- from rule 702.75a's control read alone, so losing the land takes it back
-  -- unless the permission it once gave him was recorded. Aura Graft {1}{U}
-  -- Instant -- "Gain control of target Aura that's attached to a permanent.
-  -- Attach it to another permanent it can enchant" (Oracle text checked
-  -- 2026-09-09) -- takes the Confiscate back off, and alice controls the land
-  -- again.
-  --
-  -- A PAIR off ONE board differing in exactly which land bob took, on the Vesuva
-  -- board so the permanent that exiled the card is a COPY: either the Vesuva
-  -- whose hideaway ran, or the Windbrisk Heights it copied, which exiled nothing.
-  -- Both legs END with alice controlling every permanent, so no live read of
-  -- control can tell them apart -- what differs is only who was ever allowed to
-  -- look.
-  Spec.it s "CR 406.3 the look bob had while he controlled the land survives losing it, and a land that exiled nothing gives him none" $ do
-    reclamation <- S.printingOf s registry "Synthetic Blind Reclamation"
-    confiscate <- S.printingOf s registry "Confiscate"
-    graft <- S.printingOf s registry "Aura Graft"
-    island <- S.printingOf s registry "Island"
-    (_, _, _, copy, board) <- playHeights s registry (Just "Vesuva")
-    let copied = case Set.toList (Set.delete copy (GameState.battlefield board)) of
-          [only] -> only
-          _ -> S.noSource
-        -- Two Islands for the Graft's {1}{U}, and a third for it to move the
-        -- Confiscate onto -- a permanent alice already controls, so the move
-        -- changes nothing but which land bob is holding.
-        stocked = foldr (\_ g -> snd (S.addPermanent island S.alice g)) board [1 .. (2 :: Int)]
-        (perch, g1) = S.addPermanent island S.alice stocked
-        (spell, g2) = S.addHandCard graft S.alice g1
-        -- bob holds the land through a CR 117.5 settle, which is the moment CR
-        -- 406.3's permission is recorded; then alice's Aura Graft moves the
-        -- Confiscate onto an Island of hers and the land comes home.
-        leg host =
-          let (aura, taken) = stealing confiscate host g2
-              held = S.runPure S.identityAnswer taken Engine.settleForPriority
-           in S.runPure (grafting aura perch) held $ do
-                S.cast S.alice spell
-                Stack.resolveTop
-                Engine.settleForPriority
-        tookCopy = leg copy
-        tookCopied = leg copied
-    case S.spellTargetSlot reclamation of
-      Just theSlot -> do
-        -- GAMEPLAY FIRST, and the pair is the negative: bob controls nothing on
-        -- either leg, so a live read of rule 702.75a offers him the pile on both.
-        Spec.assertEqWith
-          s
-          "CR 406.3: bob held the land that exiled the card through a settle, so he is still offered it by name after losing it"
-          (offerTo S.bob theSlot tookCopy)
-          (Set.fromList (fmap Recipient.ToObject (faceDownExiled tookCopy)))
-        Spec.assertEqWith
-          s
-          "and having held the land that exiled NOTHING he is offered the pile instead (CR 406.4)"
-          (offerTo S.bob theSlot tookCopied)
-          (Set.fromList (fmap firstDraw (pilesIn tookCopied)))
-        -- Anti-vacuity, AFTER the behaviour: the Graft really put both lands back
-        -- under alice, so nothing bob controls answers rule 702.75a on either leg.
-        Spec.assertEqWith
-          s
-          "CR 613.1b the Aura came off, so alice controls the land again on both legs"
-          [Projection.controllerOf copy tookCopy, Projection.controllerOf copied tookCopied]
-          [Just S.alice, Just S.alice]
-      Nothing -> Spec.assertFailure s "Synthetic Blind Reclamation should print one target slot"
-
-  -- CR 608.2h: "the answer is determined only once, when the effect is applied",
-  -- which for this card is the ability's own resolution -- so the threshold is a
-  -- Clause.condition rather than an activation restriction, and the land taps
-  -- either way. The pair differs in ONE thing: how many of alice's three
-  -- creatures she declared, three being the printed threshold and two one short.
-  Spec.it s "CR 608.2h the play ability reads the turn's declarations as it resolves, so two attackers is one short and three is not" $ do
-    piker <- S.printingOf s registry "Goblin Piker"
-    (_, land, leg) <- attackedHeights s registry Nothing
-    let declared = leg 3 land
-        refused = leg 2 land
-    -- GAMEPLAY FIRST. The Piker costs {1}{R} and alice controls one Plains, so
-    -- the leg that put it onto the battlefield took CR 118.9's waiver as well.
-    Spec.assertEqWith
-      s
-      "CR 608.2h: with three attackers declared the hidden Goblin Piker was played, and with two it was not"
-      (fmap (pikersFor piker) [declared, refused])
-      [1, 0]
-    -- Proxy, AFTER the behaviour: the ability was activated on BOTH legs, so what
-    -- the two boards differ in is the clause's condition and not the activation.
-    Spec.assertEqWith
-      s
-      "CR 601.2h via 602.2b: the {W} and the {T} were paid either way"
-      (fmap (tapStateOf land) [declared, refused])
-      [Just TapState.Tapped, Just TapState.Tapped]
-
-  -- CR 607.2a's link and the copy tripwire in one pair. Vesuva entered as a copy
-  -- of the Windbrisk Heights already on the battlefield, so it is the COPY whose
-  -- hideaway ran and the copy the exiled card is filed against; the printed
-  -- Windbrisk Heights beside it exiled nothing, having been placed rather than
-  -- played. Both offer the same {W}, {T} ability and both are activated with the
-  -- same three attackers declared, so the linked set is the only difference: an
-  -- ability reading "any card in exile" plays the Piker off either land, and one
-  -- reading Game.cardOf finds no ability on Vesuva at all.
-  -- CR 305.9 / 601.1a: a hidden LAND is played, never cast, even under the
-  -- ability's CR 118.9 waiver, which would otherwise price its absent mana cost
-  -- (CR 118.6) at zero. A pair differing only in whether alice's land drop is
-  -- spent: open, the Forest is played as her land; spent, it stays hidden.
-  Spec.it s "CR 305.9 a hidden Forest is played as the turn's land and never cast for free" $ do
-    (_, land, legWith) <- attackedHeightsHiding s registry Nothing "Forest"
-    let leg = legWith id
-        forests = S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Forest")) S.alice
-        spent = leg 1 3 land
-        open = leg 0 3 land
-    Spec.assertEqWith s "CR 305.2b / 305.9: with the land drop spent the Forest is not cast instead" (forests spent) 0
-    Spec.assertEqWith s "CR 305.2a: with it open the Forest is played" (forests open) 1
-    Spec.assertEqWith s "and counts as her land for the turn" (Map.lookup S.alice (GameState.landsPlayed open)) (Just 1)
-
   -- CR 406.3a / 305.1: the hidden card is turned face up just before it is
   -- played, so Null Chamber's name reaches it. A pair differing only in the name
   -- alice chose: Mutavault stays hidden, Goblin Piker leaves it playable.
@@ -1049,38 +606,6 @@ windbriskHeights s registry = Spec.describe s "Windbrisk Heights" $ do
         unnamed = legWith (naming (CardName.MkCardName (Text.pack "Goblin Piker"))) 0 3 land
     Spec.assertEqWith s "CR 305.1: named, the Mutavault is not played; otherwise it is" (fmap mutavaults [named, unnamed]) [0, 1]
 
-  Spec.it s "CR 607.2a the play ability names only what THIS permanent exiled, and a copy names what the copy exiled" $ do
-    piker <- S.printingOf s registry "Goblin Piker"
-    (original, copy, leg) <- attackedHeights s registry (Just "Vesuva")
-    let viaCopy = leg 3 copy
-        viaOriginal = leg 3 original
-    Spec.assertEqWith
-      s
-      "CR 607.2a / 707.2: the Vesuva that exiled the Piker plays it, and the Windbrisk Heights that exiled nothing plays nothing"
-      (fmap (pikersFor piker) [viaCopy, viaOriginal])
-      [1, 0]
-    Spec.assertEqWith
-      s
-      "and the card is still in exile on the leg that found no link, so the ability resolved and named nothing"
-      (fmap (length . faceDownExiled) [viaCopy, viaOriginal])
-      [0, 1]
-    -- Proxy, AFTER the behaviour: each leg really paid its own {W} and {T}.
-    Spec.assertEqWith
-      s
-      "CR 601.2h via 602.2b: both lands paid the same cost"
-      [tapStateOf copy viaCopy, tapStateOf original viaOriginal]
-      [Just TapState.Tapped, Just TapState.Tapped]
-
--- How many of that printing alice has on the battlefield.
-pikersFor :: Printing.Printing -> GameState.GameState -> Int
-pikersFor piker = S.countOnBattlefieldByName (S.printingName piker) S.alice
-
--- The tap state of one object, Nothing where it is not on the battlefield at all
--- -- which an assertion about a tap cost must be able to say apart from
--- "untapped".
-tapStateOf :: ObjectId.ObjectId -> GameState.GameState -> Maybe TapState.TapState
-tapStateOf oid gs = fmap Object.tapped (Game.lookupObject oid gs)
-
 -- The objects on the battlefield whose PRINTED card carries that name. Printed
 -- and not projected on purpose: this is how the fixture tells Vesuva from the
 -- Windbrisk Heights it copied, which no rules read may do.
@@ -1091,27 +616,16 @@ battlefieldNamed name gs =
         (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just wanted)
         (Set.toAscList (GameState.battlefield gs))
 
--- ONE board, replayed from alice's beginning of combat: playHeights' library and
--- hideaway choice, plus a Plains for the {W}, three creatures to attack with, and
--- a second turn so the land that entered tapped (CR 702.75b) has untapped.
+-- ONE board, replayed from alice's beginning of combat: alice plays the land
+-- (hideaway 4 over a five-card library, hiding the named card), plus a Plains for
+-- the {W}, three creatures to attack with, and a second turn so the land that
+-- entered tapped (CR 702.75b) has untapped.
 --
 -- Returns the Windbrisk Heights PLACED on the battlefield (S.noSource where the
--- caller asked for no copier), the land alice PLAYED, and a leg: how many
--- attackers she declares, which land she then activates in her postcombat main
--- phase, and the board that comes back.
-attackedHeights ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  Maybe String ->
-  m (ObjectId.ObjectId, ObjectId.ObjectId, Int -> ObjectId.ObjectId -> GameState.GameState)
-attackedHeights s registry copier = do
-  (original, landId, leg) <- attackedHeightsHiding s registry copier "Goblin Piker"
-  pure (original, landId, leg id 0)
-
--- attackedHeights with the hidden card named, and a leg that also takes a change
--- to the combat-ready board and says how many lands alice has already played
--- this turn when she activates (CR 305.2a).
+-- caller asked for no copier), the land alice PLAYED, and a leg: a change to the
+-- combat-ready board, how many lands alice has already played this turn when she
+-- activates (CR 305.2a), how many attackers she declares, which land she then
+-- activates in her postcombat main phase, and the board that comes back.
 attackedHeightsHiding ::
   (Monad m) =>
   Spec.Spec m n ->
@@ -1130,8 +644,8 @@ attackedHeightsHiding s registry copier hidden = do
   cancel <- S.printingOf s registry "Cancel"
   think <- S.printingOf s registry "Think Twice"
   let base = Setup.emptyGame S.bothPlayers
-      -- playHeights' library, bottom first: the look reaches four of the five and
-      -- `hiding` pins its choice to the second of them, the Goblin Piker.
+      -- The library, bottom first: the look reaches four of the five and
+      -- `hiding` pins its choice to the second of them, the hidden card.
       (_, g1) = S.addLibraryCard think S.alice base
       (_, g2) = S.addLibraryCard cancel S.alice g1
       (_, g3) = S.addLibraryCard sentry S.alice g2
@@ -1208,87 +722,6 @@ isActivationOf oid action = case action of
   A.Activate candidate _ -> candidate == oid
   _ -> False
 
--- alice plays a land with hideaway 4 with FIVE distinct cards in her library, so
--- the fifth is the one the look never reaches and every name below says which
--- card ended where. Passing a copier's name puts a Windbrisk Heights on the
--- battlefield already and plays that card instead, entering as a copy of it.
--- That one is PLACED rather than played (S.addPermanent fires no entry event),
--- so its own hideaway never triggers and one card is hidden either way.
---
--- The choice is pinned to the SECOND card of the offered four rather than
--- searched for, so a mutation cannot be silently repaired, and the random order
--- is answered by ROTATING the batch: a rotation of three is neither the identity
--- nor its own inverse, so an engine that never consulted the channel bottoms the
--- three in a different order, which the assertion reads. Reversing would not
--- discriminate -- settleArrivals reverses the answer again to perform the moves
--- from the stated end inward, and the two cancel.
---
--- Returns the name of the card left on top, the name alice hid, the names of the
--- three bottomed cards in the order they end up in, and the land that was
--- played -- which on the copier's board is the copy and not the land it copied.
-playHeights :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> Maybe String -> m (CardName.CardName, CardName.CardName, [CardName.CardName], ObjectId.ObjectId, GameState.GameState)
-playHeights s registry copier = do
-  heights <- S.printingOf s registry "Windbrisk Heights"
-  played <- maybe (pure heights) (S.printingOf s registry) copier
-  bolt <- S.printingOf s registry "Lightning Bolt"
-  piker <- S.printingOf s registry "Goblin Piker"
-  sentry <- S.printingOf s registry "Ogre Sentry"
-  cancel <- S.printingOf s registry "Cancel"
-  think <- S.printingOf s registry "Think Twice"
-  let base = Setup.emptyGame S.bothPlayers
-      -- S.addLibraryCard puts each new card on top, so this stocks the library
-      -- bottom first: Think Twice is the fifth card, under the four the look
-      -- reaches.
-      (_, g1) = S.addLibraryCard think S.alice base
-      (_, g2) = S.addLibraryCard cancel S.alice g1
-      (_, g3) = S.addLibraryCard sentry S.alice g2
-      (_, g4) = S.addLibraryCard piker S.alice g3
-      (_, g5) = S.addLibraryCard bolt S.alice g4
-      (copiedId, g6) = case copier of
-        Nothing -> (S.noSource, g5)
-        Just _ -> S.addPermanent heights S.alice g5
-      (_, g7) = S.addHandCard played S.alice g6
-      before =
-        g7
-          { GameState.turn =
-              (GameState.turn g7)
-                { TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-      after = S.runPure (hiding copiedId) before Engine.priorityLoop
-      -- The land alice played is the battlefield's one member the copier's
-      -- board did not start with; on the plain board copiedId is on no
-      -- battlefield at all and the deletion is a no-op.
-      landed = case Set.toList (Set.delete copiedId (GameState.battlefield after)) of
-        [only] -> only
-        _ -> S.noSource
-  pure (S.printingName think, S.printingName piker, [S.printingName bolt, S.printingName cancel, S.printingName sentry], landed, after)
-
--- bob takes one permanent with a Confiscate of his own, placed and attached
--- rather than cast: CR 702.75a reads control of the land, and how it moved is
--- not part of the question. Settled so no state-based action undoes it.
-steal :: Printing.Printing -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-steal confiscate host gs = snd (stealing confiscate host gs)
-
--- `steal`, also naming the Aura it placed -- which a test that then moves the
--- Aura off again has to pin its target to.
-stealing :: Printing.Printing -> ObjectId.ObjectId -> GameState.GameState -> (ObjectId.ObjectId, GameState.GameState)
-stealing confiscate host gs =
-  let (aura, g1) = S.addPermanent confiscate S.bob gs
-   in (aura, S.settleSba (S.attachTo aura (Recipient.ToObject host) g1))
-
--- Choose `aura` for Aura Graft's one target slot and `destination` for the host
--- CR 701.3a then moves it to. FILTERED rather than replaced, so a leg whose slot
--- does not admit the Aura takes no target at all rather than succeeding on a
--- hand-built recipient. Parun.BattleSpec holds its own copy for its battle pair.
-grafting :: ObjectId.ObjectId -> ObjectId.ObjectId -> Prompt.Prompt r -> r
-grafting aura destination p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (\(_, legal) -> Set.filter ((== Just aura) . Recipient.objectOf) legal) sets
-  Prompt.ChooseAttachment _ _ _ offered -> if List.elem destination (NonEmpty.toList offered) then destination else NonEmpty.head offered
-  _ -> S.aggressiveAnswer p
-
 -- Plays whatever land the board offers, copies the named permanent when one is
 -- passed, pins hideaway's choice to the SECOND card offered, and rotates the
 -- batch the random order asks about.
@@ -1301,96 +734,6 @@ hiding copied p = case p of
     h : t -> t <> [h]
     [] -> []
   _ -> S.playLandAnswer p
-
--- namesOf, keeping the order it was given -- which is a library's own (CR 401.2).
-orderedNames :: [ObjectId.ObjectId] -> GameState.GameState -> [CardName.CardName]
-orderedNames oids gs = Maybe.mapMaybe (\oid -> fmap S.nameOf (Game.cardOf oid gs)) oids
-
--- CR 406.3a: a card exiled face down has no characteristics, so it has no
--- flashback either -- and a spell whose target slot wants one cannot reach it,
--- not even through CR 406.4's pile, which is offered only where the draw could
--- name a card the slot admits. Runic Repetition {2}{U} -- "return target exiled
--- card with flashback you own to your hand" (Oracle text checked 2026-09-01) --
--- is the reader, over an Ignorant Bliss pile holding Think Twice (flashback
--- {2}{U}) and a Goblin Piker.
---
--- ONE THING APART: the second case exiles the same two cards for the same seat
--- into the same zone FACE UP, so a pool that had simply lost its exile
--- candidates could not pass it. `HeldBy Owner You` is the slot's other conjunct and
--- is untouched either way -- CR 406.3a blanks CHARACTERISTICS, and CR 108.3's
--- owner is not one.
-runicRepetition :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-runicRepetition s registry = Spec.describe s "Runic Repetition" $ do
-  Spec.it s "CR 406.3a the flashback card exiled face down has no flashback to be targeted by, so the casting is reversed" $ do
-    repetition <- S.printingOf s registry "Runic Repetition"
-    twincast <- S.printingOf s registry "Twincast"
-    cancel <- S.printingOf s registry "Cancel"
-    think <- S.printingOf s registry "Think Twice"
-    (hasFlashback, _, spellId, _, _, board) <- flashbackPileBoard s registry
-    case (hasFlashback, S.spellTargetSlot repetition) of
-      (Just wanted, Just theSlot) -> do
-        Spec.assertEqWith
-          s
-          "the casting was reversed and the sorcery is back in alice's hand, the flashback card having stayed in exile"
-          (namesIn Zone.Hand S.alice (resolveAll (S.runPure (drawing wanted) board (S.cast S.alice spellId))))
-          (Set.fromList [S.printingName repetition, S.printingName twincast, S.printingName cancel])
-        -- Proxies, AFTER the behaviour so none of them can absorb a mutation:
-        -- the reversed casting took nothing out of exile, and what alice was
-        -- offered was nothing at all -- neither card by name, the pile being
-        -- CR 406.4's answer to that, nor the pile, which holds no card the slot
-        -- could admit.
-        Spec.assertEqWith s "the reversed casting left both cards of the pile in exile" (Set.size (GameState.exile (resolveAll (S.runPure (drawing wanted) board (S.cast S.alice spellId))))) 2
-        Spec.assertEqWith s "and alice was offered neither card by name nor their pile" (offerTo S.alice theSlot board) Set.empty
-        Spec.assertEqWith s "the pile the slot could not admit held both cards" (fmap (length . membersOfPile board) (pilesIn board)) [2]
-        Spec.assertEqWith s "and it is Think Twice that carried the flashback" (namesOf [wanted] board) (Set.singleton (S.printingName think))
-      _ -> Spec.assertFailure s "the casting should hide a card with flashback and a card without, and Runic Repetition print one target slot"
-
--- alice casts Ignorant Bliss with Think Twice (flashback {2}{U}) and Goblin Piker
--- in hand, so ONE pile holds a card Runic Repetition's slot admits and a card it
--- refuses. Thirteen lands, which is the {1}{R} the Bliss costs plus the {2}{U},
--- {U}{U} and {1}{U}{U} the three spells left in her hand cost however the
--- payments fall, and her library is stocked so CR 104.3c never fires.
---
--- Returns the exiled Think Twice, the exiled Goblin Piker, her Runic Repetition,
--- her Twincast and her Cancel -- the three spells added AFTER the Bliss resolved,
--- being cards that hand would otherwise have hidden.
-flashbackPileBoard ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  m (Maybe ObjectId.ObjectId, Maybe ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-flashbackPileBoard s registry = do
-  bliss <- S.printingOf s registry "Ignorant Bliss"
-  mountain <- S.printingOf s registry "Mountain"
-  island <- S.printingOf s registry "Island"
-  think <- S.printingOf s registry "Think Twice"
-  piker <- S.printingOf s registry "Goblin Piker"
-  sentry <- S.printingOf s registry "Ogre Sentry"
-  repetition <- S.printingOf s registry "Runic Repetition"
-  twincast <- S.printingOf s registry "Twincast"
-  cancel <- S.printingOf s registry "Cancel"
-  let (g1, blissId) = S.handOne bliss (S.landsFor island S.alice 10 (S.landsInPlay mountain 3))
-      (_, g2) = S.addHandCard think S.alice g1
-      (_, g3) = S.addHandCard piker S.alice g2
-      (_, g4) = S.addLibraryCard sentry S.alice g3
-      blissed = resolveAll (S.runPure S.identityAnswer g4 (S.cast S.alice blissId))
-      (spellId, g5a) = S.addHandCard repetition S.alice blissed
-      (twincastId, g5b) = S.addHandCard twincast S.alice g5a
-      (cancelId, g5) = S.addHandCard cancel S.alice g5b
-      board =
-        g5
-          { GameState.turn =
-              (GameState.turn g5)
-                { TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-      -- Read off the board rather than assumed: CR 400.7 mints a fresh
-      -- incarnation as each card is exiled, so the ids the hand held are gone.
-      idOf printing =
-        List.find (\oid -> namesOf [oid] board == Set.singleton (S.printingName printing)) (faceDownExiled board)
-   in pure (idOf think, idOf piker, spellId, twincastId, cancelId, board)
 
 -- throughPile, with CR 406.4's draw answered by the card NAMED rather than by
 -- position. The answer is filtered back against the pile the engine offers, so
@@ -1475,22 +818,12 @@ firstDraw pile = Recipient.ToPile PileDraw.MkPileDraw {PileDraw.pile = pile, Pil
 timestampOf :: ObjectId.ObjectId -> GameState.GameState -> Timestamp.Timestamp
 timestampOf oid gs = maybe (Timestamp.MkTimestamp 0) Object.timestamp (Game.lookupObject oid gs)
 
--- castBliss' board with distinct card names and the {1}{U} alice needs for a copy
--- of the instant, cast with the PILE chosen. Every name is its own card, so the
--- two cards of the pile can be told apart in the zone each ends up in. Returns
--- the name of the card the draw named and of the other card of the same pile,
--- with the spell still on the stack.
-pileBoard ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  m (CardName.CardName, CardName.CardName, GameState.GameState)
-pileBoard s registry = do
-  (drawn, other, spellId, before) <- pileBoardUncast s registry
-  pure (drawn, other, S.runPure throughPile before (S.cast S.alice spellId))
-
--- pileBoard before the cast: the two names it returns, alice's copy of
--- Synthetic Blind Reclamation still in hand, and the board she has priority on.
+-- alice casts Ignorant Bliss with Goblin Piker and Lightning Bolt in hand and a
+-- face-up Riftsweeper of bob's already in exile, then holds her copy of
+-- Synthetic Blind Reclamation and the {1}{U} it costs. Every name is its own
+-- card, so the two cards of the pile can be told apart in the zone each ends up
+-- in. Returns the name of the pile's last card, which throughPile's draw names,
+-- the name of its other card, the spell, and the board she has priority on.
 pileBoardUncast ::
   (Monad m) =>
   Spec.Spec m n ->
@@ -1530,105 +863,14 @@ pileBoardUncast s registry = do
         ([last_], [first_]) -> (last_, first_, spellId, before)
         _ -> (S.printingName bolt, S.printingName piker, spellId, before)
 
--- alice casts Ignorant Bliss twice, off four Mountains and with a different hand
--- each time: the first casting hides Goblin Piker alone, the second hides
--- Lightning Bolt and Riftsweeper. So exile holds three face-down cards that CR
--- 406.4 keeps in two piles, and a board pooling them per owner would hold one.
---
--- Two CASTINGS rather than two cards, because that is what the rule separates:
--- the same printed instruction run twice, at two times. Her library is stocked
--- with an Ogre Sentry, which is also what shows the shuffle put a card there
--- rather than merely leaving one.
---
--- Returns the pile the FIRST casting made, the name of the one card in it, and
--- her copy of Synthetic Blind Reclamation, still in hand.
-twoPileBoard ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  m (Maybe Pile.Pile, CardName.CardName, ObjectId.ObjectId, GameState.GameState)
-twoPileBoard s registry = do
-  bliss <- S.printingOf s registry "Ignorant Bliss"
-  mountain <- S.printingOf s registry "Mountain"
-  island <- S.printingOf s registry "Island"
-  piker <- S.printingOf s registry "Goblin Piker"
-  bolt <- S.printingOf s registry "Lightning Bolt"
-  riftsweeper <- S.printingOf s registry "Riftsweeper"
-  sentry <- S.printingOf s registry "Ogre Sentry"
-  reclamation <- S.printingOf s registry "Synthetic Blind Reclamation"
-  let (_, g0) = S.addLibraryCard sentry S.alice (S.landsInPlay mountain 4)
-      (g1, firstBliss) = S.handOne bliss (S.landsFor island S.alice 2 g0)
-      (_, g2) = S.addHandCard piker S.alice g1
-      afterFirst = resolveAll (S.runPure S.identityAnswer g2 (S.cast S.alice firstBliss))
-      (secondBliss, g3) = S.addHandCard bliss S.alice afterFirst
-      (_, g4) = S.addHandCard bolt S.alice g3
-      (_, g5) = S.addHandCard riftsweeper S.alice g4
-      afterSecond = resolveAll (S.runPure S.identityAnswer g5 (S.cast S.alice secondBliss))
-      (spellId, g6) = S.addHandCard reclamation S.alice afterSecond
-      board =
-        g6
-          { GameState.turn =
-              (GameState.turn g6)
-                { TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-      hidden = S.printingName piker
-      -- WHICH pile is which is read off the board rather than assumed: CR 400.7
-      -- mints a fresh incarnation as each card is exiled, so the card is followed
-      -- by name and its pile asked of Parun.Engine.Exile.
-      pile =
-        Maybe.listToMaybe
-          ( do
-              oid <- faceDownExiled board
-              Monad.guard (namesOf [oid] board == Set.singleton hidden)
-              Maybe.maybeToList (Exile.pileOf oid board)
-          )
-   in pure (pile, hidden, spellId, board)
-
 -- Every object on the stack resolved, with nobody taking an action.
 resolveAll :: GameState.GameState -> GameState.GameState
 resolveAll gs = S.runPure S.identityAnswer gs Engine.priorityLoop
-
--- throughPile, but naming ONE pile of the several a board may offer: the offer is
--- filtered down to it rather than answered with a hand-built recipient, so a
--- candidate the engine never offered cannot be smuggled past CR 601.2c. The draw
--- is answered with the LAST card of whatever pile it is given.
-throughPileOf :: Pile.Pile -> Prompt.Prompt r -> r
-throughPileOf pile p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> S.preferring (firstDraw pile ==) sets
-  Prompt.RandomObject members -> NonEmpty.last members
-  _ -> S.identityAnswer p
-
--- throughPileOf, counting the draws it is asked for -- Parun.CopySpec's
--- countingAnswer shape, since a pure answerer cannot tell "asked once" from
--- "not asked at all".
-countingDraws :: Pile.Pile -> Prompt.Prompt r -> State.State Int r
-countingDraws pile p = case p of
-  Prompt.RandomObject _ -> do
-    State.modify' (+ 1)
-    pure (throughPileOf pile p)
-  _ -> pure (throughPileOf pile p)
-
--- throughPileOf, but answering CR 406.4's draw with an object the named pile
--- does NOT hold. The pile is still filtered out of the engine's own offer, so
--- only the draw's answer is the smuggled one.
-namingOutside :: Pile.Pile -> ObjectId.ObjectId -> Prompt.Prompt r -> r
-namingOutside pile oid p = case p of
-  Prompt.RandomObject _ -> oid
-  _ -> throughPileOf pile p
 
 -- The face-down exiled cards of one pile, in the order Parun.Engine.Target's
 -- pileMembers offers them -- ascending by object id, which is Set.toList's.
 membersOfPile :: GameState.GameState -> Pile.Pile -> [ObjectId.ObjectId]
 membersOfPile gs pile = filter (\oid -> Exile.pileOf oid gs == Just pile) (faceDownExiled gs)
-
--- The one other pile of a board that has exactly two.
-otherPileThan :: Maybe Pile.Pile -> GameState.GameState -> Maybe Pile.Pile
-otherPileThan pile gs = case filter (\p -> Just p /= pile) (pilesIn gs) of
-  [only] -> Just only
-  _ -> Nothing
 
 -- Answers CR 601.2c with the PILE -- filtered out of the offer rather than built,
 -- so a candidate the engine never offered cannot be smuggled in -- and answers CR
@@ -1643,16 +885,6 @@ throughPile p =
         Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter isPile . snd) sets
         Prompt.RandomObject members -> NonEmpty.last members
         _ -> S.identityAnswer p
-
--- One player casts their copy of the instant with the slot's whole offer FILTERED
--- down to the foretold card, then the stack is resolved. Filtered rather than
--- answered with a hand-built recipient, so a candidate the engine never offered
--- cannot be smuggled past CR 601.2c; where the filter admits nothing S.preferring
--- falls through to the offer's minimum, which is the face-up card and is exactly
--- what a player refused the permission should get.
-resolveCast :: PlayerId.PlayerId -> ObjectId.ObjectId -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-resolveCast pid spell wanted gs =
-  S.runPure S.identityAnswer (S.runPure (aimedAt wanted) gs (S.cast pid spell)) Engine.priorityLoop
 
 aimedAt :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 aimedAt oid p = case p of

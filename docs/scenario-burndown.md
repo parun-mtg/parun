@@ -71,7 +71,7 @@ out: grep for them.
 - `check:creature-count`: how many creatures a player controls
 - `check:combat`: combat state beyond attackers and blockers
 - `check:mana-value`: an object's mana value
-- `check:prompt-order`: the order prompts were asked in
+- `check:prompt-order`: the order priority was offered in
 - `board:objects-ids`
 - `board:object-classlevel`
 - `board:foretold`: a foretold card
@@ -174,7 +174,7 @@ out: grep for them.
 
 ### `CastProhibitionSpec`
 
-- CR 101.4 the active player is asked to name a card first | `check:prompt-order`
+- CR 101.4 the active player is asked to name a card first
 - CR 101.4b the later chooser knows the name the earlier one chose | `check:prompt-payload`
 - CR 201.4 a name no card has is refused and the chooser is asked again
 - CR 201.4 a slug the registry answers to is not a card's name | `check:other-Registry.fetchCard`
@@ -254,7 +254,7 @@ out: grep for them.
 
 ### `CoinSpec`
 
-- CR 705.2 only the flipping player calls, and calls before the coin comes up | `check:prompt-order`
+- CR 705.2 only the flipping player calls, and calls before the coin comes up
 
 ### `ColorSpec`
 
@@ -318,16 +318,16 @@ out: grep for them.
 
 ### `CommanderSpec`
 
-- CR 616.1e declining the offer first lets the redirect exile it | `board:object-bindings` `board:player-commandercasts`
-- CR 616.1e/903.9b the owner may apply the offer before a card's redirect | `board:object-bindings` `board:player-commandercasts`
-- CR 702.124d the other commander ignores this one's casts | `board:player-commandercasts`
-- CR 903.9b a commander bounced to its owner's hand may go to the command zone | `board:object-bindings` `board:player-commandercasts`
-- CR 903.9b a commander put on top of its owner's library may go to the command zone | `board:object-bindings` `board:player-commandercasts`
-- CR 903.9b an ordinary creature is not offered the command zone | `board:object-bindings` `board:player-commandercasts`
-- CR 903.9b declining leaves it in her hand | `board:object-bindings` `board:player-commandercasts`
-- CR 903.9b declining leaves it in her library | `board:object-bindings` `board:player-commandercasts`
-- CR 903.9b the offer applies once per commander in the same event
-- CR 903.9b the owner is asked, not the player who bounced it | `board:object-bindings` `board:player-commandercasts`
+- ~~CR 616.1e declining the offer first lets the redirect exile it | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 616.1e/903.9b the owner may apply the offer before a card's redirect | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 702.124d the other commander ignores this one's casts | `board:player-commandercasts`~~
+- ~~CR 903.9b a commander bounced to its owner's hand may go to the command zone | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 903.9b a commander put on top of its owner's library may go to the command zone | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 903.9b an ordinary creature is not offered the command zone | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 903.9b declining leaves it in her hand | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 903.9b declining leaves it in her library | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 903.9b the offer applies once per commander in the same event~~
+- ~~CR 903.9b the owner is asked, not the player who bounced it | `board:object-bindings` `board:player-commandercasts`~~
 
 ### `ConjureSpec`
 
@@ -582,23 +582,23 @@ out: grep for them.
 
 ### `ExileSpec`
 
-- CR 305.9 a hidden Forest is played as the turn's land and never cast for free | `board:exile-linked` `check:lands-played`
-- CR 406.3 the look bob had while he controlled the land survives losing it, and a land that exiled nothing gives him none | `check:pile-offer`
-- CR 406.3 the player the exiling instruction let look names both cards, and the owner who was shown nothing gets their pile | `check:helper-offerTo` `check:helper-pilesIn` `check:helper-faceDownExiled` `check:other-Object.owner`
-- CR 406.3a a Grist card exiled FACE DOWN has no characteristics to function from | `check:power-toughness-absent` `board:second-game`
-- CR 406.3a the flashback card exiled face down has no flashback to be targeted by, so the casting is reversed | `check:face-down` `check:legal-targets`
-- CR 406.3a the foretold card is turned face up as it is cast, so the noncreature tax passes it by | `board:foretold`
-- CR 406.4 a draw answered with a card outside the named pile falls back to a card in it | `check:face-down` `move:pile-target`
-- CR 406.4 a pile of one card is drawn from without asking, and a pile of two is asked about | `move:pile-target`
-- CR 406.4 choosing the pile shuffles the card the random draw named, not the other one | `check:face-down` `move:pile-target`
-- CR 406.4 the owner of a foretold card shuffles it out of exile and an opponent aiming at it by name gets the face-up one | `board:foretold`
-- CR 406.4 two castings of one spell make two piles, and the draw comes out of the pile that was named | `check:face-down` `check:legal-targets` `move:pile-target`
-- CR 603.7 at the next end step the exiled cards return to hand and alice draws | `check:delayed-triggers` `check:face-down`
-- CR 607.2a the play ability names only what THIS permanent exiled, and a copy names what the copy exiled | `board:exile-linked`
-- CR 608.2h the play ability reads the turn's declarations as it resolves, so two attackers is one short and three is not | `board:exile-linked`
-- CR 702.75a hideaway 4 hides the card its controller named and bottoms the other three, and only she may name it afterwards | `check:helper-offerTo` `check:helper-pilesIn`
-- CR 702.75a the look follows control of the land that exiled the card, and CR 406.3's does not | `board:exile-linked` `check:legal-targets`
-- CR 707.2 the look follows the copy that exiled the card, not the Windbrisk Heights it copied | `board:exile-linked` `check:legal-targets`
+- ~~CR 305.9 a hidden Forest is played as the turn's land and never cast for free | `board:exile-linked` `check:lands-played`~~
+- ~~CR 406.3 the look bob had while he controlled the land survives losing it, and a land that exiled nothing gives him none | `check:pile-offer`~~
+- ~~CR 406.3 the player the exiling instruction let look names both cards, and the owner who was shown nothing gets their pile | `check:helper-offerTo` `check:helper-pilesIn` `check:helper-faceDownExiled` `check:other-Object.owner`~~
+- ~~CR 406.3a a Grist card exiled FACE DOWN has no characteristics to function from | `check:power-toughness-absent` `board:second-game`~~
+- ~~CR 406.3a the flashback card exiled face down has no flashback to be targeted by, so the casting is reversed | `check:face-down` `check:legal-targets`~~
+- ~~CR 406.3a the foretold card is turned face up as it is cast, so the noncreature tax passes it by | `board:foretold`~~
+- ~~CR 406.4 a draw answered with a card outside the named pile falls back to a card in it | `check:face-down` `move:pile-target`~~
+- ~~CR 406.4 a pile of one card is drawn from without asking, and a pile of two is asked about | `move:pile-target`~~
+- ~~CR 406.4 choosing the pile shuffles the card the random draw named, not the other one | `check:face-down` `move:pile-target`~~
+- ~~CR 406.4 the owner of a foretold card shuffles it out of exile and an opponent aiming at it by name gets the face-up one | `board:foretold`~~
+- ~~CR 406.4 two castings of one spell make two piles, and the draw comes out of the pile that was named | `check:face-down` `check:legal-targets` `move:pile-target`~~
+- ~~CR 603.7 at the next end step the exiled cards return to hand and alice draws | `check:delayed-triggers` `check:face-down`~~
+- ~~CR 607.2a the play ability names only what THIS permanent exiled, and a copy names what the copy exiled | `board:exile-linked`~~
+- ~~CR 608.2h the play ability reads the turn's declarations as it resolves, so two attackers is one short and three is not | `board:exile-linked`~~
+- ~~CR 702.75a hideaway 4 hides the card its controller named and bottoms the other three, and only she may name it afterwards | `check:helper-offerTo` `check:helper-pilesIn`~~
+- ~~CR 702.75a the look follows control of the land that exiled the card, and CR 406.3's does not | `board:exile-linked` `check:legal-targets`~~
+- ~~CR 707.2 the look follows the copy that exiled the card, not the Windbrisk Heights it copied | `board:exile-linked` `check:legal-targets`~~
 
 ### `ExpirySpec`
 
@@ -704,15 +704,15 @@ out: grep for them.
 
 ### `KeywordTriggerSpec`
 
-- CR 509.3e a black creature joining a block a black creature is already in is +2/+0 once | `check:other-Combat.blockersOf`
-- CR 509.3e whole card: a Saproling put onto the battlefield blocking pushes an already-blocked attacker over the floor | `board:combat` `board:object-goadedby`
-- CR 509.3e whole card: two Saprolings arriving at once cross the floor together | `board:combat` `board:object-goadedby`
-- CR 603.3b two DIFFERENT abilities of one source are distinguishable entries | `check:prompt-payload`
-- CR 603.6a two triggers of the SAME ability stay indistinguishable | `check:prompt-payload`
-- CR 613.1f only a removal later than the grant takes the granted restriction away
-- CR 613.1f only a removal later than the grant takes the granted static ability away | `check:abilities`
-- CR 613.7 two Evolutions on Wanderwine Prophets champion a Merfolk | `check:other-Projection.mintedTriggeredAbilitiesOf`
-- CR 702.124j the entry trigger searches the TARGET player's library | `check:events`
+- ~~CR 509.3e a black creature joining a block a black creature is already in is +2/+0 once | `check:other-Combat.blockersOf`~~
+- ~~CR 509.3e whole card: a Saproling put onto the battlefield blocking pushes an already-blocked attacker over the floor | `board:combat` `board:object-goadedby`~~
+- ~~CR 509.3e whole card: two Saprolings arriving at once cross the floor together | `board:combat` `board:object-goadedby`~~
+- ~~CR 603.3b two DIFFERENT abilities of one source are distinguishable entries | `check:prompt-payload`~~
+- ~~CR 603.6a two triggers of the SAME ability stay indistinguishable | `check:prompt-payload`~~
+- ~~CR 613.1f only a removal later than the grant takes the granted restriction away~~
+- ~~CR 613.1f only a removal later than the grant takes the granted static ability away | `check:abilities`~~
+- ~~CR 613.7 two Evolutions on Wanderwine Prophets champion a Merfolk | `check:other-Projection.mintedTriggeredAbilitiesOf`~~
+- ~~CR 702.124j the entry trigger searches the TARGET player's library | `check:events`~~
 
 ### `LearnSpec`
 
@@ -814,24 +814,24 @@ out: grep for them.
 
 ### `MeldSpec`
 
-- CR 202.3c a copy of a melded permanent has mana value 0 | `board:source-ofmeld`
-- CR 202.3c a melded permanent's mana value is its components' front faces combined | `check:mana-value` `check:can-block`
-- CR 608.2f the pair leaves the battlefield in one event | `check:events`
+- ~~CR 202.3c a copy of a melded permanent has mana value 0 | `board:source-ofmeld`~~
+- ~~CR 202.3c a melded permanent's mana value is its components' front faces combined | `check:mana-value` `check:can-block`~~
+- ~~CR 608.2f the pair leaves the battlefield in one event | `check:events`~~
 - CR 612.7 / 701.42c a Spy Kit host is a Hanweir Garrison the game never saw, and both it and the land stay exiled
-- CR 701.42a a one-or-more-cards-leave-exile trigger counts both melded cards | `check:events` `check:other-Binding.eventAmount` `check:other-Binding.toAmount` `check:other-Event.eventBindings` `check:other-LoggedEvent.event` `check:other-Moved.change` `check:other-Moved.departures` `check:other-ZoneChange.from` `check:other-ZoneChange.object` `check:other-ZoneChange.to`
-- CR 701.42a the melding ability exiles the pair and puts one permanent onto the battlefield | `check:helper-componentPrintings` `check:helper-townshipName` `check:other-Game.printingOf` `check:other-Object.owner` `check:other-Object.source` `check:other-Printing.card`
+- ~~CR 701.42a a one-or-more-cards-leave-exile trigger counts both melded cards | `check:events` `check:other-Binding.eventAmount` `check:other-Binding.toAmount` `check:other-Event.eventBindings` `check:other-LoggedEvent.event` `check:other-Moved.change` `check:other-Moved.departures` `check:other-ZoneChange.from` `check:other-ZoneChange.object` `check:other-ZoneChange.to`~~
+- ~~CR 701.42a the melding ability exiles the pair and puts one permanent onto the battlefield | `check:helper-componentPrintings` `check:helper-townshipName` `check:other-Game.printingOf` `check:other-Object.owner` `check:other-Object.source` `check:other-Printing.card`~~
 - ~~CR 701.42b/701.42c a token counterpart melds nothing, and the land stays exiled~~
-- CR 713.8a the owner arranges the two cards her melded permanent becomes on top of her library | `board:source-ofmeld`
-- CR 713.8c a perpetual grant on a melded permanent follows both cards it becomes | `board:source-ofmeld`
-- CR 713.8e a melded permanent's death is two cards put into a graveyard and one object that moved | `board:source-ofmeld`
-- CR 713.8e each card of a melded permanent is counted as its own card type | `board:source-ofmeld`
-- CR 713.1c/712.7 the melded permanent ignores an instruction to transform | `check:helper-townshipName` `check:other-PC.subtypes` `check:other-Projection.namesOf` `check:other-Projection.project`
-- CR 903.10a a melded permanent's combat damage is tallied against its owner's commander | `board:source-ofmeld`
-- CR 903.9a a melded commander's own card goes to the command zone, whichever half melded first | `board:source-ofmeld`
-- CR 903.9c a melded commander sent to the command zone from a hand leaves its other half in the hand | `board:source-ofmeld`
-- CR 903.9c a melded commander sent to the command zone from a library leaves its other half in the library | `board:source-ofmeld`
-- CR 903.9c the component split into the command zone is not a card put into the library | `board:source-ofmeld`
-- a perpetual grant naming a meld component follows onto the permanent the pair melds into | `board:continuous-effect`
+- ~~CR 713.8a the owner arranges the two cards her melded permanent becomes on top of her library | `board:source-ofmeld`~~
+- ~~CR 713.8c a perpetual grant on a melded permanent follows both cards it becomes | `board:source-ofmeld`~~
+- ~~CR 713.8e a melded permanent's death is two cards put into a graveyard and one object that moved | `board:source-ofmeld`~~
+- ~~CR 713.8e each card of a melded permanent is counted as its own card type | `board:source-ofmeld`~~
+- ~~CR 713.1c/712.7 the melded permanent ignores an instruction to transform | `check:helper-townshipName` `check:other-PC.subtypes` `check:other-Projection.namesOf` `check:other-Projection.project`~~
+- ~~CR 903.10a a melded permanent's combat damage is tallied against its owner's commander | `board:source-ofmeld`~~
+- ~~CR 903.9a a melded commander's own card goes to the command zone, whichever half melded first | `board:source-ofmeld`~~
+- ~~CR 903.9c a melded commander sent to the command zone from a hand leaves its other half in the hand | `board:source-ofmeld`~~
+- ~~CR 903.9c a melded commander sent to the command zone from a library leaves its other half in the library | `board:source-ofmeld`~~
+- ~~CR 903.9c the component split into the command zone is not a card put into the library | `board:source-ofmeld`~~
+- ~~a perpetual grant naming a meld component follows onto the permanent the pair melds into | `board:continuous-effect`~~
 
 ### `ModalDoubleFacedSpec`
 
@@ -853,26 +853,26 @@ out: grep for them.
 
 ### `MutateSpec`
 
-- CR 702.140a a stolen mutate spell may target the owner's creature and not the caster's | `board:exile-linked`
-- CR 702.140c a merge asks for its side exactly once, whatever represents the target | `board:source-ofmeld`
-- CR 702.140e a Dormant Gomazoa under a Cubwarden still does not untap | `board:source-ofmerge`
-- CR 702.140e a Prized Unicorn under a Cubwarden still makes bob block it | `board:source-ofmerge`
-- CR 702.140e an Exalted Dragon under a Cubwarden still charges a land to attack | `board:source-ofmerge`
-- CR 731.2/111.13 a copy of a mutating creature spell merges, as a token and not as a card | `check:other-Game.componentsOf`
-- CR 731.2a/613.7 a merge outranks Mirrorweave's copy at once and is recomputed when it ends | `board:copyeffects`
-- CR 731.2a/713.5c Cubwarden merges with a melded permanent, over and under | `board:source-ofmeld`
-- CR 731.2a/731.2e a face-down merged permanent turned face up shows the topmost component's own face | `board:battlefield` `board:objects-ids`
-- CR 731.2d a merged permanent is a token only if its topmost component is | `board:source-ofmerge`
-- CR 731.2e a merge over a face-down permanent leaves the topmost component's face-up status | `board:battlefield` `board:objects-ids`
-- CR 731.2g a face-down merged permanent with a sorcery card in it stays face down | `board:entered-with`
-- CR 731.2h a flipped merged permanent uses its flip component's alternative characteristics | `board:source-ofmerge`
-- CR 731.2h a merged permanent flips for a flip component that is not its topmost one | `board:source-ofmerge`
-- CR 731.2i a merged permanent transforms by turning its double-faced component over | `board:source-ofmerge`
-- CR 731.2i/702.145c a Cubwarden over a nightbound Werewolf turns with the day and back with the night | `board:daytime`
-- CR 731.2i/707.2 a Clone of a transformed merged permanent copies the turned-over reading | `board:source-ofmerge`
-- CR 731.2j Cyber Conversion does nothing to a merged permanent with a double-faced component | `board:source-ofmerge`
-- CR 731.3/111.7 a merged permanent's token component ceases to exist while its card is put into the graveyard | `board:source-ofmerge`
-- CR 731.3/603.6c a merged permanent's component fires its own put-into-a-graveyard trigger from either arrangement | `board:source-ofmerge`
+- ~~CR 702.140a a stolen mutate spell may target the owner's creature and not the caster's | `board:exile-linked`~~
+- ~~CR 702.140c a merge asks for its side exactly once, whatever represents the target | `board:source-ofmeld`~~
+- ~~CR 702.140e a Dormant Gomazoa under a Cubwarden still does not untap | `board:source-ofmerge`~~
+- ~~CR 702.140e a Prized Unicorn under a Cubwarden still makes bob block it | `board:source-ofmerge`~~
+- ~~CR 702.140e an Exalted Dragon under a Cubwarden still charges a land to attack | `board:source-ofmerge`~~
+- ~~CR 731.2/111.13 a copy of a mutating creature spell merges, as a token and not as a card | `check:other-Game.componentsOf`~~
+- ~~CR 731.2a/613.7 a merge outranks Mirrorweave's copy at once and is recomputed when it ends | `board:copyeffects`~~
+- ~~CR 731.2a/713.5c Cubwarden merges with a melded permanent, over and under | `board:source-ofmeld`~~
+- ~~CR 731.2a/731.2e a face-down merged permanent turned face up shows the topmost component's own face | `board:battlefield` `board:objects-ids`~~
+- ~~CR 731.2d a merged permanent is a token only if its topmost component is | `board:source-ofmerge`~~
+- ~~CR 731.2e a merge over a face-down permanent leaves the topmost component's face-up status | `board:battlefield` `board:objects-ids`~~
+- ~~CR 731.2g a face-down merged permanent with a sorcery card in it stays face down | `board:entered-with`~~
+- ~~CR 731.2h a flipped merged permanent uses its flip component's alternative characteristics | `board:source-ofmerge`~~
+- ~~CR 731.2h a merged permanent flips for a flip component that is not its topmost one | `board:source-ofmerge`~~
+- ~~CR 731.2i a merged permanent transforms by turning its double-faced component over | `board:source-ofmerge`~~
+- ~~CR 731.2i/702.145c a Cubwarden over a nightbound Werewolf turns with the day and back with the night | `board:daytime`~~
+- ~~CR 731.2i/707.2 a Clone of a transformed merged permanent copies the turned-over reading | `board:source-ofmerge`~~
+- ~~CR 731.2j Cyber Conversion does nothing to a merged permanent with a double-faced component | `board:source-ofmerge`~~
+- ~~CR 731.3/111.7 a merged permanent's token component ceases to exist while its card is put into the graveyard | `board:source-ofmerge`~~
+- ~~CR 731.3/603.6c a merged permanent's component fires its own put-into-a-graveyard trigger from either arrangement | `board:source-ofmerge`~~
 
 ### `OutsideTheGameSpec`
 
@@ -1030,7 +1030,7 @@ out: grep for them.
 - CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers | `check:prompt-payload`
 - CR 101.4b a later seat knows what the seats before it answered for that land | `check:prompt-payload`
 - CR 110.5b whole card: Nature's Lore puts the Forest it finds onto the battlefield UNTAPPED | `check:events`
-- CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives | `check:prompt-order`
+- CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives
 - CR 118.12a each land is its own offer, and any player's payment saves only that land | `check:prompt-payload`
 - CR 607.2a: killing the OTHER Dragon returns the OTHER card | `board:exile-linked`
 - CR 607.2a: the dead Dragon returns the card IT exiled, not the other Dragon's | `board:exile-linked`
@@ -1200,9 +1200,9 @@ out: grep for them.
 
 ### `ZoneChangeSpec`
 
-- CR 401.2 each attacking creature's OWNER picks the end, not the resolving controller | `check:prompt-order`
+- CR 401.2 each attacking creature's OWNER picks the end, not the resolving controller
 - CR 401.7 Temporal Cleansing: the OWNER picks second from the top, and it lands under the top card | `check:prompt-payload`
-- CR 701.9 / 101.4 Tinybones Joins Up has every targeted player discard, in APNAP order | `check:prompt-order`
+- ~~CR 701.9 / 101.4 Tinybones Joins Up has every targeted player discard, in APNAP order | `check:prompt-order`~~
 
 ### `ZoneTriggerSpec`
 

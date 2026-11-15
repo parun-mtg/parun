@@ -1,0 +1,75 @@
+{
+  "description": "CR 707.2 the look follows the copy that exiled the card, not the Windbrisk Heights it copied",
+  "note": "Hideaway's granted look names the controller of the permanent that exiled the card, not of a permanent with hideaway: the Vesuva that entered as a copy of Windbrisk Heights ran the hideaway, and the Windbrisk Heights it copied was placed and exiled nothing. bob's Confiscate on the copied land leaves his Synthetic Blind Reclamation offered the hidden card's pile (CR 406.4); his second Confiscate, on the copy, hands him the card by name. Face-up cards in exile give each Reclamation a second candidate, so its target prompt is asked rather than bound.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Windbrisk Heights", "label": "copied", "ready": true }],
+        "hand": [{ "card": "Vesuva", "label": "vesuva" }],
+        "library": [
+          { "card": "Lightning Bolt", "label": "bolt" },
+          { "card": "Goblin Piker", "label": "piker" },
+          { "card": "Ogre Sentry", "label": "sentry" },
+          { "card": "Cancel", "label": "cancel" },
+          { "card": "Think Twice", "label": "think" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Island", "label": "b1" },
+          { "card": "Island", "label": "b2" },
+          { "card": "Island", "label": "b3" },
+          { "card": "Island", "label": "b4" },
+          { "card": "Island", "label": "b5" },
+          { "card": "Island", "label": "b6" },
+          { "card": "Island", "label": "b7" },
+          { "card": "Island", "label": "b8" },
+          { "card": "Island", "label": "b9" },
+          { "card": "Island", "label": "b10" },
+          { "card": "Island", "label": "b11" },
+          { "card": "Island", "label": "b12" },
+          { "card": "Island", "label": "b13" },
+          { "card": "Island", "label": "b14" },
+          { "card": "Island", "label": "b15" },
+          { "card": "Island", "label": "b16" }
+        ],
+        "hand": [
+          { "card": "Synthetic Blind Reclamation", "label": "b-copied" },
+          { "card": "Synthetic Blind Reclamation", "label": "b-copy" },
+          { "card": "Confiscate", "label": "take-copied" },
+          { "card": "Confiscate", "label": "take-copy" }
+        ],
+        "exile": [
+          { "card": "Riftsweeper", "label": "rift" },
+          { "card": "Grizzly Bears", "label": "bears" }
+        ],
+        "library": [{ "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$vesuva" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCopyTarget", "with": "$copied" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardFromAmong", "with": "$piker" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["$cancel", "$bolt", "$sentry"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$take-copied", "targets": ["$copied"], "mana": ["$b1", "$b2", "$b3", "$b4", "$b5", "$b6", null] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Controller", "object": "$copied", "is": "bob" } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$b-copied", "targets": ["$rift"], "mana": ["$b7", "$b8", null] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseTargets","offer":{"source":"Synthetic Blind Reclamation#2","slots":[["target",[1,[["Object","$rift"],["Object","$bears"],["Pile",{"pile":{"type":"OfFaceDown","value":33},"ordinal":1}]]]]]}} } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "Shuffle", "with": ["Riftsweeper"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$take-copy", "targets": ["Vesuva"], "mana": ["$b9", "$b10", "$b11", "$b12", "$b13", "$b14", null] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Controller", "object": "Vesuva", "is": "bob" } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$b-copy", "targets": ["$bears"], "mana": ["$b15", "$b16", null] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseTargets","offer":{"source":"Synthetic Blind Reclamation#2","slots":[["target",[1,[["Object","$bears"],["Object","Goblin Piker"]]]]]}} } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "Shuffle", "with": ["Riftsweeper", "Grizzly Bears"] } } }
+  ]
+}

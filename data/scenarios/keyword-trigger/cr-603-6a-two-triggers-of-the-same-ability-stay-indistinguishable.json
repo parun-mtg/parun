@@ -1,0 +1,122 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Hero of Bladehold",
+            "label": "hero",
+            "ready": true
+          },
+          {
+            "card": "Aether Flash",
+            "label": "flash"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "CR 603.6a two triggers of the SAME ability stay indistinguishable",
+  "final": [
+    {
+      "Count": {
+        "card": "Soldier Token",
+        "count": 0,
+        "player": "alice",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "The other half of #61. Hero of Bladehold's token-maker puts two Soldiers onto the battlefield at once, and CR 603.6a fires Aether Flash once for each, so the second ordering prompt of the combat holds two entries differing only in the token each remembers, which the entry deliberately does not carry: they render the same. Aether Flash rather than Soul Warden because its payload reads the entrant, so the prompt is not elided as inert. The Hero's own two entries still differ.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$hero"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "OrderTriggers",
+            "offer": [
+              {
+                "source": "$hero"
+              },
+              {
+                "source": "$hero",
+                "text": "Whenever Hero of Bladehold attacks, other attacking creatures get +1/+0 until end of turn."
+              }
+            ]
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderTriggers",
+          "with": [
+            1,
+            0
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "OrderTriggers",
+            "offer": [
+              {
+                "source": "$flash",
+                "text": "Whenever a creature enters, Aether Flash deals 2 damage to it."
+              },
+              {
+                "source": "$flash",
+                "text": "Whenever a creature enters, Aether Flash deals 2 damage to it."
+              }
+            ]
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderTriggers",
+          "with": [
+            0,
+            1
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    }
+  ]
+}

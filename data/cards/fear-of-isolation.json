@@ -1,0 +1,58 @@
+{
+  "faces": [
+    {
+      "additionalCosts": [
+        {
+          "type": "ReturnPermanents",
+          "value": {
+            "count": 1,
+            "whichPermanents": {
+              "type": "HeldBy",
+              "value": {
+                "holder": "Controller",
+                "relation": "You"
+              }
+            }
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Flying"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Fear of Isolation",
+      "oracleText": "As an additional cost to cast this spell, return a permanent you control to its owner's hand.\nFlying",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Nightmare"
+        ],
+        "types": [
+          "Creature",
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

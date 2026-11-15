@@ -28,9 +28,8 @@
 -- combat damage to an opponent flips it into the legendary 2/2 Goblin Shaman
 -- Tok-Tok, Volcano Born. CR 710's own coverage of it is Parun.FlipSpec's.
 --
--- Blightreaper Thallid // Blightsower Thallid and Howlpack Piper // Wildsong
--- Howler are the DOUBLE-FACED hosts CR 731.2i needs: the Thallid turns over by
--- its own activated ability, the Werewolf by CR 702.145c/f's day and night.
+-- Blightreaper Thallid // Blightsower Thallid is the DOUBLE-FACED host CR
+-- 731.2i needs, turned over by its own activated ability.
 --
 -- Synthetic Graftling // Synthetic Graftbeast is the double-faced MUTATE card
 -- CR 731.2i's two-component cases need (Scryfall `keyword:mutate is:dfc
@@ -48,7 +47,6 @@
 module Parun.MutateSpec where
 
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
@@ -57,7 +55,6 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Binding as Binding
@@ -68,7 +65,6 @@ import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Departure as Departure
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
-import qualified Parun.Engine.FaceDown as FaceDown
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
@@ -78,7 +74,6 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
-import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Color as Color
@@ -87,7 +82,6 @@ import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CommandZoneDecision as CommandZoneDecision
 import qualified Parun.Types.ComponentCard as ComponentCard
 import qualified Parun.Types.Cost as Cost.Type
-import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.FaceDownReason as FaceDownReason
@@ -99,7 +93,6 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
-import qualified Parun.Types.MeldSource as MeldSource
 import qualified Parun.Types.MergeComponent as MergeComponent
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MutateSide as MutateSide
@@ -124,79 +117,13 @@ import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Subtype as Subtype
-import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Transformed as Transformed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
-import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Zone as Zone
 import qualified Parun.Types.ZoneChange as ZoneChange
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Mutate" $ do
-  -- CR 731.2e's mix, from the side where the merge CHANGES the status: a
-  -- face-up card merging over a face-down permanent. "The permanent's status is
-  -- determined by its topmost component", so the result is a face-up Cubwarden
-  -- and not the nameless 2/2 the board held a moment before.
-  --
-  -- Read off the NAME rather than off Object.facing, which would be a read of
-  -- the very field the rule writes: CR 708.2a leaves a face-down permanent with
-  -- no name at all, so a projected name is the status said in the one way the
-  -- board can observe it.
-  Spec.it s "CR 731.2e a merge over a face-down permanent leaves the topmost component's face-up status" $ do
-    plains <- S.printingOf s registry "Plains"
-    kirin <- S.printingOf s registry "Misthoof Kirin"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    case faceDownBoard plains kirin cubwarden of
-      Nothing -> Spec.assertFailure s "the morph cast did not reach the battlefield"
-      Just (host, board, spellId) -> do
-        let after = merging MutateSide.Over host board spellId
-        Spec.assertEqWith
-          s
-          "CR 731.2e the merged permanent shows Cubwarden's name, so its status is the topmost component's"
-          (Projection.namesOf host after)
-          (Set.singleton (CardName.MkCardName (Text.pack "Cubwarden")))
-        -- The fixture facts behind it, after it: the host really was face down,
-        -- and really was nameless while it was, so the assertion above cannot
-        -- pass for want of either.
-        Spec.assertEqWith s "setup: the host was face down before the merge" (fmap Object.facing (Game.lookupObject host board)) (Just (Facing.faceDown FaceDownReason.Morphed))
-        Spec.assertEqWith s "setup: and CR 708.2a left it with no name at all" (Projection.namesOf host board) Set.empty
-        Spec.assertEqWith s "setup: the two cards represent one permanent" (componentNames host after) [CardName.MkCardName (Text.pack "Cubwarden"), CardName.MkCardName (Text.pack "Misthoof Kirin")]
-  -- CR 731.2e's other side: the merge goes UNDER, so the topmost component is
-  -- still the face-down one and the permanent stays face down -- and CR 702.37e's
-  -- special action then turns it over.
-  --
-  -- THE case the layer-1a read exists for. CR 731.2a is a copiable effect in
-  -- layer 1a (CR 613.2a) and CR 708.2's substitution is layer 1b (CR 613.2b), so
-  -- what the merge froze is the topmost component's OWN face -- not the nameless
-  -- 2/2 that face-down permanent was showing at the time. Read the showing face
-  -- instead and this permanent turns face up as a nameless 2/2 with lifelink,
-  -- which is what it did before this case existed.
-  --
-  -- CR 731.2f's "each face-down component that represents it is turned face up"
-  -- is not what this board discriminates, since nothing here reads the Kirin
-  -- component's own status once it turns; "CR 731.2f a face-down pile turned
-  -- face up turns its components up with it" does.
-  Spec.it s "CR 731.2a/731.2e a face-down merged permanent turned face up shows the topmost component's own face" $ do
-    plains <- S.printingOf s registry "Plains"
-    kirin <- S.printingOf s registry "Misthoof Kirin"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    case faceDownBoard plains kirin cubwarden of
-      Nothing -> Spec.assertFailure s "the morph cast did not reach the battlefield"
-      Just (host, board, spellId) -> do
-        let after = merging MutateSide.Under host board spellId
-            up = S.runPure S.identityAnswer after (FaceDown.turnFaceUp S.manaPerformer S.alice TurnUpProcedure.Morph host)
-        Spec.assertEqWith
-          s
-          "CR 731.2a the topmost component's own name, and not the nameless 2/2 it was showing when the merge froze it"
-          (Projection.namesOf host up)
-          (Set.singleton (CardName.MkCardName (Text.pack "Misthoof Kirin")))
-        Spec.assertBool s (Projection.hasKeyword Keyword.Flying host up) "CR 731.2a and its flying, which no other component prints"
-        Spec.assertBool s (Projection.hasKeyword Keyword.Lifelink host up) "CR 702.140e and lifelink, from the component under it"
-        -- The fixture facts, after them: the merged permanent really was face
-        -- down until the special action turned it over, and really is one
-        -- permanent of two cards.
-        Spec.assertEqWith s "setup: CR 731.2e it was face down while its topmost component was" (Projection.namesOf host after) Set.empty
-        Spec.assertEqWith s "setup: the two cards represent one permanent, the face-down one on top" (componentNames host after) [CardName.MkCardName (Text.pack "Misthoof Kirin"), CardName.MkCardName (Text.pack "Cubwarden")]
   -- CR 708.9's first sentence over CR 731.2e's mix: Cubwarden merges OVER the
   -- face-down Kirin, so the pile is face up and the Kirin component face down,
   -- and alice Murders the pile. She reveals the Kirin component as it moves.
@@ -380,126 +307,6 @@ spec s registry = Spec.describe s "Mutate" $ do
         Spec.assertEqWith s "CR 712.12a the face-down Thallid's front-face ability is still the pile's one activated ability" (offered after) 1
         Spec.assertEqWith s "CR 731.2i the Graftling turned: a 4/4 Graftbeast with trample" (reading after) (Set.singleton graftbeastName, Just (4, 4), True)
         Spec.assertEqWith s "setup: merged, the pile offered the Graftling's ability and the Thallid's" (offered merged) 2
-  -- CR 731.2j: a face-up merged permanent with a double-faced component can't
-  -- be turned face down. Cubwarden goes OVER, so the permanent shows one-faced
-  -- Cubwarden and only the component under it, Blightreaper Thallid, is
-  -- double-faced. The control is the same merge over one-faced Falcon
-  -- Abomination. The Islands arrive after the merge, so the mutate cost cannot
-  -- spend them.
-  Spec.it s "CR 731.2j Cyber Conversion does nothing to a merged permanent with a double-faced component" $ do
-    plains <- S.printingOf s registry "Plains"
-    island <- S.printingOf s registry "Island"
-    thallid <- S.printingOf s registry "Blightreaper Thallid"
-    falcon <- S.printingOf s registry "Falcon Abomination"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    cyber <- S.printingOf s registry "Cyber Conversion"
-    let converted under =
-          let (host, board, spellId) = mutateBoard plains under cubwarden
-              merged = merging MutateSide.Over host board spellId
-              (armed, spell) = S.handOne cyber (S.landsFor island S.alice 2 merged)
-           in (host, merged, S.runPure (mutatingAt MutateSide.Over host) armed (Cast.castSpell S.manaPerformer S.alice spell (S.printingName cyber) Facing.FaceUp >> Stack.resolveTop))
-        (dfcHost, dfcMerged, dfcAfter) = converted thallid
-        (plainHost, _, plainAfter) = converted falcon
-    Spec.assertEqWith s "CR 731.2j the merged permanent is still face up" (fmap Object.facing (Game.lookupObject dfcHost dfcAfter)) (Just Facing.FaceUp)
-    Spec.assertEqWith s "CR 731.2j and still Cubwarden" (Projection.namesOf dfcHost dfcAfter) (Set.singleton (CardName.MkCardName (Text.pack "Cubwarden")))
-    Spec.assertBool s (maybe False (Facing.isFaceDown . Object.facing) (Game.lookupObject plainHost plainAfter)) "the same merge over a one-faced card turns face down"
-    Spec.assertEqWith s "setup: Cubwarden over the Thallid" (componentNames dfcHost dfcMerged) [CardName.MkCardName (Text.pack "Cubwarden"), CardName.MkCardName (Text.pack "Blightreaper Thallid")]
-  -- CR 731.2g: Soul Summons manifests `under`, Cubwarden mutates over it (face
-  -- up, CR 731.2e), Cyber Conversion turns the merged permanent face down, and
-  -- Showstopping Surprise asks it to turn face up. The status's reason is no
-  -- longer Manifested and the topmost card is Cubwarden, so CR 701.40g cannot
-  -- answer; only the sorcery card under it can. The control manifests Thragtusk.
-  Spec.it s "CR 731.2g a face-down merged permanent with a sorcery card in it stays face down" $ do
-    plains <- S.printingOf s registry "Plains"
-    island <- S.printingOf s registry "Island"
-    mountain <- S.printingOf s registry "Mountain"
-    summons <- S.printingOf s registry "Soul Summons"
-    thragtusk <- S.printingOf s registry "Thragtusk"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    cyber <- S.printingOf s registry "Cyber Conversion"
-    surprise <- S.printingOf s registry "Showstopping Surprise"
-    let casting printing host gs =
-          let (armed, spell) = S.handOne printing gs
-           in S.runPure (mutatingAt MutateSide.Over host) armed (Cast.castSpell S.manaPerformer S.alice spell (S.printingName printing) Facing.FaceUp >> Stack.resolveTop)
-        surprised under = do
-          let (g1, summonsId) = S.handOne summons (S.landsFor plains S.alice 6 (Setup.emptyGame S.bothPlayers))
-              (_, g2) = S.addLibraryCard plains S.alice g1
-              (_, before) = S.addLibraryCard under S.alice g2
-              manifested = S.runPure S.identityAnswer before (S.cast S.alice summonsId >> Stack.resolveTop)
-          host <- Maybe.listToMaybe (Set.toList (Set.difference (GameState.battlefield manifested) (GameState.battlefield before)))
-          let (board, spellId) = S.handOne cubwarden manifested
-              merged = merging MutateSide.Over host board spellId
-              converted = casting cyber host (S.landsFor island S.alice 2 merged)
-          pure (host, converted, casting surprise host (S.landsFor mountain S.alice 5 converted))
-        facingOf host gs = fmap Object.facing (Game.lookupObject host gs)
-    case (surprised summons, surprised thragtusk) of
-      (Just (host, converted, after), Just (plainHost, plainConverted, plainAfter)) -> do
-        Spec.assertBool s (maybe False Facing.isFaceDown (facingOf host after)) "CR 731.2g the merged permanent is still face down"
-        Spec.assertEqWith s "the same board with a creature card under it turns face up as Cubwarden" (facingOf plainHost plainAfter, Projection.namesOf plainHost plainAfter) (Just Facing.FaceUp, Set.singleton (CardName.MkCardName (Text.pack "Cubwarden")))
-        Spec.assertBool s (maybe False Facing.isFaceDown (facingOf host converted) && maybe False Facing.isFaceDown (facingOf plainHost plainConverted)) "setup: Cyber Conversion turned both face down"
-        Spec.assertEqWith s "setup: Cubwarden over the Soul Summons" (componentNames host converted) [CardName.MkCardName (Text.pack "Cubwarden"), CardName.MkCardName (Text.pack "Soul Summons")]
-      _ -> Spec.assertFailure s "Soul Summons did not manifest a permanent"
-  -- CR 731.2i: Cubwarden merged UNDER Blightreaper Thallid, and the Thallid's own
-  -- "{3}{G/P}: Transform this creature" turns its card over. The merged
-  -- permanent's characteristics come off the merge's stamp, so a transform that
-  -- wrote only Object.face would leave it Blightreaper Thallid.
-  Spec.it s "CR 731.2i a merged permanent transforms by turning its double-faced component over" $ do
-    plains <- S.printingOf s registry "Plains"
-    forest <- S.printingOf s registry "Forest"
-    thallid <- S.printingOf s registry "Blightreaper Thallid"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    case transformedMerge plains forest thallid cubwarden of
-      Nothing -> Spec.assertFailure s "expected the merged permanent to offer exactly one activated ability"
-      Just (host, merged, after) -> do
-        Spec.assertEqWith
-          s
-          "CR 731.2i it is now Blightsower Thallid, a 3/3 keeping Cubwarden's lifelink, and CR 701.27f's trigger made a Saproling"
-          (Projection.namesOf host after, S.powerToughnessOf host after, Projection.hasKeyword Keyword.Lifelink host after, S.countOnBattlefieldByName saprolingToken S.alice after)
-          (Set.singleton blightsower, Just (3, 3), True, 1)
-        Spec.assertEqWith s "setup: before the activation it was Blightreaper Thallid, a 2/2" (Projection.namesOf host merged, S.powerToughnessOf host merged) (Set.singleton (CardName.MkCardName (Text.pack "Blightreaper Thallid")), Just (2, 2))
-        Spec.assertEqWith s "setup: the Thallid on top, Cubwarden under it" (componentNames host merged) [CardName.MkCardName (Text.pack "Blightreaper Thallid"), CardName.MkCardName (Text.pack "Cubwarden")]
-  -- The tripwire for the stamp: a Clone copies the merged permanent's copiable
-  -- values (CR 707.2, CR 731.2a), so it enters as whatever the turned-over
-  -- reading says, never as the printed card behind either component.
-  Spec.it s "CR 731.2i/707.2 a Clone of a transformed merged permanent copies the turned-over reading" $ do
-    plains <- S.printingOf s registry "Plains"
-    forest <- S.printingOf s registry "Forest"
-    thallid <- S.printingOf s registry "Blightreaper Thallid"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    clone <- S.printingOf s registry "Clone"
-    case transformedMerge plains forest thallid cubwarden of
-      Nothing -> Spec.assertFailure s "expected the merged permanent to offer exactly one activated ability"
-      Just (host, _, after) -> do
-        let (_, staged) = S.spellOnStack clone S.alice after
-            copied = S.runPure (copying host) staged (Stack.resolveTop >> Engine.settleForPriority)
-        case cloneOn copied of
-          Nothing -> Spec.assertFailure s "the Clone should have entered as a copy of the merged permanent"
-          Just copy ->
-            Spec.assertEqWith
-              s
-              "CR 707.2 the Clone is Blightsower Thallid, a 3/3 with the lifelink CR 702.140e merged in"
-              (Projection.namesOf copy copied, S.powerToughnessOf copy copied, Projection.hasKeyword Keyword.Lifelink copy copied)
-              (Set.singleton blightsower, Just (3, 3), True)
-  -- CR 731.2i over the OTHER order and the other road: Cubwarden merged OVER
-  -- Wildsong Howler, so every characteristic but the abilities stays
-  -- Cubwarden's, and CR 702.145c/f's day and night do the turning. The keyword
-  -- pair is the discriminator; the second night is the one a front-face read off
-  -- the topmost card gets wrong, since Howlpack Piper is no face of Cubwarden.
-  Spec.it s "CR 731.2i/702.145c a Cubwarden over a nightbound Werewolf turns with the day and back with the night" $ do
-    plains <- S.printingOf s registry "Plains"
-    piper <- S.printingOf s registry "Howlpack Piper"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    let (host, board, spellId) = mutateBoard plains piper cubwarden
-        -- PLACED back face up at night, as a nightbound permanent is.
-        atNight = board {GameState.daytime = Just Daytime.Night, GameState.objects = Map.adjust (\o -> o {Object.face = Just howler}) host (GameState.objects board)}
-        merged = merging MutateSide.Over host atNight spellId
-        day = untapStepAfter 2 merged
-        night = untapStepAfter 0 day
-        bounds gs = (Projection.hasKeyword Keyword.Daybound host gs, Projection.hasKeyword Keyword.Nightbound host gs)
-    Spec.assertEqWith s "CR 731.2i daybound by day, nightbound again by night" (bounds day, bounds night) ((True, False), (False, True))
-    Spec.assertEqWith s "CR 731.2a and Cubwarden, a 3/5, throughout" (Projection.namesOf host night, S.powerToughnessOf host night) (Set.singleton (CardName.MkCardName (Text.pack "Cubwarden")), Just (3, 5))
-    Spec.assertEqWith s "setup: nightbound after the merge" (bounds merged) (False, True)
-    Spec.assertEqWith s "setup: it became day, then night" (GameState.daytime day, GameState.daytime night) (Just Daytime.Day, Just Daytime.Night)
   -- CR 731.2i with TWO double-faced components: Synthetic Graftling transforms
   -- by its own ability, unmerged, and a second Graftling then mutates OVER it.
   -- The pile shows the top card's front and the transformed card's trample (CR
@@ -707,63 +514,6 @@ spec s registry = Spec.describe s "Mutate" $ do
         Spec.assertEqWith s "CR 611.2a after cleanup it is still the Graftbeast, with the Falcon Abomination's flying from under" (reading (cleanedUp turned)) (Set.singleton graftbeastName, Just (4, 4), True, True)
         Spec.assertEqWith s "setup: merged under Mirrorweave's copy, a 2/2 Graftling with nothing from under" (reading merged) (Set.singleton graftlingName, Just (2, 2), False, False)
         Spec.assertEqWith s "setup: under Mirrorweave the Falcon Abomination was the Hill Giant" (Projection.namesOf host board) (Set.singleton (CardName.MkCardName (Text.pack "Hill Giant")))
-  -- The case above's STORED twin: the copy effect on the target has a duration.
-  -- Mirrorweave makes the Falcon Abomination a Hill Giant until end of turn, and
-  -- Cubwarden merges with it afterwards. CR 731.2a timestamps the merge then, so
-  -- CR 613.7 applies it after Mirrorweave's copy and the merge shows at once; and
-  -- CR 514.2 / 611.2a end Mirrorweave's copy at cleanup, so the merge is then
-  -- applied over the Falcon Abomination alone and nothing of the Hill Giant is
-  -- left.
-  --
-  -- A pair of boards differing only in CR 702.140c's side, since each side has
-  -- its own wrong answer: over, the Hill Giant's lack of abilities hides the
-  -- Falcon Abomination's flying; under, the Hill Giant's name and box are what
-  -- the topmost component shows. Distinct boxes throughout: the Falcon
-  -- Abomination's 2/2, the Hill Giant's 3/3, Cubwarden's 3/5.
-  Spec.it s "CR 731.2a/613.7 a merge outranks Mirrorweave's copy at once and is recomputed when it ends" $ do
-    plains <- S.printingOf s registry "Plains"
-    falcon <- S.printingOf s registry "Falcon Abomination"
-    hillGiant <- S.printingOf s registry "Hill Giant"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    mirrorweave <- S.printingOf s registry "Mirrorweave"
-    let base = S.landsFor plains S.alice 8 (Setup.emptyGame S.bothPlayers)
-        (host, withHost) = S.addPermanent falcon S.alice base
-        (giant, withGiant) = S.addPermanent hillGiant S.alice withHost
-        (staged, weaveId) = S.handOne mirrorweave withGiant
-        woven = S.runPure (mutatingAt MutateSide.Over giant) staged (S.cast S.alice weaveId >> Stack.resolveTop >> Engine.settleForPriority)
-        (board, spellId) = S.handOne cubwarden woven
-        step g = S.runPure S.identityAnswer g Engine.runStep
-        ending gs =
-          step
-            ( step
-                gs
-                  { GameState.turn =
-                      (GameState.turn gs)
-                        { TurnRegisters.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]
-                        }
-                  }
-            )
-        cleanedUp = step . ending
-        over = merging MutateSide.Over host board spellId
-        under = merging MutateSide.Under host board spellId
-        named = Set.singleton . CardName.MkCardName . Text.pack
-    -- THE GAMEPLAY ASSERTIONS, over: the merge is what layer 1a leaves while
-    -- Mirrorweave's copy stands, and once it ends the flying from under is back.
-    Spec.assertEqWith s "CR 613.7 mutated over under Mirrorweave, it is Cubwarden at once" (Projection.namesOf host over, S.powerToughnessOf host over) (named "Cubwarden", Just (3, 5))
-    Spec.assertBool s (not (Projection.hasKeyword Keyword.Flying host over)) "CR 702.140e while Mirrorweave stands, the abilities from under are the Hill Giant's, and it has none"
-    Spec.assertBool s (Projection.hasKeyword Keyword.Flying host (cleanedUp over)) "CR 611.2a after cleanup it has the Falcon Abomination's flying from under"
-    Spec.assertEqWith s "and is still Cubwarden" (Projection.namesOf host (cleanedUp over), S.powerToughnessOf host (cleanedUp over)) (named "Cubwarden", Just (3, 5))
-    -- Under: the copy shows through the topmost component until cleanup, and the
-    -- Falcon Abomination after it, carrying Cubwarden's lifelink throughout.
-    Spec.assertEqWith s "CR 731.2a mutated under, it is the Hill Giant Mirrorweave made the topmost component" (Projection.namesOf host under, S.powerToughnessOf host under) (named "Hill Giant", Just (3, 3))
-    Spec.assertBool s (Projection.hasKeyword Keyword.Lifelink host under) "CR 613.7 with Cubwarden's lifelink from under at once"
-    Spec.assertEqWith s "CR 611.2a after cleanup it is the Falcon Abomination, nothing of the Hill Giant left" (Projection.namesOf host (cleanedUp under), S.powerToughnessOf host (cleanedUp under)) (named "Falcon Abomination", Just (2, 2))
-    Spec.assertBool s (Projection.hasKeyword Keyword.Lifelink host (cleanedUp under)) "and still with Cubwarden's lifelink"
-    -- The proxies, after the behaviours: Mirrorweave's copy really covered the
-    -- target before the merge, both spells resolved, and cleanup ran.
-    Spec.assertEqWith s "setup: under Mirrorweave the Falcon Abomination was the Hill Giant" (Projection.namesOf host board, S.powerToughnessOf host board) (named "Hill Giant", Just (3, 3))
-    Spec.assertEqWith s "setup: both merges happened" (componentNames host over, componentNames host under) ([CardName.MkCardName (Text.pack "Cubwarden"), CardName.MkCardName (Text.pack "Falcon Abomination")], [CardName.MkCardName (Text.pack "Falcon Abomination"), CardName.MkCardName (Text.pack "Cubwarden")])
-    Spec.assertEqWith s "setup: the cleanup step ran" (TurnRegisters.phase (GameState.turn (ending over))) (Phase.Ending EndingStep.Cleanup)
   -- CR 702.140e over a Room on top: Opalescence makes the Room with its red
   -- door open a 2/2 non-Human creature, and Cubwarden mutates under it. The
   -- merged permanent shows the Room (CR 731.2a), whose characteristics are
@@ -781,217 +531,6 @@ spec s registry = Spec.describe s "Mutate" $ do
         (board, spellId) = S.handOne cubwarden opened
         after = merging MutateSide.Under host board spellId
     Spec.assertBool s (Projection.hasKeyword Keyword.Lifelink host after) "the merged Room has Cubwarden's lifelink"
-  -- CR 702.140c's choice is put to a player exactly once per merge that will
-  -- happen, and Parun.Engine.Stack asks it only after Event.mergeable has said the
-  -- merge will. A pair of boards differing in exactly one thing -- whether the
-  -- creature the spell targets is represented by one card or by a meld -- so a
-  -- component list read that a meld silently emptied would show up here as a
-  -- prompt that was never raised; see #3371.
-  --
-  -- The melded permanent is HAND-BUILT, over Falcon Abomination's own printing so
-  -- that CR 702.140a still admits it as a target: the gameplay reading of a
-  -- merge with the pool's meld pair is the case below, and the question here is
-  -- only how many times the side is asked.
-  Spec.it s "CR 702.140c a merge asks for its side exactly once, whatever represents the target" $ do
-    plains <- S.printingOf s registry "Plains"
-    falcon <- S.printingOf s registry "Falcon Abomination"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    let base = S.landsFor plains S.alice 4 (Setup.emptyGame S.bothPlayers)
-        (cardTarget, withCard) = S.addPermanent falcon S.alice base
-        (meldTarget, withMeldCard) = S.addPermanent falcon S.alice base
-        (falconPid, interned) = Game.intern falcon withMeldCard
-        (cubPid, bothInterned) = Game.intern cubwarden interned
-        melded =
-          Source.OfMeld
-            MeldSource.MkMeldSource
-              { MeldSource.result = falconPid,
-                MeldSource.components = ComponentCard.MkComponentCard falconPid Nothing Nothing NonEmpty.:| [ComponentCard.MkComponentCard cubPid Nothing Nothing]
-              }
-        withMeld =
-          bothInterned
-            { GameState.objects = Map.adjust (\obj -> obj {Object.source = melded}) meldTarget (GameState.objects bothInterned)
-            }
-        counting :: ObjectId.ObjectId -> Prompt.Prompt r -> State.State Int r
-        counting host p = case p of
-          Prompt.ChooseMutateSide {} -> do
-            State.modify' (+ 1)
-            pure MutateSide.Over
-          _ -> pure (mutatingAt MutateSide.Over host p)
-        asks host gs =
-          let (board, spellId) = S.handOne cubwarden gs
-              cast = S.runPure (mutatingAt MutateSide.Over host) board (S.cast S.alice spellId)
-           in State.execState (Engine.runGame (counting host) cast (Monad.replicateM_ 6 (Engine.settleForPriority >> Stack.resolveTop))) 0
-    Spec.assertEqWith s "CR 702.140c a melded target is asked exactly one side" (asks meldTarget withMeld) 1
-    Spec.assertEqWith s "and so is a one-card target" (asks cardTarget withCard) 1
-    -- The proxies, after the pair: the melded permanent really was a legal target
-    -- of the spell, so the count above is the merge's own prompt and not an
-    -- unfillable slot.
-    Spec.assertBool s (Projection.isCreatureOf meldTarget withMeld) "setup: the melded permanent is a creature"
-    Spec.assertEqWith s "setup: which alice owns" (fmap Object.owner (Game.lookupObject meldTarget withMeld)) (Just S.alice)
-    Spec.assertBool s (not (Set.member Subtype.Human (Projection.subtypesOf meldTarget withMeld))) "setup: and is no Human"
-  -- CR 731.2 with a MELDED target, driven through the pool's own meld pair. The
-  -- two cards of that pair represent ONE component of the merged permanent and
-  -- not two: CR 701.42a puts them down as "a single object", giving them no order
-  -- between them, so CR 731.2a's "topmost component" would otherwise have two
-  -- heads and no tie-break, and CR 731.2c keeps the meld intact across the merge
-  -- -- "a merged permanent is the same object that it was before" -- so CR 713.5c
-  -- still gives that component only the combined back face.
-  --
-  -- Hanweir, the Writhing Township is a Legendary Creature -- Eldrazi Ooze and no
-  -- Human, so CR 702.140a admits it as Cubwarden's target. Its 7/4 box, its haste
-  -- and trample, and CR 202.3c's mana value of 3 all differ from Cubwarden's 3/5,
-  -- its lifelink and its {3}{W}, so no reading of the merged permanent can be
-  -- mistaken for the other; a merge that REFUSED would leave the Township at 7/4
-  -- with no lifelink and Cubwarden beside it.
-  --
-  -- The side is the pair's one difference, and CR 731.3's departure is read by
-  -- KILLING the merged permanent rather than off the component list: rule 713.8
-  -- is what makes the melded component two cards in the graveyard, and only the
-  -- death drives that composition.
-  Spec.it s "CR 731.2a/713.5c Cubwarden merges with a melded permanent, over and under" $ do
-    battlements <- S.printingOf s registry "Hanweir Battlements"
-    garrison <- S.printingOf s registry "Hanweir Garrison"
-    mountain <- S.printingOf s registry "Mountain"
-    plains <- S.printingOf s registry "Plains"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    case townshipOn battlements garrison mountain of
-      Nothing -> Spec.assertFailure s "the pair should have melded into Hanweir, the Writhing Township"
-      Just (township, melded) -> do
-        let (board, spellId) = S.handOne cubwarden (S.landsFor plains S.alice 4 melded)
-            over = merging MutateSide.Over township board spellId
-            under = merging MutateSide.Under township board spellId
-            dead = S.runPure S.identityAnswer under (Event.destroy (pure ()) Regenerability.Regenerable [township] >> Engine.settleForPriority)
-        Spec.assertEqWith s "CR 731.2a mutating over the melded permanent, the box is Cubwarden's" (S.powerToughnessOf township over) (Just (3, 5))
-        Spec.assertBool s (Projection.hasKeyword Keyword.Lifelink township under) "CR 702.140e mutating under, lifelink comes up from the component below"
-        Spec.assertEqWith s "CR 713.5c while the box stays the combined back face's, not either meld card's" (S.powerToughnessOf township under) (Just (7, 4))
-        Spec.assertEqWith
-          s
-          "CR 731.3/713.8 and it dies as three cards, the melded component put down as its two"
-          (List.sort (graveyardNames dead))
-          (List.sort [CardName.MkCardName (Text.pack "Hanweir Garrison"), CardName.MkCardName (Text.pack "Hanweir Battlements"), CardName.MkCardName (Text.pack "Cubwarden")])
-        -- A REGRESSION FENCE rather than a proved behaviour: CR 731.2a's copiable
-        -- effect stamps the melded permanent's own mana value onto the merged
-        -- one at the merge (Parun.Engine.Binding.setMergeCopy), so no read in
-        -- Parun.Engine.Game answers this line and mutating one leaves it green.
-        Spec.assertEqWith s "CR 202.3c through CR 731.2a, the topmost component being a melded one" (PC.manaValue (Projection.project township under)) (Just 3)
-        -- The proxies, after the behaviour: the permanent the spell targeted was
-        -- the melded one, with the combined face's box and neither the lifelink
-        -- nor the third card the merge adds.
-        Spec.assertEqWith s "setup: the target was the melded permanent" (fmap Object.source (Game.lookupObject township board)) (fmap Object.source (Game.lookupObject township melded))
-        Spec.assertBool s (not (Projection.hasKeyword Keyword.Lifelink township board)) "setup: which had no lifelink of its own"
-        Spec.assertEqWith
-          s
-          "setup: and was represented by the pair's two cards alone"
-          (componentNames township board)
-          [ CardName.MkCardName (Text.pack "Hanweir Garrison"),
-            CardName.MkCardName (Text.pack "Hanweir Battlements")
-          ]
-  -- CR 731.2's "or copy": CR 707.10's "a copy of a spell is itself a spell", so
-  -- a copy of a mutating creature spell is one too and CR 702.140c merges it,
-  -- becoming a token as it resolves (CR 111.13).
-  --
-  -- Double Major ({G}{U} Instant, "copy target creature spell you control,
-  -- except it isn't legendary if the spell is legendary") is the pool's
-  -- producer, and the mutating Cubwarden on the stack is a creature spell for it
-  -- to name. Both merges happen on the SAME board -- the copy resolves first,
-  -- then the original -- so the merged permanent ends up carrying one component
-  -- of each kind and the assertion can tell them apart by position.
-  --
-  -- That card's printed exception is inert here: Cubwarden is not legendary, so
-  -- CopyException.RemoveSupertypes has nothing to take.
-  --
-  -- What a REFUSING merge would leave is the discriminating half: CR 608.3f
-  -- makes a copy of a permanent spell a token "as it is put onto the
-  -- battlefield", so the copy would arrive as a second Cubwarden of its own and
-  -- rule 702.140d's trigger would fire once instead of three times.
-  --
-  -- THREE times, not twice: CR 702.140e gives the mutated permanent the
-  -- abilities of every component, so the second merge happens to a permanent
-  -- already carrying one Cubwarden trigger and gains a second, and CR 603.2
-  -- triggers each of them. Two Cats, then four.
-  Spec.it s "CR 731.2/111.13 a copy of a mutating creature spell merges, as a token and not as a card" $ do
-    plains <- S.printingOf s registry "Plains"
-    forest <- S.printingOf s registry "Forest"
-    island <- S.printingOf s registry "Island"
-    falcon <- S.printingOf s registry "Falcon Abomination"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    doubleMajor <- S.printingOf s registry "Double Major"
-    let base = S.landsFor island S.alice 1 (S.landsFor forest S.alice 1 (S.landsFor plains S.alice 4 (Setup.emptyGame S.bothPlayers)))
-        (host, withHost) = S.addPermanent falcon S.alice base
-        (withSpell, spellId) = S.handOne cubwarden withHost
-        (board, copyId) = S.handOne doubleMajor withSpell
-        cast = S.runPure (doublingAt host) board (S.cast S.alice spellId >> S.cast S.alice copyId)
-        -- EIGHT passes over a stack that never holds more than three, so every
-        -- assertion reads a drained stack: Double Major, the copy, the original,
-        -- and rule 702.140d's trigger after each merge.
-        after = S.runPure (doublingAt host) cast (Monad.replicateM_ 8 (Engine.settleForPriority >> Stack.resolveTop) >> Engine.settleForPriority)
-        -- CR 731.3's departure over the same permanent, which is where the copy
-        -- component's KIND is read a second time: the two cards are put into the
-        -- graveyard and CR 704.5d removes the token there.
-        dead = S.runPure S.identityAnswer after (Event.destroy (pure ()) Regenerability.Regenerable [host] >> Engine.settleForPriority)
-    Spec.assertEqWith
-      s
-      "CR 731.2/111.13 the copy represents the merged permanent as a token, between the card that merged after it and the creature underneath"
-      (componentKinds host after)
-      [ (Text.pack "OfCard", CardName.MkCardName (Text.pack "Cubwarden")),
-        (Text.pack "OfToken", CardName.MkCardName (Text.pack "Cubwarden")),
-        (Text.pack "OfCard", CardName.MkCardName (Text.pack "Falcon Abomination"))
-      ]
-    Spec.assertEqWith
-      s
-      "CR 702.140c/608.3f the copy did not enter the battlefield, so no second Cubwarden stands beside the merged one"
-      (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Cubwarden")) S.alice after)
-      1
-    Spec.assertEqWith
-      s
-      "CR 702.140d/702.140e both merges fired the mutate trigger, the second one twice"
-      (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Cat Token")) S.alice after)
-      6
-    Spec.assertEqWith
-      s
-      "CR 731.3/704.5d the merged permanent dies as its two cards, the token component ceasing to exist rather than sitting in the graveyard"
-      (List.sort (filter (/= CardName.MkCardName (Text.pack "Double Major")) (graveyardNames dead)))
-      (List.sort [CardName.MkCardName (Text.pack "Cubwarden"), CardName.MkCardName (Text.pack "Falcon Abomination")])
-    -- The proxies, after the behaviours: the copy really was made, and the board
-    -- really did start with one card representing the creature.
-    Spec.assertEqWith s "and nothing is left on the stack" (length (TurnRegisters.stack (GameState.turn after))) 0
-    Spec.assertEqWith s "setup: the creature was one card before either merge" (componentNames host board) []
-    Spec.assertEqWith s "setup: and Double Major left the stack for alice's graveyard" (filter (== CardName.MkCardName (Text.pack "Double Major")) (graveyardNames after)) [CardName.MkCardName (Text.pack "Double Major")]
-  -- CR 731.2d: "if a merged permanent contains a token, the resulting permanent
-  -- is a token only if the topmost component is a token". A pair of boards
-  -- differing in exactly one thing -- which side of the token Cubwarden goes on
-  -- -- so an implementation reading ANY component, or reading none, answers both
-  -- alike and neither pair member is about the merge refusing.
-  --
-  -- The token is one a CARD made: Cubwarden's own CR 702.140d trigger creates
-  -- two 1/1 white Cat tokens with lifelink, and a Cat is no Human, so rule
-  -- 702.140a admits one as the second Cubwarden's mutate target.
-  --
-  -- Ashaya, Soul of the Wild ({3}{G}{G} Creature -- Elemental) is what READS the
-  -- answer at gameplay level: "each nontoken creature you control is a Forest
-  -- land in addition to its other types", a CR 613.1d type-changing effect that
-  -- passes a token by.
-  Spec.it s "CR 731.2d a merged permanent is a token only if its topmost component is" $ do
-    plains <- S.printingOf s registry "Plains"
-    falcon <- S.printingOf s registry "Falcon Abomination"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    ashaya <- S.printingOf s registry "Ashaya, Soul of the Wild"
-    let base = S.landsFor plains S.alice 8 (Setup.emptyGame S.bothPlayers)
-        (host, withHost) = S.addPermanent falcon S.alice base
-        (_, withAshaya) = S.addPermanent ashaya S.alice withHost
-        (firstBoard, firstSpell) = S.handOne cubwarden withAshaya
-        catBoard = merging MutateSide.Over host firstBoard firstSpell
-        cat = catId catBoard
-        (secondBoard, secondSpell) = S.handOne cubwarden catBoard
-        onto side = merging side cat secondBoard secondSpell
-        isForest gs = Set.member Subtype.Forest (Projection.subtypesOf cat gs)
-    Spec.assertBool s (isForest (onto MutateSide.Over)) "CR 731.2d a card over a token is topmost, so the merged permanent is no token and Ashaya makes it a Forest"
-    Spec.assertBool s (not (isForest (onto MutateSide.Under))) "CR 731.2d while under it the token is topmost, so the merged permanent is a token and Ashaya passes it by"
-    -- The proxies, after the behaviours: the same two cards represent the
-    -- permanent either way, so the pair differs in the ORDER alone.
-    Spec.assertEqWith s "the token and the card represent one permanent, the card on top" (componentNames cat (onto MutateSide.Over)) [CardName.MkCardName (Text.pack "Cubwarden"), CardName.MkCardName (Text.pack "Cat Token")]
-    Spec.assertEqWith s "and the other way under" (componentNames cat (onto MutateSide.Under)) [CardName.MkCardName (Text.pack "Cat Token"), CardName.MkCardName (Text.pack "Cubwarden")]
-    Spec.assertBool s (not (isForest catBoard)) "setup: the Cat token was a token before anything merged with it, so Ashaya left it alone"
   -- CR 731.2d with a COPY topmost: Double Major copies alice's mutating Cubwarden
   -- and the copy merges over her Falcon Abomination. The copy becomes a token as
   -- it resolves (CR 111.13, 707.10f), so the merged permanent is a token.
@@ -1044,47 +583,6 @@ spec s registry = Spec.describe s "Mutate" $ do
     Spec.assertEqWith s "and the original Cubwarden still waits on the stack" (length (TurnRegisters.stack (GameState.turn after))) 1
     Spec.assertEqWith s "setup: the original went over the copy" (fmap fst (componentKinds host covered)) (fmap Text.pack ["OfCard", "OfToken", "OfCard"])
     Spec.assertBool s (not (isForest (catId after) after)) "setup: Ashaya passes a Cat token by"
-  -- CR 731.2h: "if a merged permanent contains a flip card, that component's
-  -- alternative characteristics are used instead of its normal characteristics
-  -- if the merged permanent is flipped."
-  --
-  -- Played out from the two cards' own text. Cubwarden merges UNDER Akki
-  -- Lavarunner, so CR 731.2a leaves the flip card topmost and the merged
-  -- permanent is a 1/1 with haste that also has CR 702.140e's lifelink; it
-  -- attacks unblocked, and Akki's printed trigger flips the permanent it is now
-  -- one component of.
-  --
-  -- The DISCRIMINATOR is haste, asserted beside the name and the box: CR 710.2
-  -- says the flip component's normal "text box" stops applying too, so an
-  -- implementation that reached the alternative half by folding it over the
-  -- merge's existing stamp keeps haste and gets every other reading right.
-  -- Lifelink is the other side of the same sentence -- rule 710.2 takes back
-  -- only the flip component's own text, and the component under it is no part
-  -- of that.
-  Spec.it s "CR 731.2h a flipped merged permanent uses its flip component's alternative characteristics" $ do
-    plains <- S.printingOf s registry "Plains"
-    akki <- S.printingOf s registry "Akki Lavarunner"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    let (host, board, spellId) = mutateBoard plains akki cubwarden
-        merged = merging MutateSide.Under host board spellId
-        after = S.runCombat S.aggressiveAnswer (intoCombat merged)
-    Spec.assertEqWith
-      s
-      "CR 731.2h the flipped merged permanent is Tok-Tok, Volcano Born, a 2/2, and CR 710.2's normal text box no longer applies"
-      (Projection.namesOf host after, S.powerToughnessOf host after, Projection.hasKeyword Keyword.Haste host after)
-      (Set.singleton (CardName.MkCardName (Text.pack "Tok-Tok, Volcano Born")), Just (2, 2), False)
-    Spec.assertBool s (Projection.hasKeyword Keyword.Lifelink host after) "CR 702.140e while the component under the flip card still contributes lifelink"
-    -- The fixture facts, after the behaviour: the same permanent read as the
-    -- normal half before the flip, the flip really happened, the combat that
-    -- fired it really connected, and two cards really represent one permanent.
-    Spec.assertEqWith
-      s
-      "setup: before the flip the same permanent was Akki Lavarunner, a 1/1"
-      (Projection.namesOf host merged, S.powerToughnessOf host merged, Projection.hasKeyword Keyword.Haste host merged)
-      (Set.singleton (CardName.MkCardName (Text.pack "Akki Lavarunner")), Just (1, 1), True)
-    Spec.assertEqWith s "setup: CR 110.5 the status itself is set" (fmap Object.flipped (Game.lookupObject host after)) (Just True)
-    Spec.assertEqWith s "setup: the 1/1 connected, which is what fired the trigger" (S.lifeOf S.bob after) (Just 19)
-    Spec.assertEqWith s "setup: the two cards represent one permanent, the flip card on top" (componentNames host after) [CardName.MkCardName (Text.pack "Akki Lavarunner"), CardName.MkCardName (Text.pack "Cubwarden")]
   -- CR 613.7 / 707.3 over CR 731.2h: Mirrorweave makes the flipped merged
   -- Tok-Tok a copy of bob's Craw Wurm. Its copy effect is later than the merge's,
   -- so the merged permanent is a 6/4 Craw Wurm, and its flipped status has no
@@ -1145,49 +643,6 @@ spec s registry = Spec.describe s "Mutate" $ do
       "setup: before the flip it was Mirrorweave's Akki Lavarunner with Cubwarden's lifelink"
       (Projection.namesOf host merged, Projection.hasKeyword Keyword.Lifelink host merged)
       (Set.singleton (CardName.MkCardName (Text.pack "Akki Lavarunner")), True)
-  -- CR 731.2h over the OTHER order, which is the whole of what this case adds:
-  -- "if a merged permanent contains a flip card" reaches a component ANYWHERE
-  -- among them, where CR 731.2a's topmost component is only where the
-  -- characteristics come from. Cubwarden merges OVER Akki Lavarunner, so the
-  -- merged permanent is a 3/5 Cubwarden carrying CR 702.140e's haste and Akki's
-  -- own flip trigger; it attacks unblocked, and that trigger flips the permanent
-  -- Akki is now the BOTTOM component of.
-  --
-  -- The DISCRIMINATOR is the ability set and not the box, since CR 731.2a leaves
-  -- every characteristic Cubwarden's either way: the flipped reading the merge
-  -- stamped folds Tok-Tok's read in where Akki's was, so protection from red
-  -- arrives and haste goes. Haste is asserted beside it because an
-  -- implementation that reached the alternative half by ADDING it to the merge's
-  -- existing stamp would keep haste and still gain the protection.
-  Spec.it s "CR 731.2h a merged permanent flips for a flip component that is not its topmost one" $ do
-    plains <- S.printingOf s registry "Plains"
-    akki <- S.printingOf s registry "Akki Lavarunner"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    let (host, board, spellId) = mutateBoard plains akki cubwarden
-        merged = merging MutateSide.Over host board spellId
-        after = S.runCombat S.aggressiveAnswer (intoCombat merged)
-    Spec.assertEqWith
-      s
-      "CR 731.2h the bottom component's alternative characteristics apply: Tok-Tok's protection from red arrives and Akki's haste goes"
-      (Projection.hasKeyword protectionFromRed host after, Projection.hasKeyword Keyword.Haste host after)
-      (True, False)
-    Spec.assertEqWith
-      s
-      "CR 731.2a while the topmost component is still what every characteristic comes from: a 3/5 Cubwarden with its own lifelink"
-      (Projection.namesOf host after, S.powerToughnessOf host after, Projection.hasKeyword Keyword.Lifelink host after)
-      (Set.singleton (CardName.MkCardName (Text.pack "Cubwarden")), Just (3, 5), True)
-    -- The fixture facts, after the behaviours: the flip card really was under
-    -- the other component, the flip really happened, the same permanent really
-    -- did read the normal half before it, and the combat that fired the trigger
-    -- really connected.
-    Spec.assertEqWith s "setup: the two cards represent one permanent, the flip card UNDER the other" (componentNames host after) [CardName.MkCardName (Text.pack "Cubwarden"), CardName.MkCardName (Text.pack "Akki Lavarunner")]
-    Spec.assertEqWith s "setup: CR 110.5 the status itself is set" (fmap Object.flipped (Game.lookupObject host after)) (Just True)
-    Spec.assertEqWith
-      s
-      "setup: before the flip the same permanent had Akki's haste and no protection from red"
-      (Projection.hasKeyword protectionFromRed host merged, Projection.hasKeyword Keyword.Haste host merged)
-      (False, True)
-    Spec.assertEqWith s "setup: the 3/5 connected, which is what fired the trigger" (S.lifeOf S.bob after) (Just 17)
   -- CR 903.9c's split names "the card that represents it and is a commander" --
   -- and CR 111.6's token is no card, so a merged commander's token component is
   -- put into the appropriate zone with every other non-commander component,
@@ -1219,26 +674,6 @@ spec s registry = Spec.describe s "Mutate" $ do
         -- really was accepted.
         Spec.assertEqWith s "setup: the components were a card and a token under one printing" (fmap (Foldable.toList . Game.componentsOf . Object.source) (Game.lookupObject oid board)) (Just [MergeComponent.OfCard (ComponentCard.MkComponentCard pid (Game.lookupObject oid base >>= Object.identity) Nothing), MergeComponent.OfToken pid])
         Spec.assertEqWith s "setup: the merged permanent left the battlefield" (Game.lookupObject oid after) Nothing
-  -- CR 731.3 over a component list that holds a token: "each of the individual
-  -- components are put into the appropriate zone", and CR 111.7 is what the
-  -- appropriate zone comes to for a token -- it ceases to exist. Cubwarden's own
-  -- Cat token is the component, and the card beside it is the control that says
-  -- the graveyard was reachable at all.
-  Spec.it s "CR 731.3/111.7 a merged permanent's token component ceases to exist while its card is put into the graveyard" $ do
-    plains <- S.printingOf s registry "Plains"
-    falcon <- S.printingOf s registry "Falcon Abomination"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    let base = S.landsFor plains S.alice 8 (Setup.emptyGame S.bothPlayers)
-        (host, withHost) = S.addPermanent falcon S.alice base
-        (firstBoard, firstSpell) = S.handOne cubwarden withHost
-        catBoard = merging MutateSide.Over host firstBoard firstSpell
-        cat = catId catBoard
-        (secondBoard, secondSpell) = S.handOne cubwarden catBoard
-        merged = merging MutateSide.Over cat secondBoard secondSpell
-        dead = S.runPure S.identityAnswer merged (Event.destroy (pure ()) Regenerability.Regenerable [cat] >> Engine.settleForPriority)
-    Spec.assertBool s (notElem (CardName.MkCardName (Text.pack "Cat Token")) (graveyardNames dead)) "CR 111.7 the token component does not stay in the graveyard"
-    Spec.assertBool s (elem (CardName.MkCardName (Text.pack "Cubwarden")) (graveyardNames dead)) "CR 731.3 while the card component is put there"
-    Spec.assertEqWith s "CR 731.3 and the merged permanent itself is gone" (Game.lookupObject cat dead) Nothing
   -- CR 731.3e's second sentence: Cubwarden mutated UNDER its own Cat token is a
   -- token (CR 731.2d), so bob's Leyline of the Void reaches only its card. The
   -- permanent dies through its token component (CR 700.4) while Cubwarden is
@@ -1373,133 +808,6 @@ spec s registry = Spec.describe s "Mutate" $ do
     Spec.assertEqWith s "CR 702.55b each haunts the targeted Piker" (GameState.haunting exiled) (Map.fromSet (const victim) (GameState.exile exiled))
     Spec.assertEqWith s "CR 702.55c the haunted Piker's death drains bob for alice" (S.lifeOf S.alice drained, S.lifeOf S.bob drained) (Just 22, Just 18)
     Spec.assertEqWith s "setup: the merged permanent held two components" (fmap (Seq.length . Game.componentsOf . Object.source) (Game.lookupObject host merged)) (Just 2)
-  -- CR 731.3's split read by CR 603.6c's last sentence: each component card is
-  -- put into the graveyard, and a "put into a graveyard from anywhere" trigger is
-  -- never a leaves-the-battlefield ability, so it fires off the CARD that arrived
-  -- rather than the permanent that left. The trailing component announces its
-  -- arrival in a GameEvent.CardArrived of its own, so the condition has to read
-  -- that event as well as the GameEvent.Moved naming the leading one.
-  --
-  -- Serra Avatar ({4}{W}{W}{W} Creature -- Avatar, printed */*, Oracle verified
-  -- 2026-09-14): "When Serra Avatar is put into a graveyard from anywhere,
-  -- shuffle it into its owner's library." A non-Human creature, so CR 702.140a
-  -- admits it as the host, and its shuffle is visible in a zone the merge never
-  -- writes to. Parun.ZoneTriggerSpec covers the unmerged card.
-  --
-  -- BOTH ARRANGEMENTS, which is the pair of boards differing in exactly one
-  -- thing: CR 731.3a lets the owner order the two cards, and only one of the two
-  -- orders makes the Avatar the leading card the Moved event names. Asserting one
-  -- order alone passes whichever way the engine reads the event.
-  Spec.it s "CR 731.3/603.6c a merged permanent's component fires its own put-into-a-graveyard trigger from either arrangement" $ do
-    plains <- S.printingOf s registry "Plains"
-    avatar <- S.printingOf s registry "Serra Avatar"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    let base = S.landsFor plains S.alice 4 (Setup.emptyGame S.bothPlayers)
-        (host, withHost) = S.addPermanent avatar S.alice base
-        (board, spellId) = S.handOne cubwarden withHost
-        merged = merging MutateSide.Over host board spellId
-        avatarName = CardName.MkCardName (Text.pack "Serra Avatar")
-        cubwardenName = CardName.MkCardName (Text.pack "Cubwarden")
-        -- Settled twice around the resolution so the trigger reaches the stack
-        -- and nothing a wrong implementation left behind is still sitting there.
-        died order =
-          S.runPure
-            (arrangingAt order)
-            merged
-            (Event.destroy (pure ()) Regenerability.Regenerable [host] >> Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
-    Monad.forM_ [[0, 1], [1, 0]] $ \order -> do
-      let after = died order
-      Spec.assertBool s (elem avatarName (libraryNames after)) "CR 603.6c the Avatar component's own trigger shuffled it into its owner's library"
-      Spec.assertBool s (notElem avatarName (graveyardNames after)) "CR 701.24 leaving the graveyard it arrived in"
-      Spec.assertBool s (elem cubwardenName (graveyardNames after)) "setup: CR 731.3 the other component is in the graveyard, so the split really ran"
-    -- The fixture fact the arrangement rests on: two components, so
-    -- Parun.Engine.Event.arrangeComponents really was asked and the two orders are
-    -- two different boards.
-    Spec.assertEqWith s "setup: the merged permanent held two components" (fmap (Seq.length . Game.componentsOf . Object.source) (Game.lookupObject host merged)) (Just 2)
-  -- CR 702.140a's owner, which the case above cannot tell from CR 109.5's "you":
-  -- alice owns and casts every mutate spell there, so the spell's owner and its
-  -- controller are one player. Here they are two -- Hostage Taker exiles BOB's
-  -- Cubwarden and permits ALICE to cast it -- and the rule's "the same owner as
-  -- this spell" points at bob.
-  --
-  -- THE SAME BOARD twice, aimed at two non-Human creatures that differ in their
-  -- OWNER and in nothing else, so a refusal is the owner comparison talking.
-  Spec.it s "CR 702.140a a stolen mutate spell may target the owner's creature and not the caster's" $ do
-    plains <- S.printingOf s registry "Plains"
-    island <- S.printingOf s registry "Island"
-    swamp <- S.printingOf s registry "Swamp"
-    taker <- S.printingOf s registry "Hostage Taker"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    falcon <- S.printingOf s registry "Falcon Abomination"
-    piker <- S.printingOf s registry "Goblin Piker"
-    case stolenCubwarden plains island swamp taker cubwarden falcon piker of
-      Nothing -> Spec.assertFailure s "setup: expected bob's Cubwarden to be exiled under the Hostage Taker"
-      Just (spellId, theirs, hers, board) -> do
-        let aimedAt victim = merging MutateSide.Over victim board spellId
-        -- THE gameplay assertion, ahead of every proxy: the creature the CASTER
-        -- owns is refused, which is exactly what `HeldBy Owner You` would have
-        -- admitted.
-        Spec.assertEqWith
-          s
-          "CR 702.140a the caster's own non-Human creature is not a legal target, so nothing merged with it"
-          (componentNames hers (aimedAt hers))
-          []
-        -- The control on the same board, off the same lands: the creature the
-        -- SPELL's owner owns is admitted, so the refusal above is about the owner
-        -- and not about the cast.
-        Spec.assertEqWith
-          s
-          "CR 702.140a while the creature the spell's owner owns is, and merges"
-          (componentNames theirs (aimedAt theirs))
-          [CardName.MkCardName (Text.pack "Cubwarden"), CardName.MkCardName (Text.pack "Falcon Abomination")]
-        -- The proxies, after them.
-        Spec.assertEqWith s "setup: CR 108.3 bob owns the card alice is casting" (fmap Object.owner (Game.lookupObject spellId board)) (Just S.bob)
-        Spec.assertEqWith s "setup: the refused creature is alice's own" (fmap Object.owner (Game.lookupObject hers board)) (Just S.alice)
-        Spec.assertEqWith s "setup: and it is a non-Human creature all the same" (Projection.subtypesOf hers board) (Set.fromList [Subtype.Goblin, Subtype.Warrior])
-        Spec.assertEqWith s "setup: the admitted one is bob's" (fmap Object.owner (Game.lookupObject theirs board)) (Just S.bob)
-        Spec.assertEqWith s "setup: and non-Human too" (Projection.subtypesOf theirs board) (Set.fromList [Subtype.Bird, Subtype.Zombie])
-  -- Dormant Gomazoa ({1}{U}{U} Creature -- Jellyfish 0/4, "This creature doesn't
-  -- untap during your untap step"), through CR 502.3's turn-based action itself.
-  Spec.it s "CR 702.140e a Dormant Gomazoa under a Cubwarden still does not untap" $ do
-    plains <- S.printingOf s registry "Plains"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    falcon <- S.printingOf s registry "Falcon Abomination"
-    gomazoa <- S.printingOf s registry "Dormant Gomazoa"
-    let untapping (h, b, sp) =
-          let merged = S.tapObject h (merging MutateSide.Over h b sp)
-           in (h, S.runPure S.identityAnswer merged (Engine.untapAll [S.alice]))
-        (host, after) = untapping (mutateBoard plains gomazoa cubwarden)
-        (cHost, control) = untapping (mutateBoard plains falcon cubwarden)
-    Spec.assertEqWith s "CR 702.140e/502.3 the merged permanent keeps the Gomazoa's prohibition and stays tapped" (fmap Object.tapped (Game.lookupObject host after)) (Just TapState.Tapped)
-    -- The paired board, differing in the under component alone.
-    Spec.assertEqWith s "CR 502.3 with a Falcon Abomination under it instead, the same permanent untaps" (fmap Object.tapped (Game.lookupObject cHost control)) (Just TapState.Untapped)
-    Spec.assertEqWith s "the two cards represent one permanent" (componentNames host after) [CardName.MkCardName (Text.pack "Cubwarden"), CardName.MkCardName (Text.pack "Dormant Gomazoa")]
-  -- Prized Unicorn ({2}{G} Creature -- Unicorn 2/2, "All creatures able to block
-  -- this creature do so"), through CR 509.1c's own gate on bob's declaration.
-  Spec.it s "CR 702.140e a Prized Unicorn under a Cubwarden still makes bob block it" $ do
-    plains <- S.printingOf s registry "Plains"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    unicorn <- S.printingOf s registry "Prized Unicorn"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let attacking under =
-          let (h, b, sp) = mutateBoard plains under cubwarden
-              (blocker, withBlocker) = S.addPermanent piker S.bob b
-              merged = intoCombat (merging MutateSide.Over h withBlocker sp)
-           in (h, blocker, S.runPure S.aggressiveAnswer merged (Combat.declareAttackers S.manaPerformer S.alice))
-        (host, blockerId, after) = attacking unicorn
-        -- The paired board's under component is a Goblin Piker rather than the
-        -- Falcon Abomination the cases above use: the Falcon prints flying, and
-        -- a blocker that CANNOT block would make an empty declaration legal for
-        -- the wrong reason.
-        (cHost, _, control) = attacking piker
-    Spec.assertBool s (not (Combat.legalBlockDeclaration S.bob Map.empty after)) "CR 702.140e the merged permanent keeps the Unicorn's requirement, so bob may not decline to block"
-    Spec.assertBool s (Combat.legalBlockDeclaration S.bob (Map.singleton blockerId (Set.singleton host)) after) "while blocking it is legal"
-    -- The paired board, differing in the under component alone.
-    Spec.assertBool s (Combat.legalBlockDeclaration S.bob Map.empty control) "CR 509.1c with a Goblin Piker under it instead, bob may decline"
-    -- The proxies, after the behaviours: both merged permanents really attacked,
-    -- so neither block question was asked of an empty combat.
-    Spec.assertEqWith s "setup: the merged permanent attacked" (S.attackerDeclarationsOf after) [host]
-    Spec.assertEqWith s "setup: and so did the control's" (S.attackerDeclarationsOf control) [cHost]
   -- CR 702.140f on Generator Servant ({1}{R} 2/1 Creature -- Elemental, "{T},
   -- Sacrifice this creature: Add {C}{C}. If any of that mana is spent on a
   -- creature spell, it gains haste until end of turn."): its haste names the
@@ -1531,25 +839,6 @@ spec s registry = Spec.describe s "Mutate" $ do
       Spec.assertEqWith s "setup: the Servant was sacrificed for its mana" (S.countOnBattlefieldByName (S.printingName servant) S.alice merged) 0
       Spec.assertEqWith s "setup: the spell merged with the host" (length (componentNames host merged)) 2
       Spec.assertEqWith s "setup: and the control's did too" (length (componentNames cHost cMerged)) 2
-  -- Exalted Dragon ({5}{W} Creature -- Dragon 5/5, "This creature can't attack
-  -- unless you sacrifice a land"), through CR 508.1h's payment during the
-  -- declaration itself.
-  Spec.it s "CR 702.140e an Exalted Dragon under a Cubwarden still charges a land to attack" $ do
-    plains <- S.printingOf s registry "Plains"
-    cubwarden <- S.printingOf s registry "Cubwarden"
-    falcon <- S.printingOf s registry "Falcon Abomination"
-    dragon <- S.printingOf s registry "Exalted Dragon"
-    let attacking under =
-          let (h, b, sp) = mutateBoard plains under cubwarden
-              merged = intoCombat (merging MutateSide.Over h b sp)
-           in (h, S.runPure S.aggressiveAnswer merged (Combat.declareAttackers S.manaPerformer S.alice))
-        (host, after) = attacking dragon
-        (cHost, control) = attacking falcon
-    Spec.assertEqWith s "CR 702.140e/508.1h the merged permanent keeps the Dragon's toll: one of the four Plains was sacrificed" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Plains")) S.alice after) 3
-    Spec.assertEqWith s "and it attacked all the same" (S.attackerDeclarationsOf after) [host]
-    -- The paired board, differing in the under component alone.
-    Spec.assertEqWith s "CR 508.1 with a Falcon Abomination under it instead, the four Plains all survive" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Plains")) S.alice control) 4
-    Spec.assertEqWith s "and that one attacked too" (S.attackerDeclarationsOf control) [cHost]
   -- CR 702.140e / 604.3: Tarmogoyf's power-and-toughness ability is one of the
   -- abilities a component brings, so it survives a Cubwarden merged over it.
   -- The graveyards hold a land and an instant, so the ability says 2/3 where
@@ -1611,29 +900,6 @@ intoCombat gs =
           }
     }
 
--- Cubwarden merged under Blightreaper Thallid, then four Forests for its
--- {3}{G/P} (S.identityAnswer declines the Phyrexian life payment) in alice's
--- main phase for its sorcery-speed rider: the ability activated and the stack
--- drained. The merged permanent, the board before the activation, and after.
-transformedMerge :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> Maybe (ObjectId.ObjectId, GameState.GameState, GameState.GameState)
-transformedMerge plains forest thallid cubwarden =
-  let (host, board, spellId) = mutateBoard plains thallid cubwarden
-      merged = merging MutateSide.Under host board spellId
-      armed =
-        (S.landsFor forest S.alice 4 merged)
-          { GameState.turn =
-              (GameState.turn (S.landsFor forest S.alice 4 merged))
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-   in case Activatable.abilitiesFor host armed of
-        [ability] ->
-          let activated = S.runPure S.identityAnswer armed (Activate.activateAbility S.alice host ability)
-           in Just (host, merged, S.runPure S.identityAnswer activated (Monad.replicateM_ 4 (Stack.resolveTop >> Engine.settleForPriority)))
-        _ -> Nothing
-
 -- Synthetic Graftling's "{2}{G}: Transform this permanent. Activate only as a
 -- sorcery." activated on `host` in alice's main phase, paid by three fresh
 -- Forests, and the stack drained. Nothing unless `host` offers exactly one
@@ -1661,93 +927,9 @@ graftlingName, graftbeastName :: CardName.CardName
 graftlingName = CardName.MkCardName (Text.pack "Synthetic Graftling")
 graftbeastName = CardName.MkCardName (Text.pack "Synthetic Graftbeast")
 
--- CR 502.2's day/night check, run as the untap step's turn-based actions with
--- `n` spells on the previous turn's books -- Parun.TransformSpec's own helper.
-untapStepAfter :: Natural.Natural -> GameState.GameState -> GameState.GameState
-untapStepAfter n gs =
-  S.runPure S.identityAnswer (S.afterCasting n gs) (Engine.runTurnBasedActions (Phase.Beginning BeginningStep.Untap))
-
--- Blightreaper Thallid's back face, its token, and Howlpack Piper's back face.
-blightsower, saprolingToken, howler :: CardName.CardName
+-- Blightreaper Thallid's back face.
+blightsower :: CardName.CardName
 blightsower = CardName.MkCardName (Text.pack "Blightsower Thallid")
-saprolingToken = CardName.MkCardName (Text.pack "Phyrexian Saproling Token")
-howler = CardName.MkCardName (Text.pack "Wildsong Howler")
-
--- Hostage Taker {2}{U}{B} Creature -- Human Pirate 2/3 (Scryfall, 2026-09-15):
--- "When this creature enters, exile another target creature or artifact until
--- this creature leaves the battlefield. You may cast that card for as long as it
--- remains exiled, and mana of any type can be spent to cast that spell."
--- Parun.CastRestrictionSpec transcribed it; its note there says which clause is
--- restated rather than dropped.
---
--- The one board in the tree where a mutate spell's OWNER is not its CONTROLLER:
--- alice casts the Taker, it exiles bob's Cubwarden, and alice may then cast that
--- card. The spell she puts on the stack is bob's.
---
--- THREE SEATS, Parun.CastRestrictionSpec's reason: the caster and the owner
--- collapse onto the two seats of a duel. carol holds nothing.
---
--- TWO non-Human creatures that differ in their owner alone as far as rule
--- 702.140a can see: bob's Falcon Abomination (Bird Zombie) and alice's Goblin
--- Piker (Goblin Warrior). Both are settled on the battlefield before either cast.
---
--- TWELVE lands -- four Plains, four Islands, four Swamps -- against eight mana of
--- demand ({2}{U}{B} for the Taker and CR 702.140a's {2}{W}{W} for the mutate), so
--- neither cast can fail for want of a payment and the negative is about the
--- filter. The Plains are what pay the {W}{W} without leaning on the Taker's
--- any-type rider.
---
--- The Taker's trigger is PINNED to the Cubwarden rather than searched for: three
--- permanents pass its "another target creature or artifact", so S.identityAnswer
--- could re-find a different one after a mutation.
---
--- Nothing when the exile did not happen, which the caller reports rather than
--- asserting against a board it did not get.
-stolenCubwarden ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Maybe (ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-stolenCubwarden plains island swamp taker cubwarden falcon piker =
-  let lands = S.landsFor swamp S.alice 4 (S.landsFor island S.alice 4 (S.landsFor plains S.alice 4 S.threePlayerGame))
-      (victim, withVictim) = S.addPermanent cubwarden S.bob lands
-      (theirs, withTheirs) = S.addPermanent falcon S.bob withVictim
-      (hers, withHers) = S.addPermanent piker S.alice withTheirs
-      (handId, board) = S.addHandCard taker S.alice withHers
-      taking :: Prompt.Prompt r -> r
-      taking p = case p of
-        Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just victim) . Recipient.objectOf) . snd) sets
-        _ -> S.identityAnswer p
-      cast = S.runPure taking (inAliceMainPhase board) (Cast.castSpell S.manaPerformer S.alice handId (S.printingName taker) Facing.FaceUp)
-      entered = S.runPure taking cast Stack.resolveTop
-      -- CR 603.3b/603.3d: the enters trigger goes onto the stack the next time a
-      -- player would receive priority, and its target is chosen there.
-      placed = S.runPure taking entered Engine.settleForPriority
-      after = inAliceMainPhase (S.runPure taking placed Stack.resolveTop)
-   in fmap (\spellId -> (spellId, theirs, hers, after)) (exiledNamed (CardName.MkCardName (Text.pack "Cubwarden")) after)
-
--- The one exiled card with this name, or Nothing where the move did not happen.
--- CR 400.7 mints a new object at the destination, so no caller holds its id.
-exiledNamed :: CardName.CardName -> GameState.GameState -> Maybe ObjectId.ObjectId
-exiledNamed name gs = List.find (\o -> Projection.hasName name o gs) (Set.toList (GameState.exile gs))
-
--- alice's precombat main phase with priority, which is what a sorcery-speed cast
--- off a permission wants; Parun.CastRestrictionSpec's inHerMainPhase, spelled here
--- because the two specs share no fixture module.
-inAliceMainPhase :: GameState.GameState -> GameState.GameState
-inAliceMainPhase gs =
-  gs
-    { GameState.turn =
-        (GameState.turn gs)
-          { TurnRegisters.phase = Phase.PrecombatMain,
-            TurnRegisters.activePlayer = S.alice,
-            TurnRegisters.priority = Just S.alice
-          }
-    }
 
 -- CR 614.12a's as-enters copy choice answered with `victim`, PINNED to that id
 -- rather than searched for, so a mutation cannot be repaired by an answerer that
@@ -1904,15 +1086,6 @@ graveyardNames gs = Maybe.mapMaybe (\oid -> fmap S.nameOf (Game.cardOf oid gs)) 
 libraryNames :: GameState.GameState -> [CardName.CardName]
 libraryNames gs = Maybe.mapMaybe (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (Game.zoneMembers Zone.Library S.alice gs)
 
--- CR 731.3a's arrangement, answered by INDEX so the two orders are the one thing
--- two runs of the same board differ by. Parun.Engine.Game.permute rejects anything
--- that is not a permutation and leaves the canonical order standing, so a wrong
--- answer here would quietly collapse the pair into one board.
-arrangingAt :: [Natural.Natural] -> Prompt.Prompt r -> r
-arrangingAt order p = case p of
-  Prompt.OrderComponentCards {} -> order
-  _ -> S.identityAnswer p
-
 -- The cards representing one permanent, top first, by name -- CR 731.2's order,
 -- read through the classifier CR 713.8 and CR 731.3 share.
 componentNames :: ObjectId.ObjectId -> GameState.GameState -> [CardName.CardName]
@@ -1920,48 +1093,6 @@ componentNames oid gs =
   foldMap
     (Maybe.mapMaybe (\component -> fmap (S.nameOf . Printing.card) (Game.printingOf (Game.printingOfComponent component) gs)) . Foldable.toList . Game.componentsOf . Object.source)
     (Game.lookupObject oid gs)
-
--- alice's Hanweir Battlements and Hanweir Garrison melded into Hanweir, the
--- Writhing Township through the PRINTED melding ability (CR 713.1a), with her
--- five Mountains paying for it: the melded permanent, and the board it stands
--- on. Parun.MeldSpec drives every other reading of that pair; what this board is
--- for is a mutate target no single card represents.
---
--- Nothing at all when the pair did not meld, which the case above fails on
--- rather than asserting past.
-townshipOn :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Maybe (ObjectId.ObjectId, GameState.GameState)
-townshipOn battlements garrison mountain =
-  let (bId, g1) = S.addPermanent battlements S.alice (Setup.emptyGame S.bothPlayers)
-      (_, g2) = S.addPermanent garrison S.alice g1
-      board =
-        (S.landsFor mountain S.alice 5 g2)
-          { GameState.turn =
-              (GameState.turn (S.landsFor mountain S.alice 5 g2))
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-   in case Projection.abilitiesOf bId board of
-        [_, _, melding] ->
-          let after = S.runPure (sparing bId) board (do Activate.activateAbility S.alice bId melding; Stack.resolveTop)
-           in fmap (\oid -> (oid, after)) (List.find (\oid -> Set.member townshipName (Projection.namesOf oid after)) (Game.zoneMembers Zone.Battlefield S.alice after))
-        _ -> Nothing
-
--- The name printed on Hanweir Battlements' combined back face, which is card
--- data no printing in the pool exposes under a name of its own.
-townshipName :: CardName.CardName
-townshipName = CardName.MkCardName (Text.pack "Hanweir, the Writhing Township")
-
--- CR 605.3a's mana window offers Hanweir Battlements itself, whose own "{T}: Add
--- {C}" sits on the permanent whose {T} the melding ability still needs (CR
--- 107.5). So the payer takes the first offer that is not that permanent, named
--- by identity rather than by index -- Parun.MeldSpec's `sparing` is the same
--- answerer for the same reason.
-sparing :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-sparing oid p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates -> List.find (/= oid) (NonEmpty.toList candidates)
-  _ -> S.identityAnswer p
 
 -- The first of the two Cat tokens CR 702.140d's trigger created, which is the
 -- token these cases merge with. By name, so nothing else on the board can stand

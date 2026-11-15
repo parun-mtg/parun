@@ -1,0 +1,57 @@
+{
+  "description": "CR 406.3 the player the exiling instruction let look names both cards, and the owner who was shown nothing gets their pile",
+  "note": "Extract Power looks at the top card of each library before exiling both face down, so CR 406.3 lets alice, the looker, keep looking at both, bob's included, while bob was shown nothing and may name neither, not even his own (CR 406.4): Synthetic Blind Reclamation offers alice both cards by name and bob their one pile. The two cards have different owners, so ownership cannot be what the offer reads, and one instruction hid them, so they are one pile. bob's face-up Riftsweeper gives the slot a second candidate, so its target prompt is asked rather than bound.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "i1" },
+          { "card": "Island", "label": "i2" },
+          { "card": "Island", "label": "i3" },
+          { "card": "Island", "label": "i4" },
+          { "card": "Island", "label": "i5" },
+          { "card": "Island", "label": "i6" },
+          { "card": "Island", "label": "i7" },
+          { "card": "Island", "label": "i8" }
+        ],
+        "hand": [
+          { "card": "Extract Power", "label": "power" },
+          { "card": "Synthetic Blind Reclamation", "label": "a-spell" }
+        ],
+        "library": [{ "card": "Goblin Piker" }, { "card": "Lightning Bolt" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Island", "label": "b1" },
+          { "card": "Island", "label": "b2" }
+        ],
+        "hand": [{ "card": "Synthetic Blind Reclamation", "label": "b-spell" }],
+        "exile": [{ "card": "Riftsweeper", "label": "rift" }],
+        "library": [{ "card": "Ogre Sentry" }, { "card": "Lightning Bolt" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$power", "mana": ["$i1", "$i2", "$i3", "$i4", "$i5", "$i6", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Exile", "is": ["Goblin Piker"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "bob", "zone": "Exile", "is": ["$rift", "Ogre Sentry"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$a-spell", "targets": ["Goblin Piker"], "mana": ["$i7", "$i8"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseTargets","offer":{"source":"Synthetic Blind Reclamation#2","slots":[["target",[1,[["Object","$rift"],["Object","Goblin Piker"],["Object","Ogre Sentry"]]]]]}} } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "RandomObject", "with": "Ogre Sentry" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["Ogre Sentry", "Lightning Bolt#2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["Goblin Piker", "Lightning Bolt"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$b-spell", "mana": ["$b1", "$b2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseTargets","offer":{"source":"Synthetic Blind Reclamation#2","slots":[["target",[1,[["Object","$rift"],["Pile",{"pile":{"type":"OfFaceDown","value":21},"ordinal":1}]]]]]}} } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "ChooseTargets", "with": [["target", [["Pile", {"pile": {"type": "OfFaceDown", "value": 21}, "ordinal": 1}]]]] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "bob", "zone": "Library", "is": ["Ogre Sentry", "Lightning Bolt#2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Library", "is": ["Goblin Piker", "Lightning Bolt"] } } }
+  ]
+}

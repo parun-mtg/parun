@@ -139,7 +139,7 @@ foretellable pid gs = filter (\oid -> canForetell pid oid gs) (Game.zoneMembers 
 -- exile" is read off this stamp rather than stored beside it, by
 -- Parun.Engine.Exile.mayLookAt -- so the owner of a foretold card may NAME it out
 -- of exile where another player may only pick the pile it is in (CR 406.4).
--- Parun.ExileSpec's "CR 406.4 the owner of a foretold card shuffles it out of
+-- The exile scenario "CR 406.4 the owner of a foretold card shuffles it out of
 -- exile and an opponent aiming at it by name gets the face-up one" is the pair
 -- that proves it.
 --

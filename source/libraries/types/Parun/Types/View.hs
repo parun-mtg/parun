@@ -47,4 +47,6 @@ data View
     Witnessed
   | -- | CR 702.179b: a player's speed, null for a player who has none.
     Speed
+  | -- | CR 101.4: this turn's prompts other than priority, in the order asked, by decider and kind.
+    Asked
   deriving (Bounded, Enum, Eq, Ord, Show)

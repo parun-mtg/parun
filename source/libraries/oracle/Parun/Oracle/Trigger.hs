@@ -455,13 +455,13 @@ lifeChanged tally =
 -- Skullhunter) or not (Trynn, Champion of Freedom). Free for threshold:
 -- printed (Anurid Barkripper) or not (Illuminate History). Free for spell
 -- mastery: printed (Calculated Dismissal). Free for infusion: printed
--- (Foolish Fate).
+-- (Foolish Fate). Free for survival: printed (Cautious Survivor).
 abilityWord :: Text.Text -> [Text.Text]
-abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"] <> [Text.pack "Infusion \8212 " | words' == Text.pack "you gained life this turn"]
+abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Text.pack "you have no cards in hand"] <> [Text.pack "Raid \8212 " | words' == Text.pack "you attacked this turn"] <> [Text.pack "Threshold \8212 " | words' == Text.pack "there are seven or more cards in your graveyard"] <> [Text.pack "Spell mastery \8212 " | words' == Text.pack "there are two or more instant and/or sorcery cards in your graveyard"] <> [Text.pack "Infusion \8212 " | words' == Text.pack "you gained life this turn"] <> [Text.pack "Survival \8212 " | Text.isSuffixOf (Text.pack " is tapped") words']
 
 -- | The ability word (CR 207.2c) Oracle text may print before an ability
 -- this event opens. Free for alliance: printed (Raphael, Tough Turtle) or not
--- (Corpse Knight); survival heads a second main phase's (Shrewd Storyteller).
+-- (Corpse Knight). Free for survival: printed (Glimmer Seeker).
 openingWord :: Text.Text -> [Text.Text]
 openingWord opens = [Text.pack "Alliance \8212 " | opens == Text.pack "Whenever another creature you control enters"] <> [Text.pack "Survival \8212 " | opens == Text.pack "At the beginning of your second main phase"]
 
@@ -550,8 +550,14 @@ counted context n comparison k = case Count.scope n of
           Nothing ->
             let parts = Text.splitOn (Text.pack " or ") noun
              in [before noun <> Text.pack " " <> noun] <> [Text.intercalate (Text.pack " or ") [Prose.article part <> Text.pack " " <> part | part <- parts] | number == Filter.Singular, comparison == Comparison.AtLeast, k == 1, length parts > 1]
+        let denied = do
+              Monad.guard (k == 0 && elem comparison [Comparison.Exactly, Comparison.AtMost])
+              one <- Filter.describe Filter.Singular Target.permanent p
+              [Text.pack "you don't control " <> Prose.article one <> Text.pack " " <> one]
         case controllers of
-          [Filter.Type.HeldBy Holder.Controller PlayerRelation.You] -> [Text.pack "you control " <> some]
+          -- Free for none: "you don't control a Glimmer creature" (Glimmer
+          -- Seeker).
+          [Filter.Type.HeldBy Holder.Controller PlayerRelation.You] -> [Text.pack "you control " <> some] <> denied
           [Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent] -> [Text.pack "an opponent controls " <> some]
           [Filter.Type.HeldByBound Holder.Controller s] | Just word <- Map.lookup s (Target.bound context) -> [word <> Text.pack " controls " <> some]
           -- Free: "there are no Zombies on the battlefield" (Sarcomancy) or

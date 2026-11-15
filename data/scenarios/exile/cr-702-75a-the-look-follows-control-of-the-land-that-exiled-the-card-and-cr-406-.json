@@ -1,0 +1,78 @@
+{
+  "description": "CR 702.75a the look follows control of the land that exiled the card, and CR 406.3's does not",
+  "note": "Hideaway's granted look names whoever controls the exiling permanent when the question is asked, so bob's Confiscate moves it with the land: before the steal bob's Synthetic Blind Reclamation is offered the hidden card's pile (CR 406.4), after it the card by name. alice keeps her look through the steal, because she was instructed to look at the four cards and then exiled one face down, which is CR 406.3's own continuing permission and owes the land nothing. Face-up cards in exile give each Reclamation a second candidate, so its target prompt is asked rather than bound.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "i1" },
+          { "card": "Island", "label": "i2" }
+        ],
+        "hand": [
+          { "card": "Windbrisk Heights", "label": "heights" },
+          { "card": "Synthetic Blind Reclamation", "label": "a-spell" }
+        ],
+        "library": [
+          { "card": "Lightning Bolt", "label": "bolt" },
+          { "card": "Goblin Piker", "label": "piker" },
+          { "card": "Ogre Sentry", "label": "sentry" },
+          { "card": "Cancel", "label": "cancel" },
+          { "card": "Think Twice", "label": "think" }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Island", "label": "b1" },
+          { "card": "Island", "label": "b2" },
+          { "card": "Island", "label": "b3" },
+          { "card": "Island", "label": "b4" },
+          { "card": "Island", "label": "b5" },
+          { "card": "Island", "label": "b6" },
+          { "card": "Island", "label": "b7" },
+          { "card": "Island", "label": "b8" },
+          { "card": "Island", "label": "b9" },
+          { "card": "Island", "label": "b10" }
+        ],
+        "hand": [
+          { "card": "Synthetic Blind Reclamation", "label": "b-before" },
+          { "card": "Synthetic Blind Reclamation", "label": "b-after" },
+          { "card": "Confiscate", "label": "confiscate" }
+        ],
+        "exile": [
+          { "card": "Riftsweeper", "label": "rift" },
+          { "card": "Grizzly Bears", "label": "bears" }
+        ],
+        "library": [{ "card": "Island" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "PlayLand": "$heights" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "ChooseCardFromAmong", "with": "$piker" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Answer": { "prompt": "Shuffle", "with": ["$cancel", "$bolt", "$sentry"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$b-before", "targets": ["$rift"], "mana": ["$b1", "$b2", null] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseTargets","offer":{"source":"Synthetic Blind Reclamation#3","slots":[["target",[1,[["Object","$rift"],["Object","$bears"],["Pile",{"pile":{"type":"OfFaceDown","value":28},"ordinal":1}]]]]]}} } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "Shuffle", "with": ["Riftsweeper"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$confiscate", "targets": ["Windbrisk Heights"], "mana": ["$b3", "$b4", "$b5", "$b6", "$b7", "$b8", null] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Controller", "object": "Windbrisk Heights", "is": "bob" } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$b-after", "targets": ["Goblin Piker"], "mana": ["$b9", "$b10"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseTargets","offer":{"source":"Synthetic Blind Reclamation#3","slots":[["target",[1,[["Object","$bears"],["Object","Goblin Piker"]]]]]}} } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$a-spell", "targets": ["$bears"], "mana": ["$i1", "$i2"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": {"kind":"ChooseTargets","offer":{"source":"Synthetic Blind Reclamation#3","slots":[["target",[1,[["Object","$bears"],["Object","Goblin Piker"]]]]]}} } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "Shuffle", "with": ["Riftsweeper", "Grizzly Bears"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": "Pass" },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "do": { "Answer": { "prompt": "Shuffle", "with": ["$think", "Ogre Sentry", "Lightning Bolt", "Cancel", "Goblin Piker"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "bob", "check": { "View": { "of": "Zone", "player": "alice", "zone": "Exile", "is": [] } } }
+  ]
+}

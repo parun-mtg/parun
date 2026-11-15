@@ -212,7 +212,10 @@ data Rehearsal = MkRehearsal
     replaying :: Bool,
     -- | Where a replayed recording stopped: the state the first prompt past
     -- its last entry was asked in.
-    ended :: Maybe GameState.GameState
+    ended :: Maybe GameState.GameState,
+    -- | Each prompt other than priority asked so far, oldest first, by turn,
+    -- decider and kind: what the Asked view reads.
+    promptsAsked :: Seq.Seq (Natural, Maybe Label.Label, Text.Text)
   }
 
 type Run = State.StateT Rehearsal (Either Halt)
@@ -327,7 +330,8 @@ rehearsalOf timeline board =
           audited = Nothing,
           reference = Nothing,
           replaying = False,
-          ended = Nothing
+          ended = Nothing,
+          promptsAsked = Seq.empty
         }
 
 -- | What a finished run still owes: choices its last action never used, and
@@ -682,7 +686,9 @@ answerScheduled asked = do
   if not (null (Asked.enclosing asked))
     then failWith (Failure.MkNestedGamePrompt (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) decider kind)
     else do
-      Monad.when (recorded prompt && kind /= Text.pack "ChooseAction") (runPromptChecks gs decider prompt)
+      Monad.when (recorded prompt && kind /= Text.pack "ChooseAction") $ do
+        runPromptChecks gs decider prompt
+        State.modify' (\rehearsal -> rehearsal {promptsAsked = promptsAsked rehearsal Seq.|> (TurnRegisters.turnNumber (GameState.turn gs), decider, kind)})
       -- CR 734.1: a refused move is reversed, so the engine's next prompt is
       -- the one it answered, asked again. A prompt the move raises on its way
       -- there -- a payment's own choices, an Answer the timeline schedules,
@@ -2234,6 +2240,10 @@ renderView gs asked viewIs =
           let seers = [pid | pid <- GameState.seating gs, Visibility.sees pid oid gs == Visibility.Type.Visible]
           labels <- mapM labelOf seers
           pure (ReplyType.Array (fmap (ReplyType.Text . Label.unwrap) labels))
+        View.Asked -> do
+          let turn = TurnRegisters.turnNumber (GameState.turn gs)
+              row (_, decider, kind) = ReplyType.Array [maybe ReplyType.Null (ReplyType.Text . Label.unwrap) decider, ReplyType.Text kind]
+          pure . ReplyType.Array . fmap row . filter (\(at, _, _) -> at == turn) . Foldable.toList =<< State.gets promptsAsked
         View.Witnessed -> do
           pid <- needPlayer
           let nameOf snapshot = Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toAscList (ProjectedCharacteristics.names snapshot)))

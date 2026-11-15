@@ -1,0 +1,142 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Shimatsu the Bloodcloaked",
+            "commander": true,
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ],
+            "label": "shimatsu"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island1"
+          },
+          {
+            "card": "Synthetic Hand Interdiction",
+            "label": "interdiction"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Unsummon",
+            "label": "bounce"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 616.1e declining the offer first lets the redirect exile it",
+  "final": [
+    {
+      "Count": {
+        "card": "Shimatsu the Bloodcloaked",
+        "count": 1,
+        "player": "alice",
+        "zone": "Exile"
+      }
+    },
+    {
+      "Count": {
+        "card": "Shimatsu the Bloodcloaked",
+        "count": 0,
+        "player": "alice",
+        "zone": "Command"
+      }
+    },
+    {
+      "Count": {
+        "card": "Shimatsu the Bloodcloaked",
+        "count": 0,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "The same board declining the offer: Synthetic Hand Interdiction exiles it, and CR 903.9a's later offer is declined too.",
+  "timeline": [
+    {
+      "check": {
+        "Count": {
+          "card": "Shimatsu the Bloodcloaked",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Shimatsu the Bloodcloaked",
+          "count": 0,
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island1"
+          ],
+          "object": "$bounce"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReturnCommander",
+          "with": "Leaves"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReturnCommander",
+          "with": "Leaves"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    }
+  ]
+}

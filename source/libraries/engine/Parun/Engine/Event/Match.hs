@@ -475,7 +475,8 @@ blocks context board gs (BlockTrigger.MkBlockTrigger role creature count) event 
         -- producer is load-bearing beside it: Combat.declareBlockers records this
         -- constructor once per declared pair under BlockProducer.Declared, which
         -- the arm above has already answered. Parun.KeywordTriggerSpec's
-        -- CreatureBecomesBlockedByAtLeast group is the proof.
+        -- CreatureBecomesBlockedByAtLeast group and data/scenarios/keyword-trigger/'s
+        -- Saproling cases are the proof.
         (BlockRole.Attacker, BlockCount.AtLeast n others, GameEvent.BecameBlocking (BecameBlocking.MkBecameBlocking {BecameBlocking.blocker = blocker, BecameBlocking.attacker = attacker, BecameBlocking.producer = BlockProducer.PutOntoBattlefield, BecameBlocking.attackerWasBlocked = True, BecameBlocking.blockersBefore = before})) ->
           admits attacker creature && tally others before < n && tally others (Set.insert blocker before) >= n
         -- The same crossing on the effect road (Combat.switchBlockers, General
@@ -774,7 +775,9 @@ leavesZone before board gs bearer you admitsTurn t event = case event of
 -- permanent's departure puts into the zone and a CardArrived event names each
 -- card after it, so such a death fires a per-card trigger twice. A CardArrived
 -- is never CR 608.2n's move, nor a move from anywhere but the battlefield.
--- Parun.MutateSpec's "from either arrangement" case proves it over both orders.
+-- The mutate scenario "CR 731.3/603.6c a merged permanent's component fires its
+-- own put-into-a-graveyard trigger from either arrangement" proves it over both
+-- orders.
 --
 -- The subject, by ActingPermanent:
 --

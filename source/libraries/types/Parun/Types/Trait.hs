@@ -14,7 +14,7 @@ data Trait
   | -- | CR 709.4a: a name (CR 702.60a's ripple).
     Name
   | -- | CR 108.3: the owner (CR 702.140a's mutate), never CR 109.5's "you",
-    -- which is the controller. Parun.MutateSpec's "CR 702.140a a stolen mutate
+    -- which is the controller. The mutate scenario "CR 702.140a a stolen mutate
     -- spell may target the owner's creature and not the caster's" proves the two
     -- part.
     Owner

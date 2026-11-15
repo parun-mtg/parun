@@ -178,7 +178,10 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   `AttachedTo` and `Controller` (of an `object`), `Result`, `ActivePlayer`,
   `Priority`, `Zone` (a `player`'s `zone`, in order), `Colors`, `ManaPool`
   (a `player`'s), `Daytime` (`null` before either), `Speed` (a `player`'s,
-  `null` for none, CR 702.179b), and `Protector`,
+  `null` for none, CR 702.179b), `Asked` (this turn's prompts other than
+  priority, in the order asked, each as `[seat, kind]`, the seat `null` for a
+  prompt nobody decides: what pins CR 101.4's order across players, which
+  the timeline does not; a check at a prompt sees only those before it), and `Protector`,
   `Designations`, `RingBearer` and `Supertypes` (of an `object`),
   `CommanderDamage` (a `player`'s, as `[name, amount]` pairs), `OwnershipChanges`
   (each card whose owner changed, as `[card, starting owner, owner]`, a merged

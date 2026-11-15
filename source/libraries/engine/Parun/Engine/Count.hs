@@ -1052,7 +1052,7 @@ snapshotView viewOf gs shape event = case event of
   -- Matched on this event's OWN destination and not the move's, which is CR
   -- 903.9c: a melded commander's component splits off to the command zone while
   -- the rest of the move goes where it was headed, and only the card that
-  -- arrived in the named zone is counted (Parun.MeldSpec).
+  -- arrived in the named zone is counted (data/scenarios/meld/'s CR 903.9c cases).
   GameEvent.CardArrived zc -> case shape of
     -- The ARRIVED card, which CR 713.8e is the whole point of here: each
     -- component of a melded permanent is a card of its own, and reading the
@@ -1065,8 +1065,9 @@ snapshotView viewOf gs shape event = case event of
     -- answers, the honest blank for a card whose characteristics as it moved
     -- cannot be recovered.
     --
-    -- Parun.CountSpec's Raphael group proves the reading, and Parun.MeldSpec's
-    -- Case of the Gorgon's Kiss case proves its melded half.
+    -- Parun.CountSpec's Raphael group proves the reading, and
+    -- data/scenarios/meld/'s CR 713.8e Case of the Gorgon's Kiss case its melded
+    -- half.
     EventShape.CardArrivedIn arrival ->
       if arrivalMatches arrival zc
         then case orLastKnown viewOf gs (ZoneChange.object zc) of
