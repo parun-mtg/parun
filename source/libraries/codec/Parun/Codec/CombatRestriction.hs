@@ -36,6 +36,7 @@ codec =
     tagOf
     [ Arm.payload "CantAttack" AffectedUnless.codec CombatRestriction.CantAttack (\x -> case x of CombatRestriction.CantAttack y -> Just y; _ -> Nothing),
       Arm.payload "CantBlock" AffectedUnless.codec CombatRestriction.CantBlock (\x -> case x of CombatRestriction.CantBlock y -> Just y; _ -> Nothing),
+      Arm.payload "CantBeAttacked" AffectedUnless.codec CombatRestriction.CantBeAttacked (\x -> case x of CombatRestriction.CantBeAttacked y -> Just y; _ -> Nothing),
       Arm.payload "CantBeBlockedBy" CantBeBlockedBy.codec CombatRestriction.CantBeBlockedBy (\x -> case x of CombatRestriction.CantBeBlockedBy y -> Just y; _ -> Nothing),
       Arm.payload "CantBlockCreatures" CantBlockCreatures.codec CombatRestriction.CantBlockCreatures (\x -> case x of CombatRestriction.CantBlockCreatures y -> Just y; _ -> Nothing),
       Arm.payload "CantAttackPlayer" CantAttackPlayer.codec CombatRestriction.CantAttackPlayer (\x -> case x of CombatRestriction.CantAttackPlayer y -> Just y; _ -> Nothing),
@@ -49,6 +50,7 @@ tagOf :: CombatRestriction.CombatRestriction -> String
 tagOf x = case x of
   CombatRestriction.CantAttack {} -> "CantAttack"
   CombatRestriction.CantBlock {} -> "CantBlock"
+  CombatRestriction.CantBeAttacked {} -> "CantBeAttacked"
   CombatRestriction.CantBeBlockedBy {} -> "CantBeBlockedBy"
   CombatRestriction.CantBlockCreatures {} -> "CantBlockCreatures"
   CombatRestriction.CantAttackPlayer {} -> "CantAttackPlayer"

@@ -4493,6 +4493,7 @@ combatRestrictionFilters :: CombatRestriction.CombatRestriction -> [(Framing, Fi
 combatRestrictionFilters restriction = case restriction of
   CombatRestriction.CantAttack (AffectedUnless.MkAffectedUnless affected condition _ amount) -> affectedSet affected <> foldMap conditionFilters condition <> foldMap quantityFilters amount
   CombatRestriction.CantBlock (AffectedUnless.MkAffectedUnless affected condition _ amount) -> affectedSet affected <> foldMap conditionFilters condition <> foldMap quantityFilters amount
+  CombatRestriction.CantBeAttacked (AffectedUnless.MkAffectedUnless affected condition _ amount) -> affectedSet affected <> foldMap conditionFilters condition <> foldMap quantityFilters amount
   -- Three positions on the PAIRWISE arm: the attackers restricted, the blockers
   -- barred from them, and the gate.
   CombatRestriction.CantBeBlockedBy (CantBeBlockedBy.MkCantBeBlockedBy affected blockers _ condition _) -> affectedSet affected <> unframed [blockers] <> foldMap conditionFilters condition
