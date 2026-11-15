@@ -2433,6 +2433,9 @@ namedTokens =
       -- with flying named Ornithopter".
       CardName.MkCardName (Text.pack "Ornithopter"),
       CardName.MkCardName (Text.pack "Rabid Sheep"),
+      -- Dragonbroods' Relic's "a 4/4 Dragon creature token named Reliquary
+      -- Dragon".
+      CardName.MkCardName (Text.pack "Reliquary Dragon"),
       -- Preston Garvey, Minuteman's "create a green Aura enchantment token named
       -- Settlement attached to up to one target land you control".
       CardName.MkCardName (Text.pack "Settlement"),
@@ -2483,7 +2486,7 @@ protectionFromEach = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Irid
 -- which any subset of the domain satisfies. Council Guardian's per-colour
 -- grants, each gated on that colour's votes, are listed the same way.
 protectionListed :: Set.Set CardName.CardName
-protectionListed = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Akroma's Memorial", "Animar, Soul of Elements", "Council Guardian", "Great Sable Stag", "Paladin en-Vec"])
+protectionListed = Set.fromList (fmap (CardName.MkCardName . Text.pack) ["Akroma's Memorial", "Animar, Soul of Elements", "Council Guardian", "Great Sable Stag", "Paladin en-Vec", "Ureni, the Song Unending"])
 
 -- The qualities of each protection group a face prints: its own keywords, each
 -- static ability's grants, and every grant its resolution effects make.

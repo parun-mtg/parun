@@ -434,9 +434,8 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertBool s (Oracle.says essence spark (Text.pack "Whenever this creature is dealt combat damage, you gain that much life.")) "Wall of Essence's wording unsaid"
     Spec.assertBool s (not (Oracle.says essence spark (Text.pack "Enrage \8212 Whenever this creature is dealt combat damage, you gain that much life."))) "enrage said of combat damage alone"
 
-  -- CR 603.6a / 700.4 read by a bystander: "Whenever a [type] enters" (or
-  -- "When", Teeming Dragonstorm) or "dies", the object "it" or "that
-  -- creature"; landfall's ability word
+  -- CR 603.6a / 700.4 read by a bystander: "Whenever a [type] enters" or
+  -- "dies", the object "it" or "that creature"; landfall's ability word
   -- (CR 207.2c); a creature among the objects it watches named first
   -- (Zulaport Cutthroat), never a noncreature.
   Spec.it s "render prints a trigger on another object entering, dying or becoming blocked" $ do

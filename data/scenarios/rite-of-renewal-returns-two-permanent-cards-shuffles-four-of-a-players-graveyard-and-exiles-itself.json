@@ -1,0 +1,255 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "graveyard": [
+          {
+            "card": "Hill Giant",
+            "label": "ggiant"
+          },
+          {
+            "card": "Forest",
+            "label": "gforest"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "gbolt"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Rite of Renewal",
+            "label": "rite"
+          }
+        ],
+        "manaPool": "GCCC",
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Grizzly Bears",
+            "label": "b1"
+          },
+          {
+            "card": "Mountain",
+            "label": "b2"
+          },
+          {
+            "card": "Shock",
+            "label": "b3"
+          },
+          {
+            "card": "Plains",
+            "label": "b4"
+          },
+          {
+            "card": "Island",
+            "label": "b5"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Goblin Piker",
+            "label": "cpiker"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2c / 115.1 / 608.2c / 701.24a: Rite of Renewal returns up to two target permanent cards from your graveyard to your hand, has target player shuffle up to four target cards from their graveyard into their library, and exiles itself",
+  "note": "Alice's graveyard holds a creature, a land and an instant, so the refused cast swapping the land for Lightning Bolt shows the instant is no permanent card. Bob's graveyard holds five cards, so four is a choice and his Island stays; carol's Goblin Piker is in another graveyard and stays.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$rite",
+          "targetsBySlot": {
+            "cards": [
+              "$b1",
+              "$b2",
+              "$b3",
+              "$b4"
+            ],
+            "permanents": [
+              "$ggiant",
+              "$gbolt"
+            ],
+            "player": [
+              "$bob"
+            ]
+          }
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "object": "$rite",
+          "targetsBySlot": {
+            "cards": [
+              "$b1",
+              "$b2",
+              "$b3",
+              "$b4"
+            ],
+            "permanents": [
+              "$ggiant",
+              "$gforest"
+            ],
+            "player": [
+              "$bob"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Shock",
+            "Grizzly Bears",
+            "Plains",
+            "Mountain"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lightning Bolt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Rite of Renewal",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Rite of Renewal",
+          "count": 0,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Shock",
+            "Grizzly Bears",
+            "Plains",
+            "Mountain"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$b5"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$cpiker"
+          ],
+          "of": "Zone",
+          "player": "carol",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
