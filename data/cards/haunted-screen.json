@@ -175,16 +175,10 @@
                             "type": "Indefinite"
                           },
                           "modification": {
-                            "type": "SetBasePowerToughness",
+                            "type": "CardType",
                             "value": {
-                              "power": {
-                                "type": "Literal",
-                                "value": 0
-                              },
-                              "toughness": {
-                                "type": "Literal",
-                                "value": 0
-                              }
+                              "cardType": "Creature",
+                              "mode": "InAddition"
                             }
                           },
                           "ref": {
@@ -219,10 +213,16 @@
                             "type": "Indefinite"
                           },
                           "modification": {
-                            "type": "CardType",
+                            "type": "SetBasePowerToughness",
                             "value": {
-                              "cardType": "Creature",
-                              "mode": "InAddition"
+                              "power": {
+                                "type": "Literal",
+                                "value": 0
+                              },
+                              "toughness": {
+                                "type": "Literal",
+                                "value": 0
+                              }
                             }
                           },
                           "ref": {
