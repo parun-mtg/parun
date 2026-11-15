@@ -657,8 +657,8 @@ returnable events gs =
 -- to CR 614.5, needs nothing here: this is asked once per proposed zone change,
 -- and CR 608.2f's batch reaches the funnel one member at a time, so a spell
 -- returning two commanders in one event puts the question to each owner.
--- Parun.CommanderSpec's "the offer applies once per commander in the same event"
--- is the proof, over Evacuation.
+-- data/scenarios/commander/cr-903-9b-the-offer-applies-once-per-commander-in-
+-- the-same-event.json is the proof, over Evacuation.
 --
 -- CR 903.9c's melded or merged commander is the ANSWER's other shape rather than
 -- a second question, and Parun.Engine.Event.offerCommandZone is where it is read.

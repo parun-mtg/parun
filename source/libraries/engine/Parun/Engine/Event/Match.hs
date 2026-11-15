@@ -475,7 +475,8 @@ blocks context board gs (BlockTrigger.MkBlockTrigger role creature count) event 
         -- producer is load-bearing beside it: Combat.declareBlockers records this
         -- constructor once per declared pair under BlockProducer.Declared, which
         -- the arm above has already answered. Parun.KeywordTriggerSpec's
-        -- CreatureBecomesBlockedByAtLeast group is the proof.
+        -- CreatureBecomesBlockedByAtLeast group and data/scenarios/keyword-trigger/'s
+        -- Saproling cases are the proof.
         (BlockRole.Attacker, BlockCount.AtLeast n others, GameEvent.BecameBlocking (BecameBlocking.MkBecameBlocking {BecameBlocking.blocker = blocker, BecameBlocking.attacker = attacker, BecameBlocking.producer = BlockProducer.PutOntoBattlefield, BecameBlocking.attackerWasBlocked = True, BecameBlocking.blockersBefore = before})) ->
           admits attacker creature && tally others before < n && tally others (Set.insert blocker before) >= n
         -- The same crossing on the effect road (Combat.switchBlockers, General

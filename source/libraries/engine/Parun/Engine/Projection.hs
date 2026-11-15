@@ -3320,9 +3320,9 @@ permanentParts statics stripped waited functioning setEffs setStripped gs permId
         -- only a removal applied AFTER the grant takes it away.
         --
         -- Outside printedParts' CR 305.7 gate: a land-subtype setter does not
-        -- remove an ability another effect granted. Parun.KeywordTriggerSpec's Backup group proves the grant,
-        -- the removal order and the Blood Moon case through Streetwise
-        -- Negotiator.
+        -- remove an ability another effect granted. Parun.KeywordTriggerSpec's Backup group proves the grant
+        -- and the Blood Moon case through Streetwise Negotiator, and
+        -- data/scenarios/keyword-trigger/'s CR 613.1f cases the removal order.
         granted n (grantTs, sa) =
           let removedAfter lowest =
                 (removalReaches sa lowest && stripped (StaticAbility.name sa) ((> grantTs) . gTimestamp) permId)
@@ -3536,8 +3536,9 @@ namedAbilityRemovalAfter gs =
 -- granted to the land by other effects", CR 612.3 keeps a text change affecting
 -- the host out of a granted ability, and it is read off `oid` itself rather
 -- than textBoxHolderOf, for grantedStaticAbilitiesOf's reason.
--- Parun.KeywordTriggerSpec's Backup group proves the removal order and the CR
--- 305.7 exemption, through the combat restriction; the other thirteen families
+-- data/scenarios/keyword-trigger/'s CR 613.1f cases prove the removal order and
+-- Parun.KeywordTriggerSpec's Backup group the CR 305.7 exemption, through the
+-- combat restriction; the other thirteen families
 -- are regression fences, no printing with backup granting one.
 grantedRuleAbilities :: GameState -> ObjectId -> RuleAbilities.RuleAbilities
 grantedRuleAbilities gs =

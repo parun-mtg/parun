@@ -10,7 +10,7 @@
           },
           {
             "card": "Hanweir Garrison",
-            "label": "garrison"
+            "label": "gar"
           },
           {
             "card": "Mountain",
@@ -34,16 +34,7 @@
           },
           {
             "card": "Goblin Piker",
-            "label": "piker",
-            "ready": true
-          }
-        ],
-        "library": [
-          {
-            "card": "Mountain"
-          },
-          {
-            "card": "Mountain"
+            "label": "piker"
           }
         ],
         "name": "alice"
@@ -52,16 +43,18 @@
         "battlefield": [
           {
             "card": "Void Winnower",
-            "label": "winnower",
-            "ready": true
+            "label": "winnower"
           }
         ],
         "library": [
           {
-            "card": "Mountain"
+            "card": "Island"
           },
           {
-            "card": "Mountain"
+            "card": "Island"
+          },
+          {
+            "card": "Island"
           }
         ],
         "name": "bob"
@@ -70,7 +63,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 202.3c a melded permanent's mana value is its components' front faces combined",
-  "note": "Hanweir Garrison's {2}{R} and Hanweir Battlements' none make the Township's mana value 3 (CR 202.3a exempts a melded permanent from the 0 of no mana cost). bob's Void Winnower stops blockers with even mana values: alice's Goblin Piker ({1}{R}) is refused, so the restriction is live, and the odd Township blocks.",
+  "note": "Hanweir Garrison's {2}{R} and Hanweir Battlements' no cost make 3 (CR 202.3a exempts a melded permanent from the 0 of an object with no mana cost). Read by bob's Void Winnower: the Township's odd 3 may block, and alice's Goblin Piker's even 2 may not, which shows the Winnower live.",
   "timeline": [
     {
       "do": {
@@ -93,6 +86,19 @@
     },
     {
       "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hanweir, the Writhing Township",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 1

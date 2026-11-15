@@ -243,7 +243,7 @@ enteredOne before after =
 
 -- Case of the Gorgon's Kiss, MKM 79: its entry trigger and CR 702.169b's static
 -- reading of "Solved --" as a type-changing effect. Its to-solve count is proven
--- against a melded permanent in Parun.MeldSpec.
+-- against a melded permanent in data/scenarios/meld/'s CR 713.8e cases.
 gorgonsKissSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 gorgonsKissSpec s registry = Spec.describe s "Case of the Gorgon's Kiss" $ do
   -- CR 720.3a's three creature cards, then CR 702.169b's "as long as this Case
