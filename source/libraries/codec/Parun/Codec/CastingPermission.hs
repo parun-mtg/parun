@@ -19,7 +19,7 @@ codec =
     [ Arm.nullary "CastFromLibraryWhileSearching" CastingPermission.CastFromLibraryWhileSearching,
       Arm.payload "CastFromGraveyard" graveyard (uncurry CastingPermission.CastFromGraveyard) (\x -> case x of CastingPermission.CastFromGraveyard f c -> Just (f, c); _ -> Nothing),
       Arm.nullary "PlayFromGraveyard" CastingPermission.PlayFromGraveyard,
-      Arm.payload "CastAsThoughItHadFlash" flash (\(c, m, a) -> CastingPermission.CastAsThoughItHadFlash c m a) (\x -> case x of CastingPermission.CastAsThoughItHadFlash c m a -> Just (c, m, a); _ -> Nothing)
+      Arm.payload "CastAsThoughItHadFlash" flash (\(c, m, k, a) -> CastingPermission.CastAsThoughItHadFlash c m k a) (\x -> case x of CastingPermission.CastAsThoughItHadFlash c m k a -> Just (c, m, k, a); _ -> Nothing)
     ]
   where
     graveyard =
@@ -29,10 +29,11 @@ codec =
           <*> Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) snd
     flash =
       Fields.object $
-        (,,)
-          <$> Fields.defaulted "condition" Nothing (Common.maybe Condition.codec) (\(c, _, _) -> c)
-          <*> Fields.defaulted "additionalCost" Nothing (Common.maybe ManaCost.codec) (\(_, m, _) -> m)
-          <*> Fields.defaulted "outsideSorceryTiming" Nothing (Common.maybe AbilityName.codec) (\(_, _, a) -> a)
+        (,,,)
+          <$> Fields.defaulted "condition" Nothing (Common.maybe Condition.codec) (\(c, _, _, _) -> c)
+          <*> Fields.defaulted "additionalMana" Nothing (Common.maybe ManaCost.codec) (\(_, m, _, _) -> m)
+          <*> Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) (\(_, _, k, _) -> k)
+          <*> Fields.defaulted "outsideSorceryTiming" Nothing (Common.maybe AbilityName.codec) (\(_, _, _, a) -> a)
 
 tagOf :: CastingPermission.CastingPermission -> String
 tagOf x = case x of

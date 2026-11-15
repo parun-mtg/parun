@@ -1,0 +1,25 @@
+{
+  "description": "CR 601.2b / 601.3c: Molten Exhale cast at sorcery timing beholds nothing, the flash permission unused",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [{"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}],
+        "manaPool": "RR",
+        "hand": [{"card": "Molten Exhale", "label": "exhale"}]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}],
+        "battlefield": [{"card": "Grizzly Bears", "label": "bears"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$exhale"}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}}
+  ]
+}
