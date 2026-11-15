@@ -79,7 +79,9 @@
                     "relation": "You"
                   }
                 },
-                "whoRecipient": "Opponent"
+                "whoRecipient": {
+                  "type": "Opponent"
+                }
               },
               "rewrite": {
                 "type": "Scale",

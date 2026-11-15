@@ -43,7 +43,9 @@
                     }
                   ]
                 },
-                "whoRecipient": "You"
+                "whoRecipient": {
+                  "type": "You"
+                }
               },
               "rewrite": {
                 "type": "PreventUpTo",

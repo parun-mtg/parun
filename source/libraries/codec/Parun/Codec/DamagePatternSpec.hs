@@ -4,6 +4,7 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.DamagePattern as DamagePattern
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.Filter as Filter
@@ -61,8 +62,16 @@ spec s = Spec.describe s "Parun.Codec.DamagePattern" $ do
     Common.assertCodec
       s
       DamagePattern.codec
-      (DamagePattern.MkDamagePattern Nothing (Filter.And []) (Just (Filter.HeldBy Holder.Controller PlayerRelation.You)) (Just PlayerRelation.You) Nothing Nothing Nothing)
-      " {\"whatRecipient\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}},\"whoRecipient\":\"You\"} "
+      (DamagePattern.MkDamagePattern Nothing (Filter.And []) (Just (Filter.HeldBy Holder.Controller PlayerRelation.You)) (Just (ControllerRelation.Related PlayerRelation.You)) Nothing Nothing Nothing)
+      " {\"whatRecipient\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}},\"whoRecipient\":{\"type\":\"You\"}} "
+  -- CR 608.2h's player by SLOT on the player half: Lightning, Army of One's
+  -- "that player or a permanent that player controls".
+  Spec.it s "a described recipient naming a slot's player (CR 608.2h)" $
+    Common.assertCodec
+      s
+      DamagePattern.codec
+      (DamagePattern.MkDamagePattern Nothing (Filter.And []) (Just (Filter.HeldByBound Holder.Controller thatPlayer)) (Just (ControllerRelation.InSlot thatPlayer)) Nothing Nothing Nothing)
+      " {\"whatRecipient\":{\"type\":\"HeldByBound\",\"value\":{\"holder\":\"Controller\",\"slot\":\"thatPlayer\"}},\"whoRecipient\":{\"type\":\"InSlot\",\"value\":\"thatPlayer\"}} "
   -- CR 609.7a's chosen source, baked as an id by Resolve's prevention arms and
   -- never authored either -- Healing Grace's "a source of your choice", whose
   -- printed properties are none, so the trivial filter rides beside the id.
@@ -83,3 +92,5 @@ spec s = Spec.describe s "Parun.Codec.DamagePattern" $ do
       (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing Nothing Nothing Nothing (Just (SlotName.MkSlotName (Text.pack "target"))))
       " {\"boundRecipient\":\"target\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s DamagePattern.codec
+  where
+    thatPlayer = SlotName.MkSlotName (Text.pack "thatPlayer")

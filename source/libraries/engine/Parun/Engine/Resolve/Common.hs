@@ -9,6 +9,7 @@ import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -24,6 +25,7 @@ import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Blight as Blight
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cast as Cast
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Count as Count
@@ -1636,7 +1638,7 @@ installDamageRow resolving targets slots controller source duration kind rewrite
                     -- when it began. Both halves are Nothing for a row
                     -- whose recipient the resolution BAKED below instead.
                     DamagePattern.whatRecipient = fst describedRecipient,
-                    DamagePattern.whoRecipient = snd describedRecipient,
+                    DamagePattern.whoRecipient = fmap ControllerRelation.Related (snd describedRecipient),
                     DamagePattern.whichRecipient = recipient,
                     -- CR 609.7a's chosen source or CR 601.2c's targeted
                     -- one, baked for the recipient's reason -- both were
@@ -1718,6 +1720,33 @@ bakeRelation players rel = case rel of
   ControllerRelation.Related _ -> rel
   ControllerRelation.EnchantedPlayers -> rel
   ControllerRelation.Among _ -> rel
+
+-- CR 608.2h: every Filter.HeldByBound a floating row's filters carry, baked to
+-- the one player its slot named (Filter.bakeBound), since the slot dies with
+-- this resolution and Replacement.candidateContext frames only the objects the
+-- row captured. Lightning, Army of One's "a permanent that player controls".
+-- Objects are left to the row's captured slots, which CR 400.7h re-keys.
+bakeRowPlayers :: Map.Map SlotName (Set PlayerId) -> ReplacementEffect.ReplacementEffect card ability effect -> ReplacementEffect.ReplacementEffect card ability effect
+bakeRowPlayers players =
+  Identity.runIdentity
+    . Children.replacementEffectChildren
+      Children.replacementLeaves
+        { Children.replacementFilter = bake,
+          Children.replacementDamage = Children.damagePatternChildren damage
+        }
+  where
+    one named = case Set.toList named of
+      [pid] -> Just pid
+      _ -> Nothing
+    bake = Identity.Identity . Filter.bakeBound (Map.mapMaybe one players) Map.empty Map.empty
+    damage =
+      Children.MkDamagePatternChildren
+        { Children.damageFilter = bake,
+          Children.damageRecipient = pure,
+          Children.damageObject = pure,
+          Children.damageSlot = pure,
+          Children.damageWhose = pure
+        }
 
 -- CR 611.2c: a combat restriction's stored class, every slot it names baked
 -- (Parun.Engine.Filter.bakeBound) since the slots die with this resolution: its

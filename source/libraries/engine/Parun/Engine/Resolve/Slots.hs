@@ -1899,10 +1899,13 @@ overRelations f re = case re of
   ReplacementEffect.GameLossR r -> (\w -> ReplacementEffect.GameLossR r {GameLossR.whose = w}) <$> f (GameLossR.whose r)
   ReplacementEffect.PlaneswalkR r -> (\w -> ReplacementEffect.PlaneswalkR r {PlaneswalkR.whose = w}) <$> f (PlaneswalkR.whose r)
   ReplacementEffect.PhaseR r -> (\w -> ReplacementEffect.PhaseR r {PhaseR.phases = (PhaseR.phases r) {PhasePattern.whosePhase = w}}) <$> f (PhasePattern.whosePhase (PhaseR.phases r))
-  -- CR 109.5's relation rides EntryR's Filter (Filter.HeldBy Holder.Controller) and DamageR's
-  -- PlayerRelation; the other four name no player at all.
+  -- The player half of the recipient (CR 120.3a); the object half rides a Filter.
+  ReplacementEffect.DamageR r ->
+    let pat = DamageR.matching r
+     in (\w -> ReplacementEffect.DamageR r {DamageR.matching = pat {DamagePattern.whoRecipient = w}}) <$> traverse f (DamagePattern.whoRecipient pat)
+  -- CR 109.5's relation rides EntryR's Filter (Filter.HeldBy Holder.Controller); the
+  -- other four name no player at all.
   ReplacementEffect.EntryR _ -> pure re
-  ReplacementEffect.DamageR _ -> pure re
   ReplacementEffect.DestructionR _ -> pure re
   ReplacementEffect.TurnUpR _ -> pure re
   ReplacementEffect.AttachR _ -> pure re

@@ -1761,7 +1761,7 @@ matchesDamagePattern :: (ObjectId -> Filter.View) -> GameState -> Filter.Context
 matchesDamagePattern viewOf gs context pat de =
   maybe True (== DamageEvent.kind de) (DamagePattern.whichKind pat)
     && matchesDamageSource viewOf gs context (DamagePattern.whatSource pat) de
-    && matchesPrintedRecipient viewOf context de pat
+    && matchesPrintedRecipient viewOf gs context de pat
     && maybe True (== DamageEvent.target de) (DamagePattern.whichRecipient pat)
     && maybe True (== DamageEvent.source de) (DamagePattern.whichSource pat)
 
@@ -1779,15 +1779,16 @@ matchesDamagePattern viewOf gs context pat de =
 -- carries Nothing on BOTH halves and admits every recipient, which is the
 -- unrestricted reading DamagePattern documents and the empty disjunction would
 -- get backwards.
-matchesPrintedRecipient :: (ObjectId -> Filter.View) -> Filter.Context -> DamageEvent.DamageEvent -> DamagePattern.DamagePattern -> Bool
-matchesPrintedRecipient viewOf context de pat = case (DamagePattern.whatRecipient pat, DamagePattern.whoRecipient pat) of
+matchesPrintedRecipient :: (ObjectId -> Filter.View) -> GameState -> Filter.Context -> DamageEvent.DamageEvent -> DamagePattern.DamagePattern -> Bool
+matchesPrintedRecipient viewOf gs context de pat = case (DamagePattern.whatRecipient pat, DamagePattern.whoRecipient pat) of
   (Nothing, Nothing) -> True
   (what, who) ->
     maybe False (matchesDamageRecipient viewOf context de) what
-      || maybe False (matchesRecipientPlayer context de) who
+      || maybe False (matchesRecipientPlayer gs context de) who
 
 -- CR 120.3a / 109.5: is this damage addressed to a PLAYER the pattern's printed
--- clause names -- Divine Deflection's "dealt to you"?
+-- clause names -- Divine Deflection's "dealt to you", Lightning, Army of One's
+-- "that player"?
 --
 -- False for an OBJECT recipient, matchesDamageRecipient's answer with the kinds
 -- swapped: the two halves each admit one of CR 120.3's two kinds and neither
@@ -1796,11 +1797,17 @@ matchesPrintedRecipient viewOf context de pat = case (DamagePattern.whatRecipien
 -- "You" is the CONTEXT's perspective, which for a floating row is the controller
 -- baked when the row was installed (candidateContext) rather than a controller
 -- re-derived from a source the resolution has already left behind. A context with
--- no perspective is judged as relationHolds judges a candidate with no "you".
-matchesRecipientPlayer :: Filter.Context -> DamageEvent.DamageEvent -> PlayerRelation.PlayerRelation -> Bool
-matchesRecipientPlayer context de relation = case Recipient.playerOf (DamageEvent.target de) of
+-- no perspective is judged as relationHolds judges a candidate with no "you"; an
+-- unbaked InSlot names nobody, and CR 303.4b's enchanted player is read off the
+-- context's source, both relationHolds' answers.
+matchesRecipientPlayer :: GameState -> Filter.Context -> DamageEvent.DamageEvent -> ControllerRelation -> Bool
+matchesRecipientPlayer gs context de rel = case Recipient.playerOf (DamageEvent.target de) of
   Nothing -> False
-  Just pid -> PlayerRelation.holdsFor (Filter.teams context) relation (Filter.perspective context) (Just pid)
+  Just pid -> case rel of
+    ControllerRelation.Related relation -> PlayerRelation.holdsFor (Filter.teams context) relation (Filter.perspective context) (Just pid)
+    ControllerRelation.EnchantedPlayers -> (Filter.source context >>= (`Projection.enchantedPlayerOf` gs)) == Just pid
+    ControllerRelation.InSlot _ -> False
+    ControllerRelation.Among players -> Set.member pid players
 
 -- CR 615.1: does the damage's RECIPIENT have the qualities the pattern's PRINTED
 -- clause names -- Stormwild Capridor's "if noncombat damage would be dealt to

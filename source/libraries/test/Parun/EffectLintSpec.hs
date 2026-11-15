@@ -1151,7 +1151,8 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
 -- Excruciator print, and the last two describe a recipient rather than naming
 -- one -- Lava Burst's "if Lava Burst would deal damage to a creature" writes
 -- `whatRecipient`, and no printing in the pool writes `whoRecipient` on THIS
--- carrier.
+-- carrier. A `whoRecipient` naming players by id or by slot is the engine's
+-- (engineOnlyPatternOffends).
 --
 -- `boundRecipient` is how Whippoorwill says it and is NOT swept: it names a SLOT,
 -- which is printed text's own way of pointing at a target, and
@@ -1162,9 +1163,9 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
 -- Exhaustive rather than a wildcard, this file's discipline for a sum.
 unpreventablePatternOffends :: PlayerEffect.PlayerEffect -> Bool
 unpreventablePatternOffends playerEffect = case playerEffect of
-  PlayerEffect.DamageCantBePrevented pattern_ -> Maybe.isJust (DamagePattern.whichRecipient pattern_) || Maybe.isJust (DamagePattern.whichSource pattern_)
-  PlayerEffect.DamageCantBeRedirected pattern_ -> Maybe.isJust (DamagePattern.whichRecipient pattern_) || Maybe.isJust (DamagePattern.whichSource pattern_)
-  PlayerEffect.DamageAsThoughSourceHad pattern_ _ -> Maybe.isJust (DamagePattern.whichRecipient pattern_) || Maybe.isJust (DamagePattern.whichSource pattern_)
+  PlayerEffect.DamageCantBePrevented pattern_ -> engineOnlyPatternOffends pattern_
+  PlayerEffect.DamageCantBeRedirected pattern_ -> engineOnlyPatternOffends pattern_
+  PlayerEffect.DamageAsThoughSourceHad pattern_ _ -> engineOnlyPatternOffends pattern_
   PlayerEffect.CantSearchLibraries _ -> False
   PlayerEffect.SearchesTopOfLibraries _ -> False
   PlayerEffect.HasProtectionFrom _ -> False
@@ -1219,6 +1220,21 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.RevealsDraw _ -> False
   PlayerEffect.Precluded _ -> False
   PlayerEffect.Shows _ -> False
+
+-- The fields of one such pattern only the engine writes. `whoRecipient` offends
+-- as an Among, which names players by id, and as an InSlot, which only
+-- Effect.Replace's install bakes and which this carrier would read as nobody.
+engineOnlyPatternOffends :: DamagePattern.DamagePattern -> Bool
+engineOnlyPatternOffends pattern_ =
+  Maybe.isJust (DamagePattern.whichRecipient pattern_)
+    || Maybe.isJust (DamagePattern.whichSource pattern_)
+    || maybe False bakedOnly (DamagePattern.whoRecipient pattern_)
+  where
+    bakedOnly rel = case rel of
+      ControllerRelation.Among _ -> True
+      ControllerRelation.InSlot _ -> True
+      ControllerRelation.Related _ -> False
+      ControllerRelation.EnchantedPlayers -> False
 
 -- The non-vacuity half of both lints above: is this a damage-event prohibition
 -- at all -- CR 615.12's or CR 614.9's? A wildcard is right here, where it is not
@@ -3682,8 +3698,15 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           PlayerEffect.DamageCantBePrevented pattern_ ->
             PlayerEffect.DamageCantBePrevented pattern_ {DamagePattern.whichKind = Just DamageKind.Combat}
           other -> other
+        who rel playerEffect = case playerEffect of
+          PlayerEffect.DamageCantBePrevented pattern_ ->
+            PlayerEffect.DamageCantBePrevented pattern_ {DamagePattern.whoRecipient = Just rel}
+          other -> other
     Spec.assertBool s (not (offends card)) "the real Excruciator names a source and no recipient, and is accepted"
     Spec.assertBool s (offends (over bake)) "and the same clause naming a shielded player is rejected"
+    Spec.assertBool s (offends (over (who (ControllerRelation.Among (Set.singleton S.alice))))) "and the same clause naming its player half by id is rejected"
+    Spec.assertBool s (offends (over (who (ControllerRelation.InSlot (SlotName.MkSlotName (Text.pack "thatPlayer")))))) "and the same clause naming its player half by slot is rejected"
+    Spec.assertBool s (not (offends (over (who (ControllerRelation.Related PlayerRelation.You))))) "and the same clause naming its player half as you is accepted"
     -- Frenzied Baloth's axis, which is authorable and must stay so: narrowing by
     -- KIND is not what this lint bans.
     Spec.assertBool s (not (offends (over kind))) "narrowing the same clause to combat damage is accepted"

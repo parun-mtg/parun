@@ -1030,8 +1030,9 @@ replace resolving source controller legal (Replace.MkReplace duration uses origi
                   ActiveReplacement.MkActiveReplacement
                     { -- CR 601.2c / 608.2b: "target player" is the player this
                       -- resolution's slot names now, BAKED for `controller`'s
-                      -- reason below.
-                      ActiveReplacement.effect = bakeAmount (Quantity.evaluateFor (effectViewOf resolving source legal gs) context gs resolving source) (Functor.runIdentity (overRelations (pure . Common.bakeRelation (Filter.slotPlayers context)) re)),
+                      -- reason below, in a relation and in a filter's
+                      -- HeldByBound alike.
+                      ActiveReplacement.effect = bakeAmount (Quantity.evaluateFor (effectViewOf resolving source legal gs) context gs resolving source) (Common.bakeRowPlayers (Filter.slotPlayers context) (Functor.runIdentity (overRelations (pure . Common.bakeRelation (Filter.slotPlayers context)) re))),
                       ActiveReplacement.source = source,
                       -- CR 109.5: the resolution's controller, BAKED now --
                       -- the source is a spell CR 608.2n is about to put in a

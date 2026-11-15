@@ -105,7 +105,9 @@
                   "type": "HasColor",
                   "value": "Red"
                 },
-                "whoRecipient": "AnyPlayer"
+                "whoRecipient": {
+                  "type": "AnyPlayer"
+                }
               },
               "rewrite": {
                 "type": "Scale",
