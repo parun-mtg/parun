@@ -907,7 +907,7 @@ performHandAction runSubgame source player =
 -- roll like any other (CR 706), then the result the Visit triggers read.
 rollToVisit :: Game Result -> PlayerId -> Game ()
 rollToVisit runSubgame pid = do
-  (results, throwers, rolled) <- throwDice runSubgame pid 6 1 (pure 0)
+  (results, throwers, rolled) <- throwDice runSubgame pid 6 1 0 (pure 0)
   Monad.unless (null rolled) (Common.recordRoll pid throwers rolled)
   -- CR 706.6 can throw a second die and ignore the lower; one is left.
   Foldable.for_ (Maybe.listToMaybe results) $ \result ->
@@ -917,7 +917,8 @@ rollToVisit runSubgame pid = do
 -- through every modification rule 706 names -- CR 614.1a's replacements, CR
 -- 706.2b's rerolls and adjustments, CR 706.6's ignored rolls -- and answer each
 -- kept die's final result beside the player who threw its final natural result.
--- `perDie` is the instruction's own modifier (CR 706.2). Shared by
+-- `ignore` is the instruction's own CR 706.6 ignore (Parun.Types.RollDie's), and
+-- `perDie` its own modifier (CR 706.2). Shared by
 -- Effect.RollDie's arm and CR 701.52a's roll to visit, which records nothing
 -- here: each caller records its own events.
 --
@@ -927,9 +928,9 @@ rollToVisit runSubgame pid = do
 -- rolls nothing, and a roll standing for that flip (Pokey's other half, applied
 -- in the same loop) is recorded as rolled and read back through the face it is
 -- -- nothing where it was neither.
-throwDice :: Game Result -> PlayerId -> Natural -> Natural -> Game Integer -> Game ([Natural], [PlayerId], [Natural])
-throwDice runSubgame controller sides named perDie = do
-  settled <- Event.proposeDiceRoll (reflipWindow runSubgame) controller sides named
+throwDice :: Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [PlayerId], [Natural])
+throwDice runSubgame controller sides named ignore perDie = do
+  settled <- Event.proposeDiceRoll (reflipWindow runSubgame) controller sides named ignore
   case settled of
     Left results -> pure (results, fmap (const controller) results, [])
     Right roll -> do
@@ -1074,7 +1075,7 @@ throwSettled runSubgame roll perDie = do
       -- docs/decisions.md, "Whether a reroll reaches a die before the lowest roll is
       -- ignored".
       rethrow by = do
-        settled <- Event.proposeDiceRoll (reflipWindow runSubgame) by sides 1
+        settled <- Event.proposeDiceRoll (reflipWindow runSubgame) by sides 1 0
         case settled of
           Left results -> rerollingWith False by (Maybe.fromMaybe 1 (Maybe.listToMaybe results))
           Right again -> do

@@ -7577,8 +7577,9 @@ keepCoin flipper faces =
 -- the roll is a replaceable event, CR 614's loop lives in this module, and this
 -- module is on the importing side of that edge.
 --
--- Takes the die and the count the INSTRUCTION named and answers the settled
--- roll: how many dice to throw, and how many of the lowest rolls CR 706.6 then
+-- Takes the die, the count and the CR 706.6 ignore the INSTRUCTION named
+-- (Berserker's Frenzy's "ignore the lower roll") and answers the settled roll:
+-- how many dice to throw, and how many of the lowest rolls CR 706.6 then
 -- ignores -- see Parun.Types.Throw.
 --
 -- A count of ZERO raises nothing: Pixie Guide's "if you would roll one or more
@@ -7594,9 +7595,9 @@ keepCoin flipper faces =
 -- A cancelled event is unreachable -- no arm of Parun.Types.DieRollRewrite replaces
 -- the roll with nothing -- so the fallback is defensive, and in the direction rule
 -- 706.1 leaves standing: the instruction's own dice, none of them ignored.
-proposeDiceRoll :: (PlayerId -> CoinFace.CoinFace -> Game Bool) -> PlayerId -> Natural -> Natural -> Game (Either [Natural] Throw.Throw)
-proposeDiceRoll reflip pid sides named = do
-  let proposed = Throw.MkThrow {Throw.thrower = pid, Throw.kind = ThrowKind.Dice sides, Throw.units = Seq.replicate (Natural.toIntSaturating named) 1, Throw.ignored = 0, Throw.instead = False}
+proposeDiceRoll :: (PlayerId -> CoinFace.CoinFace -> Game Bool) -> PlayerId -> Natural -> Natural -> Natural -> Game (Either [Natural] Throw.Throw)
+proposeDiceRoll reflip pid sides named ignore = do
+  let proposed = Throw.MkThrow {Throw.thrower = pid, Throw.kind = ThrowKind.Dice sides, Throw.units = Seq.replicate (Natural.toIntSaturating named) 1, Throw.ignored = ignore, Throw.instead = False}
   if named == 0
     then pure (Right proposed)
     else do

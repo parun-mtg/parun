@@ -22,8 +22,8 @@
 -- count, CR 706.4's choice among the results and the "other result" beside it.
 -- Neverwinter Hydra, after it, reads CR 706.4's total of the results instead.
 -- CR 614.1a's replacement over the roll is the fifth fixture, Pixie Guide, at the
--- bottom of this file -- the ignore of CR 706.6 rides it, no instruction in
--- data\/cards\/ printing one of its own.
+-- bottom of this file -- the ignore of CR 706.6 rides it; Berserker's Frenzy
+-- prints one of its own, and data/scenarios/dice proves it.
 -- CR 706.2b's first step is the SIXTH fixture, Clam-I-Am, at the bottom of this
 -- file -- a reroll offered to the roller by a permanent the instruction knows
 -- nothing about. CR 706.2a's cost on such a modifier is the SEVENTH, Wall of
@@ -796,6 +796,20 @@ bookieBoard s registry = do
 -- only at the next placement.
 nightShiftSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 nightShiftSpec s registry = Spec.describe s "IncreaseOrDecrease" $ do
+  -- CR 706.6: Berserker's Frenzy's "roll two d20 and ignore the lower roll".
+  -- The ignored 6 never happened, so "whenever you roll a 6" does not see it and
+  -- the shift is offered over the 17 alone. Should the 6 count, the roller is
+  -- asked which result to use and takes the 17, so only the Zombie and the offer
+  -- tell the readings apart.
+  Spec.it s "CR 706.6 an ignored 6 mints no Zombie and is offered no shift" $ do
+    frenzy <- S.printingOf s registry "Berserker's Frenzy"
+    mountain <- S.printingOf s registry "Mountain"
+    shift <- S.printingOf s registry "Night Shift of the Living Dead"
+    let (held, spell) = S.handOne frenzy (S.landsInPlay mountain 3)
+        board = snd (S.addPermanent shift S.alice held)
+        (after, shown) = nightShiftRun [6, 17] [] [] 1 spell board
+    Spec.assertEqWith s "CR 706.6: no ability triggers on the ignored 6" (S.countOnBattlefieldByName zombieEmployee S.alice after) 0
+    Spec.assertEqWith s "CR 706.6: no effect applies to it, so only the 17 is shown" shown [[17]]
   Spec.it s "CR 706.2 an increase from another source is part of the result" $ do
     (spell, weak, strong, board) <- endeavorBoard s registry
     shift <- S.printingOf s registry "Night Shift of the Living Dead"

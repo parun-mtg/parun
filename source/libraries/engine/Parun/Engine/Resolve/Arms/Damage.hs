@@ -1495,7 +1495,7 @@ chooseGroup resolving source controller legal (ChooseGroup.MkChooseGroup among s
 -- words scope to the instruction rather than to the die. An instruction that
 -- rolls no dice at all records nothing, having rolled none; a reroll is a
 -- roll of its own and records its own.
-rollDieArm :: (Game Result -> PlayerId -> Natural -> Natural -> Game Integer -> Game ([Natural], [PlayerId], [Natural])) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RollDie.RollDie -> Game ()
+rollDieArm :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [PlayerId], [Natural])) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> RollDie.RollDie -> Game ()
 rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
   before <- State.get
   let sides = RollDie.sides rollDie
@@ -1535,7 +1535,7 @@ rollDieArm throwDice runSubgame resolving source controller legal rollDie = do
       -- playing, and in the instruction's scope.
       rollers = filter (\pid -> Game.inRangeOf controller pid before && PlayerEffect.inScope pid controller before (RollDie.roller rollDie)) (Game.apnapOrder before)
   rolled <- Monad.forM rollers $ \roller -> do
-    (results, throwers, thrown) <- throwDice runSubgame roller sides named perDie
+    (results, throwers, thrown) <- throwDice runSubgame roller sides named (RollDie.ignore rollDie) perDie
     used <- case (RollDie.store rollDie, RollDie.reading rollDie) of
       -- CR 706.8a: a storing instruction keeps every result rather than
       -- using one, so CR 706.4's reading is never asked.
@@ -1612,7 +1612,7 @@ rethrow = State.modify' (\g -> if Maybe.isJust (Scratch.throwing (GameState.scra
 --
 -- CR 607.5 / 706.8c: only the results the resolving ability's own pair
 -- stored, so a copy's reroll finds none its printed pair stored.
-rerollStoredResults :: (Game Result -> PlayerId -> Natural -> Natural -> Game Integer -> Game ([Natural], [PlayerId], [Natural])) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> SlotName -> Game ()
+rerollStoredResults :: (Game Result -> PlayerId -> Natural -> Natural -> Natural -> Game Integer -> Game ([Natural], [PlayerId], [Natural])) -> Game Result -> ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> SlotName -> Game ()
 rerollStoredResults throwDice runSubgame resolving source controller legal slot = Foldable.for_ (legalOne slot legal >>= Recipient.objectOf) $ \target -> do
   gs <- State.get
   let acquisition = Game.readingAcquisition resolving source gs target
@@ -1623,7 +1623,7 @@ rerollStoredResults throwDice runSubgame resolving source controller legal slot 
     let rerolled = Map.filter (> 0) (Map.intersectionWith min answer stored)
         kinds = Map.fromListWith (+) [(StoredResult.sides result, n) | (result, n) <- Map.toList rerolled]
     thrown <- Monad.forM (Map.toList kinds) $ \(dieSides, n) -> do
-      (results, throwers, rolled) <- throwDice runSubgame controller dieSides n (pure 0)
+      (results, throwers, rolled) <- throwDice runSubgame controller dieSides n 0 (pure 0)
       Monad.unless (null rolled) (Common.recordRoll controller throwers rolled)
       pure (dieSides, results)
     -- Swapped only once every die is up, in the rule's order.

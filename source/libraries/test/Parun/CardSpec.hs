@@ -6134,7 +6134,8 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- them the card meant. So a card writing the slot at another count is asking
   -- for a number nothing will ever bind, which compiles and reads as zero. A
   -- total chooses nothing, so it has no other result either. Nor does an
-  -- instruction several players roll: each roller has their own. A pair read
+  -- instruction several players roll: each roller has their own, and one
+  -- ignoring a roll of its own (CR 706.6) has one left. A pair read
   -- each on its own (Celebr-8000) binds its second die there, so it owes the
   -- slot.
   Spec.it s "a roll binds the other result only where it rolls two dice" $ do
@@ -6144,7 +6145,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> False
         offends effect = case effect of
           Effect.RollDie rollDie ->
-            (Maybe.isJust (RollDie.other rollDie) && (RollDie.count rollDie /= Quantity.Type.Literal 2 || RollDie.reading rollDie == DiceReading.Total || RollDie.roller rollDie /= PlayerScope.Related PlayerRelation.You))
+            (Maybe.isJust (RollDie.other rollDie) && (RollDie.count rollDie /= Quantity.Type.Literal 2 || RollDie.ignore rollDie /= 0 || RollDie.reading rollDie == DiceReading.Total || RollDie.roller rollDie /= PlayerScope.Related PlayerRelation.You))
               || (RollDie.reading rollDie == DiceReading.Both && Maybe.isNothing (RollDie.other rollDie))
           _ -> False
         offenders = filter (anyFace (any offends . cardResolutionEffects) . Printing.card) ps

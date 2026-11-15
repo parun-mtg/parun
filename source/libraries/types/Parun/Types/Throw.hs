@@ -23,8 +23,9 @@ import qualified Parun.Types.ThrowKind as ThrowKind
 -- Thumb's "flip two coins and ignore one", whose ruling replaces "each
 -- individual coin flip". A printed instruction's entries are all 1.
 --
--- `ignored` is CR 706.6's count of the lowest units then thrown away, zero
--- until Pixie Guide applies. A coin standing for a die is low on tails, Pokey's
+-- `ignored` is CR 706.6's count of the lowest units then thrown away: the
+-- instruction's own (Parun.Types.RollDie's `ignore`), plus one for each Pixie
+-- Guide that applies. A coin standing for a die is low on tails, Pokey's
 -- "tails is 1". What is left -- `units` less `ignored` -- is what the
 -- instruction reads: one face for a flip, its count of results for a roll.
 --
