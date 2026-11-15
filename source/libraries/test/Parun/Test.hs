@@ -2008,17 +2008,13 @@ spec s reference corpus = do
   Parun.CopySpec.copiedAbilitySpec s registry
   Parun.CopySpec.copyAbilityOnStackSpec s registry
   Parun.CopySpec.copySpellSpec s registry
-  Parun.CopySpec.faceDownCopySpec s registry
   Parun.CopySpec.flamerushRiderSpec s registry
   Parun.CopySpec.garthSpec s registry
   Parun.CopySpec.graveyardTokenCopySpec s registry
   Parun.CopySpec.ivySpec s registry
   Parun.CopySpec.leylineOfResonanceSpec s registry
-  Parun.CopySpec.magarSpec s registry
   Parun.CopySpec.metamorphicAlterationSpec s registry
-  Parun.CopySpec.permanentCopySpec s registry
   Parun.CopySpec.spec s registry
-  Parun.CopySpec.stirCopySpec s registry
   Parun.CopySpec.zadaSpec s registry
   Parun.CoreSpec.spec s registry
   Parun.CostSpec.spec s registry

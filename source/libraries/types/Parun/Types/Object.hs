@@ -646,7 +646,7 @@ data Object = MkObject
     -- One-way, and cleared where "ceases to be bestowed" happens: CR 702.103f's
     -- unattachment (Parun.Engine.Sba) and CR 702.103e's illegal target
     -- (Parun.Engine.Stack.resolveTopWith). CR 702.103c's copy is bestowed by
-    -- construction, which Parun.CopySpec's "CR 702.103c a copy of a bestowed
+    -- construction, which data/scenarios/copy's "CR 702.103c a copy of a bestowed
     -- Rollicker resolves as a token Aura attached to the same host" proves; CR
     -- 702.103g's phasing in unattached reaches the CR 702.103f pass one pass
     -- later (CR 702.26i), which Parun.PhasingSpec's "CR 702.103g a bestowed Aura

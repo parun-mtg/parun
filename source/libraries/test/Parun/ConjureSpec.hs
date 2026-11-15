@@ -30,14 +30,12 @@
 -- watches the graveyard.
 --
 -- The DUPLICATE cases are the other axis: three read the abilities of a
--- duplicate of a Clone off a graveyard and a hand (CR 113.6), and one prices a
--- duplicate of a merged permanent off every component (CR 702.140e).
+-- duplicate of a Clone off a graveyard and a hand (CR 113.6).
 module Parun.ConjureSpec where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.State.Strict as State
-import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -49,16 +47,12 @@ import qualified Numeric.Natural
 import qualified Parun.Engine.Action as Action
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Cast as Cast
-import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
-import qualified Parun.Engine.FaceDown as FaceDown
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
-import qualified Parun.Engine.Room as Room
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
-import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Interpreter as Interpreter
 import qualified Parun.Registry as Registry
@@ -67,41 +61,22 @@ import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.BeginningStep as BeginningStep
-import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.Clause as Clause
-import qualified Parun.Types.Color as Color
-import qualified Parun.Types.CombatStep as CombatStep
-import qualified Parun.Types.Conjure as Conjure
-import qualified Parun.Types.ConjureCards as ConjureCards
-import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.DiscardCause as DiscardCause
-import qualified Parun.Types.Effect as Effect
-import qualified Parun.Types.EndingStep as EndingStep
-import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.Face as Face
-import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Game as Game.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
-import qualified Parun.Types.ManaCost as ManaCost
-import qualified Parun.Types.ManaSymbol as ManaSymbol
-import qualified Parun.Types.ManaType as ManaType
-import qualified Parun.Types.Modal as Modal
-import qualified Parun.Types.Mode as Mode
-import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
-import qualified Parun.Types.Player as Player
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
@@ -109,9 +84,7 @@ import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TapState as TapState
-import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
-import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Zone as Zone
 
 -- Parun.CounterspellSpec's bitterblossomChain, which is the shape both cases
@@ -486,42 +459,6 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
           "CR 702.35a the duplicate went to exile, not the graveyard: (in exile, in the graveyard)"
           (length (namedIn cloneName Zone.Exile discarded), length (namedIn cloneName Zone.Graveyard discarded))
           (1, 0)
-  -- CR 702.140e: a mutated permanent has every component's abilities, and the
-  -- Skaab's additional cost is one. Cubwarden mutates over alice's Headless
-  -- Skaab and Sinister Reflections duplicates the merged creature, so the
-  -- duplicate costs the Cubwarden's {3}{W} and still owes the Skaab's exile. The
-  -- pair differs only in a Goblin Piker in the graveyard.
-  Spec.it s "CR 702.140e a duplicate of a mutated Headless Skaab owes the Skaab's additional cost" $ do
-    (island, _, plains, piker, _, reflections, cubwarden) <- duplicatePrintings s registry
-    skaab <- S.printingOf s registry "Headless Skaab"
-    let (skaabId, board0) = S.addPermanent skaab S.alice (S.landsInPlay plains 4)
-        (withCubwarden, cubwardenSpell) = S.handOne cubwarden board0
-        merged = mergingOnto skaabId withCubwarden cubwardenSpell
-        (spell, board1) = S.addHandCard reflections S.alice (S.landsFor island S.alice 2 merged)
-        before = Game.zoneMembers Zone.Hand S.alice board1
-        resolved =
-          S.settleSba
-            ( S.runPure
-                (aimingAtAll [skaabId])
-                board1
-                  { GameState.turn =
-                      (GameState.turn board1)
-                        { TurnRegisters.phase = Phase.PrecombatMain
-                        }
-                  }
-                (S.cast S.alice spell >> Stack.resolveTop)
-            )
-    case filter (`notElem` before) (Game.zoneMembers Zone.Hand S.alice resolved) of
-      [duplicate] -> do
-        let bare = S.landsFor plains S.alice 4 resolved
-            (_, stocked) = S.addGraveyardCard piker S.alice bare
-        Spec.assertEqWith
-          s
-          "CR 702.140e castable only with a creature card to exile: (empty graveyard, a Piker in it)"
-          (S.castable S.alice duplicate bare, S.castable S.alice duplicate stocked)
-          (False, True)
-        Spec.assertEqWith s "setup: the merged permanent held the Cubwarden and the Skaab" (fmap (Seq.length . Game.componentsOf . Object.source) (Game.lookupObject skaabId merged)) (Just 2)
-      other -> Spec.assertFailure s ("expected one duplicate in hand, got " <> show (length other))
   -- Fear of Change ({G}{U} Enchantment Creature -- Nightmare, 2/3, "When this
   -- creature enters or dies, exile another creature you control. If you do,
   -- conjure a duplicate of a random creature card with mana value X onto the
@@ -857,23 +794,6 @@ aimingAtAll oids p = case p of
   Prompt.ChooseTargets _ _ _ asked -> fmap (\(_, rs) -> Set.filter (maybe False (`elem` oids) . Recipient.objectOf) rs) asked
   _ -> S.identityAnswer p
 
--- Island, Mountain, Plains, Goblin Piker, Clone, Sinister Reflections and
--- Cubwarden, which the Headless Skaab case reads.
-duplicatePrintings ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  m (Printing.Printing, Printing.Printing, Printing.Printing, Printing.Printing, Printing.Printing, Printing.Printing, Printing.Printing)
-duplicatePrintings s registry =
-  (,,,,,,)
-    <$> S.printingOf s registry "Island"
-    <*> S.printingOf s registry "Mountain"
-    <*> S.printingOf s registry "Plains"
-    <*> S.printingOf s registry "Goblin Piker"
-    <*> S.printingOf s registry "Clone"
-    <*> S.printingOf s registry "Sinister Reflections"
-    <*> S.printingOf s registry "Cubwarden"
-
 -- A Clone resolved as a copy of `original`, then duplicated into alice's hand
 -- by Sinister Reflections: the duplicate and the board, the original and the
 -- Clone still on the battlefield.
@@ -893,28 +813,6 @@ conjuredDuplicate clone reflections original board0 = do
       resolved = S.settleSba (S.runPure (aimingAtAll [cloneId]) board (S.cast S.alice spell >> Stack.resolveTop))
   duplicate <- Maybe.listToMaybe (namedIn cloneName Zone.Hand resolved)
   pure (duplicate, resolved)
-
--- Casts `spellId` for Cubwarden's mutate cost at `host`, merging OVER, and
--- drains the stack. Parun.MutateSpec's `merging`, duplicated rather than hoisted:
--- the cost is NAMED rather than indexed and the target FILTERED out of the
--- offered set, since CR 608.2b's re-read drops a hand-built recipient.
-mergingOnto :: ObjectId.ObjectId -> GameState.GameState -> ObjectId.ObjectId -> GameState.GameState
-mergingOnto host board spellId =
-  let answer :: Prompt.Prompt r -> r
-      answer p = case p of
-        Prompt.ChooseCost _ _ _ candidates _ ->
-          Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just cubwardenMutateCost) . Cost.Type.mana . CandidateCost.cost) candidates)
-        Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just host) . Recipient.objectOf) . snd) sets
-        Prompt.ChooseMutateSide {} -> MutateSide.Over
-        _ -> S.identityAnswer p
-      cast = S.runPure answer board (S.cast S.alice spellId)
-   in S.runPure answer cast (Monad.replicateM_ 6 (Engine.settleForPriority >> Stack.resolveTop) >> Engine.settleForPriority)
-
--- Cubwarden's mutate cost, {2}{W}{W}, as the announcement names it.
-cubwardenMutateCost :: ManaCost.ManaCost
-cubwardenMutateCost = ManaCost.MkManaCost [ManaSymbol.Generic 2, white, white]
-  where
-    white = ManaSymbol.OfType (ManaType.Colored Color.White)
 
 -- Resolves the staged Clone with its CR 614.12 as-enters copy pinned to the
 -- named permanent, Parun.CopySpec's copyNamed for its reason: a searching

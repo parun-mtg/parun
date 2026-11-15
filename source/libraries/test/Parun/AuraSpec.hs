@@ -1901,8 +1901,8 @@ handNames pid gs = Maybe.mapMaybe (fmap S.nameOf . flip Game.cardOf gs) (Game.zo
 -- these cases activates it, and Parun.ActivateSpec's "Any player may activate"
 -- group is where an opponent does.
 --
--- CR 702.103c's copy of a bestowed Aura spell is Parun.CopySpec's (Lithoform
--- Engine copying a bestowed Rollicker).
+-- CR 702.103c's copy of a bestowed Aura spell is data/scenarios/copy's
+-- (Lithoform Engine copying a bestowed Rollicker).
 --
 -- The LAST case is the one board shape the paragraph above does not describe: no
 -- creature at all, and then one, because what it measures is whether CR 601.2c

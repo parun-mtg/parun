@@ -1613,8 +1613,9 @@ wipedFace spell face
 -- resolves the copied text, and CR 716.3d's and 721.3d's riders ask whether the
 -- COPY is an Adventure or an Omen (Parun.Engine.Resolve.finishSpell). Equal to
 -- Game.faceOf for an object copying nothing, whose copiable values are seeded
--- from that same face. Parun.CopySpec's "CR 707.2 a spell that becomes a copy of
--- a Bolt" and "CR 707.2 an Adventure that becomes a copy of a Bolt" prove it.
+-- from that same face. data/scenarios/copy's "CR 707.2 a spell that becomes a
+-- copy of a Bolt" and "CR 707.2 an Adventure that becomes a copy of a Bolt"
+-- prove it.
 spellFaceOf :: ObjectId -> GameState -> Maybe (Face.Face Card.Type.Card)
 spellFaceOf oid gs =
   let copiable = copiableCharacteristics oid gs
@@ -2337,8 +2338,8 @@ withMergedAbilities donor base =
       PC.definesChosenColor = PC.definesChosenColor base || PC.definesChosenColor donor,
       -- CR 702.140e / 118.8 / 118.9: a cost line in a component's rules text is
       -- one of its abilities too, so a duplicate of the merged permanent owes
-      -- every component's. Parun.ConjureSpec's "CR 702.140e a duplicate of a
-      -- mutated Headless Skaab" proves it.
+      -- every component's. data/scenarios/conjure's "CR 702.140e a duplicate
+      -- of a mutated Headless Skaab" proves it.
       PC.additionalCosts = PC.additionalCosts base <> PC.additionalCosts donor,
       PC.additionalCostChoices = PC.additionalCostChoices base <> PC.additionalCostChoices donor,
       PC.alternativeCosts = PC.alternativeCosts base <> PC.alternativeCosts donor,
