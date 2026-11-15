@@ -15,7 +15,6 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Ord as Ord
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
-import qualified Data.Text as Text
 import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Combat as Combat
@@ -23,7 +22,6 @@ import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Mint as Mint
-import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Replay as Replay
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
@@ -32,7 +30,6 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Acquisition as Acquisition
-import qualified Parun.Types.Action as Action
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
@@ -59,11 +56,9 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LibraryPosition as LibraryPosition
-import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
-import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Player as Player
@@ -342,105 +337,6 @@ runUntil done answer gs0 =
 nextTurn :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameState.GameState
 nextTurn answer gs = runUntil ((/= TurnRegisters.turnNumber (GameState.turn gs)) . (TurnRegisters.turnNumber . GameState.turn)) answer gs
 
--- Cast whatever is offered, and otherwise pass. Read by the CR 614.1d case
--- below, where the one castable card in the game is the {B} creature whose
--- castability that case measures -- so "whatever is offered" is that card or
--- nothing at all.
-castOrPassAnswer :: Prompt.Prompt r -> r
-castOrPassAnswer p = case p of
-  Prompt.ChooseAction _ _ actions ->
-    let isCast a = case a of
-          Action.Cast {} -> True
-          _ -> False
-     in case filter isCast actions of
-          h : _ -> h
-          [] -> Action.Pass
-  _ -> S.identityAnswer p
-
--- castOrPassAnswer's sibling for the CR 614.1c pay-life-or-enter-tapped cases:
--- play the land, and answer its as-enters "you may pay N life" the given way.
--- Every other prompt falls through to S.playLandAnswer, so the two cases differ
--- in the OptionalDecision and in nothing else.
-payLifeOnEntryAnswer :: OptionalDecision.OptionalDecision -> Prompt.Prompt r -> r
-payLifeOnEntryAnswer decision p = case p of
-  Prompt.ChoosePayLifeOnEntry {} -> decision
-  _ -> S.playLandAnswer p
-
--- razorgrassBoard's sibling for Sea Gate, Reborn, parameterized by alice's life
--- total: the modal double-faced card and the {U} creature in hand, and NOTHING
--- else in the game. The life total is the ONLY axis, so a pair of boards built
--- here differ in it and in nothing else.
-seaGateBoard :: Printing.Printing -> Printing.Printing -> Integer -> GameState.GameState
-seaGateBoard seaGate warrior life =
-  let (_, withGate) = S.addHandCard seaGate S.alice (Setup.emptyGame S.bothPlayers)
-      (_, filled) = S.addHandCard warrior S.alice withGate
-   in filled
-        { GameState.turn =
-            (GameState.turn filled)
-              { TurnRegisters.phase = Phase.PrecombatMain,
-                TurnRegisters.activePlayer = S.alice,
-                TurnRegisters.priority = Just S.alice
-              },
-          GameState.players = Map.adjust (\p -> p {Player.life = life}) S.alice (GameState.players filled)
-        }
-
--- How many Tidal Warriors made it to the battlefield.
-warriorOut :: GameState.GameState -> Int
-warriorOut gs =
-  let warriorName = CardName.MkCardName (Text.pack "Tidal Warrior")
-   in length (filter (\o -> Projection.hasName warriorName o gs) (Set.toList (GameState.battlefield gs)))
-
--- payLifeOnEntryAnswer's sibling for the CR 614.1c REVEAL cases: play the land,
--- and answer its "you may reveal a Kithkin card from your hand" with this card.
--- PINNED, never a search of the offered list: an answerer that picked whatever
--- the engine offered would find a legal card again after a mutation widened the
--- offer, and the case would stay green while the engine's own filter was broken.
-revealOnEntryAnswer :: Maybe ObjectId.ObjectId -> Prompt.Prompt r -> r
-revealOnEntryAnswer shown p = case p of
-  Prompt.ChooseRevealOnEntry {} -> shown
-  _ -> S.playLandAnswer p
-
--- How many times the as-enters reveal was put to a player.
-revealAsks :: [Response.Response] -> Int
-revealAsks responses =
-  let isReveal r = case r of
-        Response.ChoseRevealOnEntry _ -> True
-        _ -> False
-   in length (filter isReveal responses)
-
--- alice's precombat main phase with the stack empty, Rustic Clachan and ONE {W}
--- creature in hand, and NOTHING else in the game: the land's "{T}: Add {W}" is
--- the only mana there will be, so the creature's fate reads the land's tap state
--- as Soul Warden's does for Razorgrass Ambush (data/scenarios/replacement). The
--- creature is the only axis a pair of boards from here differ on -- Mosquito
--- Guard and Benalish Hero are both {W} 1/1 Soldiers, and one is a Kithkin.
-clachanBoard :: Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, GameState.GameState)
-clachanBoard clachan creature =
-  let (_, withLand) = S.addHandCard clachan S.alice (Setup.emptyGame S.bothPlayers)
-      (creatureId, filled) = S.addHandCard creature S.alice withLand
-   in ( creatureId,
-        filled
-          { GameState.turn =
-              (GameState.turn filled)
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-      )
-
--- How many permanents with this name made it to the battlefield.
-namedOut :: String -> GameState.GameState -> Int
-namedOut name gs =
-  let cardName = CardName.MkCardName (Text.pack name)
-   in length (filter (\o -> Projection.hasName cardName o gs) (Set.toList (GameState.battlefield gs)))
-
--- Whether a life loss of exactly this size, by this player, was RECORDED -- the
--- channel a card that watches for life loss reads, and the half of CR 119.4 a
--- bare subtraction from the life total would not satisfy.
-lostLife :: PlayerId.PlayerId -> Natural.Natural -> GameState.GameState -> Bool
-lostLife pid n gs = GameEvent.LifeLost (LifeChange.MkLifeChange pid n True) `elem` S.eventsOf gs
-
 -- CR 615.7's prevention shield, whose plainest producer in data/cards/ is Mending
 -- Hands ({W} Instant: "Prevent the next 4 damage that would be dealt to any
 -- target this turn") -- the same countdown shield as Healing Grace below, minus
@@ -461,8 +357,7 @@ lostLife pid n gs = GameEvent.LifeLost (LifeChange.MkLifeChange pid n True) `ele
 -- The DAMAGE BATCHES below are hand-built and the SPELL is not: casting Mending
 -- Hands for real is what proves the card, and reaching a real combat-damage batch
 -- of two attackers with different powers would mean driving a whole combat phase
--- to produce a fixture these assertions read straight off. The same split, and
--- the same reason, as the Fog case in the group above.
+-- to produce a fixture these assertions read straight off.
 mendingHandsSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 mendingHandsSpec s registry = Spec.describe s "Mending Hands (CR 615.7)" $ do
   let -- One noncombat damage event, from `src`, at `n`.

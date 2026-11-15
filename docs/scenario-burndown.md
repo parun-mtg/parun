@@ -160,17 +160,17 @@ out: grep for them.
 
 ### `CastPermissionSpec`
 
-- CR 109.5 one player's Exploration does not raise another's allowance | `check:other-PlayerEffect.landPlaysAllowed`
-- CR 109.5 the You scope does not reach bob's graveyard | `check:other-PlayerEffect.mayCastFrom`
-- CR 305.1 / 614.1a a graveyard land turned away by its own sacrifice still spends the use | `check:helper-arrivedBetween` `check:helper-namesIn` `check:helper-pbBuried`
-- CR 400.1 the grant does not reach the copy in bob's graveyard | `check:other-PlayerEffect.mayCastFrom`
-- CR 514.2 the cleanup sweep drops an unused WhenUsed grant | `check:other-StoredEffects.playerEffects` `check:other-Expiry.dropAtCleanup`
-- CR 514.2 the permission ends at cleanup | `check:other-StoredEffects.playerEffects` `check:other-PlayerEffect.mayCastFrom`
-- CR 601.2e a rejected cast leaves the grant standing | `board:player-effect`
-- CR 601.2e an announced X that leaves the spell even takes the cast back
-- CR 601.3 / 118.8 the linked creature is cast by removing three counters | `board:exile-linked`
-- CR 611.2 resolving stores one MayPlayAsThoughItHadFlash grant expiring on use | `check:other-StoredEffects.playerEffects` `check:other-ActivePlayerEffect.effect` `check:other-ActivePlayerEffect.expiry`
-- CR 708.2a a face-down cast spends the grant off the face the gate read | `board:player-effect`
+- ~~CR 109.5 one player's Exploration does not raise another's allowance | `check:other-PlayerEffect.landPlaysAllowed`~~
+- ~~CR 109.5 the You scope does not reach bob's graveyard | `check:other-PlayerEffect.mayCastFrom`~~
+- ~~CR 305.1 / 614.1a a graveyard land turned away by its own sacrifice still spends the use | `check:helper-arrivedBetween` `check:helper-namesIn` `check:helper-pbBuried`~~
+- ~~CR 400.1 the grant does not reach the copy in bob's graveyard | `check:other-PlayerEffect.mayCastFrom`~~
+- ~~CR 514.2 the cleanup sweep drops an unused WhenUsed grant | `check:other-StoredEffects.playerEffects` `check:other-Expiry.dropAtCleanup`~~
+- ~~CR 514.2 the permission ends at cleanup | `check:other-StoredEffects.playerEffects` `check:other-PlayerEffect.mayCastFrom`~~
+- ~~CR 601.2e a rejected cast leaves the grant standing | `board:player-effect`~~
+- ~~CR 601.2e an announced X that leaves the spell even takes the cast back~~
+- ~~CR 601.3 / 118.8 the linked creature is cast by removing three counters | `board:exile-linked`~~
+- ~~CR 611.2 resolving stores one MayPlayAsThoughItHadFlash grant expiring on use | `check:other-StoredEffects.playerEffects` `check:other-ActivePlayerEffect.effect` `check:other-ActivePlayerEffect.expiry`~~
+- ~~CR 708.2a a face-down cast spends the grant off the face the gate read | `board:player-effect`~~
 
 ### `CastProhibitionSpec`
 
@@ -602,17 +602,17 @@ out: grep for them.
 
 ### `ExpirySpec`
 
-- CR 500.5 an end-of-combat retention effect expires BEFORE the pool empties | `board:combat` `board:player-effect`
-- CR 500.5a whole card: live throughout the end of combat step, gone once the phase ends | `check:other-StoredEffects.continuousEffects`
-- CR 500.5a whole card: the animation outlives the step it was made in | `check:other-ContinuousEffect.expiry` `check:other-StoredEffects.continuousEffects`
-- CR 500.5a whole card: the permission ends as alice's next combat phase ends | `check:helper-permissionOn`
-- CR 604.2 an ordinary static ability does NOT linger past its permanent | `check:other-StoredEffects.continuousEffects`
-- CR 611.2a / 514.2 it ends as that turn ends, and no later turn of theirs can play the card
-- CR 611.2a whole card: the animation outlives Titania's Song and ends at cleanup | `check:abilities`
-- CR 611.2b chapter I grants hexproof for the same duration, and it ends with the Saga | `check:other-StoredEffects.continuousEffects`
-- CR 611.2b it ends when the crown moves to the third player | `check:other-StoredEffects.continuousEffects`
-- CR 707.2a a copy of Titania's Song hands over its own effect | `check:continuous-effects`
-- Pearl Collector's perpetual lifelink survives the graveyard, where an indefinite grant does not | `check:other-StoredEffects.continuousEffects`
+- ~~CR 500.5 an end-of-combat retention effect expires BEFORE the pool empties | `board:combat` `board:player-effect`~~
+- ~~CR 500.5a whole card: live throughout the end of combat step, gone once the phase ends | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 500.5a whole card: the animation outlives the step it was made in | `check:other-ContinuousEffect.expiry` `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 500.5a whole card: the permission ends as alice's next combat phase ends | `check:helper-permissionOn`~~
+- ~~CR 604.2 an ordinary static ability does NOT linger past its permanent | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 611.2a / 514.2 it ends as that turn ends, and no later turn of theirs can play the card~~
+- ~~CR 611.2a whole card: the animation outlives Titania's Song and ends at cleanup | `check:abilities`~~
+- ~~CR 611.2b chapter I grants hexproof for the same duration, and it ends with the Saga | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 611.2b it ends when the crown moves to the third player | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 707.2a a copy of Titania's Song hands over its own effect | `check:continuous-effects`~~
+- ~~Pearl Collector's perpetual lifelink survives the graveyard, where an indefinite grant does not | `check:other-StoredEffects.continuousEffects`~~
 
 ### `FaceDownSpec`
 
@@ -898,17 +898,17 @@ out: grep for them.
 
 ### `PhasingSpec`
 
-- CR 702.103g a bestowed Aura that phases in unattached is a creature again | `board:zone-phasedout`
-- CR 702.26a a permanent without phasing does not phase out | `check:helper-onBattlefield` `check:other-Phasing.isPhasedOut`
-- CR 702.26a another player's untap step phases nothing out | `check:helper-onBattlefield`
-- CR 702.26a it phases back in at its own controller's next untap step | `board:zone-phasedout`
-- CR 702.26a the cycle repeats every untap step | `check:helper-onBattlefield`
-- CR 702.26a/702.26c a phased-out permanent phases in at its controller's next untap step | `check:creature-count` `check:helper-onBattlefield` `check:other-Phasing.isPhasedOut`
-- CR 702.26b Reality Ripple phases out a creature with no phasing | `check:other-Phasing.phasedOutStatus` `check:helper-zoneOf`
-- CR 702.26g the Aura phases in with its host, still attached | `check:helper-attachedHostOf` `check:helper-onBattlefield` `check:other-Phasing.isPhasedOut`
-- CR 702.26h an object named AND dragged phases out indirectly | `check:phasing`
-- CR 702.26i an Aura attached to a PLAYER phases in still attached | `check:phasing`
-- CR 702.26j/702.26d each transition logs only its phasing acts | `check:events`
+- ~~CR 702.103g a bestowed Aura that phases in unattached is a creature again | `board:zone-phasedout`~~
+- ~~CR 702.26a a permanent without phasing does not phase out | `check:helper-onBattlefield` `check:other-Phasing.isPhasedOut`~~
+- ~~CR 702.26a another player's untap step phases nothing out | `check:helper-onBattlefield`~~
+- ~~CR 702.26a it phases back in at its own controller's next untap step | `board:zone-phasedout`~~
+- ~~CR 702.26a the cycle repeats every untap step | `check:helper-onBattlefield`~~
+- ~~CR 702.26a/702.26c a phased-out permanent phases in at its controller's next untap step | `check:creature-count` `check:helper-onBattlefield` `check:other-Phasing.isPhasedOut`~~
+- ~~CR 702.26b Reality Ripple phases out a creature with no phasing | `check:other-Phasing.phasedOutStatus` `check:helper-zoneOf`~~
+- ~~CR 702.26g the Aura phases in with its host, still attached | `check:helper-attachedHostOf` `check:helper-onBattlefield` `check:other-Phasing.isPhasedOut`~~
+- ~~CR 702.26h an object named AND dragged phases out indirectly | `check:phasing`~~
+- ~~CR 702.26i an Aura attached to a PLAYER phases in still attached | `check:phasing`~~
+- ~~CR 702.26j/702.26d each transition logs only its phasing acts | `check:events`~~
 
 ### `PlanechaseSpec`
 
@@ -1012,18 +1012,18 @@ out: grep for them.
 
 ### `ReplacementSpec`
 
-- CR 119.4 at 2 life the payment is ILLEGAL, so it enters tapped with no life paid | `check:helper-lostLife` `check:helper-warriorOut` `check:other-Engine.priorityLoop`
+- ~~CR 119.4 at 2 life the payment is ILLEGAL, so it enters tapped with no life paid | `check:helper-lostLife` `check:helper-warriorOut` `check:other-Engine.priorityLoop`~~
 - ~~CR 614.12a the copy choice is locked in BEFORE the enters event exists~~
-- CR 614.15 with two artifacts metalcraft is off, so the Blast deals its printed 2 | `check:other-StoredEffects.replacements`
-- CR 614.1c DECLINING with a Kithkin card in hand still enters tapped | `check:helper-revealsOf`
-- CR 614.1c Rustic Clachan REVEALING a Kithkin card enters untapped | `check:events` `check:helper-revealsOf`
-- CR 614.1c one +1/+1 counter per creature card in EVERY graveyard | `check:other-S.addGraveyardCard`
-- CR 614.1c the Blade enters attached to the creature its controller chose | `check:events`
-- CR 614.1c with NO Kithkin card in hand it enters tapped, unasked | `check:events` `check:helper-revealsOf`
-- CR 614.7 an Aura the same pass buries is never offered to a regeneration shield | `check:replacement-rows`
-- CR 615.10 Fog prevents both attackers' damage in one batch | `check:events`
-- CR 616.1b three seats: carol is asked WHICH Gather Specimens takes her creature | `check:prompt-payload`
-- CR 616.1d the back-face bucket outranks Kismet's, so no order is asked | `board:daytime`
+- ~~CR 614.15 with two artifacts metalcraft is off, so the Blast deals its printed 2 | `check:other-StoredEffects.replacements`~~
+- ~~CR 614.1c DECLINING with a Kithkin card in hand still enters tapped | `check:helper-revealsOf`~~
+- ~~CR 614.1c Rustic Clachan REVEALING a Kithkin card enters untapped | `check:events` `check:helper-revealsOf`~~
+- ~~CR 614.1c one +1/+1 counter per creature card in EVERY graveyard | `check:other-S.addGraveyardCard`~~
+- ~~CR 614.1c the Blade enters attached to the creature its controller chose | `check:events`~~
+- ~~CR 614.1c with NO Kithkin card in hand it enters tapped, unasked | `check:events` `check:helper-revealsOf`~~
+- ~~CR 614.7 an Aura the same pass buries is never offered to a regeneration shield | `check:replacement-rows`~~
+- ~~CR 615.10 Fog prevents both attackers' damage in one batch | `check:events`~~
+- ~~CR 616.1b three seats: carol is asked WHICH Gather Specimens takes her creature | `check:prompt-payload`~~
+- ~~CR 616.1d the back-face bucket outranks Kismet's, so no order is asked | `board:daytime`~~
 
 ### `ResolveSpec`
 

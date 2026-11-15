@@ -649,8 +649,9 @@ data Object = MkObject
     -- construction, which Parun.CopySpec's "CR 702.103c a copy of a bestowed
     -- Rollicker resolves as a token Aura attached to the same host" proves; CR
     -- 702.103g's phasing in unattached reaches the CR 702.103f pass one pass
-    -- later (CR 702.26i), which Parun.PhasingSpec's "CR 702.103g a bestowed Aura
-    -- that phases in unattached is a creature again" proves.
+    -- later (CR 702.26i), which the scenario
+    -- phasing/cr-702-103g-a-bestowed-aura-that-phases-in-unattached-is-a-creature-again
+    -- proves.
     bestowed :: Bool,
     -- | CR 702.140a: is this SPELL a mutating creature spell? Stamped by
     -- Parun.Engine.Cast at CR 601.2b once the announcement settles on the

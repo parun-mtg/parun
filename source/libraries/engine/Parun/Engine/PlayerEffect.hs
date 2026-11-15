@@ -1736,9 +1736,9 @@ variablesIn oid gs = sum (fmap (maybe 0 Quantity.variablesOf . Face.manaCost) (G
 -- is announced the spell's mana value is fixed (CR 202.3e), so a quality-bearing
 -- prohibition is asked again at `manaValue`, against the proposal's view of
 -- `oid` otherwise. Only CantCastMatching, the one prohibition reading a quality X
--- moves; prohibitsCasting judged the rest at the proposal. Parun.CastPermissionSpec's
--- "CR 601.2e an announced X that leaves the spell even takes the cast back" is
--- the proof, off Void Winnower.
+-- moves; prohibitsCasting judged the rest at the proposal. The scenario
+-- cast-permission/cr-601-2e-an-announced-x-that-leaves-the-spell-even-takes-the-cast-back
+-- is the proof, off Void Winnower.
 prohibitsAtManaValue :: PlayerId -> ObjectId -> Integer -> GameState -> Bool
 prohibitsAtManaValue pid oid manaValue gs =
   let view = (Projection.viewOfObject oid gs) {Filter.manaValue = Just manaValue}
@@ -5201,8 +5201,9 @@ rollModifiers pid gs =
 -- CR 708.2a's face-down 2/2, the same view the cast's own gate read -- and hands
 -- the rows to `consume` only once CR 601.2h's payment has succeeded, so a
 -- rejected or reversed announcement (CR 601.2e, CR 734.1) spends nothing.
--- Parun.PlayerEffectSpec's "a rejected cast leaves the grant standing" and "a
--- face-down cast spends the grant off the face the gate read" are the proofs.
+-- The scenarios cast-permission/cr-601-2e-a-rejected-cast-leaves-the-grant-standing
+-- and cast-permission/cr-708-2a-a-face-down-cast-spends-the-grant-off-the-face-the-gate-read
+-- are the proofs.
 spentByCast :: PlayerId -> ObjectId -> GameState -> [ActivePlayerEffect.ActivePlayerEffect]
 spentByCast = spentGrants castUse
 

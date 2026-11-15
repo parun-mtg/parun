@@ -1,0 +1,91 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Exploration"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "hand": [
+          {
+            "card": "Mountain",
+            "label": "mountain"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-2"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 109.5 one player's Exploration does not raise another's allowance",
+  "final": [
+    {
+      "Count": {
+        "card": "Mountain",
+        "count": 1,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Mountain",
+        "count": 4,
+        "player": "bob",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "CR 109.5: the You scope. alice's Exploration is alice's, and bob playing lands on his own turn is still held to CR 305.2's one. That alice's own allowance is two is cr-305-2-exploration-raises-the-allowance-to-two.",
+  "timeline": [
+    {
+      "do": {
+        "PlayLand": "$mountain"
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "PlayLand": "$mountain-2"
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility Mountain#5"
+          ],
+          "of": "Offered",
+          "player": "bob"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

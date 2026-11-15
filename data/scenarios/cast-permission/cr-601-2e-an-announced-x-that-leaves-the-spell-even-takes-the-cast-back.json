@@ -1,0 +1,209 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "ready": true
+          },
+          {
+            "card": "Void Winnower",
+            "label": "winnower"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "bm1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "bm2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "bm3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "bm4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "bm5",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "bm6",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "bm7",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "bm8",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "bm9",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Molten Disaster",
+            "label": "disaster"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2e an announced X that leaves the spell even takes the cast back",
+  "note": "CR 601.2e with CR 202.3e's second half: CR 601.3a let bob BEGIN casting Molten Disaster under alice's Void Winnower, and the X he announces is then judged. X = 2 leaves {X}{R}{R} at mana value 4, even, so the cast is taken back; X = 3 makes it 5 on the stack. The control file, the Winnower gone, is the pair for the X = 2 announcement.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseKicker",
+          "with": 0
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$bm1",
+            "$bm2",
+            "$bm3",
+            "$bm4",
+            null
+          ],
+          "object": "$disaster",
+          "x": 2
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Molten Disaster",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$bm1",
+          "tapped": false
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseKicker",
+          "with": 0
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$bm1",
+            "$bm2",
+            "$bm3",
+            "$bm4",
+            "$bm5",
+            null
+          ],
+          "object": "$disaster",
+          "x": 3
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Molten Disaster"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

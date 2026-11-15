@@ -14,7 +14,6 @@ import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
-import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
@@ -34,8 +33,7 @@ import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
-import qualified Parun.Extra.Int as Int
-import Parun.PreventionSpec (aimObject, answersFor, castAndResolve, castOrPassAnswer, clachanBoard, counterBoard, countersOn, leylineShape, lostLife, namedOut, newestNamed, payLifeOnEntryAnswer, raceAnswer, revealAsks, revealOnEntryAnswer, seaGateBoard, theAbility, warriorOut, wasAskedForEntryOption, wasAskedToReplace)
+import Parun.PreventionSpec (aimObject, answersFor, castAndResolve, counterBoard, countersOn, leylineShape, newestNamed, raceAnswer, theAbility, wasAskedForEntryOption, wasAskedToReplace)
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -43,7 +41,6 @@ import qualified Parun.Types.Acquisition as Acquisition
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
-import qualified Parun.Types.BecameAttached as BecameAttached
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -55,7 +52,6 @@ import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DamagePattern as DamagePattern
 import qualified Parun.Types.DamageR as DamageR
 import qualified Parun.Types.DamageRewrite as DamageRewrite
-import qualified Parun.Types.Daytime as Daytime
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.DestructionCause as DestructionCause
 import qualified Parun.Types.Duration as Duration
@@ -67,7 +63,6 @@ import qualified Parun.Types.Expiry as Expiry
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GainControl as GainControl
-import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
@@ -89,14 +84,12 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
-import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SourceChoices as SourceChoices
 import qualified Parun.Types.StoredEffects as StoredEffects
-import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Uses as Uses
@@ -300,27 +293,6 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
         after = S.runPure S.identityAnswer g1 (Event.changeZone (pure ()) piker Zone.Hand)
     Spec.assertEqWith s "in bob's hand" (length (Game.zoneMembers Zone.Hand S.bob after)) 1
     Spec.assertEqWith s "nothing was exiled" (Set.size (GameState.exile after)) 0
-  Spec.it s "CR 615.10 Fog prevents both attackers' damage in one batch" $ do
-    forest <- S.printingOf s registry "Forest"
-    pikerPrinting <- S.printingOf s registry "Goblin Piker"
-    fog <- S.printingOf s registry "Fog"
-    let base = S.landsInPlay forest 1
-        (victimA, g1) = S.addPermanent pikerPrinting S.bob base
-        (victimB, g2) = S.addPermanent pikerPrinting S.bob g1
-        (g3, fogId) = S.handOne fog g2
-        resolved = S.runPure S.identityAnswer g3 (S.cast S.alice fogId >> Stack.resolveTop)
-        -- Hand-built rather than driven through real combat: reaching a real
-        -- combat-damage batch would mean driving an entire combat phase, which
-        -- this assertion (Fog prevents a whole batch, not just one event) does
-        -- not need.
-        batch =
-          [ DamageEvent.MkDamageEvent victimA (Recipient.ToCreature victimA) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty Nothing mempty DamageKind.Combat,
-            DamageEvent.MkDamageEvent victimB (Recipient.ToCreature victimB) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty Nothing mempty DamageKind.Combat
-          ]
-        after = S.runPure S.identityAnswer resolved (Damage.applyDamage (pure ()) batch)
-    Spec.assertEqWith s "the first attacker's damage was prevented" (S.damageOf victimA after) (Just 0)
-    Spec.assertEqWith s "and so was the second's, independently" (S.damageOf victimB after) (Just 0)
-    Spec.assertEqWith s "no damage event was recorded at all" (S.damageEventsOf after) []
   -- CR 701.19b's other form of regeneration: Mossbridge Troll's "If this
   -- creature would be destroyed, regenerate it." is a static ability (CR 604.1),
   -- so CR 604.2 keeps its replacement effect active for as long as the permanent
@@ -447,101 +419,6 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
         (g3, spellId) = S.handOne instillInfection g2
         after = castAndResolve (raceAnswer scales piker) g3 spellId
     Spec.assertEqWith s "one -1/-1 counter, unscaled" (countersOn CounterKind.MinusOneMinusOne piker after) 1
-  Spec.it s "CR 119.4 at 2 life the payment is ILLEGAL, so it enters tapped with no life paid" $ do
-    seaGate <- S.printingOf s registry "Sea Gate Restoration"
-    warrior <- S.printingOf s registry "Tidal Warrior"
-    let played = S.runPure (payLifeOnEntryAnswer OptionalDecision.Exercises) (seaGateBoard seaGate warrior 2) Engine.priorityLoop
-    case Set.toList (GameState.battlefield played) of
-      [permId] -> do
-        Spec.assertEqWith s "tapped, though the answerer said pay" (fmap Object.tapped (Game.lookupObject permId played)) (Just TapState.Tapped)
-        Spec.assertEqWith s "and the 2 life is untouched" (S.lifeOf S.alice played) (Just 2)
-        Spec.assertBool s (not (lostLife S.alice 3 played)) "no life loss was recorded"
-        Spec.assertEqWith
-          s
-          "so the {U} creature in hand stays there"
-          (warriorOut (S.runPure castOrPassAnswer played Engine.priorityLoop))
-          0
-      other -> Spec.assertFailure s ("expected one permanent, got " <> show (length other))
-  -- CR 614.1c's other price: Rustic Clachan, "As this land enters, you may reveal
-  -- a Kithkin card from your hand. If you don't, this land enters tapped" (oracle
-  -- checked on Scryfall). The three cases below are one fixture in three states,
-  -- and they differ pairwise in exactly one thing each: the first two share a
-  -- board and differ only in the ANSWER, the first and third share an answer that
-  -- names the held creature and differ only in whether that creature is a Kithkin.
-  --
-  -- The land enters in all three, so "entered untapped" is told apart from
-  -- "entered" -- each case reads the tap state of the one permanent on the board.
-  --
-  -- Mosquito Guard ({W} 1/1 Kithkin Soldier) and Benalish Hero ({W} 1/1 Human
-  -- Soldier) are the pair. Neither has an enters trigger, and the Clachan's
-  -- "{T}: Add {W}" is the only mana in the game, so what the reveal buys is read
-  -- off whether the creature gets cast -- Activatable.activatable is deliberately not
-  -- asked, since CR 605.3b keeps a mana ability off the stack.
-  --
-  -- The reveal is asserted through S.revealsOf, CR 701.20a's public log, and not
-  -- through the tap state alone: showing a card is the whole of what the player
-  -- did, and a rewrite that left the land untapped without revealing anything
-  -- would pass the tap assertion.
-  Spec.it s "CR 614.1c Rustic Clachan REVEALING a Kithkin card enters untapped" $ do
-    clachan <- S.printingOf s registry "Rustic Clachan"
-    guard_ <- S.printingOf s registry "Mosquito Guard"
-    let (guardId, board) = clachanBoard clachan guard_
-        played = S.runPure (revealOnEntryAnswer (Just guardId)) board Engine.priorityLoop
-    case Set.toList (GameState.battlefield played) of
-      [permId] -> do
-        Spec.assertEqWith s "the land entered untapped" (fmap Object.tapped (Game.lookupObject permId played)) (Just TapState.Untapped)
-        Spec.assertEqWith
-          s
-          "and alice showed the Kithkin card to do it (CR 701.20a)"
-          (S.revealsOf played)
-          [(S.alice, Set.singleton (CardName.MkCardName (Text.pack "Mosquito Guard")))]
-        Spec.assertEqWith s "one ChooseRevealOnEntry was raised" (revealAsks (answersFor (revealOnEntryAnswer (Just guardId)) board Engine.priorityLoop)) 1
-        Spec.assertEqWith
-          s
-          "and the untapped land pays for the {W} creature"
-          (namedOut "Mosquito Guard" (S.runPure castOrPassAnswer played Engine.priorityLoop))
-          1
-      other -> Spec.assertFailure s ("expected one permanent, got " <> show (length other))
-  -- The "may" half. CR 614.1c states the reveal as optional, so holding the
-  -- Kithkin card is not being made to show it -- and this is the case that proves
-  -- the answer is the player's rather than the engine's, since the board is the
-  -- one above's exactly.
-  Spec.it s "CR 614.1c DECLINING with a Kithkin card in hand still enters tapped" $ do
-    clachan <- S.printingOf s registry "Rustic Clachan"
-    guard_ <- S.printingOf s registry "Mosquito Guard"
-    let (_, board) = clachanBoard clachan guard_
-        played = S.runPure (revealOnEntryAnswer Nothing) board Engine.priorityLoop
-    case Set.toList (GameState.battlefield played) of
-      [permId] -> do
-        Spec.assertEqWith s "the land entered tapped" (fmap Object.tapped (Game.lookupObject permId played)) (Just TapState.Tapped)
-        Spec.assertEqWith s "and nothing was shown" (S.revealsOf played) []
-        Spec.assertEqWith
-          s
-          "so the {W} creature in hand stays there -- no mana to cast it with"
-          (namedOut "Mosquito Guard" (S.runPure castOrPassAnswer played Engine.priorityLoop))
-          0
-      other -> Spec.assertFailure s ("expected one permanent, got " <> show (length other))
-  -- The negative, and the case the printed filter is for. The answerer is pinned
-  -- to the held creature in BOTH this case and the first, so the only difference
-  -- between the two boards is whether that creature is a Kithkin: the engine's own
-  -- filter is the only thing that can move the outcome. Were the offer unfiltered,
-  -- the Hero would be shown and the land would enter untapped.
-  Spec.it s "CR 614.1c with NO Kithkin card in hand it enters tapped, unasked" $ do
-    clachan <- S.printingOf s registry "Rustic Clachan"
-    hero <- S.printingOf s registry "Benalish Hero"
-    let (heroId, board) = clachanBoard clachan hero
-        played = S.runPure (revealOnEntryAnswer (Just heroId)) board Engine.priorityLoop
-    case Set.toList (GameState.battlefield played) of
-      [permId] -> do
-        Spec.assertEqWith s "the land entered tapped" (fmap Object.tapped (Game.lookupObject permId played)) (Just TapState.Tapped)
-        Spec.assertEqWith s "and the non-Kithkin card was not shown" (S.revealsOf played) []
-        Spec.assertEqWith s "and no ChooseRevealOnEntry was raised -- nothing in hand to show" (revealAsks (answersFor (revealOnEntryAnswer (Just heroId)) board Engine.priorityLoop)) 0
-        Spec.assertEqWith
-          s
-          "so the {W} creature in hand stays there"
-          (namedOut "Benalish Hero" (S.runPure castOrPassAnswer played Engine.priorityLoop))
-          0
-      other -> Spec.assertFailure s ("expected one permanent, got " <> show (length other))
   -- CR 208.2b's own elision, at the ChoiceOf boundary: such an ability
   -- "lists two or more specific power and toughness values", so a
   -- single-option as-enters choice is not a 208.2b choice at all and
@@ -631,7 +508,6 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
   undergrowthScavengerSpec s registry
   fixedEntryCostSpec s registry
   degavolverSpec s registry
-  grifterBladeSpec s registry
   hyenaUmbraSpec s registry
   darkblastSpec s registry
 
@@ -791,18 +667,9 @@ atBob p = case p of
 galvanicBlastSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 galvanicBlastSpec s registry =
   Spec.describe s "Galvanic Blast (CR 614.15)" $ do
-    Spec.it s "CR 614.15 with two artifacts metalcraft is off, so the Blast deals its printed 2" $ do
-      mountain <- S.printingOf s registry "Mountain"
-      myr <- S.printingOf s registry "Darksteel Myr"
-      galvanicBlast <- S.printingOf s registry "Galvanic Blast"
-      let (gs, spellId) = metalcraftBoard mountain myr galvanicBlast 2 []
-          after = castAndResolve atBob gs spellId
-      Spec.assertEqWith s "bob takes 2" (S.lifeOf S.bob after) (Just 18)
-      -- CR 614.1: the row IS installed and simply does not apply, its clause
-      -- being false when the damage would happen (voltaicSurgeSpec below is
-      -- where that separation is observable). Unspent, since it never applied.
-      Spec.assertEqWith s "the row is installed but unapplied" (length (StoredEffects.replacements (GameState.stored after))) 1
-    -- The discriminating twin: one more artifact, everything else identical.
+    -- The discriminating twin of
+    -- cr-614-15-the-metalcraft-count-is-artifacts-you-control-not.json, where
+    -- alice's two artifacts leave the Blast at its printed 2.
     --
     -- The FOUR-artifact leg is what makes this a Comparison.AtLeast test rather
     -- than an Exactly one -- the card says "three or MORE", and at exactly three
@@ -985,26 +852,6 @@ threeSeatSpecimenBoard island gatherSpecimens creature =
         carols
       )
 
--- The SOURCE of the floating row `who` installed, so an answer can name a CR
--- 616.1 candidate by whose row it is rather than by list position -- the same
--- reason raceAnswer takes an ObjectId.
-rowSourceOf :: PlayerId.PlayerId -> GameState.GameState -> Maybe ObjectId.ObjectId
-rowSourceOf who gs =
-  Maybe.listToMaybe
-    (fmap ActiveReplacement.source (filter (\active -> ActiveReplacement.controller active == who) (StoredEffects.replacements (GameState.stored gs))))
-
--- Name the candidate whose source is `preferred`, but only when CR 616.1's race
--- is put to `who`; every other prompt takes the default. The readout for WHICH
--- player the choice was handed to: an engine that asked anyone else would take
--- the canonical first for both preferences, and the two runs would converge on
--- one board instead of disagreeing.
-replaceIfAskedOf :: PlayerId.PlayerId -> ObjectId.ObjectId -> Prompt.Prompt r -> r
-replaceIfAskedOf who preferred p = case p of
-  Prompt.ChooseReplacement _ asked entries
-    | asked == who ->
-        maybe 0 Int.toNaturalSaturating (List.findIndex ((== preferred) . ReplacementEntry.source) entries)
-  _ -> S.identityAnswer p
-
 -- CR 616.1b's bucket, through the one card in the pool that produces one.
 --
 -- Gather Specimens ({3}{U}{U}{U} instant, Shards of Alara): "If a creature would
@@ -1046,51 +893,6 @@ gatherSpecimensSpec s registry =
                 Nothing -> Spec.assertFailure s "the Coating did not reach the battlefield"
                 Just coatingObj -> Spec.assertEqWith s "an artifact is not a creature" (Projection.controllerOf coatingObj after) (Just S.bob)
         _ -> Spec.assertFailure s "fixture did not deal bob a card"
-    -- THREE SEATS, where CR 616.1b's "one of them must be chosen" finally has
-    -- something to choose between -- the case
-    -- cr-614-1d-616-1f-duelling-gather-specimens-alice-takes-it.json cannot
-    -- reach. alice and bob each resolve a Gather Specimens and CAROL casts a
-    -- creature: it would enter under carol's control, carol is an opponent of
-    -- both, so BOTH rows are applicable in the SAME iteration of CR 616.1f. Two
-    -- seats cannot produce that (a permanent has one controller, so at most one
-    -- such row can see it as an opponent's), which is why the leg above sees a
-    -- forced order instead.
-    --
-    -- The two rows are equal in `effect` -- one card, one filter -- and differ
-    -- only in the CR 109.5 controller each baked, which rides the CANDIDATE.
-    -- That is precisely what Replacement.readsApplier answers True for, so the
-    -- pair is not indistinguishable and CR 616.1 owes the question to the
-    -- affected object's controller: carol.
-    --
-    -- Her answer decides the board, and INVERTS it. The row she names applies
-    -- now; CR 616.1f then re-collects, where the other row is newly applicable
-    -- (from its controller's side the creature is an opponent's again) and the
-    -- named one is spent by CR 614.5. So the creature settles with the player
-    -- she did NOT name, and the two runs disagree -- which is the whole point:
-    -- before this was fixed both rows were elided as value-equal and the
-    -- floating store's newest-first order decided the board with nobody asked.
-    Spec.it s "CR 616.1b three seats: carol is asked WHICH Gather Specimens takes her creature" $ do
-      island <- S.printingOf s registry "Island"
-      gatherSpecimens <- S.printingOf s registry "Gather Specimens"
-      narcomoeba <- S.printingOf s registry "Narcomoeba"
-      let (gs, aliceGather, bobGather, moeba) = threeSeatSpecimenBoard island gatherSpecimens narcomoeba
-          resolveFor pid oid g = S.runPure S.identityAnswer g (S.cast pid oid >> Stack.resolveTop)
-          armed = resolveFor S.bob bobGather (resolveFor S.alice aliceGather gs)
-          entry = S.cast S.carol moeba >> Stack.resolveTop
-          asked = answersFor S.identityAnswer armed entry
-          moebaName = CardName.MkCardName $ Text.pack "Narcomoeba"
-      Spec.assertEqWith s "two floating replacements are live" (length (StoredEffects.replacements (GameState.stored armed))) 2
-      Spec.assertBool s (wasAskedToReplace asked) "a ChooseReplacement was raised"
-      case (rowSourceOf S.alice armed, rowSourceOf S.bob armed) of
-        (Just aliceRow, Just bobRow) ->
-          let namedAlice = S.runPure (replaceIfAskedOf S.carol aliceRow) armed entry
-              namedBob = S.runPure (replaceIfAskedOf S.carol bobRow) armed entry
-           in case (newestNamed moebaName namedAlice, newestNamed moebaName namedBob) of
-                (Just afterAlice, Just afterBob) -> do
-                  Spec.assertEqWith s "carol named alice's row, so bob's applies second and keeps it" (Projection.controllerOf afterAlice namedAlice) (Just S.bob)
-                  Spec.assertEqWith s "carol named bob's row, so alice's applies second and keeps it" (Projection.controllerOf afterBob namedBob) (Just S.alice)
-                _ -> Spec.assertFailure s "the creature did not reach the battlefield"
-        _ -> Spec.assertFailure s "both Gather Specimens rows should be floating"
     -- WHY CR 800.4a ends the row rather than Event's UnderControlOf arm
     -- refusing to name a departed player. A guard inside that arm would leave
     -- alice's row a CR 616.1 candidate, and Replacement.readsApplier answers True
@@ -1158,7 +960,7 @@ kismetBoard land pikerPrinting kismet spell =
 -- only observable the split has, which is why it is what
 -- cr-616-1c-the-copy-bucket-outranks-kismet-s-so-no-order-is.json asserts; the
 -- case below is the discriminating twin that shows the recorder can see one.
-kismetSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+kismetSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 kismetSpec s registry =
   Spec.describe s "Kismet (CR 616.1c/616.1d)" $ do
     -- The DISCRIMINATING TWIN: the same fixture and the same recorder, a spell
@@ -1174,36 +976,6 @@ kismetSpec s registry =
       let (gs, _, heartId) = kismetBoard island pikerPrinting kismet coldsteel
           asked = answersFor S.identityAnswer gs (S.cast S.alice heartId >> Stack.resolveTop)
       Spec.assertBool s (wasAskedToReplace asked) "a ChooseReplacement was raised"
-    -- The sibling bucket, one step DOWN: CR 616.1d's back-face-up rewrite against
-    -- the same CR 616.1e row. CR 702.145b's daybound mints EntersTransformed, and
-    -- at night it and Kismet's row are both applicable to the entering werewolf in
-    -- one iteration -- so CR 616.1d's bucket is alone at the top and, again, there
-    -- is nothing to ask. Same convergence as the copy case: the werewolf ends up
-    -- transformed AND tapped either way, so the prompt is the observable.
-    --
-    -- Forests, not Islands: Infestation Expert is {4}{G}, and its faces are 3/4
-    -- and 4/5. The power reading 4 says the werewolf is back face up; it does NOT
-    -- say the entry rewrite is what put it there, since CR 702.145c would
-    -- transform it a moment later anyway. Like the tap, it is a non-vacuity
-    -- guard. The prompt is the assertion.
-    Spec.it s "CR 616.1d the back-face bucket outranks Kismet's, so no order is asked" $ do
-      forest <- S.printingOf s registry "Forest"
-      pikerPrinting <- S.printingOf s registry "Goblin Piker"
-      kismet <- S.printingOf s registry "Kismet"
-      werewolf <- S.printingOf s registry "Infestation Expert"
-      let (day, _, wolfId) = kismetBoard forest pikerPrinting kismet werewolf
-          gs = day {GameState.daytime = Just Daytime.Night}
-          cast = S.cast S.alice wolfId >> Stack.resolveTop
-          after = S.runPure S.identityAnswer gs cast
-          asked = answersFor S.identityAnswer gs cast
-      -- Named by the BACK face, which newestNamed reads off the current face: an
-      -- Infestation Expert that stayed front face up is not found at all.
-      case newestNamed (CardName.MkCardName $ Text.pack "Infested Werewolf") after of
-        Nothing -> Spec.assertFailure s "the werewolf did not reach the battlefield transformed"
-        Just wolfOid -> do
-          Spec.assertEqWith s "CR 702.145b it entered on its back face, a 4/5" (Projection.powerOf wolfOid after) (Just 4)
-          Spec.assertBool s (Game.isTapped wolfOid after) "CR 614.1d and Kismet tapped it too"
-          Spec.assertBool s (not (wasAskedToReplace asked)) "no ChooseReplacement was raised"
 
 -- Galvanic Blast's metalcraft clause as a floating row: the damage THIS source is
 -- dealing, whatever its kind, becomes 4 (CR 614.15 / 614.1a). Uses.Unlimited
@@ -1225,68 +997,11 @@ blastShape src ts =
       ActiveReplacement.choices = SourceChoices.MkSourceChoices Map.empty Set.empty Nothing Nothing Nothing Acquisition.Own
     }
 
--- alice controls four untapped Forests and holds an Undergrowth Scavenger. Her
--- graveyard holds `aliceCreatures` Goblin Pikers and `aliceLands` Mountains;
--- bob's holds `bobCreatures` Goblin Pikers. Returns the state and the
--- Scavenger's hand id.
---
--- Every element earns its place against a different wrong reading of "the number
--- of creature cards in all graveyards":
---
---   * bob's graveyard is stocked, so Relative AnyPlayer and Relative You
---     disagree. Without it the two readings produce the same number.
---   * alice's graveyard holds a LAND card too, so HasCardType Creature is not
---     vacuous. Without it, dropping the filter changes nothing.
---   * the two seats hold DIFFERENT counts, so an implementation reading one
---     graveyard twice is caught as well.
---
--- Goblin Piker for the creature cards, Mountain for the noncreature: neither
--- carries anything that reaches the entry loop, so the only thing the board
--- varies is what a graveyard holds.
-scavengerBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> Int -> Int -> Int -> (GameState.GameState, ObjectId.ObjectId)
-scavengerBoard forest piker mountain scavenger aliceCreatures aliceLands bobCreatures =
-  let bury printing pid g _ = snd (S.addGraveyardCard printing pid g)
-      base = S.landsInPlay forest 4
-      buried =
-        List.foldl' (bury piker S.bob) (List.foldl' (bury mountain S.alice) (List.foldl' (bury piker S.alice) base (replicate aliceCreatures ())) (replicate aliceLands ())) (replicate bobCreatures ())
-      (gs, held) = S.handOne scavenger buried
-   in ( gs
-          { GameState.turn =
-              (GameState.turn gs)
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice
-                }
-          },
-        held
-      )
-
 -- CR 614.1c's variable amount: "This creature enters with a number of +1/+1
 -- counters on it equal to the number of creature cards in all graveyards."
-undergrowthScavengerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+undergrowthScavengerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 undergrowthScavengerSpec s registry =
   Spec.describe s "Undergrowth Scavenger (CR 614.1c)" $ do
-    Spec.it s "CR 614.1c one +1/+1 counter per creature card in EVERY graveyard" $ do
-      forest <- S.printingOf s registry "Forest"
-      piker <- S.printingOf s registry "Goblin Piker"
-      mountain <- S.printingOf s registry "Mountain"
-      scavenger <- S.printingOf s registry "Undergrowth Scavenger"
-      -- Two creature cards and a land in alice's graveyard, one creature card in
-      -- bob's: three, and no other reading of the sentence gives three.
-      let (gs, held) = scavengerBoard forest piker mountain scavenger 2 1 1
-          after = S.runPure S.identityAnswer gs (S.cast S.alice held >> Stack.resolveTop >> Engine.settleForPriority)
-      case newestNamed (CardName.MkCardName $ Text.pack "Undergrowth Scavenger") after of
-        Nothing -> Spec.assertFailure s "the Scavenger did not survive the battlefield"
-        Just scavengerId -> do
-          -- The printed body is 0/0, so power and toughness ARE the count.
-          Spec.assertEqWith s "power" (Projection.powerOf scavengerId after) (Just 3)
-          Spec.assertEqWith s "toughness" (Projection.toughnessOf scavengerId after) (Just 3)
-          Spec.assertEqWith s "three +1/+1 counters" (countersOn CounterKind.PlusOnePlusOne scavengerId after) 3
-          -- CR 614.1c fixes the number AS the permanent enters, so a fourth
-          -- creature card reaching a graveyard afterwards does not grow it. The
-          -- half that separates a stamped count from one re-read live.
-          let (_, later) = S.addGraveyardCard piker S.bob after
-          Spec.assertEqWith s "still 3/3 after a fourth creature card is buried" (Projection.powerOf scavengerId later) (Just 3)
     -- CR 614.12 / 608.2f: Scratch.enteredFrom, which lets the second
     -- Scavenger Rise of the Dark Realms returns count the first, lasts only as
     -- long as the move's arrivingTogether scope. The count itself is the
@@ -1463,69 +1178,6 @@ inAliceGraveyard :: Printing.Printing -> GameState.GameState -> Int
 inAliceGraveyard printing gs =
   let wanted oid = fmap S.nameOf (Game.cardOf oid gs) == Just (S.printingName printing)
    in length (filter wanted (Game.zoneMembers Zone.Graveyard S.alice gs))
-
--- Grifter's Blade {3} Artifact -- Equipment, whole text: "Flash / As this
--- Equipment enters, choose a creature you control it could be attached to. If
--- you do, it enters attached to that creature. / Equipped creature gets +1/+1. /
--- Equip {1}". Oracle text and both rulings verified against Scryfall
--- (2026-09-19); the rulings are the two branches below -- "must enter attached
--- to a creature you control, if possible" and "if you don't control a creature
--- Grifter's Blade could be attached to, it simply enters unattached".
---
--- The pool's only producer for EntryRewrite.EntersAttachedTo, CR 614.1c's
--- as-enters host choice. Flash is carried but unexercised here: the entry
--- replacement runs the same whatever the timing permission was.
-grifterBladeSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-grifterBladeSpec s registry = Spec.describe s "Grifter's Blade (CR 614.1c)" $ do
-  -- Three seats' worth of roles on two: alice's two creatures against bob's, so
-  -- "a creature you control" is told apart from a bare creature filter. The
-  -- answer is pinned to the SECOND candidate, and bob's creature is added FIRST
-  -- so it holds the LOWEST id -- which makes one pair of readings separate three
-  -- wrong implementations at once. An elided or defaulted choice lands on the
-  -- Piker; an offer that forgot "you control" makes index 1 the Piker too; only
-  -- the right offer puts the Blade on the Sorcerer.
-  Spec.it s "CR 614.1c the Blade enters attached to the creature its controller chose" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    pikerPrinting <- S.printingOf s registry "Goblin Piker"
-    sorcererPrinting <- S.printingOf s registry "Prodigal Sorcerer"
-    blade <- S.printingOf s registry "Grifter's Blade"
-    let (_, g1) = S.addPermanent pikerPrinting S.bob (S.landsInPlay mountain 3)
-        (piker, g2) = S.addPermanent pikerPrinting S.alice g1
-        (sorcerer, g3) = S.addPermanent sorcererPrinting S.alice g2
-        (g4, held) = S.handOne blade g3
-        after = S.runPure (attachesTo 1) g4 (S.cast S.alice held >> Stack.resolveTop)
-    -- FIRST, and the assertion this case exists for: the chosen creature is
-    -- wearing the Blade, read off its projected body (CR 613 layer 7c) rather
-    -- than off the attachment field, so a Blade that arrived unattached or
-    -- attached elsewhere shows here.
-    Spec.assertEqWith s "the Sorcerer alice chose is a 2/2" (S.powerToughnessOf sorcerer after) (Just (2, 2))
-    Spec.assertEqWith s "and the Piker she passed over is still a printed 2/1" (S.powerToughnessOf piker after) (Just (2, 1))
-    -- A permanent that ARRIVES attached became attached, which is the half
-    -- Event.attach cannot record -- there is no CR 701.3 move here, so the
-    -- record is written at the entry (Parun.Engine.Event, where the reasoning
-    -- sits). Read off the LOG rather than through a
-    -- trigger because nothing in data/cards/ prints one that would fire: a grep
-    -- for a Host TriggerCondition.AttachmentChanges (2026-09-19) finds only
-    -- Bramble Elemental, whose filter is HasSubtype Aura, and the Attachment end
-    -- only Enormous Energy Blade, which is not this card.
-    -- So the line this guards is a regression fence rather than a gameplay-level
-    -- proof.
-    Spec.assertBool
-      s
-      (any (\event -> case event of GameEvent.BecameAttached record -> Recipient.objectOf (BecameAttached.host record) == Just sorcerer; _ -> False) (S.eventsOf after))
-      "and the arrival recorded one BecameAttached naming the Sorcerer"
-
--- Answer every Prompt.ChooseAttachment with the candidate at this index,
--- counting from zero, falling back to the last where the offer is shorter.
---
--- PINNED BY INDEX rather than searched for: an answerer that looked for a legal
--- host would find the right one again after a mutation widened the offer.
-attachesTo :: Int -> Prompt.Prompt r -> r
-attachesTo i p = case p of
-  Prompt.ChooseAttachment _ _ _ candidates -> case drop i (NonEmpty.toList candidates) of
-    chosen : _ -> chosen
-    [] -> NonEmpty.last candidates
-  _ -> S.identityAnswer p
 
 -- CR 702.89a: "If enchanted permanent would be destroyed, instead remove all
 -- damage marked on it and destroy this Aura." A destruction replacement whose

@@ -1990,8 +1990,9 @@ noCharacteristics =
 --
 -- The zone gate is a regression fence: CR 400.7's new incarnation clears the
 -- bindings off the stack, so dropping it leaves the suite green.
--- Parun.CastPermissionSpec's "CR 601.2e an announced X that leaves the spell even
--- takes the cast back" proves the stack reading.
+-- The scenario
+-- cast-permission/cr-601-2e-an-announced-x-that-leaves-the-spell-even-takes-the-cast-back
+-- proves the stack reading.
 withAnnouncedX :: ObjectId -> GameState -> ProjectedCharacteristics -> ProjectedCharacteristics
 withAnnouncedX oid gs pc = case Game.lookupObject oid gs of
   Just object

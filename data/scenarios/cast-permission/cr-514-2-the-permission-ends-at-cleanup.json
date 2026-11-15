@@ -1,0 +1,209 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "swamp1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp3",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp4",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp5",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp6",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Sign in Blood",
+            "label": "sib"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Yawgmoth's Will",
+            "label": "will"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "bswamp1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "bswamp2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "bswamp3",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "bswamp4",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "bswamp5",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "bswamp6",
+            "ready": true
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Sign in Blood"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 514.2 the permission ends at cleanup",
+  "note": "CR 514.2: \"until end of turn\" is the stored CR 611.2c carrier's expiry, so the grant dies at cleanup and alice's next main phase refuses the same cast. The same turn's offer is the control.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$swamp1",
+            "$swamp2",
+            "$swamp3",
+            null
+          ],
+          "object": "$will"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $sib",
+            "ActivateManaAbility $swamp4",
+            "ActivateManaAbility $swamp5",
+            "ActivateManaAbility $swamp6"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$swamp4",
+            null
+          ],
+          "object": "$sib"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Sign in Blood",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand Swamp#18",
+            "ActivateManaAbility $swamp1",
+            "ActivateManaAbility $swamp2",
+            "ActivateManaAbility $swamp3",
+            "ActivateManaAbility $swamp4",
+            "ActivateManaAbility $swamp5",
+            "ActivateManaAbility $swamp6"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}
