@@ -639,19 +639,15 @@ offersCast printing board =
 -- Burning-Tree Emissary ({R/G}{R/G} 2/2 Human Shaman, "When this creature
 -- enters, add {R}{G}") triggers off neither, so its ability is no mana ability:
 -- CR 603.3 puts it on the stack and its mana is added when it RESOLVES, through
--- Parun.Engine.Resolve's Effect.AddMana arm rather than Cost.tapForMana.
+-- Parun.Engine.Resolve's Effect.AddMana arm rather than Cost.tapForMana. The
+-- {R}{G} it adds off the stack is data/scenarios/mana-source/'s
+-- cr-106-4-the-added-mana-pays-for-a-second-emissary-and-without-it-the-cast-is-not.json.
 --
 -- Here rather than in ResolveSpec for the reason the mana window is: the
 -- subsystem is mana, and this is the second of the two places mana reaches a
 -- pool.
 burningTreeSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 burningTreeSpec s registry = Spec.describe s "Burning-Tree Emissary" $ do
-  Spec.it s "CR 605.1b the enters trigger resolves off the stack and adds {R}{G}" $ do
-    bte <- S.printingOf s registry "Burning-Tree Emissary"
-    let (_, after) = burningTreeResolved bte S.alice
-    Spec.assertEqWith s "alice's pool is {R} then {G}, in printed order (CR 608.2c)" (poolUnits after) [plainRed, plainGreen]
-    Spec.assertEqWith s "the stack is empty again" (length (TurnRegisters.stack (GameState.turn after))) 0
-
   -- CR 109.5: "add {R}{G}" says "you", which for a triggered ability is the
   -- controller of the object when it triggered -- not the same seat as the active
   -- player. alice is active and holds priority on both boards, and the Emissary's
@@ -782,25 +778,6 @@ retainedGreen = plainGreen {ManaUnit.retention = ManaRetention.UntilEndOfTurn}
 -- separates them.
 shizukoSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 shizukoSpec s registry = Spec.describe s "Shizuko, Caller of Autumn" $ do
-  Spec.it s "CR 106.4 the three green land in the UPKEEP player's pool, not the controller's" $ do
-    shizuko <- S.printingOf s registry "Shizuko, Caller of Autumn"
-    let after = shizukoUpkeep shizuko S.carol
-    Spec.assertEqWith s "carol got {G}{G}{G}" (poolOf S.carol after) [retainedGreen, retainedGreen, retainedGreen]
-    Spec.assertEqWith s "alice, who controls Shizuko, got nothing" (poolOf S.alice after) []
-    Spec.assertEqWith s "and neither did bob" (poolOf S.bob after) []
-    Spec.assertEqWith s "the stack is empty again" (length (TurnRegisters.stack (GameState.turn after))) 0
-
-  -- The other half of the pair, differing in ONE thing: whose upkeep it is. Under
-  -- CR 603.2b's @Relative AnyPlayer@ scope the same ability fires on the controller's own
-  -- turn, and then "that player" IS the controller -- a redundancy, not a wrong
-  -- answer, and the reading that stops "always the upkeep player" from being
-  -- indistinguishable from "always somebody else".
-  Spec.it s "CR 603.2b on the controller's own upkeep the same trigger pays the controller" $ do
-    shizuko <- S.printingOf s registry "Shizuko, Caller of Autumn"
-    let after = shizukoUpkeep shizuko S.alice
-    Spec.assertEqWith s "alice got {G}{G}{G}" (poolOf S.alice after) [retainedGreen, retainedGreen, retainedGreen]
-    Spec.assertEqWith s "carol got nothing" (poolOf S.carol after) []
-
   -- Gameplay level: the floated mana is ordinary mana, so carol can spend it. The
   -- two boards differ in ONE thing -- whose upkeep the trigger fired on -- and
   -- share seats, timing, priority and the card in carol's hand; on the second her
