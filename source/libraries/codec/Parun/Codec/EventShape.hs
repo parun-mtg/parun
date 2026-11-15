@@ -23,6 +23,7 @@ codec =
       Arm.payload "AttackerDeclared" AttackWindow.codec EventShape.AttackerDeclared (\x -> case x of EventShape.AttackerDeclared y -> Just y; _ -> Nothing),
       Arm.nullary "CountersPut" EventShape.CountersPut,
       Arm.nullary "Sacrificed" EventShape.Sacrificed,
+      Arm.nullary "TurnedFaceUp" EventShape.TurnedFaceUp,
       Arm.nullary "DealtCombatDamageToPlayer" EventShape.DealtCombatDamageToPlayer
     ]
 
@@ -35,4 +36,5 @@ tagOf x = case x of
   EventShape.AttackerDeclared {} -> "AttackerDeclared"
   EventShape.CountersPut -> "CountersPut"
   EventShape.Sacrificed -> "Sacrificed"
+  EventShape.TurnedFaceUp -> "TurnedFaceUp"
   EventShape.DealtCombatDamageToPlayer -> "DealtCombatDamageToPlayer"

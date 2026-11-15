@@ -1,0 +1,113 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Oblivious Bookworm",
+            "label": "worm"
+          },
+          {
+            "card": "Grizzly Bears",
+            "faceDown": "Manifested",
+            "label": "bear"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Island",
+            "label": "isl"
+          }
+        ],
+        "library": [
+          {
+            "card": "Savannah Lions"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 708.7 Oblivious Bookworm draws without discarding after alice turns her manifested Grizzly Bears face up",
+  "final": [
+    {
+      "View": {
+        "is": [
+          "$isl",
+          "Savannah Lions"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "The bear was placed face down, so nothing entered face down this turn: only alice's turning it face up (CR 701.40b) satisfies the unless clause. oblivious-bookworm-discards-after-bob-turns-alice-s-bear-face-up is the same board with bob doing the turning.",
+  "timeline": [
+    {
+      "do": {
+        "Take": {
+          "action": "TurnFaceUp $bear",
+          "mana": [
+            "$f1",
+            "$f2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Grizzly Bears"
+          ],
+          "object": "$bear"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

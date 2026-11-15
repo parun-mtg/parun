@@ -1,0 +1,193 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Oblivious Bookworm",
+      "oracleText": "At the beginning of your end step, you may draw a card. If you do, discard a card unless a permanent entered the battlefield face down under your control this turn or you turned a permanent face up this turn.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ],
+                    "optionality": {
+                      "type": "Optional"
+                    }
+                  },
+                  {
+                    "condition": {
+                      "type": "All",
+                      "value": [
+                        {
+                          "type": "Compares",
+                          "value": {
+                            "comparison": "Exactly",
+                            "measured": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "And",
+                                  "value": [
+                                    {
+                                      "type": "IsFaceDown"
+                                    },
+                                    {
+                                      "type": "HeldBy",
+                                      "value": {
+                                        "holder": "Controller",
+                                        "relation": "You"
+                                      }
+                                    }
+                                  ]
+                                },
+                                "scope": {
+                                  "type": "InHistory",
+                                  "value": {
+                                    "type": "CardArrivedIn",
+                                    "value": {
+                                      "to": "Battlefield"
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "threshold": {
+                              "type": "Literal",
+                              "value": 0
+                            }
+                          }
+                        },
+                        {
+                          "type": "Compares",
+                          "value": {
+                            "comparison": "Exactly",
+                            "measured": {
+                              "type": "Count",
+                              "value": {
+                                "aggregation": {
+                                  "type": "Members"
+                                },
+                                "filter": {
+                                  "type": "HeldBy",
+                                  "value": {
+                                    "holder": "Controller",
+                                    "relation": "You"
+                                  }
+                                },
+                                "scope": {
+                                  "type": "InHistory",
+                                  "value": {
+                                    "type": "TurnedFaceUp"
+                                  }
+                                }
+                              }
+                            },
+                            "threshold": {
+                              "type": "Literal",
+                              "value": 0
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "effects": [
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      }
+                    ],
+                    "ifTaken": {
+                      "type": "AnyTaken",
+                      "value": [
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Wizard"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

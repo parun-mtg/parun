@@ -737,6 +737,7 @@ eventShapeNames asking x = case x of
   EventShape.AttackerDeclared _attackWindow -> history asking HistoryRead.Attacks
   EventShape.CountersPut -> history asking HistoryRead.CounterPlacements
   EventShape.Sacrificed -> history asking HistoryRead.Sacrifices
+  EventShape.TurnedFaceUp -> history asking HistoryRead.FaceUpTurns
   EventShape.DealtCombatDamageToPlayer -> history asking HistoryRead.Damage
 
 faceNames :: (Monoid r) => Asking r -> (card -> r) -> Face.Face card -> r

@@ -1,0 +1,171 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Oblivious Bookworm",
+            "label": "worm"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ainok Tracker",
+            "label": "ainok"
+          },
+          {
+            "card": "Island",
+            "label": "isl"
+          }
+        ],
+        "library": [
+          {
+            "card": "Savannah Lions"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Break Open",
+            "label": "break"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 708.3 Oblivious Bookworm draws without discarding after alice's morph entered face down, though bob turned it face up",
+  "final": [
+    {
+      "View": {
+        "is": [
+          "$isl",
+          "Savannah Lions"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "bob's Break Open leaves Ainok Tracker face up and leaves alice no turning of her own, so only its entering face down (CR 708.3) satisfies the unless clause, read as it entered rather than as it is now.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "faceDown": true,
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3"
+          ],
+          "object": "$ainok"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [],
+          "object": "Ainok Tracker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2"
+          ],
+          "object": "$break"
+        }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Ainok Tracker"
+          ],
+          "object": "Ainok Tracker"
+        }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

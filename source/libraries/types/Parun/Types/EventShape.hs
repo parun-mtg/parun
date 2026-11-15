@@ -12,9 +12,10 @@ import qualified Parun.Types.Zone as Zone
 -- SpellCast, which names its own (Parun.Types.CastWindow).
 --
 -- Only the zone changes, GameEvent.LeftTheGame, the cast, the attacker
--- declaration, the counter placement, the sacrifice and combat damage to a
--- player have a shape: every other GameEvent constructor is recorded in the log with no EventShape arm, so a
--- count cannot fold over any of them (#162).
+-- declaration, the counter placement, the sacrifice, the turn face up and
+-- combat damage to a player have a shape: every other GameEvent constructor is
+-- recorded in the log with no EventShape arm, so a count cannot fold over any
+-- of them (#162).
 --
 -- That is not the same as the log being unreadable for those events, and the
 -- readers that exist do not come through here. A fold is the wrong instrument
@@ -84,6 +85,10 @@ data EventShape
     -- permanent as it last existed, its controller the player who sacrificed
     -- it (Dargo, the Shipwrecker).
     Sacrificed
+  | -- | CR 708.7 / 608.2i: a face-down permanent was turned face up, each member
+    -- the permanent as it is or last was, its controller the player who turned
+    -- it (Oblivious Bookworm's "you turned a permanent face up this turn").
+    TurnedFaceUp
   | -- | CR 510.2 / 608.2i: a source dealt combat damage to a player, each member
     -- the source as it dealt it (Parun.Engine.Filter.dealtByView), and each
     -- source a member once however often it connected (Indulge // Excess).
