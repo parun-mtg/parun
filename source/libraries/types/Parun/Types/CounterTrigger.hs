@@ -5,11 +5,13 @@ import qualified Parun.Types.CounterGrouping as CounterGrouping
 import qualified Parun.Types.CounterHolder as CounterHolder
 import qualified Parun.Types.CounterMotion as CounterMotion
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.WhichCounters as WhichCounters
 
 -- | CR 603.2 over CR 122.6's placement or a removal: which kind (or any, CR
 -- 122.1), which way, on what, whether the count must cross a threshold, and
--- per counter, per permanent or per batch (CR 603.2c).
+-- per counter, per permanent or per batch (CR 603.2c), and whether only the
+-- holder's first placement this turn counts.
 data CounterTrigger = MkCounterTrigger
   { kind :: WhichCounters.WhichCounters Keyword.Keyword,
     motion :: CounterMotion.CounterMotion,
@@ -18,6 +20,9 @@ data CounterTrigger = MkCounterTrigger
     -- than N and became at least N" going on, CR 310.12b's last counter (N = 0)
     -- coming off. Nothing reads no count.
     threshold :: Maybe Natural.Natural,
-    grouping :: CounterGrouping.CounterGrouping
+    grouping :: CounterGrouping.CounterGrouping,
+    -- | FirstTimeEachTurn: only the first event this turn that put counters of
+    -- any kind on the holder, counted per holder (Stalwart Successor).
+    frequency :: TriggerFrequency.TriggerFrequency
   }
   deriving (Eq, Ord, Show)

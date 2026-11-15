@@ -1606,7 +1606,7 @@ triggerConditionChildren c condition = case condition of
             frequency
           <*> pure exactly
       )
-  TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger kind motion holder threshold grouping) ->
+  TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger kind motion holder threshold grouping frequency) ->
     fmap
       TriggerCondition.CountersChange
       ( CounterTrigger.MkCounterTrigger
@@ -1618,6 +1618,7 @@ triggerConditionChildren c condition = case condition of
               )
           <*> pure threshold
           <*> pure grouping
+          <*> triggerFrequency c HistoryRead.CounterPlacements frequency
       )
   TriggerCondition.SelfBecomesClassLevel _ -> pure condition
   TriggerCondition.SpellCast (SpellCast.MkSpellCast spell turn zone ordinal phase copies while_) ->

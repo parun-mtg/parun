@@ -134,7 +134,7 @@ chapterTriggers restricted before after n = crossed before after n && (after == 
 -- card prints two entries sharing one modal.
 chapterOf :: TriggeredAbility card ability -> Maybe Natural
 chapterOf ability = case TriggeredAbility.condition ability of
-  TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put _) CounterHolder.Self (Just n) _) -> Just n
+  TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put _) CounterHolder.Self (Just n) _ _) -> Just n
   _ -> Nothing
 
 -- | CR 715.2a: the chapter numbers a permanent's abilities print, read off the

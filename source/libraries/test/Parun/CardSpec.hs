@@ -3917,7 +3917,7 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   -- Permanent holder carries one
   -- over the permanents the counters moved on, swept like Leaves', so a
   -- card's "one or more creatures" is not exempt from the corpus filter lints.
-  TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger kind _ holder _ _) ->
+  TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger kind _ holder _ _ _) ->
     whichCountersFilters kind <> case holder of
       CounterHolder.Self -> []
       CounterHolder.Permanent f -> unframed [f]

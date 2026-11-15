@@ -206,6 +206,7 @@ import qualified Parun.Types.TopOfLibrary as TopOfLibrary
 import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRole as TurnRole
 import qualified Parun.Types.TurnUpRewrite as TurnUpRewrite
@@ -2759,8 +2760,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
             ("Effect.MoveCounters' kinds", holds (effectFilters (Effect.MoveCounters (MoveCounters.MkMoveCounters anywhere (MovedKinds.Named kind one) Nothing anywhere)))),
             ("Effect.PutCountersFrom' kind", holds (effectFilters (Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom slot (Just kind) anywhere)))),
             ("Quantity.ObjectCounters' kind", holds (quantityFilters (Quantity.Type.ObjectCounters kind))),
-            ("CR 715.2b's threshold", holds (triggerConditionFilters (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind kind) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 2) CounterGrouping.EachPermanent)))),
-            ("CR 603.2c's batch placement", holds (triggerConditionFilters (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind kind) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.HasCardType CardType.Creature)) Nothing CounterGrouping.EachBatch)))),
+            ("CR 715.2b's threshold", holds (triggerConditionFilters (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind kind) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 2) CounterGrouping.EachPermanent TriggerFrequency.EveryTime)))),
+            ("CR 603.2c's batch placement", holds (triggerConditionFilters (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind kind) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.HasCardType CardType.Creature)) Nothing CounterGrouping.EachBatch TriggerFrequency.EveryTime)))),
             ("CR 614.1's scaling pattern", holds (replacementEffectFilters (ReplacementEffect.CounterR (CounterR.MkCounterR (CounterPattern.MkCounterPattern (Just kind) CounterSubject.ByAnything (ControllerRelation.Related PlayerRelation.You) (Filter.Type.HasCardType CardType.Creature) Nothing) (Scaling.AddMore (Quantity.Type.Literal 1)))))),
             ("CR 614.1c's as-enters sacrifice", holds (entryRewriteFilters (EntryRewrite.SacrificeAnyNumber (SacrificeAnyNumber.MkSacrificeAnyNumber (Filter.Type.HasCardType CardType.Creature) (Just kind) one)))),
             -- Its MULTIPLIER, a road of its own: the field is a Quantity, so the
@@ -2801,7 +2802,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       ( counterKindFilters plain,
         effectFilters (Effect.RemoveCounters (RemoveCounters.MkRemoveCounters plain one slot Nothing)),
         quantityFilters (Quantity.Type.ObjectCounters plain),
-        triggerConditionFilters (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind plain) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent))
+        triggerConditionFilters (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind plain) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent TriggerFrequency.EveryTime))
       )
       ([], [], [], [])
     -- The same pair over the three number-shaped roads: a plain kind inside the

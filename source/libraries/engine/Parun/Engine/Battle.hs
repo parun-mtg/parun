@@ -87,6 +87,7 @@ import qualified Parun.Types.Source as Source
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TriggeredAbilitySource as TriggeredAbilitySource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -322,7 +323,7 @@ siegeDefeat =
               OfferCast.controlWhileResolving = False,
               OfferCast.slot = Nothing
             }
-   in Mint.trigger (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Defense) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent)) (Seq.fromList [exile, offer])
+   in Mint.trigger (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Defense) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent TriggerFrequency.EveryTime)) (Seq.fromList [exile, offer])
 
 -- The intrinsic triggered abilities rule 310 gives a permanent, read off the
 -- finished projection. Parun.Engine.Keyword.triggeredAbilitiesOf's sibling, and
