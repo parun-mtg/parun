@@ -71,8 +71,6 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PayOffer as PayOffer
 import qualified Parun.Types.PaymentDecision as PaymentDecision
-import qualified Parun.Types.PermanentActed as PermanentActed
-import qualified Parun.Types.PermanentAction as PermanentAction
 import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -2861,14 +2859,12 @@ attemptAttackDeclaration perform pid asked forced rejected = do
         -- rather than `chosen` so a creature the CR 508.1d degradation dropped is
         -- never offered one. Read off the PROJECTION rather than the printed face.
         --
-        -- CR 701.43a's keyword action is the write itself: `pid` joins
-        -- Object.exertedBy, which Parun.Engine.Engine.untapAll applies at that
-        -- seat's untap step and CR 701.43b expires. NOT Effect.DoesNotUntapNext,
-        -- which is a resolving effect; exerting is a cost payment. The PLAYER is
-        -- recorded because rule 701.43a names one. The step sits after `before`, so
-        -- CR 508.1's preamble undoes an exert along with the declaration. Paid
-        -- here, at the choice, ahead of CR 508.1i's window rather than among CR
-        -- 508.1j's payments; the creature is `held`, so a window that removes it
+        -- CR 701.43a's keyword action is Event.exert's write. NOT
+        -- Effect.DoesNotUntapNext, which is a resolving effect; exerting is a cost
+        -- payment. The PLAYER is recorded because rule 701.43a names one. The
+        -- step sits after `before`, so CR 508.1's preamble undoes an exert along
+        -- with the declaration. Paid here, at the choice, ahead of CR 508.1i's
+        -- window rather than among CR 508.1j's payments; the creature is `held`, so a window that removes it
         -- refuses the toll (Cost.payToll), as paying it at CR 508.1j would.
         exerted <- fmap concat . Monad.forM attacking $ \oid -> do
           gsExert <- State.get
@@ -2877,12 +2873,8 @@ attemptAttackDeclaration perform pid asked forced rejected = do
             else do
               let you = attackerOf oid
                   exertDecider = Decide.deciderFor you gsExert
-                  exert g =
-                    Event.recordEvent
-                      (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Exert oid))
-                      g {GameState.objects = Map.adjust (\o -> o {Object.exertedBy = Set.insert you (Object.exertedBy o)}) oid (GameState.objects g)}
               answer <- Game.choose (Prompt.ChooseExert exertDecider you oid)
-              if answer == OptionalDecision.Exercises then [(you, oid)] <$ State.modify' exert else pure []
+              if answer == OptionalDecision.Exercises then [(you, oid)] <$ State.modify' (Event.exert you oid) else pure []
         -- CR 702.154a's optional cost to attack, rule 508.1g's other one, asked
         -- after exert's and of `attacking` for the same reason. Rule 702.154d:
         -- ONE offer per instance of the keyword, each independent, so the roster

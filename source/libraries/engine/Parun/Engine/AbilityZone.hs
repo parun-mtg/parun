@@ -128,6 +128,7 @@ zoneOfComponent component = case component of
   CostComponent.ExileThisFrom zone -> Just zone
   CostComponent.TapThis -> Nothing
   CostComponent.UntapThis -> Nothing
+  CostComponent.ExertThis -> Nothing
   -- CR 113.6m again, and Nothing for SacrificeThis' reason above: it moves the
   -- object off the BATTLEFIELD, where CR 113.6's default already had it, so
   -- naming the zone would be redundant rather than wrong. A FENCE and not proven

@@ -77,6 +77,7 @@ traverseAmount f component = case component of
   CostComponent.PayComputedLife _ -> pure component
   CostComponent.TapThis -> pure component
   CostComponent.UntapThis -> pure component
+  CostComponent.ExertThis -> pure component
   CostComponent.SacrificeThis -> pure component
   CostComponent.ReturnThis -> pure component
   CostComponent.TapForTotalPower {} -> pure component

@@ -2041,6 +2041,7 @@ costComponentChildren :: (Applicative f) => CostChildren keyword f -> CostCompon
 costComponentChildren c component = case component of
   CostComponent.TapThis -> pure component
   CostComponent.UntapThis -> pure component
+  CostComponent.ExertThis -> pure component
   CostComponent.SacrificeThis -> pure component
   CostComponent.ReturnThis -> pure component
   CostComponent.PayLife amount -> CostComponent.PayLife <$> costAmountChildren c amount

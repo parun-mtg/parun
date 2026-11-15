@@ -43,6 +43,7 @@ codec keywordCodec =
     tagOf
     [ Arm.nullary "TapThis" CostComponent.TapThis,
       Arm.nullary "UntapThis" CostComponent.UntapThis,
+      Arm.nullary "ExertThis" CostComponent.ExertThis,
       Arm.nullary "SacrificeThis" CostComponent.SacrificeThis,
       Arm.nullary "ReturnThis" CostComponent.ReturnThis,
       Arm.payload "PayLife" CostAmount.codec CostComponent.PayLife (\x -> case x of CostComponent.PayLife y -> Just y; _ -> Nothing),
@@ -102,6 +103,7 @@ tagOf :: CostComponent.CostComponent keyword -> String
 tagOf x = case x of
   CostComponent.TapThis {} -> "TapThis"
   CostComponent.UntapThis {} -> "UntapThis"
+  CostComponent.ExertThis {} -> "ExertThis"
   CostComponent.SacrificeThis {} -> "SacrificeThis"
   CostComponent.ReturnThis {} -> "ReturnThis"
   CostComponent.PayLife {} -> "PayLife"

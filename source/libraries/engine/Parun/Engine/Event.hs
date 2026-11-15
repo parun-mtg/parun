@@ -1220,6 +1220,16 @@ turnsUpBefore event oid gs = case fmap Object.facing (Game.lookupObject oid gs) 
   Just (Facing.FaceDown state) -> Set.member event (FaceDownState.turnsUpBefore state)
   _ -> False
 
+-- CR 701.43a: `pid` exerts the permanent, joining Object.exertedBy, which
+-- Parun.Engine.Engine.untapAll applies at that seat's untap step and CR 701.43b
+-- expires. The one write CR 508.1g's attack cost
+-- (Parun.Engine.Combat) and an activation cost (Parun.Engine.Cost) both make.
+exert :: PlayerId -> ObjectId -> GameState -> GameState
+exert pid oid gs =
+  recordEvent
+    (GameEvent.PermanentActed (PermanentActed.MkPermanentActed PermanentAction.Exert oid))
+    gs {GameState.objects = Map.adjust (\o -> o {Object.exertedBy = Set.insert pid (Object.exertedBy o)}) oid (GameState.objects gs)}
+
 -- CR 701.26b: rotate one permanent back upright from a sideways position, and
 -- let CR 614 have its say first. The single funnel every route that untaps goes
 -- through -- Parun.Engine.Cost.payComponent's UntapThis for CR 107.6's untap

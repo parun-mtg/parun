@@ -54,6 +54,7 @@ loyaltyAmountOf component = case component of
   CostComponent.RemoveLoyaltyFromThis (CostAmount.Announced _) -> Nothing
   CostComponent.TapThis -> Nothing
   CostComponent.UntapThis -> Nothing
+  CostComponent.ExertThis -> Nothing
   CostComponent.SacrificeThis -> Nothing
   CostComponent.ReturnThis -> Nothing
   CostComponent.PayLife _ -> Nothing
