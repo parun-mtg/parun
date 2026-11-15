@@ -1,6 +1,6 @@
 {
   "description": "CR 601.2c the offer is every OTHER morph creature, and all three turn over",
-  "note": "The slot's own half, read off the engine's offer rather than a set this file chose: 'creatures with morph abilities' keeps the Piker off, and 'other than this creature' keeps the Weaver off its own trigger, a face-up morph creature by the time the trigger goes on the stack (CR 708.7). The Prompt view reads the offer; announcing all three turns all three over, and the Piker and the Weaver stay face up.",
+  "note": "The slot's own half, read off the engine's offer rather than a set this file chose: 'creatures with morph abilities' keeps the Piker off, and 'other than this creature' keeps the Weaver off its own trigger, a face-up morph creature by the time the trigger goes on the stack (CR 708.7). Naming the Piker or the Weaver beside the three is refused, since the slot does not offer them; announcing all three turns all three over, and the Piker and the Weaver stay face up.",
   "board": {
     "seats": [
       {
@@ -161,10 +161,29 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
-      "check": {
-        "View": {
-          "of": "Prompt",
-          "is": null
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$tracker",
+            "$elemental",
+            "$raptor",
+            "$piker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$tracker",
+            "$elemental",
+            "$raptor",
+            "$weaver"
+          ]
         }
       }
     },
@@ -180,6 +199,18 @@
             "$raptor"
           ]
         }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "OrderTimestamps": [
+          "$tracker",
+          "$elemental",
+          "$raptor"
+        ]
       }
     },
     {

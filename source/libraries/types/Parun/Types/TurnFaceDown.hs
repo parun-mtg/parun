@@ -17,7 +17,8 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 -- no slot at all. ObjectRef.InSlot covers the first and ObjectRef.EachMatching the
 -- second, and the singular "target creature" of Backslide is InSlot with a slot CR
 -- 601.2c filled once. Both forms have a card in data\/cards, the sweep form being
--- Ixidron itself; Parun.FaceDownSpec's "CR 613.7f" pair is where it is driven.
+-- Ixidron itself; data/scenarios/face-down's CR 613.7f pairs are where it is
+-- driven.
 data TurnFaceDown ability = MkTurnFaceDown
   { ref :: ObjectRef.ObjectRef,
     characteristics :: FaceDownCharacteristics.FaceDownCharacteristics ability

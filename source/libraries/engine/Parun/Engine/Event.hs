@@ -12340,7 +12340,8 @@ shuffleLibraryExcept leftOut pid = do
 -- CR 708.12 does NOT move this read, and that is the rule rather than an
 -- oversight: it governs what a revealing ability READS, not what the log records,
 -- and the read is Parun.Types.Filter's RepresentedByCard -- Hauntwoods Shrieker's
--- "if it's a creature card", proved at Parun.FaceDownSpec's CR 708.12 group.
+-- "if it's a creature card", proved at data/scenarios/face-down's CR 708.12
+-- scenarios.
 --
 -- A face-down object's reveal -- CR 708.9's, Hauntwoods Shrieker's or CR
 -- 701.40g's -- shows the card, so its snapshot is that projection face up

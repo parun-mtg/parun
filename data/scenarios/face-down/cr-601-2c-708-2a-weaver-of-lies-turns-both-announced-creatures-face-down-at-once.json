@@ -194,6 +194,17 @@
       "turn": 1,
       "step": "PrecombatMain",
       "player": "alice",
+      "do": {
+        "OrderTimestamps": [
+          "$tracker",
+          "$elemental"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
       "do": "Pass"
     },
     {

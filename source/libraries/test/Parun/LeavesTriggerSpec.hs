@@ -2452,7 +2452,7 @@ soulshiftSpec s = Spec.describe s "Soulshift" $ do
 -- carries no sampled board, so this is the live-fallback reading in
 -- Event.eventTriggers rather than the per-group one; the Blood Moon was standing
 -- before the entry either way, so the two agree here.
-strippedTriggerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+strippedTriggerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 strippedTriggerSpec s registry =
   let settle gs = snd (Engine.runGamePure S.identityAnswer gs Engine.settleForPriority)
       resolveAll gs = snd (Engine.runGamePure S.identityAnswer gs Engine.priorityLoop)

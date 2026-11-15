@@ -589,8 +589,8 @@ data Filter keyword
     -- read off that card's printed face with nothing in CR 613 applied
     -- (Hauntwoods Shrieker's "if it's a creature card"). A plain HasCardType
     -- would be vacuous, CR 708.2a leaving every face-down permanent a 2/2
-    -- creature; Parun.FaceDownSpec's Hauntwoods Shrieker group is the pair of
-    -- boards that separates them.
+    -- creature; data/scenarios/face-down's CR 708.12 scenarios are the boards
+    -- that separate them.
     RepresentedByCard (Filter keyword)
   | -- | CR 406.3: the candidate is a card that was exiled FACE DOWN; "face-up
     -- exiled card" is @Not IsExiledFaceDown@ (#163). A separate atom from
