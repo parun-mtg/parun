@@ -1,0 +1,243 @@
+{
+  "faces": [
+    {
+      "combatRestrictions": [
+        {
+          "type": "CantAttack",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            },
+            "unless": {
+              "type": "Compares",
+              "value": {
+                "comparison": "Exactly",
+                "measured": {
+                  "type": "Quotient",
+                  "value": {
+                    "divisor": {
+                      "type": "Literal",
+                      "value": 2
+                    },
+                    "quantity": {
+                      "type": "ObjectCountersOfAnyKind"
+                    },
+                    "rounding": "Up"
+                  }
+                },
+                "threshold": {
+                  "type": "Quotient",
+                  "value": {
+                    "divisor": {
+                      "type": "Literal",
+                      "value": 2
+                    },
+                    "quantity": {
+                      "type": "ObjectCountersOfAnyKind"
+                    },
+                    "rounding": "Down"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "CantBlock",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            },
+            "unless": {
+              "type": "Compares",
+              "value": {
+                "comparison": "Exactly",
+                "measured": {
+                  "type": "Quotient",
+                  "value": {
+                    "divisor": {
+                      "type": "Literal",
+                      "value": 2
+                    },
+                    "quantity": {
+                      "type": "ObjectCountersOfAnyKind"
+                    },
+                    "rounding": "Up"
+                  }
+                },
+                "threshold": {
+                  "type": "Quotient",
+                  "value": {
+                    "divisor": {
+                      "type": "Literal",
+                      "value": 2
+                    },
+                    "quantity": {
+                      "type": "ObjectCountersOfAnyKind"
+                    },
+                    "rounding": "Down"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Indestructible"
+        },
+        {
+          "type": "Reach"
+        },
+        {
+          "type": "Trample"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Sab-Sunen, Luxa Embodied",
+      "oracleText": "Reach, trample, indestructible\nSab-Sunen can't attack or block unless it has an even number of counters on it. (Zero is even.)\nAt the beginning of your first main phase, put a +1/+1 counter on Sab-Sunen. Then if it has an odd number of counters on it, draw two cards.",
+      "power": {
+        "type": "Literal",
+        "value": 6
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 6
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "ordinal": 1,
+              "phase": {
+                "type": "PrecombatMain"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "GreaterThan",
+                        "measured": {
+                          "type": "Quotient",
+                          "value": {
+                            "divisor": {
+                              "type": "Literal",
+                              "value": 2
+                            },
+                            "quantity": {
+                              "type": "ObjectCountersOfAnyKind"
+                            },
+                            "rounding": "Up"
+                          }
+                        },
+                        "threshold": {
+                          "type": "Quotient",
+                          "value": {
+                            "divisor": {
+                              "type": "Literal",
+                              "value": 2
+                            },
+                            "quantity": {
+                              "type": "ObjectCountersOfAnyKind"
+                            },
+                            "rounding": "Down"
+                          }
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "God"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
