@@ -1,0 +1,94 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "ready": true
+          },
+          {
+            "card": "Lier, Disciple of the Drowned",
+            "label": "lier"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Firebolt",
+            "label": "firebolt"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.34a a granted flashback priced at the card's own mana cost is payable for that cost",
+  "note": "Lier, Disciple of the Drowned grants each instant and sorcery card in alice's graveyard flashback at its own mana cost, read off the receiving card. Firebolt already prints Flashback {4}{R}, so it holds two flashback abilities whose costs share no reading, and alice has ONE Mountain: the granted {R} is payable and the printed {4}{R} is not. With ten lands both readings would exile Firebolt and deal 2, and nothing here would tell them apart. The cast offers both costs; paying the granted {R}, Firebolt deals alice 2 and is exiled rather than returning to the graveyard. Firebolt is aimed at alice so its damage reports which cast resolved; Lier is a legal target too.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain"
+          ],
+          "object": "$firebolt",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Firebolt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Firebolt",
+          "count": 0,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

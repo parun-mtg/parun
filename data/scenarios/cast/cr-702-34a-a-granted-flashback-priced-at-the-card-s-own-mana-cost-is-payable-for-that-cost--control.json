@@ -1,0 +1,216 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "mountain-1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-5",
+            "ready": true
+          },
+          {
+            "card": "Lier, Disciple of the Drowned",
+            "label": "lier"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Firebolt",
+            "label": "firebolt"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.34a a granted flashback priced at the card's own mana cost is payable for that cost",
+  "note": "The supporting half of the Haskell test, on a board where both costs are payable so CR 601.2b's announcement is asked at all (only payable candidates are offered, so on the one-Mountain board it is not): Lier's granted {R} is offered beside Firebolt's printed {4}{R}, each as its own flashback keyword. Alice names the granted {R}, pays it with one Mountain, and the spell deals her 2 and is exiled.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "ChooseCost",
+            "offer": {
+              "source": "Firebolt",
+              "costs": [
+                {
+                  "mana": [
+                    {
+                      "type": "Generic",
+                      "value": 4
+                    },
+                    {
+                      "type": "OfType",
+                      "value": {
+                        "type": "Colored",
+                        "value": "Red"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "mana": [
+                    {
+                      "type": "OfType",
+                      "value": {
+                        "type": "Colored",
+                        "value": "Red"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "keywords": [
+                {
+                  "type": "Flashback",
+                  "value": {
+                    "mana": [
+                      {
+                        "type": "Generic",
+                        "value": 4
+                      },
+                      {
+                        "type": "OfType",
+                        "value": {
+                          "type": "Colored",
+                          "value": "Red"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "type": "Flashback",
+                  "value": {
+                    "mana": [
+                      {
+                        "type": "OfType",
+                        "value": {
+                          "type": "Colored",
+                          "value": "Red"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ],
+              "earlier": []
+            }
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain-1",
+            null
+          ],
+          "object": "$firebolt",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCost",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Firebolt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Firebolt",
+          "count": 0,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$mountain-2",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

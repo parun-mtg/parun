@@ -1,0 +1,71 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island-1",
+            "tapped": true
+          },
+          {
+            "card": "Island",
+            "label": "island-2",
+            "tapped": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain"
+          },
+          {
+            "card": "Lier, Disciple of the Drowned",
+            "label": "lier"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Acidic Soil",
+            "label": "soil"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Synthetic Mirror of the Fallen",
+            "label": "mirror"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 707.2 a graveyard card that is a copy is priced at the copy's mana cost",
+  "note": "The discriminating twin, the same board before the copy: the two Islands already spent and the Mirror not cast. Lier prices Acidic Soil at its own printed {2}{R}, which the one Mountain cannot pay, so no cast of it is offered.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility $mountain"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
