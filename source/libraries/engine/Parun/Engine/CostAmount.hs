@@ -8,6 +8,7 @@ import qualified Data.Functor.Identity as Identity
 import qualified Data.Monoid as Monoid
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Types.CardsFromHand as CardsFromHand
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost
@@ -16,8 +17,11 @@ import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CountersFromPermanents as CountersFromPermanents
 import qualified Parun.Types.CountersOnThis as CountersOnThis
 import qualified Parun.Types.DiscardCards as DiscardCards
+import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.ObjectCount as ObjectCount
+import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.TapPermanents as TapPermanents
@@ -27,13 +31,35 @@ import qualified Parun.Types.TapPermanents as TapPermanents
 -- count announced beside it (March of Wretched Sorrow's cards exiled) has no
 -- other half.
 substituteAnnounced :: SlotName.SlotName -> Natural -> Cost keyword -> Cost keyword
-substituteAnnounced slot n cost = cost {Cost.components = fmap (Identity.runIdentity . traverseAmount (Identity.Identity . fixAt)) (Cost.components cost)}
+substituteAnnounced slot n cost = cost {Cost.components = fmap (fixCriteria . Identity.runIdentity . traverseAmount (Identity.Identity . fixAt)) (Cost.components cost)}
   where
     fixAt amount = if amount == CostAmount.Announced slot then CostAmount.Fixed n else amount
+    fixCriteria = Identity.runIdentity . traverseCriterionReads slot (const (Identity.Identity (Operand.Literal (toInteger n))))
+
+-- CR 107.3a / 601.2b: every comparison a component's criteria make against the
+-- value announced under this slot (Sidisi, Regent of the Mire's "a creature you
+-- control with mana value X"), as a traversal of the operand. Its own walk
+-- rather than one of `traverseAmount`'s amounts: the variable stands in a
+-- Filter there, as Operand.AmountInSlot, not as a CostAmount.
+traverseCriterionReads :: (Applicative f) => SlotName.SlotName -> (Measures.Measures -> f Operand.Operand) -> CostComponent.CostComponent keyword -> f (CostComponent.CostComponent keyword)
+traverseCriterionReads slot f = Children.costComponentChildren Children.costLeaves {Children.costFilter = filterReads}
+  where
+    filterReads predicate = case predicate of
+      Filter.Measures measures | Measures.operand measures == Operand.AmountInSlot slot -> (\operand -> Filter.Measures measures {Measures.operand = operand}) <$> f measures
+      _ -> Children.filterChildren (Children.descending filterReads) predicate
+
+-- The comparisons `traverseCriterionReads` finds against this slot's value.
+criterionReads :: SlotName.SlotName -> CostComponent.CostComponent keyword -> [Measures.Measures]
+criterionReads slot = Const.getConst . traverseCriterionReads slot (Const.Const . pure)
+
+-- `criterionReads` of X.
+criterionReadsOfX :: CostComponent.CostComponent keyword -> [Measures.Measures]
+criterionReadsOfX = criterionReads Binding.variableX
 
 -- The CostAmount a component carries, as a traversal: the one place that knows
--- which components CR 107.3a's X can stand in, so Parun.Engine.Cost's
--- substituteX and componentHasVariable cannot disagree about it.
+-- which components' amounts CR 107.3a's X can stand in, so Parun.Engine.Cost's
+-- substituteX and componentHasVariable cannot disagree about it. A criterion's
+-- X is `traverseCriterionReads`'.
 --
 -- EXHAUSTIVE with no wildcard, this module's posture for every CostComponent
 -- match: a new component owes an answer here, and -Werror is what makes it.
@@ -100,7 +126,8 @@ traverseCount f count = case count of
   ObjectCount.Exactly amount -> ObjectCount.Exactly <$> f amount
   ObjectCount.Every -> pure ObjectCount.Every
 
--- Parun.Engine.Cost.substituteX's predicate half, read off the same traversal: a component this
--- answers False for is one no announcement will ever substitute.
+-- Parun.Engine.Cost.substituteX's predicate half, read off the same two
+-- traversals: a component this answers False for is one no announcement will
+-- ever substitute.
 componentHasVariable :: CostComponent.CostComponent keyword -> Bool
-componentHasVariable = Monoid.getAny . Const.getConst . traverseAmount (Const.Const . Monoid.Any . (== CostAmount.Announced Binding.variableX))
+componentHasVariable component = Monoid.getAny (Const.getConst (traverseAmount (Const.Const . Monoid.Any . (== CostAmount.Announced Binding.variableX)) component)) || not (null (criterionReadsOfX component))

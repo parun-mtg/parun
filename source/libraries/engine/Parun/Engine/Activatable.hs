@@ -12,7 +12,9 @@ import qualified Parun.Engine.ActivationRestriction as ActivationRestriction
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Cost as Cost
+import qualified Parun.Engine.CostAmount as CostAmount.Engine
 import qualified Parun.Engine.Detain as Detain
+import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.Loyalty as Loyalty
@@ -29,6 +31,7 @@ import qualified Parun.Engine.SplitSecond as SplitSecond
 import qualified Parun.Engine.Target as Target
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Engine.Vanguard as Vanguard
+import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityName as AbilityName
@@ -49,6 +52,7 @@ import qualified Parun.Types.LoyaltyClause as LoyaltyClause
 import qualified Parun.Types.LoyaltyKind as LoyaltyKind
 import qualified Parun.Types.ManaSpending as ManaSpending
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.Modal as Modal.Type
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.Object as Object
@@ -620,8 +624,34 @@ leastX pid srcId ability gs = case Cost.definingCandidates pid srcId ability gs 
 -- Blighted Nightmare's blight route terminate -- an announced blight's demand
 -- never grows (Cost.demandGrowsWithX), so the climb has no other ground to stop
 -- on. Cast.affordableX takes the same argument off Face.maximumX.
+--
+-- A criterion reading X makes payability non-monotone, so its greatest payable
+-- X is found among `gateXs` instead of by the climb.
 affordableX :: Maybe Natural -> [(Map.Map SlotName (Natural, Natural), Map.Map SlotName (Set.Set ObjectId))] -> Maybe Keyword -> Maybe AbilityName.AbilityName -> Maybe (Set.Set ManaType.ManaType) -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Natural
-affordableX mCeiling aimable stamp named spendable pid srcId gs cost = Cost.greatestPayableX mCeiling (\x -> payableCostAt aimable x stamp named spendable pid srcId gs cost) cost
+affordableX mCeiling aimable stamp named spendable pid srcId gs cost
+  | criterionReadsX cost = Maybe.fromMaybe 0 (Maybe.listToMaybe (reverse (filter payableAt (gateXs mCeiling 0 gs cost))))
+  | otherwise = Cost.greatestPayableX mCeiling payableAt cost
+  where
+    payableAt x = payableCostAt aimable x stamp named spendable pid srcId gs cost
+
+-- Does a component's criterion compare against X (CostAmount.Engine.criterionReadsOfX)?
+criterionReadsX :: Cost Keyword -> Bool
+criterionReadsX = not . all (null . CostAmount.Engine.criterionReadsOfX) . Cost.Type.components
+
+-- CR 601.2b via 602.2b: the values of X a gate asks an activation cost at, in
+-- ascending order. The least X alone, unless a component's criterion compares
+-- against X (Sidisi, Regent of the Mire's "a creature you control with mana
+-- value X"): payability is then not monotone in X, and changes only where X
+-- meets a compared measure of some object, so each such value past the floor,
+-- and the one after it, is asked too, up to CR 101.1's ceiling.
+-- Cast.gateXs is the spell's counterpart.
+gateXs :: Maybe Natural -> Natural -> GameState -> Cost Keyword -> [Natural]
+gateXs mCeiling floorX gs cost =
+  let compared = fmap Measures.measure (concatMap CostAmount.Engine.criterionReadsOfX (Cost.Type.components cost))
+      viewOf = Projection.viewsOf gs
+      values = [v | measure <- compared, oid <- Map.keys (GameState.objects gs), Just v <- [Filter.measureOf measure (viewOf oid)]]
+      breakpoints = [n | v <- values, i <- [v, v + 1], Just n <- [Integer.toNatural i], n > floorX]
+   in floorX : filter (\x -> all (x <=) mCeiling) (Set.toAscList (Set.fromList breakpoints))
 
 -- CR 601.2b / 118.9 through CR 602.2b: the costs a player may announce for this
 -- activation -- its printed activation cost, once per way of paying the choices
@@ -749,4 +779,4 @@ activatableGiven pools sources pid srcId ability gs =
         && Modal.selectionPossible (Set.difference fillable (Target.rememberedModes (StackedAbility.Activated (Projection.printedActivatedAbility srcId gs ability)) modal srcId gs)) (Modal.Type.selection modal)
         -- CR 107.3c: an X its text defines off no card is undefined.
         && not (Cost.undefinedX pid srcId ability gs)
-        && any (payableCostAtGiven rows aimable sources (Target.board pools) (leastX pid srcId ability gs) (ActivatedAbility.keyword ability) (ActivatedAbility.name ability) (ActivationRestriction.spendableTypes srcId (ActivatedAbility.restrictions ability) gs) pid srcId gs) (costsFor rows pid srcId ability gs)
+        && any (\cost -> any (\x -> payableCostAtGiven rows aimable sources (Target.board pools) x (ActivatedAbility.keyword ability) (ActivatedAbility.name ability) (ActivationRestriction.spendableTypes srcId (ActivatedAbility.restrictions ability) gs) pid srcId gs cost) (gateXs (Cost.ceilingOf (ActivatedAbility.name ability) pid srcId (ActivatedAbility.maximumX ability) gs) (leastX pid srcId ability gs) gs cost)) (costsFor rows pid srcId ability gs)
