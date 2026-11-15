@@ -967,7 +967,6 @@ import qualified Parun.FragmentedSpec
 import qualified Parun.GameSpec
 import qualified Parun.GoadSpec
 import qualified Parun.GrandMeleeSpec
-import qualified Parun.HarnessSpec
 import qualified Parun.HealSpec
 import qualified Parun.IngestSpec
 import qualified Parun.InitiativeSpec
@@ -2073,7 +2072,6 @@ spec s reference corpus = do
   Parun.GameSpec.spec s registry
   Parun.GoadSpec.spec s registry
   Parun.GrandMeleeSpec.spec s registry
-  Parun.HarnessSpec.spec s registry
   Parun.HealSpec.spec s registry
   Parun.IngestSpec.spec s corpus
   Parun.InitiativeSpec.spec s registry

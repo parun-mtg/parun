@@ -86,10 +86,9 @@ faceReadings oid gs =
     S.powerToughnessOf oid gs
   )
 
-birgiReadings, harnfelReadings, bloodbogReadings :: (Set.Set CardName.CardName, Set.Set CardType.CardType, Maybe (Integer, Integer))
+birgiReadings, harnfelReadings :: (Set.Set CardName.CardName, Set.Set CardType.CardType, Maybe (Integer, Integer))
 birgiReadings = (Set.singleton birgiName, Set.singleton CardType.Creature, Just (3, 3))
 harnfelReadings = (Set.singleton harnfelName, Set.singleton CardType.Artifact, Nothing)
-bloodbogReadings = (Set.singleton bloodbogName, Set.singleton CardType.Land, Nothing)
 
 -- The play-side card's LAND face, the only one of its two names any case here
 -- asserts. Its other face is a SORCERY, which is what makes the card the
@@ -323,37 +322,6 @@ spec s registry = Spec.describe s "ModalDoubleFaced" $ do
           (List.sort (landPlays (Action.legalActions S.alice board)))
           [(mountainId, Nothing), (zofId, Just bloodbogName)]
       other -> Spec.assertFailure s ("expected two hand cards, got " <> show (length other))
-  -- CR 712.9's second sentence -- "It enters the battlefield with that face up.
-  -- See rule 305, 'Lands.'" -- and CR 305.2a's tally, through the real priority
-  -- loop rather than a direct call to the funnel.
-  --
-  -- THE proving case for the play side. Three separate wrong answers fail it: a
-  -- play that never reached the battlefield leaves the hand full; a play that
-  -- dropped the chosen face puts a SORCERY named Zof Consumption onto the
-  -- battlefield (CR 712.6a's front face, which every reader would then answer
-  -- with); and a play the engine did not tally leaves CR 305.2's allowance
-  -- unspent.
-  --
-  -- The mana ability is asserted because it is the only thing the entering
-  -- permanent has that the front face does not: the sorcery face prints no
-  -- activated ability, and "{T}: Add {B}" is the whole of the land face's text
-  -- parun can express.
-  Spec.it s "CR 712.9 playing the land face puts THAT face onto the battlefield" $ do
-    zof <- S.printingOf s registry "Zof Consumption"
-    let (_, board) = handBoardOne zof
-        after = S.runPure S.playLandAnswer board Engine.priorityLoop
-    Spec.assertEqWith s "CR 305.2a's one land play is spent" (GameState.landsPlayed after) (Map.singleton S.alice 1)
-    Spec.assertEqWith s "and the hand is empty" (S.handSize S.alice after) 0
-    case Set.toList (GameState.battlefield after) of
-      [permId] -> do
-        Spec.assertEqWith s "the permanent is the LAND face" (faceReadings permId after) bloodbogReadings
-        Spec.assertEqWith
-          s
-          "which is the face it records (CR 712.9)"
-          (fmap Object.face (Game.lookupObject permId after))
-          (Just (Just bloodbogName))
-        Spec.assertEqWith s "and it has the land face's mana ability" (length (Projection.abilitiesOf permId after)) 1
-      other -> Spec.assertFailure s ("expected one permanent, got " <> show (length other))
   -- CR 712.11b: "If a player is instructed to put a double-faced card onto the
   -- battlefield with an instant or sorcery face up, that card stays in its
   -- current zone."

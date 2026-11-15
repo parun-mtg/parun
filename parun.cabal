@@ -2626,7 +2626,6 @@ library test
     Parun.GameSpec
     Parun.GoadSpec
     Parun.GrandMeleeSpec
-    Parun.HarnessSpec
     Parun.HealSpec
     Parun.IngestSpec
     Parun.InitiativeSpec

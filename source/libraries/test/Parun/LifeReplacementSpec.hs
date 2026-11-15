@@ -258,18 +258,10 @@ wordsOfWorshipSpec s registry = Spec.describe s "Words of Worship (CR 614.11)" $
   Spec.it s "CR 614.11 an empty library still gets the life, and no failed draw is recorded" $ do
     plains <- S.printingOf s registry "Plains"
     wordsOfWorship <- S.printingOf s registry "Words of Worship"
-    let armed = emptyLibraryBoard plains wordsOfWorship True
+    let armed = emptyLibraryBoard plains wordsOfWorship
         after = S.runPure S.identityAnswer armed (Event.drawCard (pure ()) S.alice)
     Spec.assertEqWith s "CR 614.11 the row applied off an empty library" (S.lifeOf S.alice after) (Just 25)
     Spec.assertBool s (not (Set.member S.alice (GameState.drewFromEmpty after))) "CR 121.4 no draw was attempted, so nothing is owed"
-  -- The CONTROL for the case above, on the same empty library.
-  Spec.it s "CR 121.4 with no row the same empty library records the failed draw" $ do
-    plains <- S.printingOf s registry "Plains"
-    wordsOfWorship <- S.printingOf s registry "Words of Worship"
-    let unarmed = emptyLibraryBoard plains wordsOfWorship False
-        after = S.runPure S.identityAnswer unarmed (Event.drawCard (pure ()) S.alice)
-    Spec.assertEqWith s "she gained nothing" (S.lifeOf S.alice after) (Just 20)
-    Spec.assertBool s (Set.member S.alice (GameState.drewFromEmpty after)) "CR 704.5b and the failed draw is on the books"
 
   -- CR 614.3 / 608.2: the row is an effect of a resolution that has ENDED, so its
   -- CR 109.5 "you" was fixed when the ability resolved. Destroying the
@@ -309,14 +301,14 @@ wordsBoard plains wordsOfWorship stock arm =
           else g2
    in (final, enchantment)
 
--- wordsBoard with no library at all, which is CR 614.11's own board.
-emptyLibraryBoard :: Printing.Printing -> Printing.Printing -> Bool -> GameState.GameState
-emptyLibraryBoard plains wordsOfWorship arm =
+-- wordsBoard, armed, with no library at all, which is CR 614.11's own board.
+-- Its unarmed control is
+-- data/scenarios/life-replacement/cr-121-4-with-no-row-the-same-empty-library-records-the-failed-draw.json.
+emptyLibraryBoard :: Printing.Printing -> Printing.Printing -> GameState.GameState
+emptyLibraryBoard plains wordsOfWorship =
   let base = S.landsInPlay plains 1
       (enchantment, g1) = S.addPermanent wordsOfWorship S.alice base
-   in if arm
-        then S.runPure S.identityAnswer g1 (Activate.activateAbility S.alice enchantment (theAbility wordsOfWorship) >> Stack.resolveTop)
-        else g1
+   in S.runPure S.identityAnswer g1 (Activate.activateAbility S.alice enchantment (theAbility wordsOfWorship) >> Stack.resolveTop)
 
 -- CR 121.2a / 616.1g: Alms Collector ({3}{W} Creature -- Cat Cleric, 3/4, "Flash /
 -- If an opponent would draw two or more cards, instead you and that player each
