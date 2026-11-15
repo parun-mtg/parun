@@ -1,0 +1,389 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Silent Hallcreeper",
+            "label": "hc",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Wall of Stone",
+            "label": "wall"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 700.2b / 700.2c / 707.2 / 509.1b: Silent Hallcreeper can't be blocked, and each time it deals combat damage to a player its controller chooses a mode not chosen before: a draw, then two +1/+1 counters, then, its last mode forced, it becomes a copy of another creature its controller controls",
+  "note": "Turn 1 alice attacks with both; bob's Wall of Stone can block her Hill Giant but not the Hallcreeper. Turn 1 draws; turn 3 refuses the draw and takes the counters; turn 5 asks no mode and the copy target refuses bob's Wall and the Hallcreeper itself, taking alice's Grizzly Bears over her Hill Giant. The copy keeps its two counters (4/4).",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$hc",
+          "$giant"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Block": {
+          "$wall": [
+            "$hc"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$wall": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$giant",
+          "blockers": [
+            "$wall"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$hc",
+          "blockers": null
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseModes",
+          "with": [
+            1
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$hc"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$hc"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseModes",
+          "with": [
+            1
+          ]
+        }
+      },
+      "step": "CombatDamage",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseModes",
+          "with": [
+            0
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$hc"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 2,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": [
+          "$hc"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 5
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "copied": [
+            "$wall"
+          ]
+        }
+      },
+      "step": "CombatDamage",
+      "turn": 5
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "copied": [
+            "$hc"
+          ]
+        }
+      },
+      "step": "CombatDamage",
+      "turn": 5
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "copied": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 5
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 15,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Grizzly Bears"
+          ],
+          "object": "$hc"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 5
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$hc",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 3,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 5
+    }
+  ]
+}

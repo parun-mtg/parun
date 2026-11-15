@@ -1,0 +1,143 @@
+{
+  "faces": [
+    {
+      "enchant": [
+        {
+          "pool": {
+            "type": "Creatures"
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        }
+      ],
+      "name": "Sporogenic Infection",
+      "oracleText": "Enchant creature\nWhen this Aura enters, target player sacrifices a creature of their choice other than enchanted creature.\nWhen enchanted creature is dealt damage, destroy it.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PlayerSacrifices",
+                        "value": {
+                          "filter": {
+                            "type": "And",
+                            "value": [
+                              {
+                                "type": "HasCardType",
+                                "value": "Creature"
+                              },
+                              {
+                                "type": "Not",
+                                "value": {
+                                  "type": "HasAttached",
+                                  "value": {
+                                    "type": "IsSource"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          "players": {
+                            "type": "EachInSlot",
+                            "value": "target"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Players"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "IsDealtDamage",
+            "value": {
+              "dealt": {
+                "recipient": {
+                  "type": "Matching",
+                  "value": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "HasAttached",
+                        "value": {
+                          "type": "IsSource"
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Destroy",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "became"
+                          },
+                          "regenerability": "Regenerable"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Aura"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

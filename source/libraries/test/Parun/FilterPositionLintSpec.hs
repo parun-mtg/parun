@@ -2318,6 +2318,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Path to Redemption", 1), -- Spiral into Solitude's wording
         ("Watery Grasp", 1), -- an activated ability shuffling it into its owner's library
         ("Sleep Magic", 1), -- Claustrophobia's entering tap
+        ("Stay Hidden, Stay Silent", 2), -- Claustrophobia's entering tap and Watery Grasp's shuffle
         ("Stuck in Summoner's Sanctum", 1), -- Tractor Beam's entering tap
         ("Fire-Rim Form", 1) -- Super Speed's wording
       ]
