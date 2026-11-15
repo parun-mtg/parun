@@ -318,16 +318,16 @@ out: grep for them.
 
 ### `CommanderSpec`
 
-- CR 616.1e declining the offer first lets the redirect exile it | `board:object-bindings` `board:player-commandercasts`
-- CR 616.1e/903.9b the owner may apply the offer before a card's redirect | `board:object-bindings` `board:player-commandercasts`
-- CR 702.124d the other commander ignores this one's casts | `board:player-commandercasts`
-- CR 903.9b a commander bounced to its owner's hand may go to the command zone | `board:object-bindings` `board:player-commandercasts`
-- CR 903.9b a commander put on top of its owner's library may go to the command zone | `board:object-bindings` `board:player-commandercasts`
-- CR 903.9b an ordinary creature is not offered the command zone | `board:object-bindings` `board:player-commandercasts`
-- CR 903.9b declining leaves it in her hand | `board:object-bindings` `board:player-commandercasts`
-- CR 903.9b declining leaves it in her library | `board:object-bindings` `board:player-commandercasts`
-- CR 903.9b the offer applies once per commander in the same event
-- CR 903.9b the owner is asked, not the player who bounced it | `board:object-bindings` `board:player-commandercasts`
+- ~~CR 616.1e declining the offer first lets the redirect exile it | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 616.1e/903.9b the owner may apply the offer before a card's redirect | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 702.124d the other commander ignores this one's casts | `board:player-commandercasts`~~
+- ~~CR 903.9b a commander bounced to its owner's hand may go to the command zone | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 903.9b a commander put on top of its owner's library may go to the command zone | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 903.9b an ordinary creature is not offered the command zone | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 903.9b declining leaves it in her hand | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 903.9b declining leaves it in her library | `board:object-bindings` `board:player-commandercasts`~~
+- ~~CR 903.9b the offer applies once per commander in the same event~~
+- ~~CR 903.9b the owner is asked, not the player who bounced it | `board:object-bindings` `board:player-commandercasts`~~
 
 ### `ConjureSpec`
 
