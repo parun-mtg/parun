@@ -377,9 +377,20 @@ recordEvent event gs = recordEventOver (battlefieldCandidates gs) event gs
 -- the group's permanents left. A regression fence: every multi-permanent group
 -- in the suite moves with one batch board, so a later filing would read the same.
 fileBoardBefore :: GameState -> GameState -> GameState
-fileBoardBefore before gs =
-  let board = before {GameState.snapshots = (GameState.snapshots before) {Snapshots.boardAfterEvent = Map.empty, Snapshots.boardBeforeEvent = Map.empty, Snapshots.boardAtControlSample = Nothing}}
-   in gs {GameState.snapshots = (GameState.snapshots gs) {Snapshots.boardBeforeEvent = Map.insertWith (\_ filed -> filed) (Bookkeeping.nextEventGroup (GameState.bookkeeping gs)) board (Snapshots.boardBeforeEvent (GameState.snapshots gs))}}
+fileBoardBefore = fileBoardOn (\over snaps -> snaps {Snapshots.boardBeforeEvent = over (Snapshots.boardBeforeEvent snaps)})
+
+-- CR 603.4: file `after` as the game the next event's group happened on
+-- (Snapshots.boardAfterEvent), for an event recorded after that moment
+-- (`becameTarget`). The first filing stands, as Trigger.fileBoards' does.
+fileBoardAfter :: GameState -> GameState -> GameState
+fileBoardAfter = fileBoardOn (\over snaps -> snaps {Snapshots.boardAfterEvent = over (Snapshots.boardAfterEvent snaps)})
+
+-- File `board`, its own filed boards emptied, under the next event's group in
+-- the map `field` updates, unless one is filed there already.
+fileBoardOn :: ((Map.Map EventGroup.EventGroup GameState -> Map.Map EventGroup.EventGroup GameState) -> Snapshots.Snapshots GameState -> Snapshots.Snapshots GameState) -> GameState -> GameState -> GameState
+fileBoardOn field board gs =
+  let filed = board {GameState.snapshots = (GameState.snapshots board) {Snapshots.boardAfterEvent = Map.empty, Snapshots.boardBeforeEvent = Map.empty, Snapshots.boardAtControlSample = Nothing}}
+   in gs {GameState.snapshots = field (Map.insertWith (\_ kept -> kept) (Bookkeeping.nextEventGroup (GameState.bookkeeping gs)) filed) (GameState.snapshots gs)}
 
 -- The OBSERVATION POINT for a control change (CR 613.1b puts control in layer 2,
 -- so the projection re-reads it live and nothing announces the answer changing).
@@ -10335,7 +10346,10 @@ counterOne settle before destination counterer source controller oid = do
 -- -- Rune-Brand Juggler sacrificing the suspected creature its own ability names
 -- -- still made that creature a target while it stood. Proved by
 -- data/scenarios/leaves-trigger's "Professor Hojo sees a target its own cost
--- sacrificed".
+-- sacrificed". It is filed as the group's whole game too (`fileBoardAfter`),
+-- which Match.bearerTriggers reads, so Nowhere to Run sacrificed to pay still
+-- silences the ward of what it saw become a target. Proved by data/scenarios's
+-- nowhere-to-run-sacrificed-to-pay-still-keeps-ward-from-triggering.
 --
 -- BRACKETED, which is what makes CR 603.2c's first sentence readable: rule
 -- 601.2c makes the chosen objects targets in one announcement, so every event
@@ -10354,15 +10368,18 @@ becameTarget :: GameState -> ObjectId -> StackObjectKind.StackObjectKind -> Play
 becameTarget announced source kind controller chosen =
   let sample = battlefieldCandidates announced
    in simultaneously . Foldable.for_ (ListUtils.nubOrdOn (\r -> (Recipient.playerOf r, Recipient.objectOf r)) (concatMap Set.toAscList (Map.elems chosen))) $ \targeted ->
-        State.modify'
-          . recordEventOver sample
-          $ GameEvent.BecameTarget
-            BecameTarget.MkBecameTarget
-              { BecameTarget.targeted = targeted,
-                BecameTarget.source = source,
-                BecameTarget.kind = kind,
-                BecameTarget.controller = controller
-              }
+        State.modify' $
+          recordEventOver
+            sample
+            ( GameEvent.BecameTarget
+                BecameTarget.MkBecameTarget
+                  { BecameTarget.targeted = targeted,
+                    BecameTarget.source = source,
+                    BecameTarget.kind = kind,
+                    BecameTarget.controller = controller
+                  }
+            )
+            . fileBoardAfter announced
 
 -- CR 700.13: record a crime when what was just announced targets an opponent of
 -- `criminal`, a permanent, spell or ability one controls, or a card in one's
