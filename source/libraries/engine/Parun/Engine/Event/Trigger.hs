@@ -1092,8 +1092,13 @@ looksBack condition = case condition of
   -- had before. CR 603.10d names a Bound subject too, but its subject is a
   -- permanent still on the battlefield, Event.sampleControl sampling nowhere
   -- else, and its bearer is a CR 603.7 delayed entry the store keeps rather
-  -- than the log.
-  TriggerCondition.LosesControl subject -> subject == LostPermanent.Self
+  -- than the log. A Matching subject's bearer may be among the permanents
+  -- taken, and answers to its controller before (Zidane, Tantalus Thief's
+  -- ruling).
+  TriggerCondition.LosesControl subject -> case subject of
+    LostPermanent.Self -> True
+    LostPermanent.Bound _ -> False
+    LostPermanent.Matching _ -> True
   -- CR 603.10a's look-back is a question about which event fired the ability, and
   -- a reflexive is fired by none. Its bearer is a CR 603.7 delayed entry too.
   TriggerCondition.Reflexive -> False
@@ -3134,7 +3139,8 @@ zonesTriggeredFrom cond =
         -- CR 113.6's default once more: Custodi Lich is a creature and watches the
         -- crown from the battlefield, so the card sees no crowning from a graveyard.
         TriggerCondition.PlayerBecomesMonarch _ -> battlefield
-        -- CR 113.6's default: a Self subject's bearer stays on the battlefield. A
+        -- CR 113.6's default: a Self or Matching subject's bearer stays on the
+        -- battlefield. A
         -- Bound subject never actually consults it: its only carrier is a CR
         -- 603.7 delayed entry, which Event.delayedPending gathers out of
         -- StoredEffects.delayedTriggers rather than out of a zone. The default is

@@ -2166,12 +2166,20 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   --
   -- A Self subject (CR 603.10d) is the bearer itself changing hands away from
   -- `you`, the controller the scan offers it under for this event
-  -- (Event.Trigger.lostControlOf).
+  -- (Event.Trigger's controllerFor).
+  --
+  -- A Matching subject (CR 603.10d) is "an opponent gains control of a permanent
+  -- from you": the new controller related to `you`, and the permanent as it
+  -- looked immediately before the change. data/scenarios's Zidane, Tantalus
+  -- Thief scenarios prove it.
   TriggerCondition.LosesControl subject -> case event of
-    GameEvent.ControlChanged (ControlChanged.MkControlChanged oid before _) ->
+    GameEvent.ControlChanged (ControlChanged.MkControlChanged oid before after) ->
       before == you && case subject of
         LostPermanent.Self -> oid == bearer
         LostPermanent.Bound slot -> Map.lookup slot (Binding.objectSlots bindings) == Just oid
+        LostPermanent.Matching (PlayerActsOn.MkPlayerActsOn relation f) ->
+          PlayerRelation.holds (Game.teams gs) relation you after
+            && maybe False (\view -> Filter.matches bearerContext view f) (Projection.viewWithLastKnown oid (Maybe.fromMaybe gs beforeEvent) oid)
     _ -> False
   -- CR 309.4c: "when YOU move your venture marker into THIS room", so the
   -- mover must be the ability's controller, the dungeon card the marker is on

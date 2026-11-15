@@ -317,6 +317,7 @@ import qualified Parun.Types.LifeLossRewrite as LifeLossRewrite
 import qualified Parun.Types.LimitUnless as LimitUnless
 import qualified Parun.Types.LookAt as LookAt
 import qualified Parun.Types.LoopMembers as LoopMembers
+import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.LoyaltyGrant as LoyaltyGrant
 import qualified Parun.Types.MadnessCost as MadnessCost
@@ -3859,8 +3860,13 @@ triggerConditionFilters triggerCondition = case triggerCondition of
   TriggerCondition.PlayerBecomesMonarch _ -> []
   -- CR 603.7's slot-named subject holds a SlotName, which is no Filter -- what
   -- the slot holds was selected by the arming spell's own target slot -- and CR
-  -- 603.10d's self subject carries nothing at all.
-  TriggerCondition.LosesControl _ -> []
+  -- 603.10d's self subject carries nothing at all. Its Matching subject's
+  -- Filter, Zidane, Tantalus Thief's "a permanent", is swept like
+  -- PermanentSacrificed's.
+  TriggerCondition.LosesControl subject -> case subject of
+    LostPermanent.Self -> []
+    LostPermanent.Bound _ -> []
+    LostPermanent.Matching payload -> unframed [PlayerActsOn.filter payload]
   TriggerCondition.RoomEntered _ -> []
   -- CR 603.2's PlayerActs carries a PlayerAction and a PlayerRelation, neither
   -- a Filter.
