@@ -461,9 +461,9 @@ abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Te
 
 -- | The ability word (CR 207.2c) Oracle text may print before an ability
 -- this event opens. Free for alliance: printed (Raphael, Tough Turtle) or not
--- (Corpse Knight).
+-- (Corpse Knight). Free for survival: printed (Glimmer Seeker).
 openingWord :: Text.Text -> [Text.Text]
-openingWord opens = [Text.pack "Alliance \8212 " | opens == Text.pack "Whenever another creature you control enters"]
+openingWord opens = [Text.pack "Alliance \8212 " | opens == Text.pack "Whenever another creature you control enters"] <> [Text.pack "Survival \8212 " | opens == Text.pack "At the beginning of your second main phase"]
 
 -- | Whether the condition is the source's own status ("this creature is
 -- attacking"), as 'counted' reads it, after which the source is "it".
@@ -550,8 +550,14 @@ counted context n comparison k = case Count.scope n of
           Nothing ->
             let parts = Text.splitOn (Text.pack " or ") noun
              in [before noun <> Text.pack " " <> noun] <> [Text.intercalate (Text.pack " or ") [Prose.article part <> Text.pack " " <> part | part <- parts] | number == Filter.Singular, comparison == Comparison.AtLeast, k == 1, length parts > 1]
+        let denied = do
+              Monad.guard (k == 0 && elem comparison [Comparison.Exactly, Comparison.AtMost])
+              one <- Filter.describe Filter.Singular Target.permanent p
+              [Text.pack "you don't control " <> Prose.article one <> Text.pack " " <> one]
         case controllers of
-          [Filter.Type.HeldBy Holder.Controller PlayerRelation.You] -> [Text.pack "you control " <> some]
+          -- Free for none: "you don't control a Glimmer creature" (Glimmer
+          -- Seeker).
+          [Filter.Type.HeldBy Holder.Controller PlayerRelation.You] -> [Text.pack "you control " <> some] <> denied
           [Filter.Type.HeldBy Holder.Controller PlayerRelation.Opponent] -> [Text.pack "an opponent controls " <> some]
           [Filter.Type.HeldByBound Holder.Controller s] | Just word <- Map.lookup s (Target.bound context) -> [word <> Text.pack " controls " <> some]
           -- Free: "there are no Zombies on the battlefield" (Sarcomancy) or
