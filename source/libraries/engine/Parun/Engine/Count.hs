@@ -37,6 +37,7 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.AttackTarget as AttackTarget
+import qualified Parun.Types.AttackWindow as AttackWindow
 import qualified Parun.Types.AttackerDeclared as AttackerDeclared
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlocksDeclared as BlocksDeclared
@@ -174,7 +175,16 @@ evaluate viewOf quantityOf talliesWhatHappened candidateCounters context gs coun
                 EventShape.SpellCast CastWindow.BeforeEvaluated -> foldMap (fmap GameEvent.SpellCast) (Filter.evaluated context >>= \spell -> Game.castsBefore spell gs)
                 EventShape.SpellCast CastWindow.OtherThanEvaluated -> List.filter (not . isEvaluatedCast) thisTurn
                 EventShape.SpellCast CastWindow.ThisGame -> fmap GameEvent.SpellCast (Foldable.toList (Game.castsThisGame gs))
+                -- CR 508.1a / 511.3: each of Combat.declaredAttackers' creatures at
+                -- its LAST declaration this turn, which is this combat's: one
+                -- declared in an earlier combat phase too (CR 500.8) was declared
+                -- then first. A departed attacker keeps its old id in both.
+                EventShape.AttackerDeclared AttackWindow.ThisCombat ->
+                  fmap GameEvent.AttackerDeclared (List.reverse (ListUtils.nubOrdOn AttackerDeclared.attacker (List.reverse (Maybe.mapMaybe declaredThisCombat thisTurn))))
                 _ -> thisTurn
+              declaredThisCombat event = case event of
+                GameEvent.AttackerDeclared declared | Set.member (AttackerDeclared.attacker declared) (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn gs))) -> Just declared
+                _ -> Nothing
               thisTurn = fmap LoggedEvent.event (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
               isEvaluatedCast event = Maybe.isJust (Filter.evaluated context) && fmap SpellWasCast.spell (Game.castOf event) == Filter.evaluated context
               views = Maybe.mapMaybe (snapshotView viewOf gs shape) logged
@@ -816,7 +826,7 @@ snapshotView viewOf gs shape event = case event of
            in Just (maybe (asArrived gs (ZoneChange.object zc) current) (\entered -> asSnapshotted gs entered current) arrivedAs)
         else Nothing
     EventShape.SpellCast _ -> Nothing
-    EventShape.AttackerDeclared -> Nothing
+    EventShape.AttackerDeclared _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
@@ -832,7 +842,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.MovedFrom {} -> Nothing
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.SpellCast _ -> Nothing
-    EventShape.AttackerDeclared -> Nothing
+    EventShape.AttackerDeclared _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
   -- CR 615.13's record names two ids, a recipient and an amount, and snapshots no
@@ -869,7 +879,7 @@ snapshotView viewOf gs shape event = case event of
     -- but the Moved event the same cast emits is what says so, and answering here
     -- too would count one cast twice.
     EventShape.CardArrivedIn {} -> Nothing
-    EventShape.AttackerDeclared -> Nothing
+    EventShape.AttackerDeclared _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
@@ -904,7 +914,7 @@ snapshotView viewOf gs shape event = case event of
   -- controlled by the player who declared it, whom CR 508.1a requires to
   -- control it then.
   GameEvent.AttackerDeclared declared -> case shape of
-    EventShape.AttackerDeclared ->
+    EventShape.AttackerDeclared _ ->
       fmap
         (\view -> (asSnapshotted gs (AttackerDeclared.snapshot declared) view) {Filter.controller = Just (AttackerDeclared.attackingPlayer declared)})
         (orLastKnown viewOf gs (AttackerDeclared.attacker declared))
@@ -948,7 +958,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.MovedFrom {} -> Nothing
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.SpellCast _ -> Nothing
-    EventShape.AttackerDeclared -> Nothing
+    EventShape.AttackerDeclared _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
   GameEvent.AbilityTriggered {} -> Nothing
@@ -978,7 +988,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.MovedFrom {} -> Nothing
     EventShape.CardArrivedIn {} -> Nothing
     EventShape.SpellCast _ -> Nothing
-    EventShape.AttackerDeclared -> Nothing
+    EventShape.AttackerDeclared _ -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
   -- CR 122.1's removal names an object by id and snapshots no characteristics,
@@ -1065,7 +1075,7 @@ snapshotView viewOf gs shape event = case event of
     EventShape.MovedBetween {} -> Nothing
     EventShape.MovedFrom {} -> Nothing
     EventShape.SpellCast _ -> Nothing
-    EventShape.AttackerDeclared -> Nothing
+    EventShape.AttackerDeclared _ -> Nothing
     EventShape.CountersPut -> Nothing
     EventShape.Sacrificed -> Nothing
     EventShape.DealtCombatDamageToPlayer -> Nothing
@@ -1080,7 +1090,7 @@ oncePerObject shape = case shape of
   EventShape.MovedFrom {} -> False
   EventShape.CardArrivedIn {} -> False
   EventShape.SpellCast _ -> False
-  EventShape.AttackerDeclared -> False
+  EventShape.AttackerDeclared _ -> False
   EventShape.CountersPut -> False
   EventShape.Sacrificed -> False
 

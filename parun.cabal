@@ -283,6 +283,8 @@ library codec
     Parun.Codec.AttackTargetSpec
     Parun.Codec.AttackTrigger
     Parun.Codec.AttackTriggerSpec
+    Parun.Codec.AttackWindow
+    Parun.Codec.AttackWindowSpec
     Parun.Codec.Audience
     Parun.Codec.AudienceSpec
     Parun.Codec.Backup
@@ -2842,6 +2844,7 @@ library types
     Parun.Types.AttackTargetKind
     Parun.Types.AttackTargetRef
     Parun.Types.AttackTrigger
+    Parun.Types.AttackWindow
     Parun.Types.Audience
     Parun.Types.Backup
     Parun.Types.Ballot

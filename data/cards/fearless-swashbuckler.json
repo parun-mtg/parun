@@ -92,25 +92,14 @@
                         "type": "Members"
                       },
                       "filter": {
-                        "type": "And",
-                        "value": [
-                          {
-                            "type": "HasSubtype",
-                            "value": "Pirate"
-                          },
-                          {
-                            "type": "DeclaredAttackerThisCombat"
-                          }
-                        ]
+                        "type": "HasSubtype",
+                        "value": "Pirate"
                       },
                       "scope": {
-                        "type": "InZone",
+                        "type": "InHistory",
                         "value": {
-                          "player": {
-                            "type": "Relative",
-                            "value": "AnyPlayer"
-                          },
-                          "zone": "Battlefield"
+                          "type": "AttackerDeclared",
+                          "value": "ThisCombat"
                         }
                       }
                     }
@@ -132,25 +121,14 @@
                         "type": "Members"
                       },
                       "filter": {
-                        "type": "And",
-                        "value": [
-                          {
-                            "type": "HasSubtype",
-                            "value": "Vehicle"
-                          },
-                          {
-                            "type": "DeclaredAttackerThisCombat"
-                          }
-                        ]
+                        "type": "HasSubtype",
+                        "value": "Vehicle"
                       },
                       "scope": {
-                        "type": "InZone",
+                        "type": "InHistory",
                         "value": {
-                          "player": {
-                            "type": "Relative",
-                            "value": "AnyPlayer"
-                          },
-                          "zone": "Battlefield"
+                          "type": "AttackerDeclared",
+                          "value": "ThisCombat"
                         }
                       }
                     }

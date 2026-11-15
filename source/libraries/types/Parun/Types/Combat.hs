@@ -199,8 +199,9 @@ data Combat = MkCombat
     declaredAttackedThisStep :: Set.Set AttackTarget.AttackTarget,
     -- | CR 508.1a: the creatures DECLARED as attackers this combat phase.
     -- Hollow Warrior's "not declared as an attacking or blocking creature this
-    -- combat" reads it through Filter.DeclaredAttackerThisCombat, and Kytheon,
-    -- Hero of Akros counts it through Quantity.AttackersDeclaredThisCombat.
+    -- combat" reads it through Filter.DeclaredAttackerThisCombat, Kytheon,
+    -- Hero of Akros counts it through Quantity.AttackersDeclaredThisCombat, and
+    -- AttackWindow.ThisCombat narrows the log by it (Fearless Swashbuckler).
     --
     -- SEPARATE from `attackers` and monotone within the phase, for the reason
     -- `attacked` above is separate from it: CR 508.1k keeps a creature attacking

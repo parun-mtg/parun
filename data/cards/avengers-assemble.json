@@ -109,7 +109,8 @@
                       "scope": {
                         "type": "InHistory",
                         "value": {
-                          "type": "AttackerDeclared"
+                          "type": "AttackerDeclared",
+                          "value": "ThisTurn"
                         }
                       }
                     }

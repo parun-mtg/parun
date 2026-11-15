@@ -108,6 +108,7 @@ import qualified Parun.Codec.AttackTargetKindSpec
 import qualified Parun.Codec.AttackTargetRefSpec
 import qualified Parun.Codec.AttackTargetSpec
 import qualified Parun.Codec.AttackTriggerSpec
+import qualified Parun.Codec.AttackWindowSpec
 import qualified Parun.Codec.AttackedSubjectSpec
 import qualified Parun.Codec.AttackedTriggerSpec
 import qualified Parun.Codec.AttackerBlockedSpec
@@ -1183,6 +1184,7 @@ spec s reference corpus = do
   Parun.Codec.AttackCountSpec.spec s
   Parun.Codec.AttackMeasureSpec.spec s
   Parun.Codec.AttackTriggerSpec.spec s
+  Parun.Codec.AttackWindowSpec.spec s
   Parun.Codec.EntersTriggerSpec.spec s
   Parun.Codec.LeavesTriggerSpec.spec s
   Parun.Codec.LeavingPermanentSpec.spec s
