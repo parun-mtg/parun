@@ -817,6 +817,11 @@ data View = MkView
     -- it off, classLevel's posture; LastKnown files none, and no printed card
     -- counts a departed Room's doors.
     unlockedHalves :: Set.Set RoomHalf.RoomHalf,
+    -- CR 709.5c: the halves WITHOUT that designation, the complement of the
+    -- above among the halves the object has (Game.halvesOf), on the battlefield
+    -- only -- Parun.Engine.Room.lockedHalves' gate. Empty wherever
+    -- unlockedHalves is, and for a permanent with no halves.
+    lockedHalves :: Set.Set RoomHalf.RoomHalf,
     -- CR 601.2b: how many times was each optional additional cost a keyword of
     -- this candidate offers declared? Read off Object.paidCosts, or off
     -- LastKnown.paidCosts for an object that has left its zone (CR 608.2h), and
@@ -1202,6 +1207,7 @@ nobodyView =
       classLevel = Nothing,
       -- CR 709.5c: the unlocked designations are a permanent's.
       unlockedHalves = Set.empty,
+      lockedHalves = Set.empty,
       paidCosts = Map.empty,
       -- CR 702.104a's tribute is a creature's static ability, and a player is not
       -- one -- `designations` above, same sentence.
@@ -2053,6 +2059,8 @@ measureOf measure = case measure of
           | loyaltyIsToughness view -> maybe 0 (max 0) (toughness view)
           | otherwise -> toInteger (Map.findWithDefault 0 CounterKind.Loyalty (counters view))
       else Nothing
+  Measure.UnlockedDoors -> Just . toInteger . Set.size . unlockedHalves
+  Measure.LockedDoors -> Just . toInteger . Set.size . lockedHalves
 
 -- CR 306.5a: the printed loyalty a view carries for an object in zone `at`, Nothing
 -- on the battlefield (CR 306.5c). A printed X is 0 (CR 107.2) unless the stack
@@ -3271,6 +3279,8 @@ manaValueThresholds predicate = case predicate of
       Measure.ColorCount -> []
       Measure.CreatureTypeCount -> []
       Measure.Loyalty -> []
+      Measure.UnlockedDoors -> []
+      Measure.LockedDoors -> []
       -- Reads power or toughness against the literal, so it bounds nothing.
       Measure.Power -> []
       Measure.Toughness -> []

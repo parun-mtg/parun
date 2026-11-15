@@ -816,7 +816,6 @@ quantityChildren children quantity = case quantity of
   Quantity.DesignationValue _ -> pure quantity
   Quantity.StoredResultsOfSameValue -> pure quantity
   Quantity.ClassLevel -> pure quantity
-  Quantity.UnlockedDoors -> pure quantity
   Quantity.WasForetold -> pure quantity
   Quantity.TributeWasPaid -> pure quantity
   Quantity.TimesPaid designator -> fmap Quantity.TimesPaid (designatorChildren children designator)
@@ -1240,7 +1239,7 @@ effectChildren c effect = case effect of
   Effect.Designate (Designate.MkDesignate designation named value) -> fmap Effect.Designate (Designate.MkDesignate designation <$> onSlot c named <*> traverse (onQuantity c) value)
   Effect.SetClassLevel (SetClassLevel.MkSetClassLevel level named) -> fmap (Effect.SetClassLevel . SetClassLevel.MkSetClassLevel level) (onSlot c named)
   Effect.Undesignate (Undesignate.MkUndesignate designation ref) -> fmap (Effect.Undesignate . Undesignate.MkUndesignate designation) (onObjectRef c ref)
-  Effect.SetHalfLocked (SetHalfLocked.MkSetHalfLocked every locked named) -> fmap (Effect.SetHalfLocked . SetHalfLocked.MkSetHalfLocked every locked) (onSlot c named)
+  Effect.SetHalfLocked (SetHalfLocked.MkSetHalfLocked every locked named) -> fmap (Effect.SetHalfLocked . SetHalfLocked.MkSetHalfLocked every locked) (onObjectRef c named)
   Effect.CounterAndMark (PermanentActed.MkPermanentActed action permanent) -> fmap (Effect.CounterAndMark . PermanentActed.MkPermanentActed action) (onSlot c permanent)
   Effect.Mentor named -> fmap Effect.Mentor (onSlot c named)
   Effect.Firebend addition -> fmap Effect.Firebend (onManaAddition c addition)

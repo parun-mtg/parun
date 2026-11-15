@@ -1925,8 +1925,8 @@ undesignate resolving source controller legal (Undesignate.MkUndesignate designa
           }
 
 -- CR 709.5f and CR 709.5g, one arm because the two rules are one sentence with
--- two words swapped: choose a half of the slot's permanent that the setting
--- admits, and give or take the appropriate unlocked designation.
+-- two words swapped: choose a half of each permanent the ref names that the
+-- setting admits, and give or take the appropriate unlocked designation.
 --
 -- The CANDIDATES come from Parun.Engine.Room's CR 709.5c derivation -- rule
 -- 709.5g's "an unlocked half" for a lock, rule 709.5f's "a locked half" for an
@@ -1940,35 +1940,32 @@ undesignate resolving source controller legal (Undesignate.MkUndesignate designa
 -- asked about, both rules leaving nothing to choose.
 --
 -- A player recipient, an illegal slot (CR 608.2b) and an id naming no object
--- all write nothing -- Designate's postures.
+-- all write nothing, objectRefObjects naming none of them.
 --
 -- Casing on `locked` and on `every` is not casing on an effect's identity: both
 -- are payloads of one opcode, which is the argument Effect.Designate's own
 -- haddock makes.
-setHalfLocked :: PlayerId -> Map.Map SlotName (Set Recipient) -> SetHalfLocked.SetHalfLocked -> Game ()
-setHalfLocked controller legal (SetHalfLocked.MkSetHalfLocked every locked slot) =
-  case legalOne slot legal of
-    Just recipient -> case Recipient.objectOf recipient of
-      Nothing -> pure ()
-      Just target -> do
-        gs <- State.get
-        let halves = fmap Face.name (if locked then Room.unlockedHalves target gs else Room.lockedHalves target gs)
-        case halves of
-          [] -> pure ()
-          _ : _
-            -- "each locked door", which names them rather than choosing among
-            -- them, so CR 709.5f's "chooses" has nothing to ask and no prompt
-            -- is raised. The unlock is ONE write for CR 709.5i's sake; the
-            -- lock is a fold, rule 709.5g having no completion to record.
-            | every ->
-                if locked
-                  then Monad.mapM_ (Event.lockHalf target) halves
-                  else Event.unlockHalves controller target (Set.fromList halves)
-            | otherwise -> do
-                picked <- Game.chooseAmong (\decider who -> Prompt.ChooseHalf decider who target) controller halves
-                Monad.forM_ picked $ \half ->
-                  if locked then Event.lockHalf target half else Event.unlockHalves controller target (Set.singleton half)
-    _ -> pure ()
+setHalfLocked :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> SetHalfLocked.SetHalfLocked -> Game ()
+setHalfLocked resolving source controller legal (SetHalfLocked.MkSetHalfLocked every locked ref) = do
+  named <- State.gets (\gs -> objectRefObjects legal resolving controller source gs ref)
+  Monad.forM_ named $ \target -> do
+    gs <- State.get
+    let halves = fmap Face.name (if locked then Room.unlockedHalves target gs else Room.lockedHalves target gs)
+    case halves of
+      [] -> pure ()
+      _ : _
+        -- "each locked door", which names them rather than choosing among
+        -- them, so CR 709.5f's "chooses" has nothing to ask and no prompt
+        -- is raised. The unlock is ONE write for CR 709.5i's sake; the
+        -- lock is a fold, rule 709.5g having no completion to record.
+        | every ->
+            if locked
+              then Monad.mapM_ (Event.lockHalf target) halves
+              else Event.unlockHalves controller target (Set.fromList halves)
+        | otherwise -> do
+            picked <- Game.chooseAmong (\decider who -> Prompt.ChooseHalf decider who target) controller halves
+            Monad.forM_ picked $ \half ->
+              if locked then Event.lockHalf target half else Event.unlockHalves controller target (Set.singleton half)
 
 -- CR 310.9f: the resolving controller becomes the slot's battle's protector,
 -- the previous one ceasing to be. A state write on Object.protector, which CR

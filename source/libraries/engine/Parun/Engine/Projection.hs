@@ -4344,6 +4344,10 @@ measureReads measure = case measure of
   Measure.CreatureTypeCount -> Set.singleton Subtypes
   -- CR 306.5c's counters are no layer's; being a planeswalker is layer 4's.
   Measure.Loyalty -> Set.singleton Types
+  -- CR 709.5c's designations are no layer's, and the halves they sit on are
+  -- copiable values (CR 709.5), layer 1's -- ManaValue's reason.
+  Measure.UnlockedDoors -> Set.empty
+  Measure.LockedDoors -> Set.empty
 
 -- Which aspects a Trait's values read, for Filter.Shares and
 -- Aggregation.MostSharing alike.
@@ -5220,7 +5224,6 @@ quantityReads q = case q of
   Quantity.Type.DesignationValue _ -> Set.empty
   Quantity.Type.StoredResultsOfSameValue -> Set.empty
   Quantity.Type.ClassLevel -> Set.empty
-  Quantity.Type.UnlockedDoors -> Set.empty
   Quantity.Type.WasForetold -> Set.empty
   Quantity.Type.TributeWasPaid -> Set.empty
   Quantity.Type.TimesPaid _ -> Set.empty

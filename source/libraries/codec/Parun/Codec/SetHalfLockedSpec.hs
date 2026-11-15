@@ -4,12 +4,13 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.SetHalfLocked as SetHalfLocked
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SlotName as SlotName
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.SetHalfLocked" $ do
-  -- CR 709.5g: lock a half of the slot's permanent.
+  -- CR 709.5g: lock a half of the ref's permanent.
   Spec.it s "MkSetHalfLocked, the lock setting" $
     Common.assertCodec
       s
@@ -17,10 +18,10 @@ spec s = Spec.describe s "Parun.Codec.SetHalfLocked" $ do
       ( SetHalfLocked.MkSetHalfLocked
           { SetHalfLocked.every = False,
             SetHalfLocked.locked = True,
-            SetHalfLocked.slot = SlotName.MkSlotName (Text.pack "target")
+            SetHalfLocked.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))
           }
       )
-      " {\"every\":false,\"locked\":true,\"slot\":\"target\"} "
+      " {\"every\":false,\"locked\":true,\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
   -- CR 709.5f: and unlock every locked one. Both settings of both keys, since
   -- the wire tells them apart by one key each and a card that wrote the wrong one
   -- reads as the other rule, or as the other quantity.
@@ -31,8 +32,8 @@ spec s = Spec.describe s "Parun.Codec.SetHalfLocked" $ do
       ( SetHalfLocked.MkSetHalfLocked
           { SetHalfLocked.every = True,
             SetHalfLocked.locked = False,
-            SetHalfLocked.slot = SlotName.MkSlotName (Text.pack "self")
+            SetHalfLocked.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))
           }
       )
-      " {\"every\":true,\"locked\":false,\"slot\":\"self\"} "
+      " {\"every\":true,\"locked\":false,\"ref\":{\"type\":\"InSlot\",\"value\":\"self\"}} "
   Spec.it s "has a schema" $ Common.assertHasSchema s SetHalfLocked.codec

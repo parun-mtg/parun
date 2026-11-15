@@ -365,7 +365,6 @@ printedBoxQuantity quantity = case quantity of
   Quantity.Type.DesignationValue {} -> False
   Quantity.Type.StoredResultsOfSameValue -> False
   Quantity.Type.ClassLevel -> False
-  Quantity.Type.UnlockedDoors -> False
   Quantity.Type.WasForetold -> False
   Quantity.Type.TributeWasPaid -> False
   Quantity.Type.TimesPaid {} -> False
@@ -1672,7 +1671,7 @@ effectObjectRefs effect =
         Effect.Designate {} -> []
         Effect.SetClassLevel {} -> []
         Effect.Undesignate (Undesignate.MkUndesignate _ ref) -> read_ [ref]
-        Effect.SetHalfLocked {} -> []
+        Effect.SetHalfLocked halves -> [(permanentQuestions, SetHalfLocked.ref halves)]
         Effect.CounterAndMark {} -> []
         Effect.BecomeProtector {} -> []
         Effect.Mentor {} -> []
@@ -2381,7 +2380,6 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           Effect.RollDie rollDie -> Foldable.toList (RollDie.store rollDie)
           Effect.RerollStoredResults slot -> [slot]
           Effect.SetClassLevel (SetClassLevel.MkSetClassLevel _ slot) -> [slot]
-          Effect.SetHalfLocked (SetHalfLocked.MkSetHalfLocked _ _ slot) -> [slot]
           Effect.CounterAndMark (PermanentActed.MkPermanentActed _ slot) -> [slot]
           Effect.BecomeProtector slot -> [slot]
           Effect.Mentor slot -> [slot]

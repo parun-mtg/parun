@@ -86,6 +86,7 @@ import qualified Parun.Types.Prototype as Prototype
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SetPowerToughness as SetPowerToughness
@@ -318,6 +319,7 @@ viewOfCardLapsed lapsed face =
           Filter.classLevel = Nothing,
           -- CR 709.5c gives the unlocked designations to a PERMANENT.
           Filter.unlockedHalves = Set.empty,
+          Filter.lockedHalves = Set.empty,
           Filter.paidCosts = Map.empty,
           -- CR 702.104a's ability functions as a PERMANENT enters, and this
           -- builder describes a printed face -- `designations` above, same
@@ -923,6 +925,7 @@ viewOfCharacteristics peers oid pc controller counters gs =
       Filter.classLevel = Game.lookupObject oid gs >>= Object.classLevel,
       -- CR 709.5c: designations again, read live -- `designations`' posture.
       Filter.unlockedHalves = foldMap Object.unlockedHalves (Game.lookupObject oid gs),
+      Filter.lockedHalves = lockedHalvesOf oid gs,
       -- CR 601.2b: read live off the object. For one that has left its zone,
       -- Count.lastKnownView overrides this with LastKnown.paidCosts, so the CR 608.2h
       -- path answers "kicked" for a kicked spell that has left the stack.
@@ -1532,6 +1535,16 @@ copiableSnapshotOf oid gs
   | maybe False (Facing.isFaceDown . Object.facing) (Game.lookupObject oid gs) = Nothing
   | derivesFromCopiedHalves oid gs = Nothing
   | otherwise = stampedSnapshotOf oid gs
+
+-- CR 709.5c: the halves of this permanent that are locked, by position --
+-- Parun.Engine.Room.lockedHalves' gate and halves, which that module cannot lend
+-- here since it reads this one. Empty off the battlefield and for an object with
+-- no halves.
+lockedHalvesOf :: ObjectId -> GameState -> Set RoomHalf.RoomHalf
+lockedHalvesOf oid gs = Maybe.fromMaybe Set.empty $ do
+  obj <- Game.lookupObject oid gs
+  Monad.guard (Object.zone obj == Zone.Battlefield)
+  Card.lockedPositions (Object.unlockedHalves obj) <$> Game.halvesOf oid gs
 
 -- CR 709.5 / 709.5c: is this object's copiable rules text a set of HALVES it
 -- copied, to be read against its own unlocked designations? The one fork

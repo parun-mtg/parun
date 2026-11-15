@@ -663,7 +663,7 @@ applyOneEffect runSubgame resolving source controller legal chosen effect = case
   Effect.Designate payload -> Objects.designate resolving source controller legal payload
   Effect.SetClassLevel payload -> Objects.setClassLevel legal payload
   Effect.Undesignate payload -> Objects.undesignate resolving source controller legal payload
-  Effect.SetHalfLocked payload -> Objects.setHalfLocked controller legal payload
+  Effect.SetHalfLocked payload -> Objects.setHalfLocked resolving source controller legal payload
   Effect.BecomeProtector payload -> Objects.becomeProtector controller legal payload
   Effect.CounterAndMark payload -> Objects.counterAndMark controller legal payload
   Effect.Mentor payload -> Objects.mentor source controller legal payload

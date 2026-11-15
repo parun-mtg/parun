@@ -397,12 +397,6 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       Quantity.ClassLevel
       " {\"type\":\"ClassLevel\"} "
-  Spec.it s "UnlockedDoors" $
-    Common.assertCodec
-      s
-      Quantity.codec
-      Quantity.UnlockedDoors
-      " {\"type\":\"UnlockedDoors\"} "
   Spec.it s "WasForetold" $
     Common.assertCodec
       s

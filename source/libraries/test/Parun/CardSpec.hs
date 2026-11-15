@@ -451,6 +451,7 @@ import qualified Parun.Types.Search as Search
 import qualified Parun.Types.SearchDestination as SearchDestination
 import qualified Parun.Types.SetBasePowerToughness as SetBasePowerToughness
 import qualified Parun.Types.SetClassLevel as SetClassLevel
+import qualified Parun.Types.SetHalfLocked as SetHalfLocked
 import qualified Parun.Types.SetOwner as SetOwner
 import qualified Parun.Types.SetX as SetX
 import qualified Parun.Types.ShuffleIntoLibrary as ShuffleIntoLibrary
@@ -821,6 +822,7 @@ objectRefPositions =
         ("put-counters-from", Effect.PutCountersFrom (PutCountersFrom.MkPutCountersFrom (SlotName.MkSlotName (Text.pack "giver")) Nothing (plantedRef "pf")), [plantedRef "pf"]),
         ("tap", Effect.Tap (Tap.plain (plantedRef "ta")), [plantedRef "ta"]),
         ("untap", Effect.Untap (plantedRef "un"), [plantedRef "un"]),
+        ("set-half-locked", Effect.SetHalfLocked (SetHalfLocked.MkSetHalfLocked False False (plantedRef "hl")), [plantedRef "hl"]),
         ("unattach", Effect.Unattach (plantedRef "ua"), [plantedRef "ua"]),
         ("detain", Effect.Detain (plantedRef "dt"), [plantedRef "dt"]),
         ("earthbend", Effect.Earthbend (Earthbend.MkEarthbend (Quantity.Type.Literal 1) (plantedRef "eb")), [plantedRef "eb"]),
@@ -3489,7 +3491,6 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.DesignationValue _ -> []
   Quantity.Type.StoredResultsOfSameValue -> []
   Quantity.Type.ClassLevel -> []
-  Quantity.Type.UnlockedDoors -> []
   Quantity.Type.WasForetold -> []
   Quantity.Type.TributeWasPaid -> []
   Quantity.Type.TimesPaid {} -> []
@@ -5425,7 +5426,7 @@ effectFilters effect = case effect of
   Effect.Designate (Designate.MkDesignate _ _ value) -> foldMap quantityFilters value
   Effect.SetClassLevel (SetClassLevel.MkSetClassLevel _ _) -> []
   Effect.Undesignate (Undesignate.MkUndesignate _ ref) -> frame SourceHostFramed (objectRefFilters ref)
-  Effect.SetHalfLocked {} -> []
+  Effect.SetHalfLocked halves -> frame SourceHostFramed (objectRefFilters (SetHalfLocked.ref halves))
   Effect.CounterAndMark _ -> []
   Effect.BecomeProtector _ -> []
   Effect.Mentor _ -> []

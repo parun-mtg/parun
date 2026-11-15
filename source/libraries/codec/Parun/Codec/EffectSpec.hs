@@ -2386,8 +2386,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.SetHalfLocked (SetHalfLocked.MkSetHalfLocked False True (SlotName.MkSlotName (Text.pack "target"))))
-      " {\"type\":\"SetHalfLocked\",\"value\":{\"every\":false,\"locked\":true,\"slot\":\"target\"}} "
+      (Effect.SetHalfLocked (SetHalfLocked.MkSetHalfLocked False True (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")))))
+      " {\"type\":\"SetHalfLocked\",\"value\":{\"every\":false,\"locked\":true,\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}}} "
   -- CR 702.100b's counter and marker: the action rides PermanentActed's codec,
   -- the slot written where its ObjectId would be.
   Spec.it s "CounterAndMark" $

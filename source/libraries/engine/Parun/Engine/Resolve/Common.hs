@@ -3768,9 +3768,11 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   -- CR 709.5f/g: locking chooses an UNLOCKED half of the Room and unlocking a
   -- locked one, so a Room holding no half of the wanted kind has nothing to
   -- choose among. Both readers are the executing arm's.
-  Effect.SetHalfLocked (SetHalfLocked.MkSetHalfLocked _ locked slot) -> case legalOne slot legal >>= Recipient.objectOf of
-    Nothing -> False
-    Just target -> null (if locked then Room.unlockedHalves target gs else Room.lockedHalves target gs)
+  -- data/scenarios/room/cr-709-5g-keys-to-the-house-offers-no-lock-on-a-room-with-every-door-locked.json
+  -- proves it.
+  Effect.SetHalfLocked (SetHalfLocked.MkSetHalfLocked _ locked ref) ->
+    let named = objectRefObjects legal resolving controller source gs ref
+     in not (null named) && all (\target -> null (if locked then Room.unlockedHalves target gs else Room.lockedHalves target gs)) named
   Effect.CounterAndMark {} -> False
   Effect.BecomeProtector {} -> False
   Effect.Mentor {} -> False

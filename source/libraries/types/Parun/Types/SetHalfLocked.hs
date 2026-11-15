@@ -1,9 +1,9 @@
 module Parun.Types.SetHalfLocked where
 
-import qualified Parun.Types.SlotName as SlotName
+import qualified Parun.Types.ObjectRef as ObjectRef
 
--- | CR 709.5f and CR 709.5g together: lock or unlock halves of the slot's
--- permanent. Which half is not named here -- both rules make it a choice taken
+-- | CR 709.5f and CR 709.5g together: lock or unlock halves of each permanent
+-- the ref names. Which half is not named here -- both rules make it a choice taken
 -- while the effect is applied (CR 608.2d), asked through
 -- Parun.Types.Prompt.ChooseHalf.
 data SetHalfLocked = MkSetHalfLocked
@@ -17,6 +17,8 @@ data SetHalfLocked = MkSetHalfLocked
     -- 709.5f's unlock. The RESULT rather than the verb, so the two rules read as
     -- one write with two settings rather than as two writes.
     locked :: Bool,
-    slot :: SlotName.SlotName
+    -- | The permanents: a target ("target Room") or a choice an earlier
+    -- instruction bound (Ghostly Dancers' "a Room you control").
+    ref :: ObjectRef.ObjectRef
   }
   deriving (Eq, Ord, Show)
