@@ -2339,3 +2339,23 @@ Entries are ordered by the first rule each cites.
   scenario
   `quicksilver-elemental-keeps-a-gained-ability-after-the-creature-leaves`.
 - **Issue**: #7279.
+
+## A linked choice made again replaces the earlier one
+
+- **Question**: Zenos yae Galvus's "choose a creature an opponent controls"
+  trigger resolves twice (Yarok, the Desecrated). Is "the chosen creature"
+  the later choice, both, or the first? And when the later resolution has
+  nothing to choose, is there still a chosen creature?
+- **Rules**: CR 607.2d, 607.5a; CR of 2026-11-06. CR 607.2d links the
+  abilities but says nothing of a second choice; Zenos's rulings are silent.
+- **Decision**: Each resolution replaces the record: the latest choice is the
+  chosen creature, and a resolution choosing nothing leaves none.
+- **Rejected**: Both choices, which reads two creatures into "the chosen
+  creature". Keeping the first, which ignores a choice the linked ability
+  made. Keeping the earlier choice past an empty one, which lets a
+  resolution that chose nothing stand on one it superseded.
+- **Site**: `Parun.Engine.Resolve.Arms.Damage`'s `choosePermanents`, proved by
+  the scenarios
+  `zenos-yae-galvus-remembers-only-the-creature-it-chose-last` and
+  `zenos-yae-galvus-forgets-its-choice-when-a-later-resolution-chooses-nothing`.
+- **Issue**: #7694.
