@@ -1324,25 +1324,26 @@ schemesCantBeSetInMotion gs =
    in any (\pid -> any (prohibits . snd) (applying pid gs)) (Game.stillPlaying gs)
 
 -- CR 603.6a / 603.2d / 613.11 / 101.2: how the effects applying to `pid`
--- change the triggering of `pid`'s abilities that `entrant` entering causes to
--- trigger, one entry per effect admitting it. `gs` is the game immediately
--- after the entry, so the entrant is read as it exists on the battlefield and an
+-- change the triggering of `pid`'s abilities of `bearer` that `entrant`
+-- entering causes to trigger, one entry per effect admitting it. `gs` is the
+-- game immediately after the entry, so the entrant and the bearer are read as it exists on the battlefield and an
 -- effect's source entering beside it, or being it, counts (Hushwing Gryff's and
 -- Yarok, the Desecrated's rulings).
-entryTriggerings :: PlayerId -> ObjectId -> GameState -> [EntryTriggering.EntryTriggering]
-entryTriggerings pid entrant gs = moveTriggerings TriggeringMove.Entering pid entrant gs gs
+entryTriggerings :: PlayerId -> ObjectId -> ObjectId -> GameState -> [EntryTriggering.EntryTriggering]
+entryTriggerings pid entrant bearer gs = moveTriggerings TriggeringMove.Entering pid entrant (bearer, gs) gs gs
 
 -- CR 603.6a / 603.2d / 700.4 / 613.11 / 101.2: how the effects applying to
--- `pid` in `effects` change the triggering of `pid`'s abilities that `subject`
--- making `move` causes to trigger, one entry per effect admitting it, with
--- `subject` read off `board`. CR 109.5's "you" in the entrant filter is `pid`,
--- not the subject's controller (Traveling Chocobo's "a land or Bird you
--- control").
-moveTriggerings :: TriggeringMove.TriggeringMove -> PlayerId -> ObjectId -> GameState -> GameState -> [EntryTriggering.EntryTriggering]
-moveTriggerings move pid subject effects board =
+-- `pid` in `effects` change the triggering of `pid`'s abilities of the bearer
+-- that `subject` making `move` causes to trigger, one entry per effect admitting it, with
+-- `subject` read off `board`, and the ability's bearer off the board paired
+-- with it. CR 109.5's "you" in either filter is `pid`, not the object's
+-- controller (Traveling Chocobo's "a land or Bird you control", The Masamune's
+-- "an emblem you own").
+moveTriggerings :: TriggeringMove.TriggeringMove -> PlayerId -> ObjectId -> (ObjectId, GameState) -> GameState -> GameState -> [EntryTriggering.EntryTriggering]
+moveTriggerings move pid subject (bearer, atBearer) effects board =
   let triggering (source, effect) = case effect of
         PlayerEffect.EntriesTrigger entries ->
-          if EntriesTrigger.move entries == move && matchesObjectFor pid source (EntriesTrigger.entrants entries) subject board
+          if EntriesTrigger.move entries == move && matchesObjectFor pid source (EntriesTrigger.entrants entries) subject board && matchesObjectFor pid source (EntriesTrigger.bearers entries) bearer atBearer
             then Just (EntriesTrigger.triggering entries)
             else Nothing
         PlayerEffect.AdditionalTriggers _ -> Nothing
@@ -1404,26 +1405,27 @@ moveTriggerings move pid subject effects board =
    in Maybe.mapMaybe triggering (applying pid effects)
 
 -- CR 603.6a / 613.11: does an effect keep `entrant` entering from triggering
--- `pid`'s abilities (Hushwing Gryff)? Parun.Engine.Event.Match.entryTriggers is
+-- `pid`'s abilities of `bearer` (Hushwing Gryff)? Parun.Engine.Event.Match.entryTriggers is
 -- the reader.
-silencesEntry :: PlayerId -> ObjectId -> GameState -> Bool
-silencesEntry pid entrant gs = elem EntryTriggering.NoTrigger (entryTriggerings pid entrant gs)
+silencesEntry :: PlayerId -> ObjectId -> ObjectId -> GameState -> Bool
+silencesEntry pid entrant bearer gs = elem EntryTriggering.NoTrigger (entryTriggerings pid entrant bearer gs)
 
 -- CR 700.4 / 613.11: does an effect applying to `pid` in `effects` keep
--- `dying` dying from triggering `pid`'s abilities (Hushbringer)? `before` is
+-- `dying` dying from triggering `pid`'s abilities of `bearer`, read off
+-- `effects` (Hushbringer)? `before` is
 -- the game immediately before the death, so the permanent is read as it last
 -- existed on the battlefield (Hushbringer's ruling on an animated land).
 -- Parun.Engine.Event.Match.deathTriggers is the reader.
-silencesDeath :: PlayerId -> ObjectId -> GameState -> GameState -> Bool
-silencesDeath pid dying effects before = elem EntryTriggering.NoTrigger (moveTriggerings TriggeringMove.Dying pid dying effects before)
+silencesDeath :: PlayerId -> ObjectId -> ObjectId -> GameState -> GameState -> Bool
+silencesDeath pid dying bearer effects before = elem EntryTriggering.NoTrigger (moveTriggerings TriggeringMove.Dying pid dying (bearer, effects) effects before)
 
--- CR 603.2d: how many additional times each of `pid`'s abilities that
--- `subject` making `move` causes to trigger triggers, one per effect in
+-- CR 603.2d: how many additional times each of `pid`'s abilities of the bearer
+-- that `subject` making `move` causes to trigger triggers, one per effect in
 -- `effects` (Yarok, the Desecrated's and Teysa Karlov's rulings on two), with
--- `subject` read off `board`. Parun.Engine.Event.Match.additionalMoveTriggers
--- is the reader.
-additionalMoveTriggers :: TriggeringMove.TriggeringMove -> PlayerId -> ObjectId -> GameState -> GameState -> Natural
-additionalMoveTriggers move pid subject effects board = List.genericLength (filter (== EntryTriggering.AnAdditionalTime) (moveTriggerings move pid subject effects board))
+-- `subject` read off `board` and the bearer off the board paired with it.
+-- Parun.Engine.Event.Match.additionalMoveTriggers is the reader.
+additionalMoveTriggers :: TriggeringMove.TriggeringMove -> PlayerId -> ObjectId -> (ObjectId, GameState) -> GameState -> GameState -> Natural
+additionalMoveTriggers move pid subject bearer effects board = List.genericLength (filter (== EntryTriggering.AnAdditionalTime) (moveTriggerings move pid subject bearer effects board))
 
 -- CR 603.2d: how many additional times `bearer`'s triggered abilities that
 -- `pid` controls trigger, one per effect (Roaming Throne's ruling on two

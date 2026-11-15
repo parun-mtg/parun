@@ -1,0 +1,117 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Zulaport Cutthroat",
+            "label": "equipped"
+          },
+          {
+            "attached": "equipped",
+            "card": "The Masamune"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Pyroclasm",
+            "label": "sweep"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.2d / 700.4 / 113.7: The Masamune's equipped creature's dies ability triggers an additional time for each creature dying, its own death included",
+  "final": [
+    {
+      "Life": {
+        "life": 24,
+        "player": "alice"
+      }
+    },
+    {
+      "Life": {
+        "life": 16,
+        "player": "bob"
+      }
+    }
+  ],
+  "note": "Pyroclasm kills the equipped Zulaport Cutthroat and the Grizzly Bears; the Cutthroat sees both deaths, each twice. The emblem scenario beside this one shows another creature's ability triggering once.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2"
+          ],
+          "object": "$sweep"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $equipped",
+            "trigger of $equipped",
+            "trigger of $equipped",
+            "trigger of $equipped"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
