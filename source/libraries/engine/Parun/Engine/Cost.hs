@@ -3430,7 +3430,7 @@ manaActivationsOn grants rows effects measure pcs pid oid printedCost restrictio
       -- its own {B} is payable by a walk that asks the same of the Altar. CR
       -- 118.6's Nothing is still unpayable under both.
       payable = case measure of
-        Mana.ForOffer -> manaPartPayable effects adjustments pid oid cost gs
+        Mana.ForOffer -> manaPartPayable effects adjustments pid oid (ActivatedAbility.name =<< ability) cost gs
         Mana.ForSupply -> Maybe.isJust (Cost.mana cost)
    in if payable
         && all (\component -> canPayComponent Map.empty pid oid component gs) (Cost.components cost)
@@ -3537,15 +3537,15 @@ manaActivationAdjustmentsGiven effects pid stamp named = PlayerEffect.activation
 -- reduction's hybrid halves (CR 118.7e) and the order of several reductions are
 -- the payer's, unmade at this moment, so a cost this refuses has to be one NO
 -- resolution could have paid.
-manaPartPayable :: [(RowSource, PlayerEffect.Type.PlayerEffect)] -> CostAdjustments.CostAdjustments -> PlayerId -> ObjectId -> Cost Keyword.Type.Keyword -> GameState -> Bool
-manaPartPayable effects adjustments pid oid cost gs = case Cost.mana cost of
+manaPartPayable :: [(RowSource, PlayerEffect.Type.PlayerEffect)] -> CostAdjustments.CostAdjustments -> PlayerId -> ObjectId -> Maybe AbilityName.AbilityName -> Cost Keyword.Type.Keyword -> GameState -> Bool
+manaPartPayable effects adjustments pid oid named cost gs = case Cost.mana cost of
   Nothing -> False
   Just (ManaCost.MkManaCost []) -> True
   Just manaCost ->
     any
       ( \totalled ->
           Mana.canPayCommitting
-            (PaymentSubject.Activating oid Nothing Nothing)
+            (PaymentSubject.Activating oid named Nothing Nothing)
             (manaActivationsGiven effects)
             ManaSpending.AsProduced
             pid
@@ -6801,13 +6801,13 @@ tapForManaWith perform window inFlight refused activator oid = do
           --
           -- The Phyrexian life record is DISCARDED, Activate's reason: rule
           -- 702.150a reads what the player who CAST a spell announced.
-          (announcedCost, _) <- announce (PaymentSubject.Activating oid Nothing Nothing) ManaSpending.AsProduced controller oid (totalManas gathered) withComponents
+          (announcedCost, _) <- announce (PaymentSubject.Activating oid (ActivatedAbility.name =<< ManaOption.ability chosen) Nothing Nothing) ManaSpending.AsProduced controller oid (totalManas gathered) withComponents
           -- CR 118.7e's half of each hybrid symbol in a reduction, and CR
           -- 601.2f's order of several reductions -- both the payer's, and both
           -- elided by announceReductions wherever the answers cannot differ,
           -- which is every board `data/cards/` can build today.
           announced <- announceReductions controller oid gs announcedCost gathered
-          (outcome, nested, nestedSpent) <- payActivation perform (Set.insert (oid, ManaOption.ability chosen) inFlight) controller oid (totalWith announced announcedCost)
+          (outcome, nested, nestedSpent) <- payActivation perform (Set.insert (oid, ManaOption.ability chosen) inFlight) controller oid (ActivatedAbility.name =<< ManaOption.ability chosen) (totalWith announced announcedCost)
           case outcome of
             Payment.Unpaid -> pure (False, nested, [], Set.singleton (oid, ManaOption.ability chosen))
             Payment.Paid paidSlots -> do
@@ -7107,8 +7107,8 @@ keepSurvivors watched kept store = case Seq.viewl store of
 --
 -- The recursion CR 602.2b makes of that window is bounded by the in-flight set
 -- `tapForManaWith` added this route to (CR 605.3c), not by the order.
-payActivation :: ManaAbilityPerformer.ManaAbilityPerformer -> Mana.InFlight -> PlayerId -> ObjectId -> Cost Keyword.Type.Keyword -> Game (Payment.Payment, ([ManaActivation.ManaActivation], [ManaSegment.ManaSegment]), [ManaUnit.ManaUnit])
-payActivation perform inFlight pid oid cost = do
+payActivation :: ManaAbilityPerformer.ManaAbilityPerformer -> Mana.InFlight -> PlayerId -> ObjectId -> Maybe AbilityName.AbilityName -> Cost Keyword.Type.Keyword -> Game (Payment.Payment, ([ManaActivation.ManaActivation], [ManaSegment.ManaSegment]), [ManaUnit.ManaUnit])
+payActivation perform inFlight pid oid named cost = do
   before <- State.get
   (paid, windows) <- case Cost.mana cost of
     Just (ManaCost.MkManaCost []) -> pure (True, [])
@@ -7120,7 +7120,7 @@ payActivation perform inFlight pid oid cost = do
     -- Chromatic Star's {1} -- and mana restricted to casts may not. `oid` is the
     -- ability's SOURCE, which is what "abilities of artifacts" reads.
     Just manaCost -> do
-      (windowPaid, _, window) <- payManaWindow perform inFlight Nothing (PaymentSubject.Activating oid Nothing Nothing) ManaSpending.AsProduced pid (\mc -> pure (mc, [])) manaCost
+      (windowPaid, _, window) <- payManaWindow perform inFlight Nothing (PaymentSubject.Activating oid named Nothing Nothing) ManaSpending.AsProduced pid (\mc -> pure (mc, [])) manaCost
       pure (windowPaid, [window])
     -- CR 118.6: attempting to pay an unpayable cost is an illegal action.
     Nothing -> pure (False, [])

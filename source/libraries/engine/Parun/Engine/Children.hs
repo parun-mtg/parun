@@ -13,6 +13,7 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
+import qualified Parun.Types.ActivationScope as ActivationScope
 import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
@@ -3773,7 +3774,7 @@ spendScopeChildren :: (Applicative f) => ManaChildren f -> SpendScope.SpendScope
 spendScopeChildren c payments = case payments of
   SpendScope.EveryPayment -> pure payments
   SpendScope.Casting spell -> SpendScope.Casting <$> manaCriterion c spell
-  SpendScope.Activating source -> SpendScope.Activating <$> manaCriterion c source
+  SpendScope.Activating (ActivationScope.MkActivationScope source lentBy) -> fmap SpendScope.Activating (ActivationScope.MkActivationScope <$> manaCriterion c source <*> traverse (manaCriterion c) lentBy)
 
 -- | One visitor per kind of child a damage pattern holds: the damage a
 -- prevention or replacement effect matches (CR 614.1a, 615.1a).
