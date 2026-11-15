@@ -279,8 +279,8 @@ Entries are ordered by the first rule each cites.
   events come from two instructions, which agrees with this. A key without the
   source: combat and fights have several dealers.
 - **Site**: `Parun.Engine.Replacement.oneEventPerRecipient`, proved by
-  `Parun.DamageReplacementSpec`'s "CR 120.4 one sentence naming alice twice
-  deals her ONE event, of 6" and the scenario
+  the scenario `cr-120-4-one-sentence-naming-alice-twice-deals-her-one-event-of-6`
+  and the scenario
   `harms-way-onto-another-recipient-of-its-source-is-one-event`; absorb's
   ceiling spans the event at `Parun.Engine.Replacement.ceilingLeft`, proved by
   `lymph-sliver-absorbs-1-of-earthquake-once-though-pariah-adds-to-it`;
