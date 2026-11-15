@@ -200,15 +200,18 @@ lookingUpCards ::
   m a
 lookingUpCards registry failed answer asked = case Asked.prompt asked of
   Prompt.LookUpCard name -> fetched failed (Registry.fetchCard registry name)
-  Prompt.ReferenceCards predicate amount ->
-    fmap
-      (fmap (Face.name . NonEmpty.head . Card.Type.faces) . filter (Projection.referenceAdmits (Game.teams (Asked.game asked)) amount predicate))
-      (fetched failed (Registry.cards registry))
+  Prompt.ReferenceCards predicate amount -> fmap (referenceCards (Asked.game asked) predicate amount) (fetched failed (Registry.cards registry))
   Prompt.ReferenceNames predicate ->
     let context = Filter.contextIn (Asked.game asked) Nothing Nothing
         admitted face = Filter.matches context (Projection.viewOfCard face) predicate
      in fmap (concatMap (fmap fst . filter (admitted . snd) . Card.referenceViews)) (fetched failed (Registry.cards registry))
   _ -> answer asked
+
+-- | CR 108.1: Prompt.ReferenceCards' answer over the reference's cards: the
+-- first-face name of each the filter admits. Parun.Scenario answers it so too.
+referenceCards :: GameState.GameState -> Filter.Type.Filter Keyword.Keyword -> Maybe Integer -> [Card.Type.Card] -> [CardName.CardName]
+referenceCards gs predicate amount =
+  fmap (Face.name . NonEmpty.head . Card.Type.faces) . filter (Projection.referenceAdmits (Game.teams gs) amount predicate)
 
 -- A registry's answer, its failure handed to the host's handler.
 fetched :: (Monad m) => (InvalidCorpus.InvalidCorpus -> m a) -> m (Either InvalidCorpus.InvalidCorpus a) -> m a

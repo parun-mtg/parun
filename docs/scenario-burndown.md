@@ -89,7 +89,6 @@ out: grep for them.
 - `board:object-doesnotuntapfor`
 - `board:object-chosennames`
 - `move:pile-target`: a target naming a face-down pile
-- `move:ReferenceCards`
 - `move:out-of-range-answer`: an answer outside what the prompt offers, which the engine clamps or ignores and the runner refuses up front
 - `board:object-goadedby`
 - `board:zone-phasedout`
@@ -330,8 +329,8 @@ out: grep for them.
 
 ### `ConjureSpec`
 
-- CR 400.7j Calim's Breath cannot exile the discarded Calim as one of the two others | `move:ReferenceCards`
-- CR 400.7j Calim's Breath returns the Calim its cost discarded, tapped | `move:ReferenceCards`
+- ~~CR 400.7j Calim's Breath cannot exile the discarded Calim as one of the two others | `move:ReferenceCards`~~
+- ~~CR 400.7j Calim's Breath returns the Calim its cost discarded, tapped | `move:ReferenceCards`~~
 - ~~CR 603.4 conjure behind an intervening if: 4 life gained puts a castable Mox Pearl in hand | `board:stage-no-card-named-mox-pearl`~~
 - ~~CR 702.140e a duplicate of a mutated Headless Skaab owes the Skaab's additional cost | `board:source-ofmerge`~~
 - ~~CR 702.178a at max speed the Smasher returns the duplicate with haste, and the end step sacrifices it | `board:exile-linked` `board:player-speed`~~
@@ -344,7 +343,7 @@ out: grep for them.
 - ~~CR 731.3/707.2 a duplicate of a Clone split out of a merge is the Piker again | `board:source-ofmerge`~~
 - ~~Gate to Seatower's seek puts the nonland card randomness named into the hand, leaving the library's order | `board:stage-no-card-named-gate-to-seatower`~~
 - ~~Kari Zev's Ragavan attacks without being declared and goes home at the next end step | `board:stage-no-card-named-ragavan-nimble-pilferer`~~
-- a conjure from the file registry's reference never conjures a synthetic card | `move:ReferenceCards`
+- ~~a conjure from the file registry's reference never conjures a synthetic card | `move:ReferenceCards`~~
 - ~~conjure into exile puts the duplicate in the conjurer's exile, exiled with the conjuring creature | `check:exile-linked`~~
 
 ### `CopySpec`
@@ -1042,7 +1041,7 @@ out: grep for them.
 
 ### `RestampSpec`
 
-- CR 614.12 / 608.2f a card one conjure loop made later enters beside the earlier ones, not after them | `move:ReferenceCards`
+- ~~CR 614.12 / 608.2f a card one conjure loop made later enters beside the earlier ones, not after them | `move:ReferenceCards`~~
 
 ### `ReversalSpec`
 

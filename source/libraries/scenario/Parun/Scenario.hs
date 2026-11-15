@@ -211,6 +211,9 @@ data Rehearsal = MkRehearsal
     -- (Interpreter.chosenFace), a name it lacks mapped to neither; Nothing for
     -- a run holding none, whose every lookup answers neither.
     reference :: Maybe (Map.Map CardName.CardName (Maybe Card.Card, Maybe (Face.Face Card.Card))),
+    -- | CR 108.1: every card of the reference, once a ReferenceCards prompt
+    -- has asked for them; read only beside a `reference`.
+    catalogue :: Maybe [Card.Card],
     -- | Whether the run replays a game from its decks, which ends at the
     -- game's result or where its recording stops.
     replaying :: Bool,
@@ -225,10 +228,12 @@ data Rehearsal = MkRehearsal
 type Run = State.StateT Rehearsal (Either Halt)
 
 -- | Why a run stopped short: a failure, or a name its reference has yet to be
--- asked, which `run` fetches before running again from the start.
+-- asked, or its whole reference, which `run` fetches before running again from
+-- the start.
 data Halt
   = Failed Failure.ScenarioFailure
   | Fetching CardName.CardName
+  | Enumerating
 
 -- | Build, run from the board's step, check. The entry point for a scenario
 -- written as data: whole steps (CR 500.1) until the timeline is spent, the game
@@ -242,7 +247,8 @@ data Halt
 -- the engine asks and nothing else a scenario says. A lookup reaching a card
 -- file the registry cannot use fails the run with MkInvalidCorpus.
 -- Parun.ScenarioSpec's "a run looks up only the cards its scenario names"
--- proves both.
+-- proves both. A ReferenceCards prompt halts it likewise, once, for the whole
+-- reference (Registry.cards), which every later run reads.
 run :: (Monad m) => Registry.Registry m -> Scenario.Scenario -> m (Either Failure.ScenarioFailure GameState.GameState)
 run registry scenario = do
   staging <- case Scenario.start scenario of
@@ -251,21 +257,22 @@ run registry scenario = do
   let fromDecks = case Scenario.start scenario of
         Start.FromBoard _ -> False
         Start.FromDecks _ _ -> True
-      attempt known = do
+      attempt whole known = do
         (board, playing) <- Bifunctor.first Failed staging
-        (reached, rehearsal) <- State.runStateT playing ((rehearsalOf (Scenario.timeline scenario) board) {reference = Just known, replaying = fromDecks})
+        (reached, rehearsal) <- State.runStateT playing ((rehearsalOf (Scenario.timeline scenario) board) {reference = Just known, catalogue = whole, replaying = fromDecks})
         let final = Maybe.fromMaybe reached (ended rehearsal)
         Bifunctor.first Failed (settle rehearsal final)
         State.evalStateT (mapM_ (expect Nothing final Nothing) (Scenario.final scenario)) rehearsal
         pure final
-      fetching known = case attempt known of
+      fetching whole known = case attempt whole known of
         Left (Fetching name) -> do
           card <- Registry.fetchCard registry name
           face <- Interpreter.chosenFace registry name
-          either (pure . Left . Failure.MkInvalidCorpus) (fetching . flip (Map.insert name) known) ((,) <$> card <*> face)
+          either (pure . Left . Failure.MkInvalidCorpus) (fetching whole . flip (Map.insert name) known) ((,) <$> card <*> face)
+        Left Enumerating -> Registry.cards registry >>= either (pure . Left . Failure.MkInvalidCorpus) (\every -> fetching (Just every) known)
         Left (Failed failure) -> pure (Left failure)
         Right final -> pure (Right final)
-  fetching Map.empty
+  fetching Nothing Map.empty
   where
     setUp matchup gs = do
       (_, set) <- Engine.runGameAsked answerPrompt gs (Setup.newGame (Resolve.performHandAction Engine.playSubgame) matchup)
@@ -317,6 +324,7 @@ rehearse timeline board game = do
         Failed failure -> failure
         -- Unreached: rehearsalOf holds no reference, which never fetches.
         Fetching name -> Failure.MkUnknownCard name
+        Enumerating -> Failure.MkUnknownCard (CardName.MkCardName (Text.pack "the card reference"))
   ((value, final), rehearsal) <- Bifunctor.first halted (State.runStateT (Engine.runGameAsked answerPrompt (Staged.state board) game) (rehearsalOf timeline board))
   settle rehearsal final
   pure (value, final)
@@ -333,6 +341,7 @@ rehearsalOf timeline board =
           awaiting = Nothing,
           audited = Nothing,
           reference = Nothing,
+          catalogue = Nothing,
           replaying = False,
           ended = Nothing,
           promptsAsked = Seq.empty
@@ -823,6 +832,7 @@ answerDedicated decider asked =
         Prompt.Type.ChooseAction who _ actions -> answerActionPrompt gs (Decider.unwrap who) actions prompt
         -- CR 108.1: the interpreter's question, answered from the reference.
         Prompt.Type.LookUpCard name -> lookUp name
+        Prompt.Type.ReferenceCards predicate amount -> fmap (Interpreter.referenceCards gs predicate amount) referenceWhole
         -- CR 724.6: keyed on the conceding player, whom no one decides for.
         Prompt.Type.Concede pid -> do
           key <- whenOf gs pid
@@ -1830,6 +1840,16 @@ failWith failure = State.StateT (const (Left (Failed failure)))
 -- to fetch a name it has not yet been asked.
 lookUp :: CardName.CardName -> Run (Maybe Card.Card)
 lookUp = fmap fst . referenced
+
+-- | CR 108.1: every card of the reference, halting the run for `run` to fetch
+-- them the first time; none for a run holding no reference.
+referenceWhole :: Run [Card.Card]
+referenceWhole = do
+  rehearsal <- State.get
+  case (reference rehearsal, catalogue rehearsal) of
+    (Nothing, _) -> pure []
+    (Just _, Just every) -> pure every
+    (Just _, Nothing) -> State.StateT (const (Left Enumerating))
 
 referenced :: CardName.CardName -> Run (Maybe Card.Card, Maybe (Face.Face Card.Card))
 referenced name = do

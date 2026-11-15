@@ -16,43 +16,34 @@
 -- Replenish's MoveToZone road by the data/scenarios/restamp/ files and on the token road by
 -- its Rite of Replication files, on Mirror Match's CR 608.2f loop by
 -- cr-613-7m-608-2f-the-controller-orders-every-token-one-loop.json,
--- and on Ornate Imitations' conjure loop by conjuredOrderSpec.
+-- and on Ornate Imitations' conjure loop by
+-- cr-614-12-608-2f-a-card-one-conjure-loop-made-later-enters-beside-the-earlier-ones-not.json.
 module Parun.RestampSpec where
 
 import qualified Control.Monad.Trans.State.Strict as State
-import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
-import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
-import qualified Parun.Interpreter as Interpreter
 import qualified Parun.Registry as Registry
-import qualified Parun.Scenario as Scenario
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
-import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Daytime as Daytime
-import qualified Parun.Types.Existence as Existence
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
-import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Restamp" $ do
   restampOrderSpec s registry
   apnapOrderSpec s registry
-  conjuredOrderSpec s registry
 
 -- | The producer is a synthetic pair, and no printing reaches the rule; see
 -- #2571 for the search behind that. Observing which of two simultaneous CR
@@ -204,77 +195,3 @@ orderPrompts gs =
 -- The face each of these permanents is showing, as a name.
 faceNames :: [ObjectId.ObjectId] -> GameState.GameState -> [Maybe String]
 faceNames oids gs = fmap (\oid -> fmap (Text.unpack . CardName.unwrap . Face.name) (Game.faceOf oid gs)) oids
-
--- | CR 613.7m over a conjure: Ornate Imitations ({X}{G}{U} Sorcery, "For each
--- number between 1 and X, conjure a duplicate of a random creature card with
--- that mana value onto the battlefield. X can't be 0."), Oracle text verified on
--- Scryfall 2026-09-27. One action (CR 608.2f), so every card it conjures enters
--- at one moment and alice orders their stamps.
---
--- Cast for X = 6 over a FIXTURE reference of Godhead of Awe (mana value 5) and
--- Harmonious Archon (6), so numbers 1 to 4 admit nothing and conjure nothing. The
--- two write base P/T in layer 7b (1/1 and 3/3), and bob's Goblin Piker (2/1)
--- reads whichever is later. The Godhead is conjured first, so the arrival order
--- stamps the Archon later; the two boards differ only in alice's answer.
-conjuredOrderSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-conjuredOrderSpec s registry =
-  Spec.describe s "Conjure" $ do
-    -- CR 614.12 over the same loop: Tayam, Luminous Enigma (mana value 4, "Each
-    -- other creature you control enters with an additional vigilance counter on
-    -- it.") is conjured at 4 and the Godhead at 5. Entering at the same moment,
-    -- the Godhead gets nothing from Tayam; the pair's one difference is a Tayam
-    -- alice already controls, which does give it one.
-    Spec.it s "CR 614.12 / 608.2f a card one conjure loop made later enters beside the earlier ones, not after them" $ do
-      (together, _, fixture) <- ornateBoard s registry ["Tayam, Luminous Enigma", "Godhead of Awe"] False
-      (before, _, _) <- ornateBoard s registry ["Tayam, Luminous Enigma", "Godhead of Awe"] True
-      let vigilanceOnGodhead g = fmap (\oid -> S.counterOf (CounterKind.Keyword Keyword.Vigilance) oid g) (Scenario.namedObjects Existence.Live (CardName.MkCardName (Text.pack "Godhead of Awe")) g)
-      Spec.assertEqWith s "CR 614.12 the conjured Tayam entered with the Godhead, so the Godhead has no vigilance counter" (vigilanceOnGodhead (fst (ornateImitations fixture Nothing together))) [0]
-      Spec.assertEqWith s "while a Tayam already on the battlefield gives it one" (vigilanceOnGodhead (fst (ornateImitations fixture Nothing before))) [1]
-
--- alice holds Ornate Imitations and eight lands in her precombat main, and a
--- Tayam, Luminous Enigma where `withTayam` says so; bob controls a Goblin Piker.
--- Hands back the fixture reference, the named cards, beside the board.
-ornateBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> [String] -> Bool -> m (GameState.GameState, ObjectId.ObjectId, Registry.Registry (State.State [(PlayerId.PlayerId, Int)]))
-ornateBoard s registry names withTayam = do
-  tayam <- S.printingOf s registry "Tayam, Luminous Enigma"
-  island <- S.printingOf s registry "Island"
-  forest <- S.printingOf s registry "Forest"
-  piker <- S.printingOf s registry "Goblin Piker"
-  ornate <- S.printingOf s registry "Ornate Imitations"
-  reference <- mapM (S.cardOf s registry) names
-  let base = S.landsFor forest S.alice 4 (S.landsFor island S.alice 4 (Setup.emptyGame S.bothPlayers))
-      lands = if withTayam then snd (S.addPermanent tayam S.alice base) else base
-      (pikerId, withPiker) = S.addPermanent piker S.bob lands
-      (_, withSpell) = S.addHandCard ornate S.alice withPiker
-      fixture = S.fixtureRegistry reference
-  pure
-    ( withSpell
-        { GameState.turn =
-            (GameState.turn withSpell)
-              { TurnRegisters.activePlayer = S.alice,
-                TurnRegisters.phase = Phase.PrecombatMain,
-                TurnRegisters.priority = Just S.alice
-              }
-        },
-      pikerId,
-      fixture
-    )
-
--- alice casts the Ornate Imitations in her hand for X = 6 and it resolves, the
--- reference answered off `fixture`. CR 613.7m's order is answered with
--- `permutation`, or with the offered order; hands back the board and who was
--- asked that order, over how many.
-ornateImitations :: Registry.Registry (State.State [(PlayerId.PlayerId, Int)]) -> Maybe [Natural.Natural] -> GameState.GameState -> (GameState.GameState, [(PlayerId.PlayerId, Int)])
-ornateImitations fixture permutation gs =
-  let answer :: Asked.Asked GameState.GameState r -> State.State [(PlayerId.PlayerId, Int)] r
-      answer question = case Asked.prompt question of
-        Prompt.ChooseX {} -> pure 6
-        Prompt.OrderTimestamps _ pid batch -> do
-          State.modify (<> [(pid, length batch)])
-          pure (Maybe.fromMaybe (zipWith const [0 ..] batch) permutation)
-        p -> pure (S.identityAnswer p)
-      spell = case Game.zoneMembers Zone.Hand S.alice gs of
-        oid : _ -> oid
-        [] -> ObjectId.MkObjectId 0
-      ((_, after), asked) = State.runState (Engine.runGameAsked (Interpreter.lookingUpCards fixture S.unreachableCorpus answer) gs (S.cast S.alice spell >> Stack.resolveTop >> Engine.settleForPriority)) []
-   in (after, asked)

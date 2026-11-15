@@ -34,7 +34,6 @@
 module Parun.ConjureSpec where
 
 import qualified Control.Monad as Monad
-import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
@@ -45,7 +44,6 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Numeric.Natural
 import qualified Parun.Engine.Action as Action
-import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -66,7 +64,6 @@ import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.DiscardCause as DiscardCause
-import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Game as Game.Type
 import qualified Parun.Types.GameEvent as GameEvent
@@ -75,7 +72,6 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
-import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
@@ -517,39 +513,6 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
       "the lying reference was what offered it"
       offers
       [[goblinPiker, hillGiant, ancientVendetta, giantSpider]]
-  -- The first case's board over the suite's own FILE registry, beside a
-  -- Llanowar Elves so X is 3, a mana value synthetic creature cards in
-  -- data/cards/ share. Randomness names a synthetic wherever one is offered: a
-  -- synthetic is a test fixture and no card of the Oracle card reference, so
-  -- none is, and a real card enters.
-  Spec.it s "a conjure from the file registry's reference never conjures a synthetic card" $ do
-    fear <- S.printingOf s registry "Fear of Change"
-    elves <- S.printingOf s registry "Llanowar Elves"
-    let (_, withElves) = S.addPermanent elves S.alice (Setup.emptyGame S.bothPlayers)
-        (_, entered) = S.entersWithTrigger fear S.alice withElves
-        lifted = Registry.hoist Trans.lift registry
-        synthetic name = Text.pack "Synthetic " `Text.isPrefixOf` CardName.unwrap name
-        answer :: (Monad m) => Asked.Asked GameState.GameState r -> State.StateT [[CardName.CardName]] m r
-        answer asked = case Asked.prompt asked of
-          Prompt.RandomCard offered -> do
-            State.modify' (NonEmpty.toList offered :)
-            pure (Maybe.fromMaybe (NonEmpty.head offered) (List.find synthetic (NonEmpty.toList offered)))
-          p -> pure (S.identityAnswer p)
-        run = do
-          (_, settled) <- Engine.runGameAsked (Interpreter.lookingUpCards lifted (Trans.lift . S.brokenCorpus s) answer) entered Engine.settleForPriority
-          Engine.runGameAsked (Interpreter.lookingUpCards lifted (Trans.lift . S.brokenCorpus s) answer) settled Engine.priorityLoop
-    ((_, final), logged) <- State.runStateT run []
-    let arrived = filter (`notElem` [fearOfChange, llanowarElves]) (namesIn Zone.Battlefield final)
-    Spec.assertEqWith
-      s
-      "one creature card entered, and it is no synthetic"
-      (length arrived, filter synthetic arrived)
-      (1, [])
-    Spec.assertEqWith
-      s
-      "the reference offered no synthetic"
-      (concatMap (filter synthetic) logged, length logged)
-      ([], 1)
   -- Gyox, Brutal Carnivora ({1}{B}{G} Legendary Creature -- Phyrexian Warlock
   -- 2/4, "... Whenever a nontoken creature you control with one or more oil
   -- counters on it dies, conjure X duplicates of it into exile, where X is the
@@ -596,30 +559,6 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
       (Just 6, 11)
     Spec.assertEqWith s "a stated depth asks randomness nothing" asked []
 
-  -- Calim's Breath, "{1}{U}, Discard Calim: Tap up to one target nonland
-  -- permanent. Draw a card. Then you may exile two other cards named Calim,
-  -- Djinn Emperor from your graveyard. When you do, return Calim from your
-  -- graveyard to the battlefield tapped." CR 400.7j lets the ability find the
-  -- card its own cost discarded (Binding.discardedCard), and "other" is that
-  -- card left out of what the gate may exile.
-  Spec.it s "CR 400.7j Calim's Breath returns the Calim its cost discarded, tapped" $ do
-    (final, _) <- calimsBreath s registry False 2
-    Spec.assertEqWith
-      s
-      "a tapped Calim is on alice's battlefield, and the two others are in exile"
-      (fmap (\oid -> Object.tapped <$> Game.lookupObject oid final) (namedIn calimName Zone.Battlefield final), length (namedIn calimName Zone.Exile final))
-      ([Just TapState.Tapped], 2)
-  -- The pair: ONE other Calim. The discarded Calim is not "other", so the gate
-  -- cannot be paid and neither card leaves the graveyard.
-  Spec.it s "CR 400.7j Calim's Breath cannot exile the discarded Calim as one of the two others" $ do
-    (final, offered) <- calimsBreath s registry False 1
-    Spec.assertEqWith
-      s
-      "both Calims stay in alice's graveyard"
-      (length (namedIn calimName Zone.Graveyard final), namedIn calimName Zone.Battlefield final)
-      (2, [])
-    Spec.assertEqWith s "and alice was never offered the exile" offered 0
-
   -- Mine Security ({1}{R} Creature -- Kavu Soldier 3/1, trample, "When this
   -- creature enters, conjure a card named Flametongue Kavu into the top eight
   -- cards of your library at random."). Randomness names the fifth place, which
@@ -653,9 +592,6 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
 fearOfChange :: CardName.CardName
 fearOfChange = CardName.MkCardName (Text.pack "Fear of Change")
 
-llanowarElves :: CardName.CardName
-llanowarElves = CardName.MkCardName (Text.pack "Llanowar Elves")
-
 calimName :: CardName.CardName
 calimName = CardName.MkCardName (Text.pack "Calim, Djinn Emperor")
 
@@ -672,51 +608,6 @@ libraryOf gs = Map.findWithDefault Seq.empty S.alice (GameState.library gs)
 -- Where a card of this name sits in alice's library, 0 being the top.
 libraryIndexOf :: CardName.CardName -> GameState.GameState -> Maybe Int
 libraryIndexOf name gs = Seq.findIndexL (\oid -> S.soleFaceName oid gs == name) (libraryOf gs)
-
--- Calim in alice's hand at her precombat main, two Islands to pay {1}{U}, bob's
--- Goblin Piker as the target, ten Islands in her library for the discard
--- trigger's conjure, `others` more Calims in her graveyard, and, when
--- `leyline`, bob's Leyline of the Void. She activates Calim's Breath and
--- everything resolves; every offer to pay is accepted and counted.
-calimsBreath :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> Bool -> Int -> m (GameState.GameState, Int)
-calimsBreath s registry leyline others = do
-  calim <- S.printingOf s registry "Calim, Djinn Emperor"
-  island <- S.printingOf s registry "Island"
-  piker <- S.printingOf s registry "Goblin Piker"
-  void_ <- S.printingOf s registry "Leyline of the Void"
-  reference <- mapM (S.cardOf s registry) ["Calim, Djinn Emperor"]
-  let empty = islandsInLibrary island 10 (S.landsFor island S.alice 2 (Setup.emptyGame S.bothPlayers))
-      base = if leyline then snd (S.addPermanent void_ S.bob empty) else empty
-      (pikerId, withPiker) = S.addPermanent piker S.bob base
-      stocked = List.foldl' (\g _ -> snd (S.addGraveyardCard calim S.alice g)) withPiker [1 .. others]
-      (calimId, inHand) = S.addHandCard calim S.alice stocked
-      board =
-        inHand
-          { GameState.turn =
-              (GameState.turn inHand)
-                { TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-      ability = case Game.faceOf calimId board of
-        Just face -> take 1 (Face.activatedAbilities face)
-        Nothing -> []
-      fixture = S.fixtureRegistry reference
-      answer :: Asked.Asked GameState.GameState r -> State.State Int r
-      answer asked = case Asked.prompt asked of
-        Prompt.ChooseToPay {} -> do
-          State.modify' (+ 1)
-          pure PaymentDecision.Pays
-        Prompt.ChooseTargets _ _ _ sets -> pure (fmap (Set.filter ((== Just pikerId) . Recipient.objectOf) . snd) sets)
-        p -> pure (S.identityAnswer p)
-      asking :: Asked.Asked GameState.GameState r -> State.State Int r
-      asking = Interpreter.lookingUpCards fixture S.unreachableCorpus answer
-      run = do
-        (_, activated) <- Engine.runGameAsked asking board (Monad.mapM_ (Activate.activateAbility S.alice calimId) ability)
-        Engine.runGameAsked asking activated Engine.priorityLoop
-      ((_, final), offered) = State.runState run 0
-  pure (final, offered)
 
 -- Settle the pending trigger and resolve it, looking card names up in
 -- `reference` and answering every Prompt.RandomDepth with `depth`. The reaches
