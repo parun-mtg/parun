@@ -1872,7 +1872,7 @@ holdsPlayer pool = case pool of
   Pool.CardsInGraveyard _ -> False
   Pool.CardsInExile -> False
   Pool.CardsInAnte -> False
-  Pool.CreaturesAndCardsInGraveyard _ -> False
+  Pool.CardsInGraveyardAnd _ _ -> False
 
 effectLintSpec :: (Monad n) => Spec.Spec IO n -> Registry.Registry IO -> [(FilePath, Either Text.Text Card.Type.Card)] -> n ()
 effectLintSpec s registry corpus = Spec.describe s "Lint" $ do

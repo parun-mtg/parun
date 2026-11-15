@@ -4036,7 +4036,7 @@ targetSlotChildren c (TargetSlot.MkTargetSlot pool filter_ count amount chooser 
       Pool.CardsInGraveyard zones -> Pool.CardsInGraveyard <$> permissionZones c zones
       Pool.CardsInExile -> pure p
       Pool.CardsInAnte -> pure p
-      Pool.CreaturesAndCardsInGraveyard zones -> Pool.CreaturesAndCardsInGraveyard <$> permissionZones c zones
+      Pool.CardsInGraveyardAnd partner zones -> Pool.CardsInGraveyardAnd partner <$> permissionZones c zones
     slotCountChildren n = case n of
       SlotCount.Printed _ -> pure n
       SlotCount.AnnouncedX -> pure n

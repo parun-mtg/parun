@@ -1,5 +1,6 @@
 module Parun.Types.Pool where
 
+import qualified Parun.Types.GraveyardPartner as GraveyardPartner
 import qualified Parun.Types.ZoneScope as ZoneScope
 
 -- | CR 115: the closed set of recipient kinds a target slot may draw from, fixing
@@ -11,7 +12,7 @@ import qualified Parun.Types.ZoneScope as ZoneScope
 -- A union of two admitted kinds is the one further shape a card can force, since
 -- CR 601.2c fixes one count per slot and a slot has one pool; SpellsAndPermanents,
 -- SpellsAndAbilities, PlayersAndPlaneswalkers, PermanentsAndPlayers and
--- CreaturesAndCardsInGraveyard are those.
+-- CardsInGraveyardAnd are those.
 data Pool
   = Creatures -- CR 115.2: creatures on the battlefield (ToCreature).
   | Players -- CR 115: players still in the game (ToPlayer).
@@ -108,23 +109,25 @@ data Pool
     CardsInExile
   | -- | CR 115.2 / 407: the cards in the ante (ToObject), Darkpact's target.
     CardsInAnte
-  | -- | CR 115.2 clause (a) exercised TWICE in one slot -- Savior of Ollenbock's
-    -- "up to one other target creature from the battlefield or creature card from
-    -- a graveyard". SpellsAndPermanents' shape across two zones instead of two
-    -- kinds: the union of Creatures and CardsInGraveyard above, tagged as each of
-    -- those pools tags its own members (ToCreature on the battlefield, ToObject in
-    -- a graveyard).
+  | -- | CR 115.2 clause (a) exercised TWICE in one slot: CardsInGraveyard above
+    -- and a second zone's candidates, the GraveyardPartner -- Savior of
+    -- Ollenbock's "up to one other target creature from the battlefield or
+    -- creature card from a graveyard", Sorceress's Schemes's "target instant or
+    -- sorcery card from your graveyard or exiled card with flashback you own".
+    -- Each half is tagged as its own pool tags it (ToCreature on the
+    -- battlefield, ToObject in a graveyard or exile).
     --
     -- ONE slot and not two, because the printed count covers both halves at once:
-    -- two slots would let a card exile one of each where the card allows one
+    -- two slots would let a card take one of each where the card allows one
     -- altogether, and CR 601.2c fixes a count per slot.
     --
-    -- The Filter is asked of both halves, which is what the printed words do too
-    -- -- "creature" of the battlefield half under CR 109.2, "creature card" of the
-    -- graveyard half under CR 109.2a. A filter that can only hold of one zone's
-    -- members simply empties the other half.
+    -- The Filter is asked of both halves, as the printed words are -- "creature"
+    -- of the battlefield half under CR 109.2, "creature card" of the graveyard
+    -- half under CR 109.2a. A filter that can only hold of one zone's members
+    -- empties the other half, and a card whose halves ask different things says
+    -- so with Filter.IsInZone (Sorceress's Schemes).
     --
-    -- Carries CardsInGraveyard's ZoneScope for that pool's reason (CR 400.1's
-    -- per-player graveyards) and for no other: the battlefield half needs none.
-    CreaturesAndCardsInGraveyard ZoneScope.ZoneScope
+    -- The ZoneScope is the graveyard half's, for CardsInGraveyard's reason (CR
+    -- 400.1's per-player graveyards): neither partner needs one.
+    CardsInGraveyardAnd GraveyardPartner.GraveyardPartner ZoneScope.ZoneScope
   deriving (Eq, Ord, Show)

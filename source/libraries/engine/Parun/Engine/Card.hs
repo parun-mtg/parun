@@ -34,6 +34,7 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.FaceDownCharacteristics as FaceDownCharacteristics
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.GrantedAbility as GrantedAbility
+import qualified Parun.Types.GraveyardPartner as GraveyardPartner
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.Layout as Layout
 import qualified Parun.Types.ManaCost as ManaCost
@@ -2005,7 +2006,7 @@ poolWithin inner outer =
     (Pool.Creatures, Pool.AnyTarget) -> True
     (Pool.Creatures, Pool.Permanents) -> True
     (Pool.Creatures, Pool.SpellsAndPermanents) -> True
-    (Pool.Creatures, Pool.CreaturesAndCardsInGraveyard _) -> True
+    (Pool.Creatures, Pool.CardsInGraveyardAnd GraveyardPartner.BattlefieldCreatures _) -> True
     (Pool.Players, Pool.AnyTarget) -> True
     (Pool.Players, Pool.PlayersAndPlaneswalkers) -> True
     (Pool.PlayersAndPlaneswalkers, Pool.AnyTarget) -> True
@@ -2015,5 +2016,5 @@ poolWithin inner outer =
     (Pool.PlayersAndPlaneswalkers, Pool.PermanentsAndPlayers) -> True
     (Pool.Permanents, Pool.SpellsAndPermanents) -> True
     (Pool.Spells, Pool.SpellsAndPermanents) -> True
-    (Pool.CardsInGraveyard scope, Pool.CreaturesAndCardsInGraveyard scope') -> scope == scope'
+    (Pool.CardsInGraveyard scope, Pool.CardsInGraveyardAnd _ scope') -> scope == scope'
     _ -> False

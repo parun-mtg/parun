@@ -3602,12 +3602,12 @@ targetSlotSiblingNames slot =
     ]
 
 -- The sibling slot ONE pool names, Card.instancePool's own two arms: only
--- CardsInGraveyard and CreaturesAndCardsInGraveyard carry a ZoneScope, and only
+-- CardsInGraveyard and CardsInGraveyardAnd carry a ZoneScope, and only
 -- ZoneScope.InSlot/ControllerOfBound name a slot within it.
 poolSiblingName :: Pool.Pool -> Set SlotName.SlotName
 poolSiblingName pool = case pool of
   Pool.CardsInGraveyard scope -> zoneScopeSlotName scope
-  Pool.CreaturesAndCardsInGraveyard scope -> zoneScopeSlotName scope
+  Pool.CardsInGraveyardAnd _ scope -> zoneScopeSlotName scope
   _ -> Set.empty
 
 zoneScopeSlotName :: ZoneScope.ZoneScope -> Set SlotName.SlotName

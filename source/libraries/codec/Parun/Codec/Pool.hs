@@ -3,6 +3,7 @@ module Parun.Codec.Pool where
 import qualified Parun.Codec.ZoneScope as ZoneScope
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.Types.GraveyardPartner as GraveyardPartner
 import qualified Parun.Types.Pool as Pool
 
 -- | Tagged rather than nullary-only, because CR 400.1's per-player graveyard
@@ -27,8 +28,15 @@ codec =
       -- to select among.
       Arm.nullary "CardsInExile" Pool.CardsInExile,
       Arm.nullary "CardsInAnte" Pool.CardsInAnte,
-      Arm.payload "CreaturesAndCardsInGraveyard" ZoneScope.codec Pool.CreaturesAndCardsInGraveyard (\x -> case x of Pool.CreaturesAndCardsInGraveyard y -> Just y; _ -> Nothing)
+      -- One arm per GraveyardPartner, told apart by the tag alone as
+      -- Parun.Codec.ZoneScope's slot-named arms are: each carries only the
+      -- graveyard half's ZoneScope.
+      partnerArm "CreaturesAndCardsInGraveyard" GraveyardPartner.BattlefieldCreatures,
+      partnerArm "CardsInGraveyardAndExile" GraveyardPartner.ExiledCards
     ]
+  where
+    partnerArm tag partner =
+      Arm.payload tag ZoneScope.codec (Pool.CardsInGraveyardAnd partner) (\x -> case x of Pool.CardsInGraveyardAnd p y | p == partner -> Just y; _ -> Nothing)
 
 tagOf :: Pool.Pool -> String
 tagOf x = case x of
@@ -45,4 +53,6 @@ tagOf x = case x of
   Pool.CardsInGraveyard {} -> "CardsInGraveyard"
   Pool.CardsInExile {} -> "CardsInExile"
   Pool.CardsInAnte {} -> "CardsInAnte"
-  Pool.CreaturesAndCardsInGraveyard {} -> "CreaturesAndCardsInGraveyard"
+  Pool.CardsInGraveyardAnd partner _ -> case partner of
+    GraveyardPartner.BattlefieldCreatures -> "CreaturesAndCardsInGraveyard"
+    GraveyardPartner.ExiledCards -> "CardsInGraveyardAndExile"

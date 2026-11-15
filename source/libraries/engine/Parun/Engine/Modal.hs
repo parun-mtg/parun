@@ -318,7 +318,7 @@ instanceScope rename slot =
 instancePool :: (SlotName -> SlotName) -> Pool.Pool -> Pool.Pool
 instancePool rename pool = case pool of
   Pool.CardsInGraveyard scope -> Pool.CardsInGraveyard (instanceZoneScope rename scope)
-  Pool.CreaturesAndCardsInGraveyard scope -> Pool.CreaturesAndCardsInGraveyard (instanceZoneScope rename scope)
+  Pool.CardsInGraveyardAnd partner scope -> Pool.CardsInGraveyardAnd partner (instanceZoneScope rename scope)
   Pool.Creatures -> pool
   Pool.Players -> pool
   Pool.AnyTarget -> pool
