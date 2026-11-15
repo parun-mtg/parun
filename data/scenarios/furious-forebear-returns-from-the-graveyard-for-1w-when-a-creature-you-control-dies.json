@@ -137,7 +137,7 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 113.6m / 603.10a: Furious Forebear's trigger functions only while it is in its owner's graveyard, so it does not see a creature dying beside it, and once there its controller may pay {1}{W} when a creature they control dies to return it to hand",
+  "description": "CR 113.6b / 113.6m / 603.10a: Furious Forebear's trigger functions only while it is in its owner's graveyard, so it does not see a creature dying beside it, and once there its controller may pay {1}{W} when a creature they control dies to return it to hand",
   "note": "Pyroclasm kills Forebear and the Bears together: no trigger. bob's Hill Giant dying: no trigger. alice's Memnite dying: she pays {1}{W} and Forebear returns. An unscheduled ChooseToPay fails the scenario.",
   "timeline": [
     {
