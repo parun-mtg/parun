@@ -297,7 +297,7 @@ lastStepOf phase = case phase of
 -- after this phase" (CR 500.8) is the head.
 thisPhase :: Phase -> Seq Phase -> (Seq Phase, Seq Phase)
 thisPhase phase remaining = case lastStepOf phase >>= \step -> Seq.elemIndexL step remaining of
-  Just i | not (any (Maybe.isJust . phaseBeginningAt) (Seq.take i remaining)) -> Seq.splitAt (i + 1) remaining
+  Just i | not (or (Seq.zipWith (\before -> Maybe.isJust . phaseBeginningAt (Just before)) (phase Seq.<| remaining) (Seq.take i remaining))) -> Seq.splitAt (i + 1) remaining
   _ -> (Seq.empty, remaining)
 
 -- CR 500.11 / CR 725.2d: everything left of the turn AFTER this phase. The other
@@ -322,11 +322,23 @@ dropRestOfPhase phase = snd . thisPhase phase
 -- additional combat phase begins at the same step, since expandExtraPhase
 -- builds it from CR 506.1's list.
 --
+-- The step before it in the turn, if any, is the other argument: a first step
+-- directly after a step of the same phase no later in CR 500.1's order is a CR
+-- 500.9 step added to the phase under way (Y'shtola Rhul's second end step),
+-- not a new phase. A CR 500.8 phase starts over at its first step, behind that
+-- phase's later steps.
+--
 -- Not implemented: a CR 500.10 beginning phase holding only an upkeep step
 -- (ExtraPhase.ExtraUpkeep) is not seen to begin here or to end at
 -- phaseEndingAt (#7601).
-phaseBeginningAt :: Phase -> Maybe PhaseSelector
-phaseBeginningAt phase = case phase of
+phaseBeginningAt :: Maybe Phase -> Phase -> Maybe PhaseSelector
+phaseBeginningAt previous phase
+  | Just before <- previous, Maybe.isJust (wholePhaseOf phase), wholePhaseOf before == wholePhaseOf phase, before <= phase = Nothing
+  | otherwise = firstStepOf phase
+
+-- CR 501.1 / 506.1 / 512.1: the stepped phase this step is the first of.
+firstStepOf :: Phase -> Maybe PhaseSelector
+firstStepOf phase = case phase of
   Phase.Beginning BeginningStep.Untap -> Just PhaseSelector.BeginningPhase
   Phase.Beginning _ -> Nothing
   Phase.PrecombatMain -> Nothing
@@ -579,4 +591,12 @@ stepsBegun gs = do
 --
 -- data/scenarios' raph-and-leo pair is what proves the combat phase's count.
 phasesBegun :: PhaseSelector -> GameState -> Natural
-phasesBegun selector = Natural.length . filter (\phase -> selector == PhaseSelector.Step phase || phaseBeginningAt phase == Just selector) . stepsBegun
+phasesBegun selector gs =
+  let steps = stepsBegun gs
+   in Natural.length (filter (\(before, phase) -> selector == PhaseSelector.Step phase || phaseBeginningAt before phase == Just selector) (zip (Nothing : fmap Just steps) steps))
+
+-- CR 500.1: the whole phase the step now under way begins, asked of the step
+-- before it -- the last one begun this turn, since Engine.advance logs none for
+-- the step it has only scheduled.
+phaseBeginningNow :: GameState -> Maybe PhaseSelector
+phaseBeginningNow gs = phaseBeginningAt (Maybe.listToMaybe (reverse (stepsBegun gs))) (TurnRegisters.phase (GameState.turn gs))

@@ -1843,10 +1843,6 @@ addPhases extras =
 
 -- CR 500.9: add the step directly after the one this is resolving in, which is
 -- the head of `remaining`.
---
--- Not implemented: an added end step is read as the ending phase beginning
--- again (Turn.phaseBeginningAt), so a CR 614.10 ending-phase skip would take it
--- (#7583).
 addStep :: Phase.Phase -> Game ()
 addStep step =
   State.modify' $ \gs ->
