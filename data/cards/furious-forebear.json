@@ -55,6 +55,9 @@
               }
             }
           },
+          "functionsFrom": [
+            "Graveyard"
+          ],
           "modal": {
             "modes": [
               {
