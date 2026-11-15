@@ -29,12 +29,14 @@ import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Types.Card as Card.Type
 import Parun.Types.CardName (CardName)
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost.Type
+import qualified Parun.Types.CostAdjustments as CostAdjustments
 import qualified Parun.Types.Face as Face
 import Parun.Types.Game (Game)
 import Parun.Types.GameState (GameState)
@@ -125,10 +127,9 @@ unlockCostOf face = Cost.Type.MkCost (Face.manaCost face) []
 --   * the unlock cost is payable. An action the player cannot take is not
 --     offered, which is Parun.Engine.Action.legalActions' posture throughout.
 --
--- The payability check is Cost.canPay and NOT Cost.total's CR 601.2f
--- adjustments, for the reason FaceDown.canTurnFaceUp gives: that rule totals the
--- cost of a spell being cast or an ability being activated, and a special action
--- is neither (#90).
+-- The cost is measured after CR 118.7's changes to it (unlockCost below), and
+-- payable when SOME order and hybrid half of its reductions pays, the posture
+-- of Cost.totalManas' other callers: nobody has been asked yet.
 --
 -- The PRIORITY clause has no conjunct, for the reason CR 116.2a's land play has
 -- none: legalActions is asked only of the priority holder.
@@ -139,7 +140,20 @@ canUnlock pid oid half gs =
     face : _ ->
       Projection.controllerOf oid gs == Just pid
         && Turn.sorcerySpeedWindow pid gs
-        && Cost.canPay (PaymentSubject.Unlocking oid) pid oid (unlockCostOf face) gs
+        && let (adjustments, cost) = unlockCost pid oid face gs
+            in any (\manaCost -> Cost.canPay (PaymentSubject.Unlocking oid) pid oid cost {Cost.Type.mana = Just manaCost} gs) (foldMap (Cost.totalManas adjustments) (Cost.Type.mana cost))
+
+-- CR 118.7: what an effect changes about one half's unlock cost (Inquisitive
+-- Glimmer's "Unlock costs you pay cost {1} less"), gathered over the rows whose
+-- subject is CostSubject.Unlocks, and the cost with their added components.
+-- The mana part is left unadjusted: the reductions hold CR 118.7e's choice,
+-- which the payer makes (Cost.announceReductions).
+-- data/scenarios/inquisitive-glimmer-takes-one-off-the-unlock-costs-its-controller-pays
+-- proves it.
+unlockCost :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> (CostAdjustments.CostAdjustments, Cost Keyword)
+unlockCost pid oid face gs =
+  let adjustments = PlayerEffect.unlockCostAdjustments pid oid gs
+   in (adjustments, Cost.plusComponents adjustments (unlockCostOf face))
 
 -- Every door this player may unlock right now, in battlefield order and then
 -- printed order -- what Action.Unlock is built from, and the shape
@@ -175,7 +189,9 @@ unlock perform pid oid half = do
     else case filter ((== half) . Face.name) (lockedHalves oid before) of
       [] -> pure ()
       face : _ -> do
-        paid <- Cost.payAction perform before (PaymentSubject.Unlocking oid) 0 pid oid (unlockCostOf face)
+        let (adjustments, cost) = unlockCost pid oid face before
+        announced <- Cost.announceReductions pid oid before cost adjustments
+        paid <- Cost.payAction perform before (PaymentSubject.Unlocking oid) 0 pid oid (Cost.totalWith announced cost)
         -- CR 709.5e names the actor itself: the player who paid the unlock cost
         -- is the one who unlocked the door.
         Monad.forM_ paid $ \_ -> Event.unlockHalves pid oid (Set.singleton half)

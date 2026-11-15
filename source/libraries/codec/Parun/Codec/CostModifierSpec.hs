@@ -78,6 +78,15 @@ spec s = Spec.describe s "Parun.Codec.CostModifier" $ do
       s
       (Either.isLeft (Codec.decode CostModifier.codec =<< Common.parse (Text.pack "{\"subject\":{\"type\":\"Activations\",\"value\":{}},\"matching\":{\"type\":\"IsSource\"},\"whichTargets\":{\"type\":\"IsSource\"},\"change\":{\"type\":\"Add\",\"value\":{\"components\":[]}}}")))
       "expected a decode failure"
+  Spec.it s "refuses a target criterion or an ordinal on an unlock" $
+    let decodeUnlock extra = Codec.decode CostModifier.codec =<< Common.parse (Text.pack ("{\"subject\":{\"type\":\"Unlocks\"},\"matching\":{\"type\":\"And\",\"value\":[]}" <> extra <> ",\"change\":{\"type\":\"Reduce\",\"value\":{\"amount\":[{\"type\":\"Generic\",\"value\":1}]}}}"))
+     in Spec.assertBool
+          s
+          ( Either.isRight (decodeUnlock "")
+              && Either.isLeft (decodeUnlock ",\"whichTargets\":{\"type\":\"IsSource\"}")
+              && Either.isLeft (decodeUnlock ",\"onlyNth\":{\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}},\"ordinal\":1}")
+          )
+          "expected a decode failure only beside a target criterion or an ordinal"
   Spec.it s "has a schema" $ Common.assertHasSchema s CostModifier.codec
 
 -- An activation reduction limited to the nth each turn, its criteria as given.

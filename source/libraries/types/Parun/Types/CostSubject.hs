@@ -11,4 +11,6 @@ data CostSubject
     Spells
   | -- | CR 602.2b: activating an ability, narrowed by what only an ability has.
     Activations (ActivationCriteria.ActivationCriteria Keyword.Keyword)
+  | -- | CR 709.5e: paying an unlock cost, matched against the Room permanent.
+    Unlocks
   deriving (Eq, Ord, Show)

@@ -95,9 +95,9 @@ ignoreCostOf oid name gs = case fmap snd (filter (\(n, _) -> n == name) (ignoreG
 --     which is Parun.Engine.Action.legalActions' posture throughout.
 --
 -- The payability check is Cost.canPay and NOT Cost.total's CR 601.2f
--- adjustments, for the reason Room.canUnlock gives: that rule totals the cost of
--- a spell being cast or an ability being activated, and a special action is
--- neither (#90).
+-- adjustments, for the reason FaceDown.canTurnFaceUp gives: that rule totals
+-- the cost of a spell being cast or an ability being activated, and a special
+-- action is neither (#90).
 --
 -- No conjunct for the PRIORITY clause, for the reason CR 116.2a's land play has
 -- none: legalActions is asked only of the priority holder. And none for having
