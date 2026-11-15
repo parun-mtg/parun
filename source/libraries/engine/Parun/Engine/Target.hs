@@ -42,11 +42,11 @@ import qualified Parun.Types.AgainstSlot as AgainstSlot
 import qualified Parun.Types.Aggregation as Aggregation
 import qualified Parun.Types.Binding as Binding.Type
 import Parun.Types.Card (Card)
-import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Chosen as Chosen
 import qualified Parun.Types.Count as Count.Type
 import qualified Parun.Types.DifferentIn as DifferentIn
+import qualified Parun.Types.DifferingValue as DifferingValue
 import qualified Parun.Types.Dividing as Dividing
 import qualified Parun.Types.Filter as Filter.Type
 import Parun.Types.Game (Game)
@@ -2382,7 +2382,7 @@ togetherRefused slot picked gs = case TargetSlot.together slot of
 -- One target's values on a `Differing` axis (Filter.differingOf), off its CR
 -- 613 projection, so a split card's two names count (CR 201.2a). Nothing for a
 -- target with no name where names are kept apart (CR 201.2b), or a player.
-differingValues :: DifferentIn.DifferentIn -> GameState -> Recipient -> Maybe (Set (DifferentIn.DifferentIn, Either CardName.CardName (Either Integer CardType.CardType)))
+differingValues :: DifferentIn.DifferentIn -> GameState -> Recipient -> Maybe (Set (DifferentIn.DifferentIn, DifferingValue.DifferingValue))
 differingValues axis gs recipient = do
   oid <- Recipient.objectOf recipient
   Filter.differingOf (Set.singleton axis) (Projection.viewOfObject oid gs)

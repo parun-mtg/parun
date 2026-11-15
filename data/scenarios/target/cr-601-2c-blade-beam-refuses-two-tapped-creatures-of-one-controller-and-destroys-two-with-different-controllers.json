@@ -1,0 +1,147 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Cloud's Limit Break",
+            "label": "break"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "tapped": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2c Blade Beam refuses two tapped creatures of one controller and destroys two with different controllers",
+  "final": [
+    {
+      "Count": {
+        "card": "Goblin Piker",
+        "count": 1,
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Grizzly Bears",
+        "count": 1,
+        "player": "bob",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "Count": {
+        "card": "Hill Giant",
+        "count": 1,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "Both announcements pick the Blade Beam tier with the same three Plains; the refused one names both of bob's tapped creatures, the taken one swaps Hill Giant for alice's own tapped Goblin Piker, so only the shared controller tells them apart.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3"
+          ],
+          "modes": [
+            1
+          ],
+          "object": "$break",
+          "targets": [
+            "$bears",
+            "$giant"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3"
+          ],
+          "modes": [
+            1
+          ],
+          "object": "$break",
+          "targets": [
+            "$bears",
+            "$piker"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

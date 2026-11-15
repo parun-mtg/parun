@@ -1,0 +1,188 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Forest",
+            "label": "f5"
+          },
+          {
+            "card": "Forest",
+            "label": "f6"
+          },
+          {
+            "card": "Forest",
+            "label": "f7"
+          },
+          {
+            "card": "Forest",
+            "label": "f8"
+          },
+          {
+            "card": "Forest",
+            "label": "f9"
+          },
+          {
+            "card": "Forest",
+            "label": "f10"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Memnite",
+            "label": "mv0"
+          },
+          {
+            "card": "Eager Cadet",
+            "label": "mv1"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "mv2"
+          },
+          {
+            "card": "Balduvian Bears",
+            "label": "mv2b"
+          },
+          {
+            "card": "Alpine Grizzly",
+            "label": "mv3"
+          },
+          {
+            "card": "Axebane Beast",
+            "label": "mv4"
+          },
+          {
+            "card": "Ancient Carp",
+            "label": "mv5"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "mv6"
+          },
+          {
+            "card": "Enormous Baloth",
+            "label": "mv7"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Long Rest",
+            "label": "rest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 7,
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 119.5 Long Rest returning seven cards leaves its controller's life total alone",
+  "final": [
+    {
+      "View": {
+        "is": [
+          "$mv2b",
+          "$mv7"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Long Rest"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Exile"
+      }
+    },
+    {
+      "Life": {
+        "life": 7,
+        "player": "alice"
+      }
+    }
+  ],
+  "note": "Seven targets with different mana values, one short of the eight the life clause asks for; Long Rest is still exiled.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4",
+            "$f5",
+            "$f6",
+            "$f7",
+            "$f8",
+            "$f9",
+            "$f10"
+          ],
+          "object": "$rest",
+          "targets": [
+            "$mv0",
+            "$mv1",
+            "$mv2",
+            "$mv3",
+            "$mv4",
+            "$mv5",
+            "$mv6"
+          ],
+          "x": 7
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

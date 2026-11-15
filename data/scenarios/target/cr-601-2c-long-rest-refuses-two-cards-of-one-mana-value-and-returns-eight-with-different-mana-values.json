@@ -1,0 +1,235 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Forest",
+            "label": "f3"
+          },
+          {
+            "card": "Forest",
+            "label": "f4"
+          },
+          {
+            "card": "Forest",
+            "label": "f5"
+          },
+          {
+            "card": "Forest",
+            "label": "f6"
+          },
+          {
+            "card": "Forest",
+            "label": "f7"
+          },
+          {
+            "card": "Forest",
+            "label": "f8"
+          },
+          {
+            "card": "Forest",
+            "label": "f9"
+          },
+          {
+            "card": "Forest",
+            "label": "f10"
+          },
+          {
+            "card": "Forest",
+            "label": "f11"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Memnite",
+            "label": "mv0"
+          },
+          {
+            "card": "Eager Cadet",
+            "label": "mv1"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "mv2"
+          },
+          {
+            "card": "Balduvian Bears",
+            "label": "mv2b"
+          },
+          {
+            "card": "Alpine Grizzly",
+            "label": "mv3"
+          },
+          {
+            "card": "Axebane Beast",
+            "label": "mv4"
+          },
+          {
+            "card": "Ancient Carp",
+            "label": "mv5"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "mv6"
+          },
+          {
+            "card": "Enormous Baloth",
+            "label": "mv7"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Long Rest",
+            "label": "rest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "life": 7,
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2c Long Rest refuses two cards of one mana value and returns eight with different mana values, restoring starting life",
+  "final": [
+    {
+      "View": {
+        "is": [
+          "$mv2b"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Graveyard"
+      }
+    },
+    {
+      "View": {
+        "is": [
+          "Long Rest"
+        ],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Exile"
+      }
+    },
+    {
+      "Count": {
+        "card": "Enormous Baloth",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Life": {
+        "life": 20,
+        "player": "alice"
+      }
+    }
+  ],
+  "note": "Both announcements name eight targets with the same eleven Forests; the refused one swaps Alpine Grizzly for Balduvian Bears, a second mana value 2, so only the shared mana value tells them apart. Alice's life is 7 against a starting 20.",
+  "timeline": [
+    {
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4",
+            "$f5",
+            "$f6",
+            "$f7",
+            "$f8",
+            "$f9",
+            "$f10",
+            "$f11"
+          ],
+          "object": "$rest",
+          "targets": [
+            "$mv0",
+            "$mv1",
+            "$mv2",
+            "$mv2b",
+            "$mv4",
+            "$mv5",
+            "$mv6",
+            "$mv7"
+          ],
+          "x": 8
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            "$f3",
+            "$f4",
+            "$f5",
+            "$f6",
+            "$f7",
+            "$f8",
+            "$f9",
+            "$f10",
+            "$f11"
+          ],
+          "object": "$rest",
+          "targets": [
+            "$mv0",
+            "$mv1",
+            "$mv2",
+            "$mv3",
+            "$mv4",
+            "$mv5",
+            "$mv6",
+            "$mv7"
+          ],
+          "x": 8
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

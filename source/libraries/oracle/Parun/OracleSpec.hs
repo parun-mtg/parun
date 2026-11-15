@@ -77,6 +77,7 @@ import qualified Parun.Types.DeckLimit as DeckLimit
 import qualified Parun.Types.Destroy as Destroy
 import qualified Parun.Types.DestructionR as DestructionR
 import qualified Parun.Types.DestructionRewrite as DestructionRewrite
+import qualified Parun.Types.DifferentIn as DifferentIn
 import qualified Parun.Types.Discard as Discard
 import qualified Parun.Types.DiscardCards as DiscardCards
 import qualified Parun.Types.Draw as Draw
@@ -622,6 +623,10 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s [Text.pack "Exile up to three target cards from a single graveyard."] (to Zone.Exile single)
     let anywhere = [(target, graveyard PlayerRelation.AnyPlayer Nothing)]
     Spec.assertEq s [Text.pack "Exile target card from a graveyard."] (to Zone.Exile anywhere)
+    let rest = [(target, (graveyard PlayerRelation.You Nothing) {TargetSlot.count = SlotCount.Printed (TargetCount.MkTargetCount 2 (Just 2)), TargetSlot.together = Just (Together.Differing DifferentIn.ManaValues)})]
+    Spec.assertEq s [Text.pack "Return two target cards with different mana values from your graveyard to your hand."] (to Zone.Hand rest)
+    let beam = [(target, (TargetSlot.required Pool.Creatures (Just Filter.IsTapped)) {TargetSlot.count = SlotCount.Printed (TargetCount.MkTargetCount 0 (Just 2)), TargetSlot.together = Just (Together.Differing DifferentIn.Controllers)})]
+    Spec.assertEq s [Text.pack "Exile up to two target tapped creatures with different controllers."] (to Zone.Exile beam)
 
   -- Several objects go to "their owners' hands" (Evacuation) or "their
   -- owner's hand" (Retract), and a description of them reads "all" or, in the

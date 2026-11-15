@@ -15,4 +15,6 @@ data DifferentIn
     Toughnesses
   | -- | The Karst, Enchanted's "don't share ... card type" (CR 205.2a).
     CardTypes
+  | -- | Cloud's Limit Break's "with different controllers" (CR 110.2).
+    Controllers
   deriving (Bounded, Enum, Eq, Ord, Show)
