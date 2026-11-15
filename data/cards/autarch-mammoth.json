@@ -1,0 +1,131 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Saddle",
+          "value": 5
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Autarch Mammoth",
+      "oracleText": "When this creature enters and whenever it attacks while saddled, create a 3/3 green Elephant creature token.\nSaddle 5 (Tap any number of other creatures you control with total power 5 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "Enters",
+                "value": {}
+              },
+              {
+                "type": "Attacks",
+                "value": {
+                  "type": "Attacker",
+                  "value": {
+                    "creature": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "IsSource"
+                        },
+                        {
+                          "type": "HasDesignation",
+                          "value": "Saddled"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Green"
+                                ],
+                                "name": "Elephant Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 3
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 3
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Elephant"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Elephant",
+          "Mount"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

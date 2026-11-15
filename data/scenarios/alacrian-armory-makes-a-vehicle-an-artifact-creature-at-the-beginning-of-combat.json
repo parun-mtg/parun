@@ -1,0 +1,219 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Alacrian Armory",
+            "label": "armory"
+          },
+          {
+            "card": "Skybox Ferry",
+            "label": "ferry",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Alacrian Armory's beginning-of-combat trigger makes a target Vehicle its controller controls an artifact creature until end of turn, without saddling it",
+  "note": "Skybox Ferry, uncrewed, becomes an artifact creature with the Armory's +0/+1 (4/5) and vigilance, so it attacks without tapping; a Vehicle is not saddled.",
+  "timeline": [
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$ferry"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Types": {
+          "object": "$ferry",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "object": "$ferry",
+          "of": "Designations"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$ferry",
+          "power": 4,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$ferry"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAttackTarget",
+          "with": [
+            "Player",
+            "bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$ferry",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Trample"
+        },
+        {
+          "type": "Cycling",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                },
+                {
+                  "type": "OfType",
+                  "value": {
+                    "type": "Colored",
+                    "value": "Green"
+                  }
+                }
+              ]
+            },
+            "searchFor": null
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Agonasaur Rex",
+      "oracleText": "Trample\nCycling {2}{G} ({2}{G}, Discard this card: Draw a card.)\nWhen you cycle this card, put two +1/+1 counters on up to one target creature or Vehicle. It gains trample and indestructible until end of turn.",
+      "power": {
+        "type": "Literal",
+        "value": 8
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 8
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Discards",
+            "value": {
+              "subject": {
+                "type": "Self"
+              },
+              "way": "Cycled"
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Trample"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Indestructible"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 1
+                      }
+                    },
+                    "filter": {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Creature"
+                        },
+                        {
+                          "type": "HasSubtype",
+                          "value": "Vehicle"
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Dinosaur"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

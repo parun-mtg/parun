@@ -1,0 +1,288 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Prodigal Pyromancer",
+            "label": "pyro",
+            "ready": true
+          },
+          {
+            "card": "Avishkar Raceway",
+            "label": "race"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "At max speed, Avishkar Raceway's {3}, {T}, Discard a card: Draw a card",
+  "note": "Speed climbs to 4 on alice's third turn as bob loses life; before that the rummage is refused, after it alice discards Lightning Bolt and draws.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$pyro",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$pyro",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "ability": 1,
+          "object": "$race"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$pyro",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$bolt"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "costOrder": [
+            0,
+            1
+          ],
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            null
+          ],
+          "object": "$race"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lightning Bolt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    }
+  ]
+}

@@ -1,0 +1,239 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "hand": [
+          {
+            "card": "Brightglass Gearhulk",
+            "label": "hulk"
+          }
+        ],
+        "library": [
+          {
+            "card": "Ornithopter",
+            "label": "orni"
+          },
+          {
+            "card": "Llanowar Elves",
+            "label": "elves"
+          },
+          {
+            "card": "Shivan Dragon",
+            "label": "dragon"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "lbolt"
+          },
+          {
+            "card": "Sol Ring",
+            "label": "ring"
+          }
+        ],
+        "manaPool": "GGWW",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Brightglass Gearhulk may search for up to two artifact, creature, and/or enchantment cards with mana value 1 or less as it enters",
+  "note": "Shivan Dragon (mana value 6) and Lightning Bolt (an instant) are no answers.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$hulk"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$orni",
+            "$dragon"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$lbolt"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$orni",
+            "$elves"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$dragon",
+            "$lbolt",
+            "$ring"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ornithopter",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Llanowar Elves",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Sol Ring",
+          "count": 1,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

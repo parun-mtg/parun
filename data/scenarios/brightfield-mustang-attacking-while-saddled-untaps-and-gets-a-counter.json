@@ -1,0 +1,234 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Brightfield Mustang",
+            "label": "mount",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "saddler",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Whenever Brightfield Mustang attacks while saddled, it untaps and gets a +1/+1 counter",
+  "note": "The Mustang has no vigilance, so attacking taps it; its trigger untaps it and leaves it a 4/4 with one counter.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTapsForTotalPower",
+          "with": [
+            "$saddler"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$mount"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Saddled"
+          ],
+          "object": "$mount",
+          "of": "Designations"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$mount"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAttackTarget",
+          "with": [
+            "Player",
+            "bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$mount",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$mount"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$mount",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}

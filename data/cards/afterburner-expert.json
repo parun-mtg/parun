@@ -1,0 +1,148 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              }
+            ]
+          },
+          "keyword": {
+            "type": "Exhaust"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Afterburner Expert",
+      "oracleText": "Exhaust — {2}{G}{G}: Put two +1/+1 counters on this creature. (Activate each exhaust ability only once.)\nWhenever you activate an exhaust ability, return this card from your graveyard to the battlefield.",
+      "power": {
+        "type": "Literal",
+        "value": 4
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AbilityActivated",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                {
+                  "type": "IsActivatedAbility",
+                  "value": {
+                    "grantedBy": {
+                      "type": "OfKeyword",
+                      "value": {
+                        "type": "Exhaust"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "origin": "Graveyard",
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          },
+                          "zone": "Battlefield"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Artificer",
+          "Goblin"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

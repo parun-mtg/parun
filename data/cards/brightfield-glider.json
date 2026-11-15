@@ -1,0 +1,122 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Vigilance"
+        },
+        {
+          "type": "Saddle",
+          "value": 3
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Brightfield Glider",
+      "oracleText": "Vigilance\nWhenever this creature attacks while saddled, it gets +1/+2 and gains flying until end of turn.\nSaddle 3 (Tap any number of other creatures you control with total power 3 or more: This Mount becomes saddled until end of turn. Saddle only as a sorcery.)",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Attacker",
+              "value": {
+                "creature": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "IsSource"
+                    },
+                    {
+                      "type": "HasDesignation",
+                      "value": "Saddled"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "ModifyPowerToughness",
+                            "value": {
+                              "power": {
+                                "type": "Literal",
+                                "value": 1
+                              },
+                              "toughness": {
+                                "type": "Literal",
+                                "value": 2
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Flying"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Mount",
+          "Possum"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

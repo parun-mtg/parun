@@ -1,0 +1,163 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Adrenaline Jockey",
+      "oracleText": "Whenever a player casts a spell, if it's not their turn, this creature deals 4 damage to them.\nWhenever you activate an exhaust ability, put a +1/+1 counter on this creature.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "SpellCast",
+            "value": {
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "AnyPlayer"
+                }
+              },
+              "spell": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": []
+                }
+              }
+            }
+          },
+          "intervening": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "IsActivePlayer",
+                "value": {
+                  "type": "InSlot",
+                  "value": "thatPlayer"
+                }
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 0
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "Literal",
+                                "value": 4
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "thatPlayer"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "AbilityActivated",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                {
+                  "type": "IsActivatedAbility",
+                  "value": {
+                    "grantedBy": {
+                      "type": "OfKeyword",
+                      "value": {
+                        "type": "Exhaust"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Minotaur",
+          "Pilot"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

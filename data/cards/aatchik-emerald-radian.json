@@ -1,0 +1,219 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Aatchik, Emerald Radian",
+      "oracleText": "When Aatchik enters, create a 1/1 green Insect creature token for each artifact and/or creature card in your graveyard.\nWhenever another Insect you control dies, put a +1/+1 counter on Aatchik. Each opponent loses 1 life.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Green"
+                                ],
+                                "name": "Insect Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Insect"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "Or",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Artifact"
+                                  },
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Creature"
+                                  }
+                                ]
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "You"
+                                  },
+                                  "zone": "Graveyard"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "Leaves",
+            "value": {
+              "destinations": [
+                {
+                  "zone": "Graveyard"
+                }
+              ],
+              "permanent": {
+                "type": "Matching",
+                "value": {
+                  "type": "And",
+                  "value": [
+                    {
+                      "type": "Not",
+                      "value": {
+                        "type": "IsSource"
+                      }
+                    },
+                    {
+                      "type": "HasSubtype",
+                      "value": "Insect"
+                    },
+                    {
+                      "type": "HeldBy",
+                      "value": {
+                        "holder": "Controller",
+                        "relation": "You"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "effects": [
+                      {
+                        "type": "LoseLife",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "Opponent"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Druid",
+          "Insect"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

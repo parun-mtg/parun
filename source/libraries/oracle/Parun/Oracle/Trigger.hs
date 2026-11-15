@@ -91,7 +91,15 @@ event context creature c = case c of
   TriggerCondition.AnyOf cs@(_ : _ : _) -> do
     parts <- traverse (selfEvent context creature) cs
     let openings = if all ((== ["When"]) . fst3) parts then ["When"] else recurring
-    itself openings (Prose.listing "or" (fmap (Text.pack . snd3) parts)) (concatMap thd3 parts) (concatMap ownership cs)
+        -- Free for a one-shot event before a recurring one: "When this
+        -- creature enters and whenever it attacks while saddled" (Autarch
+        -- Mammoth).
+        split = case parts of
+          [(["When"], first, _), (later, second, _)]
+            | later /= ["When"] ->
+                [MkEvent (Text.pack ("When " <> self <> " " <> first <> " and whenever it " <> second)) True (slotted (concatMap thd3 parts)) (concatMap ownership cs)]
+          _ -> []
+    itself openings (Prose.listing "or" (fmap (Text.pack . snd3) parts)) (concatMap thd3 parts) (concatMap ownership cs) <> split
   _ | own@(_ : _) <- selfEvent context creature c -> do
     (openings, happens, slots) <- own
     itself openings (Text.pack happens) slots (ownership c)

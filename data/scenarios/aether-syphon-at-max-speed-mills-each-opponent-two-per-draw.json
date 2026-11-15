@@ -1,0 +1,341 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Prodigal Pyromancer",
+            "label": "pyro",
+            "ready": true
+          },
+          {
+            "card": "Aether Syphon",
+            "label": "syphon"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          }
+        ],
+        "hand": [],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Aether Syphon's {2}, {T}: Draw a card, and at max speed, whenever its controller draws a card, each opponent mills two cards",
+  "note": "The draw on turn 1 (speed 1) mills nothing; on turn 7, once the third ping takes alice to speed 4, the draw mills bob and carol two each, and alice none.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$i1",
+            "$i2"
+          ],
+          "object": "$syphon"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 0,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$pyro",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$pyro",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$pyro",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$i1",
+            "$i2"
+          ],
+          "object": "$syphon"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "ability of $syphon"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $syphon"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 2,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 2,
+          "player": "carol",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Island",
+          "count": 0,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 7
+    }
+  ]
+}

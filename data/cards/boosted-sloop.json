@@ -1,0 +1,107 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "Menace"
+        },
+        {
+          "type": "Crew",
+          "value": 1
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Boosted Sloop",
+      "oracleText": "Menace\nWhenever you attack, draw a card, then discard a card.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Attacks",
+            "value": {
+              "type": "Declaration",
+              "value": {
+                "player": "You"
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Draw",
+                        "value": {
+                          "player": {
+                            "type": "Relative",
+                            "value": "You"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      },
+                      {
+                        "type": "Discard",
+                        "value": {
+                          "type": "Counted",
+                          "value": {
+                            "player": {
+                              "type": "Relative",
+                              "value": "You"
+                            },
+                            "quantity": {
+                              "type": "Literal",
+                              "value": 1
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Vehicle"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

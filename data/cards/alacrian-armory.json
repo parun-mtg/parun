@@ -1,0 +1,242 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Alacrian Armory",
+      "oracleText": "Creatures you control get +0/+1 and have vigilance.\nAt the beginning of combat on your turn, choose up to one target Mount or Vehicle you control. Until end of turn, that permanent becomes saddled if it's a Mount and becomes an artifact creature if it's a Vehicle.",
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 0
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 1
+                }
+              }
+            },
+            {
+              "type": "GainKeyword",
+              "value": {
+                "type": "Vigilance"
+              }
+            }
+          ]
+        }
+      ],
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Combat",
+                "value": "BeginningOfCombat"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "Count",
+                          "value": {
+                            "aggregation": {
+                              "type": "Members"
+                            },
+                            "filter": {
+                              "type": "HasSubtype",
+                              "value": "Mount"
+                            },
+                            "scope": {
+                              "type": "OverBound",
+                              "value": "target"
+                            }
+                          }
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "Designate",
+                        "value": {
+                          "designation": "Saddled",
+                          "slot": "target"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "condition": {
+                      "type": "Compares",
+                      "value": {
+                        "comparison": "AtLeast",
+                        "measured": {
+                          "type": "Count",
+                          "value": {
+                            "aggregation": {
+                              "type": "Members"
+                            },
+                            "filter": {
+                              "type": "HasSubtype",
+                              "value": "Vehicle"
+                            },
+                            "scope": {
+                              "type": "OverBound",
+                              "value": "target"
+                            }
+                          }
+                        },
+                        "threshold": {
+                          "type": "Literal",
+                          "value": 1
+                        }
+                      }
+                    },
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "CardType",
+                            "value": {
+                              "cardType": "Artifact",
+                              "mode": "InAddition"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      },
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "CardType",
+                            "value": {
+                              "cardType": "Creature",
+                              "mode": "InAddition"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0,
+                        "most": 1
+                      }
+                    },
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Or",
+                          "value": [
+                            {
+                              "type": "HasSubtype",
+                              "value": "Mount"
+                            },
+                            {
+                              "type": "HasSubtype",
+                              "value": "Vehicle"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,165 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Variable"
+              },
+              {
+                "type": "Generic",
+                "value": 2
+              },
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Red"
+                }
+              }
+            ]
+          },
+          "keyword": {
+            "type": "Exhaust"
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "DealDamage",
+                        "value": {
+                          "parts": [
+                            {
+                              "quantity": {
+                                "type": "InSlot",
+                                "value": "X"
+                              },
+                              "ref": {
+                                "type": "InSlot",
+                                "value": "target"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "AnyTarget"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Crew",
+          "value": 2
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Boommobile",
+      "oracleText": "When this Vehicle enters, add four mana of any one color. Spend this mana only to activate abilities.\nExhaust — {X}{2}{R}: This Vehicle deals X damage to any target. Put a +1/+1 counter on this Vehicle. (Activate each exhaust ability only once.)\nCrew 2",
+      "power": {
+        "type": "Literal",
+        "value": 5
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "count": {
+                            "type": "Literal",
+                            "value": 4
+                          },
+                          "production": {
+                            "type": "AnyColor"
+                          },
+                          "restriction": {
+                            "activations": {
+                              "type": "And",
+                              "value": []
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Vehicle"
+        ],
+        "types": [
+          "Artifact"
+        ]
+      }
+    }
+  ]
+}
