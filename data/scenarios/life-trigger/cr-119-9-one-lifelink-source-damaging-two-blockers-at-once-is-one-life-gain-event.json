@@ -1,0 +1,176 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Child of Night",
+            "label": "child",
+            "ready": true
+          },
+          {
+            "card": "Synthetic Communal Vigil",
+            "label": "vigil"
+          },
+          {
+            "card": "Ajani's Pridemate",
+            "label": "pridemate",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Savannah Lions",
+            "label": "lion1",
+            "ready": true
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lion2",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "CR 119.9 one lifelink source damaging two blockers at once is one life gain event",
+  "note": "CR 702.15e separates the gains of multiple SOURCES, and CR 119.9 hangs the trigger off the source causing the gain, so one lifelink source dealing damage to two recipients at once is one life gain event of its whole damage (CR 702.15b). The double-blocked Child of Night divides its 2 power one apiece (CR 510.1c), each half lethal to a 2/1 Savannah Lions, so both dying shows the damage reached two recipients. One counter on Ajani's Pridemate, one card drawn by Synthetic Communal Vigil and 2 life is one gain of 2; two records of 1 is the per-recipient reading. The Haskell test placed two Goblin Pikers as blockers; a Piker can't block, so vanilla Lions stand in. The damage staying one event group is not observable here and is not restated.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$child"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$lion1": [
+            "$child"
+          ],
+          "$lion2": [
+            "$child"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "AssignDamage": {
+          "$lion1": 1,
+          "$lion2": 1
+        }
+      },
+      "player": "alice",
+      "source": "$child",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$vigil",
+          "$pridemate"
+        ]
+      },
+      "player": "alice",
+      "step": "CombatDamage",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Savannah Lions",
+          "count": 2,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 22,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$pridemate"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    }
+  ]
+}

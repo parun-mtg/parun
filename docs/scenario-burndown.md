@@ -58,7 +58,6 @@ out: grep for them.
 - `check:tapped-count`: how many permanents a player has tapped
 - `board:player-effect`: a player effect already in force
 - `check:face-down`: whether an exiled card is face down
-- `move:nested`: the `nested` prompt
 - `board:replacement`: a replacement effect already in force
 - `board:object-bindings`
 - `board:stack`: something on the stack
@@ -90,6 +89,7 @@ out: grep for them.
 - `move:pile-target`: a target naming a face-down pile
 - `move:ReferenceCards`
 - `move:out-of-range-answer`: an answer outside what the prompt offers, which the engine clamps or ignores and the runner refuses up front
+- `move:another-game`: an answer naming an object in another game (CR 730.4), which no reference names
 - `board:object-goadedby`
 - `board:zone-phasedout`
 - `board:object-unlockedhalves`
@@ -238,13 +238,13 @@ out: grep for them.
 
 ### `ClassSpec`
 
-- CR 717.2a / CR 120.1 the level-3 trigger has the spell deal damage by instants and sorceries cast | `board:object-classlevel`
-- CR 717.2a / CR 508.3d the level-3 trigger pumps by each OTHER attacker and grants double strike | `board:object-classlevel`
-- CR 717.2a / CR 603.10 the level-2 section's trigger fires on the very activation that grants it | `board:object-classlevel`
-- CR 717.2a the level-2 trigger does not fire again when the Class goes from 2 to 3 | `board:object-classlevel`
-- CR 717.2a the level-3 section is off while the Class is level 2 | `board:object-classlevel`
-- CR 717.2b a Class retains its level even if it stops being a Class | `board:object-classlevel`
-- CR 717.2c Sorcerer Class's mana pays to gain a Class level | `board:object-classlevel`
+- ~~CR 717.2a / CR 120.1 the level-3 trigger has the spell deal damage by instants and sorceries cast | `board:object-classlevel`~~
+- ~~CR 717.2a / CR 508.3d the level-3 trigger pumps by each OTHER attacker and grants double strike | `board:object-classlevel`~~
+- ~~CR 717.2a / CR 603.10 the level-2 section's trigger fires on the very activation that grants it | `board:object-classlevel`~~
+- ~~CR 717.2a the level-2 trigger does not fire again when the Class goes from 2 to 3 | `board:object-classlevel`~~
+- ~~CR 717.2a the level-3 section is off while the Class is level 2 | `board:object-classlevel`~~
+- ~~CR 717.2b a Class retains its level even if it stops being a Class | `board:object-classlevel`~~
+- ~~CR 717.2c Sorcerer Class's mana pays to gain a Class level | `board:object-classlevel`~~
 
 ### `CodecIntegrationSpec`
 
@@ -256,12 +256,12 @@ out: grep for them.
 
 ### `ColorSpec`
 
-- CR 113.1c Painter's Servant does not colour an ability on the stack | `board:object-chosencolor`
-- CR 114.3 a Koth emblem's damage lands through protection from the colour Painter's Servant named | `board:object-chosencolor`
-- CR 607.2d two Gauntlets of Power each pump the creatures of their OWN chosen colour | `board:object-chosencolor`
-- CR 611.2a Moonlace states no duration, so a permanent it made colourless stays colourless past cleanup | `check:other-StoredEffects.continuousEffects`
-- CR 613.3 devoid beats an OLDER layer-5 'in addition' effect | `board:object-chosencolor`
-- CR 613.7a a granted devoid clears an OLDER 'in addition' colour | `move:other-addPermanent`
+- ~~CR 113.1c Painter's Servant does not colour an ability on the stack | `board:object-chosencolor`~~
+- ~~CR 114.3 a Koth emblem's damage lands through protection from the colour Painter's Servant named | `board:object-chosencolor`~~
+- ~~CR 607.2d two Gauntlets of Power each pump the creatures of their OWN chosen colour | `board:object-chosencolor`~~
+- ~~CR 611.2a Moonlace states no duration, so a permanent it made colourless stays colourless past cleanup | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 613.3 devoid beats an OLDER layer-5 'in addition' effect | `board:object-chosencolor`~~
+- ~~CR 613.7a a granted devoid clears an OLDER 'in addition' colour | `move:other-addPermanent`~~
 
 ### `CombatCostSpec`
 
@@ -403,12 +403,12 @@ out: grep for them.
 
 ### `CountSpec`
 
-- CR 108.3 a spell still on the stack is read off the object, not off a record | `board:exile-cast-permission` `board:stack`
-- CR 110.2 X counts the one seat with more lands than alice and the one with fewer | `check:events`
-- CR 110.2 a seat TIED with alice controls no more lands than she does | `check:events`
-- CR 601.2a the second, cast from the LIBRARY, does not win | `board:library-order`
-- CR 800.4a a player who has conceded is not one of alice's opponents | `board:player-status`
-- CR 800.4a neither AnyPlayer nor Opponent names a player who has left the game | `check:other-Count.playersFor` `check:other-Filter.contextFor` `check:other-S.countOf` `check:other-S.stubView` `check:other-Teams.none`
+- ~~CR 108.3 a spell still on the stack is read off the object, not off a record | `board:exile-cast-permission` `board:stack`~~
+- ~~CR 110.2 X counts the one seat with more lands than alice and the one with fewer | `check:events`~~
+- ~~CR 110.2 a seat TIED with alice controls no more lands than she does | `check:events`~~
+- ~~CR 601.2a the second, cast from the LIBRARY, does not win | `board:library-order`~~
+- ~~CR 800.4a a player who has conceded is not one of alice's opponents | `board:player-status`~~
+- ~~CR 800.4a neither AnyPlayer nor Opponent names a player who has left the game | `check:other-Count.playersFor` `check:other-Filter.contextFor` `check:other-S.countOf` `check:other-S.stubView` `check:other-Teams.none`~~
 
 ### `CounterKeywordTriggerSpec`
 
@@ -520,10 +520,10 @@ out: grep for them.
 
 ### `DiceSpec`
 
-- CR 108.3 a creature reanimated under another player's control still makes its OWNER lose the game | `board:delayed-trigger` `board:entered-with` `board:graveyard` `board:object-bindings`
-- CR 706.2a the modifier is taken only once each turn | `board:battlefield` `board:objects-ids`
-- CR 706.2b Goblin Bookie rerolls another player's die | `check:events`
-- CR 706.2b a reroll is a roll by the player who throws it | `check:events`
+- ~~CR 108.3 a creature reanimated under another player's control still makes its OWNER lose the game | `board:delayed-trigger` `board:entered-with` `board:graveyard` `board:object-bindings`~~
+- ~~CR 706.2a the modifier is taken only once each turn | `board:battlefield` `board:objects-ids`~~
+- ~~CR 706.2b Goblin Bookie rerolls another player's die | `check:events`~~
+- ~~CR 706.2b a reroll is a roll by the player who throws it | `check:events`~~
 
 ### `DungeonSpec`
 
@@ -643,7 +643,7 @@ out: grep for them.
 
 ### `GameSpec`
 
-- CR 104.2c gameplay: a Shahrazad subgame won by a team excludes every player on it | `move:nested`
+- ~~CR 104.2c gameplay: a Shahrazad subgame won by a team excludes every player on it | `move:nested`~~
 - ~~CR 400.7/728.2 gameplay: a restart puts Painter's Servant into a library with its chosen colour forgotten | `board:object-chosencolor`~~
 - ~~CR 514.3 a cleanup step with nothing waiting grants no priority | `check:helper-runCountingActions`~~
 - ~~CR 514.3a the exception grants a real priority round | `check:prompt-count`~~
@@ -659,11 +659,11 @@ out: grep for them.
 - ~~CR 724.6 a controlled player concedes themselves; their controller cannot do it for them~~
 - ~~CR 728.5/728.4 gameplay: Karn's ultimate leaves its own exiles in exile and then plays them | `board:exile-linked`~~
 - ~~CR 730.1a #153: a question names the game it came from, so a subgame's is not a main-game one | `move:nested`~~
-- CR 730.1a/730.1b #137 gameplay: a TRIGGERED ability plays the subgame, and CR 730.1b's winner is bound | `move:nested` `check:other-GameState.subgamesThisMatch`
-- CR 730.1b gameplay: Shahrazad's non-winners each lose half their own life, rounded up | `move:nested`
-- CR 730.1b gameplay: a DRAWN Shahrazad subgame is won by nobody, so every player pays | `move:nested`
-- CR 730.1b/730.3 gameplay: alice casts a subgame spell, bob decks, bob loses 3 | `move:nested`
-- CR 730.5/730.4b gameplay: cards funnel back, main-game board survives, main-game counters untouched | `move:nested`
+- CR 730.1a/730.1b #137 gameplay: a TRIGGERED ability plays the subgame, and CR 730.1b's winner is bound | `check:other-GameState.subgamesThisMatch`
+- ~~CR 730.1b gameplay: Shahrazad's non-winners each lose half their own life, rounded up | `move:nested`~~
+- ~~CR 730.1b gameplay: a DRAWN Shahrazad subgame is won by nobody, so every player pays | `move:nested`~~
+- ~~CR 730.1b/730.3 gameplay: alice casts a subgame spell, bob decks, bob loses 3 | `move:nested`~~
+- ~~CR 730.5/730.4b gameplay: cards funnel back, main-game board survives, main-game counters untouched | `move:nested`~~
 - ~~CR 800.4a a player who departs paying a cost is not asked again | `check:prompt-count` `check:other-Player.status`~~
 - ~~CR 800.4a/117.4 priority after a concede goes to the next seat, and the pass cycle restarts | `check:other-GameState.players` `check:other-Player.status`~~
 - ~~CR 800.4j after a resolution, priority returns to the next seat, not the departed active player | `board:stack`~~
@@ -765,15 +765,15 @@ out: grep for them.
 
 ### `LifeTriggerSpec`
 
-- CR 101.4 arming the other way round changes nothing | `check:prompt-payload` `check:other-StoredEffects.delayedTriggers`
-- CR 101.4 the active player is asked first even though the other seat armed first | `check:prompt-payload` `check:other-StoredEffects.delayedTriggers` `check:events`
-- CR 101.4c the entry alice names first is asked first | `check:prompt-payload` `check:events`
-- CR 111.3 / 601.2b cast for X=2, it mints two 2/2 red Human Knights with trample and haste and arms one entry | `check:delayed-triggers`
-- CR 119.9 one lifelink source damaging two blockers at once is one life gain event | `check:events`
-- CR 603.10 stripping the PRIDEMATE takes the second gain from it and not the first | `check:other-Projection.triggeredAbilitiesOf`
-- CR 603.2c two Knights connecting in one step are one trigger event, so the entry fires once | `check:delayed-triggers` `check:events`
-- CR 603.7b / 514.2 the same Knights connecting on alice's next turn crown nobody | `check:delayed-triggers`
-- CR 702.15e two lifelink attackers connecting at once are two life gain events | `check:events`
+- ~~CR 101.4 arming the other way round changes nothing | `check:prompt-payload` `check:other-StoredEffects.delayedTriggers`~~
+- ~~CR 101.4 the active player is asked first even though the other seat armed first | `check:prompt-payload` `check:other-StoredEffects.delayedTriggers` `check:events`~~
+- ~~CR 101.4c the entry alice names first is asked first | `check:prompt-payload` `check:events`~~
+- ~~CR 111.3 / 601.2b cast for X=2, it mints two 2/2 red Human Knights with trample and haste and arms one entry | `check:delayed-triggers`~~
+- ~~CR 119.9 one lifelink source damaging two blockers at once is one life gain event | `check:events`~~
+- ~~CR 603.10 stripping the PRIDEMATE takes the second gain from it and not the first | `check:other-Projection.triggeredAbilitiesOf`~~
+- ~~CR 603.2c two Knights connecting in one step are one trigger event, so the entry fires once | `check:delayed-triggers` `check:events`~~
+- ~~CR 603.7b / 514.2 the same Knights connecting on alice's next turn crown nobody | `check:delayed-triggers`~~
+- ~~CR 702.15e two lifelink attackers connecting at once are two life gain events | `check:events`~~
 
 ### `ManaSourceSpec`
 
@@ -875,7 +875,7 @@ out: grep for them.
 ### `OutsideTheGameSpec`
 
 - ~~CR 100.4a two copies of one printing are two cards: the second wish finds the second copy | `board:outside-the-game`~~
-- CR 103.2a a deck's sideboard is recorded on its player and minted into no zone | `check:helper-poolOf` `check:other-Game.printingOf` `check:other-GameState.objects`
+- ~~CR 103.2a a deck's sideboard is recorded on its player and minted into no zone | `check:helper-poolOf` `check:other-Game.printingOf` `check:other-GameState.objects`~~
 - ~~CR 307.1 with a spell on the stack the cycle's instant is castable and its sorcery is not | `board:outside-the-game`~~
 - ~~CR 315.3 a conspiracy outside the game cannot be brought in | `board:outside-the-game`~~
 - ~~CR 400.11b the pool is spent: a second Burning Wish finds nothing | `board:outside-the-game`~~
@@ -884,15 +884,15 @@ out: grep for them.
 - ~~CR 400.11c a pool holding no sorcery yields nothing | `board:outside-the-game`~~
 - ~~CR 400.11c two eligible cards are a choice, and the answer decides which arrives | `board:outside-the-game`~~
 - ~~CR 400.2 declining outside the game too, the graveyard's match is found | `board:outside-the-game`~~
-- CR 604.2/730.4a gameplay: Death Wish takes Titania's Song out of the main game and its effect goes on applying there | `move:nested`
+- CR 604.2/730.4a gameplay: Death Wish takes Titania's Song out of the main game and its effect goes on applying there | `move:another-game`
 - ~~CR 701.20a Death Wish brings the card in without revealing it, where Burning Wish reveals | `board:outside-the-game`~~
 - ~~CR 701.23a/701.23j a library find fills the one count, and the library is shuffled | `board:outside-the-game`~~
 - ~~CR 701.23j Invasion of Arcavios brings an instant in from outside the game, and a search that skipped her library shuffles nothing | `board:outside-the-game`~~
 - ~~CR 701.23j a card taken from outside the game fills the count, sparing the graveyard's match | `board:outside-the-game`~~
 - ~~CR 701.23j outside the game alone may find nothing | `board:outside-the-game`~~
-- CR 708.2/730.4 a manifested main-game sorcery is offered to a subgame's wish as a creature and not as a sorcery | `board:objects-ids` `board:outsideobjects`
-- CR 730.4/730.4a/730.5 gameplay: Living Wish takes two main-game creatures out of a Shahrazad subgame, and the triggers wait for the main game | `move:nested`
-- CR 730.5 gameplay: a wish that takes the resolving Shahrazad itself still finishes resolving with the winner it bound | `move:nested`
+- ~~CR 708.2/730.4 a manifested main-game sorcery is offered to a subgame's wish as a creature and not as a sorcery | `board:objects-ids` `board:outsideobjects`~~
+- CR 730.4/730.4a/730.5 gameplay: Living Wish takes two main-game creatures out of a Shahrazad subgame, and the triggers wait for the main game | `move:another-game`
+- CR 730.5 gameplay: a wish that takes the resolving Shahrazad itself still finishes resolving with the winner it bound | `move:another-game`
 
 ### `PhasingSpec`
 
@@ -1025,19 +1025,19 @@ out: grep for them.
 
 ### `ResolveSpec`
 
-- CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers | `check:prompt-payload`
-- CR 101.4b a later seat knows what the seats before it answered for that land | `check:prompt-payload`
-- CR 110.5b whole card: Nature's Lore puts the Forest it finds onto the battlefield UNTAPPED | `check:events`
-- CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives
-- CR 118.12a each land is its own offer, and any player's payment saves only that land | `check:prompt-payload`
-- CR 607.2a: killing the OTHER Dragon returns the OTHER card | `board:exile-linked`
-- CR 607.2a: the dead Dragon returns the card IT exiled, not the other Dragon's | `board:exile-linked`
-- CR 608.2b a Bolt whose only target died fizzles | `check:events`
-- CR 608.2h a modification that cannot be frozen is not stored at all | `check:other-StoredEffects.continuousEffects`
-- CR 608.2h/611.2d Rush of Blood's X is the power of the creature in its own target slot | `check:continuous-effects`
-- CR 701.23a/701.23e whole card: Hoarding Dragon exiles the artifact it finds, unrevealed | `check:events`
-- a departed player is not a legal target | `check:legal-targets` `check:other-TargetSlot.required`
-- an opponent's creature: that opponent loses the life | `check:creature-count`
+- ~~CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers | `check:prompt-payload`~~
+- ~~CR 101.4b a later seat knows what the seats before it answered for that land | `check:prompt-payload`~~
+- ~~CR 110.5b whole card: Nature's Lore puts the Forest it finds onto the battlefield UNTAPPED | `check:events`~~
+- ~~CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives~~
+- ~~CR 118.12a each land is its own offer, and any player's payment saves only that land | `check:prompt-payload`~~
+- ~~CR 607.2a: killing the OTHER Dragon returns the OTHER card | `board:exile-linked`~~
+- ~~CR 607.2a: the dead Dragon returns the card IT exiled, not the other Dragon's | `board:exile-linked`~~
+- ~~CR 608.2b a Bolt whose only target died fizzles | `check:events`~~
+- ~~CR 608.2h a modification that cannot be frozen is not stored at all | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 608.2h/611.2d Rush of Blood's X is the power of the creature in its own target slot | `check:continuous-effects`~~
+- ~~CR 701.23a/701.23e whole card: Hoarding Dragon exiles the artifact it finds, unrevealed | `check:events`~~
+- ~~a departed player is not a legal target | `check:legal-targets` `check:other-TargetSlot.required`~~
+- ~~an opponent's creature: that opponent loses the life | `check:creature-count`~~
 
 ### `RestampSpec`
 
@@ -1063,12 +1063,12 @@ out: grep for them.
 
 ### `SetupSpec`
 
-- CR 728.1 / 103.7 a restarted Planechase game sets a new starting plane | `check:other-Planechase.deckOf`
-- CR 728.2 / 103.3a a restart puts a face-up scheme back into the shuffled scheme deck | `check:other-Archenemy.deckOf` `check:events`
+- ~~CR 728.1 / 103.7 a restarted Planechase game sets a new starting plane | `check:other-Planechase.deckOf`~~
+- ~~CR 728.2 / 103.3a a restart puts a face-up scheme back into the shuffled scheme deck | `check:other-Archenemy.deckOf` `check:events`~~
 - ~~CR 730.2a the planar deck plays the subgame and comes back | `check:other-Planechase.deckOf` `check:events`~~
 - ~~CR 730.2a the scheme deck plays the subgame and comes back | `check:other-Archenemy.deckOf` `check:events`~~
-- CR 730.5/713.8 a subgame ending with a melded permanent returns both of its cards to the main-game library | `check:helper-componentsOn` `check:helper-sourcesOf` `check:other-Game.componentsOf` `check:other-GameState.objects` `check:other-GameState.nextObjectId`
-- CR 903.6/903.9c a restarted Commander game puts the melded commander's own card into the command zone and its partner into the deck | `board:source-ofmeld`
+- ~~CR 730.5/713.8 a subgame ending with a melded permanent returns both of its cards to the main-game library | `check:helper-componentsOn` `check:helper-sourcesOf` `check:other-Game.componentsOf` `check:other-GameState.objects` `check:other-GameState.nextObjectId`~~
+- ~~CR 903.6/903.9c a restarted Commander game puts the melded commander's own card into the command zone and its partner into the deck | `board:source-ofmeld`~~
 
 ### `ShieldCounterSpec`
 

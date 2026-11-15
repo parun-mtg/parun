@@ -69,8 +69,9 @@ data ScenarioFailure
     MkUnknownSlot When.When Move.Move Text.Text [Text.Text]
   | -- | A source qualifier on a prompt with no source, which nothing matches.
     MkUnexpectedQualifier When.When Text.Text Reference.Reference
-  | MkNestedGamePrompt Natural Phase.Phase (Maybe Label.Label) Text.Text
-  | MkUnscheduledPrompt Natural Phase.Phase (Maybe Label.Label) Text.Text [Text.Text]
+  | -- | A prompt no entry answers: the depth of the game asking it (CR
+    -- 730.1a), its turn, step and decider, its kind, and what it offered.
+    MkUnscheduledPrompt Natural Natural Phase.Phase (Maybe Label.Label) Text.Text [Text.Text]
   | MkUnexpectedPrompt When.When Entry.Entry Text.Text [Text.Text]
   | MkActionNotOffered When.When Move.Move [Text.Text]
   | MkAmbiguousAction When.When Move.Move [Text.Text]
@@ -88,8 +89,9 @@ data ScenarioFailure
     -- next priority prompt found it unmade (CR 734.1).
     MkUnmadeMove When.When Move.Move
   | -- | Between two priority prompts, the event log failed to account for the
-    -- board (Parun.Engine.Ledger), at the turn and step of the later prompt.
-    MkUnloggedChanges Natural Phase.Phase (NonEmpty.NonEmpty Discrepancy.Discrepancy)
+    -- board (Parun.Engine.Ledger), at the depth, turn and step of the later
+    -- prompt.
+    MkUnloggedChanges Natural Natural Phase.Phase (NonEmpty.NonEmpty Discrepancy.Discrepancy)
   | -- | Entries whose moment never came, at least one of them a move, and the
     -- turn and step the run stopped at.
     MkUnreachedEntries Natural Phase.Phase (Seq.Seq Timed.Timed)

@@ -135,7 +135,7 @@ to agents as written. What it doesn't say:
   Run `script/format-json.sh fix` on the files you wrote, never a whole
   directory: over all of `data/scenarios/` it rewrites hand-formatted
   scenarios and breaks some. It sorts keys, and a `View ManaPool` check
-  compares key order, so never run it on a scenario holding one.
+  compares key order, as a `View Prompt` check does, so never run it on a scenario holding either.
 
 - After a PR merges, before the next unit, ask: did anything catch you that
   your own checks didn't? did you violate an instruction? did you learn a

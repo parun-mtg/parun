@@ -12,6 +12,8 @@ import qualified Parun.Types.When as When.Type
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.When" $ do
   Spec.it s "a turn, a flat step and a player" $
-    Common.assertCodec s When.codec (When.Type.MkWhen 2 (Phase.Type.Ending EndingStep.Type.EndStep) (Label.Type.MkLabel (Text.pack "bob"))) " {\"turn\":2,\"step\":\"EndStep\",\"player\":\"bob\"} "
+    Common.assertCodec s When.codec (When.Type.MkWhen 2 (Phase.Type.Ending EndingStep.Type.EndStep) (Label.Type.MkLabel (Text.pack "bob")) 0) " {\"turn\":2,\"step\":\"EndStep\",\"player\":\"bob\"} "
+  Spec.it s "a subgame's moment, at its depth (CR 730.1a)" $
+    Common.assertCodec s When.codec (When.Type.MkWhen 1 (Phase.Type.Ending EndingStep.Type.EndStep) (Label.Type.MkLabel (Text.pack "bob")) 1) " {\"turn\":1,\"step\":\"EndStep\",\"player\":\"bob\",\"depth\":1} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s When.codec

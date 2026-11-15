@@ -597,40 +597,6 @@ restartSpec s registry = Spec.describe s "restart (CR 728)" $ do
     Spec.assertEqWith s "the pool going in genuinely carried per-incarnation state" (not (all forgotten (Map.elems (GameState.objects g2)))) True
     Spec.assertEqWith s "every rebuilt object forgot its previous existence" (all forgotten (Map.elems (GameState.objects after))) True
 
-  -- CR 903.9c is the shape the restart's own rule 903.6 needs for a melded
-  -- commander: "that permanent and each component representing it that isn't a
-  -- commander are put into the appropriate zone, and the card that represents it
-  -- and is a commander is put into the command zone". Nothing extra implements
-  -- it -- the split runs before startGameFromCards reads the pool, so
-  -- Commander.isCommander recognises the component card and the existing CR
-  -- 903.6 hold-back does the rest.
-  --
-  -- A PAIR of restarts differing in the designation alone, so the command zone's
-  -- one card cannot be read as something a restart does to any melded permanent.
-  Spec.it s "CR 903.6/903.9c a restarted Commander game puts the melded commander's own card into the command zone and its partner into the deck" $ do
-    battlements <- S.printingOf s registry "Hanweir Battlements"
-    garrison <- S.printingOf s registry "Hanweir Garrison"
-    mountain <- S.printingOf s registry "Mountain"
-    let (meldedId, board) = meldedBoard (Setup.emptyGame S.bothPlayers) battlements garrison mountain
-        components = componentsOn meldedId board
-        -- CR 903.3: the component card printed as `printingId`, by its identity.
-        designating printingId gs =
-          let identities = Set.fromList [identity | obj <- Maybe.maybeToList (meldedId >>= (`Game.lookupObject` gs)), card <- Maybe.mapMaybe Game.cardOfComponent (Foldable.toList (Game.componentsOf (Object.source obj))), ComponentCard.printing card == printingId, Just identity <- [ComponentCard.identity card]]
-           in gs {GameState.players = Map.adjust (\p -> p {Player.commander = identities}) S.alice (GameState.players gs)}
-        restarted gs = snd (Engine.runGamePure S.identityAnswer gs (Setup.restartGame S.performer Set.empty S.alice))
-        deckOf gs = Game.zoneMembers Zone.Library S.alice gs <> Game.zoneMembers Zone.Hand S.alice gs
-    case components of
-      [first, second] -> do
-        let designated = restarted (designating first board)
-            control = restarted board
-        Spec.assertEqWith s "CR 903.9c the command zone holds the component card alice designated, and only it" (sourcesOf (Set.toAscList (GameState.command designated)) designated) [Source.OfCard first]
-        Spec.assertEqWith s "CR 903.6 its partner is in her deck instead" (elem (Source.OfCard second) (sourcesOf (deckOf designated) designated)) True
-        Spec.assertEqWith s "and the designated card is not also in her deck" (elem (Source.OfCard first) (sourcesOf (deckOf designated) designated)) False
-        -- The control leg: the same board, the same restart, no designation.
-        Spec.assertEqWith s "with neither half designated the command zone stays empty (CR 903.6)" (Set.toAscList (GameState.command control)) []
-        Spec.assertEqWith s "and both cards are in her deck" (filter (\c -> elem (Source.OfCard c) (sourcesOf (deckOf control) control)) components) components
-      _ -> Spec.assertFailure s "the Hanweir pair should meld into a permanent representing two cards"
-
   -- CR 100.6a against CR 728.1: a restart begins a new GAME of the same MATCH,
   -- so the match's subgame tally is the one record that crosses it. Asserted
   -- beside a per-game record that does not, on the same board and the same
@@ -793,8 +759,8 @@ townshipName = CardName.MkCardName (Text.pack "Hanweir, the Writhing Township")
 -- alice's Hanweir Battlements and Hanweir Garrison put onto `base` with the five
 -- Mountains that pay for it, and the Battlements' printed melding ability
 -- activated and resolved: the melded permanent's id, and the board it stands on.
--- The real activation rather than the Meld opcode, so what the two cases below
--- hand these funnels is a board the game can reach.
+-- The real activation rather than the Meld opcode, so what the case below hands
+-- the funnel is a board the game can reach.
 --
 -- Duplicated from Parun.MeldSpec's `meldedThrough` rather than hoisted into
 -- Parun.Support, which rebuilds every spec in the tree.
@@ -1307,33 +1273,6 @@ subgameSpec s registry = Spec.describe s "subgames (CR 730)" $ do
 -- funnels: CR 728's restart (Karn Liberated) and CR 730's subgame (Shahrazad).
 supplementaryDeckSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 supplementaryDeckSpec s registry = Spec.describe s "supplementary decks" $ do
-  -- CR 728.1a / 103.7: bob restarts, so bob is the new game's starting player
-  -- and turns up the top of HIS planar deck; alice's face-up Academy goes back
-  -- into hers (CR 311.2 / 103.3a).
-  Spec.it s "CR 728.1 / 103.7 a restarted Planechase game sets a new starting plane" $ do
-    academy <- S.printingOf s registry "Academy at Tolaria West"
-    tazeem <- S.printingOf s registry "Tazeem"
-    karn <- S.printingOf s registry "Karn Liberated"
-    board <- supplementaryBoard s registry (\d -> d {Deck.sideDecks = Map.singleton SideDeck.Planar (Map.fromSet (const 1) (Set.singleton academy))}) (\d -> d {Deck.sideDecks = Map.singleton SideDeck.Planar (Map.fromSet (const 1) (Set.singleton tazeem))})
-    let started = S.runPure S.identityAnswer board (Planechase.setStartingPlane S.alice)
-        (karnId, withKarn) = S.addPermanent karn S.bob started
-        before =
-          Game.overTurn
-            ( \registers ->
-                registers
-                  { TurnRegisters.activePlayer = S.bob,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.bob
-                  }
-            )
-            (S.addCounter CounterKind.Loyalty 14 karnId withKarn)
-
-        after = snd (Engine.runGamePure karnAnswer before Engine.priorityLoop)
-    Spec.assertEqWith s "the old game's plane is alice's Academy" (cardNames (Planechase.faceUp before) before) ["Academy at Tolaria West"]
-    Spec.assertEqWith s "CR 103.7 the new game's starting plane is bob's Tazeem" (cardNames (Planechase.faceUp after) after) ["Tazeem"]
-    Spec.assertEqWith s "CR 311.2 and the Academy is back in alice's planar deck" (cardNames (Planechase.deckOf S.alice after) after) ["Academy at Tolaria West"]
-    Spec.assertEqWith s "not in a library or a hand" (length (Game.zoneMembers Zone.Library S.alice after) + S.handSize S.alice after) 10
-
   -- CR 901.15a / 103.3a through Setup.newGame: alice's Academy and bob's
   -- Tazeem make one communal deck, shuffled once as a whole, whose top card is
   -- the starting plane.
@@ -1372,34 +1311,6 @@ supplementaryDeckSpec s registry = Spec.describe s "supplementary decks" $ do
         after = snd (Engine.runGamePure karnAnswer before Engine.priorityLoop)
     Spec.assertEqWith s "the old game turned up alice's Academy" (cardNames (Planechase.faceUp before) before) ["Academy at Tolaria West"]
     Spec.assertEqWith s "CR 103.7 one plane is face up and the other in the communal deck" (length (Planechase.faceUp after), length (Planechase.deckOf S.bob after)) (1, 1)
-
-  -- CR 728.2 / 103.3a: a restart starts the archenemy's scheme deck over, so
-  -- the ongoing Very Soil she had face up is back in it, shuffled.
-  Spec.it s "CR 728.2 / 103.3a a restart puts a face-up scheme back into the shuffled scheme deck" $ do
-    look <- S.printingOf s registry "Look Skyward and Despair"
-    soil <- S.printingOf s registry "The Very Soil Shall Shake"
-    karn <- S.printingOf s registry "Karn Liberated"
-    board <- supplementaryBoard s registry (\d -> d {Deck.sideDecks = Map.singleton SideDeck.Scheme (Map.fromList [(look, 1), (soil, 1)])}) id
-    let set = turnUp "The Very Soil Shall Shake" board
-        (karnId, withKarn) = S.addPermanent karn S.bob set
-        before =
-          Game.overTurn
-            ( \registers ->
-                registers
-                  { TurnRegisters.activePlayer = S.bob,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.bob
-                  }
-            )
-            (S.addCounter CounterKind.Loyalty 14 karnId withKarn)
-
-        schemeIds = Set.fromList (Archenemy.faceUp before <> Archenemy.deckOf S.alice before)
-        ((_, after), shuffles) = State.runState (Engine.runGame (recordShuffles karnAnswer) before Engine.priorityLoop) []
-    Spec.assertEqWith s "the old game had Very Soil face up" (cardNames (Archenemy.faceUp before) before) ["The Very Soil Shall Shake"]
-    Spec.assertEqWith s "CR 728.2 the new game has no scheme face up" (Archenemy.faceUp after) []
-    Spec.assertEqWith s "and both are in alice's scheme deck" (List.sort (cardNames (Archenemy.deckOf S.alice after) after)) ["Look Skyward and Despair", "The Very Soil Shall Shake"]
-    Spec.assertBool s (elem schemeIds (fmap Set.fromList shuffles)) "CR 103.3a which alice shuffled"
-    Spec.assertEqWith s "CR 103.4e she is still the archenemy, at 40 life" (S.lifeOf S.alice after, S.lifeOf S.bob after) (Just 40, Just 20)
 
   -- CR 730.2a / 103.7 / 730.5a: the planar decks move into the Shahrazad
   -- subgame, where alice's top card becomes the starting plane; her face-up

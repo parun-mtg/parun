@@ -62,7 +62,10 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   name the topmost triggered or activated ability on the stack from that
   source, which may have left the game (CR 113.7a).
 - **Timeline.** Each entry is keyed by `turn`, `step` and the `player` who
-  decides, and carries `do` (a move) or `check`. Entries sharing a key are
+  decides, and carries `do` (a move) or `check`. An entry for a subgame (CR
+  730.1a) adds its `depth`, 1 for the main game's subgame, and names that
+  game's own turn and step; CR 730.2's first-player roll and CR 730.5's
+  shuffles are the main game's. Entries sharing a key are
   taken in order; order across keys is not kept, so an entry is taken the first
   time its key comes up once the entries before it at that key are spent. A
   step that occurs twice in a turn (an extra combat or main phase) is one key,
