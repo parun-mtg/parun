@@ -1,0 +1,303 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "p1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p2",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p3",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p4",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p5",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p6",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p7",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p8",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p9",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p10",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p11",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p12",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p13",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p14",
+            "ready": true
+          },
+          {
+            "card": "Future Sight",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Approach of the Second Sun",
+            "label": "first"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Approach of the Second Sun",
+            "label": "second"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "b1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "b2",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "b3",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "b4",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "b5",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "b6",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "b7",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2a the second, cast from the LIBRARY, does not win",
+  "final": [
+    {
+      "View": {
+        "is": null,
+        "of": "Result"
+      }
+    },
+    {
+      "Life": {
+        "life": 34,
+        "player": "alice"
+      }
+    }
+  ],
+  "note": "Approach of the Second Sun's \"cast from your hand\": the second copy, under the first by one Plains drawn on turn 4, is cast from the library through Future Sight on a later turn. It goes seventh from the top and alice gains a second 7 instead of winning.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4",
+            "$p5",
+            "$p6",
+            "$p7",
+            null
+          ],
+          "object": "$first"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 27,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "of": "ActivePlayer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4",
+            "$p5",
+            "$p6",
+            "$p7",
+            null
+          ],
+          "object": "$second"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Plains#15",
+            "Plains#16",
+            "Plains#17",
+            "Plains#18",
+            "Approach of the Second Sun",
+            "Plains#19",
+            "Approach of the Second Sun#2",
+            "Plains#20",
+            "Plains#21"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 4
+    }
+  ]
+}

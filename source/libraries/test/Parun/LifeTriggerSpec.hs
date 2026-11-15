@@ -22,7 +22,6 @@ import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event.Binding as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
-import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Extra.Int as Int
@@ -31,15 +30,12 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.Batching as Batching
-import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
-import qualified Parun.Types.DelayedTrigger as DelayedTrigger
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.LifeDirection as LifeDirection
 import qualified Parun.Types.LifeTrigger as LifeTrigger
@@ -55,12 +51,9 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
-import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TriggerCondition as TriggerCondition
-import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerFrequency as TriggerFrequency
-import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnScope as TurnScope
 import qualified Parun.Types.Zone as Zone
@@ -174,73 +167,6 @@ lifeGainTriggerSpec s registry =
           Spec.assertEqWith s "two damage records the gain" (gainsIn (after 2)) [S.alice]
           Spec.assertEqWith s "zero damage records nothing" (gainsIn (after 0)) []
 
--- CR 603.10's first sentence, asked of a permanent that never leaves: "objects
--- that exist immediately after an event are checked to see if the event matched
--- any trigger conditions, and continuous effects that exist at that time are used
--- to determine what the trigger conditions are". The abilities that decide are the
--- ones the permanent had AT THE EVENT, not the ones it has when the CR 117.5 scan
--- gets around to looking.
---
--- The two readings need an ability set that MOVES between an event and the scan,
--- with the event first. Synthetic Humbling Draught, {W} Instant, "You gain 2 life.
--- Until end of turn, target creature loses all abilities. You gain 3 life", is that
--- in one resolution: the first CR 119.3 life gain is recorded, the CR 613.1f
--- layer-6 removal lands after it, and the second gain after that -- all before any
--- player could have priority, so the whole thing is one CR 117.5 batch.
---
--- The SECOND gain is what makes the board tell the three readings apart, on the one
--- number every case asserts. Aimed at the Pridemate:
---
---   * abilities as of each event (the rule): the first gain triggers, the second
---     does not -- ONE counter.
---   * abilities as of the scan: neither triggers, the Pridemate having none by then
---     -- NO counter.
---   * abilities as of the batch's first event: both trigger, one sample being
---     stretched over two events that straddle the strip -- TWO counters.
---
--- SYNTHETIC, after searching the printings. Every card that says "loses all
--- abilities" and does anything else in the same resolution strips FIRST -- Day of
--- Black Sun, Patriar's Humiliation, Resolute Rejection, Snakeform, Abigale -- so
--- the ability set has already moved when the event happens and the readings agree.
--- The three printings that order it the other way each need a trigger condition
--- parun does not have: Merfolk Trickster and The Wondrous Wasp tap first, and
--- nothing here watches a permanent becoming tapped, while Tishana's Tidebinder
--- counters an ability first. Nothing in the CR forbids the card as written; it is
--- Blossoming Calm's shape with Turn to Frog's one layer.
---
--- The pair differs in the TARGET and in nothing else: the same board, the same
--- mana, the same 5 life gained, the same two legal creatures to aim at. Aiming at
--- the Goblin Piker is the control that proves the plumbing -- the Pridemate takes
--- both counters -- and aiming at the Pridemate is the case.
-abilitiesWhenTriggeredSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-abilitiesWhenTriggeredSpec s registry =
-  let countersOn oid gs = fmap (Map.findWithDefault 0 CounterKind.PlusOnePlusOne . Object.counters) (Game.lookupObject oid gs)
-      -- Pinned to the one recipient rather than searched for among the legal ones:
-      -- a searching answerer would find the other creature again once the case
-      -- under test broke.
-      aimAt :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-      aimAt victimId p = case p of
-        Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToCreature victimId))) sets
-        _ -> S.identityAnswer p
-      board = do
-        plains <- S.printingOf s registry "Plains"
-        pridemate <- S.printingOf s registry "Ajani's Pridemate"
-        piker <- S.printingOf s registry "Goblin Piker"
-        draught <- S.printingOf s registry "Synthetic Humbling Draught"
-        let (mateId, b0) = S.addPermanent pridemate S.alice (S.landsInPlay plains 1)
-            (pikerId, b1) = S.addPermanent piker S.alice b0
-        pure (mateId, pikerId, S.handOne draught b1)
-      drinkAt victimId (gs, spellId) =
-        let cast = snd (Engine.runGamePure (aimAt victimId) gs (S.cast S.alice spellId))
-         in snd (Engine.runGamePure (aimAt victimId) cast Engine.priorityLoop)
-   in Spec.describe s "CR 603.10 abilities as of the event" $ do
-        Spec.it s "CR 603.10 stripping the PRIDEMATE takes the second gain from it and not the first" $ do
-          (mateId, _, gs) <- board
-          let after = drinkAt mateId gs
-          Spec.assertEqWith s "the same 5 life, the strip changing neither gain" (S.lifeOf S.alice after) (Just 25)
-          Spec.assertBool s (null (Projection.triggeredAbilitiesOf mateId after)) "and the Pridemate really has no abilities left"
-          Spec.assertEqWith s "exactly one counter: the gain it still had the ability for" (countersOn mateId after) (Just 1)
-
 -- CR 119.9 read for its NUMBER, which the group above never asks for: Ajani's
 -- Pridemate's payload names no amount, so nothing there could tell a bound amount
 -- from an unbound one.
@@ -326,8 +252,10 @@ lifeGainAmountSpec s registry =
 -- two seats; no second card is needed. StoredEffects.delayedTriggers appends in
 -- RESOLUTION order and the stack is last-in-first-out (CR 405.2 / 608.1), so the seat who
 -- casts LAST arms FIRST -- which is how arming order and APNAP order come apart
--- on a two-seat board at all. The first case below asserts that gap on the board
--- rather than assuming it.
+-- on a two-seat board at all. The proving pair is in data/scenarios/life-trigger
+-- (cr-101-4-the-active-player-is-asked-first-even-though-the-other-seat-armed-first.json
+-- and cr-101-4-arming-the-other-way-round-changes-nothing.json); the vacuity guard
+-- stays here.
 --
 -- The batch is Centaur Peacemaker entering, "each player
 -- gains 4 life", one EventGroup across the seats (CR 608.2f), so each entry's
@@ -339,7 +267,7 @@ lifeGainAmountSpec s registry =
 -- 101.4b turned into an answer -- the seat asked FIRST names its own gain, and
 -- the seat asked SECOND names carol's, carol controlling no entry of her own --
 -- so which seat drains itself is exactly the ordering question.
-apnapDelayedSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+apnapDelayedSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 apnapDelayedSpec s registry =
   let -- Which candidate is the named seat's own gain. FILTERED rather than
       -- guessed: the answer indexes the offered list, so it is built from the
@@ -358,75 +286,16 @@ apnapDelayedSpec s registry =
           State.put (earlier <> [controller])
           pure (indexOf (if null earlier then controller else S.carol) candidates)
         _ -> pure (S.identityAnswer p)
-      -- The distinct EventGroups the log's life gains carry. Synthetic Singular Cure's
-      -- precondition, for the same reason: were the seats' gains not one group,
-      -- the earliest-group step would have picked a seat and CR 603.7b's second
-      -- sentence -- and so the prompt this group orders -- would never be reached.
-      gainsIn gs =
-        Maybe.mapMaybe
-          ( \logged -> case LoggedEvent.event logged of
-              GameEvent.LifeGained _ -> Just (LoggedEvent.group logged)
-              _ -> Nothing
-          )
-          (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
-      -- `first` casts a Cure, then `second` does, then both resolve: the stack
-      -- being last-in-first-out, `second` arms first. alice is the active player
-      -- either way, and the Peacemaker is already placed with its Moved event
-      -- recorded, so the CR 603.6a scan runs at the next settle.
-      armed first second = do
-        swamp <- S.printingOf s registry "Swamp"
-        cure <- S.printingOf s registry "Synthetic Singular Cure"
-        peacemaker <- S.printingOf s registry "Centaur Peacemaker"
-        let lands = S.landsFor swamp S.bob 2 (S.landsFor swamp S.alice 2 S.threePlayerGame)
-            (peacemakerId, withPeacemaker) = S.addPermanent peacemaker S.alice lands
-            (firstSpell, withFirst) = S.addHandCard cure first withPeacemaker
-            (secondSpell, withSecond) = S.addHandCard cure second withFirst
-            cast = S.cast first firstSpell >> S.cast second secondSpell
-            resolved = snd (Engine.runGamePure S.identityAnswer (snd (Engine.runGamePure S.identityAnswer withSecond cast)) Engine.priorityLoop)
-            moved = ZoneChange.MkZoneChange peacemakerId peacemakerId Zone.Stack Zone.Battlefield
-        pure (S.withEvents [GameEvent.Moved (Moved.moved moved (Projection.project peacemakerId resolved))] resolved)
       -- One run, read twice, so the controllers asked and the life totals cannot
       -- come from different games.
       played gs = State.runState (Engine.runGame laterKnows gs (Engine.settleForPriority >> Engine.priorityLoop)) []
       asked gs = snd (played gs)
       after gs = snd (fst (played gs))
-      -- The store's own order, which the reordering must NOT disturb: it is the
-      -- arming order every later gather reads. Read on the pre-batch board, where
-      -- it is both this group's precondition -- arming order is not APNAP order,
-      -- or nothing here is observable -- and the fence on that half of the change.
-      armingOrder gs = fmap DelayedTrigger.controller (Foldable.toList (StoredEffects.delayedTriggers (GameState.stored gs)))
    in Spec.describe s "CR 101.4 simultaneous delayed triggers" $ do
-        -- The proving case. alice casts first, so BOB's entry is armed first, and
-        -- an engine that walks the store asks bob before alice. Under CR 101.4 the
-        -- active player is asked first: alice names her own gain and drains
-        -- herself, and bob, knowing that, names carol's. Ask in arming order
-        -- instead and it is bob who drains himself while alice keeps her 4.
-        Spec.it s "CR 101.4 the active player is asked first even though the other seat armed first" $ do
-          gs <- armed S.alice S.bob
-          Spec.assertEqWith s "alice was asked first, so she drained her own gain" (S.lifeOf S.alice (after gs)) (Just 16)
-          Spec.assertEqWith s "bob was asked second, so he kept his 4 and drained carol instead" (S.lifeOf S.bob (after gs)) (Just 24)
-          Spec.assertEqWith s "carol paid for the second answer" (S.lifeOf S.carol (after gs)) (Just 16)
-          Spec.assertEqWith s "and the two questions were raised in APNAP order" (asked gs) [S.alice, S.bob]
-          Spec.assertEqWith s "bob's entry was armed first, so arming order is not APNAP order, and the store still holds it" (armingOrder gs) [S.bob, S.alice]
-          Spec.assertEqWith s "setup: every seat started at 20" (fmap (\pid -> S.lifeOf pid gs) [S.alice, S.bob, S.carol]) [Just 20, Just 20, Just 20]
-          Spec.assertEqWith s "three gains, in one event group" (length (gainsIn (after gs)), Set.size (Set.fromList (gainsIn (after gs)))) (3, 1)
-          Spec.assertEqWith s "and both entries are spent, neither having a stated duration" (Seq.length ((StoredEffects.delayedTriggers . GameState.stored) (after gs))) 0
-        -- The other half of the pair, differing in exactly one thing -- which seat
-        -- cast first, and so which entry was armed first. bob casts first, alice
-        -- second, and the arming order is now APNAP order already: the same seats
-        -- drain the same amounts. An engine that merely REVERSED the store passes
-        -- the case above and fails this one; one that sorted the wrong way round
-        -- fails both.
-        Spec.it s "CR 101.4 arming the other way round changes nothing" $ do
-          gs <- armed S.bob S.alice
-          Spec.assertEqWith s "alice is still asked first and still drains herself" (S.lifeOf S.alice (after gs)) (Just 16)
-          Spec.assertEqWith s "bob still keeps his 4" (S.lifeOf S.bob (after gs)) (Just 24)
-          Spec.assertEqWith s "carol still pays" (S.lifeOf S.carol (after gs)) (Just 16)
-          Spec.assertEqWith s "the same two questions in the same order" (asked gs) [S.alice, S.bob]
-          Spec.assertEqWith s "setup: alice's entry was armed first this time" (armingOrder gs) [S.alice, S.bob]
         -- The vacuity guard: the same Peacemaker with NO entry armed asks nobody
         -- anything and leaves all three seats holding their 4 (CR 119.3). Without
-        -- it an empty question list above would read as a passing order.
+        -- it an empty question list in the proving scenarios would read as a passing
+        -- order.
         Spec.it s "CR 119.3 with no entry armed, nobody is asked and each seat keeps its 4" $ do
           peacemaker <- S.printingOf s registry "Centaur Peacemaker"
           let (peacemakerId, placed) = S.addPermanent peacemaker S.alice S.threePlayerGame
@@ -436,129 +305,6 @@ apnapDelayedSpec s registry =
           Spec.assertEqWith s "alice is at 24" (S.lifeOf S.alice (after gs)) (Just 24)
           Spec.assertEqWith s "bob is at 24" (S.lifeOf S.bob (after gs)) (Just 24)
           Spec.assertEqWith s "carol is at 24" (S.lifeOf S.carol (after gs)) (Just 24)
-
--- CR 101.4c: a player making more than one choice at the same time picks the
--- order they make them in. The choices are CR 603.7b's -- one seat holding TWO
--- durationless delayed entries that one batch matches is asked twice, and
--- nothing in the rules specifies which question comes first, so the player does.
--- CR 603.3b's Prompt.OrderTriggers is the shape that asks it.
---
--- The two entries are Synthetic Singular Cure and Synthetic Singular Toll, both
--- cast by alice: the same trigger condition on the same batch with DIFFERENT
--- payloads, which is what makes the order observable on the board at all. Two
--- copies of one card cannot show it -- equal payloads drain the same seats by
--- the same amounts whichever entry named which gain -- so the second synthetic
--- is the observability, not the capability.
---
---   * Synthetic Singular Toll {B} Instant
---     (data/cards/synthetic-singular-toll.json): "The next time a player gains
---     life, that player loses 3 life."
---
--- WHY A SYNTHETIC. Its sibling's search, re-run: Scryfall o:/[Ww]hen(ever)? a
--- player gains life/, 2026-09-02, matches one printing -- False Cure, whose
--- stated duration is what CR 603.7b's second sentence excludes. A printing that
--- armed a duration-less delayed ability on a life gain would refute both cards;
--- nothing in the CR forbids one.
---
--- 3 against the Cure's 8 (twice the 4 gained) on purpose: the two entries must
--- be told apart by the AMOUNT a seat loses, so equal amounts would leave the two
--- orders indistinguishable however the questions were asked.
---
--- The batch is Centaur Peacemaker's "each player gains 4
--- life", one EventGroup across the seats (CR 608.2f), so each entry's
--- per-occurrence condition matches three times and each is asked once.
-oneSeatDelayedSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-oneSeatDelayedSpec s registry =
-  let -- apnapDelayedSpec's: which candidate is the named seat's own gain,
-      -- FILTERED out of the offered list rather than guessed.
-      indexOf pid candidates =
-        let gained event = case event of
-              GameEvent.LifeGained lc -> LifeChange.player lc == pid
-              _ -> False
-         in maybe 0 Int.toNaturalSaturating (List.findIndex gained (NonEmpty.toList candidates))
-      -- The state is the sources asked, in order, and every ordering prompt
-      -- raised, tagged with how many per-occurrence questions preceded it.
-      -- `picks` is the permutation alice answers the CR 101.4c one with, the one
-      -- thing the two proving cases differ in.
-      --
-      -- TWO ordering prompts reach this board and the tag is what tells them
-      -- apart: CR 101.4c's is raised as the batch is gathered, before any
-      -- question, and CR 603.3b's is raised by Engine.orderPending afterwards,
-      -- over the two triggers alice is putting on the stack. Only the first is
-      -- this group's, so only it is answered with `picks`.
-      --
-      -- CR 101.4b turned into an answer, apnapDelayedSpec's `laterKnows`: the
-      -- entry asked FIRST names alice's own gain and the one asked SECOND names
-      -- carol's, carol controlling no entry. So which seat loses 8 and which
-      -- loses 3 is exactly the ordering question.
-      answering :: ([Natural] -> [Natural]) -> Prompt.Prompt r -> State.State ([ObjectId.ObjectId], [(Int, [TriggerSource.TriggerSource])]) r
-      answering picks p = case p of
-        Prompt.OrderTriggers _ _ entries -> do
-          (questions, orderings) <- State.get
-          State.put (questions, orderings <> [(length questions, fmap TriggerEntry.source entries)])
-          let canonical = zipWith const [0 ..] entries
-          pure (if null questions then picks canonical else canonical)
-        Prompt.ChooseDelayedTriggerEvent _ _ source candidates -> do
-          (questions, orderings) <- State.get
-          State.put (questions <> [source], orderings)
-          pure (indexOf (if null questions then S.alice else S.carol) candidates)
-        _ -> pure (S.identityAnswer p)
-      -- The distinct EventGroups the log's life gains carry, and how many. The
-      -- precondition the group rests on: were the seats' gains not one group, the
-      -- earliest-group step would have picked a seat and CR 603.7b's second
-      -- sentence -- and so the questions this group orders -- never reached.
-      gainsIn gs =
-        Maybe.mapMaybe
-          ( \logged -> case LoggedEvent.event logged of
-              GameEvent.LifeGained _ -> Just (LoggedEvent.group logged)
-              _ -> Nothing
-          )
-          (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
-      -- alice casts the Cure and then the Toll off three Swamps, with a Centaur
-      -- Peacemaker already placed and its Moved event recorded, so the CR 603.6a
-      -- scan runs at the next settle. The stack is last-in-first-out (CR 405.2 /
-      -- 608.1), so the Toll resolves first and so arms first.
-      armed = do
-        swamp <- S.printingOf s registry "Swamp"
-        cure <- S.printingOf s registry "Synthetic Singular Cure"
-        toll <- S.printingOf s registry "Synthetic Singular Toll"
-        peacemaker <- S.printingOf s registry "Centaur Peacemaker"
-        let lands = S.landsFor swamp S.alice 3 S.threePlayerGame
-            (peacemakerId, withPeacemaker) = S.addPermanent peacemaker S.alice lands
-            (cureSpell, withCure) = S.addHandCard cure S.alice withPeacemaker
-            (tollSpell, withToll) = S.addHandCard toll S.alice withCure
-            cast = S.cast S.alice cureSpell >> S.cast S.alice tollSpell
-            resolved = snd (Engine.runGamePure S.identityAnswer (snd (Engine.runGamePure S.identityAnswer withToll cast)) Engine.priorityLoop)
-            moved = ZoneChange.MkZoneChange peacemakerId peacemakerId Zone.Stack Zone.Battlefield
-        pure (S.withEvents [GameEvent.Moved (Moved.moved moved (Projection.project peacemakerId resolved))] resolved)
-      -- One run, read three ways, so the questions asked and the life totals
-      -- cannot come from different games.
-      played picks gs = State.runState (Engine.runGame (answering picks) gs (Engine.settleForPriority >> Engine.priorityLoop)) ([], [])
-      asked picks gs = fst (snd (played picks gs))
-      offered picks gs = snd (snd (played picks gs))
-      after picks gs = snd (fst (played picks gs))
-      -- The store's own order, which the reordering must NOT disturb: it is the
-      -- arming order every later gather reads.
-      armingOrder gs = fmap DelayedTrigger.source (Foldable.toList (StoredEffects.delayedTriggers (GameState.stored gs)))
-   in Spec.describe s "CR 101.4c one seat's simultaneous delayed triggers" $ do
-        -- The proving case. alice answers the ordering prompt with the reverse of
-        -- the store, so the CURE is asked first: it names alice's own gain and
-        -- drains her 8, and the Toll, asked second, takes 3 off carol. An engine
-        -- that ignores the answer and asks in arming order drains alice 3 and
-        -- carol 8 instead.
-        Spec.it s "CR 101.4c the entry alice names first is asked first" $ do
-          gs <- armed
-          Spec.assertEqWith s "the Cure was asked first, so alice lost 8 of her own" (S.lifeOf S.alice (after reverse gs)) (Just 16)
-          Spec.assertEqWith s "the Toll was asked second, so carol lost 3" (S.lifeOf S.carol (after reverse gs)) (Just 21)
-          Spec.assertEqWith s "bob was named by neither" (S.lifeOf S.bob (after reverse gs)) (Just 24)
-          Spec.assertEqWith s "and the two questions came in the order alice chose" (asked reverse gs) (reverse (armingOrder gs))
-          -- CR 101.4c's prompt is the one raised before any question; CR 603.3b's
-          -- follows the two answers, and its entries are still in STORE order --
-          -- the half of this that must not move, since `outcomes` feeds it.
-          Spec.assertEqWith s "one ordering prompt before the questions, over alice's two entries in store order" (offered reverse gs) [(0, fmap TriggerSource.OfObject (armingOrder gs)), (2, fmap TriggerSource.OfObject (armingOrder gs))]
-          Spec.assertEqWith s "setup: every seat started at 20" (fmap (\pid -> S.lifeOf pid gs) [S.alice, S.bob, S.carol]) [Just 20, Just 20, Just 20]
-          Spec.assertEqWith s "three gains, in one event group" (length (gainsIn (after reverse gs)), Set.size (Set.fromList (gainsIn (after reverse gs)))) (3, 1)
-          Spec.assertEqWith s "and both entries are spent, neither having a stated duration" (Seq.length ((StoredEffects.delayedTriggers . GameState.stored) (after reverse gs))) 0
 
 -- CR 603.2c's FIRST sentence on the LIFE side, and the CR 608.2f bracket that
 -- makes it reachable: "each player gains 4 life" is ONE action taken on several
@@ -672,134 +418,6 @@ communalVigilSpec s registry =
           Spec.assertEqWith s "every seat is 8 up over the two batches" (fmap (\pid -> S.lifeOf pid again) [S.alice, S.bob, S.carol]) [Just 28, Just 28, Just 28]
           Spec.assertEqWith s "and the second batch was one event group" (Set.size (Set.fromList (gainsIn again))) 1
 
--- Only `attacker` attacks in the double-block case below, so S.aggressiveAnswer's
--- blockers all land on it (CR 509.1), and its CR 510.1c division puts one damage
--- on each blocker: two recipients, one source, one combat damage step. Both
--- halves are PINNED off what the prompt offered rather than built, so a mutation
--- cannot be repaired by an answerer that goes looking for a legal division.
-lifelinkDivision :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-lifelinkDivision attacker p = case p of
-  Prompt.DeclareAttackers _ _ ids -> filter (== attacker) ids
-  Prompt.AssignCombatDamage _ _ _ thresholds _ _ -> Map.fromList (fmap (\r -> (r, 1)) (filter S.isCreatureRecipient (Map.keys thresholds)))
-  _ -> S.aggressiveAnswer p
-
--- CR 702.15e against the CR 510.2 bracket: two lifelink attackers connecting in
--- one combat damage step deal ONE damage event and cause TWO life gain events,
--- so a batch reader of the gains fires twice in the same step where a batch
--- reader of the damage fires once. Parun.Engine.Damage.dealWave brackets the
--- wave as one Parun.Types.EventGroup, and Parun.Engine.Damage.recordLifelinkGains
--- lands the gains AFTER the bracket closes, one group apiece; a bracket wide
--- enough to take the gains in fused them, which is what the step read as for a
--- while (related to #2814).
---
--- The other direction is the third case: ONE lifelink source dealing damage to
--- two recipients at once is one life gain event, since CR 702.15e separates the
--- events of multiple SOURCES and CR 119.9 hangs the trigger off the source
--- causing the gain. Parun.Engine.Damage.recordLifelinkGains sums a source's
--- damage before it records, and a double-blocked Child of Night dividing its
--- power is the board that tells the two readings apart.
---
--- Synthetic Communal Vigil is the batch reader, and communalVigilSpec above says
--- why a synthetic. Child of Night {1}{B} Creature -- Vampire 2/1, lifelink, is
--- the source, twice over. Every life total is the same under either reading, so
--- what the cases read is how many CARDS the Vigil drew. Ajani's Pridemate stands
--- beside it as the per-occurrence control: "whenever you gain life" is CR 119.9's
--- per-source reading and takes a counter per gain under either grouping.
-lifelinkGainEventsSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-lifelinkGainEventsSpec s registry =
-  let groupsOf pick gs =
-        Maybe.mapMaybe
-          (\logged -> if pick (LoggedEvent.event logged) then Just (LoggedEvent.group logged) else Nothing)
-          (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
-      gainGroups =
-        groupsOf
-          ( \event -> case event of
-              GameEvent.LifeGained _ -> True
-              _ -> False
-          )
-      combatDamageGroups =
-        groupsOf
-          ( \event -> case event of
-              GameEvent.DamageDealt ev -> DamageEvent.kind ev == DamageKind.Combat
-              _ -> False
-          )
-      combatDamageBy src gs =
-        Maybe.mapMaybe
-          ( \logged -> case LoggedEvent.event logged of
-              GameEvent.DamageDealt ev
-                | DamageEvent.source ev == src && DamageEvent.kind ev == DamageKind.Combat ->
-                    Just (DamageEvent.target ev, DamageEvent.amount ev)
-              _ -> Nothing
-          )
-          (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
-      gainAmounts gs =
-        Maybe.mapMaybe
-          ( \logged -> case LoggedEvent.event logged of
-              GameEvent.LifeGained change -> Just (LifeChange.amount change)
-              _ -> Nothing
-          )
-          (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
-      -- alice attacks with `mine` into an empty board, the Vigil and the
-      -- Pridemate out and six Plains in her library, so the Vigil can draw for
-      -- every reading without CR 104.3c deciding a case for it. The Pridemate
-      -- attacks too under S.aggressiveAnswer and has no lifelink, so it adds two
-      -- to bob's loss and nothing to the gains.
-      board mine = do
-        ours <- mapM (S.printingOf s registry) mine
-        plains <- S.printingOf s registry "Plains"
-        vigil <- S.printingOf s registry "Synthetic Communal Vigil"
-        pridemate <- S.printingOf s registry "Ajani's Pridemate"
-        let (gs, _, _) = S.combatBoardOf ours []
-            stocked = foldr (\_ g -> snd (S.addLibraryCard plains S.alice g)) gs [1 .. 6 :: Int]
-            withVigil = snd (S.addPermanent vigil S.alice stocked)
-            (mate, staged) = S.addPermanent pridemate S.alice withVigil
-        pure (mate, S.runCombat S.aggressiveAnswer staged)
-      -- The same board with two Goblin Pikers, {1}{R} 2/1, in the way: they both
-      -- block the one Child, which divides its 2 power one apiece -- CR 510.1c's
-      -- division is free. A Piker's 1 toughness makes each half lethal, so both
-      -- leave the battlefield and the case reads the damage EVENTS rather than
-      -- the marks they would otherwise carry.
-      doubleBlockBoard = do
-        child <- S.printingOf s registry "Child of Night"
-        piker <- S.printingOf s registry "Goblin Piker"
-        plains <- S.printingOf s registry "Plains"
-        vigil <- S.printingOf s registry "Synthetic Communal Vigil"
-        pridemate <- S.printingOf s registry "Ajani's Pridemate"
-        let (gs, ours, _) = S.combatBoardOf [child] [piker, piker]
-            stocked = foldr (\_ g -> snd (S.addLibraryCard plains S.alice g)) gs [1 .. 6 :: Int]
-            withVigil = snd (S.addPermanent vigil S.alice stocked)
-            (mate, staged) = S.addPermanent pridemate S.alice withVigil
-        pure (mate, ours, staged)
-   in Spec.describe s "CR 702.15e lifelink gains beside the combat damage bracket" $ do
-        -- The proving case: two lifelink sources connect at once, and the Vigil
-        -- draws TWO -- 1 is the fused reading, 0 is silence.
-        Spec.it s "CR 702.15e two lifelink attackers connecting at once are two life gain events" $ do
-          (mate, after) <- board ["Child of Night", "Child of Night"]
-          Spec.assertEqWith s "the Vigil drew once per lifelink source" (S.handSize S.alice after) 2
-          Spec.assertEqWith s "alice gained 2 twice" (S.lifeOf S.alice after) (Just 24)
-          Spec.assertEqWith s "bob took all three attackers" (S.lifeOf S.bob after) (Just 14)
-          Spec.assertEqWith s "CR 702.15e: two gains, two event groups" (length (gainGroups after), Set.size (Set.fromList (gainGroups after))) (2, 2)
-          Spec.assertEqWith s "CR 510.2: the three damage events stayed one event group" (Set.size (Set.fromList (combatDamageGroups after))) 1
-          Spec.assertEqWith s "and the Pridemate took a counter per gain" (S.counterOf CounterKind.PlusOnePlusOne mate after) 2
-        -- The other direction, and the discriminating case: ONE source, two
-        -- recipients at once. Two records of 1 is the per-recipient reading.
-        Spec.it s "CR 119.9 one lifelink source damaging two blockers at once is one life gain event" $ do
-          (mate, ours, staged) <- doubleBlockBoard
-          case ours of
-            [child] -> do
-              let after = S.runCombat (lifelinkDivision child) staged
-              Spec.assertEqWith s "the Pridemate took one counter for the one gain" (S.counterOf CounterKind.PlusOnePlusOne mate after) 1
-              Spec.assertEqWith s "the Vigil drew once" (S.handSize S.alice after) 1
-              Spec.assertEqWith s "CR 702.15b: one gain, of the source's whole damage" (gainAmounts after) [2]
-              Spec.assertEqWith s "one gain, one event group" (length (gainGroups after), Set.size (Set.fromList (gainGroups after))) (1, 1)
-              Spec.assertEqWith s "alice gained 2 all told" (S.lifeOf S.alice after) (Just 22)
-              -- The precondition the reading rests on: the Child's 2 power really
-              -- did reach two recipients in the one step.
-              Spec.assertEqWith s "the Child's 2 power went 1 apiece to two recipients" (Set.size (Set.fromList (fmap fst (combatDamageBy child after))), fmap snd (combatDamageBy child after)) (2, [1, 1])
-              Spec.assertEqWith s "CR 510.2: the damage stayed one event group" (Set.size (Set.fromList (combatDamageGroups after))) 1
-              Spec.assertEqWith s "bob was not damaged" (S.lifeOf S.bob after) (Just 20)
-            _ -> Spec.assertFailure s "fixture should have one attacker"
-
 -- CR 603.2c's FIRST sentence on the CR 603.7 DELAYED path, which the two groups
 -- above cannot reach between them: Synthetic Communal Vigil proves the batch
 -- reading for an object's own triggered ability, and False Cure proves the
@@ -845,12 +463,6 @@ forthEorlingasSpec s registry =
       choosingX x p = case p of
         Prompt.ChooseX {} -> x
         _ -> S.identityAnswer p
-      -- Attacks with nothing, so a turn's combat passes without the Knights
-      -- connecting -- S.identityAnswer attacks with everything.
-      passive :: Prompt.Prompt r -> r
-      passive p = case p of
-        Prompt.DeclareAttackers {} -> []
-        _ -> S.identityAnswer p
       knights gs = filter (\oid -> Set.member Subtype.Knight (Projection.subtypesOf oid gs)) (Set.toList (GameState.battlefield gs))
       -- The distinct EventGroups the log's combat damage carries.
       combatDamageGroups gs =
@@ -865,7 +477,7 @@ forthEorlingasSpec s registry =
               )
           )
       -- Run whole steps until `done` holds of the board, bounded so a bug cannot
-      -- loop forever; wide enough for the two turns the negative below plays.
+      -- loop forever.
       runUntil step done gs0 =
         let go n g =
               if n <= (0 :: Int) || done g || Maybe.isJust (GameState.result g)
@@ -873,8 +485,7 @@ forthEorlingasSpec s registry =
                 else go (n - 1) (step g)
          in go 40 gs0
       -- alice, in her precombat main with the four lands {2}{R}{W} needs at X=2,
-      -- casts the spell for `x` and resolves it. Both libraries are stocked
-      -- because the negative below plays through two draw steps (CR 104.3c).
+      -- casts the spell for `x` and resolves it, both libraries stocked.
       armed = armedAmong S.bothPlayers
       armedAmong players x = do
         mountain <- S.printingOf s registry "Mountain"
@@ -905,32 +516,6 @@ forthEorlingasSpec s registry =
             placed = S.runPure answer atDamage (Engine.runTurnBasedActions combatDamage >> Engine.settleForPriority)
          in (placed, resolveAll placed)
    in Spec.describe s "CR 603.2c Forth Eorlingas!" $ do
-        Spec.it s "CR 111.3 / 601.2b cast for X=2, it mints two 2/2 red Human Knights with trample and haste and arms one entry" $ do
-          gs <- armed 2
-          case knights gs of
-            tokens@[_, _] -> do
-              Spec.assertEqWith s "each is 2/2" (fmap (\oid -> (Projection.powerOf oid gs, Projection.toughnessOf oid gs)) tokens) [(Just 2, Just 2), (Just 2, Just 2)]
-              Spec.assertEqWith s "each is red" (fmap (\oid -> Projection.colorsOf oid gs) tokens) [Set.singleton Color.Red, Set.singleton Color.Red]
-              Spec.assertBool s (all (\oid -> Set.member Subtype.Human (Projection.subtypesOf oid gs)) tokens) "each is a Human too"
-              Spec.assertBool s (all (\oid -> Projection.hasKeyword Keyword.Type.Haste oid gs) tokens) "each has haste"
-              Spec.assertBool s (all (\oid -> Projection.hasKeyword Keyword.Type.Trample oid gs) tokens) "each has trample"
-              Spec.assertBool s (all (\oid -> Projection.controllerOf oid gs == Just S.alice) tokens) "and alice controls both"
-            other -> Spec.assertFailure s ("expected exactly two Knight tokens, got " <> show (length other))
-          Spec.assertEqWith s "one delayed ability waiting" (Seq.length (StoredEffects.delayedTriggers (GameState.stored gs))) 1
-          Spec.assertEqWith s "nobody is the monarch yet" (GameState.monarch gs) Nothing
-        -- The proving case. Two Knights connect in ONE combat damage step, which
-        -- is one trigger event, so the entry fires ONCE: one trigger on the
-        -- stack, and alice is crowned. A gatherer that fired per member stacks
-        -- two -- and crowns alice all the same, which is why the count is read
-        -- before the stack resolves.
-        Spec.it s "CR 603.2c two Knights connecting in one step are one trigger event, so the entry fires once" $ do
-          gs <- armed 2
-          let (placed, after) = connecting (runUntil (\g -> S.runPure S.identityAnswer g Engine.runStep) ((== declareAttackers) . (TurnRegisters.phase . GameState.turn)) gs)
-          Spec.assertEqWith s "alice became the monarch" (GameState.monarch after) (Just S.alice)
-          Spec.assertEqWith s "one trigger on the stack for the batch, not one per Knight" (length (TurnRegisters.stack (GameState.turn placed))) 1
-          Spec.assertEqWith s "both Knights connected, for four" (S.lifeOf S.bob after) (Just 16)
-          Spec.assertEqWith s "CR 510.2: the two damage events were one event group" (length (combatDamageGroups placed)) 1
-          Spec.assertEqWith s "and CR 603.7b's stated duration kept the entry armed" (Seq.length (StoredEffects.delayedTriggers (GameState.stored after))) 1
         -- "To ONE OR MORE PLAYERS": three seats, and the Knights split between
         -- bob and carol, so the step damages two players and is still one
         -- trigger event -- where "to a player" (Feline Sovereign) is one per
@@ -953,7 +538,8 @@ forthEorlingasSpec s registry =
               Spec.assertEqWith s "CR 508.1b each Knight connected with its own player, for two each" (S.lifeOf S.bob after, S.lifeOf S.carol after) (Just 18, Just 18)
             other -> Spec.assertFailure s ("expected exactly two Knight tokens, got " <> show (length other))
         -- The floor the two readings share: one Knight is one occurrence either
-        -- way, so a fixed count of one passes here and fails above.
+        -- way, so a fixed count of one passes here and fails the two-Knight
+        -- scenario, data/scenarios/life-trigger/cr-603-2c-two-knights-connecting-in-one-step-are-one-trigger-event-so-the-entry-fires-once.json.
         Spec.it s "CR 603.2c a lone Knight connecting is one trigger event as well" $ do
           gs <- armed 1
           let (placed, after) = connecting (runUntil (\g -> S.runPure S.identityAnswer g Engine.runStep) ((== declareAttackers) . (TurnRegisters.phase . GameState.turn)) gs)
@@ -977,21 +563,6 @@ forthEorlingasSpec s registry =
               placed = S.runPure S.identityAnswer staged Engine.settleForPriority
           Spec.assertEqWith s "one trigger per group, so two" (length (TurnRegisters.stack (GameState.turn placed))) 2
           Spec.assertEqWith s "two damage events, in two event groups" (length (combatDamageGroups staged)) 2
-        -- "This turn", differing from the proving case in exactly one thing:
-        -- which turn's combat the Knights attack in. The turn that armed the
-        -- entry passes with no attack, bob takes his, and on alice's next turn
-        -- the same two Knights connect for the same four -- and crown nobody,
-        -- CR 514.2's cleanup having ended the entry's duration.
-        Spec.it s "CR 603.7b / 514.2 the same Knights connecting on alice's next turn crown nobody" $ do
-          gs <- armed 2
-          let later = runUntil (\g -> S.runPure passive g Engine.runStep) (\g -> TurnRegisters.turnNumber (GameState.turn g) == 3 && TurnRegisters.phase (GameState.turn g) == declareAttackers) gs
-              (placed, after) = connecting later
-          Spec.assertEqWith s "nobody became the monarch" (GameState.monarch after) Nothing
-          Spec.assertEqWith s "nothing triggered off the batch" (length (TurnRegisters.stack (GameState.turn placed))) 0
-          Spec.assertEqWith s "though both Knights connected, for four" (S.lifeOf S.bob after) (Just 16)
-          Spec.assertEqWith s "it is alice's next turn" (TurnRegisters.turnNumber (GameState.turn later), TurnRegisters.activePlayer (GameState.turn later)) (3, S.alice)
-          Spec.assertEqWith s "the entry is gone, not masked" (Seq.length (StoredEffects.delayedTriggers (GameState.stored later))) 0
-          Spec.assertEqWith s "bob took no damage before it" (S.lifeOf S.bob later) (Just 20)
 
 -- CR 120.3's event read by its RECIPIENT, which no condition could ask for
 -- before: every damage arm beside this one watches a permanent DEALING damage.
@@ -1442,12 +1013,9 @@ masterOfLaketownSpec s registry =
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
   lifeGainTriggerSpec s registry
-  abilitiesWhenTriggeredSpec s registry
   lifeGainAmountSpec s registry
   apnapDelayedSpec s registry
-  oneSeatDelayedSpec s registry
   communalVigilSpec s registry
-  lifelinkGainEventsSpec s registry
   forthEorlingasSpec s registry
   enrageSpec s registry
   belltowerSphinxSpec s registry

@@ -1,0 +1,74 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains",
+            "ready": true
+          },
+          {
+            "card": "Ajani's Pridemate",
+            "label": "pridemate",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Synthetic Humbling Draught",
+            "label": "draught"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.10 stripping the PRIDEMATE takes the second gain from it and not the first",
+  "final": [
+    {
+      "Life": {
+        "life": 25,
+        "player": "alice"
+      }
+    },
+    {
+      "Counters": {
+        "count": 1,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$pridemate"
+      }
+    }
+  ],
+  "note": "Synthetic Humbling Draught gains 2 life, strips target creature's abilities until end of turn, then gains 3, all in one resolution. Trigger conditions are read as of each event (CR 603.10): aimed at the Pridemate, the first gain triggers and the second does not, so ONE counter, where abilities as of the scan give none and as of the batch's first event give two. SYNTHETIC: every printing that strips abilities and does anything else in the same resolution strips first. One counter where the Piker-aimed control takes two is what shows the strip landed.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains"
+          ],
+          "object": "$draught",
+          "targets": [
+            "$pridemate"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
