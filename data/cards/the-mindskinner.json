@@ -1,0 +1,107 @@
+{
+  "faces": [
+    {
+      "name": "The Mindskinner",
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "oracleText": "The Mindskinner can't be blocked.\nIf a source you control would deal damage to an opponent, prevent that damage and each opponent mills that many cards.",
+      "power": {
+        "type": "Literal",
+        "value": 10
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Nightmare"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Enchantment",
+          "Creature"
+        ]
+      },
+      "combatRestrictions": [
+        {
+          "type": "CantBeBlockedBy",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            },
+            "blockers": {
+              "type": "And",
+              "value": []
+            }
+          }
+        }
+      ],
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "DamageR",
+            "value": {
+              "matching": {
+                "whatSource": {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                },
+                "whoRecipient": {
+                  "type": "Opponent"
+                }
+              },
+              "rewrite": {
+                "type": "PreventAll"
+              },
+              "riders": [
+                {
+                  "type": "Mill",
+                  "value": {
+                    "player": {
+                      "type": "Relative",
+                      "value": "Opponent"
+                    },
+                    "quantity": {
+                      "type": "InSlot",
+                      "value": "thatMuch"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
