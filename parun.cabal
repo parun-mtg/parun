@@ -2464,6 +2464,7 @@ library scenario
     parun:extra,
     parun:interpreter,
     parun:json-codec,
+    parun:oracle,
     parun:registry,
     parun:trustworthy,
     parun:types,
@@ -2480,6 +2481,7 @@ library scenario
     Parun.Scenario.Offer
     Parun.Scenario.Perturb
     Parun.Scenario.Prompt
+    Parun.Scenario.PromptOffer
     Parun.Scenario.Reply
 
 -- Converts text (card names) into slugs, which can be used for convenient file

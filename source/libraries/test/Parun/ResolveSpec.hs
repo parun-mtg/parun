@@ -2788,16 +2788,6 @@ rhysticSpec s registry =
             (gs, tutorId) = S.handOne tutor stocked
             onStack = S.runPure S.identityAnswer gs (S.cast S.alice tutorId)
         pure (pikerId, onStack)
-      -- bob: a Goblin Piker on the stack. alice: two Swamps and Dash Hopes,
-      -- cast at the Piker, with its CR 601.2i cast trigger settled on top.
-      dashBoard = do
-        swamp <- S.printingOf s registry "Swamp"
-        piker <- S.printingOf s registry "Goblin Piker"
-        dash <- S.printingOf s registry "Dash Hopes"
-        let (_, withPiker) = S.spellOnStack piker S.bob (S.landsFor swamp S.alice 2 S.threePlayerGame)
-            (gs, dashId) = S.handOne dash withPiker
-            onStack = S.runPure S.identityAnswer gs (S.cast S.alice dashId >> Engine.settleForPriority)
-        pure onStack
    in Spec.describe s "CR 118.12a unless any player pays" $ do
         Spec.it s "CR 118.12a bob alone pays, so alice does not search" $ do
           (pikerId, onStack) <- tutorBoard
@@ -2814,20 +2804,6 @@ rhysticSpec s registry =
           Spec.assertEqWith s "into her hand" (fmap (`S.soleFaceName` after) (Game.zoneMembers Zone.Hand S.alice after)) [CardName.MkCardName (Text.pack "Goblin Piker")]
           Spec.assertEqWith s "CR 701.23e: \"put that card into your hand\" reveals nothing" (S.revealsOf after) []
           Spec.assertEqWith s "all three declined" (payResponses transcript) (replicate 3 (Response.ChoseToPay PaymentDecision.Declines))
-        -- A pair differing only in bob's answer; carol pays exactly when her
-        -- prompt says bob did.
-        Spec.it s "CR 101.4b a later payer is told what the payers before it answered" $ do
-          onStack <- dashBoard
-          let copying :: Bool -> Prompt.Prompt r -> r
-              copying bobPays p = case p of
-                Prompt.ChooseToPay (Decider.MkDecider d) player _ _ _ earlier
-                  | d == player && player == S.bob -> if bobPays then PaymentDecision.Pays else PaymentDecision.Declines
-                  | d == player && player == S.carol -> maybe PaymentDecision.Declines told (lookup S.bob (Foldable.toList earlier))
-                _ -> paysFor Nothing p
-              paid = S.runPure (copying True) onStack Stack.resolveTop
-              declined = S.runPure (copying False) onStack Stack.resolveTop
-          Spec.assertEqWith s "CR 101.4b told bob paid, carol paid too" (fmap (`S.lifeOf` paid) [S.alice, S.bob, S.carol]) [Just 20, Just 15, Just 15]
-          Spec.assertEqWith s "CR 101.4b told bob declined, carol declined" (fmap (`S.lifeOf` declined) [S.alice, S.bob, S.carol]) (replicate 3 (Just 20))
 
 -- CR 101.4b over a choice of costs: Perforating Artist's "each opponent loses 3
 -- life unless that player sacrifices a nonland permanent of their choice or

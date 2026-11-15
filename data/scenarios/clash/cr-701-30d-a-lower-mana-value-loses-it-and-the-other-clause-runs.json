@@ -71,17 +71,6 @@
       "step": "PrecombatMain",
       "player": "alice",
       "do": {
-        "Answer": {
-          "prompt": "ChooseOpponent",
-          "with": "bob"
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
-      "do": {
         "Cast": {
           "object": "$teeth",
           "targets": [
@@ -106,8 +95,56 @@
       "player": "alice",
       "do": {
         "Answer": {
+          "prompt": "ChooseOpponent",
+          "with": "bob"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
           "prompt": "ChooseClash",
-          "with": "Bottom"
+          "with": "Top"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseClash",
+            "offer": {
+              "source": "Pulling Teeth",
+              "card": "$b-top",
+              "revealed": [
+                [
+                  "alice",
+                  "$a-top"
+                ],
+                [
+                  "bob",
+                  "$b-top"
+                ]
+              ],
+              "earlier": [
+                [
+                  "alice",
+                  "Top"
+                ]
+              ],
+              "options": [
+                "Top",
+                "Bottom"
+              ]
+            }
+          }
         }
       }
     },

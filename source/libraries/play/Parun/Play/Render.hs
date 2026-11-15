@@ -15,6 +15,7 @@ import Numeric.Natural (Natural)
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Exceptions.InvalidCorpus as InvalidCorpus
 import qualified Parun.Oracle as Oracle
+import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Types.AbilityFacts as AbilityFacts
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.AbilityView as AbilityView
@@ -378,7 +379,7 @@ located view oid =
 knownName :: PlayerView.PlayerView -> ObjectId.ObjectId -> Maybe Text.Text
 knownName view oid = case Map.lookup oid (objects view) of
   Just o -> Just (nameOf view o)
-  Nothing -> fmap snapshotName (Map.lookup oid (snapshots view))
+  Nothing -> fmap PromptOffer.snapshotName (Map.lookup oid (snapshots view))
 
 -- | What each witnessed move showed the object it moved as, by
 -- either end's id, the latest winning.
@@ -394,12 +395,6 @@ snapshots view =
 -- turn's, oldest first.
 witnessed :: PlayerView.PlayerView -> [LoggedEvent.LoggedEvent]
 witnessed view = PlayerView.witnessedLastTurn view <> PlayerView.witnessed view
-
--- | CR 708.2a: a face-down object has no name.
-snapshotName :: ProjectedCharacteristics.ProjectedCharacteristics -> Text.Text
-snapshotName c = case Set.toList (ProjectedCharacteristics.names c) of
-  [] -> Text.pack "a face-down card"
-  names -> Text.intercalate (Text.pack " // ") (fmap CardName.unwrap names)
 
 -- | Witnessed entries as sentences, a run of one player's draws told as one.
 events :: PlayerView.PlayerView -> [LoggedEvent.LoggedEvent] -> [Text.Text]
@@ -419,7 +414,7 @@ events view = concatMap sentences . List.groupBy (\a b -> Maybe.isJust (drawer a
 -- per-attacker records).
 event :: PlayerView.PlayerView -> LoggedEvent.LoggedEvent -> Maybe Text.Text
 event view logged = case LoggedEvent.event logged of
-  GameEvent.SpellCast c -> said [player (SpellWasCast.player c), Text.pack "casts", snapshotName (SpellWasCast.characteristics c)]
+  GameEvent.SpellCast c -> said [player (SpellWasCast.player c), Text.pack "casts", PromptOffer.snapshotName (SpellWasCast.characteristics c)]
   GameEvent.AbilityActivated a
     | AbilityFacts.kind (AbilityWasActivated.facts a) == AbilityKind.ManaAbility -> Nothing
     | otherwise -> said [player (AbilityWasActivated.player a), Text.pack "activates", name (AbilityWasActivated.source a) <> Text.pack "'s ability"]
@@ -436,17 +431,17 @@ event view logged = case LoggedEvent.event logged of
     | to == Zone.Stack -> Nothing
     -- CR 111.1: a token's creation is logged as a move from the battlefield
     -- to it.
-    | from == Zone.Battlefield && to == Zone.Battlefield -> said [snapshotName (Moved.characteristics m), Text.pack "is created"]
-    | to == Zone.Graveyard -> said [snapshotName (Moved.characteristics m), Text.pack "is put into a graveyard from", zone from]
-    | otherwise -> said [snapshotName (Moved.characteristics m), Text.pack "moves from", zone from, Text.pack "to", zone to]
+    | from == Zone.Battlefield && to == Zone.Battlefield -> said [PromptOffer.snapshotName (Moved.characteristics m), Text.pack "is created"]
+    | to == Zone.Graveyard -> said [PromptOffer.snapshotName (Moved.characteristics m), Text.pack "is put into a graveyard from", PromptOffer.zoneName from]
+    | otherwise -> said [PromptOffer.snapshotName (Moved.characteristics m), Text.pack "moves from", PromptOffer.zoneName from, Text.pack "to", PromptOffer.zoneName to]
     where
       from = ZoneChange.from (Moved.change m)
       to = ZoneChange.to (Moved.change m)
   GameEvent.Discarded d -> said [player (Discarded.player d), Text.pack "discards", name (Discarded.card d)]
   GameEvent.Milled m -> said [player (Milled.player m), Text.pack "mills", Text.intercalate (Text.pack ", ") (fmap name (Foldable.toList (Milled.cards m)))]
   GameEvent.Drew d -> said [player (Drew.player d), Text.pack "draws a card"]
-  GameEvent.Revealed r -> said [player (Revealed.player r), Text.pack "reveals", snapshotName (Revealed.characteristics r)]
-  GameEvent.Looked l -> said [Text.pack "Looked at", snapshotName (Looked.characteristics l)]
+  GameEvent.Revealed r -> said [player (Revealed.player r), Text.pack "reveals", PromptOffer.snapshotName (Revealed.characteristics r)]
+  GameEvent.Looked l -> said [Text.pack "Looked at", PromptOffer.snapshotName (Looked.characteristics l)]
   GameEvent.SpellCountered c -> said [name (Countering.countered c), Text.pack "is countered"]
   GameEvent.MulliganDeclared d -> case MulliganDeclared.decision d of
     MulliganDecision.Keep -> said [player (MulliganDeclared.player d), Text.pack "keeps"]
@@ -532,7 +527,7 @@ event view logged = case LoggedEvent.event logged of
        in said [listing names, Text.pack (if length names == 1 then one else many), name object]
     ballot b =
       player (Ballot.voter b) <> Text.pack " votes for " <> case Ballot.choice b of
-        BallotChoice.ForObject o -> snapshotName (ObjectSnapshot.characteristics o)
+        BallotChoice.ForObject o -> PromptOffer.snapshotName (ObjectSnapshot.characteristics o)
         BallotChoice.ForWord w -> SlotName.unwrap w
         BallotChoice.ForPlayer pid -> player pid
     attacked target = case target of
@@ -641,17 +636,6 @@ sticker k = Text.pack $ case k of
   StickerKind.Ability -> "an ability sticker"
   StickerKind.PowerToughness -> "a power and toughness sticker"
   StickerKind.Art -> "an art sticker"
-
-zone :: Zone.Zone -> Text.Text
-zone z = Text.pack $ case z of
-  Zone.Library -> "a library"
-  Zone.Hand -> "a hand"
-  Zone.Graveyard -> "a graveyard"
-  Zone.Battlefield -> "the battlefield"
-  Zone.Stack -> "the stack"
-  Zone.Exile -> "exile"
-  Zone.Command -> "the command zone"
-  Zone.Ante -> "the ante"
 
 result :: Result.Result -> Text.Text
 result r = case r of

@@ -66,6 +66,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario.Offer as Offer
 import qualified Parun.Scenario.Prompt as Prompt
+import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Scenario.Reply as Reply
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
@@ -247,7 +248,7 @@ run registry scenario = do
         (reached, rehearsal) <- State.runStateT playing ((rehearsalOf (Scenario.timeline scenario) board) {reference = Just known, replaying = fromDecks})
         let final = Maybe.fromMaybe reached (ended rehearsal)
         Bifunctor.first Failed (settle rehearsal final)
-        State.evalStateT (mapM_ (expect Nothing final) (Scenario.final scenario)) rehearsal
+        State.evalStateT (mapM_ (expect Nothing final Nothing) (Scenario.final scenario)) rehearsal
         pure final
       fetching known = case attempt known of
         Left (Fetching name) -> do
@@ -660,6 +661,7 @@ answerScheduled asked = do
   if not (null (Asked.enclosing asked))
     then failWith (Failure.MkNestedGamePrompt (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) decider kind)
     else do
+      Monad.when (recorded prompt && kind /= Text.pack "ChooseAction") (runPromptChecks gs decider prompt)
       -- CR 734.1: a refused move is reversed, so the engine's next prompt is
       -- the one it answered, asked again. A prompt the move raises on its way
       -- there -- a payment's own choices, an Answer the timeline schedules,
@@ -956,14 +958,20 @@ answerDedicated decider asked =
 -- active player's for a prompt nobody decides (a shuffle, a die).
 takeAnswer :: GameState.GameState -> Maybe Label.Label -> Text.Text -> Run (Maybe (When.When, Int, Timed.Timed))
 takeAnswer gs decider kind = do
-  label <- maybe (labelOf (TurnRegisters.activePlayer (GameState.turn gs))) pure decider
-  let key = When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) label
-      names timed = case Timed.entry timed of
+  key <- deciderKey gs decider
+  let names timed = case Timed.entry timed of
         Entry.Do (Move.Answer answer) -> Answer.prompt answer == kind
         Entry.Refuse (Move.Answer answer) -> Answer.prompt answer == kind
         _ -> False
   entries <- queueAt key
   pure (fmap (\(index, timed) -> (key, index, timed)) (List.find (names . snd) (zip [0 ..] (Foldable.toList entries))))
+
+-- | The key a prompt's entries carry: its decider's, or the active player's
+-- for a prompt nobody decides.
+deciderKey :: GameState.GameState -> Maybe Label.Label -> Run When.When
+deciderKey gs decider = do
+  label <- maybe (labelOf (TurnRegisters.activePlayer (GameState.turn gs))) pure decider
+  pure (When.MkWhen (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) label)
 
 answerGeneric :: GameState.GameState -> When.When -> Text.Text -> Int -> Timed.Timed -> Prompt.Type.Prompt r -> Run r
 answerGeneric gs key kind index timed prompt = case Timed.entry timed of
@@ -1338,19 +1346,41 @@ untouched before after =
    in quiet before == quiet after
 
 -- | The checks at the head of a moment's queue, evaluated and taken in order,
--- stopping at the first move.
+-- stopping at the first move or Prompt view, which waits for a prompt other
+-- than priority.
 runLeadingChecks :: When.When -> GameState.GameState -> Run ()
-runLeadingChecks key gs = do
+runLeadingChecks key gs = takeLeadingChecks (not . readsPrompt) key gs Nothing
+
+-- | At a prompt other than priority, the Prompt views at the head of the
+-- decider's queue (the active player's, for a prompt nobody decides), read
+-- against it; every other check waits for priority.
+runPromptChecks :: GameState.GameState -> Maybe Label.Label -> Prompt.Type.Prompt r -> Run ()
+runPromptChecks gs decider prompt = do
+  key <- deciderKey gs decider
+  takeLeadingChecks readsPrompt key gs (Just (MkAskedPrompt prompt))
+
+readsPrompt :: Check.Check -> Bool
+readsPrompt check = case check of
+  Check.View viewIs -> ViewIs.view viewIs == View.Prompt
+  _ -> False
+
+takeLeadingChecks :: (Check.Check -> Bool) -> When.When -> GameState.GameState -> Maybe AskedPrompt -> Run ()
+takeLeadingChecks taken key gs asked = do
   entries <- queueAt key
   case Seq.lookup 0 entries of
     Just timed
-      | Entry.Expect check <- Timed.entry timed -> case Timed.source timed of
+      | Entry.Expect check <- Timed.entry timed,
+        taken check -> case Timed.source timed of
           Just ref -> failWith (Failure.MkUnexpectedQualifier key (Text.pack "check") ref)
           Nothing -> do
-            expect (Just key) gs check
+            expect (Just key) gs asked check
             popAt key 0
-            runLeadingChecks key gs
+            takeLeadingChecks taken key gs asked
     _ -> pure ()
+
+-- | The prompt a check runs at, for a Prompt view to read.
+data AskedPrompt where
+  MkAskedPrompt :: Prompt.Type.Prompt r -> AskedPrompt
 
 choicesOf :: Move.Move -> Choices.Choices
 choicesOf verb = case verb of
@@ -1570,9 +1600,9 @@ onEntry unscheduled key kind offers select match = do
 
 -- | Fails the run unless the check holds on this state, naming the entries
 -- still queued for an earlier step: the run stops here, so they never ran.
-expect :: Maybe When.When -> GameState.GameState -> Check.Check -> Run ()
-expect key gs check = do
-  observed <- observe gs check
+expect :: Maybe When.When -> GameState.GameState -> Maybe AskedPrompt -> Check.Check -> Run ()
+expect key gs asked check = do
+  observed <- observe gs asked check
   case observed of
     Nothing -> pure ()
     Just actual -> do
@@ -1583,8 +1613,8 @@ expect key gs check = do
       failWith (Failure.MkCheckFailed key check actual skipped)
 
 -- | Nothing when the check holds, else what was there instead.
-observe :: GameState.GameState -> Check.Check -> Run (Maybe Text.Text)
-observe gs check = case check of
+observe :: GameState.GameState -> Maybe AskedPrompt -> Check.Check -> Run (Maybe Text.Text)
+observe gs asked check = case check of
   Check.Life (LifeIs.MkLifeIs label life) -> do
     pid <- resolvePlayer label
     let actual = fmap Player.life (Map.lookup pid (GameState.players gs))
@@ -1659,7 +1689,7 @@ observe gs check = case check of
   -- A rendered view, compared as JSON; objects named as the runner's
   -- messages name them.
   Check.View viewIs -> do
-    actual <- renderView gs viewIs
+    actual <- renderView gs asked viewIs
     pure (if actual == ViewIs.is viewIs then Nothing else Just (Common.render (Codec.Reply.toValue actual)))
   -- The projected keywords (CR 613.1f), counted by instance.
   Check.Keywords (KeywordsAre.MkKeywordsAre ref keyword count) -> do
@@ -2080,17 +2110,22 @@ referenceTo labels gs oid = case List.find ((== oid) . snd) (Map.toAscList label
 -- and Offered view name it (Parun.Scenario.Offer).
 actionLines :: GameState.GameState -> [Action.Action] -> Run [Text.Text]
 actionLines gs actions = do
-  labels <- State.gets (Staged.objects . staged)
-  seats <- State.gets (Staged.seats . staged)
-  let namer =
-        Reply.MkNamer
-          { Reply.nameObject = referenceTo labels gs,
-            Reply.namePlayer = seatLabel seats
-          }
+  namer <- namerFor gs
   pure (Offer.linesOf (fmap (Offer.offer namer gs) actions))
 
-renderView :: GameState.GameState -> ViewIs.ViewIs -> Run ReplyType.Reply
-renderView gs viewIs =
+-- | Objects and seats as the runner's messages name them.
+namerFor :: GameState.GameState -> Run Reply.Namer
+namerFor gs = do
+  labels <- State.gets (Staged.objects . staged)
+  seats <- State.gets (Staged.seats . staged)
+  pure
+    Reply.MkNamer
+      { Reply.nameObject = referenceTo labels gs,
+        Reply.namePlayer = seatLabel seats
+      }
+
+renderView :: GameState.GameState -> Maybe AskedPrompt -> ViewIs.ViewIs -> Run ReplyType.Reply
+renderView gs asked viewIs =
   let texts :: Run [Text.Text] -> Run ReplyType.Reply
       texts = fmap (ReplyType.Array . fmap ReplyType.Text)
       named :: Run Label.Label -> Run ReplyType.Reply
@@ -2103,6 +2138,11 @@ renderView gs viewIs =
         View.Offered -> do
           pid <- needPlayer
           texts (actionLines gs (ActionEngine.legalActions pid gs))
+        View.Prompt -> case asked of
+          Nothing -> failWith (Failure.MkCheckFailed Nothing (Check.View viewIs) (Text.pack "this view is read at a prompt other than priority, not in final") Seq.empty)
+          Just (MkAskedPrompt prompt) -> do
+            namer <- namerFor gs
+            pure (ReplyType.Object [(Text.pack "kind", ReplyType.Text (Prompt.kindOf prompt)), (Text.pack "offer", PromptOffer.offerOf namer gs prompt)])
         View.AttachedTo -> do
           oid <- needObject
           case Game.lookupObject oid gs >>= Object.attachedTo of

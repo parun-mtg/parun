@@ -44,6 +44,7 @@ import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Offer as Offer
 import qualified Parun.Scenario.Prompt as Scenario.Prompt
+import qualified Parun.Scenario.PromptOffer as PromptOffer
 import qualified Parun.Scenario.Reply as Reply
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -176,8 +177,8 @@ spec s registry = Spec.describe s "Protocol" $ do
   Spec.it s "an activated ability is offered by its place among its source's, so two abilities of one source differ" $ do
     vane <- S.printingOf s registry "Arcum's Weathervane"
     let (oid, gs) = S.addPermanent vane S.alice (Setup.emptyGame S.bothPlayers)
-        offered = Protocol.offerOf gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (fmap (Action.Activate oid) (Projection.abilitiesOf oid gs)))
-        activate i = R.Object [(Text.pack "action", R.Text (Text.pack "Activate")), (Text.pack "object", Protocol.object oid), (Text.pack "ability", R.Number i)]
+        offered = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice (fmap (Action.Activate oid) (Projection.abilitiesOf oid gs)))
+        activate i = R.Object [(Text.pack "action", R.Text (Text.pack "Activate")), (Text.pack "object", PromptOffer.object Protocol.namer oid), (Text.pack "ability", R.Number i)]
     Spec.assertEqWith s "offer" offered (R.Array [activate 0, activate 1])
   Spec.it s "a scenario names an offer by its action and object, then only the fields telling it from its action's other offers" $ do
     let offer kind extra = R.Object ((Text.pack "action", R.Text (Text.pack kind)) : [(Text.pack key, value) | (key, value) <- extra])
@@ -205,15 +206,15 @@ spec s registry = Spec.describe s "Protocol" $ do
         gs = Setup.emptyGame S.bothPlayers
         cost = Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) []
         ban = AbilityName.MkAbilityName (Text.pack "search ban")
-        offered = Protocol.offerOf gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.TurnFaceUp oid TurnUpProcedure.Manifest, Action.Ignore oid ban, Action.Plot oid cost])
-        acting kind extra = R.Object ([(Text.pack "action", R.Text (Text.pack kind)), (Text.pack "object", Protocol.object oid)] <> [(Text.pack key, value) | (key, value) <- extra])
-    Spec.assertEqWith s "offer" offered (R.Array [acting "TurnFaceUp" [("procedure", R.Text (Text.pack "Manifest"))], acting "Ignore" [("abilityName", R.Text (Text.pack "search ban"))], acting "Plot" [("cost", Protocol.payment cost)]])
+        offered = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.TurnFaceUp oid TurnUpProcedure.Manifest, Action.Ignore oid ban, Action.Plot oid cost])
+        acting kind extra = R.Object ([(Text.pack "action", R.Text (Text.pack kind)), (Text.pack "object", PromptOffer.object Protocol.namer oid)] <> [(Text.pack key, value) | (key, value) <- extra])
+    Spec.assertEqWith s "offer" offered (R.Array [acting "TurnFaceUp" [("procedure", R.Text (Text.pack "Manifest"))], acting "Ignore" [("abilityName", R.Text (Text.pack "search ban"))], acting "Plot" [("cost", PromptOffer.payment Protocol.namer cost)]])
   Spec.it s "CR 305.1 / 708.6 a land play is a PlayLand, and a face-down cast is offered with its reason" $ do
     let oid = ObjectId.MkObjectId 7
         gs = Setup.emptyGame S.bothPlayers
         name = CardName.MkCardName (Text.pack "Ainok Tracker")
-        offered = Protocol.offerOf gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Play oid Nothing, Action.Cast oid name Facing.FaceUp, Action.Cast oid name (Facing.FaceDown (FaceDownState.defaultFor FaceDownReason.Morphed))])
-        acting kind extra = R.Object ([(Text.pack "action", R.Text (Text.pack kind)), (Text.pack "object", Protocol.object oid)] <> [(Text.pack key, value) | (key, value) <- extra])
+        offered = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseAction (Decider.MkDecider S.alice) S.alice [Action.Play oid Nothing, Action.Cast oid name Facing.FaceUp, Action.Cast oid name (Facing.FaceDown (FaceDownState.defaultFor FaceDownReason.Morphed))])
+        acting kind extra = R.Object ([(Text.pack "action", R.Text (Text.pack kind)), (Text.pack "object", PromptOffer.object Protocol.namer oid)] <> [(Text.pack key, value) | (key, value) <- extra])
         casting = ("name", R.Text (Text.pack "Ainok Tracker"))
     Spec.assertEqWith s "offer" offered (R.Array [acting "PlayLand" [], acting "Cast" [casting], acting "Cast" [casting, ("faceDown", R.Text (Text.pack "Morphed"))]])
 
@@ -224,17 +225,17 @@ spec s registry = Spec.describe s "Protocol" $ do
         cost = Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 2])) []
         blitz = Keyword.Blitz cost
         earlier = Seq.fromList [(S.bob, PayerAnswer.Paid cost (Set.singleton taken)), (S.alice, PayerAnswer.Declined)]
-        choosing = Protocol.offerOf gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, CandidateCost.plain (Just blitz) cost] earlier)
-        paying = Protocol.offerOf gs (Prompt.ChooseToPay (Decider.MkDecider S.alice) S.alice oid PayOffer.InsteadOfDraw cost earlier)
+        choosing = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, CandidateCost.plain (Just blitz) cost] earlier)
+        paying = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseToPay (Decider.MkDecider S.alice) S.alice oid PayOffer.InsteadOfDraw cost earlier)
         player p = R.Text (Text.pack (show (PlayerId.unwrap p)))
-        told = R.Array [R.Array [player S.bob, R.Array [Protocol.payment cost, R.Array [Protocol.object taken]]], R.Array [player S.alice, R.Null]]
+        told = R.Array [R.Array [player S.bob, R.Array [PromptOffer.payment Protocol.namer cost, R.Array [PromptOffer.object Protocol.namer taken]]], R.Array [player S.alice, R.Null]]
     Spec.assertEqWith s "the keywords" (fmap Codec.Reply.toValue (field "keywords" choosing)) (Just (Codec.encode (Common.list (Common.maybe Codec.Keyword.codec)) [Nothing, Just blitz]))
-    Spec.assertEqWith s "the costs, equal" (field "costs" choosing) (Just (R.Array [Protocol.payment cost, Protocol.payment cost]))
+    Spec.assertEqWith s "the costs, equal" (field "costs" choosing) (Just (R.Array [PromptOffer.payment Protocol.namer cost, PromptOffer.payment Protocol.namer cost]))
     Spec.assertEqWith s "CR 101.4b earlier payers of a choice of cost" (field "earlier" choosing) (Just told)
     Spec.assertEqWith s "CR 101.4b earlier payers of an offer to pay" (field "earlier" paying) (Just told)
     -- CR 603.7g: the delayed ability a candidate creates, only where one does.
     let named = AbilityName.MkAbilityName (Text.pack "sacrifice it")
-        arming = Protocol.offerOf gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, (CandidateCost.plain Nothing cost) {CandidateCost.arms = Just named}] Seq.empty)
+        arming = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCost (Decider.MkDecider S.alice) S.alice oid [CandidateCost.plain Nothing cost, (CandidateCost.plain Nothing cost) {CandidateCost.arms = Just named}] Seq.empty)
     Spec.assertEqWith s "CR 603.7g the delayed abilities" (field "arming" arming) (Just (R.Array [R.Null, R.Text (Text.pack "sacrifice it")]))
     Spec.assertEqWith s "and none where no candidate creates one" (field "arming" choosing) Nothing
 
@@ -243,47 +244,47 @@ spec s registry = Spec.describe s "Protocol" $ do
         lethal = Map.fromList [(Recipient.ToCreature (ObjectId.MkObjectId 9), 2), (Recipient.ToCreature (ObjectId.MkObjectId 11), 3 :: Natural)]
         paid = Map.singleton (Recipient.ToCreature (ObjectId.MkObjectId 11)) (1 :: Natural)
         prompt = Prompt.AssignCombatDamage (Decider.MkDecider S.alice) S.alice o7 lethal paid 5
-        offer = Protocol.offerOf (Setup.emptyGame S.bothPlayers) prompt
+        offer = PromptOffer.offerOf Protocol.namer (Setup.emptyGame S.bothPlayers) prompt
     Spec.assertEqWith s "lethal" (fmap (Protocol.decodeAnswer prompt) (field "lethal" offer)) (Just (Right lethal))
     Spec.assertEqWith s "CR 702.19b: what other creatures already assign" (fmap (Protocol.decodeAnswer prompt) (field "paid" offer)) (Just (Right paid))
     Spec.assertEqWith s "total" (field "total" offer) (Just (R.Number 5))
-    Spec.assertEqWith s "source" (field "source" offer) (Just (Protocol.object o7))
+    Spec.assertEqWith s "source" (field "source" offer) (Just (PromptOffer.object Protocol.namer o7))
 
   Spec.it s "CR 400.2 a guess offers its source and proposition and never the card" $ do
     let o7 = ObjectId.MkObjectId 7
         proposition = Filter.Type.Measures (Measures.MkMeasures Measure.ManaValue Comparison.GreaterThan (Operand.Literal 4))
-        offer = Protocol.offerOf (Setup.emptyGame S.bothPlayers) (Prompt.ChooseGuess (Decider.MkDecider S.bob) S.bob o7 proposition)
+        offer = PromptOffer.offerOf Protocol.namer (Setup.emptyGame S.bothPlayers) (Prompt.ChooseGuess (Decider.MkDecider S.bob) S.bob o7 proposition)
         keys = case offer of
           R.Object pairs -> fmap fst pairs
           _ -> []
     Spec.assertEqWith s "keys" keys [Text.pack "source", Text.pack "proposition"]
-    Spec.assertEqWith s "source" (field "source" offer) (Just (Protocol.object o7))
+    Spec.assertEqWith s "source" (field "source" offer) (Just (PromptOffer.object Protocol.namer o7))
     Spec.assertEqWith s "proposition" (fmap Codec.Reply.toValue (field "proposition" offer)) (Just (Codec.encode (Codec.Filter.codec Codec.Keyword.codec) proposition))
 
   Spec.it s "CR 118.12 an offer to pay names the cost and what offers it" $ do
     vane <- S.printingOf s registry "Arcum's Weathervane"
     let (oid, gs) = S.addPermanent vane S.alice (Setup.emptyGame S.bothPlayers)
         costs = fmap ActivatedAbility.cost (Projection.abilitiesOf oid gs)
-        offers = [Protocol.offerOf gs (Prompt.ChooseToPay (Decider.MkDecider S.bob) S.bob oid (PayOffer.AtClause (ModeIndex.MkModeIndex 0) (ClauseIndex.MkClauseIndex 0)) cost mempty) | cost <- costs]
+        offers = [PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseToPay (Decider.MkDecider S.bob) S.bob oid (PayOffer.AtClause (ModeIndex.MkModeIndex 0) (ClauseIndex.MkClauseIndex 0)) cost mempty) | cost <- costs]
         decodedCost offer = fmap (\c -> Common.parse (Common.render (Codec.Reply.toValue c)) >>= Codec.decode (Codec.Cost.codec Codec.Keyword.codec)) (field "cost" offer)
     Spec.assertEqWith s "cost" (fmap decodedCost offers) (fmap (Just . Right) costs)
-    Spec.assertEqWith s "source" (fmap (field "source") offers) (fmap (const (Just (Protocol.object oid))) costs)
+    Spec.assertEqWith s "source" (fmap (field "source") offers) (fmap (const (Just (PromptOffer.object Protocol.namer oid))) costs)
 
   Spec.it s "CR 201.4 a prompt answered by a name or a word offers what bounds the answer" $ do
     let o7 = ObjectId.MkObjectId 7
         alice = Decider.MkDecider S.alice
         gs = Setup.emptyGame S.bothPlayers
-        options prompt = maybe (Left (Text.pack "no options")) Right (field "options" (Protocol.offerOf gs prompt) >>= arrayOf) >>= traverse (Protocol.decodeAnswer prompt)
+        options prompt = maybe (Left (Text.pack "no options")) Right (field "options" (PromptOffer.offerOf Protocol.namer gs prompt) >>= arrayOf) >>= traverse (Protocol.decodeAnswer prompt)
         restriction = Filter.Type.Not (Filter.Type.HasCardType CardType.Land)
-        naming = Protocol.offerOf gs (Prompt.ChooseCardName alice S.alice o7 restriction (Seq.singleton (S.bob, CardName.MkCardName (Text.pack "Hill Giant"))))
+        naming = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCardName alice S.alice o7 restriction (Seq.singleton (S.bob, CardName.MkCardName (Text.pack "Hill Giant"))))
         basic = Prompt.ChooseSubtype alice S.alice o7 SubtypeFamily.BasicLandType Nothing
         creature = Prompt.ChooseSubtype alice S.alice o7 SubtypeFamily.CreatureType Nothing
         walker = Prompt.ChooseSubtype alice S.alice o7 SubtypeFamily.PlaneswalkerType Nothing
         listed = Prompt.ChooseSubtype alice S.alice o7 SubtypeFamily.CreatureType (Just (Subtype.Treefolk NonEmpty.:| [Subtype.Kithkin]))
         families = Set.fromList [WordFamily.BasicLandType, WordFamily.Color]
         forbidden = Set.singleton (TextWord.ColorWord Color.Black)
-        swap = Protocol.offerOf gs (Prompt.ChooseWordSwap alice S.alice o7 (SlotName.MkSlotName (Text.pack "target")) families forbidden)
-    Spec.assertEqWith s "CR 201.4a a name's restriction, beside its source" (field "source" naming, fmap Codec.Reply.toValue (field "filter" naming)) (Just (Protocol.object o7), Just (Codec.encode (Codec.Filter.codec Codec.Keyword.codec) restriction))
+        swap = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseWordSwap alice S.alice o7 (SlotName.MkSlotName (Text.pack "target")) families forbidden)
+    Spec.assertEqWith s "CR 201.4a a name's restriction, beside its source" (field "source" naming, fmap Codec.Reply.toValue (field "filter" naming)) (Just (PromptOffer.object Protocol.namer o7), Just (Codec.encode (Codec.Filter.codec Codec.Keyword.codec) restriction))
     Spec.assertEqWith s "CR 101.4b the names earlier choosers chose" (field "earlier" naming) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Text (Text.pack "Hill Giant")]]))
     Spec.assertEqWith s "CR 305.6 the basic land types" (options basic) (Right [Subtype.Forest, Subtype.Island, Subtype.Mountain, Subtype.Plains, Subtype.Swamp])
     Spec.assertEqWith s "CR 205.3m every creature type" (fmap Set.fromList (options creature)) (Right Engine.Subtype.everyCreatureType)
@@ -291,7 +292,7 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertBool s (either (const False) (all (Scenario.withinOffer creature)) (options creature)) "every creature type within the offer"
     Spec.assertEqWith s "CR 614.12a only the creature types a card lists" (options listed) (Right [Subtype.Kithkin, Subtype.Treefolk])
     Spec.assertBool s (not (Scenario.withinOffer listed Subtype.Goblin)) "a creature type off the list is outside the offer"
-    Spec.assertEqWith s "CR 612.2 a swap's families and forbidden words, beside its source and slot" (fmap (\key -> field key swap) ["source", "slot", "families", "forbidden"]) [Just (Protocol.object o7), Just (R.Text (Text.pack "target")), Just (R.Array [R.Text (Text.pack "BasicLandType"), R.Text (Text.pack "Color")]), Just (Reply.encode (Reply.list Reply.textWord) Protocol.namer [TextWord.ColorWord Color.Black])]
+    Spec.assertEqWith s "CR 612.2 a swap's families and forbidden words, beside its source and slot" (fmap (\key -> field key swap) ["source", "slot", "families", "forbidden"]) [Just (PromptOffer.object Protocol.namer o7), Just (R.Text (Text.pack "target")), Just (R.Array [R.Text (Text.pack "BasicLandType"), R.Text (Text.pack "Color")]), Just (Reply.encode (Reply.list Reply.textWord) Protocol.namer [TextWord.ColorWord Color.Black])]
 
   Spec.it s "CR 608.2h a departed option is named beside the options by last known information, where it left a public zone" $ do
     bears <- S.printingOf s registry "Grizzly Bears"
@@ -300,18 +301,18 @@ spec s registry = Spec.describe s "Protocol" $ do
         (dead, g2) = S.addPermanent piker S.alice g1
         (held, g3) = S.addHandCard piker S.bob g2
         gs = Event.forgetObject (S.runPure S.identityAnswer g3 (Event.destroy (pure ()) Regenerability.Regenerable [dead])) held
-        offer among = Protocol.offerOf gs (Prompt.ChooseCardFromAmong (Decider.MkDecider S.alice) S.alice live among)
+        offer among = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCardFromAmong (Decider.MkDecider S.alice) S.alice live among)
         gone = offer (live NonEmpty.:| [dead, held])
     Spec.assertEqWith s "the Piker and the hand card have left the game" (fmap (`Map.member` GameState.objects gs) [live, dead, held]) [True, False, False]
-    Spec.assertEqWith s "every candidate is an option" (field "options" gone) (Just (R.Array (fmap Protocol.object [live, dead, held])))
+    Spec.assertEqWith s "every candidate is an option" (field "options" gone) (Just (R.Array (fmap (PromptOffer.object Protocol.namer) [live, dead, held])))
     Spec.assertEqWith s "CR 400.2 the permanent's name, and not the hidden hand card's" (field "departed" gone) (Just (R.Object [(Text.pack ("$" <> show (ObjectId.unwrap dead)), R.Text (Text.pack "Goblin Piker"))]))
     Spec.assertEqWith s "nothing where every option is in the game" (field "departed" (offer (pure live))) Nothing
   Spec.it s "CR 404.3 a graveyard batch offers its cards top first, and an arrangement reads back" $ do
     let o5 = ObjectId.MkObjectId 5
         o7 = ObjectId.MkObjectId 7
         prompt = Prompt.ArrangeGraveyardArrivals (Decider.MkDecider S.alice) S.alice [o7, o5]
-        offer = Protocol.offerOf (Setup.emptyGame S.bothPlayers) prompt
-    Spec.assertEqWith s "from" (field "from" offer) (Just (Protocol.objects [o7, o5]))
+        offer = PromptOffer.offerOf Protocol.namer (Setup.emptyGame S.bothPlayers) prompt
+    Spec.assertEqWith s "from" (field "from" offer) (Just (PromptOffer.objects Protocol.namer [o7, o5]))
     Spec.assertEqWith s "in order" (Protocol.decodeAnswer prompt (R.Array [R.Number 1, R.Number 0])) (Right (GraveyardArrangement.InOrder [1, 0]))
     Spec.assertEqWith s "any order" (Protocol.decodeAnswer prompt R.Null) (Right GraveyardArrangement.AnyOrder)
 
@@ -322,22 +323,22 @@ spec s registry = Spec.describe s "Protocol" $ do
         alice = Decider.MkDecider S.alice
         gs = Setup.emptyGame S.bothPlayers
         listed key prompt = do
-          let offer = Protocol.offerOf gs prompt
+          let offer = PromptOffer.offerOf Protocol.namer gs prompt
           options <- maybe (Left (Text.pack ("no " <> key))) Right (field key offer >>= arrayOf)
           answers <- traverse (Protocol.decodeAnswer prompt) options
           pure (field "source" offer, answers)
         hand = Prompt.ChooseCardInHand alice S.alice o7 (o9 NonEmpty.:| [o11])
-    Spec.assertEqWith s "cards" (listed "options" hand) (Right (Just (Protocol.object o7), [o9, o11]))
-    Spec.assertEqWith s "players" (listed "players" (Prompt.ChoosePlayer alice S.alice o7 (S.alice NonEmpty.:| [S.bob]))) (Right (Just (Protocol.object o7), [S.alice, S.bob]))
-    Spec.assertEqWith s "a may declines last" (listed "players" (Prompt.ChooseAssistant alice S.alice o7 (S.bob NonEmpty.:| []))) (Right (Just (Protocol.object o7), [Just S.bob, Nothing]))
-    Spec.assertEqWith s "words" (listed "options" (Prompt.ChooseColor alice S.alice o7 (Color.Red NonEmpty.:| [Color.Green]))) (Right (Just (Protocol.object o7), [Color.Red, Color.Green]))
-    Spec.assertEqWith s "attack targets" (listed "options" (Prompt.ChooseAttackTarget alice S.alice o7 (AttackTarget.OfPlayer S.bob NonEmpty.:| [AttackTarget.OfPlaneswalker o9]))) (Right (Just (Protocol.object o7), [AttackTarget.OfPlayer S.bob, AttackTarget.OfPlaneswalker o9]))
+    Spec.assertEqWith s "cards" (listed "options" hand) (Right (Just (PromptOffer.object Protocol.namer o7), [o9, o11]))
+    Spec.assertEqWith s "players" (listed "players" (Prompt.ChoosePlayer alice S.alice o7 (S.alice NonEmpty.:| [S.bob]))) (Right (Just (PromptOffer.object Protocol.namer o7), [S.alice, S.bob]))
+    Spec.assertEqWith s "a may declines last" (listed "players" (Prompt.ChooseAssistant alice S.alice o7 (S.bob NonEmpty.:| []))) (Right (Just (PromptOffer.object Protocol.namer o7), [Just S.bob, Nothing]))
+    Spec.assertEqWith s "words" (listed "options" (Prompt.ChooseColor alice S.alice o7 (Color.Red NonEmpty.:| [Color.Green]))) (Right (Just (PromptOffer.object Protocol.namer o7), [Color.Red, Color.Green]))
+    Spec.assertEqWith s "attack targets" (listed "options" (Prompt.ChooseAttackTarget alice S.alice o7 (AttackTarget.OfPlayer S.bob NonEmpty.:| [AttackTarget.OfPlaneswalker o9]))) (Right (Just (PromptOffer.object Protocol.namer o7), [AttackTarget.OfPlayer S.bob, AttackTarget.OfPlaneswalker o9]))
     Spec.assertEqWith s "no source" (listed "players" (Prompt.ChooseActivePlayer alice S.alice (S.bob NonEmpty.:| [S.alice]))) (Right (Nothing, [S.bob, S.alice]))
     Spec.assertEqWith s "turn markers" (listed "options" (Prompt.ChooseTurnMarker alice S.alice (2 NonEmpty.:| [1]))) (Right (Nothing, [2, 1]))
     Spec.assertBool s (all (Scenario.withinOffer hand) [o9, o11]) "every option within the offer"
     -- CR 101.4b: what earlier choosers took.
-    let graveyard = Protocol.offerOf gs (Prompt.ChooseCardInGraveyard alice S.alice o7 (o9 NonEmpty.:| []) (Seq.singleton (S.bob, o11)))
-    Spec.assertEqWith s "earlier" (field "earlier" graveyard) (Just (R.Array [R.Array [R.Text (Text.pack "1"), Protocol.object o11]]))
+    let graveyard = PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseCardInGraveyard alice S.alice o7 (o9 NonEmpty.:| []) (Seq.singleton (S.bob, o11)))
+    Spec.assertEqWith s "earlier" (field "earlier" graveyard) (Just (R.Array [R.Array [R.Text (Text.pack "1"), PromptOffer.object Protocol.namer o11]]))
 
   Spec.it s "CR 401.4 a prompt answered by a permutation offers each item it orders, and every permutation is within the offer" $ do
     giant <- S.printingOf s registry "Hill Giant"
@@ -346,8 +347,8 @@ spec s registry = Spec.describe s "Protocol" $ do
         o11 = ObjectId.MkObjectId 11
         alice = Decider.MkDecider S.alice
         (printing, gs) = Game.intern giant (Setup.emptyGame S.bothPlayers)
-        offerOf = Protocol.offerOf gs
-        both = Just (R.Array [Protocol.object o9, Protocol.object o11])
+        offerOf = PromptOffer.offerOf Protocol.namer gs
+        both = Just (R.Array [PromptOffer.object Protocol.namer o9, PromptOffer.object Protocol.namer o11])
         components = [CostComponent.TapThis, CostComponent.SacrificeThis]
         hit = DamageEvent.MkDamageEvent o7 (Recipient.ToPlayer S.bob) 2 0 False False False 0 Nothing Nothing mempty False mempty mempty Nothing mempty DamageKind.Noncombat
         arrivals = Prompt.ArrangeLibraryArrivals alice S.alice LibraryPosition.Bottom [o9, o11]
@@ -360,9 +361,9 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "mana activations" (field "order" (offerOf (Prompt.OrderManaActivations alice S.alice [o9, o11]))) both
     Spec.assertEqWith s "combat tolls" (field "order" (offerOf (Prompt.OrderCombatTolls alice S.alice [o9, o11]))) both
     Spec.assertEqWith s "component cards by name, beside their zone" (fmap (\key -> field key (offerOf cards)) ["zone", "order"]) [Just (R.Text (Text.pack "Graveyard")), Just (R.Array (replicate 2 (R.Text (Text.pack "Hill Giant"))))]
-    Spec.assertEqWith s "cost components, beside their source" (field "source" (offerOf cost), fmap (traverse (either (const Nothing) Just . Codec.decode (Codec.CostComponent.codec Codec.Keyword.codec) . Codec.Reply.toValue)) (field "order" (offerOf cost) >>= arrayOf)) (Just (Protocol.object o7), Just (Just components))
-    Spec.assertEqWith s "damage events" (field "order" (offerOf (Prompt.OrderDamage alice S.alice [hit]))) (Just (R.Array [R.Object [(Text.pack "source", Protocol.object o7), (Text.pack "target", R.Array [R.Text (Text.pack "Player"), R.Text (Text.pack "1")]), (Text.pack "amount", R.Number 2)]]))
-    Spec.assertEqWith s "recipients, beside their source" (field "source" (offerOf each), field "order" (offerOf each)) (Just (Protocol.object o7), Just (Reply.encode (Reply.list Reply.recipient) Protocol.namer [Recipient.ToCreature o9, Recipient.ToPlayer S.bob]))
+    Spec.assertEqWith s "cost components, beside their source" (field "source" (offerOf cost), fmap (traverse (either (const Nothing) Just . Codec.decode (Codec.CostComponent.codec Codec.Keyword.codec) . Codec.Reply.toValue)) (field "order" (offerOf cost) >>= arrayOf)) (Just (PromptOffer.object Protocol.namer o7), Just (Just components))
+    Spec.assertEqWith s "damage events" (field "order" (offerOf (Prompt.OrderDamage alice S.alice [hit]))) (Just (R.Array [R.Object [(Text.pack "source", PromptOffer.object Protocol.namer o7), (Text.pack "target", R.Array [R.Text (Text.pack "Player"), R.Text (Text.pack "1")]), (Text.pack "amount", R.Number 2)]]))
+    Spec.assertEqWith s "recipients, beside their source" (field "source" (offerOf each), field "order" (offerOf each)) (Just (PromptOffer.object Protocol.namer o7), Just (Reply.encode (Reply.list Reply.recipient) Protocol.namer [Recipient.ToCreature o9, Recipient.ToPlayer S.bob]))
     Spec.assertBool s (all (Scenario.withinOffer arrivals) [[0, 1], [1, 0]] && not (Scenario.withinOffer arrivals [0, 0])) "each permutation within the offer, and only those"
 
   Spec.it s "a prompt answered by one of a fixed set offers each value as the answer that picks it, beside what it decides about" $ do
@@ -370,15 +371,15 @@ spec s registry = Spec.describe s "Protocol" $ do
         o9 = ObjectId.MkObjectId 9
         alice = Decider.MkDecider S.alice
         gs = Setup.emptyGame S.bothPlayers
-        options prompt = maybe (Left (Text.pack "no options")) Right (field "options" (Protocol.offerOf gs prompt) >>= arrayOf) >>= traverse (Protocol.decodeAnswer prompt)
+        options prompt = maybe (Left (Text.pack "no options")) Right (field "options" (PromptOffer.offerOf Protocol.namer gs prompt) >>= arrayOf) >>= traverse (Protocol.decodeAnswer prompt)
         dredge = Prompt.ChooseDredge alice S.alice o7 3
     Spec.assertEqWith s "a yes or no, yes first" (options dredge) (Right [OptionalDecision.Exercises, OptionalDecision.Declines])
-    Spec.assertEqWith s "beside its source and count" (fmap (\key -> field key (Protocol.offerOf gs dredge)) ["source", "count"]) [Just (Protocol.object o7), Just (R.Number 3)]
+    Spec.assertEqWith s "beside its source and count" (fmap (\key -> field key (PromptOffer.offerOf Protocol.namer gs dredge)) ["source", "count"]) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 3)]
     Spec.assertEqWith s "a coin's faces" (options (Prompt.CallCoin alice S.alice)) (Right [CoinFace.Heads, CoinFace.Tails])
     Spec.assertEqWith s "a land, a nonland, or neither" (options (Prompt.ChooseLandOrNonland alice S.alice o7)) (Right [Just LandOrNonland.Land, Just LandOrNonland.Nonland, Nothing])
     Spec.assertEqWith s "a mutate's sides" (options (Prompt.ChooseMutateSide alice S.alice o7 o9)) (Right [MutateSide.Over, MutateSide.Under])
     Spec.assertEqWith s "a library's ends" (options (Prompt.ChooseLibraryEnd alice S.alice o7 0)) (Right [LibraryPosition.Top, LibraryPosition.Bottom])
-    Spec.assertEqWith s "a die reroll, with no source" (fmap (\key -> field key (Protocol.offerOf gs (Prompt.Rethrow alice S.alice (ThrowResult.DieCameUp 4) Nothing))) ["source", "result", "cost"]) [Nothing, Just (R.Number 4), Nothing]
+    Spec.assertEqWith s "a die reroll, with no source" (fmap (\key -> field key (PromptOffer.offerOf Protocol.namer gs (Prompt.Rethrow alice S.alice (ThrowResult.DieCameUp 4) Nothing))) ["source", "result", "cost"]) [Nothing, Just (R.Number 4), Nothing]
     Spec.assertBool s (all (Scenario.withinOffer dredge) [OptionalDecision.Exercises, OptionalDecision.Declines]) "every option within the offer"
 
   Spec.it s "a prompt answered by a set offers each candidate as an element of the answer, within its bounds" $ do
@@ -387,18 +388,18 @@ spec s registry = Spec.describe s "Protocol" $ do
         o11 = ObjectId.MkObjectId 11
         alice = Decider.MkDecider S.alice
         gs = Setup.emptyGame S.bothPlayers
-        bounds prompt = fmap (\key -> field key (Protocol.offerOf gs prompt)) ["source", "least", "most"]
+        bounds prompt = fmap (\key -> field key (PromptOffer.offerOf Protocol.namer gs prompt)) ["source", "least", "most"]
         sacrifices = Prompt.ChooseSacrifices alice S.alice o7 [o9, o11] 1 (Seq.singleton (S.bob, Set.singleton o7))
         loop = Prompt.ChooseLoopMembers alice S.alice o7 LoopMembers.AnyNumber [Recipient.ToCreature o9, Recipient.ToPlayer S.bob]
-    Spec.assertEqWith s "candidates read back as the answer" (fmap (Protocol.decodeAnswer sacrifices . R.Array) (field "among" (Protocol.offerOf gs sacrifices) >>= arrayOf)) (Just (Right (Set.fromList [o9, o11])))
-    Spec.assertEqWith s "exactly the count" (bounds sacrifices) [Just (Protocol.object o7), Just (R.Number 1), Just (R.Number 1)]
-    Spec.assertEqWith s "CR 101.4b what earlier choosers picked" (field "earlier" (Protocol.offerOf gs sacrifices)) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Array [Protocol.object o7]]]))
-    Spec.assertEqWith s "no more than there are" (bounds (Prompt.ChooseTaps alice S.alice o7 [o9] 2)) [Just (Protocol.object o7), Just (R.Number 1), Just (R.Number 1)]
-    Spec.assertEqWith s "CR 702.167a one or more is a least" (bounds (Prompt.ChooseMaterials alice S.alice o7 [o9, o11] 1 True)) [Just (Protocol.object o7), Just (R.Number 1), Nothing]
-    Spec.assertEqWith s "CR 702.122a a power threshold, unbounded" (fmap (\key -> field key (Protocol.offerOf gs (Prompt.ChooseTapsForTotalPower alice S.alice o7 [(o9, 2)] 3))) ["power", "least", "most"]) [Just (R.Number 3), Nothing, Nothing]
-    Spec.assertEqWith s "any number up to the most" (bounds (Prompt.ChooseAnyNumber alice S.alice o7 AnyNumberOf.ToExile [o9, o11] (Just 1) Seq.empty)) [Just (Protocol.object o7), Just (R.Number 0), Just (R.Number 1)]
-    Spec.assertEqWith s "CR 608.2d one loop member is exactly one" (bounds (Prompt.ChooseLoopMembers alice S.alice o7 LoopMembers.One [Recipient.ToCreature o9, Recipient.ToPlayer S.bob])) [Just (Protocol.object o7), Just (R.Number 1), Just (R.Number 1)]
-    Spec.assertEqWith s "recipients read back as the answer" (fmap (Protocol.decodeAnswer loop . R.Array) (field "among" (Protocol.offerOf gs loop) >>= arrayOf)) (Just (Right (Set.fromList [Recipient.ToCreature o9, Recipient.ToPlayer S.bob])))
+    Spec.assertEqWith s "candidates read back as the answer" (fmap (Protocol.decodeAnswer sacrifices . R.Array) (field "among" (PromptOffer.offerOf Protocol.namer gs sacrifices) >>= arrayOf)) (Just (Right (Set.fromList [o9, o11])))
+    Spec.assertEqWith s "exactly the count" (bounds sacrifices) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 1), Just (R.Number 1)]
+    Spec.assertEqWith s "CR 101.4b what earlier choosers picked" (field "earlier" (PromptOffer.offerOf Protocol.namer gs sacrifices)) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Array [PromptOffer.object Protocol.namer o7]]]))
+    Spec.assertEqWith s "no more than there are" (bounds (Prompt.ChooseTaps alice S.alice o7 [o9] 2)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 1), Just (R.Number 1)]
+    Spec.assertEqWith s "CR 702.167a one or more is a least" (bounds (Prompt.ChooseMaterials alice S.alice o7 [o9, o11] 1 True)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 1), Nothing]
+    Spec.assertEqWith s "CR 702.122a a power threshold, unbounded" (fmap (\key -> field key (PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseTapsForTotalPower alice S.alice o7 [(o9, 2)] 3))) ["power", "least", "most"]) [Just (R.Number 3), Nothing, Nothing]
+    Spec.assertEqWith s "any number up to the most" (bounds (Prompt.ChooseAnyNumber alice S.alice o7 AnyNumberOf.ToExile [o9, o11] (Just 1) Seq.empty)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 0), Just (R.Number 1)]
+    Spec.assertEqWith s "CR 608.2d one loop member is exactly one" (bounds (Prompt.ChooseLoopMembers alice S.alice o7 LoopMembers.One [Recipient.ToCreature o9, Recipient.ToPlayer S.bob])) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 1), Just (R.Number 1)]
+    Spec.assertEqWith s "recipients read back as the answer" (fmap (Protocol.decodeAnswer loop . R.Array) (field "among" (PromptOffer.offerOf Protocol.namer gs loop) >>= arrayOf)) (Just (Right (Set.fromList [Recipient.ToCreature o9, Recipient.ToPlayer S.bob])))
 
   Spec.it s "a prompt answered by an index or an entry of what it lists offers each option as its answer, beside the entry it picks" $ do
     giant <- S.printingOf s registry "Hill Giant"
@@ -413,7 +414,7 @@ spec s registry = Spec.describe s "Protocol" $ do
         gs = g3 {GameState.objects = Map.adjust (\o -> o {Object.bindings = Binding.fromChoices Map.empty Nothing (Seq.singleton (ModeIndex.MkModeIndex 0))}) plan (GameState.objects g3)}
         offered :: Prompt.Prompt r -> Either Text.Text ([r], Maybe R.Reply)
         offered prompt = do
-          let offer = Protocol.offerOf gs prompt
+          let offer = PromptOffer.offerOf Protocol.namer gs prompt
           options <- maybe (Left (Text.pack "no options")) Right (field "options" offer >>= arrayOf)
           answers <- traverse (Protocol.decodeAnswer prompt) options
           if all (Scenario.withinOffer prompt) answers then Right (answers, field "entries" offer) else Left (Text.pack "an option outside the offer")
@@ -426,23 +427,23 @@ spec s registry = Spec.describe s "Protocol" $ do
         clause = ClauseIndex.MkClauseIndex
         hand = HandActionIndex.MkHandActionIndex
         shape = EntryOption.MkEntryOption 1 6 Set.empty Set.empty
-    Spec.assertEqWith s "CR 616.1 a replacement by its source and Oracle text" (offered (Prompt.ChooseReplacement alice S.alice [tapped, tapped])) (Right ([0, 1], entries (replicate 2 (R.Object [(Text.pack "source", Protocol.object looked), (Text.pack "text", R.Text (Text.pack "Hill Giant enters tapped."))]))))
+    Spec.assertEqWith s "CR 616.1 a replacement by its source and Oracle text" (offered (Prompt.ChooseReplacement alice S.alice [tapped, tapped])) (Right ([0, 1], entries (replicate 2 (R.Object [(Text.pack "source", PromptOffer.object Protocol.namer looked), (Text.pack "text", R.Text (Text.pack "Hill Giant enters tapped."))]))))
     Spec.assertEqWith s "CR 614.1c an entry option as its shape" (fmap (fmap (fmap (fmap (Codec.decode Codec.EntryOption.codec . Codec.Reply.toValue)) . (>>= arrayOf))) (offered (Prompt.ChooseEntryOption alice S.alice o7 [shape]))) (Right ([0], Just [Right shape]))
     Spec.assertEqWith s "CR 603.7b an event the seat saw, and null for one it did not" (offered (Prompt.ChooseDelayedTriggerEvent alice S.alice o7 (GameEvent.DamageDealt hit NonEmpty.:| [hidden]))) (Right ([0, 1], entries [Reply.encode (Reply.viaCodec Codec.GameEvent.codec) Protocol.namer (GameEvent.DamageDealt hit), R.Null]))
-    Spec.assertEqWith s "CR 706.2b a modifier by its object, null for none" (offered (Prompt.ChooseRollModifier alice S.alice (Just o7 NonEmpty.:| [Nothing]))) (Right ([0, 1], entries [R.Object [(Text.pack "source", Protocol.object o7)], R.Object [(Text.pack "source", R.Null)]]))
+    Spec.assertEqWith s "CR 706.2b a modifier by its object, null for none" (offered (Prompt.ChooseRollModifier alice S.alice (Just o7 NonEmpty.:| [Nothing]))) (Right ([0, 1], entries [R.Object [(Text.pack "source", PromptOffer.object Protocol.namer o7)], R.Object [(Text.pack "source", R.Null)]]))
     Spec.assertEqWith s "CR 123.5c a keeper by its card's name" (offered (Prompt.ChooseStickerKeeper alice S.alice (printing NonEmpty.:| [printing]))) (Right ([0, 1], entries (replicate 2 (R.Text (Text.pack "Hill Giant")))))
-    Spec.assertEqWith s "CR 315.5a a hand as its cards" (offered (Prompt.KeepHand alice S.alice ([o7] NonEmpty.:| [[]]))) (Right ([0, 1], entries [R.Array [Protocol.object o7], R.Array []]))
+    Spec.assertEqWith s "CR 315.5a a hand as its cards" (offered (Prompt.KeepHand alice S.alice ([o7] NonEmpty.:| [[]]))) (Right ([0, 1], entries [R.Array [PromptOffer.object Protocol.namer o7], R.Array []]))
     Spec.assertEqWith s "CR 706.4 a result as its number" (offered (Prompt.ChooseDieResult alice S.alice (Just o7) (4 NonEmpty.:| [4]))) (Right ([0, 1], entries [R.Number 4, R.Number 4]))
     Spec.assertEqWith s "CR 701.48a a branch, then neither" (offered (Prompt.ChooseLearn alice S.alice o7 (LearnMode.TakeLesson NonEmpty.:| []))) (Right ([Just LearnMode.TakeLesson, Nothing], entries [R.Text (Text.pack "TakeLesson")]))
     Spec.assertEqWith s "CR 701.38a a vote's choices, then no ballot where it is offered" (fmap (fmap fst . offered . Prompt.ChooseVote alice S.alice o7 (ballot "time" NonEmpty.:| [ballot "knowledge"])) [True, False]) [Right [Just (ballot "time"), Just (ballot "knowledge"), Nothing], Right [Just (ballot "time"), Just (ballot "knowledge")]]
     Spec.assertEqWith s "CR 608.2d a clause, as its index where no object resolves, then neither where it is offered" (offered (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) True Seq.empty)) (Right ([Just (clause 1), Just (clause 2), Nothing], entries [R.Number 1, R.Number 2]))
     Spec.assertEqWith s "CR 701.55a a branch of a villainous choice as its Oracle text, and as its index where its clause does not render" (offered (Prompt.ChooseClause bobDecides S.bob plan (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False Seq.empty)) (Right ([Just (clause 1), Just (clause 2)], entries [R.Text (Text.pack "Target opponent discards three cards."), R.Number 2]))
-    Spec.assertEqWith s "CR 101.4b and the branch an earlier chooser announced likewise" (field "earlier" (Protocol.offerOf gs (Prompt.ChooseClause bobDecides S.bob plan (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False (Seq.singleton (S.alice, Just (clause 1)))))) (Just (R.Array [R.Array [R.Text (Text.pack "0"), R.Text (Text.pack "Target opponent discards three cards.")]]))
+    Spec.assertEqWith s "CR 101.4b and the branch an earlier chooser announced likewise" (field "earlier" (PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseClause bobDecides S.bob plan (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False (Seq.singleton (S.alice, Just (clause 1)))))) (Just (R.Array [R.Array [R.Text (Text.pack "0"), R.Text (Text.pack "Target opponent discards three cards.")]]))
     Spec.assertEqWith s "CR 701.55a and not where it is not" (fmap fst (offered (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False Seq.empty))) (Right [Just (clause 1), Just (clause 2)])
-    Spec.assertEqWith s "CR 101.4b the clauses earlier choosers announced" (field "earlier" (Protocol.offerOf gs (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False (Seq.fromList [(S.bob, Just (clause 2)), (S.bob, Nothing)])))) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Number 2], R.Array [R.Text (Text.pack "1"), R.Null]]))
+    Spec.assertEqWith s "CR 101.4b the clauses earlier choosers announced" (field "earlier" (PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseClause alice S.alice o7 (ModeIndex.MkModeIndex 0) (clause 1 NonEmpty.:| [clause 2]) False (Seq.fromList [(S.bob, Just (clause 2)), (S.bob, Nothing)])))) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Number 2], R.Array [R.Text (Text.pack "1"), R.Null]]))
     Spec.assertEqWith s "CR 700.3d a pile, an empty one included" (offered (Prompt.ChoosePile alice S.alice o7 (Set.singleton o9 NonEmpty.:| [Set.empty]) Seq.empty)) (Right ([Set.singleton o9, Set.empty], Nothing))
-    Spec.assertEqWith s "CR 101.4b the piles earlier choosers took" (field "earlier" (Protocol.offerOf gs (Prompt.ChoosePile alice S.alice o7 (Set.singleton o9 NonEmpty.:| [Set.empty]) (Seq.singleton (S.bob, Set.singleton o9))))) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Array [Protocol.object o9]]]))
-    Spec.assertEqWith s "CR 103.5b a card's action, by its place where it has two, then none" (offered (Prompt.MulliganAction alice S.alice [(o7, hand 0), (o7, hand 1), (o9, hand 0)])) (Right ([Just (o7, hand 0), Just (o7, hand 1), Just (o9, hand 0), Nothing], entries [R.Object [(Text.pack "source", Protocol.object o7), (Text.pack "ability", R.Number 0)], R.Object [(Text.pack "source", Protocol.object o7), (Text.pack "ability", R.Number 1)], R.Object [(Text.pack "source", Protocol.object o9)]]))
+    Spec.assertEqWith s "CR 101.4b the piles earlier choosers took" (field "earlier" (PromptOffer.offerOf Protocol.namer gs (Prompt.ChoosePile alice S.alice o7 (Set.singleton o9 NonEmpty.:| [Set.empty]) (Seq.singleton (S.bob, Set.singleton o9))))) (Just (R.Array [R.Array [R.Text (Text.pack "1"), R.Array [PromptOffer.object Protocol.namer o9]]]))
+    Spec.assertEqWith s "CR 103.5b a card's action, by its place where it has two, then none" (offered (Prompt.MulliganAction alice S.alice [(o7, hand 0), (o7, hand 1), (o9, hand 0)])) (Right ([Just (o7, hand 0), Just (o7, hand 1), Just (o9, hand 0), Nothing], entries [R.Object [(Text.pack "source", PromptOffer.object Protocol.namer o7), (Text.pack "ability", R.Number 0)], R.Object [(Text.pack "source", PromptOffer.object Protocol.namer o7), (Text.pack "ability", R.Number 1)], R.Object [(Text.pack "source", PromptOffer.object Protocol.namer o9)]]))
     Spec.assertEqWith s "CR 103.6 an opening-hand action, then none" (fmap fst (offered (Prompt.OpeningHandAction alice S.alice [(o9, hand 0)]))) (Right [Just (o9, hand 0), Nothing])
     Spec.assertEqWith s "CR 608.2g a cast as its action, then none" (offered (Prompt.CastWhileSearching alice S.alice [(o9, hillGiant, Facing.FaceUp)])) (Right ([Just (o9, hillGiant, Facing.FaceUp), Nothing], entries [Offer.offer Protocol.namer gs (Action.Cast o9 hillGiant Facing.FaceUp)]))
 
@@ -451,26 +452,26 @@ spec s registry = Spec.describe s "Protocol" $ do
         alice = Decider.MkDecider S.alice
         gs = Setup.emptyGame S.bothPlayers
         bounds :: Prompt.Prompt r -> [Maybe R.Reply]
-        bounds prompt = fmap (\key -> field key (Protocol.offerOf gs prompt)) ["source", "least", "greatest"]
+        bounds prompt = fmap (\key -> field key (PromptOffer.offerOf Protocol.namer gs prompt)) ["source", "least", "greatest"]
         kicker = Keyword.Kicker (Cost.Type.MkCost Nothing [])
         adjust = Prompt.AdjustDieRoll alice S.alice (4 NonEmpty.:| [-1]) 2 Nothing
-        options = maybe (Left (Text.pack "no options")) Right (field "options" (Protocol.offerOf gs adjust) >>= arrayOf) >>= traverse (Protocol.decodeAnswer adjust)
-    Spec.assertEqWith s "CR 601.2b a kicker from none to its limit" (bounds (Prompt.ChooseKicker alice S.alice o7 kicker Nothing (Just 1))) [Just (Protocol.object o7), Just (R.Number 0), Just (R.Number 1)]
-    Spec.assertEqWith s "CR 702.33c and with no greatest for any number of times" (bounds (Prompt.ChooseKicker alice S.alice o7 kicker Nothing Nothing)) [Just (Protocol.object o7), Just (R.Number 0), Nothing]
-    Spec.assertEqWith s "beside the keyword paid" (field "keyword" (Protocol.offerOf gs (Prompt.ChooseKicker alice S.alice o7 kicker Nothing Nothing))) (Just (Reply.encode (Reply.viaCodec Codec.Keyword.codec) Protocol.namer kicker))
+        options = maybe (Left (Text.pack "no options")) Right (field "options" (PromptOffer.offerOf Protocol.namer gs adjust) >>= arrayOf) >>= traverse (Protocol.decodeAnswer adjust)
+    Spec.assertEqWith s "CR 601.2b a kicker from none to its limit" (bounds (Prompt.ChooseKicker alice S.alice o7 kicker Nothing (Just 1))) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 0), Just (R.Number 1)]
+    Spec.assertEqWith s "CR 702.33c and with no greatest for any number of times" (bounds (Prompt.ChooseKicker alice S.alice o7 kicker Nothing Nothing)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 0), Nothing]
+    Spec.assertEqWith s "beside the keyword paid" (field "keyword" (PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseKicker alice S.alice o7 kicker Nothing Nothing))) (Just (Reply.encode (Reply.viaCodec Codec.Keyword.codec) Protocol.namer kicker))
     Spec.assertEqWith s "and a count reads back as the decision" (Protocol.decodeAnswer (Prompt.ChooseKicker alice S.alice o7 kicker Nothing Nothing) (R.Number 3)) (Right (KickerDecision.MkKickerDecision 3))
-    Spec.assertEqWith s "CR 702.132a an assist from none to the pool's most" (bounds (Prompt.ChooseAssistAmount alice S.alice o7 3)) [Just (Protocol.object o7), Just (R.Number 0), Just (R.Number 3)]
-    Spec.assertEqWith s "CR 107.14 energy from none to the player's" (bounds (Prompt.ChoosePaidEnergy alice S.alice o7 5)) [Just (Protocol.object o7), Just (R.Number 0), Just (R.Number 5)]
-    Spec.assertEqWith s "CR 715.3b a chapter from one to the final" (bounds (Prompt.ChooseReadAheadChapter alice S.alice o7 3)) [Just (Protocol.object o7), Just (R.Number 1), Just (R.Number 3)]
+    Spec.assertEqWith s "CR 702.132a an assist from none to the pool's most" (bounds (Prompt.ChooseAssistAmount alice S.alice o7 3)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 0), Just (R.Number 3)]
+    Spec.assertEqWith s "CR 107.14 energy from none to the player's" (bounds (Prompt.ChoosePaidEnergy alice S.alice o7 5)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 0), Just (R.Number 5)]
+    Spec.assertEqWith s "CR 715.3b a chapter from one to the final" (bounds (Prompt.ChooseReadAheadChapter alice S.alice o7 3)) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 1), Just (R.Number 3)]
     Spec.assertEqWith s "CR 706.2b each die either way, then none" options (Right ([Just (index, adjustment) | index <- [0, 1], adjustment <- [RollAdjustment.Increase, RollAdjustment.Decrease]] <> [Nothing]))
-    Spec.assertEqWith s "beside the results, unclamped, and the amount" (fmap (\key -> field key (Protocol.offerOf gs adjust)) ["results", "amount", "cost"]) [Just (R.Array [R.Number 4, R.Number (-1)]), Just (R.Number 2), Nothing]
+    Spec.assertEqWith s "beside the results, unclamped, and the amount" (fmap (\key -> field key (PromptOffer.offerOf Protocol.namer gs adjust)) ["results", "amount", "cost"]) [Just (R.Array [R.Number 4, R.Number (-1)]), Just (R.Number 2), Nothing]
     Spec.assertBool s (all (Scenario.withinOffer (Prompt.ChooseAssistAmount alice S.alice o7 3)) [0, 3] && not (Scenario.withinOffer (Prompt.ChooseAssistAmount alice S.alice o7 3) 4)) "the bounds are the offer's"
 
   Spec.it s "CR 700.2a a modal spell's legal modes are each named by its Oracle text" $ do
     charm <- S.printingOf s registry "Ebony Charm"
     let (spell, gs) = S.addHandCard charm S.alice (Setup.emptyGame S.bothPlayers)
         modes = Prompt.ChooseModes (Decider.MkDecider S.alice) S.alice spell (Set.fromList (fmap ModeIndex.MkModeIndex [0, 2])) (ModeSelection.ChooseExactly 1)
-    Spec.assertEqWith s "the first and third modes" (field "names" (Protocol.offerOf gs modes)) (Just (R.Array (fmap (R.Text . Text.pack) ["Target opponent loses 1 life and you gain 1 life.", "Target creature gains fear until end of turn."])))
+    Spec.assertEqWith s "the first and third modes" (field "names" (PromptOffer.offerOf Protocol.namer gs modes)) (Just (R.Array (fmap (R.Text . Text.pack) ["Target opponent loses 1 life and you gain 1 life.", "Target creature gains fear until end of turn."])))
 
   Spec.it s "a prompt answered by a set or a sequence offers each candidate as an element of the answer" $ do
     giant <- S.printingOf s registry "Hill Giant"
@@ -482,9 +483,9 @@ spec s registry = Spec.describe s "Protocol" $ do
         (printing, gs) = Game.intern giant g2
         free = Cost.Type.MkCost Nothing []
         among :: Prompt.Prompt r -> [R.Reply]
-        among prompt = Maybe.fromMaybe [] (field "among" (Protocol.offerOf gs prompt) >>= arrayOf)
+        among prompt = Maybe.fromMaybe [] (field "among" (PromptOffer.offerOf Protocol.namer gs prompt) >>= arrayOf)
         told :: Prompt.Prompt r -> [String] -> [Maybe R.Reply]
-        told prompt = fmap (\key -> field key (Protocol.offerOf gs prompt))
+        told prompt = fmap (\key -> field key (PromptOffer.offerOf Protocol.namer gs prompt))
         mode = ModeIndex.MkModeIndex
         modes = Prompt.ChooseModes alice S.alice o7 (Set.fromList [mode 0, mode 2]) (ModeSelection.ChooseExactlyWithRepeats 2)
         spliceCost = Cost.Type.MkCost (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, ManaSymbol.OfType (ManaType.Colored Color.Red)])) []
@@ -500,18 +501,18 @@ spec s registry = Spec.describe s "Protocol" $ do
     Spec.assertEqWith s "CR 700.2i each listed mode's pawprints" (told (Prompt.ChooseModes alice S.alice o7 (Set.fromList [mode 0, mode 2]) (ModeSelection.ChoosePawprintsWithRepeats (ChoosePawprints.MkChoosePawprints 5 (Seq.fromList [1, 2, 3])))) ["most", "pawprints"]) [Just (R.Number 5), Just (R.Array [R.Number 1, R.Number 3])]
     Spec.assertEqWith s "and none for a selection by count" (told modes ["pawprints"]) [Nothing]
     Spec.assertEqWith s "and a mode named twice reads back" (Protocol.decodeAnswer modes (R.Array (replicate 2 (R.Number 2)))) (Right (Seq.fromList [mode 2, mode 2]))
-    Spec.assertEqWith s "CR 702.47a each card beside the splice cost it adds" (told splice ["costs"]) [Just (R.Array (fmap Protocol.payment [free, spliceCost]))]
+    Spec.assertEqWith s "CR 702.47a each card beside the splice cost it adds" (told splice ["costs"]) [Just (R.Array (fmap (PromptOffer.payment Protocol.namer) [free, spliceCost]))]
     Spec.assertEqWith s "CR 702.47b the cards read back in the order named" (Protocol.decodeAnswer splice (R.Array (reverse (among splice)))) (Right [card, o9])
     Spec.assertEqWith s "CR 701.23j at least one place, each named" (told zones ["least", "names"]) [Just (R.Number 1), Just (R.Array (fmap R.Text [Text.pack "a graveyard", Text.pack "outside the game"]))]
     Spec.assertEqWith s "and the places read back" (Protocol.decodeAnswer zones (R.Array (among zones))) (Right (Set.fromList [SearchPlace.InZone Zone.Graveyard, SearchPlace.OutsideTheGame]))
-    Spec.assertEqWith s "CR 701.34a the permanents, then the players as recipients" (among (Prompt.ChooseProliferate alice S.alice [o9] [S.bob])) [Protocol.object o9, Reply.encode Reply.recipient Protocol.namer (Recipient.ToPlayer S.bob)]
+    Spec.assertEqWith s "CR 701.34a the permanents, then the players as recipients" (among (Prompt.ChooseProliferate alice S.alice [o9] [S.bob])) [PromptOffer.object Protocol.namer o9, Reply.encode Reply.recipient Protocol.namer (Recipient.ToPlayer S.bob)]
     Spec.assertEqWith s "CR 400.11c a card once per copy, named" (told outside ["names", "least", "most"]) [Just (R.Array (replicate 2 (R.Text (Text.pack "Hill Giant (sideboard)")))), Just (R.Number 1), Just (R.Number 2)]
     Spec.assertEqWith s "and both copies read back" (Protocol.decodeAnswer outside (R.Array (among outside))) (Right [pool, pool])
     Spec.assertEqWith s "CR 702.22c the attackers, a band of them reading back" (Protocol.decodeAnswer bands (R.Array [R.Array (among bands)])) (Right [Set.fromList [o9, card]])
-    Spec.assertEqWith s "CR 701.56a the candidates and the source" (told (Prompt.ChooseTimeTravel alice S.alice o7 [o9]) ["source", "among"]) [Just (Protocol.object o7), Just (R.Array [Protocol.object o9])]
-    Spec.assertEqWith s "CR 701.22a the cards looked at, top first, each named" (told scry ["from", "names"]) [Just (R.Array [Protocol.object card, Protocol.object other]), Just (R.Array (replicate 2 (R.Text (Text.pack "Hill Giant"))))]
-    Spec.assertEqWith s "CR 701.25a a surveil alike" (Protocol.offerOf gs (Prompt.ChooseSurveil alice S.alice [card, other])) (Protocol.offerOf gs scry)
-    Spec.assertEqWith s "CR 701.29a a fateseal names whose library" (told (Prompt.ChooseFateseal alice S.alice S.bob [card]) ["owner", "from"]) [Just (R.Text (Text.pack "1")), Just (R.Array [Protocol.object card])]
+    Spec.assertEqWith s "CR 701.56a the candidates and the source" (told (Prompt.ChooseTimeTravel alice S.alice o7 [o9]) ["source", "among"]) [Just (PromptOffer.object Protocol.namer o7), Just (R.Array [PromptOffer.object Protocol.namer o9])]
+    Spec.assertEqWith s "CR 701.22a the cards looked at, top first, each named" (told scry ["from", "names"]) [Just (R.Array [PromptOffer.object Protocol.namer card, PromptOffer.object Protocol.namer other]), Just (R.Array (replicate 2 (R.Text (Text.pack "Hill Giant"))))]
+    Spec.assertEqWith s "CR 701.25a a surveil alike" (PromptOffer.offerOf Protocol.namer gs (Prompt.ChooseSurveil alice S.alice [card, other])) (PromptOffer.offerOf Protocol.namer gs scry)
+    Spec.assertEqWith s "CR 701.29a a fateseal names whose library" (told (Prompt.ChooseFateseal alice S.alice S.bob [card]) ["owner", "from"]) [Just (R.Text (Text.pack "1")), Just (R.Array [PromptOffer.object Protocol.namer card])]
 
   Spec.it s "a prompt answered by an amount per item offers the answer each item taking the most it may, within the bounds on their sum" $ do
     let o7 = ObjectId.MkObjectId 7
@@ -520,9 +521,9 @@ spec s registry = Spec.describe s "Protocol" $ do
         alice = Decider.MkDecider S.alice
         gs = Setup.emptyGame S.bothPlayers
         told :: Prompt.Prompt r -> [String] -> [Maybe R.Reply]
-        told prompt = fmap (\key -> field key (Protocol.offerOf gs prompt))
+        told prompt = fmap (\key -> field key (PromptOffer.offerOf Protocol.namer gs prompt))
         caps :: Prompt.Prompt r -> Maybe (Either Text.Text r)
-        caps prompt = fmap (Protocol.decodeAnswer prompt) (field "amounts" (Protocol.offerOf gs prompt))
+        caps prompt = fmap (Protocol.decodeAnswer prompt) (field "amounts" (PromptOffer.offerOf Protocol.namer gs prompt))
         plus = CounterKind.PlusOnePlusOne
         carried = Map.fromList [(o9, 2), (o11, 1 :: Natural)]
         kinds = Map.fromList [(plus, 2), (CounterKind.Time, 1)] :: Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural
@@ -539,27 +540,27 @@ spec s registry = Spec.describe s "Protocol" $ do
         redistribution = Prompt.ChooseRedistribution alice S.alice [(S.alice, 20), (S.bob, -3)]
         player = Reply.encode Reply.player Protocol.namer
     Spec.assertEqWith s "CR 615.7 each event's own amount" (caps allocate) (Just (Right [2, 3]))
-    Spec.assertEqWith s "beside each event, the points divided whole" (told allocate ["entries", "least", "most"]) [Just (R.Array (fmap (Protocol.damageEvent . hit) [2, 3])), Just (R.Number 4), Just (R.Number 4)]
+    Spec.assertEqWith s "beside each event, the points divided whole" (told allocate ["entries", "least", "most"]) [Just (R.Array (fmap (PromptOffer.damageEvent Protocol.namer . hit) [2, 3])), Just (R.Number 4), Just (R.Number 4)]
     Spec.assertEqWith s "CR 601.2c any number of targets up to what the board supplies" (caps announce) (Just (Right (Map.singleton slot 2)))
-    Spec.assertEqWith s "from its least" (fmap (Protocol.decodeAnswer announce) (field "floors" (Protocol.offerOf gs announce))) (Just (Right (Map.singleton slot 1)))
-    Spec.assertEqWith s "beside its source and recipients" (told announce ["source", "recipients"]) [Just (Protocol.object o7), Just (Reply.encode (Reply.mapOf (Reply.viaCodec Codec.SlotName.codec) (Reply.setOf Reply.recipient)) Protocol.namer (Map.singleton slot recipients))]
+    Spec.assertEqWith s "from its least" (fmap (Protocol.decodeAnswer announce) (field "floors" (PromptOffer.offerOf Protocol.namer gs announce))) (Just (Right (Map.singleton slot 1)))
+    Spec.assertEqWith s "beside its source and recipients" (told announce ["source", "recipients"]) [Just (PromptOffer.object Protocol.namer o7), Just (Reply.encode (Reply.mapOf (Reply.viaCodec Codec.SlotName.codec) (Reply.setOf Reply.recipient)) Protocol.namer (Map.singleton slot recipients))]
     Spec.assertEqWith s "no floor for up to" (told (Prompt.AnnounceTargets alice S.alice o7 (Map.singleton slot (TargetCount.upTo 2, recipients))) ["floors"]) [Nothing]
     Spec.assertEqWith s "CR 601.2h what each permanent carries" (caps (Prompt.ChooseCounterRemovalAmong alice S.alice o7 2 carried)) (Just (Right carried))
-    Spec.assertEqWith s "exactly the count" (told (Prompt.ChooseCounterRemovalAmong alice S.alice o7 2 carried) ["source", "least", "most"]) [Just (Protocol.object o7), Just (R.Number 2), Just (R.Number 2)]
+    Spec.assertEqWith s "exactly the count" (told (Prompt.ChooseCounterRemovalAmong alice S.alice o7 2 carried) ["source", "least", "most"]) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 2), Just (R.Number 2)]
     Spec.assertEqWith s "at least it" (told (Prompt.ChooseCounterRemovalAtLeast alice S.alice o7 1 carried) ["least", "most"]) [Just (R.Number 1), Nothing]
     Spec.assertEqWith s "CR 608.2d at most it" (told (Prompt.ChooseCounterRemovalUpTo alice S.alice o7 2 carried) ["least", "most"]) [Nothing, Just (R.Number 2)]
     Spec.assertEqWith s "CR 122.1 each kind each permanent carries" (caps (mixed CounterSpread.FromAmong)) (Just (Right (Map.singleton o9 kinds)))
     Spec.assertEqWith s "off one permanent where the cost says one" (told (mixed CounterSpread.FromOne) ["fromOne", "least", "most"]) [Just (R.Boolean True), Just (R.Number 2), Just (R.Number 2)]
     Spec.assertEqWith s "and at least the count where it says one or more" (told (mixed CounterSpread.FromAmongAtLeast) ["fromOne", "least", "most"]) [Nothing, Just (R.Number 2), Nothing]
     Spec.assertEqWith s "CR 122.5 each kind's tally" (caps moved) (Just (Right kinds))
-    Spec.assertEqWith s "off one object and onto another, any number" (told moved ["off", "onto", "least", "most"]) [Just (Protocol.object o7), Just (Protocol.object o9), Nothing, Nothing]
+    Spec.assertEqWith s "off one object and onto another, any number" (told moved ["off", "onto", "least", "most"]) [Just (PromptOffer.object Protocol.namer o7), Just (PromptOffer.object Protocol.namer o9), Nothing, Nothing]
     Spec.assertEqWith s "one or more" (told (Prompt.ChooseMovedCountersAtLeastOne alice S.alice o7 o9 kinds) ["least"]) [Just (R.Number 1)]
     Spec.assertEqWith s "each destination may take each whole tally" (caps (distributed MoveSpread.AnyNumber)) (Just (Right (Map.fromList [(o9, kinds), (o11, kinds)])))
-    Spec.assertEqWith s "beside the tallies, every counter" (told (distributed MoveSpread.Exactly) ["off", "counters", "least", "most"]) [Just (Protocol.object o7), Just (Reply.encode (Reply.mapOf Reply.counterKind Reply.natural) Protocol.namer kinds), Just (R.Number 3), Just (R.Number 3)]
+    Spec.assertEqWith s "beside the tallies, every counter" (told (distributed MoveSpread.Exactly) ["off", "counters", "least", "most"]) [Just (PromptOffer.object Protocol.namer o7), Just (Reply.encode (Reply.mapOf Reply.counterKind Reply.natural) Protocol.namer kinds), Just (R.Number 3), Just (R.Number 3)]
     Spec.assertEqWith s "CR 609.3 that many of one kind" (told (distributed (MoveSpread.OneKind 2)) ["oneKind", "least", "most"]) [Just (R.Number 2), Nothing, Just (R.Number 2)]
     Spec.assertEqWith s "one or more, and up to one" (told (distributed MoveSpread.AtLeastOne) ["least"] <> told (distributed MoveSpread.UpToOne) ["most"]) [Just (R.Number 1), Just (R.Number 1)]
     Spec.assertEqWith s "CR 608.2d the whole count on any candidate" (caps distribution) (Just (Right (Map.fromList [(o9, 3), (o11, 3)])))
-    Spec.assertEqWith s "divided exactly" (told distribution ["source", "least", "most"]) [Just (Protocol.object o7), Just (R.Number 3), Just (R.Number 3)]
+    Spec.assertEqWith s "divided exactly" (told distribution ["source", "least", "most"]) [Just (PromptOffer.object Protocol.namer o7), Just (R.Number 3), Just (R.Number 3)]
     Spec.assertEqWith s "CR 706.8b each stored result by how many" (caps (Prompt.ChooseStoredRerolls alice S.alice o7 stored)) (Just (Right stored))
     Spec.assertEqWith s "CR 119.7 each candidate beside its life total" (told redistribution ["totals"]) [Just (R.Array [R.Array [player S.alice, R.Number 20], R.Array [player S.bob, R.Number (-3)]])]
     Spec.assertEqWith s "and a swap reads back" (Protocol.decodeAnswer redistribution (R.Array [R.Array [player S.alice, player S.bob], R.Array [player S.bob, player S.alice]])) (Right (Map.fromList [(S.alice, S.bob), (S.bob, S.alice)]))

@@ -1,0 +1,270 @@
+{
+  "description": "CR 701.30d the controller's higher mana value wins the clash",
+  "note": "alice reveals Hill Giant and bob Lightning Bolt, publicly, so carol sees both (CR 701.30c); each decides in APNAP order shown both revealed cards, bob also told alice's decision (CR 101.4b). Mana value 4 beats 1, so alice wins and carol discards two. alice's Giant goes to the bottom of her library and bob's Bolt stays on top.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s0",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s1",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Pulling Teeth",
+            "label": "teeth"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant",
+            "label": "a-top"
+          },
+          {
+            "card": "Plains"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Lightning Bolt",
+            "label": "b-top"
+          },
+          {
+            "card": "Plains"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "hand": [
+          {
+            "card": "Plains",
+            "label": "c0"
+          },
+          {
+            "card": "Plains",
+            "label": "c1"
+          },
+          {
+            "card": "Plains",
+            "label": "c2"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$teeth",
+          "targets": [
+            "$carol"
+          ],
+          "mana": [
+            "$s0",
+            "$s1"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOpponent",
+          "with": "bob"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseClash",
+            "offer": {
+              "source": "Pulling Teeth",
+              "card": "$a-top",
+              "revealed": [
+                [
+                  "alice",
+                  "$a-top"
+                ],
+                [
+                  "bob",
+                  "$b-top"
+                ]
+              ],
+              "earlier": [],
+              "options": [
+                "Top",
+                "Bottom"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseClash",
+          "with": "Bottom"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseClash",
+            "offer": {
+              "source": "Pulling Teeth",
+              "card": "$b-top",
+              "revealed": [
+                [
+                  "alice",
+                  "$a-top"
+                ],
+                [
+                  "bob",
+                  "$b-top"
+                ]
+              ],
+              "earlier": [
+                [
+                  "alice",
+                  "Bottom"
+                ]
+              ],
+              "options": [
+                "Top",
+                "Bottom"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseClash",
+          "with": "Top"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "$c0",
+            "$c1"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "carol",
+          "zone": "Graveyard",
+          "card": "Plains",
+          "count": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library",
+          "is": [
+            "Plains",
+            "Hill Giant"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library",
+          "is": [
+            "$b-top",
+            "Plains#2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Witnessed",
+          "player": "carol",
+          "is": [
+            "Hill Giant",
+            "Lightning Bolt"
+          ]
+        }
+      }
+    }
+  ]
+}

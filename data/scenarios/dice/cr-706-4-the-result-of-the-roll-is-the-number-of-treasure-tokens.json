@@ -34,6 +34,22 @@
       "turn": 1,
       "step": "CombatDamage",
       "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "RollDie",
+            "offer": {
+              "sides": 20
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "RollDie",

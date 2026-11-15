@@ -1,0 +1,39 @@
+{
+  "description": "CR 601.2b all four modes fillable: the prompt offers four, asks for two, and the chosen two resolve",
+  "note": "Ojutai's Command with a creature card in alice's graveyard and bob's creature spell on the stack, so every mode has a legal target. alice chooses the reanimate and counter modes: bob's Piker spell is countered, the graveyard Piker enters under her, and the unchosen life mode leaves her at 20.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Island", "label": "island-1" },
+          { "card": "Island", "label": "island-2" },
+          { "card": "Island", "label": "island-3" },
+          { "card": "Plains", "label": "plains" }
+        ],
+        "hand": [{ "card": "Ojutai's Command", "label": "command" }],
+        "graveyard": [{ "card": "Goblin Piker" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Mountain", "label": "mountain-1" },
+          { "card": "Mountain", "label": "mountain-2" }
+        ],
+        "hand": [{ "card": "Goblin Piker", "label": "piker" }]
+      }
+    ],
+    "active": "bob",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Cast": { "object": "$piker", "mana": ["$mountain-1", "$mountain-2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$command", "modes": [0, 2], "mana": ["$island-1", "$island-2", "$island-3", "$plains"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Prompt", "is": { "kind": "ChooseModes", "offer": { "source": "Ojutai's Command", "names": [null, "You gain 4 life.", "Counter target creature spell.", "Draw a card."], "least": 2, "most": 2, "among": [0, 1, 2, 3] } } } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Stack", "card": "Goblin Piker", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Graveyard", "card": "Goblin Piker", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Goblin Piker", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Life": { "player": "alice", "life": 20 } } }
+  ]
+}
