@@ -2,11 +2,12 @@
 
 -- Covers: CR 108.3 / 110.2 / 111.2's OWNER, read as Parun.Types.Filter's HeldBy Owner
 -- atom off Parun.Engine.Filter.View's `owner` field; and CR 701.21a / CR 101.2's
--- SACRIFICE PROHIBITION -- Parun.Types.SacrificeRestriction, the set
--- Parun.Engine.SacrificeRestriction answers, and the two places that set is
+-- SACRIFICE PROHIBITION -- Parun.Types.ObjectRestriction's Sacrifice action, the
+-- set Parun.Engine.ObjectRestriction answers, and the two places that set is
 -- subtracted (Parun.Engine.Replacement.sacrificeCandidates for every offer, and
 -- Parun.Engine.Event.sacrifice for every instruction that names a victim without
--- asking).
+-- asking). Its TurnFaceUp action is proven by data/scenarios' Unable to Scream
+-- pair.
 --
 -- Garland, Royal Kidnapper is the fixture, and it is the whole point: "Creatures
 -- you control but don't own get +2/+2 and can't be sacrificed" is one Filter
@@ -31,7 +32,7 @@
 -- (Parun.Engine.Sba filters it out before reporting one, so the CR 704.3 settle
 -- loop terminates). No card in the pool gives a player control of another
 -- player's Saga, so the board cannot be built from card data.
-module Parun.SacrificeRestrictionSpec where
+module Parun.ObjectRestrictionSpec where
 
 import qualified Data.Map.Strict as Map
 import qualified Data.Set as Set
@@ -39,11 +40,11 @@ import qualified Data.Text as Text
 import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Keyword as Engine.Keyword
+import qualified Parun.Engine.ObjectRestriction as ObjectRestriction
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Resolve.Effect as Resolve
-import qualified Parun.Engine.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Registry as Registry
@@ -64,6 +65,7 @@ import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RestrictedAction as RestrictedAction
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.Subtype as Subtype
@@ -84,7 +86,7 @@ offered :: GameState.GameState -> [ObjectId.ObjectId]
 offered = Replacement.sacrificeCandidates (Just S.alice) Map.empty S.alice Nothing anyCreature
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-spec s registry = Spec.describe s "SacrificeRestriction" $ do
+spec s registry = Spec.describe s "ObjectRestriction" $ do
   ownerSpec s registry
   offerSpec s registry
   instructionSpec s registry
@@ -160,7 +162,7 @@ offerSpec s registry = Spec.describe s "Offer" $ do
     Spec.assertBool s (S.castable S.alice spell withHers) "and now the spell is castable"
     -- A stolen Garland is inside its own affected set, which is what the printed
     -- sentence says and what makes the board above possible at all.
-    Spec.assertBool s (SacrificeRestriction.prohibited stolenGarland barren) "CR 101.2: even Garland itself can't be sacrificed once stolen"
+    Spec.assertBool s (ObjectRestriction.prohibited RestrictedAction.Sacrifice stolenGarland barren) "CR 101.2: even Garland itself can't be sacrificed once stolen"
   -- CR 701.21a's OTHER cost shape, which consults no candidate list at all:
   -- "Sacrifice this permanent" names the permanent paying. Ghitu Fire-Eater's
   -- ability is "{T}, Sacrifice this creature: it deals damage equal to its power
@@ -248,7 +250,7 @@ instructionSpec s registry = Spec.describe s "Instruction" $ do
       (elem (GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed S.bob his)) (S.eventsOf after))
       "and the sacrifice was recorded"
 
--- CR 305.7 as Parun.Engine.SacrificeRestriction reads it, which is the gate
+-- CR 305.7 as Parun.Engine.ObjectRestriction reads it, which is the gate
 -- Parun.Engine.Projection.liveAfterLayers holds for every reader CR 613.10 and CR
 -- 613.11 place after the seven layers. Ashaya, Soul of the Wild makes alice's
 -- nontoken creatures Forest LANDS at layer 4, Blood Moon then depends on that (CR
@@ -284,10 +286,10 @@ landSubtypeStripSpec s registry = Spec.describe s "LandSubtypeStrip" $ do
     Spec.assertEqWith
       s
       "the stolen Piker can't be sacrificed until Ashaya and Blood Moon are both on the battlefield"
-      ( SacrificeRestriction.prohibited stolen base,
-        SacrificeRestriction.prohibited stolen withAshaya,
-        SacrificeRestriction.prohibited stolen withMoon,
-        SacrificeRestriction.prohibited stolen stripped
+      ( ObjectRestriction.prohibited RestrictedAction.Sacrifice stolen base,
+        ObjectRestriction.prohibited RestrictedAction.Sacrifice stolen withAshaya,
+        ObjectRestriction.prohibited RestrictedAction.Sacrifice stolen withMoon,
+        ObjectRestriction.prohibited RestrictedAction.Sacrifice stolen stripped
       )
       (True, True, True, False)
     -- The anti-vacuity legs: the prohibition lifted because Garland lost its

@@ -59,6 +59,7 @@ import qualified Parun.Engine.Mana as Mana
 import qualified Parun.Engine.ManaAbility as ManaAbility
 import qualified Parun.Engine.ManaRider as ManaRider
 import qualified Parun.Engine.ManaSymbolText as ManaSymbolText
+import qualified Parun.Engine.ObjectRestriction as ObjectRestriction
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Players as Players
 import qualified Parun.Engine.Projection as Projection
@@ -68,7 +69,6 @@ import qualified Parun.Engine.QuantitySlot as QuantitySlot
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Reversal as Reversal
 import qualified Parun.Engine.RulePermission as RulePermission
-import qualified Parun.Engine.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Engine.Snapshot as Snapshot
 import qualified Parun.Engine.Subtype as Subtype
 import qualified Parun.Engine.Summoning as Summoning
@@ -193,6 +193,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Prototype as Prototype
 import qualified Parun.Types.Quantity as Quantity.Type
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RestrictedAction as RestrictedAction
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.RevealWindow as RevealWindow
@@ -4388,7 +4389,7 @@ canPayComponentGiven board slots pid oid component gs = case component of
   CostComponent.SacrificeThis ->
     Set.member oid (GameState.battlefield gs)
       && Projection.controllerOf oid gs == Just pid
-      && not (SacrificeRestriction.prohibited oid gs)
+      && not (ObjectRestriction.prohibited RestrictedAction.Sacrifice oid gs)
   -- CR 118.1 as a cost: only a permanent, and only one this player controls, no
   -- rule's doing (`returnCandidates`) but because no printing lets another player
   -- pay it -- SacrificeThis' two conjuncts above, read here rather than left to

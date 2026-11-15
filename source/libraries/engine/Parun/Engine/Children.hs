@@ -344,6 +344,7 @@ import qualified Parun.Types.ObjectCount as ObjectCount
 import qualified Parun.Types.ObjectDamage as ObjectDamage
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
@@ -427,7 +428,6 @@ import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
-import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scope as Scope
@@ -2982,7 +2982,7 @@ data FaceChildren card f = MkFaceChildren
     -- | A combat restriction (CR 508.1c, 509.1b), whole.
     faceCombatRestriction :: CombatRestriction.CombatRestriction -> f CombatRestriction.CombatRestriction,
     -- | A restriction on sacrificing (CR 701.21a), whole.
-    faceSacrificeRestriction :: SacrificeRestriction.SacrificeRestriction -> f SacrificeRestriction.SacrificeRestriction,
+    faceObjectRestriction :: ObjectRestriction.ObjectRestriction -> f ObjectRestriction.ObjectRestriction,
     -- | A restriction on untapping (CR 502.3), whole.
     faceUntapRestriction :: UntapRestriction.UntapRestriction -> f UntapRestriction.UntapRestriction,
     -- | A restriction on crewing (CR 702.122a), whole.
@@ -3043,7 +3043,7 @@ faceLeaves =
       faceBlockPermission = pure,
       faceAttackRequirement = pure,
       faceCombatRestriction = pure,
-      faceSacrificeRestriction = pure,
+      faceObjectRestriction = pure,
       faceUntapRestriction = pure,
       faceKeywordCostRestriction = pure,
       faceTargetRestriction = pure,
@@ -3061,7 +3061,7 @@ faceLeaves =
 
 -- | A face's children. A delayed ability's name and a mode cost's index are keys, left as they are.
 faceChildren :: (Applicative f) => FaceChildren card f -> Face.Face card -> f (Face.Face card)
-faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer additionalHand anteOnly circlesTwo deckLimit commanderDeckRules pregameExile keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions sacrificeRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
+faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness loyalty defense startingIntensity vanguard canBeYourCommander claimsStartingPlayer additionalHand anteOnly circlesTwo deckLimit commanderDeckRules pregameExile keywords colorIndicator characteristicPT characteristicColors staticAbilities spell activatedAbilities replacementEffects triggeredAbilities delayedAbilities rooms dungeonEntryQuality castingPermissions castingRestrictions enchant counterability copyability additionalCosts additionalCostChoices modeCosts modeChooser maximumX minimumX alternativeCosts costReductions playerAbilities blockRequirements blockPermissions attackRequirements combatRestrictions objectRestrictions untapRestrictions keywordCostRestrictions targetRestrictions rulePermissions attachRestrictions entryRestrictions counterRestrictions activationProhibitions attackCosts blockCosts counterLimits mulliganActions openingHandActions specialActions) =
   Face.MkFace name oracleText manaCost typeLine
     <$> traverse (facePower c) power
     <*> traverse (faceToughness c) toughness
@@ -3107,7 +3107,7 @@ faceChildren c (Face.MkFace name oracleText manaCost typeLine power toughness lo
     <*> traverse (faceBlockPermission c) blockPermissions
     <*> traverse (faceAttackRequirement c) attackRequirements
     <*> traverse (faceCombatRestriction c) combatRestrictions
-    <*> traverse (faceSacrificeRestriction c) sacrificeRestrictions
+    <*> traverse (faceObjectRestriction c) objectRestrictions
     <*> traverse (faceUntapRestriction c) untapRestrictions
     <*> traverse (faceKeywordCostRestriction c) keywordCostRestrictions
     <*> traverse (faceTargetRestriction c) targetRestrictions
@@ -3409,7 +3409,7 @@ ruleLeaves =
 
 -- | A RuleAbilities' children (CR 613.11), row by row.
 ruleAbilitiesChildren :: (Applicative f) => RuleChildren f -> RuleAbilities.RuleAbilities -> f RuleAbilities.RuleAbilities
-ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions attachRestrictions attackCosts rulePermissions attackRequirements blockCosts blockPermissions blockRequirements combatRestrictions counterRestrictions keywordCostRestrictions entryRestrictions sacrificeRestrictions targetRestrictions untapRestrictions counterLimits) =
+ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions attachRestrictions attackCosts rulePermissions attackRequirements blockCosts blockPermissions blockRequirements combatRestrictions counterRestrictions keywordCostRestrictions entryRestrictions objectRestrictions targetRestrictions untapRestrictions counterLimits) =
   RuleAbilities.MkRuleAbilities
     <$> traverse (activationProhibitionChildren c) activationProhibitions
     <*> traverse (attachRestrictionChildren c) attachRestrictions
@@ -3423,7 +3423,7 @@ ruleAbilitiesChildren c (RuleAbilities.MkRuleAbilities activationProhibitions at
     <*> traverse (counterRestrictionChildren c) counterRestrictions
     <*> traverse (keywordCostRestrictionChildren c) keywordCostRestrictions
     <*> traverse (entryRestrictionChildren c) entryRestrictions
-    <*> traverse (sacrificeRestrictionChildren c) sacrificeRestrictions
+    <*> traverse (objectRestrictionChildren c) objectRestrictions
     <*> traverse (targetRestrictionChildren c) targetRestrictions
     <*> traverse (untapRestrictionChildren c) untapRestrictions
     <*> traverse (counterLimitChildren c) counterLimits
@@ -3483,9 +3483,9 @@ entryRestrictionChildren c (EntryRestriction.MkEntryRestriction affected origins
   EntryRestriction.MkEntryRestriction <$> ruleAffected c affected <*> pure origins
 
 -- | A sacrifice restriction's children (CR 701.21).
-sacrificeRestrictionChildren :: (Applicative f) => RuleChildren f -> SacrificeRestriction.SacrificeRestriction -> f SacrificeRestriction.SacrificeRestriction
-sacrificeRestrictionChildren c (SacrificeRestriction.MkSacrificeRestriction affected) =
-  SacrificeRestriction.MkSacrificeRestriction <$> ruleAffected c affected
+objectRestrictionChildren :: (Applicative f) => RuleChildren f -> ObjectRestriction.ObjectRestriction -> f ObjectRestriction.ObjectRestriction
+objectRestrictionChildren c (ObjectRestriction.MkObjectRestriction action affected) =
+  ObjectRestriction.MkObjectRestriction action <$> ruleAffected c affected
 
 -- | A target restriction's children. Its stack object kind is left as it is.
 targetRestrictionChildren :: (Applicative f) => RuleChildren f -> TargetRestriction.TargetRestriction Affected.Affected -> f (TargetRestriction.TargetRestriction Affected.Affected)

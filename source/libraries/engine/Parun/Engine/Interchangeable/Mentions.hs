@@ -25,7 +25,7 @@
 -- ObjectRef with ChosenPermanents, the rule-affecting rows: RuleAbilities
 -- with its ActivationProhibition, AttachRestriction, RulePermission,
 -- AttackRequirement, BlockPermission, BlockRequirement, CounterRestriction, CounterLimit,
--- KeywordCostRestriction, EntryRestriction, SacrificeRestriction, TargetRestriction
+-- KeywordCostRestriction, EntryRestriction, ObjectRestriction, TargetRestriction
 -- and UntapRestriction, the combat rules CombatRestriction, AttackCost,
 -- BlockCost and PerCreature, Affected, the mana payloads: ManaAddition with
 -- its ManaProduction, ManaCount, ManaRestriction, ManaRider and WhenSpent, and
@@ -144,6 +144,7 @@ import qualified Parun.Types.MoveDuration as MoveDuration
 import qualified Parun.Types.MovedKinds as MovedKinds
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.Operand as Operand
 import qualified Parun.Types.PayGate as PayGate
@@ -166,7 +167,6 @@ import qualified Parun.Types.RemovalCount as RemovalCount
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
-import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.Scope as Scope
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.SpecialAction as SpecialAction
@@ -772,7 +772,7 @@ faceNames asking onCard =
           Children.faceBlockPermission = Const.Const . blockPermissionNames asking,
           Children.faceAttackRequirement = Const.Const . attackRequirementNames asking,
           Children.faceCombatRestriction = Const.Const . combatRestrictionNames asking,
-          Children.faceSacrificeRestriction = Const.Const . sacrificeRestrictionNames asking,
+          Children.faceObjectRestriction = Const.Const . objectRestrictionNames asking,
           Children.faceUntapRestriction = Const.Const . untapRestrictionNames asking,
           Children.faceKeywordCostRestriction = Const.Const . keywordCostRestrictionNames asking,
           Children.faceTargetRestriction = Const.Const . targetRestrictionNames asking,
@@ -1158,8 +1158,8 @@ replacementEffectNames asking onCard onAbility onEffect =
 ruleAbilitiesNames :: (Monoid r) => Asking r -> RuleAbilities.RuleAbilities -> r
 ruleAbilitiesNames asking = Const.getConst . Children.ruleAbilitiesChildren (ruleVisitors asking)
 
-sacrificeRestrictionNames :: (Monoid r) => Asking r -> SacrificeRestriction.SacrificeRestriction -> r
-sacrificeRestrictionNames asking = Const.getConst . Children.sacrificeRestrictionChildren (ruleVisitors asking)
+objectRestrictionNames :: (Monoid r) => Asking r -> ObjectRestriction.ObjectRestriction -> r
+objectRestrictionNames asking = Const.getConst . Children.objectRestrictionChildren (ruleVisitors asking)
 
 scopeNames :: (Monoid r) => Asking r -> Scope.Scope -> r
 scopeNames asking x = case x of

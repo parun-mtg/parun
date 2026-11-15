@@ -3,14 +3,14 @@
 -- reaches past the layer system (alongside Parun.Engine.PlayerEffect,
 -- Parun.Engine.BlockRequirement, Parun.Engine.AttackRequirement,
 -- Parun.Engine.CombatRestriction, Parun.Engine.AttackCost,
--- Parun.Engine.SacrificeRestriction and Parun.Engine.UntapRestriction). None is a
+-- Parun.Engine.ObjectRestriction and Parun.Engine.UntapRestriction). None is a
 -- layer, and no layer of Parun.Engine.Projection rewrites them.
 --
 -- The only reader of Parun.Types.AttachRestriction. Its callers ask about a PAIR
 -- and never learn which card produced the answer.
 --
 -- THREE places ask, and all three are needed for the reason
--- Parun.Engine.SacrificeRestriction's header gives about its own two: CR 101.2
+-- Parun.Engine.ObjectRestriction's header gives about its own two: CR 101.2
 -- makes the "can't" beat the "can", so a refused pairing must neither be
 -- ATTACHED (Parun.Engine.Attach.attachmentFor, which every CR 701.3 move and every
 -- Filter.CanHostSubject offer goes through) nor be left STANDING once it somehow
@@ -76,11 +76,11 @@ import qualified Parun.Types.RuleAbilities as RuleAbilities
 -- right now say `subject` can't become attached to `host`? Consecrate Land's
 -- "can't be enchanted by other Auras" and Goblin Brawler's "can't be equipped".
 --
--- A Bool about a PAIR, where Parun.Engine.SacrificeRestriction answers a set of
+-- A Bool about a PAIR, where Parun.Engine.ObjectRestriction answers a set of
 -- ids: this question has two object positions, so there is no one set to hand
 -- back. Every caller holds the pair already.
 --
--- Parun.Engine.SacrificeRestriction.cantBeSacrificed's body, gate for gate, plus
+-- Parun.Engine.ObjectRestriction.restricted's body, gate for gate, plus
 -- the second position: the same CR 305.7 and CR 613.1f ability losses are asked
 -- of the RESTRICTING permanent, the same CR 612.1 word swap is applied -- to the
 -- affected set AND to the attachers filter, since both are words on that one

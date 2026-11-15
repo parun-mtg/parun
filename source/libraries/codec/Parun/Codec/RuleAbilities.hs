@@ -15,8 +15,8 @@ import qualified Parun.Codec.CounterLimit as CounterLimit
 import qualified Parun.Codec.CounterRestriction as CounterRestriction
 import qualified Parun.Codec.EntryRestriction as EntryRestriction
 import qualified Parun.Codec.KeywordCostRestriction as KeywordCostRestriction
+import qualified Parun.Codec.ObjectRestriction as ObjectRestriction
 import qualified Parun.Codec.RulePermission as RulePermission
-import qualified Parun.Codec.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Codec.TargetRestriction as TargetRestriction
 import qualified Parun.Codec.UntapRestriction as UntapRestriction
 import qualified Parun.JsonCodec.Codec as Codec
@@ -40,7 +40,7 @@ codec = Fields.object $ do
   counterRestrictions <- Fields.defaulted "counterRestrictions" [] (Common.list CounterRestriction.codec) RuleAbilities.counterRestrictions
   keywordCostRestrictions <- Fields.defaulted "keywordCostRestrictions" [] (Common.list KeywordCostRestriction.codec) RuleAbilities.keywordCostRestrictions
   entryRestrictions <- Fields.defaulted "entryRestrictions" [] (Common.list EntryRestriction.codec) RuleAbilities.entryRestrictions
-  sacrificeRestrictions <- Fields.defaulted "sacrificeRestrictions" [] (Common.list SacrificeRestriction.codec) RuleAbilities.sacrificeRestrictions
+  objectRestrictions <- Fields.defaulted "objectRestrictions" [] (Common.list ObjectRestriction.codec) RuleAbilities.objectRestrictions
   targetRestrictions <- Fields.defaulted "targetRestrictions" [] (Common.list (TargetRestriction.codec Affected.codec)) RuleAbilities.targetRestrictions
   untapRestrictions <- Fields.defaulted "untapRestrictions" [] (Common.list UntapRestriction.codec) RuleAbilities.untapRestrictions
   counterLimits <- Fields.defaulted "counterLimits" [] (Common.list CounterLimit.codec) RuleAbilities.counterLimits
@@ -58,7 +58,7 @@ codec = Fields.object $ do
         RuleAbilities.counterRestrictions = counterRestrictions,
         RuleAbilities.keywordCostRestrictions = keywordCostRestrictions,
         RuleAbilities.entryRestrictions = entryRestrictions,
-        RuleAbilities.sacrificeRestrictions = sacrificeRestrictions,
+        RuleAbilities.objectRestrictions = objectRestrictions,
         RuleAbilities.targetRestrictions = targetRestrictions,
         RuleAbilities.untapRestrictions = untapRestrictions,
         RuleAbilities.counterLimits = counterLimits

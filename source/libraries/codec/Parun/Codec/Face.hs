@@ -56,6 +56,7 @@ import qualified Parun.Codec.Loyalty as Loyalty
 import qualified Parun.Codec.ManaCost as ManaCost
 import qualified Parun.Codec.Modal as Modal
 import qualified Parun.Codec.ModeIndex as ModeIndex
+import qualified Parun.Codec.ObjectRestriction as ObjectRestriction
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Codec.Power as Power
@@ -63,7 +64,6 @@ import qualified Parun.Codec.PregameExile as PregameExile
 import qualified Parun.Codec.PrintedReplacement as PrintedReplacement
 import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.RulePermission as RulePermission
-import qualified Parun.Codec.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Codec.SpecialAction as SpecialAction
 import qualified Parun.Codec.StaticAbility as StaticAbility
 import qualified Parun.Codec.Subtype as Subtype
@@ -156,7 +156,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
   blockPermissions <- Fields.defaulted "blockPermissions" [] (Common.list BlockPermission.codec) Face.blockPermissions
   attackRequirements <- Fields.defaulted "attackRequirements" [] (Common.list AttackRequirement.codec) Face.attackRequirements
   combatRestrictions <- Fields.defaulted "combatRestrictions" [] (Common.list CombatRestriction.codec) Face.combatRestrictions
-  sacrificeRestrictions <- Fields.defaulted "sacrificeRestrictions" [] (Common.list SacrificeRestriction.codec) Face.sacrificeRestrictions
+  objectRestrictions <- Fields.defaulted "objectRestrictions" [] (Common.list ObjectRestriction.codec) Face.objectRestrictions
   untapRestrictions <- Fields.defaulted "untapRestrictions" [] (Common.list UntapRestriction.codec) Face.untapRestrictions
   keywordCostRestrictions <- Fields.defaulted "keywordCostRestrictions" [] (Common.list KeywordCostRestriction.codec) Face.keywordCostRestrictions
   targetRestrictions <- Fields.defaulted "targetRestrictions" [] (Common.list (TargetRestriction.codec Affected.codec)) Face.targetRestrictions
@@ -248,7 +248,7 @@ codec cardCodec = Fields.objectWith (modeCostsInRange Monad.>=> chooserHasModes)
         Face.blockPermissions = blockPermissions,
         Face.attackRequirements = attackRequirements,
         Face.combatRestrictions = combatRestrictions,
-        Face.sacrificeRestrictions = sacrificeRestrictions,
+        Face.objectRestrictions = objectRestrictions,
         Face.untapRestrictions = untapRestrictions,
         Face.keywordCostRestrictions = keywordCostRestrictions,
         Face.targetRestrictions = targetRestrictions,

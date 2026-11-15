@@ -25,15 +25,16 @@ import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
+import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.ProhibitedCost as ProhibitedCost
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RequiredBlockers as RequiredBlockers
 import qualified Parun.Types.RequirementArity as RequirementArity
+import qualified Parun.Types.RestrictedAction as RestrictedAction
 import qualified Parun.Types.RuleAbilities as RuleAbilities
 import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.RuleWaiver as RuleWaiver
-import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TargetRestriction as TargetRestriction
@@ -63,7 +64,7 @@ testRuleAbilities =
       RuleAbilities.counterRestrictions = [CounterRestriction.MkCounterRestriction Affected.Attached (Just CounterKind.MinusOneMinusOne)],
       RuleAbilities.keywordCostRestrictions = [KeywordCostRestriction.MkKeywordCostRestriction KeywordCostPart.Crew Affected.Attached],
       RuleAbilities.entryRestrictions = [EntryRestriction.MkEntryRestriction Affected.Attached (Set.singleton Zone.Graveyard)],
-      RuleAbilities.sacrificeRestrictions = [SacrificeRestriction.MkSacrificeRestriction Affected.Attached],
+      RuleAbilities.objectRestrictions = [ObjectRestriction.MkObjectRestriction RestrictedAction.Sacrifice Affected.Attached],
       RuleAbilities.targetRestrictions = [TargetRestriction.MkTargetRestriction Affected.Attached StackObjectKind.Spell (Filter.And [])],
       RuleAbilities.untapRestrictions = [UntapRestriction.MkUntapRestriction Affected.Attached UntapHold.Forbidden Nothing],
       RuleAbilities.counterLimits = [CounterLimit.MkCounterLimit CounterKind.Age 7]
@@ -83,7 +84,7 @@ testRuleAbilitiesJson =
     <> "\"counterRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"kind\":{\"type\":\"MinusOneMinusOne\"}}],"
     <> "\"keywordCostRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"part\":\"Crew\"}],"
     <> "\"entryRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"origins\":[\"Graveyard\"]}],"
-    <> "\"sacrificeRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}],"
+    <> "\"objectRestrictions\":[{\"action\":\"Sacrifice\",\"affected\":{\"type\":\"Attached\"}}],"
     <> "\"targetRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"kind\":\"Spell\"}],"
     <> "\"untapRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}],"
     <> "\"counterLimits\":[{\"atMost\":7,\"kind\":{\"type\":\"Age\"}}]}"

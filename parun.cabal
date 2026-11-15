@@ -1272,6 +1272,8 @@ library codec
     Parun.Codec.ObjectIdSpec
     Parun.Codec.ObjectRef
     Parun.Codec.ObjectRefSpec
+    Parun.Codec.ObjectRestriction
+    Parun.Codec.ObjectRestrictionSpec
     Parun.Codec.ObjectSnapshot
     Parun.Codec.ObjectSnapshotSpec
     Parun.Codec.ObjectSpec
@@ -1564,6 +1566,8 @@ library codec
     Parun.Codec.ReselectAttackSpec
     Parun.Codec.RestartSignal
     Parun.Codec.RestartSignalSpec
+    Parun.Codec.RestrictedAction
+    Parun.Codec.RestrictedActionSpec
     Parun.Codec.RestrictedCreatures
     Parun.Codec.RestrictedCreaturesSpec
     Parun.Codec.Result
@@ -1614,8 +1618,6 @@ library codec
     Parun.Codec.SacrificeEffect
     Parun.Codec.SacrificeEffectSpec
     Parun.Codec.Sacrificer
-    Parun.Codec.SacrificeRestriction
-    Parun.Codec.SacrificeRestrictionSpec
     Parun.Codec.SacrificerSpec
     Parun.Codec.SacrificeSpec
     Parun.Codec.SacrificeToEnter
@@ -2046,6 +2048,7 @@ library engine
     Parun.Engine.MoveDuration
     Parun.Engine.Mulligan
     Parun.Engine.NameWords
+    Parun.Engine.ObjectRestriction
     Parun.Engine.Phasing
     Parun.Engine.Plane
     Parun.Engine.Planechase
@@ -2083,7 +2086,6 @@ library engine
     Parun.Engine.RuleAbilities
     Parun.Engine.RuleFamily
     Parun.Engine.RulePermission
-    Parun.Engine.SacrificeRestriction
     Parun.Engine.Saga
     Parun.Engine.Sba
     Parun.Engine.Scheme
@@ -2651,6 +2653,7 @@ library test
     Parun.MoveCounterSpec
     Parun.MulliganSpec
     Parun.MutateSpec
+    Parun.ObjectRestrictionSpec
     Parun.OmenSpec
     Parun.OutsideTheGameSpec
     Parun.PhasingSpec
@@ -2682,7 +2685,6 @@ library test
     Parun.ReversalSpec
     Parun.RingSpec
     Parun.RoomSpec
-    Parun.SacrificeRestrictionSpec
     Parun.SaddleSpec
     Parun.SagaSpec
     Parun.ScenarioSpec
@@ -3427,6 +3429,7 @@ library types
     Parun.Types.ObjectDamage
     Parun.Types.ObjectId
     Parun.Types.ObjectRef
+    Parun.Types.ObjectRestriction
     Parun.Types.ObjectSnapshot
     Parun.Types.ObjectView
     Parun.Types.Observer
@@ -3599,6 +3602,7 @@ library types
     Parun.Types.ReselectAttack
     Parun.Types.Response
     Parun.Types.RestartSignal
+    Parun.Types.RestrictedAction
     Parun.Types.RestrictedCreatures
     Parun.Types.Result
     Parun.Types.ReturnEnding
@@ -3627,7 +3631,6 @@ library types
     Parun.Types.SacrificeAnyNumber
     Parun.Types.SacrificeEffect
     Parun.Types.Sacrificer
-    Parun.Types.SacrificeRestriction
     Parun.Types.SacrificeToEnter
     Parun.Types.Saddling
     Parun.Types.Scaling

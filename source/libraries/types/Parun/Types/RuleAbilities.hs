@@ -13,8 +13,8 @@ import qualified Parun.Types.CounterLimit as CounterLimit
 import qualified Parun.Types.CounterRestriction as CounterRestriction
 import qualified Parun.Types.EntryRestriction as EntryRestriction
 import qualified Parun.Types.KeywordCostRestriction as KeywordCostRestriction
+import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.RulePermission as RulePermission
-import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.TargetRestriction as TargetRestriction
 import qualified Parun.Types.UntapRestriction as UntapRestriction
 
@@ -62,9 +62,9 @@ data RuleAbilities = MkRuleAbilities
     -- | CR 101.2 / CR 400.4a (see Parun.Types.EntryRestriction): "creature cards
     -- in graveyards and libraries can't enter the battlefield" (Grafdigger's Cage).
     entryRestrictions :: [EntryRestriction.EntryRestriction],
-    -- | CR 701.21a: "creatures you control but don't own ... can't be sacrificed"
-    -- (Garland, Royal Kidnapper).
-    sacrificeRestrictions :: [SacrificeRestriction.SacrificeRestriction],
+    -- | CR 101.2: "creatures you control but don't own ... can't be sacrificed"
+    -- (Garland, Royal Kidnapper), "it can't be turned face up" (Unable to Scream).
+    objectRestrictions :: [ObjectRestriction.ObjectRestriction],
     -- | CR 115 / 101.2: "creatures can't be the targets of spells" (Dense
     -- Foliage).
     targetRestrictions :: [TargetRestriction.TargetRestriction Affected.Affected],
@@ -98,7 +98,7 @@ instance Semigroup RuleAbilities where
         counterRestrictions = counterRestrictions left <> counterRestrictions right,
         keywordCostRestrictions = keywordCostRestrictions left <> keywordCostRestrictions right,
         entryRestrictions = entryRestrictions left <> entryRestrictions right,
-        sacrificeRestrictions = sacrificeRestrictions left <> sacrificeRestrictions right,
+        objectRestrictions = objectRestrictions left <> objectRestrictions right,
         targetRestrictions = targetRestrictions left <> targetRestrictions right,
         untapRestrictions = untapRestrictions left <> untapRestrictions right,
         counterLimits = counterLimits left <> counterLimits right
@@ -122,7 +122,7 @@ instance Monoid RuleAbilities where
         counterRestrictions = [],
         keywordCostRestrictions = [],
         entryRestrictions = [],
-        sacrificeRestrictions = [],
+        objectRestrictions = [],
         targetRestrictions = [],
         untapRestrictions = [],
         counterLimits = []

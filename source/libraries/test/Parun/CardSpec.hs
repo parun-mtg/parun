@@ -362,6 +362,7 @@ import qualified Parun.Types.NextDamageInstance as NextDamageInstance
 import qualified Parun.Types.Ninjutsu as Ninjutsu
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.OfferCast as OfferCast
 import qualified Parun.Types.Onset as Onset
 import qualified Parun.Types.OrElse as OrElse
@@ -442,7 +443,6 @@ import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.Sacrifice as Sacrifice
 import qualified Parun.Types.SacrificeAnyNumber as SacrificeAnyNumber
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
-import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SacrificeToEnter as SacrificeToEnter
 import qualified Parun.Types.Scaling as Scaling
 import qualified Parun.Types.Scope as Scope
@@ -565,7 +565,7 @@ vanillaFace name typeLine =
       Face.blockPermissions = [],
       Face.attackRequirements = [],
       Face.combatRestrictions = [],
-      Face.sacrificeRestrictions = [],
+      Face.objectRestrictions = [],
       Face.untapRestrictions = [],
       Face.attachRestrictions = [],
       Face.counterRestrictions = [],
@@ -1494,7 +1494,7 @@ cardCounts =
           Children.faceBlockPermission = Children.blockPermissionChildren ruleCounts,
           Children.faceAttackRequirement = Children.attackRequirementChildren ruleCounts,
           Children.faceCombatRestriction = Children.combatRestrictionChildren ruleCounts,
-          Children.faceSacrificeRestriction = Children.sacrificeRestrictionChildren ruleCounts,
+          Children.faceObjectRestriction = Children.objectRestrictionChildren ruleCounts,
           Children.faceUntapRestriction = Children.untapRestrictionChildren ruleCounts,
           Children.faceKeywordCostRestriction = Children.keywordCostRestrictionChildren ruleCounts,
           Children.faceTargetRestriction = Children.targetRestrictionChildren ruleCounts,
@@ -5549,7 +5549,7 @@ ruleAbilitiesFilters rules =
         <> concatMap (concatMap conditionFilters . Maybe.maybeToList . AttackCost.while) (RuleAbilities.attackCosts rules)
         <> concatMap (concatMap conditionFilters . Maybe.maybeToList . BlockCost.while) (RuleAbilities.blockCosts rules)
         <> concatMap (frame Unframed . combatRestrictionFilters) (RuleAbilities.combatRestrictions rules)
-        <> concatMap (unframed . affectedFilters . SacrificeRestriction.affected) (RuleAbilities.sacrificeRestrictions rules)
+        <> concatMap (unframed . affectedFilters . ObjectRestriction.affected) (RuleAbilities.objectRestrictions rules)
         <> concatMap untapRestrictionFilters (RuleAbilities.untapRestrictions rules)
         <> concatMap (unframed . affectedFilters . KeywordCostRestriction.affected) (RuleAbilities.keywordCostRestrictions rules)
         <> concatMap (unframed . affectedFilters . TargetRestriction.affected) (RuleAbilities.targetRestrictions rules)
@@ -5785,7 +5785,7 @@ activatedAbilityFilters ability =
 --   * `specialActions` -- CR 116.2d's ignore cost, a Cost like the two above.
 --   * `playerAbilities` -- CR 613.11's cost modifiers and CR 601.3b's timing
 --     permission.
---   * `combatRestrictions` (CR 508.1c / 509.1b), `sacrificeRestrictions` (CR
+--   * `combatRestrictions` (CR 508.1c / 509.1b), `objectRestrictions` (CR
 --     701.21a / 101.2), `untapRestrictions` (CR 502.3 / 101.2),
 --     `keywordCostRestrictions` (CR 702.122d / 101.2),
 --     `targetRestrictions` (CR 115 / 101.2),

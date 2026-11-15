@@ -24,13 +24,13 @@ import qualified Parun.Engine.Dungeon as Dungeon
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Event.Trigger as Trigger
 import qualified Parun.Engine.Game as Game
+import qualified Parun.Engine.ObjectRestriction as ObjectRestriction
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.Planechase as Planechase
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Prepare as Prepare
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
-import qualified Parun.Engine.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Engine.Saga as Saga
 import qualified Parun.Engine.Snapshot as Snapshot
 import qualified Parun.Engine.SpaceSculptor as SpaceSculptor
@@ -64,6 +64,7 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.RangeOfInfluence as RangeOfInfluence
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
+import qualified Parun.Types.RestrictedAction as RestrictedAction
 import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotCount as SlotCount
 import qualified Parun.Types.Source as Source
@@ -880,7 +881,7 @@ checkOnce instead boards = do
       -- answer.
       told =
         filter
-          (\(_, oid) -> not (SacrificeRestriction.prohibited oid gs))
+          (\(_, oid) -> not (ObjectRestriction.prohibited RestrictedAction.Sacrifice oid gs))
           (Saga.sacrificing (\oid -> Projection.controllerOf oid gs) pcs (Event.unscannedEvents gs) gs)
       -- CR 704.5v / 310.7 and CR 704.5w / 310.8, from the SAME pre-pass state as
       -- everything above, and living in Parun.Engine.Battle with the rest of rule

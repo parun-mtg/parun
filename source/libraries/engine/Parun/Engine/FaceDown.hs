@@ -44,6 +44,7 @@ import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
+import qualified Parun.Engine.ObjectRestriction as ObjectRestriction
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Types.CardType as CardType
@@ -62,6 +63,7 @@ import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.PaymentSubject as PaymentSubject
 import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prompt as Prompt
+import qualified Parun.Types.RestrictedAction as RestrictedAction
 import Parun.Types.TurnUpProcedure (TurnUpProcedure)
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 
@@ -133,7 +135,7 @@ costsOf procedure oid gs = case procedure of
   TurnUpProcedure.Cloak -> Maybe.maybeToList (creatureCardCostOf oid gs)
 
 -- CR 116.2b: may this player turn this permanent face up right now, by this
--- procedure? Five conjuncts, each a clause of the rule:
+-- procedure? Six conjuncts, the first five each a clause of the rule:
 --
 --   * it is FACE DOWN (CR 708.2b's mirror -- there is nothing to turn up
 --     otherwise);
@@ -147,6 +149,9 @@ costsOf procedure oid gs = case procedure of
 --   * one such cost is payable. An action the player cannot take is not offered,
 --     which is Parun.Engine.Action.legalActions' posture for every other action
 --     on the menu.
+--
+-- and the sixth CR 101.2's: no effect says it CAN'T be turned face up (Unable
+-- to Scream), which beats every procedure alike.
 --
 -- The payability check is Cost.canPay and NOT Cost.total's CR 601.2f
 -- adjustments: that rule totals the cost of a spell being cast or an ability
@@ -192,6 +197,7 @@ canTurnFaceUp pid procedure oid gs =
         && Projection.controllerOf oid gs == Just pid
         && eligible
         && any (payable pid oid gs) (costsOf procedure oid gs)
+        && not (ObjectRestriction.prohibited RestrictedAction.TurnFaceUp oid gs)
 
 -- Cost.canPay for the special action, canTurnFaceUp's last conjunct and the
 -- filter turnFaceUp offers its choice through. A cost with an X in it is

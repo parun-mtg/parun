@@ -59,6 +59,7 @@ import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
+import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerStaticAbility as PlayerStaticAbility
 import qualified Parun.Types.Power as Power
@@ -66,7 +67,6 @@ import qualified Parun.Types.PregameExile as PregameExile
 import qualified Parun.Types.PrintedReplacement as PrintedReplacement
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RulePermission as RulePermission
-import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.StaticAbility as StaticAbility
 import qualified Parun.Types.Subtype as Subtype
@@ -544,17 +544,17 @@ data Face card = MkFace
     -- where the requirements take two fields: Parun.Types.CombatRestriction argues
     -- why the axis that split those is absent here.
     combatRestrictions :: [CombatRestriction.CombatRestriction],
-    -- | CR 604.1/604.2 / 701.21a / 101.2: this face's printed SACRIFICE
-    -- PROHIBITIONS -- "creatures you control but don't own ... can't be
-    -- sacrificed" (Garland, Royal Kidnapper); read by
-    -- Parun.Engine.SacrificeRestriction, rewritten by no layer, for
-    -- blockRequirements' CR 613.11 reason.
+    -- | CR 604.1/604.2 / 101.2: this face's printed OBJECT PROHIBITIONS --
+    -- "creatures you control but don't own ... can't be sacrificed" (Garland,
+    -- Royal Kidnapper, CR 701.21a), "it can't be turned face up" (Unable to
+    -- Scream, CR 708); read by Parun.Engine.ObjectRestriction, rewritten by no
+    -- layer, for blockRequirements' CR 613.11 reason.
     --
     -- Its own field rather than an arm of combatRestrictions above, because the
     -- two forbid unrelated game actions: a combat restriction is read only by
     -- the two declarations CR 508.1 and CR 509.1 describe, and this is read
-    -- wherever CR 701.21a's sacrifice is reached from.
-    sacrificeRestrictions :: [SacrificeRestriction.SacrificeRestriction],
+    -- wherever its action is reached from.
+    objectRestrictions :: [ObjectRestriction.ObjectRestriction],
     -- | CR 604.1/604.2 / 502.3 / 101.2: this face's printed UNTAP PROHIBITIONS --
     -- "each land with an activated ability that isn't a mana ability doesn't untap
     -- during its controller's untap step" (Tsabo's Web), and the untaps its
@@ -562,9 +562,10 @@ data Face card = MkFace
     -- Parun.Engine.UntapRestriction, rewritten by no layer, for
     -- blockRequirements' CR 613.11 reason.
     --
-    -- Its own field rather than an arm of sacrificeRestrictions above, for the
-    -- reason that field gives one line up: the two forbid unrelated game actions,
-    -- and this one is read at exactly one site, CR 502.3's turn-based action.
+    -- Its own field rather than an action of objectRestrictions above: an
+    -- untap restriction carries a hold and an "as long as" (CR 611.3a) that no
+    -- such action takes, and is read at exactly one site, CR 502.3's
+    -- turn-based action.
     --
     -- The STATIC prohibition only. The one-shots -- "doesn't untap during its
     -- controller's NEXT untap step" and CR 701.43a's exert -- ride the victim, as

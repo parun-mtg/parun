@@ -1,0 +1,97 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "faceDown": "Manifested",
+            "label": "piker"
+          },
+          {
+            "attached": "piker",
+            "card": "Unable to Scream",
+            "label": "scream"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-2",
+            "ready": true
+          },
+          {
+            "card": "Ashnod's Altar",
+            "label": "altar"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Unable to Scream keeps a manifested creature from being turned face up",
+  "note": "Goblin Piker is placed manifested with Unable to Scream attached. CR 101.2: the Aura's \"can't be turned face up\" beats CR 701.40b, so the two Mountains that would pay {1}{R} are offered only as mana; the unenchanted board offers TurnFaceUp (board/cr-701-40a-a-placed-manifested-permanent-is-a-nameless-2-2). Face down it is still a creature, and the Aura makes it a 0/2 Toy artifact. Ashnod's Altar stays offered: the Aura forbids turning the creature face up, not sacrificing it.",
+  "timeline": [
+    {
+      "check": {
+        "Names": {
+          "names": [],
+          "object": "$piker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 0,
+          "toughness": 2
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "$piker",
+          "subtypes": [
+            "Toy"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility $mountain",
+            "ActivateManaAbility $mountain-2",
+            "ActivateManaAbility $altar"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

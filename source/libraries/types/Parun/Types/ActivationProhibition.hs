@@ -12,14 +12,14 @@ import qualified Parun.Types.ProhibitedCost as ProhibitedCost
 --
 -- A printed static carrier alongside Parun.Types.StaticAbility,
 -- Parun.Types.PlayerStaticAbility, Parun.Types.CombatRestriction,
--- Parun.Types.SacrificeRestriction and its siblings.
+-- Parun.Types.ObjectRestriction and its siblings.
 -- Parun.Types.BlockRequirement's header argues why neither of the first two can
 -- hold one, and every step of that argument holds here unchanged: CR 613.1's
 -- layers compute an OBJECT's characteristics and "can't be activated" is not
 -- one of them, and a PlayerScope names PLAYERS where this names a permanent.
 --
 -- NOT a Parun.Types.Modification, for the reason
--- Parun.Types.SacrificeRestriction states at length: CR 613.11 puts a continuous
+-- Parun.Types.ObjectRestriction states at length: CR 613.11 puts a continuous
 -- effect that "affects game rules rather than objects" outside the layer
 -- system, CR 101.2a holds rule 101.2 clear of adding abilities to objects
 -- and removing them, and no layer of Parun.Engine.Projection rewrites them. Losing the ability and
