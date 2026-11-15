@@ -1,0 +1,46 @@
+{
+  "faces": [
+    {
+      "keywords": [
+        {
+          "type": "DoubleStrike"
+        },
+        {
+          "type": "Melee"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Red"
+          }
+        }
+      ],
+      "name": "Ferocious Colonist",
+      "oracleText": "Double strike\nMelee (Whenever this creature attacks, it gets +1/+1 until end of turn for each opponent you attacked this combat.)",
+      "power": {
+        "type": "Literal",
+        "value": 0
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Citizen",
+          "Klingon"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
