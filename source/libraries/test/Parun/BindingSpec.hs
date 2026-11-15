@@ -62,6 +62,7 @@ sampleSnapshot =
       PC.combatDamageAmount = Nothing,
       PC.combatDamageOptions = Map.empty,
       PC.grantsStationToughness = False,
+      PC.tapPowerBonus = Map.empty,
       PC.loyaltyIsToughness = False,
       PC.additionalCosts = [],
       PC.additionalCostChoices = [],

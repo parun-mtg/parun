@@ -146,6 +146,7 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.KeywordCostPart as KeywordCostPart
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.KeywordInstance as KeywordInstance
 import qualified Parun.Types.LibraryPosition as LibraryPosition
 import qualified Parun.Types.LoggedEvent as LoggedEvent
@@ -2973,12 +2974,21 @@ dividesMixedRemoval spread owed offered division =
 
 -- The power a candidate contributes to CR 702.122a's total. Zero for a permanent
 -- with no power at all, which after CR 208.3 is every noncreature one.
-tapPower :: ObjectId -> GameState -> Integer
-tapPower = tapPowerGiven Map.empty
+--
+-- Raised by the candidate's Modification.TapsAsThoughPowerGreater offsets for
+-- the keyword whose cost this is (Deathless Pilot), and by none for a cost
+-- printed outside a keyword. The scenario
+-- `deathless-pilot-crews-a-crew-4-vehicle-alone-where-a-bear-of-its-power-cannot`
+-- proves it.
+tapPower :: Maybe KeywordFamily.KeywordFamily -> ObjectId -> GameState -> Integer
+tapPower keyword = tapPowerGiven keyword Map.empty
 
 -- The same power read off a board the caller already projected.
-tapPowerGiven :: Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> Integer
-tapPowerGiven pcs candidate gs = Maybe.fromMaybe 0 (Projection.powerGiven pcs candidate gs)
+tapPowerGiven :: Maybe KeywordFamily.KeywordFamily -> Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> Integer
+tapPowerGiven keyword pcs candidate gs =
+  let pc = Projection.projectGiven pcs candidate gs
+      bonus = maybe 0 (\k -> Map.findWithDefault 0 k (PC.tapPowerBonus pc)) keyword
+   in maybe 0 (+ toInteger bonus) (PC.power pc)
 
 -- CR 205.3m: a tap candidate's creature types, off its projection -- so a
 -- changeling holds every one (CR 702.73a) and a land type none.
@@ -3158,8 +3168,8 @@ claimOfGiven board slots pid oid component gs =
         -- the same permissive reading and for its reason. CR 702.122a's own criterion
         -- excludes them (Parun.Engine.Keyword's crew), so a crew cost's pool is the
         -- untapped creatures exactly.
-        CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower threshold criterion)
-          | threshold > 0 -> reaching ClaimAxis.Tapping (toInteger threshold) (\candidate -> tapPowerGiven (Snapshot.projected board) candidate gs) (tapCandidatesGiven board slots pid oid criterion gs)
+        CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower threshold criterion keyword)
+          | threshold > 0 -> reaching ClaimAxis.Tapping (toInteger threshold) (\candidate -> tapPowerGiven keyword (Snapshot.projected board) candidate gs) (tapCandidatesGiven board slots pid oid criterion gs)
           | otherwise -> Nothing
         -- CR 601.2f's "tapping permanents", on the TAPPING axis rather than a zone's,
         -- for the header's reason. ManaSpec's "a creature tapped for mana can still be
@@ -3686,13 +3696,13 @@ uncountedCeiling pid oid claims gs component = case component of
   -- candidates' powers, `canPayComponent`'s pool and reading -- six 1/1s are two
   -- activations of Synthetic Muster Dynamo (Parun.ManaSpec). A threshold of 0
   -- taps nothing and imposes nothing.
-  CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower threshold criterion)
+  CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower threshold criterion keyword)
     | threshold > 0 ->
         Just
           ( alone
               ClaimAxis.Tapping
               threshold
-              (fmap (max 0 . (`tapPower` gs)) (tapCandidates Map.empty pid oid criterion gs))
+              (fmap (max 0 . (\candidate -> tapPower keyword candidate gs)) (tapCandidates Map.empty pid oid criterion gs))
           )
     | otherwise -> Nothing
   -- TapForTotalPower's arm above one zone over: CR 701.59a's number is a
@@ -4437,8 +4447,8 @@ canPayComponentGiven board slots pid oid component gs = case component of
   -- power 0 or less cannot raise it and the player is never obliged to. Exact
   -- rather than a bound, and `>=` because CR 702.122a says "or greater". A
   -- threshold of 0 is payable by the empty set, with no special case.
-  CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion) ->
-    sum (fmap (max 0 . (\candidate -> tapPowerGiven (Snapshot.projected board) candidate gs)) (tapCandidatesGiven board slots pid oid criterion gs)) >= toInteger n
+  CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion keyword) ->
+    sum (fmap (max 0 . (\candidate -> tapPowerGiven keyword (Snapshot.projected board) candidate gs)) (tapCandidatesGiven board slots pid oid criterion gs)) >= toInteger n
   -- Sacrifice's arm read over tapping: the count is HOW MANY, so the question is
   -- a size and not a sum. "Untapped" is not asked here and is not missing -- CR
   -- 107.5's exclusion is not this component's, so a card that wants it prints it
@@ -7400,12 +7410,12 @@ payPayable perform moment paidFor slots pid oid component = case component of
   -- `tapCandidates` above supplies the set for.
   --
   -- The taps are ONE event group, TapPermanents' reason below.
-  CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion) -> do
+  CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion keyword) -> do
     gs <- State.get
     let candidates = tapCandidates slots pid oid criterion gs
         decider = Decide.deciderFor pid gs
-    chosen <- Game.choose (Prompt.ChooseTapsForTotalPower decider pid oid (fmap (\c -> (c, tapPower c gs)) candidates) n)
-    let totalPower = sum (fmap (`tapPower` gs) (Set.toAscList chosen))
+    chosen <- Game.choose (Prompt.ChooseTapsForTotalPower decider pid oid (fmap (\c -> (c, tapPower keyword c gs)) candidates) n)
+    let totalPower = sum (fmap (\c -> tapPower keyword c gs) (Set.toAscList chosen))
     if Set.isSubsetOf chosen (Set.fromList candidates) && totalPower >= toInteger n
       then do
         Event.simultaneously (Monad.mapM_ tapObject (Set.toAscList chosen))

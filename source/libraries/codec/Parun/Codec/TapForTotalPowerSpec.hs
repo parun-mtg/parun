@@ -8,6 +8,7 @@ import qualified Parun.Spec as Spec
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.TapForTotalPower as TapForTotalPower
 
 -- | Instantiated at 'Keyword.Keyword', the only concrete instantiation anywhere
@@ -24,8 +25,21 @@ spec s = Spec.describe s "Parun.Codec.TapForTotalPower" $ do
       codec
       ( TapForTotalPower.MkTapForTotalPower
           { TapForTotalPower.totalPower = 6,
-            TapForTotalPower.whichPermanents = Filter.HasCardType CardType.Creature
+            TapForTotalPower.whichPermanents = Filter.HasCardType CardType.Creature,
+            TapForTotalPower.keywordCost = Nothing
           }
       )
       " {\"totalPower\":6,\"whichPermanents\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}} "
+  -- CR 702.171a: saddle 2's own cost, naming its keyword.
+  Spec.it s "keywordCost" $
+    Common.assertCodec
+      s
+      codec
+      ( TapForTotalPower.MkTapForTotalPower
+          { TapForTotalPower.totalPower = 2,
+            TapForTotalPower.whichPermanents = Filter.HasCardType CardType.Creature,
+            TapForTotalPower.keywordCost = Just KeywordFamily.Saddle
+          }
+      )
+      " {\"totalPower\":2,\"whichPermanents\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"keywordCost\":\"Saddle\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s codec

@@ -3149,7 +3149,7 @@ costComponentFilters component = case component of
   -- CR 601.2f's "sacrificing permanents": Village Rites' "a creature".
   CostComponent.Sacrifice (Sacrifice.MkSacrifice _ f) -> [f]
   -- CR 702.122a's "other untapped creatures you control".
-  CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower _ f) -> [f]
+  CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower _ f _) -> [f]
   -- CR 601.2f's "tapping permanents": Springleaf Drum's "an untapped creature
   -- you control".
   CostComponent.TapPermanents (TapPermanents.MkTapPermanents _ f _) -> [f]
@@ -3722,6 +3722,7 @@ modificationFilters modification = case modification of
   -- Payload-free, both of them, so there is no Filter to sweep.
   Modification.AssignCombatDamage _ -> []
   Modification.GrantsStationToughness -> []
+  Modification.TapsAsThoughPowerGreater {} -> []
   Modification.LoyaltyIsToughness -> []
   -- An enum payload holds neither.
   Modification.AssignCombatDamageAs {} -> []

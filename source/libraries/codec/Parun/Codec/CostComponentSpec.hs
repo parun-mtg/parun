@@ -109,7 +109,7 @@ spec s = Spec.describe s "Parun.Codec.CostComponent" $ do
     Common.assertCodec
       s
       codec
-      (CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower 6 (Filter.HasCardType CardType.Creature)))
+      (CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower 6 (Filter.HasCardType CardType.Creature) Nothing))
       " {\"type\":\"TapForTotalPower\",\"value\":{\"totalPower\":6,\"whichPermanents\":{\"type\":\"HasCardType\",\"value\":\"Creature\"}}} "
   -- A COUNT and a Filter, Sacrifice's payload shape spelled over tapping --
   -- Springleaf Drum's one untapped creature.
