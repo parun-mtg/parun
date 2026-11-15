@@ -23,16 +23,18 @@
                         "value": {
                           "production": {
                             "type": "OneOf",
-                            "value": [
-                              {
-                                "type": "Colored",
-                                "value": "Red"
-                              },
-                              {
-                                "type": "Colored",
-                                "value": "Green"
-                              }
-                            ]
+                            "value": {
+                              "types": [
+                                {
+                                  "type": "Colored",
+                                  "value": "Red"
+                                },
+                                {
+                                  "type": "Colored",
+                                  "value": "Green"
+                                }
+                              ]
+                            }
                           },
                           "rider": {
                             "condition": {

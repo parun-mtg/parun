@@ -9,6 +9,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ColorSpread as ColorSpread
 import qualified Parun.Types.CouldProduce as CouldProduce
 import qualified Parun.Types.Filter as Filter
+import qualified Parun.Types.ManaAmong as ManaAmong
 import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaFilter as ManaFilter
 import qualified Parun.Types.ManaProduction as ManaProduction
@@ -28,8 +29,8 @@ spec s = Spec.describe s "Parun.Codec.ManaProduction" $ do
     Common.assertCodec
       s
       ManaProduction.codec
-      (ManaProduction.OneOf (Set.fromList [ManaType.Colored Color.Red, ManaType.Colored Color.Green]))
-      " {\"type\":\"OneOf\",\"value\":[{\"type\":\"Colored\",\"value\":\"Red\"},{\"type\":\"Colored\",\"value\":\"Green\"}]} "
+      (ManaProduction.OneOf (ManaAmong.MkManaAmong (Set.fromList [ManaType.Colored Color.Red, ManaType.Colored Color.Green]) ColorSpread.OneColor))
+      " {\"type\":\"OneOf\",\"value\":{\"types\":[{\"type\":\"Colored\",\"value\":\"Red\"},{\"type\":\"Colored\",\"value\":\"Green\"}]}} "
   Spec.it s "AnyColor" $
     Common.assertCodec
       s

@@ -1135,6 +1135,8 @@ library codec
     Parun.Codec.ManaAddedSpec
     Parun.Codec.ManaAddition
     Parun.Codec.ManaAdditionSpec
+    Parun.Codec.ManaAmong
+    Parun.Codec.ManaAmongSpec
     Parun.Codec.ManaCost
     Parun.Codec.ManaCostSpec
     Parun.Codec.ManaCount
@@ -3321,6 +3323,7 @@ library types
     Parun.Types.ManaAdded
     Parun.Types.ManaAddedCause
     Parun.Types.ManaAddition
+    Parun.Types.ManaAmong
     Parun.Types.ManaCost
     Parun.Types.ManaCount
     Parun.Types.ManaFilter

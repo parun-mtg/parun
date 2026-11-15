@@ -1,7 +1,7 @@
 module Parun.Types.ColorSpread where
 
 -- | How CR 105.4's colour choice spreads over the units one AddMana instruction
--- adds (Parun.Types.ManaProduction.AnyColor).
+-- adds (Parun.Types.ManaProduction.AnyColor, Parun.Types.ManaAmong.spread).
 data ColorSpread
   = -- | One choice for every unit, "three mana of any one color" (CR 105.4).
     OneColor
