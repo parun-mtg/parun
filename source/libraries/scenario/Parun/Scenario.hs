@@ -464,12 +464,14 @@ settleStartingLife board =
       record pid p = p {Player.startingLife = Setup.startingLifeOf (MatchScope.settings (GameState.match gs)) seats pid (Player.commander p) (Setup.lifeModifierOf pid gs)}
    in board {Staged.state = gs {GameState.players = Map.mapWithKey record (GameState.players gs)}}
 
--- | CR 103.2a / 309.2: each seat's starting deck and dungeons, as setup would
--- have recorded them, each card interned as a placement's is.
+-- | CR 103.2a / 400.11a / 309.2: each seat's starting deck, cards outside the
+-- game and dungeons, as setup would have recorded them, each card interned as
+-- a placement's is.
 recordOutsideCards :: (Monad m) => Registry.Registry m -> [(Seat.Seat, PlayerId.PlayerId)] -> Staged.Staged -> m (Either Failure.ScenarioFailure Staged.Staged)
-recordOutsideCards registry seated board = Monad.foldM record (Right board) (decks <> dungeons)
+recordOutsideCards registry seated board = Monad.foldM record (Right board) (decks <> outside <> dungeons)
   where
     decks = [(pid, name, \printingId p -> p {Player.startingDeck = Map.insertWith (+) printingId count (Player.startingDeck p)}) | (seat, pid) <- seated, (name, count) <- Map.toAscList (Seat.startingDeck seat)]
+    outside = [(pid, name, \printingId p -> p {Player.outsideTheGame = Map.insertWith (+) printingId count (Player.outsideTheGame p)}) | (seat, pid) <- seated, (name, count) <- Map.toAscList (Seat.outsideTheGame seat)]
     dungeons = [(pid, name, \printingId p -> p {Player.dungeons = Set.insert printingId (Player.dungeons p)}) | (seat, pid) <- seated, name <- Set.toAscList (Seat.dungeons seat)]
     record next (pid, name, stamp) = case next of
       Left failure -> pure (Left failure)

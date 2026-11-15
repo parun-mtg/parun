@@ -46,6 +46,7 @@ codec = Fields.object $ do
   ante <- Fields.defaulted "ante" Seq.empty (Common.seq Placement.codec) Seat.ante
   sideDecks <- Fields.defaulted "sideDecks" Map.empty (Common.keyedList (Common.keyValue SideDeck.codec (Common.seq Placement.codec))) Seat.sideDecks
   startingDeck <- Fields.defaulted "startingDeck" Map.empty (Common.multiset CardName.codec) Seat.startingDeck
+  outsideTheGame <- Fields.defaulted "outsideTheGame" Map.empty (Common.multiset CardName.codec) Seat.outsideTheGame
   dungeons <- Fields.defaulted "dungeons" Set.empty (Common.set CardName.codec) Seat.dungeons
   draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq DraftNote.codec))) Seat.draftNotes
   pure
@@ -68,6 +69,7 @@ codec = Fields.object $ do
         Seat.ante = ante,
         Seat.sideDecks = sideDecks,
         Seat.startingDeck = startingDeck,
+        Seat.outsideTheGame = outsideTheGame,
         Seat.dungeons = dungeons,
         Seat.draftNotes = draftNotes
       }

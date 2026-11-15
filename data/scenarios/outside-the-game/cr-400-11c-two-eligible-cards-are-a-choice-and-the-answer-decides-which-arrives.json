@@ -1,0 +1,143 @@
+{
+  "description": "CR 400.11c two eligible cards are a choice, and the answer decides which arrives",
+  "note": "alice owns Sign in Blood and Psychic Miasma outside the game, both sorceries. She is asked which to reveal and names Sign in Blood, the second offered, so an engine taking the first would put Psychic Miasma in her hand.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Burning Wish",
+            "label": "wish"
+          }
+        ],
+        "outsideTheGame": [
+          {
+            "key": "Sign in Blood",
+            "value": 1
+          },
+          {
+            "key": "Psychic Miasma",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$wish",
+          "mana": [
+            "$m1",
+            "$m2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseOptional": "Exercises"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseFromOutsideTheGame",
+            "offer": {
+              "names": [
+                "Psychic Miasma (sideboard)",
+                "Sign in Blood (sideboard)"
+              ],
+              "least": 1,
+              "most": 1,
+              "among": [
+                {
+                  "type": "InPool",
+                  "value": 2
+                },
+                {
+                  "type": "InPool",
+                  "value": 3
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseFromOutsideTheGame",
+          "with": [
+            {
+              "type": "InPool",
+              "value": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand",
+          "is": [
+            "Sign in Blood"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ring of Ma'rûf",
+            "label": "ring"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          },
+          {
+            "card": "Plains",
+            "label": "p5"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          }
+        ],
+        "name": "alice",
+        "outsideTheGame": [
+          {
+            "key": "Sign in Blood",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep",
+    "turn": 2
+  },
+  "description": "CR 400.11c a draw replaced by a wish brings the card in from outside the game",
+  "note": "alice activates Ring of Ma'rûf in her upkeep; her draw step's draw is replaced (CR 614.6), so the Sign in Blood she owns outside the game reaches her hand and both Goblin Pikers stay in her library.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4",
+            "$p5"
+          ],
+          "object": "$ring"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Sign in Blood"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Goblin Piker",
+            "Goblin Piker#2"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    }
+  ]
+}

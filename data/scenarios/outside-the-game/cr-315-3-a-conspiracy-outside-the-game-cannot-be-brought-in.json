@@ -1,0 +1,111 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Ring of Ma'rûf",
+            "label": "ring"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Plains",
+            "label": "p2"
+          },
+          {
+            "card": "Plains",
+            "label": "p3"
+          },
+          {
+            "card": "Plains",
+            "label": "p4"
+          },
+          {
+            "card": "Plains",
+            "label": "p5"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          }
+        ],
+        "name": "alice",
+        "outsideTheGame": [
+          {
+            "key": "Sentinel Dispatch",
+            "value": 1
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep",
+    "turn": 2
+  },
+  "description": "CR 315.3 a conspiracy outside the game cannot be brought in",
+  "note": "The Ring of Ma'rûf board with Sentinel Dispatch, a conspiracy, as alice's one card outside the game: the draw is still replaced and nothing arrives (CR 609.3).",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4",
+            "$p5"
+          ],
+          "object": "$ring"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Goblin Piker",
+            "Goblin Piker#2"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    }
+  ]
+}

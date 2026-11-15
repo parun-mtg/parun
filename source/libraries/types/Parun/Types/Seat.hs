@@ -52,6 +52,9 @@ data Seat = MkSeat
     -- | CR 103.2a: the player's starting deck, counted by name, which no zone
     -- above records once the game has begun.
     startingDeck :: Map.Map CardName.CardName Natural,
+    -- | CR 400.11a: the cards the player has outside the game, counted by
+    -- name, which no zone above records.
+    outsideTheGame :: Map.Map CardName.CardName Natural,
     -- | CR 309.2: the dungeon cards the player owns outside the game, by name
     -- (Player.dungeons).
     dungeons :: Set.Set CardName.CardName,

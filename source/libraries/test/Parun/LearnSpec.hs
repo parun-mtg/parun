@@ -5,22 +5,18 @@
 --
 -- Cram Session ({1}{B/G} Sorcery, "You gain 4 life. Learn.") is the fixture: the
 -- keyword action is its whole second clause and states nothing the rulebook does
--- not, so every assertion below is about rule 701.48a. The gain of 4 is what
--- says the spell resolved at all, so a branch that did nothing is told apart
--- from a spell that never ran.
+-- not, so every assertion below is about rule 701.48a.
 --
--- THE BOARD SHAPE that makes the cases discriminating. One board, three answers:
 -- alice holds a Hill Giant to discard, has a Plains to draw, and owns TWO cards
 -- outside the game -- Airbending Lesson (an Instant -- Lesson) and Sign in Blood
--- (a sorcery, no Lesson). So the third sentence's "Lesson card" is a real gate,
--- and the three cases differ in the ANSWER alone.
+-- (a sorcery, no Lesson). The branches on that board alone are scenarios, under
+-- data/scenarios/learn; the cases here add a card to it.
 module Parun.LearnSpec where
 
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
-import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Registry as Registry
@@ -32,7 +28,6 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Printing as Printing
-import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Zone as Zone
 
@@ -69,13 +64,6 @@ learned mode spell gs =
 printingsIn :: Zone.Zone -> PlayerId.PlayerId -> GameState.GameState -> [Printing.Printing]
 printingsIn zone pid gs = Maybe.mapMaybe (\oid -> Game.printingOfObject oid gs) (Game.zoneMembers zone pid gs)
 
--- What is left in a player's pool, by printing.
-poolOf :: PlayerId.PlayerId -> GameState.GameState -> Map.Map PrintingId.PrintingId Natural.Natural
-poolOf pid gs = maybe Map.empty Player.outsideTheGame (Map.lookup pid (GameState.players gs))
-
-lifeOf :: PlayerId.PlayerId -> GameState.GameState -> Integer
-lifeOf pid gs = maybe 0 Player.life (Map.lookup pid (GameState.players gs))
-
 -- What rule 701.48a put into her graveyard, which is her graveyard WITHOUT Cram
 -- Session: CR 608.2n puts the resolved sorcery there itself, and that is a fact
 -- about the fixture rather than about learning.
@@ -84,25 +72,6 @@ discardedBy cram gs = List.sort (filter (/= cram) (printingsIn Zone.Graveyard S.
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Learn" $ do
-  Spec.it s "CR 701.48a the first branch discards a card and then draws one" $ do
-    swamp <- S.printingOf s registry "Swamp"
-    cram <- S.printingOf s registry "Cram Session"
-    giant <- S.printingOf s registry "Hill Giant"
-    plains <- S.printingOf s registry "Plains"
-    lesson <- S.printingOf s registry "Airbending Lesson"
-    sorcery <- S.printingOf s registry "Sign in Blood"
-    let (spell, before) = board swamp cram giant plains lesson sorcery
-        after = learned (Just LearnMode.DiscardAndDraw) spell before
-    -- THE gameplay reading, and first: the Hill Giant is in the graveyard and
-    -- the library's Plains is in her hand, which is rule 701.48a's first two
-    -- sentences and nothing else.
-    Spec.assertEqWith s "CR 701.48a the discarded card is in her graveyard" (discardedBy cram after) [giant]
-    Spec.assertEqWith s "CR 701.48a and the drawn card is in her hand" (printingsIn Zone.Hand S.alice after) [plains]
-    -- The spell did resolve, so an empty branch and an unrun spell differ.
-    Spec.assertEqWith s "and the spell's own clause gained her 4" (lifeOf S.alice after) (lifeOf S.alice before + 4)
-    -- CR 701.48a's third sentence is conditioned on NOT discarding, so the pool
-    -- is untouched.
-    Spec.assertEqWith s "CR 701.48a nothing came in from outside the game" (poolOf S.alice after) (poolOf S.alice before)
   -- CR 121.2a: the first branch's draw is an instruction to draw a card, so
   -- Quantum Riddler's "if you would draw one or more cards" reaches it once the
   -- discard has left alice's hand empty. Drawing through Event.drawCard, around
@@ -122,38 +91,6 @@ spec s registry = Spec.describe s "Learn" $ do
         after = learned (Just LearnMode.DiscardAndDraw) spell before
     Spec.assertEqWith s "she drew both library cards" (List.sort (printingsIn Zone.Hand S.alice after)) (List.sort [plains, island])
     Spec.assertEqWith s "after discarding the Hill Giant" (discardedBy cram after) [giant]
-  Spec.it s "CR 701.48a the second branch takes the Lesson from outside the game, and leaves the non-Lesson there" $ do
-    swamp <- S.printingOf s registry "Swamp"
-    cram <- S.printingOf s registry "Cram Session"
-    giant <- S.printingOf s registry "Hill Giant"
-    plains <- S.printingOf s registry "Plains"
-    lesson <- S.printingOf s registry "Airbending Lesson"
-    sorcery <- S.printingOf s registry "Sign in Blood"
-    let (spell, before) = board swamp cram giant plains lesson sorcery
-        after = learned (Just LearnMode.TakeLesson) spell before
-    -- THE gameplay reading, and first: the Lesson joined the Hill Giant she
-    -- already held, and the non-Lesson in the same pool did not.
-    Spec.assertEqWith s "CR 701.48a the Lesson is in her hand" (List.sort (printingsIn Zone.Hand S.alice after)) (List.sort [giant, lesson])
-    Spec.assertEqWith s "CR 400.11b and the pool is one card lighter" (Map.size (poolOf S.alice after)) 1
-    Spec.assertBool s (notElem sorcery (printingsIn Zone.Hand S.alice after)) "CR 701.48a the non-Lesson beside it stayed outside the game"
-    -- Nothing was discarded: the two branches are exclusive.
-    Spec.assertEqWith s "CR 701.48a and her graveyard is empty" (discardedBy cram after) []
-    Spec.assertEqWith s "and the spell's own clause gained her 4" (lifeOf S.alice after) (lifeOf S.alice before + 4)
-  -- Rule 701.48a is two "you may"s, so declining both is an outcome. The SAME
-  -- board, differing in the answer alone.
-  Spec.it s "CR 701.48a a learner may decline both branches" $ do
-    swamp <- S.printingOf s registry "Swamp"
-    cram <- S.printingOf s registry "Cram Session"
-    giant <- S.printingOf s registry "Hill Giant"
-    plains <- S.printingOf s registry "Plains"
-    lesson <- S.printingOf s registry "Airbending Lesson"
-    sorcery <- S.printingOf s registry "Sign in Blood"
-    let (spell, before) = board swamp cram giant plains lesson sorcery
-        after = learned Nothing spell before
-    Spec.assertEqWith s "CR 701.48a her hand is as it was" (printingsIn Zone.Hand S.alice after) [giant]
-    Spec.assertEqWith s "CR 701.48a nothing was discarded" (discardedBy cram after) []
-    Spec.assertEqWith s "CR 701.48a and the pool is untouched" (poolOf S.alice after) (poolOf S.alice before)
-    Spec.assertEqWith s "and the spell still resolved" (lifeOf S.alice after) (lifeOf S.alice before + 4)
   -- The first branch's board with a second card in her hand, so the discard is
   -- a choice. S.addHandCard puts the Ornithopter in FRONT of the Hill Giant, so
   -- the answer below, the last card offered, names the Giant: a learn that took

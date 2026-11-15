@@ -43,7 +43,6 @@ out: grep for them.
 
 - `check:events`: event history: not state, so a test reading it stays in Haskell unless it can be re-expressed
 - `check:prompt-payload`: what a prompt offers, beyond its candidates; the `Prompt` view reads it where the line protocol's offer carries it
-- `board:outside-the-game`: cards outside the game
 - `board:exile-linked`: an exiled card linked to what exiled it (CR 607.2a, hideaway, "until it leaves")
 - `board:combat`: combat already under way
 - `board:entered-with`: linked "entered with" records
@@ -713,9 +712,9 @@ out: grep for them.
 ### `LearnSpec`
 
 - ~~CR 118.12 Library of Leng does not reach learn's discard~~
-- CR 701.48a a learner may decline both branches | `board:outside-the-game`
-- CR 701.48a the first branch discards a card and then draws one | `board:outside-the-game`
-- CR 701.48a the second branch takes the Lesson from outside the game, and leaves the non-Lesson there | `board:outside-the-game`
+- ~~CR 701.48a a learner may decline both branches | `board:outside-the-game`~~
+- ~~CR 701.48a the first branch discards a card and then draws one | `board:outside-the-game`~~
+- ~~CR 701.48a the second branch takes the Lesson from outside the game, and leaves the non-Lesson there | `board:outside-the-game`~~
 
 ### `LeavesTriggerSpec`
 
@@ -872,22 +871,22 @@ out: grep for them.
 
 ### `OutsideTheGameSpec`
 
-- CR 100.4a two copies of one printing are two cards: the second wish finds the second copy | `board:outside-the-game`
+- ~~CR 100.4a two copies of one printing are two cards: the second wish finds the second copy | `board:outside-the-game`~~
 - ~~CR 103.2a a deck's sideboard is recorded on its player and minted into no zone | `check:helper-poolOf` `check:other-Game.printingOf` `check:other-GameState.objects`~~
-- CR 307.1 with a spell on the stack the cycle's instant is castable and its sorcery is not | `board:outside-the-game`
-- CR 315.3 a conspiracy outside the game cannot be brought in | `board:outside-the-game`
-- CR 400.11b the pool is spent: a second Burning Wish finds nothing | `board:outside-the-game`
-- CR 400.11c Burning Wish puts the sorcery it revealed from outside the game into her hand | `board:outside-the-game`
-- CR 400.11c a draw replaced by a wish brings the card in from outside the game | `board:outside-the-game`
-- CR 400.11c a pool holding no sorcery yields nothing | `board:outside-the-game`
-- CR 400.11c two eligible cards are a choice, and the answer decides which arrives | `board:outside-the-game`
-- CR 400.2 declining outside the game too, the graveyard's match is found | `board:outside-the-game`
+- ~~CR 307.1 with a spell on the stack the cycle's instant is castable and its sorcery is not | `board:outside-the-game`~~
+- ~~CR 315.3 a conspiracy outside the game cannot be brought in | `board:outside-the-game`~~
+- ~~CR 400.11b the pool is spent: a second Burning Wish finds nothing | `board:outside-the-game`~~
+- ~~CR 400.11c Burning Wish puts the sorcery it revealed from outside the game into her hand | `board:outside-the-game`~~
+- ~~CR 400.11c a draw replaced by a wish brings the card in from outside the game | `board:outside-the-game`~~
+- ~~CR 400.11c a pool holding no sorcery yields nothing | `board:outside-the-game`~~
+- ~~CR 400.11c two eligible cards are a choice, and the answer decides which arrives | `board:outside-the-game`~~
+- ~~CR 400.2 declining outside the game too, the graveyard's match is found | `board:outside-the-game`~~
 - CR 604.2/730.4a gameplay: Death Wish takes Titania's Song out of the main game and its effect goes on applying there | `move:another-game`
-- CR 701.20a Death Wish brings the card in without revealing it, where Burning Wish reveals | `board:outside-the-game`
-- CR 701.23a/701.23j a library find fills the one count, and the library is shuffled | `board:outside-the-game`
-- CR 701.23j Invasion of Arcavios brings an instant in from outside the game, and a search that skipped her library shuffles nothing | `board:outside-the-game`
-- CR 701.23j a card taken from outside the game fills the count, sparing the graveyard's match | `board:outside-the-game`
-- CR 701.23j outside the game alone may find nothing | `board:outside-the-game`
+- ~~CR 701.20a Death Wish brings the card in without revealing it, where Burning Wish reveals | `board:outside-the-game`~~
+- ~~CR 701.23a/701.23j a library find fills the one count, and the library is shuffled | `board:outside-the-game`~~
+- ~~CR 701.23j Invasion of Arcavios brings an instant in from outside the game, and a search that skipped her library shuffles nothing | `board:outside-the-game`~~
+- ~~CR 701.23j a card taken from outside the game fills the count, sparing the graveyard's match | `board:outside-the-game`~~
+- ~~CR 701.23j outside the game alone may find nothing | `board:outside-the-game`~~
 - ~~CR 708.2/730.4 a manifested main-game sorcery is offered to a subgame's wish as a creature and not as a sorcery | `board:objects-ids` `board:outsideobjects`~~
 - CR 730.4/730.4a/730.5 gameplay: Living Wish takes two main-game creatures out of a Shahrazad subgame, and the triggers wait for the main game | `move:another-game`
 - CR 730.5 gameplay: a wish that takes the resolving Shahrazad itself still finishes resolving with the winner it bound | `move:another-game`

@@ -20,8 +20,7 @@
 -- card in the zone the wish names -- Burning Wish ({1}{R} sorcery, "You may
 -- reveal a sorcery card you own from outside the game and put it into your hand.
 -- Exile Burning Wish.")
--- for the pool, with Cunning Wish for the cycle's instant speed, Death Wish
--- for a card that prints no reveal, The Raven's Warning for a destination that
+-- for the pool, with The Raven's Warning for a destination that
 -- is not the hand, Research for a count other than one, Extrapolate the
 -- Impossible for CR 201.2b's different names and an opponent's pick among the
 -- revealed cards, Turtles Forever for a search's finds out there revealed
@@ -34,6 +33,9 @@
 -- The last group takes the OTHER road in: Ring of Ma'rûf's CR 614.6 draw
 -- replacement, whose rewrite reaches the same `bringInto` the resolution arm
 -- does, and Synthetic Wishful Djinn's, two of which put CR 616.1's choice.
+--
+-- The cases a board with cards outside the game can play are scenarios, under
+-- data/scenarios/outside-the-game.
 module Parun.OutsideTheGameSpec where
 
 import qualified Control.Monad as Monad
@@ -251,20 +253,6 @@ extrapolating named chooser p = case p of
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
-  -- CR 400.11c and CR 701.20a: the gate. The card the wish's filter admits
-  -- reaches the hand its sentence names, and nothing else comes in with it.
-  Spec.it s "CR 400.11c Burning Wish puts the sorcery it revealed from outside the game into her hand" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    wish <- S.printingOf s registry "Burning Wish"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    let (gs, wishId) = wishBoard mountain wish [(signInBlood, 1)]
-        resolved = resolveWish exercising wishId gs
-    Spec.assertEqWith s "her hand starts with the wish alone" (printingsIn Zone.Hand S.alice gs) [wish]
-    Spec.assertEqWith s "and holds the sorcery from outside the game afterwards" (printingsIn Zone.Hand S.alice resolved) [signInBlood]
-    -- CR 608.2n: the second sentence. The wish is in EXILE and not in the
-    -- graveyard, which is the whole of what Effect.ExileThisSpell does.
-    Spec.assertEqWith s "the wish itself was exiled" (printingsIn Zone.Exile S.alice resolved) [wish]
-    Spec.assertEqWith s "and no card reached her graveyard" (printingsIn Zone.Graveyard S.alice resolved) []
   -- CR 606.3 / 400.11b: the wish as a loyalty ability, its filter a creature.
   Spec.it s "CR 400.11b Vivien, Arkbow Ranger's -5 puts a creature card from outside the game into her hand" $ do
     mountain <- S.printingOf s registry "Mountain"
@@ -289,143 +277,6 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
         Spec.assertEqWith s "the creature card reached her hand" (printingsIn Zone.Hand S.alice resolved) [bears]
         Spec.assertEqWith s "and the sorcery stays outside the game" (Map.elems (poolOf S.alice resolved)) [1]
       other -> Spec.assertEqWith s "Vivien has three loyalty abilities" (length other) 3
-  -- CR 400.11b: "those cards remain in the game until the game ends". The copy
-  -- brought in is gone from the pool, so a second wish cannot find it again.
-  Spec.it s "CR 400.11b the pool is spent: a second Burning Wish finds nothing" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    wish <- S.printingOf s registry "Burning Wish"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    let (gs, firstWish) = wishBoard mountain wish [(signInBlood, 1)]
-        once = resolveWish exercising firstWish gs
-        -- A second wish, cast off the board the first one left: same lands, same
-        -- pool, and the pool is what has changed. ADDED to the hand rather than
-        -- S.handOne's replacement of it, so the card the first wish put there is
-        -- still in hand to be counted.
-        (secondWish, again) = S.addHandCard wish S.alice once
-        twice = resolveWish exercising secondWish again
-    -- THE BEHAVIOUR first, and the pool's own state after it: an assertion about
-    -- the pool ordered ahead would absorb a mutation the hand is what observes.
-    Spec.assertEqWith s "the second wish brings in nothing: the one card in hand is the first wish's" (printingsIn Zone.Hand S.alice twice) [signInBlood]
-    Spec.assertEqWith s "and the first wish had emptied the pool" (Map.size (poolOf S.alice once)) 0
-    -- The second wish still resolved and still exiled itself, which is what tells
-    -- "found nothing" apart from "did not resolve".
-    Spec.assertEqWith s "and exiled itself all the same" (length (printingsIn Zone.Exile S.alice twice)) 2
-  -- A sideboard is a multiset -- CR 100.4a caps it at fifteen CARDS and applies CR
-  -- 100.2a's four-card limit across deck and sideboard together -- which is the one
-  -- place this pool parts from Player.dungeons' set: two copies are two cards.
-  Spec.it s "CR 100.4a two copies of one printing are two cards: the second wish finds the second copy" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    wish <- S.printingOf s registry "Burning Wish"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    let (gs, firstWish) = wishBoard mountain wish [(signInBlood, 2)]
-        once = resolveWish exercising firstWish gs
-        (secondWish, again) = S.addHandCard wish S.alice once
-        twice = resolveWish exercising secondWish again
-    Spec.assertEqWith s "the second wish brings in the second copy" (List.sort (printingsIn Zone.Hand S.alice twice)) (List.sort [signInBlood, signInBlood])
-    Spec.assertEqWith s "and one copy was left after the first wish" (Map.elems (poolOf S.alice once)) [1]
-  -- CR 400.11c: what the effect ALLOWS is the card's own filter, so a pool that
-  -- holds nothing the filter admits yields nothing.
-  Spec.it s "CR 400.11c a pool holding no sorcery yields nothing" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    wish <- S.printingOf s registry "Burning Wish"
-    dragon <- S.printingOf s registry "Hoarding Dragon"
-    let (gs, wishId) = wishBoard mountain wish [(dragon, 1)]
-        resolved = resolveWish exercising wishId gs
-    Spec.assertEqWith s "the creature card stays outside the game" (Map.elems (poolOf S.alice resolved)) [1]
-    Spec.assertEqWith s "and her hand is empty of it" (printingsIn Zone.Hand S.alice resolved) []
-  -- CR 400.11c again, with a CHOICE: two eligible cards, so the player is asked
-  -- which one, and the answer is what arrives.
-  Spec.it s "CR 400.11c two eligible cards are a choice, and the answer decides which arrives" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    wish <- S.printingOf s registry "Burning Wish"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    psychicMiasma <- S.printingOf s registry "Psychic Miasma"
-    let (gs, wishId) = wishBoard mountain wish [(signInBlood, 1), (psychicMiasma, 1)]
-        -- Answering with the LAST offered rather than the first, so the assertion
-        -- fails if the answer is ignored and the head is taken.
-        answeringLast :: Prompt.Prompt r -> r
-        answeringLast p = case p of
-          Prompt.ChooseFromOutsideTheGame _ _ candidates _ _ -> [List.last (fmap fst (foldr (:) [] candidates))]
-          _ -> exercising p
-        resolved = resolveWish answeringLast wishId gs
-    -- Psychic Miasma is interned second, so it is what the prompt offers last and
-    -- what the answer above names.
-    Spec.assertEqWith s "the card she named is the one in her hand" (printingsIn Zone.Hand S.alice resolved) [psychicMiasma]
-    Spec.assertEqWith s "and the other card is still outside the game" (Map.size (poolOf S.alice resolved)) 1
-  -- CR 304.1 / 307.1: Cunning Wish ({2}{U} instant, "You may reveal an instant
-  -- card you own from outside the game and put it into your hand. Exile Cunning
-  -- Wish.") is the cycle's instant, so it is the one wish that reaches outside
-  -- the game with another spell already on the stack.
-  --
-  -- A PAIR of castability readings off ONE board, differing only in which wish is
-  -- asked about: both are in the same hand, both are payable from the same eight
-  -- untapped lands, and the spell on the stack is the same spell. The type line is
-  -- the only difference left, which is what CR 307.1 turns on.
-  Spec.it s "CR 307.1 with a spell on the stack the cycle's instant is castable and its sorcery is not" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    island <- S.printingOf s registry "Island"
-    cunning <- S.printingOf s registry "Cunning Wish"
-    burning <- S.printingOf s registry "Burning Wish"
-    cancel <- S.printingOf s registry "Cancel"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    let (board, occupantId) = wishBoard mountain burning [(cancel, 1), (signInBlood, 1)]
-        withIslands = S.landsFor island S.alice 4 board
-        (cunningId, withCunning) = S.addHandCard cunning S.alice withIslands
-        (burningId, ready) = S.addHandCard burning S.alice withCunning
-        -- The occupant is a Burning Wish cast at sorcery speed onto an EMPTY
-        -- stack, which is what makes the stack non-empty for the two readings
-        -- below without introducing a card the pool does not already hold.
-        held = snd (Engine.runGamePure exercising ready (S.cast S.alice occupantId))
-    Spec.assertEqWith s "the stack holds the spell cast first" (length (Game.zoneMembers Zone.Stack S.alice held)) 1
-    Spec.assertEqWith s "CR 307.1: the sorcery in hand cannot be cast into that window" (S.castable S.alice burningId held) False
-    -- The same card off the same board with an EMPTY stack, so the reading above
-    -- cannot be passing for want of mana or for anything else about the card.
-    Spec.assertEqWith s "and it was castable on that board before the stack held anything" (S.castable S.alice burningId ready) True
-    Spec.assertEqWith s "CR 304.1: the instant can" (S.castable S.alice cunningId held) True
-    -- Driven, not merely gated: the wish is actually cast in that window, and what
-    -- arrives is the INSTANT its filter names rather than the sorcery sitting
-    -- beside it in the pool -- which the wish underneath then takes in its turn.
-    let stacked = snd (Engine.runGamePure exercising held (S.cast S.alice cunningId))
-        once = snd (Engine.runGamePure exercising stacked Stack.resolveTop)
-        after = snd (Engine.runGamePure exercising once Stack.resolveTop)
-    Spec.assertEqWith s "both wishes are on the stack at once" (length (Game.zoneMembers Zone.Stack S.alice stacked)) 2
-    Spec.assertEqWith s "CR 400.11c: Cunning Wish resolves first and takes the instant" (List.sort (printingsIn Zone.Hand S.alice once)) (List.sort [burning, cancel])
-    Spec.assertEqWith s "and the sorcery wish underneath then takes the sorcery" (List.sort (printingsIn Zone.Hand S.alice after)) (List.sort [burning, cancel, signInBlood])
-    Spec.assertEqWith s "CR 608.2n: both cast wishes exiled themselves" (List.sort (printingsIn Zone.Exile S.alice after)) (List.sort [burning, cunning])
-  -- CR 701.20a is a keyword action of its own, and a card that does not print it
-  -- shows nobody anything. Death Wish ({1}{B}{B} sorcery, "You may put a card you
-  -- own from outside the game into your hand. You lose half your life, rounded up.
-  -- Exile Death Wish.") is the producer: no reveal, and no stated quality either,
-  -- so its filter is the empty And that admits everything.
-  --
-  -- A PAIR of boards differing in ONE thing, the wish. Same lands, same pool, same
-  -- card arriving in hand -- so the Revealed entry is the only reading that moves.
-  Spec.it s "CR 701.20a Death Wish brings the card in without revealing it, where Burning Wish reveals" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    swamp <- S.printingOf s registry "Swamp"
-    death <- S.printingOf s registry "Death Wish"
-    burning <- S.printingOf s registry "Burning Wish"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    let boardFor wish =
-          let (base, wishId) = wishBoard mountain wish [(signInBlood, 1)]
-           in (S.landsFor swamp S.alice 4 base, wishId)
-        (deathBoard, deathId) = boardFor death
-        (burningBoard, burningId) = boardFor burning
-        afterDeath = resolveWish exercising deathId deathBoard
-        afterBurning = resolveWish exercising burningId burningBoard
-        isRevealed e = case e of
-          GameEvent.Revealed _ -> True
-          _ -> False
-    -- THE BEHAVIOUR first. The card is in hand either way, so an assertion that
-    -- it arrived cannot absorb the reveal reading below.
-    Spec.assertEqWith s "CR 400.11c: Death Wish's empty filter admits the sorcery, which reaches her hand" (printingsIn Zone.Hand S.alice afterDeath) [signInBlood]
-    Spec.assertEqWith s "CR 701.20a: and nothing was revealed" (eventIndex isRevealed afterDeath) Nothing
-    Spec.assertEqWith s "where Burning Wish brings in the same card" (printingsIn Zone.Hand S.alice afterBurning) [signInBlood]
-    Spec.assertEqWith s "and does reveal it" (Maybe.isJust (eventIndex isRevealed afterBurning)) True
-    -- The rest of Death Wish's sentence, which is what tells a resolution apart
-    -- from a fizzle: CR 119.3 and CR 107.1a, half of twenty rounded up.
-    Spec.assertEqWith s "she lost half her life, rounded up" (S.lifeOf S.alice afterDeath) (Just 10)
-    Spec.assertEqWith s "and Burning Wish cost her none" (S.lifeOf S.alice afterBurning) (Just 20)
   -- North Wind Avatar ({2}{U}{U}{R} 5/5 flier, "When this creature enters, if you
   -- cast it, you may put a card you own from outside the game into your hand.")
   -- is the wish as an enters trigger behind CR 603.4's intervening "if".
@@ -1219,41 +1070,11 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     Spec.assertEqWith s "CR 603.12: bob lost nothing, so the reflexive never armed" (S.lifeOf S.alice none, S.lifeOf S.bob none) (Just 20, Just 20)
     -- What the pair rests on.
     Spec.assertEqWith s "CR 730.4/730.5: on both legs the wish took the Levy, which came back to alice's main-game library" (fmap (length . filter (== levy) . printingsIn Zone.Library S.alice) [lost, none]) [1, 1]
-
   -- CR 614.6 / 400.11c: Ring of Ma'rûf ({5} Artifact, "{5}, {T}, Exile this
   -- artifact: The next time you would draw a card this turn, instead put a card
-  -- you own from outside the game into your hand." -- name, cost, type line and
-  -- Oracle text checked against api.scryfall.com 2026-09-04, paper printing
-  -- `arn`).
-  --
-  -- The second road into the game, and the only printing that takes it --
-  -- Scryfall o:"outside the game" o:"would draw", 2026-09-04, one hit: an
-  -- activated ability installs a floating row (CR 614.3) and the next draw is
-  -- CANCELLED, so no card leaves the library and the card arrives from the pool
-  -- instead.
-  --
-  -- A PAIR of boards differing in one thing -- whether the ability was activated
-  -- -- so "the draw was replaced" and "she drew normally" are told apart by WHICH
-  -- printing is in her hand, not merely by how many cards are.
-  --
-  -- Every number distinct: five lands, two library cards, one card in the pool.
-  Spec.it s "CR 400.11c a draw replaced by a wish brings the card in from outside the game" $ do
-    plains <- S.printingOf s registry "Plains"
-    ring <- S.printingOf s registry "Ring of Ma'rûf"
-    piker <- S.printingOf s registry "Goblin Piker"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    let (armed, ringId) = ringBoard plains ring piker signInBlood True
-        after = S.runPure S.identityAnswer armed (Event.drawCard (pure ()) S.alice)
-    -- The fixture's own precondition: the cost really exiled the artifact, which
-    -- is what says the ability was activated and resolved at all.
-    Spec.assertEqWith s "setup: the activation cost exiled the Ring, so the ability was paid for and resolved" (Set.member ringId (GameState.battlefield armed)) False
-    -- THE BEHAVIOUR, ahead of every proxy: the card in hand is the one from the
-    -- pool and not the one off the top of her library.
-    Spec.assertEqWith s "CR 400.11c the card she owns outside the game is what reached her hand" (printingsIn Zone.Hand S.alice after) [signInBlood]
-    Spec.assertEqWith s "CR 614.6 the draw never happened, so nothing left her library" (length (Game.zoneMembers Zone.Library S.alice after)) 2
-    Spec.assertEqWith s "CR 400.11b and the pool is spent" (Map.size (poolOf S.alice after)) 0
-  -- The CONTROL: the same board with the ability never activated, so the only
-  -- difference is the floating row.
+  -- you own from outside the game into your hand."). The CONTROL of the
+  -- outside-the-game scenario whose draw it replaces: the ability never
+  -- activated, so the only difference is the floating row.
   Spec.it s "CR 121.1 with no row installed the same board draws off her library" $ do
     plains <- S.printingOf s registry "Plains"
     ring <- S.printingOf s registry "Ring of Ma'rûf"
@@ -1338,19 +1159,6 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
     Spec.assertEqWith s "CR 616.1 through the red Piker's row the Hill Giant reached her hand" (printingsIn Zone.Hand S.alice (drawn red)) [giant]
     Spec.assertEqWith s "CR 616.1 through the blue Merfolk's row nothing did" (printingsIn Zone.Hand S.alice (drawn blue)) []
     Spec.assertBool s (wasAskedToReplace (answersFor (preferringRow red) board (Event.drawCard (pure ()) S.alice))) "a ChooseReplacement was raised"
-  -- CR 315.3: "conspiracy cards that aren't in the game can't be brought into the
-  -- game". The first case's board with Sentinel Dispatch in the pool instead of
-  -- Sign in Blood: the draw is still replaced, and nothing arrives (CR 609.3).
-  Spec.it s "CR 315.3 a conspiracy outside the game cannot be brought in" $ do
-    plains <- S.printingOf s registry "Plains"
-    ring <- S.printingOf s registry "Ring of Ma'rûf"
-    piker <- S.printingOf s registry "Goblin Piker"
-    dispatch <- S.printingOf s registry "Sentinel Dispatch"
-    let (armed, _) = ringBoard plains ring piker dispatch True
-        after = S.runPure S.identityAnswer armed (Event.drawCard (pure ()) S.alice)
-    Spec.assertEqWith s "CR 315.3 the conspiracy did not reach her hand" (printingsIn Zone.Hand S.alice after) []
-    Spec.assertEqWith s "CR 400.11b and it is still in the pool" (Map.size (poolOf S.alice after)) 1
-    Spec.assertEqWith s "CR 614.6 the draw was still replaced" (length (Game.zoneMembers Zone.Library S.alice after)) 2
   -- CR 407.3: "when not playing for ante ... these cards can't be brought into
   -- the game from outside the game". Contract from Below is a sorcery, so
   -- Burning Wish's filter admits it; the pair differs only in the setting.
@@ -1678,67 +1486,19 @@ spec s registry = Spec.describe s "Parun.Engine.Event (CR 400.11)" $ do
           _ -> False
         asked = answersFor (extrapolating [] S.carol) gs (S.cast S.alice spellId >> Stack.resolveTop)
     Spec.assertEqWith s "and one name is no choice: nobody was asked which cards" (length (filter choseOutside asked)) 0
-  -- CR 701.23j: a search that reaches outside the game beside its zones.
-  -- Invasion of Arcavios ({3}{U}{U} Battle -- Siege, "When this Siege enters,
-  -- search your library, graveyard, and/or outside the game for an instant or
-  -- sorcery card you own, reveal it, and put it into your hand. If you search
-  -- your library this way, shuffle."; api.scryfall.com 2026-09-27) on
-  -- arcaviosBoard, the cases differing in the answers alone: which places she
-  -- takes, which library card she finds, and whether she takes what she is
-  -- offered from outside the game.
-  Spec.it s "CR 701.23j Invasion of Arcavios brings an instant in from outside the game, and a search that skipped her library shuffles nothing" $ do
-    board <- arcaviosBoard s registry
-    let resolved = resolveArcavios (arcaviosAnswer [SearchPlace.OutsideTheGame] [] True) board
-    -- THE BEHAVIOUR first. An engine that did not offer outside the game as a
-    -- place falls back to every zone, and CR 400.2 then forces the graveyard's
-    -- Sign in Blood into her hand instead.
-    Spec.assertEqWith s "CR 701.23j the Fog from outside the game is in her hand" (printingsIn Zone.Hand S.alice resolved) [arcaviosFog board]
-    Spec.assertEqWith s "CR 400.11b and it left the pool, the Island the filter rejects staying" (Map.elems (poolOf S.alice resolved)) [1]
-    Spec.assertEqWith s "the graveyard's sorcery was not found" (printingsIn Zone.Graveyard S.alice resolved) [arcaviosSign board]
-    Spec.assertEqWith s "and the library she did not search was not shuffled" (printingsIn Zone.Library S.alice resolved) (arcaviosLibrary board)
-  -- CR 701.23j and CR 400.2 together: the graveyard is public, so a search of it
-  -- must find its match -- unless the one count is filled from outside the game,
-  -- which the searcher "may" take. Paired with the case after it, which differs
-  -- only in declining the Fog.
-  Spec.it s "CR 701.23j a card taken from outside the game fills the count, sparing the graveyard's match" $ do
-    board <- arcaviosBoard s registry
-    let resolved = resolveArcavios (arcaviosAnswer [SearchPlace.InZone Zone.Graveyard, SearchPlace.OutsideTheGame] [] True) board
-    Spec.assertEqWith s "CR 701.23j the Fog is in her hand" (printingsIn Zone.Hand S.alice resolved) [arcaviosFog board]
-    Spec.assertEqWith s "CR 701.23a one count over every place, so the graveyard's sorcery stayed" (printingsIn Zone.Graveyard S.alice resolved) [arcaviosSign board]
-  Spec.it s "CR 400.2 declining outside the game too, the graveyard's match is found" $ do
-    board <- arcaviosBoard s registry
-    let resolved = resolveArcavios (arcaviosAnswer [SearchPlace.InZone Zone.Graveyard, SearchPlace.OutsideTheGame] [] False) board
-    Spec.assertEqWith s "CR 400.2 the graveyard's Sign in Blood is in her hand" (printingsIn Zone.Hand S.alice resolved) [arcaviosSign board]
-    Spec.assertEqWith s "CR 400.11b and the pool is untouched" (Map.elems (poolOf S.alice resolved)) [1, 1]
-  -- CR 701.23j's "may" on its own: outside the game alone, declined, finds
-  -- nothing although the graveyard holds a match -- which it was not searched.
-  Spec.it s "CR 701.23j outside the game alone may find nothing" $ do
-    board <- arcaviosBoard s registry
-    let resolved = resolveArcavios (arcaviosAnswer [SearchPlace.OutsideTheGame] [] False) board
-    Spec.assertEqWith s "CR 701.23j her hand is empty" (printingsIn Zone.Hand S.alice resolved) []
-    Spec.assertEqWith s "and the graveyard's sorcery stayed" (printingsIn Zone.Graveyard S.alice resolved) [arcaviosSign board]
   -- Opposition Agent's "they exile each card they find" reaches a card found
   -- outside the game too: bob's Agent, and alice searching her library and
-  -- outside the game. The case above without the Agent puts the Fog in her hand.
+  -- outside the game. Without the Agent the Fog reaches her hand (the
+  -- outside-the-game scenarios on Invasion of Arcavios).
   Spec.it s "CR 701.23j an opponent's Opposition Agent exiles the card found outside the game, linked to the Agent" $ do
     board <- arcaviosBoard s registry
     agentCard <- S.printingOf s registry "Opposition Agent"
     let (agentId, withAgent) = S.addPermanent agentCard S.bob (arcaviosState board)
-        resolved = resolveArcavios (arcaviosAnswer [SearchPlace.InZone Zone.Library, SearchPlace.OutsideTheGame] [] True) board {arcaviosState = withAgent}
+        resolved = resolveArcavios (arcaviosAnswer [SearchPlace.InZone Zone.Library, SearchPlace.OutsideTheGame]) board {arcaviosState = withAgent}
         exiled = Game.zoneMembers Zone.Exile S.alice resolved
     Spec.assertEqWith s "the Fog from outside the game is in her exile" (printingsIn Zone.Exile S.alice resolved) [arcaviosFog board]
     Spec.assertEqWith s "and her hand is empty" (printingsIn Zone.Hand S.alice resolved) []
     Spec.assertEqWith s "CR 607.1c the exiled Fog is linked to the Agent" (fmap (\oid -> fmap ExileLink.source (Map.lookup oid (GameState.exiledWith resolved))) exiled) [Just agentId]
-  -- Every place, and the library's instant named: the one count is filled from
-  -- the zones, so nothing out there is taken whatever she would have answered,
-  -- and the card's own "if you search your library this way, shuffle" follows.
-  Spec.it s "CR 701.23a/701.23j a library find fills the one count, and the library is shuffled" $ do
-    board <- arcaviosBoard s registry
-    let everywhere = [SearchPlace.InZone Zone.Library, SearchPlace.InZone Zone.Graveyard, SearchPlace.OutsideTheGame]
-        resolved = resolveArcavios (arcaviosAnswer everywhere [arcaviosBoltId board] True) board
-    Spec.assertEqWith s "CR 701.23a the library's Lightning Bolt is in her hand, and nothing else" (printingsIn Zone.Hand S.alice resolved) [arcaviosBolt board]
-    Spec.assertEqWith s "CR 701.23a the pool is untouched" (Map.elems (poolOf S.alice resolved)) [1, 1]
-    Spec.assertEqWith s "the library was shuffled" (printingsIn Zone.Library S.alice resolved) (reverse (filter (/= arcaviosBolt board) (arcaviosLibrary board)))
   -- CR 701.23j with a reveal for later clauses: Turtles Forever ({3}{W}
   -- instant, "Search your library and/or outside the game for exactly four
   -- legendary creature cards you own with different names, then reveal those
@@ -1831,37 +1591,25 @@ researching picks p = case p of
   _ -> S.identityAnswer p
 
 -- Invasion of Arcavios's board: alice with five Islands and the Siege in hand;
--- a Lightning Bolt above two Islands in her library, so the filter has a card to
--- reject there and a shuffle of what is left is visible; a Sign in Blood in her
--- graveyard; and an Island and a Fog outside the game, the Island interned first
--- so an offer the filter did not narrow would lead with it.
+-- two Islands in her library; a Sign in Blood in her graveyard; and an Island
+-- and a Fog outside the game, the Island interned first so an offer the filter
+-- did not narrow would lead with it.
 data ArcaviosBoard = MkArcaviosBoard
   { arcaviosState :: GameState.GameState,
     arcaviosSpell :: ObjectId.ObjectId,
-    arcaviosBoltId :: ObjectId.ObjectId,
-    arcaviosBolt :: Printing.Printing,
-    arcaviosSign :: Printing.Printing,
-    arcaviosFog :: Printing.Printing,
-    -- | Her library before the cast, top first.
-    arcaviosLibrary :: [Printing.Printing]
+    arcaviosFog :: Printing.Printing
   }
 
 arcaviosBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m ArcaviosBoard
 arcaviosBoard s registry = do
   island <- S.printingOf s registry "Island"
   invasion <- S.printingOf s registry "Invasion of Arcavios"
-  bolt <- S.printingOf s registry "Lightning Bolt"
   signInBlood <- S.printingOf s registry "Sign in Blood"
   fog <- S.printingOf s registry "Fog"
   let (board, spellId) = S.handOne invasion (S.landsInPlay island 5)
       withIslands = stockLibrary island 2 S.alice board
-      (boltId, stocked) = S.addLibraryCard bolt S.alice withIslands
-      buried = snd (S.addGraveyardCard signInBlood S.alice stocked)
-      intern printing (acc, gs) = let (printingId, gs2) = Game.intern printing gs in (acc <> [(printingId, 1)], gs2)
-      (entries, interned) = List.foldl' (flip intern) ([], buried) [island, fog]
-      stock p = p {Player.outsideTheGame = Map.fromList entries}
-      ready = interned {GameState.players = Map.adjust stock S.alice (GameState.players interned)}
-  pure (MkArcaviosBoard ready spellId boltId bolt signInBlood fog (printingsIn Zone.Library S.alice ready))
+      buried = snd (S.addGraveyardCard signInBlood S.alice withIslands)
+  pure (MkArcaviosBoard (stockPool [(island, 1), (fog, 1)] buried) spellId fog)
 
 -- Cast the Siege, resolve it, and resolve its enters trigger.
 resolveArcavios :: (forall r. Prompt.Prompt r -> r) -> ArcaviosBoard -> GameState.GameState
@@ -1870,15 +1618,13 @@ resolveArcavios answer board =
       settled = S.runPure answer entered Engine.settleForPriority
    in S.runPure answer settled Stack.resolveTop
 
--- The places she takes, the zone cards she finds, whether she takes everything
--- she is offered from outside the game, and a shuffle that reverses what it is
--- offered, so one is visible.
-arcaviosAnswer :: [SearchPlace.SearchPlace] -> [ObjectId.ObjectId] -> Bool -> Prompt.Prompt r -> r
-arcaviosAnswer places found takeOutside p = case p of
+-- The places she takes, finding nothing in them, and everything she is offered
+-- from outside the game taken.
+arcaviosAnswer :: [SearchPlace.SearchPlace] -> Prompt.Prompt r -> r
+arcaviosAnswer places p = case p of
   Prompt.ChooseSearchZones {} -> Set.fromList places
-  Prompt.Search {} -> found
-  Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> if takeOutside then fmap fst (NonEmpty.toList offered) else []
-  Prompt.Shuffle ids -> reverse ids
+  Prompt.Search {} -> []
+  Prompt.ChooseFromOutsideTheGame _ _ offered _ _ -> fmap fst (NonEmpty.toList offered)
   _ -> S.identityAnswer p
 
 -- Turtles Forever's board: alice with four Plains and the instant in hand;

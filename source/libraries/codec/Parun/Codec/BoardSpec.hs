@@ -190,6 +190,7 @@ seat name =
       Seat.Type.ante = Seq.empty,
       Seat.Type.sideDecks = Map.empty,
       Seat.Type.startingDeck = Map.empty,
+      Seat.Type.outsideTheGame = Map.empty,
       Seat.Type.dungeons = Set.empty,
       Seat.Type.draftNotes = Map.empty
     }
