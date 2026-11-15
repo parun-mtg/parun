@@ -15,7 +15,6 @@ import qualified Parun.Types.CompletedDungeon as CompletedDungeon
 import qualified Parun.Types.ControlWindow as ControlWindow
 import qualified Parun.Types.Count as Count
 import qualified Parun.Types.CounterKind as CounterKind
-import qualified Parun.Types.DamageDirection as DamageDirection
 import qualified Parun.Types.DamageTally as DamageTally
 import qualified Parun.Types.DealtDamage as DealtDamage
 import qualified Parun.Types.Designation as Designation
@@ -30,6 +29,7 @@ import qualified Parun.Types.ManaCount as ManaCount
 import qualified Parun.Types.ManaSpent as ManaSpent
 import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
+import qualified Parun.Types.ObjectDamage as ObjectDamage
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerCounterTally as PlayerCounterTally
 import qualified Parun.Types.PlayerDesignationTally as PlayerDesignationTally
@@ -303,7 +303,7 @@ data Quantity
     DamageDealtToPlayersThisTurn (DealtDamage.DealtDamage PlayerRef.PlayerRef)
   | -- | CR 120.1 / 608.2i: the total damage dealt this turn to, or by, the
     -- object this quantity is evaluated against.
-    DamageDealtThisTurn DamageDirection.DamageDirection
+    DamageDealtThisTurn ObjectDamage.ObjectDamage
   | -- | CR 601.2i / 608.2i: how many spells that player cast during the turn the
     -- tally names (not CR 502.2's active-player count).
     SpellsCast SpellTally.SpellTally

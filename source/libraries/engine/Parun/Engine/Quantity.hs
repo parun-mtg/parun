@@ -76,6 +76,7 @@ import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.NoteFold as NoteFold
 import qualified Parun.Types.Object as Object
+import qualified Parun.Types.ObjectDamage as ObjectDamage
 import Parun.Types.ObjectId (ObjectId)
 import qualified Parun.Types.ObjectSnapshot as ObjectSnapshot
 import qualified Parun.Types.PastActivation as PastActivation
@@ -816,7 +817,15 @@ evaluateAgainst viewOf context gs announcedOn mOid mView quantity =
         -- the printed clause says this turn, and CR 120.6's regeneration and CR 120.3d's
         -- wither and infect are three boards where the damage that was dealt is no
         -- longer marked on the creature that took it.
-        Quantity.DamageDealtThisTurn direction -> fmap (toInteger . Game.damageDealtThisTurn direction gs) mOid
+        --
+        -- A source's controller is the one CR 120.1's event captured as the
+        -- damage was dealt (DamageEvent.dealtByController), off its last known
+        -- information if it was already gone (CR 608.2h). Nothing for a
+        -- reference naming anything but exactly one player.
+        Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage direction controlledBy) -> case fmap playersOf controlledBy of
+          Nothing -> fmap (toInteger . Game.damageDealtThisTurn direction Nothing gs) mOid
+          Just (Just [pid]) -> fmap (toInteger . Game.damageDealtThisTurn direction (Just pid) gs) mOid
+          Just _ -> Nothing
         -- CR 508.3b: how many of that player's opponents they declared attacked this
         -- combat phase. LifeTotal's arm in shape -- live, one player only, resolved
         -- through the same playersOf, and Nothing for a reference naming

@@ -12,7 +12,6 @@ import qualified Parun.Codec.CommanderColors as CommanderColors
 import qualified Parun.Codec.CompletedDungeon as CompletedDungeon
 import qualified Parun.Codec.Count as Count
 import qualified Parun.Codec.CounterKind as CounterKind
-import qualified Parun.Codec.DamageDirection as DamageDirection
 import qualified Parun.Codec.DamageTally as DamageTally
 import qualified Parun.Codec.DealtDamage as DealtDamage
 import qualified Parun.Codec.Designation as Designation
@@ -28,6 +27,7 @@ import qualified Parun.Codec.ManaCount as ManaCount
 import qualified Parun.Codec.ManaSpent as ManaSpent
 import qualified Parun.Codec.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Codec.Measure as Measure
+import qualified Parun.Codec.ObjectDamage as ObjectDamage
 import qualified Parun.Codec.PhaseSelector as PhaseSelector
 import qualified Parun.Codec.PlayerAction as PlayerAction
 import qualified Parun.Codec.PlayerCounterTally as PlayerCounterTally
@@ -213,7 +213,7 @@ codec =
       -- CR 120.1's damage again, with only the event's end on the wire for
       -- WasToken's reason: the object it is measured against is whichever one
       -- the quantity is evaluated against, and the turn is the log's extent.
-      Arm.payload "DamageDealtThisTurn" DamageDirection.codec Quantity.DamageDealtThisTurn (\x -> case x of Quantity.DamageDealtThisTurn y -> Just y; _ -> Nothing),
+      Arm.payload "DamageDealtThisTurn" ObjectDamage.codec Quantity.DamageDealtThisTurn (\x -> case x of Quantity.DamageDealtThisTurn y -> Just y; _ -> Nothing),
       -- CR 601.2i's tally, with only a PlayerRef on the wire for
       -- CardsDiscardedThisTurn's reason above -- but read off the handoff snapshot
       -- rather than the log, since "last turn" outlives the log it was folded

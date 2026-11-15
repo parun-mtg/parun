@@ -751,8 +751,8 @@ tappedPermanent = SlotName.MkSlotName (Text.pack "thatTappedPermanent")
 -- Boomerang's "Return Trusty Boomerang", Archery Training's "the number of
 -- arrow counters on Archery Training". Parun.Engine.Projection's GainAbility
 -- arm bakes it into the granter's id, so two Poles grant two abilities, each
--- naming its own. An activated ability a quantity of which reads it is named for
--- its granter there too, and setGranter binds it as the ability is activated.
+-- naming its own. An ability reading it by slot is named for its granter there
+-- too, and setGranter binds it as the ability is activated or put on the stack.
 grantingPermanent :: SlotName
 grantingPermanent = SlotName.MkSlotName (Text.pack "thatGrantingPermanent")
 

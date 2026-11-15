@@ -49,7 +49,9 @@
               "comparison": "AtLeast",
               "measured": {
                 "type": "DamageDealtThisTurn",
-                "value": "DealtTo"
+                "value": {
+                  "direction": "DealtTo"
+                }
               },
               "threshold": {
                 "type": "Literal",

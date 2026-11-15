@@ -431,17 +431,18 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         Modification.GainAbility g -> case g of
           -- The cost names its granter by id (Binding.grantingPermanent);
           -- data/scenarios' Fishing Pole files prove each names its own. The
-          -- effect does too (bakeGranter). One whose quantity reads its granter
-          -- by slot is named for it, so Binding.setGranter can bind the slot as
-          -- it is activated (CR 608.2h).
+          -- effect does too (bakeGranter). One that reads its granter by slot
+          -- is named for it, so Binding.setGranter can bind the slot as it is
+          -- activated or put on the stack (CR 608.2h).
           GrantedAbility.Activated a ->
             let named = namedForGranter src a
              in pc {PC.activatedAbilities = PC.activatedAbilities pc <> [named {ActivatedAbility.cost = Filter.bakeCost Binding.grantingPermanent src (ActivatedAbility.cost a), ActivatedAbility.costChoices = fmap (CostChoice.MkCostChoice . fmap (Filter.bakeCost Binding.grantingPermanent src) . CostChoice.unwrap) (ActivatedAbility.costChoices a), ActivatedAbility.modal = bakeGranter src (ActivatedAbility.modal a)}]}
           GrantedAbility.Triggered t ->
-            let named = case TriggeredAbility.limit t of
-                  TriggerLimit.Unlimited -> t
-                  TriggerLimit.OncePerTurn _ -> t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
-                  TriggerLimit.OncePerGame -> t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
+            let forGranter = t {TriggeredAbility.name = Just (Binding.acquiredFrom src (TriggeredAbility.name t))}
+                named = case TriggeredAbility.limit t of
+                  TriggerLimit.Unlimited -> if readsGranter (TriggeredAbility.modal t) then forGranter else t
+                  TriggerLimit.OncePerTurn _ -> forGranter
+                  TriggerLimit.OncePerGame -> forGranter
              in pc {PC.triggeredAbilities = PC.triggeredAbilities pc <> [named {TriggeredAbility.modal = bakeGranter src (TriggeredAbility.modal named)}]}
           GrantedAbility.Static sa -> case affected of
             Affected.TheseObjects _ -> pc
@@ -980,11 +981,12 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
 -- condition counts over. Named by id, so a granter that has since changed
 -- zones is a different object and is not found (CR 400.7).
 -- data/scenarios' Trusty Boomerang files prove the object and its Heliod's
--- Punishment files the condition. The triggered arm shares the bake and has no
--- producer in data/cards; Spare Dagger would be one.
+-- Punishment files the condition. The triggered arm shares the bake, which no
+-- card in data/cards reaches; Spare Dagger would. A slot-named position is
+-- readsGranter's.
 --
--- Not implemented: the name in any other position of the granted ability -- a
--- target slot, a quoted ability, a slot no cost binds (#7342).
+-- Not implemented: the name in a target slot's filter or a quoted ability
+-- (#7794).
 bakeGranter :: ObjectId -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card)
 bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . effect, Children.modalCondition = Identity.Identity . condition}
   where
@@ -1015,16 +1017,18 @@ namedForGranter src a
   | Keyword.countsActivations a || readsGranter (ActivatedAbility.modal a) = a {ActivatedAbility.name = Just (Binding.acquiredFrom src (ActivatedAbility.name a))}
   | otherwise = a
 
--- CR 201.5a / 608.2h: whether a quantity of the granted ability reads its
--- granter by slot (Binding.grantingPermanent), which only a binding answers off
--- its last known information once the granter has left. data/scenarios'
--- Archery Training files prove it.
+-- CR 201.5a / 608.2h: whether the granted ability reads its granter by slot
+-- (Binding.grantingPermanent) -- in a quantity, a player reference or an
+-- effect's own slot -- which only a binding answers, off its last known
+-- information once the granter has left. data/scenarios' Archery Training
+-- files prove the quantity and its Grothama, All-Devouring files the slot.
 readsGranter :: Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Bool
 readsGranter = Monoid.getAny . Const.getConst . Children.modalChildren Children.modalLeaves {Children.modalEffect = effect, Children.modalCondition = condition}
   where
-    effect = Children.effectChildren Children.effectLeaves {Children.onEffect = effect, Children.onQuantity = quantity}
+    effect = Children.effectChildren Children.effectLeaves {Children.onEffect = effect, Children.onQuantity = quantity, Children.onPlayer = mentions . QuantitySlot.playerRefSlots, Children.onSlot = mentions . Set.singleton}
     condition = Children.conditionChildren Children.conditionLeaves {Children.conditionQuantity = quantity, Children.conditionNested = condition}
-    quantity = Const.Const . Monoid.Any . Set.member Binding.grantingPermanent . QuantitySlot.slots
+    quantity = mentions . QuantitySlot.slots
+    mentions = Const.Const . Monoid.Any . Set.member Binding.grantingPermanent
 
 -- One grant, dropped when CR 205.3d refuses it. The refusal is proved at the
 -- land-type direction (Parun.ProjectionSpec's Synthetic Marsh Song case) and is a
