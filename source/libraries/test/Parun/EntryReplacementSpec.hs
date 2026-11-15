@@ -895,7 +895,7 @@ stuffyDollSpec s registry =
       dealing events gs = resolveAll (settleAll (S.runPure S.identityAnswer gs (Damage.applyDamage (pure ()) events)))
       noncombat src target amount = DamageEvent.MkDamageEvent src (Recipient.ToCreature target) amount 0 False False False 0 Nothing Nothing mempty False mempty Nothing mempty DamageKind.Noncombat
       lives g = (S.lifeOf S.alice g, S.lifeOf S.bob g, S.lifeOf S.carol g)
-      chosenOn oid g = Game.lookupObject oid g >>= Map.lookup PlayerChoice.AsEnters . Map.findWithDefault Map.empty Acquisition.Own . Object.chosenPlayers
+      chosenOn oid g = Game.lookupObject oid g >>= Map.lookup PlayerChoice.AsEntersOrTransforms . Map.findWithDefault Map.empty Acquisition.Own . Object.chosenPlayers
       -- alice casts the Doll off five Mountains on a three-seat board and answers
       -- CR 614.12a's choice with `who`. The Doll must be CAST: S.addPermanent puts
       -- an object straight onto the battlefield without running the entry loop,
@@ -986,7 +986,7 @@ stuffyDollSpec s registry =
               Spec.assertEqWith
                 s
                 "CR 400.7 the rebuilt object forgot the player it chose"
-                (fmap (Map.lookup PlayerChoice.AsEnters . Map.findWithDefault Map.empty Acquisition.Own . Object.chosenPlayers . Object.newIncarnation) (Game.lookupObject dollId gs))
+                (fmap (Map.lookup PlayerChoice.AsEntersOrTransforms . Map.findWithDefault Map.empty Acquisition.Own . Object.chosenPlayers . Object.newIncarnation) (Game.lookupObject dollId gs))
                 (Just Nothing)
             _ -> Spec.assertFailure s "the Doll did not reach the battlefield"
         -- The fourth clause, and the one that makes the card self-contained: {T}

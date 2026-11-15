@@ -2042,7 +2042,7 @@ candidateContext gs candidate =
         gs
         (fmap (Set.map Recipient.ToObject) (ReplacementCandidate.slots candidate))
         (Projection.framedWith choices source gs (Projection.sourceContext gs (ReplacementCandidate.controller candidate) source))
-          { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players source gs >>= Map.lookup PlayerChoice.AsEnters
+          { Filter.carrierChosenPlayer = Game.currentChoice Chosen.Players source gs >>= Map.lookup PlayerChoice.AsEntersOrTransforms
           }
 
 -- CR 614.16: whether a token row's "an effect would create" reaches `lot`: a
@@ -2519,8 +2519,9 @@ readsApplier re = case re of
   -- The quality's offer rides the effect whoever's row is applying, the entry
   -- arm's answer.
   ReplacementEffect.AttachR (AttachR.MkAttachR _ (AttachRewrite.ChooseQuality _)) -> False
-  -- CR 109.5: the effects run under the transforming permanent's controller,
-  -- read off the event, EntryRewrite.RunEffects' answer.
+  -- CR 109.5: the effects run, and the player is chosen, under the
+  -- transforming permanent's controller, read off the event --
+  -- EntryRewrite.RunEffects' and EntryRewrite.ChoosePlayer's answer.
   ReplacementEffect.TransformR (TransformR.MkTransformR _ _) -> False
   -- CR 122.1d acts on the permanent becoming untapped and names no player -- CR
   -- 701.19a's answer one event class over, and for its reason.

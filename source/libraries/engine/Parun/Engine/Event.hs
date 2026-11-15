@@ -318,6 +318,7 @@ import qualified Parun.Types.TokenPattern as TokenPattern
 import qualified Parun.Types.TokenPlus as TokenPlus
 import qualified Parun.Types.TokenR as TokenR
 import qualified Parun.Types.TransformR as TransformR
+import qualified Parun.Types.TransformRewrite as TransformRewrite
 import qualified Parun.Types.Transformed as Transformed
 import Parun.Types.TriggerCondition (TriggerCondition)
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -3354,24 +3355,7 @@ apply settle batch applied batchPrevented candidate event =
       -- Written to Object.chosenPlayers, NOT to the copiable snapshot -- see
       -- EntryRewrite.ChoosePlayer.
       EntryRewrite.ChoosePlayer relation -> do
-        gs <- State.get
-        picked <- case Projection.controllerOf oid gs of
-          -- Unreachable, and defensive for ChoiceOf's reason: the object is
-          -- materialized on the battlefield before this loop runs, so
-          -- controllerOf falls back to its owner. Chooses NOBODY, as
-          -- chooseQualityAs does -- and CR 101.3 already ignores the share of a
-          -- later instruction that names nobody.
-          Nothing -> pure Nothing
-          -- CR 801.5a's offer, asked through Players.chooseOne. Nobody left to
-          -- choose from is a board CR 104.2a has already ended the game on, and
-          -- chooses nobody, the posture designateProtector takes for a battle
-          -- with no legal protector.
-          Just controller -> Players.chooseOne controller oid Nothing (Players.offer controller gs relation)
-        Replacement.consume (ReplacementCandidate.identity candidate)
-        let asEnters held = case Map.alter (const picked) PlayerChoice.AsEnters (Maybe.fromMaybe Map.empty held) of
-              chosen | Map.null chosen -> Nothing
-              chosen -> Just chosen
-        State.modify' $ \g -> Game.recordChoice Chosen.Players (Game.acquisitionOf oid g) asEnters oid g
+        choosePlayerAs candidate relation oid
         pure (Just event)
       -- CR 614.1c with CR 201.4: Null Chamber's as-enters name choices. Unlike
       -- the two arms above, this one has to settle WHO is asked before it can
@@ -5872,7 +5856,7 @@ apply settle batch applied batchPrevented candidate event =
     -- resolution, by the settle loop. Both the performer and CR 113.7's source are
     -- the transforming permanent, the entry arm's posture. The event survives:
     -- the face is already turned.
-    (ReplacementEffect.TransformR (TransformR.MkTransformR _ effects), ProposedEvent.WouldTransform oid) -> do
+    (ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.RunEffects effects)), ProposedEvent.WouldTransform oid) -> do
       Replacement.consume (ReplacementCandidate.identity candidate)
       gs <- State.get
       -- Nothing is unreachable: the permanent is on the battlefield, so
@@ -5892,6 +5876,11 @@ apply settle batch applied batchPrevented candidate event =
                           }
                   }
             }
+      pure (Just event)
+    -- Shinryu, Transcendent Rival's "choose an opponent", the entry arm's
+    -- process.
+    (ReplacementEffect.TransformR (TransformR.MkTransformR _ (TransformRewrite.ChoosePlayer relation)), ProposedEvent.WouldTransform oid) -> do
+      choosePlayerAs candidate relation oid
       pure (Just event)
     -- Unreachable: `applies` admits TransformR only against WouldTransform.
     (ReplacementEffect.TransformR {}, _) -> pure (Just event)
@@ -5913,10 +5902,36 @@ unlinkLostPayments oid gs = case Game.lookupObject oid gs of
         paid = Map.filter (not . Map.null) (Map.mapWithKey (\keyword -> Map.filterWithKey (\which _ -> kept keyword which)) (Object.paidCosts obj))
         promise choice = case choice of
           PlayerChoice.Promised something which -> kept (Keyword.Type.Gift something) which
-          PlayerChoice.AsEnters -> True
+          PlayerChoice.AsEntersOrTransforms -> True
         promises = fmap (Map.filterWithKey (\choice _ -> promise choice)) (Object.chosenPlayers obj)
         settled = obj {Object.paidCosts = paid, Object.chosenPlayers = promises}
      in gs {GameState.objects = Map.insert oid settled (GameState.objects gs)}
+
+-- CR 614.1c / 701.27i: an "as [this permanent] enters" (Stuffy Doll) or "as
+-- [this permanent] transforms" (Shinryu, Transcendent Rival) choice of a player
+-- in the relation, made by the permanent's controller and written to
+-- Object.chosenPlayers, NOT to the copiable snapshot -- see
+-- EntryRewrite.ChoosePlayer.
+choosePlayerAs :: ReplacementCandidate -> PlayerRelation.PlayerRelation -> ObjectId -> Game ()
+choosePlayerAs candidate relation oid = do
+  gs <- State.get
+  picked <- case Projection.controllerOf oid gs of
+    -- Unreachable, and defensive for ChoiceOf's reason: the object is on the
+    -- battlefield (an entering one is materialized before the entry loop
+    -- runs), so controllerOf falls back to its owner. Chooses NOBODY, as
+    -- chooseQualityAs does -- and CR 101.3 already ignores the share of a
+    -- later instruction that names nobody.
+    Nothing -> pure Nothing
+    -- CR 801.5a's offer, asked through Players.chooseOne. Nobody left to
+    -- choose from is a board CR 104.2a has already ended the game on, and
+    -- chooses nobody, the posture designateProtector takes for a battle
+    -- with no legal protector.
+    Just controller -> Players.chooseOne controller oid Nothing (Players.offer controller gs relation)
+  Replacement.consume (ReplacementCandidate.identity candidate)
+  let withPick held = case Map.alter (const picked) PlayerChoice.AsEntersOrTransforms (Maybe.fromMaybe Map.empty held) of
+        chosen | Map.null chosen -> Nothing
+        chosen -> Just chosen
+  State.modify' $ \g -> Game.recordChoice Chosen.Players (Game.acquisitionOf oid g) withPick oid g
 
 -- CR 614.1c / 607.2d: an "as this enters" (Painter's Servant) or "as this
 -- becomes attached" (Sanctuary Blade) choice, made by the object's controller

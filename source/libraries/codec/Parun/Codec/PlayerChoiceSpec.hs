@@ -9,12 +9,12 @@ import qualified Parun.Types.PlayerChoice as PlayerChoice
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.PlayerChoice" $ do
-  Spec.it s "AsEnters" $
+  Spec.it s "AsEntersOrTransforms" $
     Common.assertCodec
       s
       PlayerChoice.codec
-      PlayerChoice.AsEnters
-      " {\"type\":\"AsEnters\"} "
+      PlayerChoice.AsEntersOrTransforms
+      " {\"type\":\"AsEntersOrTransforms\"} "
   Spec.it s "Promised" $
     Common.assertCodec
       s

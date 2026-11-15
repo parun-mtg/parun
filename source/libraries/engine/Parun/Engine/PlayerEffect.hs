@@ -192,7 +192,7 @@ inScopeWithin source reach pid controller gs scope = case scope of
   PlayerScope.Related relation -> PlayerRelation.holds (Game.teams gs) relation controller pid
   PlayerScope.Superlative leading -> List.elem pid (leaders reach gs leading)
   PlayerScope.InRole role -> List.elem pid (Turn.roleHolders role gs)
-  PlayerScope.ChosenPlayer -> (source >>= \oid -> Game.currentChoice Chosen.Players oid gs >>= Map.lookup PlayerChoice.AsEnters) == Just pid
+  PlayerScope.ChosenPlayer -> (source >>= \oid -> Game.currentChoice Chosen.Players oid gs >>= Map.lookup PlayerChoice.AsEntersOrTransforms) == Just pid
   PlayerScope.SourceOwner -> (source >>= \oid -> fmap Object.owner (Game.lookupObject oid gs)) == Just pid
 
 -- The same question over a CARRIER's affected set rather than over a bare scope:

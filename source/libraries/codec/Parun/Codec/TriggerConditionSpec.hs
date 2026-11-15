@@ -77,6 +77,7 @@ import qualified Parun.Types.PlayerExpends as PlayerExpends
 import qualified Parun.Types.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
+import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlaysLand as PlaysLand
 import qualified Parun.Types.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Types.Quantity as Quantity
@@ -679,19 +680,19 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       TriggerCondition.codec
       (TriggerCondition.PlayerPlaysLand (PlaysLand.MkPlaysLand PlayerRelation.You (Just Zone.Exile) (Filter.And [])))
       " {\"type\":\"PlayerPlaysLand\",\"value\":{\"player\":\"You\",\"from\":\"Exile\",\"filter\":{\"type\":\"And\",\"value\":[]}}} "
-  -- CR 603.9. Withengar Unbound's "a player" and Share the Spoils' "an
-  -- opponent".
-  Spec.it s "PlayerLosesGame round-trips both relations" $ do
+  -- CR 603.9. Withengar Unbound's "a player" and Shinryu, Transcendent Rival's
+  -- "the chosen player".
+  Spec.it s "PlayerLosesGame round-trips a relation and the chosen player" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PlayerLosesGame PlayerRelation.AnyPlayer)
-      " {\"type\":\"PlayerLosesGame\",\"value\":\"AnyPlayer\"} "
+      (TriggerCondition.PlayerLosesGame (PlayerScope.Related PlayerRelation.AnyPlayer))
+      " {\"type\":\"PlayerLosesGame\",\"value\":{\"type\":\"AnyPlayer\"}} "
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.PlayerLosesGame PlayerRelation.Opponent)
-      " {\"type\":\"PlayerLosesGame\",\"value\":\"Opponent\"} "
+      (TriggerCondition.PlayerLosesGame PlayerScope.ChosenPlayer)
+      " {\"type\":\"PlayerLosesGame\",\"value\":{\"type\":\"ChosenPlayer\"}} "
   Spec.it s "PlayerManifestsDread" $
     Common.assertCodec
       s

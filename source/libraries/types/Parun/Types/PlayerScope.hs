@@ -54,9 +54,11 @@ data PlayerScope
     -- the active players a "the active player" ability chooses one of (Siren's
     -- Call), or the defending players.
     InRole TurnRole.TurnRole
-  | -- | CR 607.2d / 614.1c: the player the SOURCE chose as it entered -- Booby
-    -- Trap's "the chosen player reveals each card they draw". Nobody where the
-    -- carrier has no source to read, or the source chose nobody.
+  | -- | CR 607.2d / 614.1c / 701.27i: the player the SOURCE chose as it entered
+    -- or transformed -- Booby Trap's "the chosen player reveals each card they
+    -- draw", Shinryu, Transcendent Rival's "when the chosen player loses the
+    -- game". Nobody where the carrier has no source to read, or the source
+    -- chose nobody.
     ChosenPlayer
   | -- | CR 108.3: the source's owner, nobody where the carrier has no source.
     SourceOwner

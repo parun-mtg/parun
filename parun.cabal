@@ -1790,6 +1790,8 @@ library codec
     Parun.Codec.Transformed
     Parun.Codec.TransformedSpec
     Parun.Codec.TransformR
+    Parun.Codec.TransformRewrite
+    Parun.Codec.TransformRewriteSpec
     Parun.Codec.TransformRSpec
     Parun.Codec.TransformTrigger
     Parun.Codec.TransformTriggerSpec
@@ -3712,6 +3714,7 @@ library types
     Parun.Types.Trait
     Parun.Types.Transformed
     Parun.Types.TransformR
+    Parun.Types.TransformRewrite
     Parun.Types.TransformTrigger
     Parun.Types.TriggerCondition
     Parun.Types.TriggeredAbility

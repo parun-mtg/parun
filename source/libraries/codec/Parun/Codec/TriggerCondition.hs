@@ -38,6 +38,7 @@ import qualified Parun.Codec.PlayerDrawsNthCard as PlayerDrawsNthCard
 import qualified Parun.Codec.PlayerExpends as PlayerExpends
 import qualified Parun.Codec.PlayerIsDealtDamage as PlayerIsDealtDamage
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
+import qualified Parun.Codec.PlayerScope as PlayerScope
 import qualified Parun.Codec.PlaysLand as PlaysLand
 import qualified Parun.Codec.PutIntoZoneTrigger as PutIntoZoneTrigger
 import qualified Parun.Codec.RevealedThisWay as RevealedThisWay
@@ -114,7 +115,7 @@ codec =
           Arm.payload "LosesControl" LostPermanent.codec TriggerCondition.LosesControl (\x -> case x of TriggerCondition.LosesControl y -> Just y; _ -> Nothing),
           Arm.payload "RoomEntered" RoomIndex.codec TriggerCondition.RoomEntered (\x -> case x of TriggerCondition.RoomEntered y -> Just y; _ -> Nothing),
           Arm.payload "PlayerActs" (PlayerActed.codec PlayerRelation.codec) TriggerCondition.PlayerActs (\x -> case x of TriggerCondition.PlayerActs y -> Just y; _ -> Nothing),
-          Arm.payload "PlayerLosesGame" PlayerRelation.codec TriggerCondition.PlayerLosesGame (\x -> case x of TriggerCondition.PlayerLosesGame y -> Just y; _ -> Nothing),
+          Arm.payload "PlayerLosesGame" PlayerScope.codec TriggerCondition.PlayerLosesGame (\x -> case x of TriggerCondition.PlayerLosesGame y -> Just y; _ -> Nothing),
           Arm.payload "PlayerPlaysLand" PlaysLand.codec TriggerCondition.PlayerPlaysLand (\x -> case x of TriggerCondition.PlayerPlaysLand y -> Just y; _ -> Nothing),
           Arm.payload "PlayerManifestsDread" PlayerRelation.codec TriggerCondition.PlayerManifestsDread (\x -> case x of TriggerCondition.PlayerManifestsDread y -> Just y; _ -> Nothing),
           Arm.payload "PlayerFacesDilemma" PlayerRelation.codec TriggerCondition.PlayerFacesDilemma (\x -> case x of TriggerCondition.PlayerFacesDilemma y -> Just y; _ -> Nothing),

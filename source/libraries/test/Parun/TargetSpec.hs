@@ -1420,7 +1420,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
       Just slot -> do
         let (nemesisId, board0) = S.addPermanent nemesis S.bob S.threePlayerGame
             (giantId, board) = S.addPermanent giant S.bob board0
-            chose who = board {GameState.objects = Map.adjust (\o -> o {Object.chosenPlayers = Map.singleton Acquisition.Own (Map.singleton PlayerChoice.AsEnters who)}) nemesisId (GameState.objects board)}
+            chose who = board {GameState.objects = Map.adjust (\o -> o {Object.chosenPlayers = Map.singleton Acquisition.Own (Map.singleton PlayerChoice.AsEntersOrTransforms who)}) nemesisId (GameState.objects board)}
             reaches gs victim =
               let (spellId, onStack) = S.spellOnStack murder S.alice gs
                in Set.member (Recipient.ToCreature victim) (Target.legalRecipients StackObjectKind.Spell (Just S.alice) spellId slot onStack)
@@ -1465,7 +1465,7 @@ spec s registry = Spec.describe s "Parun.Engine.Target" $ do
     case Face.activatedAbilities (S.combinedFace recluse) of
       [ability] | Just theSlot <- soleTargetSlot (ActivatedAbility.modal ability) -> do
         let (nemesisId, board0) = S.addPermanent nemesis S.alice S.threePlayerGame
-            chose = board0 {GameState.objects = Map.adjust (\o -> o {Object.chosenPlayers = Map.singleton Acquisition.Own (Map.singleton PlayerChoice.AsEnters S.bob)}) nemesisId (GameState.objects board0)}
+            chose = board0 {GameState.objects = Map.adjust (\o -> o {Object.chosenPlayers = Map.singleton Acquisition.Own (Map.singleton PlayerChoice.AsEntersOrTransforms S.bob)}) nemesisId (GameState.objects board0)}
             (recluseId, board1) = S.addPermanent recluse S.carol chose
             (hisRecluseId, board2) = S.addPermanent recluse S.bob board1
             (rayId, board) = S.addHandCard rayOfCommand S.bob (S.landsFor island S.bob 4 board2)
