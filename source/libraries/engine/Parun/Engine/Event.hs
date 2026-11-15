@@ -8373,8 +8373,8 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
     -- not. Tempest Efreet's "put Tempest Efreet from anywhere into that
     -- player's graveyard", with nothing exchanged, is the producer, and
     -- data/scenarios/ante's "already in the graveyard" scenario the proof, and
-    -- Parun.LeavesTriggerSpec's "a card moved from a library into a library"
-    -- the library's.
+    -- data/scenarios/leaves-trigger's "a card moved from a library into a
+    -- library" the library's.
     Just obj | alreadyIn oid obj requestedDest gs -> stayPut oid obj requestedDest requestedPosition False
     Just obj -> do
       let pid = Object.owner obj
@@ -10322,7 +10322,8 @@ counterOne settle before destination counterer source controller oid = do
 -- are appended to: an activation whose cost removes the creature it also targeted
 -- -- Rune-Brand Juggler sacrificing the suspected creature its own ability names
 -- -- still made that creature a target while it stood. Proved by
--- Parun.LeavesTriggerSpec's "Professor Hojo sees a target its own cost sacrificed".
+-- data/scenarios/leaves-trigger's "Professor Hojo sees a target its own cost
+-- sacrificed".
 --
 -- BRACKETED, which is what makes CR 603.2c's first sentence readable: rule
 -- 601.2c makes the chosen objects targets in one announcement, so every event

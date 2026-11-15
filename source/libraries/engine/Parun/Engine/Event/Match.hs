@@ -1760,8 +1760,8 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- same rule 601.2c, so Dormant Gomazoa's "a spell" must not untap on Ravenous
   -- Rats' targeted discard. "An ACTIVATED ability" is CR 113.3b alone, so a
   -- condition that did not ask would draw off a triggered ability too.
-  -- Parun.LeavesTriggerSpec's activated-against-triggered pair is what proves
-  -- it.
+  -- data/scenarios/leaves-trigger's activated-against-triggered pair is what
+  -- proves it.
   --
   -- CR 109.2 scopes the Filter to the BATTLEFIELD, which is the arm's other
   -- rules content and belongs here rather than in each card's Filter: a target
@@ -1776,7 +1776,7 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- Membership and view both off `board`, CR 603.10's sample of the
   -- announcement (Event.becameTarget takes it before any cost is paid), not the
   -- board at the CR 117.5 gather: a permanent named as a target and sacrificed
-  -- to pay for it was a target while it stood. Parun.LeavesTriggerSpec's
+  -- to pay for it was a target while it stood. data/scenarios/leaves-trigger's
   -- "Professor Hojo sees a target its own cost sacrificed" proves it.
   --
   -- Firing ONCE for the whole announcement under OneOrMore is

@@ -1,0 +1,27 @@
+{
+  "description": "CR 603.10 a card that reaches a graveyard mid-batch is no witness to an earlier event",
+  "note": "Squee, Goblin Nabob: \"At the beginning of your upkeep, you may return this card from your graveyard to your hand.\" Alice's upkeep begins with Squee on the battlefield under a -1/-1 counter, so the step's beginning is recorded first and only then does CR 704.5f bury Squee, a strictly later event group of the same CR 117.5 batch. The graveyard card CR 400.7 mints did not exist immediately after the step began, so its CR 113.6m upkeep ability is no witness to it: no \"may\" is asked (an unscheduled one fails the run) and Squee stays in the graveyard. Bitterblossom's own upkeep trigger is the control: it saw the same step begin, and fires.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Squee, Goblin Nabob", "label": "squee", "counters": [{ "key": { "type": "MinusOneMinusOne" }, "value": 1 }] },
+          { "card": "Bitterblossom", "label": "bitterblossom" }
+        ],
+        "library": [{ "card": "Island" }, { "card": "Island" }]
+      },
+      { "name": "bob", "library": [{ "card": "Island" }] }
+    ],
+    "active": "alice",
+    "step": "Upkeep"
+  },
+  "timeline": [
+    { "turn": 1, "step": "Upkeep", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $bitterblossom"] } } },
+    { "turn": 1, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Squee, Goblin Nabob", "count": 1 } } },
+    { "turn": 1, "step": "Upkeep", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Faerie Rogue Token", "count": 1 } } },
+    { "turn": 1, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Squee, Goblin Nabob", "count": 0 } } },
+    { "turn": 1, "step": "Upkeep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Graveyard", "card": "Squee, Goblin Nabob", "count": 1 } } }
+  ]
+}
