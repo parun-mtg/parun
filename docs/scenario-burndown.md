@@ -333,20 +333,20 @@ out: grep for them.
 
 - CR 400.7j Calim's Breath cannot exile the discarded Calim as one of the two others | `move:ReferenceCards`
 - CR 400.7j Calim's Breath returns the Calim its cost discarded, tapped | `move:ReferenceCards`
-- CR 603.4 conjure behind an intervening if: 4 life gained puts a castable Mox Pearl in hand | `board:stage-no-card-named-mox-pearl`
+- ~~CR 603.4 conjure behind an intervening if: 4 life gained puts a castable Mox Pearl in hand | `board:stage-no-card-named-mox-pearl`~~
 - CR 702.140e a duplicate of a mutated Headless Skaab owes the Skaab's additional cost | `board:source-ofmerge`
-- CR 702.178a at max speed the Smasher returns the duplicate with haste, and the end step sacrifices it | `board:exile-linked` `board:player-speed`
-- CR 702.178a one short of max speed, the duplicate stays in exile | `board:exile-linked` `board:player-speed`
-- CR 707.2/702.37e a duplicate of a Clone of Ainok Tracker is cast face down and turned up for its morph cost | `check:tapped-count`
-- CR 707.2/709.5b a duplicate of a copied Room is cast as a door
-- CR 707.2/716.2b a duplicate of a Clone of Flaxen Intruder is cast as Welcome Home | `check:tapped-count`
-- CR 716.3a a duplicate of Flaxen Intruder cast as Welcome Home costs Welcome Home's cost
-- CR 731.2/731.3 a duplicate of a Clone that merged as the spell is the Cubwarden again | `board:source-ofmerge`
-- CR 731.3/707.2 a duplicate of a Clone split out of a merge is the Piker again | `board:source-ofmerge`
-- Gate to Seatower's seek puts the nonland card randomness named into the hand, leaving the library's order | `board:stage-no-card-named-gate-to-seatower`
-- Kari Zev's Ragavan attacks without being declared and goes home at the next end step | `board:stage-no-card-named-ragavan-nimble-pilferer`
+- ~~CR 702.178a at max speed the Smasher returns the duplicate with haste, and the end step sacrifices it | `board:exile-linked` `board:player-speed`~~
+- ~~CR 702.178a one short of max speed, the duplicate stays in exile | `board:exile-linked` `board:player-speed`~~
+- ~~CR 707.2/702.37e a duplicate of a Clone of Ainok Tracker is cast face down and turned up for its morph cost | `check:tapped-count`~~
+- ~~CR 707.2/709.5b a duplicate of a copied Room is cast as a door~~
+- ~~CR 707.2/716.2b a duplicate of a Clone of Flaxen Intruder is cast as Welcome Home | `check:tapped-count`~~
+- ~~CR 716.3a a duplicate of Flaxen Intruder cast as Welcome Home costs Welcome Home's cost~~
+- ~~CR 731.2/731.3 a duplicate of a Clone that merged as the spell is the Cubwarden again | `board:source-ofmerge`~~
+- ~~CR 731.3/707.2 a duplicate of a Clone split out of a merge is the Piker again | `board:source-ofmerge`~~
+- ~~Gate to Seatower's seek puts the nonland card randomness named into the hand, leaving the library's order | `board:stage-no-card-named-gate-to-seatower`~~
+- ~~Kari Zev's Ragavan attacks without being declared and goes home at the next end step | `board:stage-no-card-named-ragavan-nimble-pilferer`~~
 - a conjure from the file registry's reference never conjures a synthetic card | `move:ReferenceCards`
-- conjure into exile puts the duplicate in the conjurer's exile, exiled with the conjuring creature | `check:exile-linked`
+- ~~conjure into exile puts the duplicate in the conjurer's exile, exiled with the conjuring creature | `check:exile-linked`~~
 
 ### `CopySpec`
 

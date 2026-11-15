@@ -1,0 +1,243 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Pearl Collector",
+            "label": "collector",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "s2",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Sun's Bounty",
+            "label": "bounty"
+          },
+          {
+            "card": "Sun's Bounty",
+            "label": "bounty-2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.4 conjure behind an intervening if: 4 life gained puts a castable Mox Pearl in hand",
+  "note": "Pearl Collector's second-main trigger is behind an intervening if on life gained this turn; Sun's Bounty meets the threshold exactly (the Morsel Theft scenario beside this one falls one short). The Mox is cast and then offered as a mana source, which tells the card the file writes from an empty face under the right name. A second Bounty on turn 3 meets the threshold again, but the rider is spent, so nothing goes on the stack and no second Mox comes.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$s1",
+            null
+          ],
+          "object": "$bounty"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $collector"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 24,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mox Pearl",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [],
+          "object": "Mox Pearl"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $bounty-2",
+            "ActivateManaAbility $p2",
+            "ActivateManaAbility $s2",
+            "ActivateManaAbility Mox Pearl"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$s1",
+            null
+          ],
+          "object": "$bounty-2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 28,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mox Pearl",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mox Pearl",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 3
+    }
+  ]
+}

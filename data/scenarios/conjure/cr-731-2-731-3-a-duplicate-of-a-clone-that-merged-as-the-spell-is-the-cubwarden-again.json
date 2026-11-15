@@ -1,0 +1,431 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Cubwarden",
+            "label": "cubwarden"
+          },
+          {
+            "card": "Island",
+            "label": "i1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i4",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i5",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i6",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p2",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p3",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p4",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p5",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p6",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p7",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p8",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p9",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p10",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p11",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p12",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Clone",
+            "label": "clone"
+          },
+          {
+            "card": "Sinister Reflections",
+            "label": "reflections"
+          },
+          {
+            "card": "Day of Judgment",
+            "label": "judgment"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Day of Judgment",
+            "label": "judgment-2"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 731.2/731.3 a duplicate of a Clone that merged as the spell is the Cubwarden again",
+  "note": "The other side of CR 731.2: the duplicate is the mutating SPELL. alice's Clone copies her Cubwarden and Sinister Reflections duplicates it, so the card in hand is a Cubwarden printed Clone; Day of Judgment clears the original and the Clone. The duplicate is cast for its mutate cost over a Goblin Piker cast afterwards, and CR 731.2b takes the spell's object away, so what carries its values through the merge is the component alone: a second Day of Judgment puts it into the graveyard a Cubwarden, beside the original Clone and the Piker.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            null
+          ],
+          "object": "$clone"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseCopyTarget": "$cubwarden"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i5",
+            "$i6",
+            null
+          ],
+          "object": "$reflections",
+          "targets": [
+            "Clone"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p1",
+            "$p2",
+            "$p3",
+            "$p4",
+            null
+          ],
+          "object": "$judgment"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Cubwarden"
+          ],
+          "object": "Clone"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            null
+          ],
+          "object": "$piker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "cost": [
+            {
+              "type": "Generic",
+              "value": 2
+            },
+            {
+              "type": "OfType",
+              "value": {
+                "type": "Colored",
+                "value": "White"
+              }
+            },
+            {
+              "type": "OfType",
+              "value": {
+                "type": "Colored",
+                "value": "White"
+              }
+            }
+          ],
+          "mana": [
+            "$p5",
+            "$p6",
+            "$p7",
+            "$p8",
+            null
+          ],
+          "object": "Clone"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseMutateSide",
+          "with": "Over"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Cubwarden"
+          ],
+          "object": "Clone#2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Clone#2",
+          "power": 3,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$p9",
+            "$p10",
+            "$p11",
+            "$p12"
+          ],
+          "object": "$judgment-2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderComponentCards",
+          "with": [
+            0,
+            1
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Clone",
+          "count": 2,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Clone"
+          ],
+          "object": "Clone"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Cubwarden"
+          ],
+          "object": "Clone#2"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Goblin Piker"
+          ],
+          "object": "Goblin Piker"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
