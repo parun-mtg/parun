@@ -28,6 +28,22 @@
           "effect": {
             "type": "EntriesTrigger",
             "value": {
+              "bearers": {
+                "type": "And",
+                "value": [
+                  {
+                    "type": "IsInZone",
+                    "value": "Battlefield"
+                  },
+                  {
+                    "type": "HeldBy",
+                    "value": {
+                      "holder": "Controller",
+                      "relation": "You"
+                    }
+                  }
+                ]
+              },
               "entrants": {
                 "type": "HasCardType",
                 "value": "Creature"

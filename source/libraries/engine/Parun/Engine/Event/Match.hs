@@ -613,7 +613,7 @@ countersMoved gs you counterTrigger event = case (CounterTrigger.motion counterT
 enters :: Filter.Context -> Map.Map ObjectId (BattlefieldCandidate.BattlefieldCandidate PC.ProjectedCharacteristics) -> GameState -> ObjectId -> PlayerId -> EntersTrigger.EntersTrigger -> GameEvent -> Bool
 enters context board gs bearer you t event = case Game.enteredBattlefieldChange event of
   Nothing -> False
-  Just zc -> watched (ZoneChange.object zc) && entryTriggers gs you zc
+  Just zc -> watched (ZoneChange.object zc) && entryTriggers gs you bearer zc
   where
     watched entrant = case EntersTrigger.permanent t of
       ActingPermanent.Self -> entrant == bearer
@@ -669,7 +669,7 @@ leaves bindings context before gs bearer you t event = case event of
     ZoneChange.from zc == Zone.Battlefield
       && ZoneChange.to zc /= Zone.Battlefield
       && (Set.null destinations || any (reaches (ZoneChange.to zc) (ZoneChange.departed zc)) destinations)
-      && deathTriggers before before you zc
+      && deathTriggers before before you bearer zc
       && watched (ZoneChange.departed zc)
   GameEvent.LeftTheGame l -> Set.null destinations && LeftTheGame.from l == Zone.Battlefield && watched (LeftTheGame.object l)
   _ -> False
@@ -732,8 +732,8 @@ leavesZone before board gs bearer you admitsTurn t event = case event of
         admitsTurn t
           && seen (Moved.revealed m)
           && not (Seq.null (admittedDepartures gs bearer you t m))
-          && entryTriggers gs you (Moved.change m)
-          && deathTriggers before before you (Moved.change m)
+          && entryTriggers gs you bearer (Moved.change m)
+          && deathTriggers before before you bearer (Moved.change m)
   GameEvent.LeftTheGame l
     | LeftTheGame.from l == LeavesZoneTrigger.from t,
       Maybe.isNothing (LeavesZoneTrigger.to t) ->
@@ -797,16 +797,16 @@ putIntoZone context board atEvent before gs bearer you admitsTurn t event = case
         && (Set.null origins || Set.member (ZoneChange.from zc) origins)
         && (duringResolution || not (PutIntoZoneTrigger.duringResolution t))
         && admitsTurn t
-        && entryTriggers gs you zc
+        && entryTriggers gs you bearer zc
         && dyingTriggers zc
         && watched revealed zc
     -- Hushbringer's ruling on "from anywhere": no look-back, so the silencer
     -- is read after the death, and the dying card's own such ability fires.
     dyingTriggers zc
-      | putIntoZoneLooksBack t = deathTriggers before before you zc
+      | putIntoZoneLooksBack t = deathTriggers before before you bearer zc
       | otherwise = case PutIntoZoneTrigger.card t of
           ActingPermanent.Self -> True
-          ActingPermanent.Matching _ -> deathTriggers (Just atEvent) before you zc
+          ActingPermanent.Matching _ -> deathTriggers (Just atEvent) before you bearer zc
     watched revealed zc = case PutIntoZoneTrigger.card t of
       ActingPermanent.Self -> ZoneChange.object zc == bearer
       ActingPermanent.Matching f ->
@@ -845,7 +845,8 @@ dealtToRelated board gs related orTheirPlaneswalkers target
   where
     theirPlaneswalker view = Set.member CardType.Planeswalker (Filter.cardTypes view) && maybe False related (Filter.controller view)
 
--- CR 603.6a / 613.11: may this zone change trigger `you`'s abilities, or is
+-- CR 603.6a / 613.11: may this zone change trigger `you`'s abilities of
+-- `bearer`, or is
 -- it a move onto the battlefield that an effect applying to them (Hushwing
 -- Gryff) silences? Every arm a move onto the battlefield can satisfy asks: the
 -- CR 603.6a arm, the departure-side LeavesZone, since the entry and the
@@ -862,13 +863,13 @@ dealtToRelated board gs related orTheirPlaneswalkers target
 -- for. That the filed board is read rather than the live one is a regression
 -- fence: the suite stays green under the live read, since no scenario has a
 -- silencer leave between the entry and the scan.
-entryTriggers :: GameState -> PlayerId -> ZoneChange.ZoneChange -> Bool
-entryTriggers gs you zc =
+entryTriggers :: GameState -> PlayerId -> ObjectId -> ZoneChange.ZoneChange -> Bool
+entryTriggers gs you bearer zc =
   ZoneChange.to zc /= Zone.Battlefield
-    || not (PlayerEffect.silencesEntry you (ZoneChange.object zc) (atEntry gs (ZoneChange.object zc)))
+    || not (PlayerEffect.silencesEntry you (ZoneChange.object zc) bearer (atEntry gs (ZoneChange.object zc)))
 
 -- CR 700.4 / 603.10a / 613.11: may this zone change trigger `you`'s
--- abilities, or is it a permanent dying that an effect applying to them in
+-- abilities of `bearer`, or is it a permanent dying that an effect applying to them in
 -- `effects` (Hushbringer) silences? The permanent is read off `before`, the
 -- game filed immediately before the death (Snapshots.boardBeforeEvent), as it
 -- last existed on the battlefield. Every arm a death can satisfy asks: `leaves`,
@@ -879,36 +880,38 @@ entryTriggers gs you zc =
 -- filed before it, answers True. LeavesZone's gate and PutIntoZone's look-back
 -- one are regression fences: no card in data/cards watches a graveyard arrival
 -- from the battlefield through either (grep, 2026-11-14).
-deathTriggers :: Maybe GameState -> Maybe GameState -> PlayerId -> ZoneChange.ZoneChange -> Bool
-deathTriggers effects before you zc =
+deathTriggers :: Maybe GameState -> Maybe GameState -> PlayerId -> ObjectId -> ZoneChange.ZoneChange -> Bool
+deathTriggers effects before you bearer zc =
   ZoneChange.from zc /= Zone.Battlefield
     || ZoneChange.to zc /= Zone.Graveyard
     || case (effects, before) of
-      (Just silencers, Just board) -> not (PlayerEffect.silencesDeath you (ZoneChange.departed zc) silencers board)
+      (Just silencers, Just board) -> not (PlayerEffect.silencesDeath you (ZoneChange.departed zc) bearer silencers board)
       _ -> True
 
 -- CR 603.2d: how many additional times an ability of `you`'s that this zone
--- change caused to trigger triggers -- none unless it is a move onto the
--- battlefield (Yarok, the Desecrated), with the scope `entryTriggers` has, or a
--- death (CR 700.4, Teysa Karlov), with the scope `deathTriggers` has.
+-- change caused `bearer` to trigger triggers -- none unless it is a move onto
+-- the battlefield (Yarok, the Desecrated), with the scope `entryTriggers` has,
+-- or a death (CR 700.4, Teysa Karlov), with the scope `deathTriggers` has.
 --
 -- An entry is read off the same filed game as `entryTriggers`, so a Yarok
--- entering beside the entrant, or being it, counts (its ruling); the caller
--- asks only for a bearer on the board after it. A death is read off the board
--- before it (Snapshots.boardBeforeEvent), the dying permanent as it last
--- existed and the doubler too, so a Teysa dying beside it, or being it,
--- counts (its rulings), whether or not the ability looks back. Its bearer is a
--- permanent on the board the ability reads (`additionalTriggers`' choice);
--- a death with no board filed before it counts none.
+-- entering beside the entrant, or being it, counts (its ruling), and so is the
+-- bearer. A death is read off the board before it
+-- (Snapshots.boardBeforeEvent), the dying permanent as it last existed and the
+-- doubler too, so a Teysa dying beside it, or being it, counts (its rulings),
+-- whether or not the ability looks back. Its bearer is read off the board the
+-- ability reads (`additionalTriggers`' choice), the first holding it; a death
+-- with no board filed before it counts none. Whether the bearer is a
+-- permanent (CR 110.1) or an emblem (CR 114.4) is the effect's
+-- (EntriesTrigger.bearers).
 additionalMoveTriggers :: GameState -> PlayerId -> ObjectId -> EventGroup.EventGroup -> Bool -> ZoneChange.ZoneChange -> Natural
 additionalMoveTriggers gs you bearer group looksBack zc
   | ZoneChange.to zc == Zone.Battlefield =
       let atIt = atEntry gs (ZoneChange.object zc)
-       in PlayerEffect.additionalMoveTriggers TriggeringMove.Entering you (ZoneChange.object zc) atIt atIt
+       in PlayerEffect.additionalMoveTriggers TriggeringMove.Entering you (ZoneChange.object zc) (bearer, atIt) atIt atIt
   | Game.dies zc,
     Just before <- Map.lookup group (Snapshots.boardBeforeEvent (GameState.snapshots gs)),
-    any (Set.member bearer . GameState.battlefield) ([before | looksBack] <> [gameAfter group gs]) =
-      PlayerEffect.additionalMoveTriggers TriggeringMove.Dying you (ZoneChange.departed zc) before before
+    atBearer : _ <- filter (Maybe.isJust . Game.lookupObject bearer) ([before | looksBack] <> [gameAfter group gs]) =
+      PlayerEffect.additionalMoveTriggers TriggeringMove.Dying you (ZoneChange.departed zc) (bearer, atBearer) before before
   | otherwise = 0
 
 -- CR 603.2d: how many additional times `bearer`'s triggered ability triggers on

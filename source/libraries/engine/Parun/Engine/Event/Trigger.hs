@@ -2393,9 +2393,11 @@ eventTriggersGiven scope standing events gs =
             -- every card the death puts into a graveyard, a melded or merged
             -- creature's second included (CR 713.8, 731.3), but
             -- not an event causing the death, a sacrifice being its own
-            -- (GameEvent.PermanentSacrificed, Teysa's ruling). Only a bearer on
-            -- the battlefield is a permanent (CR 110.1): not a card in a
-            -- graveyard watching lands enter (Bloodghast), nor an emblem. A "triggers only
+            -- (GameEvent.PermanentSacrificed, Teysa's ruling). Whose abilities
+            -- it doubles is the effect's (EntriesTrigger.bearers): a permanent
+            -- for Yarok and Teysa (CR 110.1), so not a card in a graveyard
+            -- watching lands enter (Bloodghast), and The Masamune's creature
+            -- and its controller's emblems (CR 114.4). A "triggers only
             -- once" limit still caps the instances: the additional instance is a
             -- second triggering (Yarok's ruling of 2019-07-12), and CR 101.2 puts
             -- the limit over it. Delayed and reflexive triggers
@@ -2404,7 +2406,7 @@ eventTriggersGiven scope standing events gs =
             -- of All) adds to one that names the entry.
             additional cond =
               additionalTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) + case Game.enteredBattlefieldChange event of
-                Just zc | Map.member oid board -> additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) zc
+                Just zc -> additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond) zc
                 _ -> maybe 0 (additionalMoveTriggers gs (controllerFor cond) oid (LoggedEvent.group logged) (looksBack cond)) (Monad.mfilter Game.dies (movedOf event))
             -- CR 805.4d: one trigger per player whose step this is (stepCopies).
             -- Each paired with which of CR 603.2d's instances it is.

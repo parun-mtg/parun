@@ -18,6 +18,7 @@ spec s = Spec.describe s "Parun.Codec.EntriesTrigger" $ do
       EntriesTrigger.codec
       ( EntriesTrigger.MkEntriesTrigger
           { EntriesTrigger.entrants = Filter.HasCardType CardType.Creature,
+            EntriesTrigger.bearers = Filter.And [],
             EntriesTrigger.move = TriggeringMove.Entering,
             EntriesTrigger.triggering = EntryTriggering.NoTrigger
           }
@@ -30,10 +31,24 @@ spec s = Spec.describe s "Parun.Codec.EntriesTrigger" $ do
       EntriesTrigger.codec
       ( EntriesTrigger.MkEntriesTrigger
           { EntriesTrigger.entrants = Filter.HasCardType CardType.Creature,
+            EntriesTrigger.bearers = Filter.And [],
             EntriesTrigger.move = TriggeringMove.Dying,
             EntriesTrigger.triggering = EntryTriggering.NoTrigger
           }
       )
       " {\"entrants\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"move\":\"Dying\",\"triggering\":\"NoTrigger\"} "
+  -- The Masamune's "of this creature or an emblem you own".
+  Spec.it s "MkEntriesTrigger bearers" $
+    Common.assertCodec
+      s
+      EntriesTrigger.codec
+      ( EntriesTrigger.MkEntriesTrigger
+          { EntriesTrigger.entrants = Filter.HasCardType CardType.Creature,
+            EntriesTrigger.bearers = Filter.Or [Filter.IsSource, Filter.IsEmblem],
+            EntriesTrigger.move = TriggeringMove.Dying,
+            EntriesTrigger.triggering = EntryTriggering.AnAdditionalTime
+          }
+      )
+      " {\"bearers\":{\"type\":\"Or\",\"value\":[{\"type\":\"IsSource\"},{\"type\":\"IsEmblem\"}]},\"entrants\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"move\":\"Dying\",\"triggering\":\"AnAdditionalTime\"} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s EntriesTrigger.codec
