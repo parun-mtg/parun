@@ -1,0 +1,113 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains"
+          },
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Edgewalker",
+            "label": "walker"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Edgewalker",
+            "label": "cleric"
+          },
+          {
+            "card": "Whipstitched Zombie",
+            "label": "zombie"
+          },
+          {
+            "card": "Artificial Evolution",
+            "label": "evolution"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2f the printed filter casts the Cleric and not the Zombie",
+  "note": "The control for the evolved Edgewalker: the same board with no text change. Edgewalker's printed word discounts the Cleric (the Edgewalker in hand) to {1}, which a Plains pays; Whipstitched Zombie keeps its {B}, which neither land can pay. Offered shows the Cleric and the Evolution and not the Zombie, and the Cleric is cast off the Plains.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $cleric",
+            "Cast $evolution",
+            "ActivateManaAbility $plains",
+            "ActivateManaAbility $island"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$plains",
+            null
+          ],
+          "object": "$cleric"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Edgewalker#2"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$plains",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$island",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

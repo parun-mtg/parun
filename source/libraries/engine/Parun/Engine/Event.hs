@@ -827,8 +827,9 @@ closeEventGroup gs =
 -- CR 119.8's last sentence rides here rather than at the three call sites: a cost
 -- that involves having a player who can't lose life pay life can't be paid, and
 -- every reader of CR 119.4 already comes through this one door. Platinum
--- Emperion's own reminder text is that reading in as many words, and
--- Parun.PlayerEffectSpec's GreedUnderEmperion group is the proof.
+-- Emperion's own reminder text is that reading in as many words, and the
+-- scenario cr-119-8-alice-s-platinum-emperion-makes-greed-s-cost-unpayable is the
+-- proof.
 --
 -- CR 119.7's matching clause -- a cost that involves having a player GAIN life
 -- can't be paid -- has no site: Parun.Types.CostComponent has no life-gain
@@ -7245,8 +7246,9 @@ resolvePlayerCounters cause pid kind n = do
 -- CR 119.8's restriction is asked ahead of the proposal, resolveLifeGain's
 -- position and for CR 119.7's reason one direction over. It reaches DAMAGE
 -- through CR 120.3a: the damage is still dealt and its other results still
--- happen, and only the life loss does not -- Parun.PlayerEffectSpec's
--- PlatinumEmperion group is the proof.
+-- happen, and only the life loss does not -- the scenario
+-- cr-119-8-alice-s-platinum-emperion-takes-the-3-damage-without-the-3-life is the
+-- proof.
 --
 -- `settle` is drawSeries', for the draws Lich makes in place of the gain
 -- Strong, the Brutish Thespian makes in the loss's place.
@@ -7309,7 +7311,8 @@ resolveCounterLoss settle asOf oid kind n =
 -- life gain event affecting that player won't do anything", which a row CR 616.1
 -- has already ordered and spent could not produce. The classification question
 -- goes to Parun.Engine.PlayerEffect.prohibitsGainingLife, so nothing here cases on
--- an effect. Parun.PlayerEffectSpec's GiantCindermaw group is the proof.
+-- an effect. The scenario
+-- cr-119-7-bob-s-giant-cindermaw-stops-alice-gaining-anything is the proof.
 --
 -- `settle` is drawSeries', for the draws Lich makes in the gain's place.
 --

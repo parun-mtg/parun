@@ -327,8 +327,7 @@ defendingPlayerSpec s registry = Spec.describe s "DefendingPlayer" $ do
     -- THREE seats (alice active, bob, carol) with carol controlling alice
     -- (Mindslaver-style: GameState.control names carol as alice's decider),
     -- the established fixture idiom for a controlled player -- the same shape
-    -- GameSpec's CR 724.6 concede test (GameSpec.hs:811-858) and DecideSpec's
-    -- CR 724.3 case (DecideSpec.hs:19-23) both set up. Three seats, not two, so
+    -- DecideSpec's CR 724.3 case (DecideSpec.hs:19-23) sets up. Three seats, not two, so
     -- attackableOpponents is [bob, carol] -- a REAL choice -- rather than
     -- CR 506.2's one-candidate elision, which would never build a prompt at all
     -- and so could never discriminate the Decider on one.

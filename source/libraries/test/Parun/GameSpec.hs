@@ -6,7 +6,6 @@
 module Parun.GameSpec where
 
 import qualified Control.Monad.Trans.State.Strict as State
-import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
@@ -17,12 +16,9 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Action as Action
-import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Ante as Ante
 import qualified Parun.Engine.Binding as Binding
-import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Damage as Damage
-import qualified Parun.Engine.Decide as Decide
 import qualified Parun.Engine.Departure as Departure
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -43,43 +39,33 @@ import qualified Parun.Types.Action as A
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivatedAbilitySource as ActivatedAbilitySource
 import qualified Parun.Types.Activator as Activator
-import qualified Parun.Types.AffectedPlayers as AffectedPlayers
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardIdentity as CardIdentity
-import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Copyability as Copyability
 import qualified Parun.Types.Cost as Cost.Type
-import qualified Parun.Types.CostAmount as CostAmount
-import qualified Parun.Types.CostComponent as CostComponent
 import qualified Parun.Types.CounterKind as CounterKind
-import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Deck as Deck
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.EndingStep as EndingStep
-import qualified Parun.Types.ExileLink as ExileLink
-import qualified Parun.Types.Expiry as Expiry.Type
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Game as Game.Type
-import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameSettings as GameSettings
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.MatchScope as MatchScope
-import qualified Parun.Types.MeldSource as MeldSource
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
-import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.MulliganDecision as MulliganDecision
 import qualified Parun.Types.MulliganOffer as MulliganOffer
 import qualified Parun.Types.Object as Object
@@ -88,19 +74,15 @@ import qualified Parun.Types.OutsideObject as OutsideObject
 import qualified Parun.Types.OwnershipChange as OwnershipChange
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Player as Player
-import qualified Parun.Types.PlayerControl as PlayerControl
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
-import qualified Parun.Types.PlayerEffect as PlayerEffect.Type
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
-import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.PrintingId as PrintingId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.Result as Result
-import qualified Parun.Types.ShownComponent as ShownComponent
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Source as Source
@@ -112,7 +94,6 @@ import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.Timestamp as Timestamp
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
-import qualified Parun.Types.ZoneChange as ZoneChange
 
 objectFactSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 objectFactSpec s registry = Spec.describe s "ObjectFacts" $ do
@@ -477,219 +458,6 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
     gs <- deckedOut s registry
     Spec.assertEqWith s "bob won" (GameState.result gs) (Just (Result.Won S.bob))
 
-  Spec.it s "CR 724.3/724.5: alice decides for bob, but bob's resources move" $ do
-    -- bob's main phase, controlled by alice, with a Mountain and a Bolt.
-    mountain <- S.printingOf s registry "Mountain"
-    lightningBolt <- S.printingOf s registry "Lightning Bolt"
-    let g0 = Setup.emptyGame S.bothPlayers
-        (_mtnId, g1) = S.addPermanent mountain S.bob g0
-        (_boltId, g2) = handBobBolt lightningBolt g1
-        g3 =
-          g2
-            { GameState.turn =
-                (GameState.turn g2)
-                  { TurnRegisters.activePlayer = S.bob,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.bob
-                  },
-              GameState.control = S.turnControl S.alice S.bob
-            }
-        after = snd (Engine.runGamePure slaveAnswer g3 Engine.priorityLoop)
-        boltInBobGrave =
-          length
-            ( filter
-                (namedIs (CardName.MkCardName $ Text.pack "Lightning Bolt") after)
-                (fmap (\i -> Game.lookupObject i after) (Game.zoneMembers Zone.Graveyard S.bob after))
-            )
-    Spec.assertEqWith s "bob took 3 from his own Bolt" (S.lifeOf S.bob after) (Just 17)
-    Spec.assertEqWith s "bob's Bolt is in bob's graveyard" boltInBobGrave 1
-    Spec.assertEqWith s "the Mountain (bob's) is tapped" (S.tappedCount S.bob after) 1
-
-  Spec.it s "CR 724.1/724.3 gameplay: Mindslaver hands alice bob's whole turn, then control lapses" $ do
-    -- Alice activates a REAL Mindslaver through the driver loop at bob, the
-    -- engine promotes control on bob's turn, alice casts bob's Bolt at bob
-    -- (bob's own resource), and control ends at the following turn boundary.
-    mindslaver <- S.printingOf s registry "Mindslaver"
-    mountain <- S.printingOf s registry "Mountain"
-    lightningBolt <- S.printingOf s registry "Lightning Bolt"
-    let g0 = Setup.emptyGame S.bothPlayers
-        (_msId, g1) = S.addPermanent mindslaver S.alice g0
-        -- {4} for Mindslaver's activation: four untapped Mountains for alice.
-        (_a1, g2) = S.addPermanent mountain S.alice g1
-        (_a2, g3) = S.addPermanent mountain S.alice g2
-        (_a3, g4) = S.addPermanent mountain S.alice g3
-        (_a4, g5) = S.addPermanent mountain S.alice g4
-        -- bob's own resources for his controlled turn: a Mountain and a Bolt.
-        (_bMtn, g6) = S.addPermanent mountain S.bob g5
-        (_bBolt, g7) = handBobBolt lightningBolt g6
-        gStart =
-          g7
-            { GameState.turn =
-                (GameState.turn g7)
-                  { TurnRegisters.activePlayer = S.alice,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.alice
-                  }
-            }
-        -- Alice's turn: activate Mindslaver at bob; the ability resolves and
-        -- installs pending control for bob (CR 724.1).
-        afterActivation = snd (Engine.runGamePure gateAnswer gStart Engine.priorityLoop)
-        -- Handoff to bob's turn promotes pendingControl into GameState.control.
-        bobsTurn = snd (Engine.runGamePure gateAnswer afterActivation Engine.handoffTurn)
-        -- Bob's controlled main phase: alice decides, casting bob's Bolt at bob.
-        bobMain =
-          bobsTurn
-            { GameState.turn =
-                (GameState.turn bobsTurn)
-                  { TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.bob
-                  }
-            }
-        bobPlayed = snd (Engine.runGamePure gateAnswer bobMain Engine.priorityLoop)
-        -- Next handoff (bob -> alice) clears control (CR 724.1: ends at the
-        -- beginning of the next turn).
-        afterBob = snd (Engine.runGamePure gateAnswer bobPlayed Engine.handoffTurn)
-        boltInBobGrave =
-          length
-            ( filter
-                (namedIs (CardName.MkCardName $ Text.pack "Lightning Bolt") bobPlayed)
-                (fmap (\i -> Game.lookupObject i bobPlayed) (Game.zoneMembers Zone.Graveyard S.bob bobPlayed))
-            )
-    Spec.assertEqWith s "CR 724.1: control pending for bob after activation" (fmap (fmap PlayerControl.decider . NonEmpty.toList) (Map.lookup S.bob (GameState.pendingControl afterActivation))) (Just [Decider.MkDecider S.alice])
-    Spec.assertEqWith s "CR 724.1: promoted to live control on bob's turn" (S.unstamped (GameState.control bobsTurn)) (S.turnControl S.alice S.bob)
-    Spec.assertEqWith s "CR 724.3: bob is still the active player while controlled" (TurnRegisters.activePlayer (GameState.turn bobsTurn)) S.bob
-    Spec.assertEqWith s "CR 724.5: bob's decisions route to alice" (Decide.deciderFor S.bob bobsTurn) (Decider.MkDecider S.alice)
-    Spec.assertEqWith s "alice's whole-turn choice moved bob's life" (S.lifeOf S.bob bobPlayed) (Just 17)
-    Spec.assertEqWith s "bob's Bolt went to bob's graveyard" boltInBobGrave 1
-    Spec.assertEqWith s "bob's Mountain (his resource) is tapped" (S.tappedCount S.bob bobPlayed) 1
-    Spec.assertEqWith s "CR 724.1: control lapses at the next turn" (Decide.deciderFor S.bob afterBob) (Decider.MkDecider S.bob)
-    Spec.assertEqWith s "live control cleared after bob's turn" (GameState.control afterBob) Map.empty
-
-  Spec.it s "CR 724.5 combat: alice declares bob's attackers, so alice takes the hit" $ do
-    -- bob's turn, controlled by alice, with one 2/1 Piker. combatBoardOf sets
-    -- alice active with `mine` and bob with `theirs`; here alice attacks with
-    -- nothing and bob has the Piker, and we flip the active player to bob.
-    -- Flipping who attacks flips who defends: combatBoardOf states bob as the
-    -- defending player because alice is active there (CR 506.2), so a board
-    -- that makes bob active must name alice instead -- otherwise bob would be
-    -- declared the defending player on his own turn.
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (board, _mine, _bobsPikers) = S.combatBoardOf [] [piker]
-        g0 =
-          board
-            { GameState.turn =
-                (GameState.turn board)
-                  { TurnRegisters.activePlayer = S.bob,
-                    TurnRegisters.combat = (TurnRegisters.combat (GameState.turn board)) {Combat.Type.defenders = [S.alice]}
-                  },
-              GameState.control = S.turnControl S.alice S.bob
-            }
-        after = S.runCombat controlCombatAnswer g0
-    Spec.assertEqWith s "alice took 2 from bob's Piker, declared by alice-as-bob" (S.lifeOf S.alice after) (Just 18)
-
-  Spec.it s "CR 724.5a: the controller spends only the controlled player's resources" $ do
-    -- bob (controlled by alice) and alice each have an untapped Mountain; bob
-    -- has a Bolt. Alice-as-bob casts bob's Bolt, paid from BOB's Mountain.
-    -- alice's Mountain and hand must be untouched.
-    mountain <- S.printingOf s registry "Mountain"
-    lightningBolt <- S.printingOf s registry "Lightning Bolt"
-    let g0 = Setup.emptyGame S.bothPlayers
-        (_bMtn, g1) = S.addPermanent mountain S.bob g0
-        (_aMtn, g2) = S.addPermanent mountain S.alice g1
-        (_bBolt, g3) = handBobBolt lightningBolt g2
-        g4 =
-          g3
-            { GameState.turn =
-                (GameState.turn g3)
-                  { TurnRegisters.activePlayer = S.bob,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.bob
-                  },
-              GameState.control = S.turnControl S.alice S.bob
-            }
-        after = snd (Engine.runGamePure slaveAnswer g4 Engine.priorityLoop)
-    Spec.assertEqWith s "bob took 3 from his own Bolt" (S.lifeOf S.bob after) (Just 17)
-    Spec.assertEqWith s "bob's Mountain (his resource) is tapped" (S.tappedCount S.bob after) 1
-    Spec.assertEqWith s "CR 724.5a: alice's Mountain is untouched" (S.tappedCount S.alice after) 0
-    Spec.assertEqWith s "CR 724.5a: alice's hand is untouched" (S.handSize S.alice after) 0
-
-  -- CR 724.1a with the two control lifetimes overlapping, which is the case PR
-  -- #3349 got wrong; see #3351. Rule 724.1a's "overwrite" is the
-  -- continuous-effect sense: both effects exist and the last one CREATED is the
-  -- one that works.
-  -- So a Word of Command resolving on a turn a Mindslaver already owns does not
-  -- destroy the Mindslaver control -- it layers over it, and when the CR 724.2
-  -- span ends the CR 724.1 one is again the last created and works for the rest
-  -- of the turn (CR 724.1: "the effect doesn't end until the beginning of the
-  -- next turn").
-  --
-  -- Both real cards, and the whole line driven through the loop: alice
-  -- sacrifices Mindslaver at bob, bob's turn begins under her control, and she
-  -- casts Word of Command at him during it.
-  --
-  -- What makes the board discriminate is that the two readings differ on every
-  -- priority bob gets AFTER the Word of Command resolution: alice under the rule,
-  -- bob under a control the resolution erased.
-  Spec.it s "CR 724.1a gameplay: Word of Command over a Mindslaver hands bob back to alice, not to himself" $ do
-    mindslaver <- S.printingOf s registry "Mindslaver"
-    wordOfCommand <- S.printingOf s registry "Word of Command"
-    swamp <- S.printingOf s registry "Swamp"
-    mountain <- S.printingOf s registry "Mountain"
-    lightningBolt <- S.printingOf s registry "Lightning Bolt"
-    elves <- S.printingOf s registry "Llanowar Elves"
-    let g0 = Setup.emptyGame S.bothPlayers
-        (_msId, g1) = S.addPermanent mindslaver S.alice g0
-        -- {4} for Mindslaver's activation, then {B}{B} for Word of Command on
-        -- bob's turn. Separate lands, since the Mountains are spent by then.
-        (_a1, g2) = S.addPermanent mountain S.alice g1
-        (_a2, g3) = S.addPermanent mountain S.alice g2
-        (_a3, g4) = S.addPermanent mountain S.alice g3
-        (_a4, g5) = S.addPermanent mountain S.alice g4
-        (_s1, g6) = S.addPermanent swamp S.alice g5
-        (_s2, g7) = S.addPermanent swamp S.alice g6
-        (_wocId, g8) = S.addHandCard wordOfCommand S.alice g7
-        -- bob's own resources, and TWO cards so Word of Command's CR 608.2d
-        -- choice out of his hand is a real question rather than an elision.
-        (_bMtn, g9) = S.addPermanent mountain S.bob g8
-        (boltId, g10) = S.addHandCard lightningBolt S.bob g9
-        (_bElves, g11) = S.addHandCard elves S.bob g10
-        gStart =
-          g11
-            { GameState.turn =
-                (GameState.turn g11)
-                  { TurnRegisters.activePlayer = S.alice,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.alice
-                  }
-            }
-        -- Alice's turn: Mindslaver at bob (CR 724.1).
-        afterActivation = snd (Engine.runGamePure gateAnswer gStart Engine.priorityLoop)
-        bobsTurn = snd (Engine.runGamePure gateAnswer afterActivation Engine.handoffTurn)
-        bobMain =
-          bobsTurn
-            { GameState.turn =
-                (GameState.turn bobsTurn)
-                  { TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.bob
-                  }
-            }
-        -- Bob's controlled main phase, with alice casting Word of Command at him
-        -- out of HER hand. `layeringAnswer` passes for bob's seat, so nothing bob
-        -- does here is anyone's doing but Word of Command's.
-        ((_, afterWord), asks) = State.runState (Engine.runGame (layeringAnswer boltId) bobMain Engine.priorityLoop) []
-        -- CR 724.1's own ending is unmoved by any of this.
-        afterBob = S.runPure S.identityAnswer afterWord Engine.handoffTurn
-    Spec.assertEqWith s "CR 724.1: alice controls bob as his turn begins" (Decide.deciderFor S.bob bobsTurn) (Decider.MkDecider S.alice)
-    -- THE ASSERTION. Bob is asked for priority before Word of Command resolves
-    -- and again after it has; a resolution raises no priority question, so an
-    -- overwritten-and-deleted CR 724.1 row would put BOB on the later ones.
-    Spec.assertBool s (length (askedOf "ChooseAction" S.bob asks) >= 2) "bob was asked for priority both before and after the Word of Command resolution"
-    Spec.assertEqWith s "CR 724.1a: alice still decides for bob once Word of Command has finished resolving" (ListUtils.nubOrd (askedOf "ChooseAction" S.bob asks)) [Just (Decider.MkDecider S.alice)]
-    Spec.assertEqWith s "and the Mindslaver row is what is left on the stack" (S.unstamped (GameState.control afterWord)) (S.turnControl S.alice S.bob)
-    -- The CR 724.2 span really did happen: bob's own Bolt was chosen and cast.
-    Spec.assertEqWith s "Word of Command made bob cast his own Bolt at himself" (S.lifeOf S.bob afterWord) (Just 17)
-    Spec.assertEqWith s "CR 724.1: and it still ends at the next turn" (Decide.deciderFor S.bob afterBob) (Decider.MkDecider S.bob)
-
   Spec.it s "CR 400.7/728.2 gameplay: a restart puts Painter's Servant into a library with its chosen colour forgotten" $ do
     -- The card-driven proof for Setup.startGameFromCards' hand-written zone
     -- move. Painter's Servant is CAST rather than placed, because CR 614.1c's
@@ -752,99 +520,6 @@ ruleSpec s registry = Spec.describe s "Rules" $ do
       _ -> Spec.assertFailure s "Painter's Servant did not reach the battlefield"
     Spec.assertEqWith s "CR 728.2: the restart really ran (the battlefield is empty)" (Set.null (GameState.battlefield after)) True
     Spec.assertEqWith s "the game did not end, so the rebuild is the live state" (GameState.result after) Nothing
-
-  -- The other half of the Karn pair below: the exemption reads CR 607.2a's
-  -- linkage, and this is the ability that files one. Driven through the single
-  -- activation rather than the priority loop, which is the narrowest path that
-  -- shows it.
-  Spec.it s "CR 607.2a: Karn's -3 files the permanent it exiles against Karn" $ do
-    karn <- S.printingOf s registry "Karn Liberated"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let g0 = Setup.emptyGame S.threePlayers
-        (karnId, g1) = S.addPermanent karn S.bob g0
-        g2 = S.addCounter CounterKind.Loyalty 14 karnId g1
-        (pikerId, g3) = S.addPermanent piker S.carol g2
-        gStart =
-          g3
-            { GameState.turn =
-                (GameState.turn g3)
-                  { TurnRegisters.activePlayer = S.bob,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.bob
-                  }
-            }
-    case filter ((==) (Just (-3)) . loyaltyChange) (Face.activatedAbilities (S.combinedFace karn)) of
-      [minusThree] -> do
-        let after = S.runPure (aimingAt pikerId) gStart (do Activate.activateAbility S.bob karnId minusThree; Stack.resolveTop)
-            exiled = Game.zoneMembers Zone.Exile S.carol after
-        case exiled of
-          [exiledPiker] ->
-            Spec.assertEqWith s "CR 607.2a: the exiled card is filed against Karn" (fmap ExileLink.source (Map.lookup exiledPiker (GameState.exiledWith after))) (Just karnId)
-          _ -> Spec.assertFailure s "Karn's -3 did not exile carol's Piker"
-      _ -> Spec.assertFailure s "Karn does not have exactly one ability costing three loyalty"
-
-  -- CR 728.5 plus Karn's rider, on three seats so "under your control" is not
-  -- collapsed onto the only other player: the exempted card is CAROL's, and it
-  -- has to end up under BOB's control.
-  --
-  -- Three cards sit in exile, and the board tells all three apart:
-  --   * carol's Goblin Piker -- a non-Aura permanent card exiled with Karn, so
-  --     CR 728.5 exempts it and Karn's rider then plays it;
-  --   * alice's Pacifism -- exiled with Karn, but an Aura, so Karn's own words
-  --     leave it out of the exemption and the rebuild shuffles it away;
-  --   * alice's Russet Wolves -- a non-Aura permanent card in exile that Karn
-  --     did NOT exile, which is the decoy: it differs from the Piker in the
-  --     linkage and in nothing else.
-  --
-  -- The mountains are minted BEFORE the exiled cards so the two shuffled-back
-  -- cards sit behind alice's opening seven (startGameFromCards orders each
-  -- library by object id and identityAnswer's shuffle is the identity), which is
-  -- what lets the assertion say "in a library" rather than "somewhere else".
-  Spec.it s "CR 728.5/728.4 gameplay: Karn's ultimate leaves its own exiles in exile and then plays them" $ do
-    karn <- S.printingOf s registry "Karn Liberated"
-    piker <- S.printingOf s registry "Goblin Piker"
-    pacifism <- S.printingOf s registry "Pacifism"
-    wolves <- S.printingOf s registry "Russet Wolves"
-    mountain <- S.printingOf s registry "Mountain"
-    let g0 = addManyG mountain 7 S.carol (addManyG mountain 7 S.bob (addManyG mountain 7 S.alice (Setup.emptyGame S.threePlayers)))
-        (karnId, g1a) = S.addPermanent karn S.bob g0
-        g1 = S.addCounter CounterKind.Loyalty 14 karnId g1a
-        (pikerId, g2) = S.addExiledCard piker S.carol g1
-        (pacifismId, g3) = S.addExiledCard pacifism S.alice g2
-        (wolvesId, g4) = S.addExiledCard wolves S.alice g3
-        gStart =
-          g4
-            { -- CR 607.2a's linkage, which Karn's own -3 files in the case above.
-              GameState.exiledWith = Map.fromList [(pikerId, ExileLink.MkExileLink {ExileLink.source = karnId, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False}), (pacifismId, ExileLink.MkExileLink {ExileLink.source = karnId, ExileLink.ability = Nothing, ExileLink.acquisition = Acquisition.Own, ExileLink.chosen = False})],
-              GameState.turn =
-                (GameState.turn g4)
-                  { TurnRegisters.activePlayer = S.bob,
-                    TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.bob
-                  }
-            }
-        after = snd (Engine.runGamePure restartAnswer gStart Engine.priorityLoop)
-        zoneOf oid = fmap Object.zone (Game.lookupObject oid after)
-        nameOf oid = fmap Face.name (Game.faceOf oid after)
-    -- The new game really is a new game, not the old one with a board wiped.
-    Spec.assertEqWith s "CR 728.1a: bob is the starting player" (TurnRegisters.activePlayer (GameState.turn after)) S.bob
-    Spec.assertEqWith s "CR 728.1: the rebuilt game is on turn 1" (TurnRegisters.turnNumber (GameState.turn after)) 1
-    Spec.assertEqWith s "CR 728.1: the match's second game" (MatchScope.gameNumber (GameState.match after), MatchScope.gamesThisMatch (GameState.match after)) (2, 2)
-    Spec.assertEqWith s "CR 728.4: settled at the first untap step" (TurnRegisters.phase (GameState.turn after)) Turn.firstPhase
-    Spec.assertEqWith s "CR 103.5: carol drew a fresh opening hand" (S.handSize S.carol after) 7
-    Spec.assertEqWith s "the game did not end -- the new game is live" (GameState.result after) Nothing
-    -- CR 728.5: the exemption, and only the exemption.
-    Spec.assertEqWith s "CR 728.2: the Aura Karn exiled went back into its owner's deck" (zoneOf pacifismId) (Just Zone.Library)
-    Spec.assertEqWith s "CR 728.2: the card Karn did NOT exile went back into its owner's deck" (zoneOf wolvesId) (Just Zone.Library)
-    -- Karn's rider (CR 728.4): the exempted card, and it alone, is on the
-    -- battlefield -- under bob, though carol owns it.
-    case Set.toList (GameState.battlefield after) of
-      [only] -> do
-        Spec.assertEqWith s "the exempted card is what is on the battlefield" (nameOf only) (Just (CardName.MkCardName (Text.pack "Goblin Piker")))
-        Spec.assertEqWith s "CR 110.2a: it entered under Karn's controller" (Projection.controllerOf only after) (Just S.bob)
-        Spec.assertEqWith s "CR 728.2: ownership did not change" (fmap Object.owner (Game.lookupObject only after)) (Just S.carol)
-      other -> Spec.assertFailure s ("expected exactly the exempted card on the battlefield, got " <> show (length other))
-    Spec.assertEqWith s "the exempted card left exile for the battlefield, and nothing else stayed" (Set.null (GameState.exile after)) True
 
   Spec.it s "CR 730.2/730.3/730.5: playSubgame runs a nested game, bob decks, cards funnel back" $ do
     mountain <- S.printingOf s registry "Mountain"
@@ -1417,7 +1092,7 @@ concedeOrderAnswer who p = case p of
   _ -> pure (S.identityAnswer p)
 
 concedeSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-concedeSpec s registry = Spec.describe s "concede (CR 104.3a)" $ do
+concedeSpec s _ = Spec.describe s "concede (CR 104.3a)" $ do
   Spec.it s "the conceding player departs as Conceded, not Lost" $ do
     let gs =
           (Setup.emptyGame S.bothPlayers)
@@ -1429,58 +1104,6 @@ concedeSpec s registry = Spec.describe s "concede (CR 104.3a)" $ do
             }
         after = S.runPure (concedeAnswer S.alice) gs Engine.runStep
     Spec.assertEqWith s "reason recorded" (fmap Player.status (Map.lookup S.alice (GameState.players after))) (Just (Status.Departed Departure.Type.Conceded))
-
-  Spec.it s "CR 724.6 a controlled player concedes themselves; their controller cannot do it for them" $ do
-    -- alice controls bob (Mindslaver). Every ChooseAction for bob is answered
-    -- by alice. The concede ask is NOT: it reaches bob, and bob takes it.
-    -- If Prompt.Concede carried a Decider, this would be alice's call.
-    --
-    -- The premise -- that alice genuinely IS bob's decider for this run -- is
-    -- not merely set up, it is OBSERVED: bob is given a land to play so a real
-    -- Prompt.ChooseAction fires for him before he concedes, and the answerer
-    -- records the Decider that prompt actually carried. A silent regression in
-    -- Decide.deciderFor (GameState.control stops being honoured) would make this
-    -- record MkDecider bob instead, and the test would catch it even though
-    -- the headline outcome (bob departs Conceded, alice wins) would still hold.
-    mountain <- S.printingOf s registry "Mountain"
-    let (mountainOid, gs) =
-          S.addHandCard
-            mountain
-            S.bob
-            ( (Setup.emptyGame S.bothPlayers)
-                { GameState.turn =
-                    (GameState.turn (Setup.emptyGame S.bothPlayers))
-                      { TurnRegisters.phase = Phase.PrecombatMain,
-                        TurnRegisters.activePlayer = S.bob
-                      },
-                  GameState.control = S.turnControl S.alice S.bob
-                }
-            )
-        -- (deciders seen for bob's ChooseAction, PlayerIds seen for Concede).
-        -- Bob's first Concede ask answers Continues so the ChooseAction below
-        -- fires and gets recorded; he plays the land (which keeps priority
-        -- with him, CR 305.3 style timing aside -- Engine.priorityLoop simply
-        -- re-loops with `priority = Just p` after a Play), and only on the
-        -- SECOND Concede ask -- now with a recorded ChooseAction in hand --
-        -- does he actually concede.
-        answer :: Prompt.Prompt r -> State.State ([Decider.Decider], [PlayerId.PlayerId]) r
-        answer p = case p of
-          Prompt.ChooseAction decider pid _ ->
-            if pid == S.bob
-              then do
-                State.modify' (\(ds, cs) -> (ds <> [decider], cs))
-                pure (A.Play mountainOid Nothing)
-              else pure (S.identityAnswer p)
-          Prompt.Concede asked -> do
-            (_, asksSoFar) <- State.get
-            State.modify' (\(ds, cs) -> (ds, cs <> [asked]))
-            pure (if null asksSoFar then Concession.Continues else Concession.Concedes)
-          _ -> pure (S.identityAnswer p)
-        ((_, after), (deciders, concedeAsks)) = State.runState (Engine.runGame answer gs Engine.runStep) ([], [])
-    Spec.assertEqWith s "bob's ChooseAction carried alice as decider (bob genuinely is controlled)" deciders [Decider.MkDecider S.alice]
-    Spec.assertEqWith s "every Concede ask reached bob himself, not his controller" concedeAsks [S.bob, S.bob]
-    Spec.assertEqWith s "bob left by his own concession" (fmap Player.status (Map.lookup S.bob (GameState.players after))) (Just (Status.Departed Departure.Type.Conceded))
-    Spec.assertEqWith s "alice wins" (GameState.result after) (Just (Result.Won S.alice))
 
   -- #144, and the proof that the elision is NOT cosmetic latency. CR 104.3a
   -- says a player may concede "at any time"; Engine.priorityLoop offers the
@@ -1578,13 +1201,6 @@ greedThenPassAnswer greedId ability p = case p of
 
 turnOrderSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 turnOrderSpec s registry = Spec.describe s "TurnOrder (CR 800.4)" $ do
-  Spec.it s "CR 800.4k a departed player's turn does not begin" $ do
-    let gone = S.departs Departure.Type.Conceded S.bob S.threePlayerGame
-        after = S.runPure S.identityAnswer gone Engine.handoffTurn
-    Spec.assertEqWith s "carol is active, bob is skipped" (TurnRegisters.activePlayer (GameState.turn after)) S.carol
-    Spec.assertEqWith s "exactly one turn began" (TurnRegisters.turnNumber (GameState.turn after)) 2
-    Spec.assertEqWith s "the seating roster is untouched" (GameState.seating after) [S.alice, S.bob, S.carol]
-
   Spec.it s "CR 800.4k the walk is a loop: two consecutive departed seats are both skipped" $ do
     -- Proves the walk keeps walking rather than skipping exactly one seat.
     -- With bob and carol both gone, alice takes consecutive turns.
@@ -1799,42 +1415,6 @@ turnOrderSpec s registry = Spec.describe s "TurnOrder (CR 800.4)" $ do
     Spec.assertEqWith s "the guard is what keeps her from being asked, not an empty board" askedAfter []
     Spec.assertBool s (Map.null (Combat.Type.attackers (TurnRegisters.combat (GameState.turn after)))) "and nothing attacked"
 
-  Spec.it s "M5.6a gate: a three-player game survives a concede, and the departed seat still ends its durations" $ do
-    -- Alice, bob, carol. Bob arms an "until your next turn" player effect
-    -- (Silence's shape: an ActivePlayerEffect with Expiry.AtTurnOf bob), then
-    -- concedes mid-cycle at his own priority.
-    --
-    --   * CR 800.4a: priority passes to CAROL, the next seat still in the
-    --     game -- not alice, the head of the order.
-    --   * CR 104.2a: two survivors, so there is no result and the step runs
-    --     to its end.
-    --   * CR 800.4k: bob's turn does not begin at the handoff.
-    --   * CR 800.4m: bob's effect ends at the seat where his turn WOULD have
-    --     begun -- not when he left, and not never.
-    let armed =
-          S.addPlayerEffect
-            (Expiry.Type.AtTurnOf S.bob)
-            (AffectedPlayers.Scoped (PlayerScope.Related PlayerRelation.Opponent))
-            PlayerEffect.Type.CantCastSpells
-            S.bob
-            ( S.threePlayerGame
-                { GameState.turn =
-                    (GameState.turn S.threePlayerGame)
-                      { TurnRegisters.phase = Phase.PrecombatMain,
-                        TurnRegisters.activePlayer = S.alice
-                      }
-                }
-            )
-        ((_, afterStep), asks) = State.runState (Engine.runGame (concedeOrderAnswer S.bob) armed Engine.runStep) []
-        afterHandoff = S.runPure S.identityAnswer afterStep Engine.handoffTurn
-    Spec.assertEqWith s "carol received priority after bob's concession" asks [S.alice, S.bob, S.carol, S.alice]
-    Spec.assertEqWith s "bob departed by conceding" (fmap Player.status (Map.lookup S.bob (GameState.players afterStep))) (Just (Status.Departed Departure.Type.Conceded))
-    Spec.assertEqWith s "the game continues" (GameState.result afterStep) Nothing
-    Spec.assertBool s (TurnRegisters.phase (GameState.turn afterStep) /= Phase.PrecombatMain) "the step ran to its end and advanced"
-    Spec.assertEqWith s "bob's effect did NOT end when he left" (length (StoredEffects.playerEffects (GameState.stored afterStep))) 1
-    Spec.assertEqWith s "carol takes the next turn, bob's seat is skipped" (TurnRegisters.activePlayer (GameState.turn afterHandoff)) S.carol
-    Spec.assertEqWith s "and bob's effect ended at bob's seat -- not never" (StoredEffects.playerEffects (GameState.stored afterHandoff)) []
-
   Spec.it s "CR 800.4a a player who departs paying a cost is not asked again" $ do
     -- Alice controls Greed and one Swamp at exactly 2 life. She activates
     -- Greed ({B}, Pay 2 life: Draw a card -- CR 119.4 makes paying her last
@@ -1867,103 +1447,6 @@ turnOrderSpec s registry = Spec.describe s "TurnOrder (CR 800.4)" $ do
       "alice departed by paying her last 2 life"
       (fmap Player.status (Map.lookup S.alice (GameState.players after)))
       (Just (Status.Departed Departure.Type.Lost))
-
-  Spec.it s "M5.6d gate: attacking the monarch takes the crown and frees Palace Jailer's prisoner; attacking the other opponent does neither" $ do
-    -- bob's Palace Jailer has entered: its first ETB made bob the monarch, and
-    -- its second exiled carol's Piker until an opponent becomes the monarch.
-    -- Carol's is the ONLY creature on the board when that ETB resolves, so the
-    -- target is forced and the test does not depend on id ordering. alice's
-    -- attacker is added afterwards.
-    --
-    -- CR 726.2: "Whenever a creature deals combat damage to the monarch, its
-    -- controller becomes the monarch."
-    --
-    -- Palace Jailer's Gatherer ruling (2021-03-19) is why the prisoner is
-    -- watching for a new monarch rather than for the Jailer: "Palace Jailer
-    -- leaving the battlefield won't cause the exiled creature to return. The
-    -- game will continue to watch for the next time an opponent becomes the
-    -- monarch."
-    piker <- S.printingOf s registry "Goblin Piker"
-    palaceJailer <- S.printingOf s registry "Palace Jailer"
-    let (victim, g1) = S.addPermanent piker S.carol S.threePlayerGame
-        (jailer, g2) = S.addPermanent palaceJailer S.bob g1
-        entered = ZoneChange.MkZoneChange jailer jailer Zone.Stack Zone.Battlefield
-        g3 = S.withEvents [GameEvent.Moved (Moved.moved entered (Projection.project jailer g2))] g2
-        resolved = S.runPure S.identityAnswer (S.runPure S.identityAnswer g3 Engine.settleForPriority) Engine.priorityLoop
-        -- CR 400.7: exiling the target gives it a new object identity, so the
-        -- watch Palace Jailer's second ETB registers is keyed to a NEW id, not
-        -- `victim`'s battlefield id. `victim` is kept only as a deterministic,
-        -- total fallback -- unreachable once the size assertion below holds --
-        -- so no partial function is needed to find it.
-        prisoner = Maybe.fromMaybe victim (Maybe.listToMaybe (Map.keys (GameState.movedUntil resolved)))
-        (attacker, g4) = S.addPermanent piker S.alice resolved
-        board =
-          g4
-            { GameState.turn =
-                (GameState.turn g4)
-                  { TurnRegisters.activePlayer = S.alice,
-                    TurnRegisters.phase = Phase.Combat CombatStep.BeginningOfCombat,
-                    TurnRegisters.remaining =
-                      Seq.fromList
-                        [ Phase.Combat CombatStep.DeclareAttackers,
-                          Phase.Combat CombatStep.DeclareBlockers,
-                          Phase.Combat CombatStep.CombatDamage,
-                          Phase.Combat CombatStep.EndOfCombat,
-                          Phase.PostcombatMain
-                        ]
-                  }
-            }
-        -- Declines blocks rather than delegating to S.aggressiveAnswer's
-        -- DeclareBlockers arm: in run A bob himself is the defending player,
-        -- and his only creature is the Jailer, which aggressiveAnswer would
-        -- happily throw in front of alice's attacker. That would zero out
-        -- the combat damage to bob for a reason CR 509.1 (only the
-        -- DEFENDING player declares blockers -- Task 4's own case, not this
-        -- gate's) already covers -- not evidence about the chosen defender.
-        -- Declining blocks keeps this test's damage assertions about the
-        -- ONE thing it is meant to discriminate.
-        attackTo who p = case p of
-          Prompt.DeclareBlockers {} -> Map.empty
-          _ -> S.attackTo who p
-        hitBob = S.runCombat (attackTo S.bob) board
-        hitCarol = S.runCombat (attackTo S.carol) board
-    -- The fixture really is what the test claims.
-    Spec.assertEqWith s "bob is the monarch before combat" (GameState.monarch board) (Just S.bob)
-    Spec.assertEqWith s "exactly one creature is under the watch" (Map.size (GameState.movedUntil board)) 1
-    Spec.assertEqWith s "carol's Piker left the battlefield" (S.creaturesInPlay S.carol board) 0
-    Spec.assertBool s (Combat.canAttack S.alice attacker board) "alice has an attacker"
-    -- Run A: alice attacks the monarch.
-    Spec.assertEqWith s "bob took 2" (S.lifeOf S.bob hitBob) (Just 18)
-    Spec.assertEqWith s "alice is the monarch" (GameState.monarch hitBob) (Just S.alice)
-    -- The next two assertions are ENTAILED by "alice is the monarch" just
-    -- above: an entry is due iff the crown has CHANGED HANDS since the watch
-    -- last looked and the new monarch is not the entry's controller (#171),
-    -- and this combat is exactly such a change -- carol held the crown when
-    -- the watch was armed, and alice has taken it from her. So carol's entry
-    -- is due and nothing consistent with that fact can leave it
-    -- undischarged. They are not a second, independent observation that the
-    -- crown moved; what they add is real coverage of the return machinery
-    -- itself (Resolve's MoveToZone arm with CR 726's duration,
-    -- and this settle-loop return) running inside a full
-    -- Engine.runStep-driven combat.
-    Spec.assertEqWith s "the watch is discharged" (GameState.movedUntil hitBob) Map.empty
-    -- CR 400.7: the return is itself a zone change, so the returned
-    -- permanent has yet another new object id -- `prisoner`'s id (the one it
-    -- held while exiled) never appears on any battlefield. Carol's creature
-    -- COUNT is what survives across that identity reset.
-    Spec.assertEqWith s "and the prisoner is back on the battlefield" (S.creaturesInPlay S.carol hitBob) 1
-    -- Run B: alice attacks the other opponent. Same board, same interpreter
-    -- shape, one different answer. Unreachable under the head-of-list
-    -- behaviour, which is what makes the pair evidence.
-    Spec.assertEqWith s "carol took 2" (S.lifeOf S.carol hitCarol) (Just 18)
-    Spec.assertEqWith s "bob was untouched, so he keeps the crown" (S.lifeOf S.bob hitCarol) (Just 20)
-    Spec.assertEqWith s "bob is still the monarch" (GameState.monarch hitCarol) (Just S.bob)
-    -- Entailed by "bob is still the monarch" just above, for the same
-    -- reason as run A's pair: real coverage of the same return code path,
-    -- not independent evidence that the crown followed the chosen defender.
-    Spec.assertBool s (Map.member prisoner (GameState.movedUntil hitCarol)) "the watch still stands"
-    Spec.assertEqWith s "and the prisoner is still exiled, not back on carol's battlefield" (S.creaturesInPlay S.carol hitCarol) 0
-    Spec.assertEqWith s "neither run ended the game" (GameState.result hitBob, GameState.result hitCarol) (Nothing, Nothing)
 
 -- #219: Action.legalActions computes what is legal; the priority loop must not
 -- act on anything else. Every gate the enumeration applies -- the controller
@@ -2336,128 +1819,6 @@ choicelessBoard mountain tapped =
           GameState.bookkeeping = (GameState.bookkeeping gs2) {Bookkeeping.lastChoice = Timestamp.MkTimestamp 0}
         }
 
--- One Lightning Bolt in bob's hand.
-handBobBolt :: Printing.Printing -> GameState.GameState -> (ObjectId.ObjectId, GameState.GameState)
-handBobBolt lightningBolt gs =
-  let (printingId, gsP) = Game.intern lightningBolt gs
-      (oid, gs1) = Game.freshObjectId gsP
-      (ts, gs2) = Game.freshTimestamp gs1
-      obj =
-        (Game.cardObject oid S.bob printingId Zone.Hand ts)
-          { Object.sickness = Sickness.Settled S.bob
-          }
-   in (oid, gs2 {GameState.objects = Map.insert oid obj (GameState.objects gs2), GameState.hand = Map.insert S.bob (Seq.singleton oid) (GameState.hand gs2)})
-
-namedIs :: CardName.CardName -> GameState.GameState -> Maybe Object.Object -> Bool
-namedIs wanted gs mo =
-  let named printingId = fmap S.nameOf (Game.cardOfPrinting printingId gs) == Just wanted
-   in case mo of
-        Just o -> case Object.source o of
-          Source.OfCard printingId -> named printingId
-          -- CR 713.5c: the combined back face is where a melded permanent's name
-          -- comes from, so the result printing answers.
-          Source.OfMeld meld -> named (MeldSource.result meld)
-          -- CR 731.2a: the topmost component is where a merged permanent's name
-          -- comes from, so the head of the list answers.
-          Source.OfMerge components -> named (Game.printingOfComponent (ShownComponent.component (NonEmpty.head components)))
-          Source.OfToken printingId -> named printingId
-          Source.OfAbility _ -> False
-          Source.OfTrigger _ -> False
-          Source.OfEmblem _ -> False
-          Source.OfSpellCopy printingId -> named printingId
-          -- CR 723.3c's copy has a name of its own, the prepare spell's, which is
-          -- the one face of the printing the mint interned.
-          Source.OfCardCopy printingId -> named printingId
-          Source.OfInherentTrigger _ -> False
-        Nothing -> False
-
--- The layering board's answerer: alice casts out of her OWN hand, every other
--- seat passes, and the Decider on each priority question is recorded. Bob's seat
--- passing is what keeps his own agency out of the outcome -- everything his
--- cards do is Word of Command's doing.
---
--- Keyed on the asked PLAYER and not on the Decider, because on this board bob's
--- questions carry alice throughout and the two would be indistinguishable.
-layeringAnswer :: ObjectId.ObjectId -> Prompt.Prompt r -> State.State [(String, PlayerId.PlayerId, Maybe Decider.Decider)] r
-layeringAnswer pinned p = case p of
-  Prompt.ChooseAction decider player actions -> do
-    State.modify' (<> [("ChooseAction", player, Just decider)])
-    pure $
-      if player == S.alice
-        then case filter isCastAction actions of
-          h : _ -> h
-          [] -> A.Pass
-        else A.Pass
-  _ -> wordAnswer pinned p
-
--- Records who was ASKED and which Decider the prompt carried -- the whole point
--- of a CR 724 case being that the two come apart -- then answers as Word of
--- Command's controller: cast the only thing alice can cast, pick the pinned card
--- out of the hand offered, and aim whatever bob is made to cast at bob.
---
--- Stateful rather than a pure Prompt -> r, because two structurally identical
--- Prompt.ChooseAction asks (bob's, before and after the resolution) must be told
--- apart by the assertion.
---
--- Every seat but alice PASSES, which is what keeps bob's own agency out of the
--- outcome: anything bob's cards do here was ordered by alice.
-wordAnswer :: ObjectId.ObjectId -> Prompt.Prompt r -> State.State [(String, PlayerId.PlayerId, Maybe Decider.Decider)] r
-wordAnswer pinned p = case p of
-  Prompt.ChooseAction decider player actions -> do
-    State.modify' (<> [("ChooseAction", player, Just decider)])
-    pure $
-      if player == S.alice
-        then case filter isCastAction actions of
-          h : _ -> h
-          [] -> A.Pass
-        else A.Pass
-  -- FILTERED out of the offer, never built: an ask put to the wrong seat offers
-  -- a set the pinned id is not in, and falls back rather than quietly answering.
-  Prompt.ChooseCardFromAmong decider player _ offered -> do
-    State.modify' (<> [("ChooseCardFromAmong", player, Just decider)])
-    pure (Maybe.fromMaybe (NonEmpty.head offered) (List.find (== pinned) (NonEmpty.toList offered)))
-  -- CR 724.6's prompt, which carries no Decider to record.
-  Prompt.Concede player -> do
-    State.modify' (<> [("Concede", player, Nothing)])
-    pure (S.identityAnswer p)
-  Prompt.ChooseTargets _ _ _ sets -> pure (S.preferring (== Recipient.ToPlayer S.bob) sets)
-  _ -> pure (S.identityAnswer p)
-
--- The deciders recorded for one prompt kind put to one seat, in order.
-askedOf :: String -> PlayerId.PlayerId -> [(String, PlayerId.PlayerId, Maybe Decider.Decider)] -> [Maybe Decider.Decider]
-askedOf kind who seen = fmap (\(_, _, decider) -> decider) (filter (\(k, pid, _) -> k == kind && pid == who) seen)
-
--- The controller's strategy: when asked to decide for bob (the CONTROLLED player,
--- routed because the prompt's Decider is alice), cast the Bolt at bob; otherwise
--- pass. A naive engine that ignored control would send the prompt with Decider =
--- bob, this interpreter would pass, and bob's life would stay 20 -- the falsifier.
-slaveAnswer :: Prompt.Prompt r -> r
-slaveAnswer p = case p of
-  Prompt.ChooseAction (Decider.MkDecider d) player actions ->
-    if player == S.bob && d == S.alice
-      then case filter isCastAction actions of
-        h : _ -> h
-        [] -> A.Pass
-      else A.Pass
-  Prompt.ChooseTargets _ _ _ sets -> S.preferring (== Recipient.ToPlayer S.bob) sets
-  _ -> S.identityAnswer p
-
--- CR 724.5 combat: alice, controlling bob, declares bob's attackers. Attackers
--- are declared only when the prompt's Decider is alice for player bob; a naive
--- engine that sent the prompt with Decider = bob would fall to `[]` and no one
--- would attack. Damage from the lone unblocked attacker goes to its sole
--- recipient (the defending player, alice). Everything else delegates to
--- slaveAnswer (blocks: none; priority: pass).
-controlCombatAnswer :: Prompt.Prompt r -> r
-controlCombatAnswer p = case p of
-  Prompt.DeclareAttackers (Decider.MkDecider d) player attackers ->
-    if d == S.alice && player == S.bob then attackers else []
-  Prompt.AssignCombatDamage _ _ _ thresholds _ n ->
-    case Map.keys thresholds of
-      r : _ -> Map.singleton r n
-      [] -> Map.empty
-  _ -> slaveAnswer p
-
 -- An interpreter that names an action it was never offered. CR-wise this is not
 -- a rules question at all: Action.legalActions computes what is legal, and the
 -- priority loop must not act on anything else (#219). parun's boundary is an
@@ -2498,55 +1859,6 @@ isCastAction :: A.Action -> Bool
 isCastAction a = case a of
   A.Cast {} -> True
   _ -> False
-
--- Is this a legal-action Activate? On the gate board (a Mindslaver plus basic
--- lands, whose mana abilities are intrinsic and never surface as activated
--- abilities) the ONLY Activate action is Mindslaver's, so "the first Activate"
--- is unambiguously Mindslaver's control ability.
-isActivateAction :: A.Action -> Bool
-isActivateAction a = case a of
-  A.Activate _ _ -> True
-  _ -> False
-
--- CR 724 gate strategy. Alice, deciding for herself, fires Mindslaver (the only
--- activation on the board) at bob; once she is bob's decider (CR 724.5, the
--- prompt's Decider is alice while player is bob) she casts bob's Bolt; otherwise
--- pass. Non-ChooseAction prompts (targets, modes, shuffle, ...) delegate to
--- slaveAnswer, which targets bob. A naive engine ignoring control would send
--- bob's ChooseAction with Decider = bob; the else-branch would pass, bob would
--- keep 20 life, and the gate would fail -- the falsifier.
-gateAnswer :: Prompt.Prompt r -> r
-gateAnswer p = case p of
-  Prompt.ChooseAction (Decider.MkDecider d) player actions ->
-    case filter isActivateAction actions of
-      activation : _ -> activation
-      [] ->
-        if player == S.bob && d == S.alice
-          then case filter isCastAction actions of
-            h : _ -> h
-            [] -> A.Pass
-          else A.Pass
-  _ -> slaveAnswer p
-
--- Take every target offered at one object. Karn's -3 can exile any permanent,
--- Karn included, so a fixture that means carol's Piker has to say so.
-aimingAt :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-aimingAt oid p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> S.preferring (\r -> Recipient.objectOf r == Just oid) sets
-  _ -> S.identityAnswer p
-
--- CR 606.4: what this loyalty ability's cost does to its source's loyalty, or
--- Nothing for an ability that is not one. Karn Liberated has three of them and
--- parun now writes all three, so an ability taken BY POSITION out of the
--- printing's list is whichever one the card file happens to list first -- the
--- cost is the thing that actually tells them apart.
-loyaltyChange :: ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card) -> Maybe Integer
-loyaltyChange ability =
-  let change c = case c of
-        CostComponent.AddLoyaltyToThis n -> Just (toInteger n)
-        CostComponent.RemoveLoyaltyFromThis (CostAmount.Fixed n) -> Just (negate (toInteger n))
-        _ -> Nothing
-   in Maybe.listToMaybe (Maybe.mapMaybe change (Cost.Type.components (ActivatedAbility.cost ability)))
 
 -- Does this Activate action fire a restart? Karn Liberated has three loyalty
 -- abilities, so "the first Activate" would be its +4 rather than its ultimate --
@@ -2798,14 +2110,6 @@ runCountingActions gs act =
 
 restartReentrySpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 restartReentrySpec s registry = Spec.describe s "restart re-entry (CR 728.4)" $ do
-  Spec.it s "the step the restart fired in does not advance past turn 1's untap step" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    let (after, _) = runCountingActions (restartOnStack mountain) Engine.runStep
-    Spec.assertEqWith s "still positioned at the untap step" (TurnRegisters.phase (GameState.turn after)) Turn.firstPhase
-    Spec.assertEqWith s "the fresh turn schedule is intact, not popped" (TurnRegisters.remaining (GameState.turn after)) Turn.laterPhases
-    Spec.assertEqWith s "turn 1 of the new game" (TurnRegisters.turnNumber (GameState.turn after)) 1
-    Spec.assertEqWith s "the new game is still being played" (GameState.result after) Nothing
-
   Spec.it s "no player receives priority after the restart resolves" $ do
     -- alice passes, bob passes, the ability resolves: two ChooseAction prompts
     -- and no more. A third means the priority loop kept running on a game that
@@ -2824,8 +2128,9 @@ restartReentrySpec s registry = Spec.describe s "restart re-entry (CR 728.4)" $ 
   Spec.it s "a live playGame survives the restart and plays the new game to a result" $ do
     -- An end-to-end liveness guard, not a discriminating one: the loop did
     -- not wedge before the fix either, it just played a turn 1 with no untap
-    -- step. The three tests above are what actually catch that. This one
-    -- pins the surrounding claim -- playGame keeps looping across the
+    -- step. The two tests above and the Karn restart scenarios under
+    -- data/scenarios/game/ are what actually catch that. This one pins the
+    -- surrounding claim -- playGame keeps looping across the
     -- rebuild and returns the REBUILT game's result (CR 728.1: no player
     -- wins, loses or draws the game that was restarted). Terminating: the
     -- restart is a hand-built stack object, not a card in any library, so it

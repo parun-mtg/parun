@@ -1,0 +1,410 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "attached": "piker",
+            "card": "Pacifism",
+            "label": "pacifism"
+          }
+        ],
+        "exile": [
+          {
+            "card": "Russet Wolves",
+            "label": "wolves"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Karn Liberated",
+            "counters": [
+              {
+                "key": {
+                  "type": "Loyalty"
+                },
+                "value": 20
+              }
+            ],
+            "label": "karn"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 607.2a/728.5/728.4 gameplay: Karn's ultimate leaves its own exiles in exile and then plays them",
+  "final": [
+    {
+      "View": {
+        "is": "bob",
+        "of": "ActivePlayer"
+      }
+    },
+    {
+      "View": {
+        "is": "Untap",
+        "of": "Step"
+      }
+    },
+    {
+      "View": {
+        "is": null,
+        "of": "Result"
+      }
+    },
+    {
+      "Count": {
+        "card": "Swamp",
+        "count": 7,
+        "player": "carol",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Pacifism",
+        "count": 1,
+        "player": "alice",
+        "zone": "Library"
+      }
+    },
+    {
+      "Count": {
+        "card": "Russet Wolves",
+        "count": 1,
+        "player": "alice",
+        "zone": "Library"
+      }
+    },
+    {
+      "Count": {
+        "card": "Goblin Piker",
+        "count": 1,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "Count": {
+        "card": "Karn Liberated",
+        "count": 0,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    },
+    {
+      "View": {
+        "is": "bob",
+        "object": "Goblin Piker",
+        "of": "Controller"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "OwnershipChanges"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Exile"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "Zone",
+        "player": "bob",
+        "zone": "Exile"
+      }
+    },
+    {
+      "View": {
+        "is": [],
+        "of": "Zone",
+        "player": "carol",
+        "zone": "Exile"
+      }
+    }
+  ],
+  "note": "Three seats, so \"under your control\" is not collapsed onto the only other player. Karn's -3 exiles alice's Pacifism and, a cycle later, carol's Piker, filing both against Karn (CR 607.2a); alice's Russet Wolves sits in exile linked to nothing. The ultimate exempts only the non-Aura card Karn exiled (CR 728.5): carol's shuffle rebuilds her library without the Piker, Pacifism and the Wolves go back into alice's, and Karn's rider puts the Piker onto the battlefield under bob, its owner unchanged. Each player's library is one basic type so the shuffles can name them; Pacifism and the Wolves are shuffled to the bottom, behind alice's opening seven.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "object": "$karn",
+          "targets": [
+            "$pacifism"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Pacifism",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "object": "$karn",
+          "targets": [
+            "$piker"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Goblin Piker",
+          "count": 1,
+          "player": "carol",
+          "zone": "Exile"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 4
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 2,
+          "object": "$karn"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 7
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Island",
+            "Island#2",
+            "Island#3",
+            "Island#4",
+            "Island#5",
+            "Island#6",
+            "Island#7",
+            "Island#8",
+            "Karn Liberated"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Swamp",
+            "Swamp#2",
+            "Swamp#3",
+            "Swamp#4",
+            "Swamp#5",
+            "Swamp#6",
+            "Swamp#7",
+            "Swamp#8"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Plains",
+            "Plains#2",
+            "Plains#3",
+            "Plains#4",
+            "Plains#5",
+            "Plains#6",
+            "Plains#7",
+            "Plains#8",
+            "Pacifism",
+            "Russet Wolves"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      },
+      "player": "bob",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      },
+      "player": "carol",
+      "step": "Untap",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 1
+    }
+  ]
+}

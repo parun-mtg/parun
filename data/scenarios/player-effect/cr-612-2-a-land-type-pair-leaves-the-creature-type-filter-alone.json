@@ -1,0 +1,125 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains"
+          },
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Edgewalker",
+            "label": "walker"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Edgewalker",
+            "label": "cleric"
+          },
+          {
+            "card": "Whipstitched Zombie",
+            "label": "zombie"
+          },
+          {
+            "card": "Magical Hack",
+            "label": "hack"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 612.2 a land-type pair leaves the creature-type filter alone",
+  "note": "Magical Hack can name only basic land types, so its Swamp-to-Island swap on alice's Edgewalker reaches no creature-type word and the discount stays on Clerics: with one Plains left, Offered shows the Cleric (the Edgewalker in hand) and not Whipstitched Zombie.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island",
+            null
+          ],
+          "object": "$hack",
+          "targets": [
+            "$walker"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseWordSwap": {
+          "from": {
+            "type": "Swamp"
+          },
+          "to": {
+            "type": "Island"
+          }
+        }
+      },
+      "player": "alice",
+      "source": "Magical Hack",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Magical Hack",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast $cleric",
+            "ActivateManaAbility $plains"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

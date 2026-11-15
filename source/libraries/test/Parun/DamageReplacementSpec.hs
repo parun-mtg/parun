@@ -39,7 +39,6 @@ import qualified Parun.Types.Action as Action
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
@@ -52,7 +51,6 @@ import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
@@ -63,10 +61,8 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
-import qualified Parun.Types.Scratch as Scratch
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StoredEffects as StoredEffects
-import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
@@ -235,66 +231,6 @@ braceForImpactSpec s registry = Spec.describe s "Brace for Impact (CR 615.5)" $ 
         atMono = castAndResolve (onlyCreature mono) g3 spellId
     Spec.assertEqWith s "the white-and-blue 5/5 is offered, so a shield goes up" (preventAllRows atMulti) 1
     Spec.assertEqWith s "the mono-red 2/1 is not, so none does" (preventAllRows atMono) 0
-
--- CR 615.5's additional effect over a PLAYER recipient, which neither Test of
--- Faith's nor Brace for Impact's nor Stormwild Capridor's permanent recipient can
--- reach: a player has no Object, so the prevented amount has nowhere to be bound
--- and CR 615.5's "the amount of damage that was prevented" travels on
--- Scratch.ambientAmounts instead. Inkshield ({3}{W}{B} Instant) prints "Prevent
--- all combat damage that would be dealt to you this turn. For each 1 damage
--- prevented this way, create a 2/1 white and black Inkling creature token with
--- flying."
---
--- Numbers all distinct: the attacker is a 5/5 and the pinger deals 1, so the
--- readings answer 20 life and 5 tokens (right), 20 and 1 (one token per
--- application), 20 and 0 (the rider never runs), 15 and 0 (no shield at all) and
--- 19 and 0 (the kind refused it). No two coincide.
-inkshieldSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-inkshieldSpec s registry = Spec.describe s "Inkshield (CR 615.5)" $ do
-  Spec.it s "a shield over a PLAYER runs CR 615.5's rider, scaled by the amount" $ do
-    plains <- S.printingOf s registry "Plains"
-    swamp <- S.printingOf s registry "Swamp"
-    jedit <- S.printingOf s registry "Jedit Ojanen"
-    inkshield <- S.printingOf s registry "Inkshield"
-    let base = S.landsFor swamp S.alice 3 (S.landsInPlay plains 2)
-        (_, g1) = S.addPermanent jedit S.bob base
-        (g2, spellId) = S.handOne inkshield g1
-        shielded = castAndResolve S.identityAnswer g2 spellId
-        after = S.runCombat attackNoBlock (bobAttacks shielded)
-        -- The CONTROL is the same board with Inkshield still in hand, so the one
-        -- difference between the two is the shield.
-        control = S.runCombat attackNoBlock (bobAttacks g2)
-    Spec.assertEqWith s "setup: the unbounded shield is a floating replacement" (preventAllRows shielded) 1
-    Spec.assertEqWith s "the 5/5's whole combat damage is prevented" (S.lifeOf S.alice after) (Just 20)
-    Spec.assertEqWith s "and five Inklings arrive, one per damage prevented" (length (S.tokensOf after)) 5
-    Monad.forM_ (S.tokensOf after) $ \oid -> do
-      Spec.assertEqWith s "each a 2/1" (S.powerToughnessOf oid after) (Just (2, 1))
-      Spec.assertEqWith s "white and black" (Projection.colorsOf oid after) (Set.fromList [Color.White, Color.Black])
-      Spec.assertEqWith s "an Inkling" (Projection.subtypesOf oid after) (Set.singleton Subtype.Inkling)
-      Spec.assertEqWith s "with flying" (Projection.hasKeyword Keyword.Flying oid after) True
-      -- CR 111.4: the name is the subtypes plus the word "Token".
-      Spec.assertEqWith s "named Inkling Token (CR 111.4)" (Projection.namesOf oid after) (Set.singleton (CardName.MkCardName (Text.pack "Inkling Token")))
-    -- The channel the amount travelled on is put back, which the stamp it
-    -- replaced had no test for: a value left behind would shadow every later
-    -- reserved-slot read in the game.
-    Spec.assertEqWith s "and CR 615.5's amount channel does not outlive the rider" (Scratch.ambientAmounts (GameState.scratch after)) Map.empty
-    -- The VACUITY guard: unshielded, that same attack really is dealt, so the
-    -- prevention above is a prevention rather than an attack that never happened.
-    Spec.assertEqWith s "unshielded the same attack takes 5 and makes no token" (S.lifeOf S.alice control, length (S.tokensOf control)) (Just 15, 0)
-  Spec.it s "the combat-only shield leaves noncombat damage alone, rider and all (CR 608)" $ do
-    plains <- S.printingOf s registry "Plains"
-    swamp <- S.printingOf s registry "Swamp"
-    sorcerer <- S.printingOf s registry "Prodigal Sorcerer"
-    inkshield <- S.printingOf s registry "Inkshield"
-    let base = S.landsFor swamp S.alice 3 (S.landsInPlay plains 2)
-        (pinger, g1) = S.addPermanent sorcerer S.alice base
-        (g2, spellId) = S.handOne inkshield g1
-        shielded = castAndResolve S.identityAnswer g2 spellId
-        ping g = S.runPure (aimPlayer S.alice) g (Activate.activateAbility S.alice pinger (theAbility sorcerer) Monad.>> Stack.resolveTop)
-        after = ping shielded
-    Spec.assertEqWith s "setup: the shield is installed" (preventAllRows shielded) 1
-    Spec.assertEqWith s "the Sorcerer's noncombat 1 is dealt anyway" (S.lifeOf S.alice after) (Just 19)
-    Spec.assertEqWith s "so nothing was prevented and no rider ran" (length (S.tokensOf after)) 0
 
 -- CR 615.5's additional effect on a STATIC prevention ability, which is where
 -- Test of Faith's floating shield above cannot reach: Stormwild Capridor ({2}{W}
@@ -587,7 +523,7 @@ absorbSpec s registry = Spec.describe s "Absorb (CR 702.64)" $ do
 -- hit 5 and the floor 1. So the floored readings are 8 and 7, the unfloored ones
 -- 4 and 3, and a "prevent all" reading would leave 9 and 8; no two readings of
 -- the rule land on the same number.
-ajaniSteadfastSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+ajaniSteadfastSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 ajaniSteadfastSpec s registry = Spec.describe s "Ajani Steadfast (CR 114.4, CR 615.10)" $ do
   let hit src recipient n =
         DamageEvent.MkDamageEvent src recipient n 0 False False False 0 Nothing Nothing mempty False mempty mempty Nothing mempty DamageKind.Noncombat
@@ -637,72 +573,6 @@ ajaniSteadfastSpec s registry = Spec.describe s "Ajani Steadfast (CR 114.4, CR 6
       Spec.assertEqWith s "setup: alice's other planeswalker holds 8 before any damage" (countersOn CounterKind.Loyalty jace armed) 8
       Spec.assertBool s (not (S.onBattlefield ajani armed)) "CR 704.5i Ajani paid his last loyalty counter for the ultimate and is buried"
       Spec.assertBool s (S.onBattlefield ajani base) "where the unactivated board still has him, at the seven counters he never spent"
-  -- CR 120.4's damage EVENT, whose granularity is one source, one recipient, one
-  -- moment -- and a sentence can name one recipient TWICE. Char ({2}{R} Instant,
-  -- "Char deals 4 damage to any target and 2 damage to you" -- name, cost, type
-  -- line and Oracle text checked against api.scryfall.com 2026-08-30) aimed at
-  -- its own caster is that sentence: CR 608.2f makes its two clauses one action
-  -- processed simultaneously, so alice's 4 and alice's 2 are one event of 6 and
-  -- not two.
-  --
-  -- Nothing in the CR individuates simultaneous damage more finely than by
-  -- source: CR 615.7 puts the allocation question only to damage "by two or more
-  -- applicable SOURCES at the same time", CR 120.4a computes excess against
-  -- "damage from other SOURCES that would be dealt at the same time", and CR
-  -- 120.9 scopes a trigger's "damage dealt" to the sources named. CR 701.14c is
-  -- the rule's own worked instance of the collapse -- a creature that fights
-  -- ITSELF "deals damage to itself equal to TWICE its power", one blow rather
-  -- than its power twice.
-  --
-  -- The emblem is the observer and CR 615.10 is why: its floor applies to each
-  -- applicable event separately, so it is worth exactly the number of events. One
-  -- event of 6 leaves alice 1 damage; two events would leave her 1 apiece.
-  --
-  -- Numbers all distinct -- 4 at the target, 2 at the caster, 6 in one event, the
-  -- floor 1, alice at 9 and bob at 20 -- so no two readings land on the same
-  -- board: one event reads 8, two events 7, an unfloored 3.
-  Spec.it s "CR 120.4 one sentence naming alice twice deals her ONE event, of 6" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    ajaniPrinting <- S.printingOf s registry "Ajani Steadfast"
-    char <- S.printingOf s registry "Char"
-    let base =
-          Game.overTurn
-            ( \registers ->
-                registers
-                  { TurnRegisters.phase = Phase.PrecombatMain
-                  }
-            )
-            (S.landsFor mountain S.alice 3 (Setup.emptyGame S.bothPlayers))
-
-        (ajani, g1) = S.addPermanent ajaniPrinting S.alice base
-        (charId, unarmed) = S.addHandCard char S.alice (atLife S.alice 9 (S.addCounter CounterKind.Loyalty 7 ajani g1))
-        armed = loyaltyAbility 2 S.identityAnswer ajaniPrinting ajani unarmed
-        burn victim g = castAndResolve (preferTarget [victim]) g charId
-        aimedAtAlice = burn (Recipient.ToPlayer S.alice) armed
-        aimedAtBob = burn (Recipient.ToPlayer S.bob) armed
-        control = burn (Recipient.ToPlayer S.alice) unarmed
-    -- THE case, and the gameplay-level assertion: 4 and 2 aimed at one recipient
-    -- are 6 in one event, which the emblem floors once. Two events would floor
-    -- twice and take alice to 7.
-    Spec.assertEqWith s "CR 120.3a the sentence's whole 6 is floored once: 9 - 1" (S.lifeOf S.alice aimedAtAlice) (Just 8)
-    Spec.assertEqWith s "and one event was dealt, not two" (fmap DamageEvent.amount (S.damageEventsOf aimedAtAlice)) [1]
-    -- The paired board, differing in exactly the target: aimed at bob the two
-    -- clauses name two recipients and stay two events, so the merge is keyed to
-    -- the RECIPIENT rather than flattening an instruction to one event.
-    Spec.assertEqWith s "aimed at bob the clauses name two recipients: bob's 4 is unfloored, alice's 2 is floored to 1" (S.lifeOf S.bob aimedAtBob, S.lifeOf S.alice aimedAtBob) (Just 16, Just 8)
-    -- Sorted, since what is asserted is that there are TWO events and what each
-    -- came to, not the order the batch happened to be recorded in.
-    Spec.assertEqWith s "so that board deals two events" (List.sort (fmap DamageEvent.amount (S.damageEventsOf aimedAtBob))) [1, 4]
-    -- The unemblemed board, differing in exactly the emblem: the same one event
-    -- of 6 is dealt whole, which is what makes the floor above the only thing
-    -- separating 8 from 3.
-    Spec.assertEqWith s "without the emblem the whole 6 lands: 9 - 6" (S.lifeOf S.alice control) (Just 3)
-    Spec.assertEqWith s "in one event still" (fmap DamageEvent.amount (S.damageEventsOf control)) [6]
-    -- The fixture's own preconditions, after the behaviour so neither can absorb
-    -- a mutation aimed at it.
-    Spec.assertEqWith s "CR 114.2 setup: the ultimate left one emblem in the command zone" (Set.size (GameState.command armed)) 1
-    Spec.assertEqWith s "and the unemblemed board has none" (Set.size (GameState.command unarmed)) 0
-    Spec.assertEqWith s "setup: alice is at 9 before the burn" (S.lifeOf S.alice armed) (Just 9)
 
 -- Activate the nth loyalty ability of `walker` in printed order, resolve it, and
 -- settle CR 704's state-based actions -- which is what buries a planeswalker
@@ -715,41 +585,6 @@ loyaltyAbility n answer printing walker gs =
         ability : _ -> S.runPure answer gs (do Activate.activateAbility S.alice walker ability; Stack.resolveTop)
         [] -> gs
     )
-
--- Protean Hydra {X}{G} Creature -- Hydra, printed 0/0: "this creature enters with
--- X +1/+1 counters on it. If damage would be dealt to this creature, prevent that
--- damage and remove that many +1/+1 counters from it."
---
--- Two rules this group is the pool's only producer of. CR 107.3m puts the SPELL's
--- announced X inside the permanent's own CR 614.1c entry replacement, an
--- exception the rule states against rule 107.3i and bounds in the same sentence
--- ("the value of X for that permanent is 0"); and CR 615.5's additional effect on a printed
--- ability names its own permanent by CR 113.7's reserved self slot, which is what
--- Parun.Types.RemoveCounters needs and Stormwild Capridor's PutCounters (an
--- ObjectRef) does not.
---
--- Numbers all distinct: X is announced at 4, the Bolt is 3, one counter is left,
--- and the Hydra goes from 4/4 to 1/1. A permanent's own X of 0 would answer no
--- counters at all, an unrun rider would leave 4, and a per-event reading of "that
--- many" would leave 3.
-proteanHydraSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-proteanHydraSpec s registry = Spec.describe s "Protean Hydra (CR 107.3m, CR 615.5)" $ do
-  -- CR 615.5's rider on the same card, on a board where the Hydra is PLACED
-  -- rather than cast: the counters are handed to it directly, so what the Bolt
-  -- proves is the removal alone.
-  Spec.it s "CR 615.5 the prevented three come off as three +1/+1 counters" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    hydraPrinting <- S.printingOf s registry "Protean Hydra"
-    bolt <- S.printingOf s registry "Lightning Bolt"
-    let base = S.landsInPlay mountain 1
-        (hydra, g1) = S.addPermanent hydraPrinting S.alice base
-        g2 = S.addCounter CounterKind.PlusOnePlusOne 4 hydra g1
-        (g3, spellId) = S.handOne bolt g2
-        after = castAndResolve (aimCreature hydra) g3 spellId
-    Spec.assertEqWith s "setup: a 4/4" (S.powerToughnessOf hydra g3) (Just (4, 4))
-    Spec.assertEqWith s "4 - 3: the rider found its own permanent through the self slot" (countersOn CounterKind.PlusOnePlusOne hydra after) 1
-    Spec.assertEqWith s "CR 615.6: nothing was marked, the damage having been prevented" (S.damageOf hydra after) (Just 0)
-    Spec.assertEqWith s "so the 4/4 is a 1/1" (S.powerToughnessOf hydra after) (Just (1, 1))
 
 -- CR 604.2's "as long as" clause on a PRINTED replacement ability, whose producer
 -- is Jared Carthalion, True Heir ({R}{G}{W} Legendary Creature -- Human Warrior
@@ -938,8 +773,9 @@ glitteringLionSpec s registry = Spec.describe s "Glittering Lion (CR 613.1f)" $ 
 -- EVERY case here has a CONTROL on a board that differs in Spider-Punk and in
 -- nothing else, so no assertion can pass because the damage would have got
 -- through anyway: the control board's shield genuinely prevents it. The first
--- two cases are the two halves of one comparison, one board each; the third runs
--- literally the same script over both.
+-- case's control is the scenario
+-- cr-615-12-the-unreduced-shield-still-covers-the-next-2-once-spider-punk-is-gone--control;
+-- the second runs literally the same script over both boards.
 --
 -- The DAMAGE BATCHES are hand-built and the SPELL is not, for mendingHandsSpec's
 -- reason: casting Mending Hands for real is what proves the card, while reaching
@@ -974,19 +810,6 @@ spiderPunkSpec s registry = Spec.describe s "Spider-Punk (CR 615.12)" $ do
                   (g6, spellId) = S.handOne mendingHands g5
                in (victim, attacker, other, punks, castAndResolve (aimCreature victim) g6 spellId)
         act build
-  -- THE CONTROL. Without Spider-Punk the shield does its ordinary CR 615.7 job:
-  -- the whole 3 is prevented, the event never happens (CR 615.6), and 1 of the
-  -- shield's 4 is left. Every refusal below would be true of a board whose
-  -- shield had never been there at all if this case did not pass.
-  Spec.it s "CR 615.7 without Spider-Punk the shield prevents the whole 3"
-    . withBoard
-    $ \build -> do
-      let (victim, attacker, _, _, shielded) = build False
-          after = settleDamage S.identityAnswer shielded [hit attacker (Recipient.ToCreature victim) 3]
-      Spec.assertEqWith s "setup: the shield is a floating replacement" (shieldsLeft shielded) [4]
-      Spec.assertEqWith s "nothing is marked on the shielded creature" (S.damageOf victim after) (Just 0)
-      Spec.assertEqWith s "and no damage event happened at all" (amounts after) []
-      Spec.assertEqWith s "3 of the shield's 4 were spent, so 1 remains" (shieldsLeft after) [1]
   -- CR 615.12's first and third clauses on one board. The shield is applicable
   -- and is still applied -- CR 615.12a gives it exactly one application, which
   -- is why this terminates -- but it prevents none of the damage, and it is not
@@ -1339,12 +1162,12 @@ apnapSpec s registry = Spec.describe s "APNAP (CR 616.1)" $ do
 --
 -- ONE board carries both directions, and that is the whole point of the group:
 -- alice's Goblin Piker is shielded by a Mending Hands she really casts on it,
--- and bob controls Excruciator AND a Goblin Piker. The first two cases send the
--- same 3 from each of them into that one shield -- the Excruciator's lands whole
--- and costs the shield nothing, the Piker's is prevented whole and spends 3 of
--- the shield's 4 -- so nothing but the damage's SOURCE differs between them, and
--- neither can pass because the damage would have got through anyway. The third
--- puts both in one batch.
+-- and bob controls Excruciator AND a Goblin Piker. The first case sends the
+-- Excruciator's 3 into that one shield, and it lands whole and costs the shield
+-- nothing; the scenario
+-- cr-615-7-the-shield-still-prevents-a-non-excruciator-source-s-3-whole is its
+-- control, another source's 3 prevented whole beside the same Excruciator. The
+-- second case puts the Excruciator's and the Piker's damage in one batch.
 --
 -- The DAMAGE BATCHES are hand-built and the SPELL is not, for spiderPunkSpec's
 -- reason.
@@ -1364,18 +1187,6 @@ excruciatorSpec s registry = Spec.describe s "Excruciator (CR 615.12)" $ do
             (avatar, g3) = S.addPermanent excruciator S.bob g2
             (g4, spellId) = S.handOne mendingHands g3
         act victim piker avatar (castAndResolve (aimCreature victim) g4 spellId)
-  -- THE CONTROL, and it shares its board with the case below rather than
-  -- standing on a second one: the shield is applicable to the Piker's damage and
-  -- prevents the whole of it, though an Excruciator is on the battlefield the
-  -- entire time. A pattern that admitted every source would fail here.
-  Spec.it s "CR 615.7 the shield still prevents the Goblin Piker's 3 whole"
-    . withBoard
-    $ \victim piker _ shielded -> do
-      let after = settleDamage S.identityAnswer shielded [hit piker (Recipient.ToCreature victim) 3]
-      Spec.assertEqWith s "setup: the shield is a floating replacement" (shieldsLeft shielded) [4]
-      Spec.assertEqWith s "nothing is marked on the shielded creature" (S.damageOf victim after) (Just 0)
-      Spec.assertEqWith s "and no damage event happened at all" (amounts after) []
-      Spec.assertEqWith s "3 of the shield's 4 were spent, so 1 remains" (shieldsLeft after) [1]
   -- CR 615.12 for the source the clause names: the same shield, on the same
   -- creature, on the same board, prevents none of the Excruciator's 3 and is not
   -- reduced by it.
@@ -1417,12 +1228,13 @@ excruciatorSpec s registry = Spec.describe s "Excruciator (CR 615.12)" $ do
 -- which is the Maybe ObjectId Parun.Engine.PlayerEffect.unpreventable threads out
 -- beside each pattern -- bob's, and not the shielded creature's controller.
 --
--- ONE board carries all four cases, excruciatorSpec's design and for its reason:
+-- ONE board carries both cases, excruciatorSpec's design and for its reason:
 -- alice's Goblin Piker is shielded by a Mending Hands she really casts on it,
--- alice controls a SECOND Piker, and bob controls a Piker and the Beast. Nothing
--- but the axis under test differs between the cases -- the source's controller
--- in the first two, the damage's KIND in the third -- so neither control can
--- pass because the damage would have got through anyway.
+-- alice controls a SECOND Piker, and bob controls a Piker and the Beast. The two
+-- controls -- another controller's creature's combat damage, and the same
+-- creature's noncombat damage, both prevented -- are the scenarios
+-- cr-615-7-combat-damage-from-a-creature-the-beast-s-controller-does-not-control-is-prevented
+-- and cr-615-7-noncombat-damage-from-a-creature-the-beast-s-controller-controls-is-prevented.
 --
 -- The DAMAGE BATCHES are hand-built and the SPELL is not, for spiderPunkSpec's
 -- reason: that is what lets a case name DamageKind.Combat without driving a
@@ -1444,18 +1256,6 @@ questingBeastSpec s registry = Spec.describe s "Questing Beast (CR 615.12)" $ do
             (_, g4) = S.addPermanent questingBeast S.bob g3
             (g5, spellId) = S.handOne mendingHands g4
         act victim hers his (castAndResolve (aimCreature victim) g5 spellId)
-  -- THE whatSource CONTROL: the same shield, on the same board, with the Beast on
-  -- the battlefield the whole time, prevents the combat damage of a creature
-  -- ALICE controls whole. "Creatures you control" is bob's set, so a pattern that
-  -- dropped the HeldBy Controller atom would fail here.
-  Spec.it s "CR 615.7 combat damage from a creature the Beast's controller does NOT control is prevented"
-    . withBoard
-    $ \victim hers _ shielded -> do
-      let after = settleDamage S.identityAnswer shielded [hit DamageKind.Combat hers (Recipient.ToCreature victim) 3]
-      Spec.assertEqWith s "setup: the shield is a floating replacement" (shieldsLeft shielded) [4]
-      Spec.assertEqWith s "nothing is marked on the shielded creature" (S.damageOf victim after) (Just 0)
-      Spec.assertEqWith s "and no damage event happened at all" (amounts after) []
-      Spec.assertEqWith s "3 of the shield's 4 were spent, so 1 remains" (shieldsLeft after) [1]
   -- THE CARD: the same shield, the same creature, the same 3, and the source is
   -- now a creature BOB controls. It lands whole and the shield is not reduced
   -- (CR 615.12's last sentence).
@@ -1471,17 +1271,6 @@ questingBeastSpec s registry = Spec.describe s "Questing Beast (CR 615.12)" $ do
       Spec.assertEqWith s "the whole 3 is marked on the shielded creature" (S.damageOf victim after) (Just 3)
       Spec.assertEqWith s "and the event happened, at its full amount" (amounts after) [3]
       Spec.assertEqWith s "the shield still holds all 4" (shieldsLeft after) [4]
-  -- THE whichKind CONTROL: the SAME source, the SAME shield, the same 3 -- only
-  -- CR 510.2's kind differs, and the damage is prevented. This is the assertion
-  -- that keeps whichKind from being decoration.
-  Spec.it s "CR 615.7 NONcombat damage from that same creature is prevented"
-    . withBoard
-    $ \victim _ his shielded -> do
-      let after = settleDamage S.identityAnswer shielded [hit DamageKind.Noncombat his (Recipient.ToCreature victim) 3]
-      Spec.assertEqWith s "setup: the same shield is on the same creature" (shieldsLeft shielded) [4]
-      Spec.assertEqWith s "nothing is marked on the shielded creature" (S.damageOf victim after) (Just 0)
-      Spec.assertEqWith s "and no damage event happened at all" (amounts after) []
-      Spec.assertEqWith s "3 of the shield's 4 came off it" (shieldsLeft after) [1]
   -- Both directions in ONE batch, which is what makes the narrowing a per-EVENT
   -- fact rather than a per-board one, exactly as excruciatorSpec's third case is.
   --
@@ -2143,12 +1932,6 @@ tablesBoard plains lands mine spells =
 
 -- Cast the named cards in the ORDER GIVEN, aiming every target at `victim`, and
 -- attack with everything.
---
--- Order matters in the Kill Shot case, and one answerer cannot express it: both
--- spells declare the same Pool.Creatures/IsAttacking slot, and casting both in
--- one priority round puts Kill Shot on TOP of the stack, so it resolves first
--- and Turn the Tables fizzles under CR 608.2b with no row installed. That case
--- therefore runs one step per spell, naming one card each time.
 castInOrder :: [String] -> ObjectId.ObjectId -> Prompt.Prompt r -> r
 castInOrder names victim p = case p of
   Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToCreature victim))) sets
@@ -2183,11 +1966,10 @@ redirectRows gs = do
 -- be dealt to you this turn is dealt to target attacking creature instead." bob
 -- is the caster, because "you" is the redirect's controller and only the
 -- DEFENDING player is being dealt combat damage worth moving.
-turnTheTablesSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+turnTheTablesSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 turnTheTablesSpec s registry = Spec.describe s "Turn the Tables (CR 614.9)" $ do
   let atCombatDamage = S.runToStep (Phase.Combat CombatStep.CombatDamage)
       hit src recipient n = DamageEvent.MkDamageEvent src recipient n 0 False False False 0 Nothing Nothing mempty False mempty mempty Nothing mempty DamageKind.Noncombat
-      amounts gs = fmap DamageEvent.amount (S.damageEventsOf gs)
       targets gs = fmap DamageEvent.target (S.damageEventsOf gs)
   -- THE KIND NARROWING. "All COMBAT damage", so a noncombat event aimed at bob
   -- is none of the card's business. Without this case the whichKind thread is
@@ -2205,34 +1987,6 @@ turnTheTablesSpec s registry = Spec.describe s "Turn the Tables (CR 614.9)" $ do
         Spec.assertEqWith s "addressed to bob, not moved" (targets after) [Recipient.ToPlayer S.bob]
         Spec.assertEqWith s "and the attacker is untouched" (S.damageOf attacker after) (Just 0)
       _ -> Spec.assertFailure s "fixture should have one attacker"
-  -- CR 614.9's GUARD. "If one of those permanents is no longer on the
-  -- battlefield when the damage would be redirected ... the effect does
-  -- nothing." bob redirects onto the Hill Giant and then kills it with Kill
-  -- Shot, so the surviving attacker's damage lands on bob exactly as if the
-  -- redirect were not there.
-  --
-  -- "Does nothing" is not "prevents": the load-bearing assertion is that the
-  -- event still HAPPENED. Dropping it instead would run weaker than printed.
-  Spec.it s "CR 614.9 guard: a destination that left the battlefield makes the effect do nothing" $ do
-    plains <- S.printingOf s registry "Plains"
-    jedit <- S.printingOf s registry "Jedit Ojanen"
-    hillGiant <- S.printingOf s registry "Hill Giant"
-    tables <- S.printingOf s registry "Turn the Tables"
-    killShot <- S.printingOf s registry "Kill Shot"
-    case tablesBoard plains 8 [jedit, hillGiant] [tables, killShot] of
-      (gs, [big, doomed]) -> do
-        let atBlockers = S.runToStep (Phase.Combat CombatStep.DeclareBlockers) (castInOrder ["Turn the Tables"] doomed) gs
-            atDamage = atCombatDamage (castInOrder ["Kill Shot"] doomed) atBlockers
-            after = S.runCombat S.aggressiveAnswer atDamage
-        -- The negative-cast trap: bob is at 15 either way if the spell was never
-        -- cast at all, so the row's existence is asserted outright.
-        Spec.assertEqWith s "setup: the redirect was installed, aimed at the doomed creature" (redirectRows atDamage) [(Just DamageKind.Combat, Just (Recipient.ToPlayer S.bob), Recipient.ToCreature doomed)]
-        Spec.assertEqWith s "setup: Kill Shot really destroyed it" (S.creaturesInPlay S.alice atDamage) 1
-        Spec.assertEqWith s "so the survivor's 5 lands on bob" (S.lifeOf S.bob after) (Just 15)
-        Spec.assertEqWith s "and the event still HAPPENED -- 'does nothing' is not 'prevents'" (amounts after) [5]
-        Spec.assertEqWith s "addressed to bob, its original recipient" (targets after) [Recipient.ToPlayer S.bob]
-        Spec.assertEqWith s "the big attacker took nothing" (S.damageOf big after) (Just 0)
-      _ -> Spec.assertFailure s "fixture should have two attackers"
 
 -- The SOURCE each floating redirection row watches (DamagePattern.whichSource),
 -- read off the store. redirectRows above reads the other three baked fields; a
@@ -2294,11 +2048,10 @@ orderedBy wanted p = case p of
 -- the wrong way round moves damage between two things the board tells apart
 -- only by id; bob's Piker is the source. alice's library is stocked for the
 -- card's second sentence.
-caromSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+caromSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 caromSpec s registry = Spec.describe s "Carom (CR 614.9, CR 615.7)" $ do
   let hit src recipient n = DamageEvent.MkDamageEvent src recipient n 0 False False False 0 Nothing Nothing mempty False mempty mempty Nothing mempty DamageKind.Noncombat
       amounts gs = List.sort (fmap DamageEvent.amount (S.damageEventsOf gs))
-      targets gs = fmap DamageEvent.target (S.damageEventsOf gs)
       strike src recipient n g = S.runPure S.identityAnswer g (Damage.applyDamage (pure ()) [hit src recipient n])
       board = do
         plains <- S.printingOf s registry "Plains"
@@ -2321,47 +2074,14 @@ caromSpec s registry = Spec.describe s "Carom (CR 614.9, CR 615.7)" $ do
                 }
             redirected = S.runPure (aimFromTo victim haven) ready (S.cast S.alice caromId Monad.>> Stack.resolveTop)
         pure (victim, haven, attacker, ready, redirected)
-  Spec.it s "CR 615.7 the next 1 of a 3-damage event moves and the other 2 stay where they were aimed" $ do
-    (victim, haven, attacker, _, redirected) <- board
-    let after = strike attacker (Recipient.ToCreature victim) 3 redirected
-    -- THE gameplay assertion, and the pair that separates a counted redirect
-    -- from Turn the Tables: the victim keeps 2 and the haven takes 1.
-    Spec.assertEqWith s "the victim takes 2 of the 3" (S.damageOf victim after) (Just 2)
-    Spec.assertEqWith s "and the haven takes the 1 that moved" (S.damageOf haven after) (Just 1)
-    -- CR 614.9 moves "the same damage": two events of the same source, and
-    -- nothing prevented.
-    Spec.assertEqWith s "two events, 1 and 2" (amounts after) [1, 2]
-    Spec.assertEqWith s "the row is spent and gone" (countedRedirectRows after) []
-    -- The proxies, after the behaviour.
-    Spec.assertEqWith s "setup: one counted row of 1, from the victim to the haven" (countedRedirectRows redirected) [(1, Just (Recipient.ToCreature victim), Recipient.ToCreature haven, Nothing)]
-  Spec.it s "CR 615.7 once spent, the next event stays whole" $ do
-    (victim, haven, attacker, _, redirected) <- board
-    let spent = strike attacker (Recipient.ToCreature victim) 3 redirected
-        after = strike attacker (Recipient.ToCreature victim) 2 spent
-    Spec.assertEqWith s "the second event's 2 all lands on the victim" (S.damageOf victim after) (Just 4)
-    Spec.assertEqWith s "and the haven keeps the 1 alone" (S.damageOf haven after) (Just 1)
-  Spec.it s "CR 614.9 a 1-damage event moves whole, and the row is spent by it" $ do
-    (victim, haven, attacker, _, redirected) <- board
-    let after = strike attacker (Recipient.ToCreature victim) 1 redirected
-    Spec.assertEqWith s "the victim takes nothing" (S.damageOf victim after) (Just 0)
-    Spec.assertEqWith s "the haven takes the 1" (S.damageOf haven after) (Just 1)
-    Spec.assertEqWith s "one event, addressed to the haven" (targets after) [Recipient.ToCreature haven]
-    Spec.assertEqWith s "the row is spent and gone" (countedRedirectRows after) []
-  -- The BASELINE that makes the cases above discriminate: the same board, the
-  -- spell never cast.
+  -- The BASELINE that makes the Carom scenarios in data/scenarios/damage-replacement
+  -- discriminate: the same board, the spell never cast.
   Spec.it s "CR 614.9 no redirect, no move: the whole 3 lands on the victim" $ do
     (victim, haven, attacker, ready, _) <- board
     let after = strike attacker (Recipient.ToCreature victim) 3 ready
     Spec.assertEqWith s "the victim takes all 3" (S.damageOf victim after) (Just 3)
     Spec.assertEqWith s "the haven takes nothing" (S.damageOf haven after) (Just 0)
     Spec.assertEqWith s "one event" (amounts after) [3]
-  -- The other recipient is not covered: damage aimed at the haven stays there.
-  Spec.it s "CR 614.9 the redirection covers the creature the spell named and not the other" $ do
-    (victim, haven, attacker, _, redirected) <- board
-    let after = strike attacker (Recipient.ToCreature haven) 2 redirected
-    Spec.assertEqWith s "the haven takes its own 2" (S.damageOf haven after) (Just 2)
-    Spec.assertEqWith s "the victim takes nothing" (S.damageOf victim after) (Just 0)
-    Spec.assertEqWith s "and the row is unspent" (fmap (\(n, _, _, _) -> n) (countedRedirectRows after)) [1]
 
 -- CR 614.9's redirection between two TARGETED players with a counted X, whose
 -- producer is Captain's Maneuver ({X}{R}{W} Instant: "The next X damage that
@@ -2839,7 +2559,7 @@ queensBayPaladinSpec s registry = Spec.describe s "Queen's Bay Paladin (CR 122.1
 --
 -- A REAL untap step throughout (Engine.runTurnBasedActions at CR 502.3), not a
 -- direct call to the funnel.
-cryogenicStasisSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+cryogenicStasisSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 cryogenicStasisSpec s registry = Spec.describe s "Cryogenic Stasis (CR 122.1d)" $ do
   -- alice is the active player, so CR 502.3's turn-based action is asked about
   -- the permanents she controls.
@@ -2875,23 +2595,6 @@ cryogenicStasisSpec s registry = Spec.describe s "Cryogenic Stasis (CR 122.1d)" 
     Spec.assertEqWith s "CR 122.1d with the counter gone the next untap step untaps it" (tapStateOf piker second) (Just TapState.Untapped)
     Spec.assertEqWith s "setup: the spell tapped the Piker and left one stun counter on it" (tapStateOf piker resolved, countersOn CounterKind.Stun piker resolved) (Just TapState.Tapped, 1)
     Spec.assertEqWith s "setup: and drew alice her card, so the whole spell resolved" (S.handSize S.alice resolved) 1
-  -- Rule 701.26b's second sentence, which is `proposeUntap`'s guard: an UNTAPPED
-  -- permanent does not become untapped, so CR 122.1d's event is never proposed
-  -- for it and no counter is spent. The board differs from the case above in
-  -- exactly one thing -- the permanent's tap state -- so the pair is what tells
-  -- "the counter is spent by an untap step" from "the counter is spent by an
-  -- untap".
-  --
-  -- The counter is placed by the fixture rather than by Cryogenic Stasis: the
-  -- card TAPS what it stuns, so no board it can build reaches this arm.
-  Spec.it s "CR 701.26b an untapped permanent never becomes untapped, so its stun counter is not spent" $ do
-    pikerPrinting <- S.printingOf s registry "Goblin Piker"
-    let (piker, placed) = S.addPermanent pikerPrinting S.alice (Setup.emptyGame S.bothPlayers)
-        stunned = S.addCounter CounterKind.Stun 1 piker placed
-        after = untapStep stunned
-    Spec.assertEqWith s "CR 701.26b the untap step spent no stun counter on a permanent that was already upright" (countersOn CounterKind.Stun piker after) 1
-    Spec.assertEqWith s "setup: it went into the step untapped" (tapStateOf piker stunned) (Just TapState.Untapped)
-    Spec.assertEqWith s "and came out of it untapped" (tapStateOf piker after) (Just TapState.Untapped)
 
 -- The names of the cards in a player's graveyard, sorted.
 graveyardNames :: PlayerId.PlayerId -> GameState.GameState -> [CardName.CardName]
@@ -3060,12 +2763,10 @@ spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
   divineDeflectionSpec s registry
   braceForImpactSpec s registry
-  inkshieldSpec s registry
   stormwildCapridorSpec s registry
   templeAltisaurSpec s registry
   absorbSpec s registry
   ajaniSteadfastSpec s registry
-  proteanHydraSpec s registry
   jaredCarthalionSpec s registry
   glitteringLionSpec s registry
   spiderPunkSpec s registry

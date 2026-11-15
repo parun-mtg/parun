@@ -13,7 +13,8 @@
 -- Phyrexian Discount, Synthetic Snow Discount, Synthetic Monocolored Hybrid
 -- Discount and Synthetic Hybrid Discount are SYNTHETIC, one per reduction CR
 -- 118.7e-g describes and no card prints. Khabál
--- Ghoul, Withered Wretch and Sol Ring are the costs the last two are aimed at.
+-- Ghoul, Withered Wretch and Sol Ring are the costs the last two are aimed at;
+-- Synthetic Hybrid Discount's cases are all scenarios (data/scenarios/player-effect).
 --
 -- Patrician Geist is the reduction side's zone axis: CR 601.2a's zone a spell was
 -- CAST FROM, which Filter.WasCastFrom reads and which no other card in this
@@ -101,7 +102,6 @@
 module Parun.PlayerEffectSpec where
 
 import qualified Data.List as List
-import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -138,7 +138,6 @@ import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CostAdjustments as CostAdjustments
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterName as CounterName
-import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Expiry as Expiry.Type
 import qualified Parun.Types.Facing as Facing
@@ -147,7 +146,6 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.Keyword as Keyword
-import qualified Parun.Types.LifeChange as LifeChange
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
@@ -675,21 +673,6 @@ thaliaWith mountain thalia lightningBolt extras n =
           }
       )
 
-thaliaUntaxed :: Printing.Printing -> Printing.Printing -> Int -> (ObjectId.ObjectId, GameState.GameState)
-thaliaUntaxed mountain lightningBolt n =
-  let base = S.landsInPlay mountain n
-      (bolt, gs1) = S.addHandCard lightningBolt S.alice base
-   in ( bolt,
-        gs1
-          { GameState.turn =
-              (GameState.turn gs1)
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-      )
-
 -- Thalia, Guardian of Thraben {1}{W} Legendary Creature -- Human Soldier 2/1:
 -- "First strike / Noncreature spells cost {1} more to cast."
 thaliaSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -721,10 +704,11 @@ thaliaSpec s registry =
         (totalManaCost S.alice pikerId (ManaCost.MkManaCost [ManaSymbol.Generic 1, red]) gs)
         (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, red]))
 
-    -- BOTH sites, one scenario. Taxing castability but not payment lets
-    -- the player underpay; taxing payment but not castability offers a
-    -- cast that cannot be afforded, and nothing REPAIRS a cast partway --
-    -- that is a wedged game, not a rejected action.
+    -- The castability site; payment is a scenario
+    -- (data/scenarios/player-effect/cr-601-2f-thalia-s-taxed-*). Taxing
+    -- castability but not payment lets the player underpay; taxing payment but
+    -- not castability offers a cast that cannot be afforded, and nothing
+    -- REPAIRS a cast partway -- that is a wedged game, not a rejected action.
     Spec.it s "CR 601.2f castability is measured against the total cost" $ do
       mountain <- S.printingOf s registry "Mountain"
       thalia <- S.printingOf s registry "Thalia, Guardian of Thraben"
@@ -736,18 +720,6 @@ thaliaSpec s registry =
       Spec.assertBool s (not (S.castable S.alice boltOne oneLand)) "one Mountain is not enough for a taxed Bolt"
       Spec.assertBool s (S.castable S.alice boltTwo twoLands) "two Mountains are"
       Spec.assertBool s (S.castable S.alice pikerTwo twoLandsAgain) "and an untaxed creature spell needs only its printed two"
-
-    Spec.it s "CR 601.2f payment spends the total cost" $ do
-      mountain <- S.printingOf s registry "Mountain"
-      thalia <- S.printingOf s registry "Thalia, Guardian of Thraben"
-      lightningBolt <- S.printingOf s registry "Lightning Bolt"
-      piker <- S.printingOf s registry "Goblin Piker"
-      let (bolt, _, gs) = thaliaBoard mountain thalia lightningBolt piker 3
-          paid = S.runPure S.identityAnswer gs (S.cast S.alice bolt)
-          (boltU, gsU) = thaliaUntaxed mountain lightningBolt 3
-          paidU = S.runPure S.identityAnswer gsU (S.cast S.alice boltU)
-      Spec.assertEqWith s "taxed: two lands tapped" (S.tappedCount S.alice paid) 2
-      Spec.assertEqWith s "untaxed: one land tapped" (S.tappedCount S.alice paidU) 1
 
     -- The AnyPlayer scope: Thalia's controller is taxed (every assertion
     -- above is alice's own spell) and so is her opponent.
@@ -1324,8 +1296,9 @@ edgewalkerSpec s registry =
         (totalManaCost S.alice spell (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]) gs)
         (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]))
 
-    -- BOTH cost sites, one scenario, exactly as the Thalia group tests them.
-    -- Three Plains produce white mana and nothing else, so they can never pay
+    -- The castability site, as the Thalia group tests it; payment is a
+    -- scenario (data/scenarios/player-effect/cr-601-2f-edgewalker-*). Three
+    -- Plains produce white mana and nothing else, so they can never pay
     -- a {B}: what makes the discounted spell castable is that the reduction
     -- removed the black SYMBOL, not that it removed an amount.
     Spec.it s "CR 601.2f castability is measured against the total cost" $ do
@@ -1336,14 +1309,6 @@ edgewalkerSpec s registry =
           (undiscounted, _, bare) = edgewalkerBoard plains edgewalker piker 0 3
       Spec.assertBool s (not (S.castable S.alice undiscounted bare)) "three Plains cannot pay a printed {1}{W}{B}"
       Spec.assertBool s (S.castable S.alice discounted withEdgewalker) "but they can pay the discounted {1}"
-
-    Spec.it s "CR 601.2f payment spends the total cost" $ do
-      plains <- S.printingOf s registry "Plains"
-      edgewalker <- S.printingOf s registry "Edgewalker"
-      piker <- S.printingOf s registry "Goblin Piker"
-      let (spell, _, gs) = edgewalkerBoard plains edgewalker piker 1 3
-          paid = S.runPure S.identityAnswer gs (S.cast S.alice spell)
-      Spec.assertEqWith s "one Plains tapped, not three" (S.tappedCount S.alice paid) 1
 
     -- CR 611.1 / 109.5: the You scope is the effect's controller, and bob
     -- controls no Edgewalker.
@@ -1416,20 +1381,6 @@ phyrexianDiscountSpec s registry =
         (totalManaCost S.alice cubId (ManaCost.MkManaCost [ManaSymbol.Generic 1, green]) gs)
         (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]))
 
-    -- The control the case above needs: without the artifact the same spell is
-    -- full price, so the {G} really did leave because of the reduction.
-    Spec.it s "without the reducer the same spell is full price" $ do
-      forest <- S.printingOf s registry "Forest"
-      discount <- S.printingOf s registry "Synthetic Phyrexian Discount"
-      cub <- S.printingOf s registry "Longtusk Cub"
-      growth <- S.printingOf s registry "Mutagenic Growth"
-      let (cubId, _, gs) = phyrexianDiscountBoard forest discount cub growth 0 2
-      Spec.assertEqWith
-        s
-        "{1}{G} stays {1}{G}"
-        (totalManaCost S.alice cubId (ManaCost.MkManaCost [ManaSymbol.Generic 1, green]) gs)
-        (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, green]))
-
     -- THE OTHER SIDE of the same symbol, and the reason CR 118.7f is a rule
     -- about REDUCTIONS only. Mutagenic Growth's printed {G/P} is a symbol its
     -- controller has not yet announced a route for (CR 601.2b precedes CR
@@ -1458,11 +1409,12 @@ phyrexianDiscountSpec s registry =
     -- Filter said -- the assertion would pass for the wrong reason, and it did
     -- under mutation. Parun.Engine.Filter's colour atom is proved by the
     -- SapphireMedallion group instead, and the mutation that DOES discriminate
-    -- here (this card's HasColor Green flipped to Red) breaks the three cases
-    -- that assert a discount.
+    -- here (this card's HasColor Green flipped to Red) breaks the cases that
+    -- assert a discount.
 
-    -- BOTH cost sites, one scenario, exactly as the Edgewalker group tests
-    -- them. One Forest is the amount that tells {1} apart from {1}{G}.
+    -- The castability site, as the Edgewalker group tests it; payment is a
+    -- scenario (data/scenarios/player-effect/cr-601-2f-a-g-p-*). One Forest is
+    -- the amount that tells {1} apart from {1}{G}.
     Spec.it s "CR 601.2f castability is measured against the total cost" $ do
       forest <- S.printingOf s registry "Forest"
       discount <- S.printingOf s registry "Synthetic Phyrexian Discount"
@@ -1472,15 +1424,6 @@ phyrexianDiscountSpec s registry =
           (undiscounted, _, bare) = phyrexianDiscountBoard forest discount cub growth 0 1
       Spec.assertBool s (not (S.castable S.alice undiscounted bare)) "one Forest cannot pay a printed {1}{G}"
       Spec.assertBool s (S.castable S.alice discounted withDiscount) "but it can pay the discounted {1}"
-
-    Spec.it s "CR 601.2f payment spends the total cost" $ do
-      forest <- S.printingOf s registry "Forest"
-      discount <- S.printingOf s registry "Synthetic Phyrexian Discount"
-      cub <- S.printingOf s registry "Longtusk Cub"
-      growth <- S.printingOf s registry "Mutagenic Growth"
-      let (cubId, _, gs) = phyrexianDiscountBoard forest discount cub growth 1 2
-          paid = S.runPure S.identityAnswer gs (S.cast S.alice cubId)
-      Spec.assertEqWith s "one Forest tapped, not two" (S.tappedCount S.alice paid) 1
 
 -- alice controls `copies` Synthetic Snow Discounts and `n` untapped Forests; her
 -- hand holds one Longtusk Cub ({1}{G} green Cat) and one Goblin Piker ({1}{R}
@@ -1542,20 +1485,6 @@ snowDiscountSpec s registry =
         (totalManaCost S.alice cubId (ManaCost.MkManaCost [ManaSymbol.Generic 1, green]) gs)
         (Just (ManaCost.MkManaCost [green]))
 
-    -- The control the case above needs: without the artifact the same spell is
-    -- full price, so the {1} really did leave because of the reduction.
-    Spec.it s "without the reducer the same spell is full price" $ do
-      forest <- S.printingOf s registry "Forest"
-      discount <- S.printingOf s registry "Synthetic Snow Discount"
-      cub <- S.printingOf s registry "Longtusk Cub"
-      piker <- S.printingOf s registry "Goblin Piker"
-      let (cubId, _, gs) = snowDiscountBoard forest discount cub piker 0 2
-      Spec.assertEqWith
-        s
-        "{1}{G} stays {1}{G}"
-        (totalManaCost S.alice cubId (ManaCost.MkManaCost [ManaSymbol.Generic 1, green]) gs)
-        (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, green]))
-
     -- The colour criterion, and unlike the Phyrexian group's it DISCRIMINATES:
     -- a generic reduction does not care what the cost prints, so {1}{R} would
     -- lose its {1} just as {1}{G} does if the Filter let the reduction reach
@@ -1573,8 +1502,9 @@ snowDiscountSpec s registry =
         (totalManaCost S.alice pikerId (ManaCost.MkManaCost [ManaSymbol.Generic 1, red]) gs)
         (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, red]))
 
-    -- BOTH cost sites, one scenario, exactly as the Edgewalker and Phyrexian
-    -- groups test them. One Forest is the amount that tells {G} apart from
+    -- The castability site, as the Edgewalker and Phyrexian groups test it;
+    -- payment is a scenario (data/scenarios/player-effect/cr-601-2f-an-s-*). One
+    -- Forest is the amount that tells {G} apart from
     -- {1}{G}.
     Spec.it s "CR 601.2f castability is measured against the total cost" $ do
       forest <- S.printingOf s registry "Forest"
@@ -1585,28 +1515,6 @@ snowDiscountSpec s registry =
           (undiscounted, _, bare) = snowDiscountBoard forest discount cub piker 0 1
       Spec.assertBool s (not (S.castable S.alice undiscounted bare)) "one Forest cannot pay a printed {1}{G}"
       Spec.assertBool s (S.castable S.alice discounted withDiscount) "but it can pay the discounted {G}"
-
-    Spec.it s "CR 601.2f payment spends the total cost" $ do
-      forest <- S.printingOf s registry "Forest"
-      discount <- S.printingOf s registry "Synthetic Snow Discount"
-      cub <- S.printingOf s registry "Longtusk Cub"
-      piker <- S.printingOf s registry "Goblin Piker"
-      let (cubId, _, gs) = snowDiscountBoard forest discount cub piker 1 2
-          paid = S.runPure S.identityAnswer gs (S.cast S.alice cubId)
-      Spec.assertEqWith s "one Forest tapped, not two" (S.tappedCount S.alice paid) 1
-
--- Answers CR 118.7e's Prompt.ChooseHybridHalf with `half` whenever it is on
--- offer, and defers everything else to S.identityAnswer -- the `announces` shape
--- Parun.ManaSpec uses for CR 118.13a's announcements.
---
--- The "whenever it is on offer" is what makes the pairs below discriminating: an
--- interpreter that named a half the symbol does not have would silently get the
--- first one instead, and the two cases would stop disagreeing.
-takesHalf :: ManaSymbol.ManaSymbol -> Prompt.Prompt r -> r
-takesHalf half p = case p of
-  Prompt.ChooseHybridHalf _ _ _ _ offers ->
-    if elem half offers then half else NonEmpty.head offers
-  _ -> S.identityAnswer p
 
 -- alice controls `copies` reducers and `n` untapped lands of one printing; her
 -- hand holds one `spell` and one Sol Ring ({1} colourless Artifact). Shared by
@@ -1660,18 +1568,6 @@ hybridDiscountBoard land discount spell solRing copies n =
 monocoloredHybridDiscountSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 monocoloredHybridDiscountSpec s registry =
   Spec.describe s "SyntheticMonocoloredHybridDiscount" $ do
-    -- The control both cases above need: without the artifact the same spell is
-    -- full price whatever the interpreter would have answered, so the mana
-    -- really did leave because of the reduction.
-    Spec.it s "without the reducer the same spell is full price" $ do
-      swamp <- S.printingOf s registry "Swamp"
-      discount <- S.printingOf s registry "Synthetic Monocolored Hybrid Discount"
-      ghoul <- S.printingOf s registry "Khabál Ghoul"
-      solRing <- S.printingOf s registry "Sol Ring"
-      let (ghoulId, _, gs) = hybridDiscountBoard swamp discount ghoul solRing 0 3
-          paid = S.runPure (takesHalf (ManaSymbol.Generic 2)) gs (S.cast S.alice ghoulId)
-      Spec.assertEqWith s "three Swamps tapped" (S.tappedCount S.alice paid) 3
-
     -- CR 118.7e AT THE GATE. Two Swamps cannot pay Khabál Ghoul's printed
     -- {2}{B}, and either half of the reduction brings it into range: the {B}
     -- half leaves {2} and the {2} half leaves {B}. The control differs in ONE
@@ -1726,105 +1622,44 @@ monocoloredHybridDiscountSpec s registry =
       let (ghoulId, _, gs) = hybridDiscountBoard swamp discount ghoul solRing 1 0
       Spec.assertBool s (not (S.castable S.alice ghoulId gs)) "no mana pays either half"
 
--- Synthetic Hybrid Discount {2} Artifact: "Black spells you cast cost {W/B}
--- less to cast."
---
--- SYNTHETIC, and the file's fourth, for the reason the group above gives: the
--- same Scryfall sweep finds no printing whose reduction amount is a hybrid
--- symbol of either shape.
---
--- CR 107.4e's COLOUR/COLOUR half ({W/B}), whose two ways are two colours rather
--- than a colour against a number. That is what makes it a different question
--- from the group above and not a relabelling of it, and why CR 118.7e's prompt
--- answers with the resulting SYMBOL: {2/B}'s halves are an OfType and a Generic,
--- {W/B}'s are two OfTypes.
---
--- Aimed at Withered Wretch's {B}{B}, which prints one of the two colours and not
--- the other, and NO GENERIC COMPONENT. Both of those are deliberate. Printing
--- one colour is what lets the count tell the two answers apart -- a cost
--- printing both would take one mana either way. Printing no generic component
--- isolates CR 118.7e's choice from CR 118.7b's spill: a stranded {W} becomes one
--- GENERIC mana, and this cost has none for CR 118.7a to take it off, so the
--- white half leaves {B}{B} alone whichever way the spill is read.
---
--- The SPILL itself is the last case below, on Khabál Ghoul's {2}{B} instead --
--- the same reduction and the same white half, aimed at a cost that does have a
--- generic component for CR 118.7b to reach.
-hybridDiscountSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-hybridDiscountSpec s registry =
-  Spec.describe s "SyntheticHybridDiscount" $ do
-    -- The control the headline needs: with no reducer out, two Swamps is what
-    -- the spell costs whatever the interpreter would have answered.
-    Spec.it s "without the reducer the same spell is full price" $ do
-      swamp <- S.printingOf s registry "Swamp"
-      discount <- S.printingOf s registry "Synthetic Hybrid Discount"
-      wretch <- S.printingOf s registry "Withered Wretch"
-      solRing <- S.printingOf s registry "Sol Ring"
-      let (wretchId, _, gs) = hybridDiscountBoard swamp discount wretch solRing 0 2
-          paid = S.runPure (takesHalf black) gs (S.cast S.alice wretchId)
-      Spec.assertEqWith s "two Swamps tapped" (S.tappedCount S.alice paid) 2
-
 -- Aims the text changer's one target slot at `oid` -- the SpellsAndPermanents
--- pool's recipient shape, which both changers below print -- and answers the
--- swap prompt with (from, to), whichever family the changer names.
+-- pool's recipient shape -- and answers the swap prompt with (from, to),
+-- whichever family the changer names.
 swapAt :: ObjectId.ObjectId -> Subtype.Subtype -> Subtype.Subtype -> Prompt.Prompt r -> r
 swapAt oid from to p = case p of
   Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToObject oid))) sets
   Prompt.ChooseWordSwap {} -> (TextWord.SubtypeWord from, TextWord.SubtypeWord to)
   _ -> S.identityAnswer p
 
--- Exchange of Words' two targets, pinned by FILTERING the offered set to `pair`
--- rather than building recipients, so CR 608.2b's re-read still finds them.
-exchangeBetween :: Set.Set ObjectId.ObjectId -> Prompt.Prompt r -> r
-exchangeBetween pair p = case p of
-  Prompt.AnnounceTargets _ _ _ offers -> fmap (const 2) offers
-  Prompt.ChooseTargets _ _ _ offers -> S.preferring (maybe False (`Set.member` pair) . Recipient.objectOf) offers
-  _ -> S.identityAnswer p
-
 -- alice controls one Edgewalker, one untapped Plains and one untapped Island;
--- her hand holds a second Edgewalker ({1}{W}{B} Human Cleric), a Whipstitched
--- Zombie ({1}{B} Zombie) and the text changer `changerName`. With `swap`, she
--- casts that changer at the Edgewalker ON THE BATTLEFIELD -- the Island pays the
--- {U} -- and it resolves before anything is measured; without it the board is
--- otherwise identical, which is what makes the two comparable.
---
--- Returns the state, the Edgewalker printing the discount, the Cleric spell and
--- the Zombie spell. Loaded fresh inside each case that needs it -- equivalent
--- because loading is deterministic and cached (batch-recipe.md).
+-- her hand holds a second Edgewalker ({1}{W}{B} Human Cleric) and a Whipstitched
+-- Zombie ({1}{B} Zombie). Returns the state, the Cleric spell and the Zombie
+-- spell. Loaded fresh inside each case that needs it -- equivalent because
+-- loading is deterministic and cached (batch-recipe.md).
 textChangedEdgewalkerBoard ::
   (Monad m) =>
   Spec.Spec m n ->
   Registry.Registry m ->
-  String ->
-  Maybe (Subtype.Subtype, Subtype.Subtype) ->
-  m (GameState.GameState, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId)
-textChangedEdgewalkerBoard s registry changerName swap = do
+  m (GameState.GameState, ObjectId.ObjectId, ObjectId.ObjectId)
+textChangedEdgewalkerBoard s registry = do
   plains <- S.printingOf s registry "Plains"
   island <- S.printingOf s registry "Island"
   edgewalker <- S.printingOf s registry "Edgewalker"
   zombie <- S.printingOf s registry "Whipstitched Zombie"
-  changer <- S.printingOf s registry changerName
   let (_, g1) = S.addPermanent island S.alice (S.landsInPlay plains 1)
-      (walkerId, g2) = S.addPermanent edgewalker S.alice g1
+      (_, g2) = S.addPermanent edgewalker S.alice g1
       (clericSpell, g3) = S.addHandCard edgewalker S.alice g2
       (zombieSpell, g4) = S.addHandCard zombie S.alice g3
-      (changerId, g5) = S.addHandCard changer S.alice g4
       ready =
-        g5
+        g4
           { GameState.turn =
-              (GameState.turn g5)
+              (GameState.turn g4)
                 { TurnRegisters.phase = Phase.PrecombatMain,
                   TurnRegisters.activePlayer = S.alice,
                   TurnRegisters.priority = Just S.alice
                 }
           }
-      after = case swap of
-        Nothing -> ready
-        Just (from, to) ->
-          S.runPure (swapAt walkerId from to) ready $ do
-            S.cast S.alice changerId
-            Stack.resolveTop
-  pure (after, walkerId, clericSpell, zombieSpell)
+  pure (ready, clericSpell, zombieSpell)
 
 -- CR 612.1 reaching the FILTER a player static ability's effect carries.
 --
@@ -1847,15 +1682,18 @@ textChangedEdgewalkerBoard s registry changerName swap = do
 -- black Zombie that makes the new word observable, and its upkeep trigger never
 -- fires here because nothing in the group reaches an upkeep.
 --
--- BOTH HALVES are asserted every time. "The Zombie spell is discounted" passes
--- vacuously against a reader that discounts everything, and "the Cleric spell is
--- not" passes vacuously against one that discounts nothing.
-textChangedEdgewalkerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+-- The text-changed boards are scenarios (data/scenarios/player-effect,
+-- cr-612-1-*, cr-612-2-*, cr-612-5-* and cr-613-8b-*), each asserting both
+-- halves: "the Zombie spell is discounted" passes vacuously against a reader
+-- that discounts everything, and "the Cleric spell is not" against one that
+-- discounts nothing.
+textChangedEdgewalkerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 textChangedEdgewalkerSpec s registry = Spec.describe s "TextChangedEdgewalker" $ do
-  -- The premise the two changed cases are read against: with no text changer the
-  -- printed word stands, so the Cleric spell is discounted and the Zombie is not.
+  -- The premise the text-changed scenarios are read against: with no text changer
+  -- the printed word stands, so the Cleric spell is discounted and the Zombie is
+  -- not.
   Spec.it s "CR 118.7 the printed filter discounts Clerics and not Zombies" $ do
-    (gs, _, clericSpell, zombieSpell) <- textChangedEdgewalkerBoard s registry "Artificial Evolution" Nothing
+    (gs, clericSpell, zombieSpell) <- textChangedEdgewalkerBoard s registry
     Spec.assertEqWith
       s
       "the Cleric spell's {1}{W}{B} becomes {1}"
@@ -1866,131 +1704,6 @@ textChangedEdgewalkerSpec s registry = Spec.describe s "TextChangedEdgewalker" $
       "and the Zombie spell's {1}{B} is untouched"
       (totalManaCost S.alice zombieSpell (ManaCost.MkManaCost [ManaSymbol.Generic 1, black]) gs)
       (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, black]))
-
-  Spec.it s "CR 612.1 an evolved Edgewalker discounts Zombies and no longer discounts Clerics" $ do
-    (gs, walkerId, clericSpell, zombieSpell) <-
-      textChangedEdgewalkerBoard s registry "Artificial Evolution" (Just (Subtype.Cleric, Subtype.Zombie))
-    -- The anti-vacuity check, first: every assertion below would also hold of an
-    -- Evolution that never resolved onto the Edgewalker at all.
-    Spec.assertEqWith s "the Evolution resolved onto the Edgewalker" (Projection.textChangesAffecting walkerId gs) [(TextWord.SubtypeWord Subtype.Cleric, TextWord.SubtypeWord Subtype.Zombie)]
-    Spec.assertEqWith
-      s
-      "the Zombie spell's {1}{B} becomes {1}"
-      (totalManaCost S.alice zombieSpell (ManaCost.MkManaCost [ManaSymbol.Generic 1, black]) gs)
-      (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]))
-    Spec.assertEqWith
-      s
-      "and the Cleric spell pays its printed {1}{W}{B}"
-      (totalManaCost S.alice clericSpell (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]) gs)
-      (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
-
-  -- CR 612.5 / 613.7: the evolved Edgewalker's text box then moves to alice's
-  -- Goblin Piker ({1}{R} Creature -- Goblin Warrior 2/1, no rules text --
-  -- checked against Scryfall, 2026-09-24) under Exchange of Words ({1}{U}{U},
-  -- "When this enchantment enters, choose two target creatures. For as long as
-  -- this enchantment remains on the battlefield, exchange the text boxes of
-  -- those creatures.", same check). The Evolution came first, so the discount
-  -- the Piker carries is the evolved one.
-  Spec.it s "CR 612.5 the evolved discount moves to the Piker with the text box" $ do
-    (evolved, walkerId, clericSpell, zombieSpell) <-
-      textChangedEdgewalkerBoard s registry "Artificial Evolution" (Just (Subtype.Cleric, Subtype.Zombie))
-    piker <- S.printingOf s registry "Goblin Piker"
-    exchange <- S.printingOf s registry "Exchange of Words"
-    let (pikerId, withPiker) = S.addPermanent piker S.alice evolved
-        (_, entered) = S.entersWithTrigger exchange S.alice withPiker
-        pair = Set.fromList [walkerId, pikerId]
-        -- Inlined rather than bound: GADTs implies MonoLocalBinds, so a shared
-        -- binding of the answerer would not generalise over the prompt's type.
-        staged = S.runPure (exchangeBetween pair) entered Engine.settleForPriority
-        gs = S.runPure (exchangeBetween pair) staged Stack.resolveTop
-    Spec.assertEqWith
-      s
-      "CR 612.5 the Zombie spell's {1}{B} becomes {1}, off the Piker"
-      (totalManaCost S.alice zombieSpell (ManaCost.MkManaCost [ManaSymbol.Generic 1, black]) gs)
-      (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]))
-    Spec.assertEqWith
-      s
-      "and the Cleric spell pays its printed {1}{W}{B}"
-      (totalManaCost S.alice clericSpell (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]) gs)
-      (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
-    -- The anti-vacuity check, after the behaviour: the text box really moved,
-    -- which the Edgewalker's printed discount on an unexchanged board is not.
-    Spec.assertEqWith s "the Edgewalker now carries the Piker's text box" (Projection.textBoxHolderOf walkerId gs) pikerId
-
-  -- CR 613.8b, the other way round: the Evolution resolves on the vanilla Piker
-  -- FIRST and the exchange comes after. The Evolution depends on the exchange,
-  -- which gives the Piker the Cleric word it changes, and not the reverse, so
-  -- the exchange applies first and the discount the Piker receives is evolved.
-  Spec.it s "CR 613.8b an Evolution on the Piker waits for the Edgewalker's text" $ do
-    (ready, walkerId, clericSpell, zombieSpell) <- textChangedEdgewalkerBoard s registry "Artificial Evolution" Nothing
-    piker <- S.printingOf s registry "Goblin Piker"
-    evolution <- S.printingOf s registry "Artificial Evolution"
-    exchange <- S.printingOf s registry "Exchange of Words"
-    let (pikerId, withPiker) = S.addPermanent piker S.alice ready
-        (evolutionId, inHand) = S.addHandCard evolution S.alice withPiker
-        evolved =
-          S.runPure (swapAt pikerId Subtype.Cleric Subtype.Zombie) inHand $ do
-            S.cast S.alice evolutionId
-            Stack.resolveTop
-        (_, entered) = S.entersWithTrigger exchange S.alice evolved
-        pair = Set.fromList [walkerId, pikerId]
-        -- Inlined rather than bound, for the case above's reason.
-        staged = S.runPure (exchangeBetween pair) entered Engine.settleForPriority
-        gs = S.runPure (exchangeBetween pair) staged Stack.resolveTop
-    Spec.assertEqWith
-      s
-      "CR 613.8b the Zombie spell's {1}{B} becomes {1}, off the Piker"
-      (totalManaCost S.alice zombieSpell (ManaCost.MkManaCost [ManaSymbol.Generic 1, black]) gs)
-      (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]))
-    Spec.assertEqWith
-      s
-      "and the Cleric spell pays its printed {1}{W}{B}"
-      (totalManaCost S.alice clericSpell (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]) gs)
-      (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
-    -- The anti-vacuity check, after the behaviour: the Evolution really
-    -- resolved on the Piker.
-    Spec.assertEqWith s "the Evolution resolved onto the Piker" (Projection.textChangesAffecting pikerId evolved) [(TextWord.SubtypeWord Subtype.Cleric, TextWord.SubtypeWord Subtype.Zombie)]
-
-  -- CR 612.2's family gate, at this read point: a text-changing effect "changes
-  -- only those words that are used in the correct way", and the rule's own
-  -- examples are "a land type word used as a land type" and "a creature type word
-  -- used as a creature type". Magical Hack ({U} Instant, "Change the
-  -- text of target spell or permanent by replacing all instances of one basic
-  -- land type with another." -- checked against Scryfall, 2026-08-05) can only
-  -- name a basic land type, so the pair it imposes reaches no creature type
-  -- position and the discount stays on Clerics.
-  Spec.it s "CR 612.2 a land-type pair leaves the creature-type filter alone" $ do
-    (gs, walkerId, clericSpell, zombieSpell) <-
-      textChangedEdgewalkerBoard s registry "Magical Hack" (Just (Subtype.Swamp, Subtype.Island))
-    Spec.assertEqWith s "the Hack resolved onto the Edgewalker" (Projection.textChangesAffecting walkerId gs) [(TextWord.SubtypeWord Subtype.Swamp, TextWord.SubtypeWord Subtype.Island)]
-    Spec.assertEqWith
-      s
-      "the Cleric spell is discounted exactly as printed"
-      (totalManaCost S.alice clericSpell (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]) gs)
-      (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1]))
-    Spec.assertEqWith
-      s
-      "and the Zombie spell is still no business of the Edgewalker's"
-      (totalManaCost S.alice zombieSpell (ManaCost.MkManaCost [ManaSymbol.Generic 1, black]) gs)
-      (Just (ManaCost.MkManaCost [ManaSymbol.Generic 1, black]))
-
-  -- The whole-card case: CR 601.2f measures castability and payment against the
-  -- TOTAL cost, so the rewritten filter decides which spell alice can actually
-  -- cast. One Plains is her only untapped mana once the Evolution has tapped the
-  -- Island, and a Plains can never pay a {B}: what makes the Zombie castable is
-  -- that the reduction removed the black SYMBOL.
-  Spec.it s "CR 601.2f whole cards: the rewritten filter decides a real cast" $ do
-    (evolved, _, evolvedCleric, evolvedZombie) <-
-      textChangedEdgewalkerBoard s registry "Artificial Evolution" (Just (Subtype.Cleric, Subtype.Zombie))
-    (printed, _, printedCleric, printedZombie) <- textChangedEdgewalkerBoard s registry "Artificial Evolution" Nothing
-    Spec.assertBool s (not (S.castable S.alice printedZombie printed)) "unevolved, the Zombie spell's {B} cannot be paid"
-    Spec.assertBool s (S.castable S.alice evolvedZombie evolved) "evolved, the discounted Zombie spell can be cast"
-    Spec.assertBool s (S.castable S.alice printedCleric printed) "unevolved, the discounted Cleric spell can be cast"
-    Spec.assertBool s (not (S.castable S.alice evolvedCleric evolved)) "evolved, the Cleric spell's {W}{B} cannot be paid"
-    -- And the payment really is the reduced one: the Island the Evolution tapped,
-    -- plus the single Plains that pays the discounted {1}.
-    let paid = S.runPure S.identityAnswer evolved (S.cast S.alice evolvedZombie)
-    Spec.assertEqWith s "one Plains tapped on top of the Evolution's Island" (S.tappedCount S.alice paid) 2
 
 -- alice holds nine Plains cards; the board is otherwise empty unless a
 -- printing is named. Loaded fresh inside each case that needs it --
@@ -2365,20 +2078,6 @@ minamoScrollkeeperSpec s registry =
       scrollkeeper <- S.printingOf s registry "Minamo Scrollkeeper"
       Spec.assertEqWith s "seven" (PlayerEffect.maximumHandSize S.bob (reliquaryHandOfNine plains [scrollkeeper])) (Just 7)
 
-    -- CR 613.11 / Reliquary Tower's ruling: an adjustment applied after a removal
-    -- adjusts nothing, because the removal left no number. A reading that
-    -- restarted from CR 402.2's seven, or from the Tower's absent maximum treated
-    -- as a number, would answer eight here.
-    Spec.it s "CR 613.11 an increase after Reliquary Tower still leaves no maximum" $ do
-      plains <- S.printingOf s registry "Plains"
-      reliquaryTower <- S.printingOf s registry "Reliquary Tower"
-      scrollkeeper <- S.printingOf s registry "Minamo Scrollkeeper"
-      let board = reliquaryHandOfNine plains [reliquaryTower, scrollkeeper]
-          after = reliquaryCleanup board
-      Spec.assertEqWith s "CR 514.1 discards nothing" (S.handSize S.alice after) 9
-      Spec.assertEqWith s "nothing discarded" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 0
-      Spec.assertEqWith s "no maximum" (PlayerEffect.maximumHandSize S.alice board) Nothing
-
     -- CR 613.11 with the Scrollkeeper LATER: it raises the ten The Ten Rings set.
     Spec.it s "CR 613.11 an increase after The Ten Rings raises the ten it set" $ do
       plains <- S.printingOf s registry "Plains"
@@ -2661,136 +2360,6 @@ silenceAfter plains silence mountain prodigalSorcerer piker =
       after = resolveAll (S.runPure S.identityAnswer before (S.cast S.alice silenceId))
    in (silenceId, silence2Id, pikerId, landId, before, after)
 
--- Takes the first mana source offered, and otherwise S.identityAnswer -- which
--- DECLINES a Prompt.ChooseManaSource, leaving a cast unpaid.
-payingAnswer :: Prompt.Prompt r -> r
-payingAnswer p = case p of
-  Prompt.ChooseManaSource _ _ _ candidates -> Just (NonEmpty.head candidates)
-  _ -> S.identityAnswer p
-
--- payingAnswer with every target slot aimed at `who`, for a Lightning Bolt that
--- must hit the PLAYER rather than the 8/8 standing beside them.
-boltingAnswer :: PlayerId.PlayerId -> Prompt.Prompt r -> r
-boltingAnswer who p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToPlayer who))) sets
-  _ -> payingAnswer p
-
--- CR 119.3's life events, by player and amount, as the whole run logged them:
--- what a "whenever you gain life" trigger would read, and what a gain the engine
--- settled to nothing must NOT leave behind (CR 119.10).
-lifeGainsOf :: GameState.GameState -> [(PlayerId.PlayerId, Natural)]
-lifeGainsOf gs = Maybe.mapMaybe (\ev -> case ev of GameEvent.LifeGained (LifeChange.MkLifeChange pid n _) -> Just (pid, n); _ -> Nothing) (S.eventsOf gs)
-
-lifeLossesOf :: GameState.GameState -> [(PlayerId.PlayerId, Natural)]
-lifeLossesOf gs = Maybe.mapMaybe (\ev -> case ev of GameEvent.LifeLost (LifeChange.MkLifeChange pid n _) -> Just (pid, n); _ -> Nothing) (S.eventsOf gs)
-
--- Renewed Faith ({2}{W} Instant, "You gain 6 life") in alice's hand over three
--- untapped Plains, with `mawSeats` naming who controls a Giant Cindermaw ({2}{R}
--- Creature, "Trample. Players can't gain life."). The empty list is the paired
--- control: two boards differing in exactly that permanent.
-faithBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> [PlayerId.PlayerId] -> (ObjectId.ObjectId, GameState.GameState)
-faithBoard plains faith cindermaw mawSeats =
-  let withMaws = List.foldl' (\gs pid -> snd (S.addPermanent cindermaw pid gs)) (S.landsInPlay plains 3) mawSeats
-      (gs1, oid) = S.handOne faith withMaws
-   in ( oid,
-        gs1
-          { GameState.turn =
-              (GameState.turn gs1)
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-      )
-
-cindermawSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-cindermawSpec s registry =
-  Spec.describe s "GiantCindermaw" $ do
-    -- The paired control, first: with no Cindermaw anywhere, Renewed Faith takes
-    -- alice from CR 103.3's 20 to 26. Every negative below is this board with one
-    -- permanent added, so a negative cannot pass because the cast failed.
-    Spec.it s "CR 119.3 with no restriction Renewed Faith's 6 lands" $ do
-      plains <- S.printingOf s registry "Plains"
-      faith <- S.printingOf s registry "Renewed Faith"
-      cindermaw <- S.printingOf s registry "Giant Cindermaw"
-      let (oid, board) = faithBoard plains faith cindermaw []
-          after = S.runPure payingAnswer board (do S.cast S.alice oid; Stack.resolveTop)
-      Spec.assertEqWith s "alice gained 6" (S.lifeOf S.alice after) (Just 26)
-      Spec.assertEqWith s "and logged the gain" (lifeGainsOf after) [(S.alice, 6)]
-
-    -- CR 119.7: the restriction is a STATIC one, so the gain does not happen at
-    -- all -- not a gain replaced by 0. alice is at 20 and no LifeGained event was
-    -- recorded, which is what a trigger watching CR 603.2c's batch would read.
-    Spec.it s "CR 119.7 bob's Giant Cindermaw stops alice gaining anything" $ do
-      plains <- S.printingOf s registry "Plains"
-      faith <- S.printingOf s registry "Renewed Faith"
-      cindermaw <- S.printingOf s registry "Giant Cindermaw"
-      let (oid, board) = faithBoard plains faith cindermaw [S.bob]
-          after = S.runPure payingAnswer board (do S.cast S.alice oid; Stack.resolveTop)
-      Spec.assertEqWith s "alice is still at 20" (S.lifeOf S.alice after) (Just 20)
-      Spec.assertEqWith s "no life gain event happened" (lifeGainsOf after) []
-      Spec.assertEqWith s "and the spell really resolved, out of alice's hand" (S.handSize S.alice after) 0
-
-    -- The printed scope is "PLAYERS", CR 613.11's AnyPlayer, and the controller
-    -- is one of them: the same board with the Cindermaw on ALICE's side answers
-    -- the same way, where an Opponents reading would let her gain her 6.
-    Spec.it s "CR 613.11 the Cindermaw's controller can't gain either" $ do
-      plains <- S.printingOf s registry "Plains"
-      faith <- S.printingOf s registry "Renewed Faith"
-      cindermaw <- S.printingOf s registry "Giant Cindermaw"
-      let (oid, board) = faithBoard plains faith cindermaw [S.alice]
-          after = S.runPure payingAnswer board (do S.cast S.alice oid; Stack.resolveTop)
-      Spec.assertEqWith s "alice is still at 20" (S.lifeOf S.alice after) (Just 20)
-      Spec.assertEqWith s "no life gain event happened" (lifeGainsOf after) []
-
--- Platinum Emperion ({8} Artifact Creature 8\/8, "Your life total can't change")
--- under `emperionSeats`, with alice holding a Lightning Bolt over one Mountain.
--- The empty list is the paired control.
-emperionBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> [PlayerId.PlayerId] -> (ObjectId.ObjectId, GameState.GameState)
-emperionBoard mountain bolt emperion emperionSeats =
-  let withEmperions = List.foldl' (\gs pid -> snd (S.addPermanent emperion pid gs)) (S.landsInPlay mountain 1) emperionSeats
-      (gs1, oid) = S.handOne bolt withEmperions
-   in ( oid,
-        gs1
-          { GameState.turn =
-              (GameState.turn gs1)
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice
-                }
-          }
-      )
-
-emperionSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-emperionSpec s registry =
-  Spec.describe s "PlatinumEmperion" $ do
-    -- The paired control: without the Emperion, CR 120.3a takes alice to 17.
-    Spec.it s "CR 120.3a with no restriction the Bolt's 3 damage costs 3 life" $ do
-      mountain <- S.printingOf s registry "Mountain"
-      bolt <- S.printingOf s registry "Lightning Bolt"
-      emperion <- S.printingOf s registry "Platinum Emperion"
-      let (oid, board) = emperionBoard mountain bolt emperion []
-          after = S.runPure (boltingAnswer S.alice) board (do S.cast S.alice oid; Stack.resolveTop)
-      Spec.assertEqWith s "alice fell to 17" (S.lifeOf S.alice after) (Just 17)
-      Spec.assertEqWith s "and lost 3 life" (lifeLossesOf after) [(S.alice, 3)]
-
-    -- CR 119.8 against CR 120.3a: the damage is still DEALT -- the event is in
-    -- the log, and a "whenever this is dealt damage" trigger would see it -- and
-    -- only its RESULT, the life loss, does not happen.
-    Spec.it s "CR 119.8 alice's Platinum Emperion takes the 3 damage without the 3 life" $ do
-      mountain <- S.printingOf s registry "Mountain"
-      bolt <- S.printingOf s registry "Lightning Bolt"
-      emperion <- S.printingOf s registry "Platinum Emperion"
-      let (oid, board) = emperionBoard mountain bolt emperion [S.alice]
-          after = S.runPure (boltingAnswer S.alice) board (do S.cast S.alice oid; Stack.resolveTop)
-      Spec.assertEqWith s "alice is still at 20" (S.lifeOf S.alice after) (Just 20)
-      Spec.assertEqWith s "no life loss event happened" (lifeLossesOf after) []
-      Spec.assertEqWith
-        s
-        "but CR 120.3's damage was dealt to her all the same"
-        (fmap (\ev -> (DamageEvent.target ev, DamageEvent.amount ev)) (S.damageEventsOf after))
-        [(Recipient.ToPlayer S.alice, 3)]
-
 -- Angelic Arbiter {5}{W}{W}: "Each opponent who cast a spell this turn can't
 -- attack with creatures. Each opponent who attacked with a creature this turn
 -- can't cast spells." Three seats with bob active, so "each opponent who" has
@@ -2866,7 +2435,6 @@ spec s registry = Spec.describe s "Parun.Engine.PlayerEffect" $ do
   phyrexianDiscountSpec s registry
   snowDiscountSpec s registry
   monocoloredHybridDiscountSpec s registry
-  hybridDiscountSpec s registry
   textChangedEdgewalkerSpec s registry
   nerdRageSpec s registry
   reliquaryTowerSpec s registry
@@ -2874,6 +2442,4 @@ spec s registry = Spec.describe s "Parun.Engine.PlayerEffect" $ do
   minamoScrollkeeperSpec s registry
   gnatMiserSpec s registry
   storedSpec s registry
-  cindermawSpec s registry
-  emperionSpec s registry
   angelicArbiterSpec s registry

@@ -1,0 +1,81 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Reliquary Tower"
+          },
+          {
+            "card": "Minamo Scrollkeeper"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "Cleanup"
+  },
+  "description": "CR 613.11 an increase after Reliquary Tower still leaves no maximum",
+  "note": "Reliquary Tower's ruling: an adjustment applied after a removal adjusts nothing, because the removal left no number. Minamo Scrollkeeper enters after the Tower, and nine cards at cleanup discard nothing, where restarting from seven, or treating the absent maximum as a number, would give eight and discard one.",
+  "timeline": [
+    {
+      "check": {
+        "Count": {
+          "card": "Plains",
+          "count": 9,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}
