@@ -1279,8 +1279,9 @@ data Context = MkContext
     sourceSectors :: Set.Set Designation.Designation,
     -- CR 201.1 / 709.4a: the NAMES of the SOURCE, for Shares Name Source
     -- (CR 702.60a's ripple); `slotNames` below asks the same of a
-    -- SLOT. Filled with sourceMeasures, and a SET for sourceColors' reason (CR
-    -- 708.2a's nameless object).
+    -- SLOT. Filled with sourceMeasures, and inside the layer fold by
+    -- Parun.Engine.Projection.applyModification off its running board; a SET
+    -- for sourceColors' reason (CR 708.2a's nameless object).
     sourceNames :: Set.Set CardName.CardName,
     -- CR 120.1: whom the SOURCE dealt damage to this turn, each beside the kind
     -- and the recipient's card types,
