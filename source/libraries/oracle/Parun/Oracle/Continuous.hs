@@ -410,7 +410,10 @@ affected context attached enchants a = case a of
   Affected.Attached
     | Just word <- attached,
       [slot] <- enchants -> do
-        (one, _) <- Target.described context slot
+        -- Free: the enchant ability's filter left out, as
+        -- Parun.Oracle.faceAbilities's host leaves it (Silken Strength's
+        -- "enchanted permanent").
+        (one, _) <- Target.described context slot <> Target.described context slot {TargetSlot.filter = Nothing}
         [Target.MkReference (word <> Text.pack " " <> one) [] Filter.Singular []]
   Affected.Matching Filter.Type.IsSource -> [Target.MkReference (Target.self context) [] Filter.Singular []]
   Affected.Matching f
