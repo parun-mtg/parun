@@ -7444,6 +7444,7 @@ hideaway n =
         Effect.GrantLookAtExiled
           ( GrantLookAtExiled.MkGrantLookAtExiled
               (ObjectRef.InSlot hideawayExiled)
+              (PlayerRef.Relative PlayerRelation.You)
               True
           )
       rest =

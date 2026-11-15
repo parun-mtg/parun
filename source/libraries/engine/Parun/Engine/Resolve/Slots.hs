@@ -161,6 +161,7 @@ import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GameLossR as GameLossR
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
+import qualified Parun.Types.GrantLookAtExiled as GrantLookAtExiled
 import qualified Parun.Types.GrantPlayFromExile as GrantPlayFromExile
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Grouping as Grouping
@@ -1028,7 +1029,8 @@ effectPlayerRefs effect = case effect of
   Effect.OfferNotedCopy {} -> []
   -- CR 601.3's "that player", the seat the permission is written for.
   Effect.GrantPlayFromExile x -> durationPlayerRefs (GrantPlayFromExile.duration x) <> [GrantPlayFromExile.player x]
-  Effect.GrantLookAtExiled {} -> []
+  -- CR 406.3's looker.
+  Effect.GrantLookAtExiled x -> [GrantLookAtExiled.player x]
   Effect.MakePlotted {} -> []
   Effect.MakeForetold {} -> []
   Effect.MakeWarped {} -> []

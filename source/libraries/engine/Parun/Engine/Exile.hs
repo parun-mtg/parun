@@ -112,7 +112,7 @@ exilerController oid gs = do
 --
 -- STAMP-ONLY, which is the rule: nothing here ever removes a looker, and the
 -- grant it writes is the same one Parun.Engine.Resolve.Effect's
--- Effect.GrantLookAtExiled writes for the instruction's own controller.
+-- Effect.GrantLookAtExiled writes for the player its payload names.
 --
 -- SAMPLED rather than hooked for Parun.Engine.Engine.checkControlContinuity's
 -- reason -- control is DERIVED (CR 613.1b), so no resolution announces the

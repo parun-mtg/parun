@@ -2106,11 +2106,11 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.GrantLookAtExiled (GrantLookAtExiled.MkGrantLookAtExiled (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "exiled"))) False))
+      (Effect.GrantLookAtExiled (GrantLookAtExiled.MkGrantLookAtExiled (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "exiled"))) (PlayerRef.Relative PlayerRelation.You) False))
       " {\"type\":\"GrantLookAtExiled\",\"value\":{\"cards\":{\"type\":\"InSlot\",\"value\":\"exiled\"}}} "
     Spec.assertBool
       s
-      ( toJson (Effect.GrantLookAtExiled (GrantLookAtExiled.MkGrantLookAtExiled (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "exiled"))) False))
+      ( toJson (Effect.GrantLookAtExiled (GrantLookAtExiled.MkGrantLookAtExiled (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "exiled"))) (PlayerRef.Relative PlayerRelation.You) False))
           /= toJson (Effect.MakePlotted (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "exiled"))))
       )
       "GrantLookAtExiled and MakePlotted of the same slot encode differently"

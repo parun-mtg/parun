@@ -1345,7 +1345,8 @@ effectChildren c effect = case effect of
           <*> traverse (onKeyword c) keywords
           <*> pure zone
       )
-  Effect.GrantLookAtExiled (GrantLookAtExiled.MkGrantLookAtExiled cards followsExiler) -> fmap (\rewritten -> Effect.GrantLookAtExiled (GrantLookAtExiled.MkGrantLookAtExiled rewritten followsExiler)) (onObjectRef c cards)
+  Effect.GrantLookAtExiled (GrantLookAtExiled.MkGrantLookAtExiled cards who followsExiler) ->
+    fmap Effect.GrantLookAtExiled (GrantLookAtExiled.MkGrantLookAtExiled <$> onObjectRef c cards <*> onPlayer c who <*> pure followsExiler)
   Effect.MakePlotted ref -> fmap Effect.MakePlotted (onObjectRef c ref)
   Effect.MakeForetold (MakeForetold.MkMakeForetold cards reducedBy) -> fmap (\rewritten -> Effect.MakeForetold (MakeForetold.MkMakeForetold rewritten reducedBy)) (onObjectRef c cards)
   Effect.MakeWarped ref -> fmap Effect.MakeWarped (onObjectRef c ref)

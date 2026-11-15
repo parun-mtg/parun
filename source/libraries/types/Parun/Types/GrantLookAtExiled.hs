@@ -1,6 +1,7 @@
 module Parun.Types.GrantLookAtExiled where
 
 import qualified Parun.Types.ObjectRef as ObjectRef
+import qualified Parun.Types.PlayerRef as PlayerRef
 
 -- | CR 406.3's look permission as an instruction gives it, and CR 702.75a's
 -- rider on top of it. The two travel in one opcode because rule 702.75a's
@@ -10,8 +11,11 @@ import qualified Parun.Types.ObjectRef as ObjectRef
 data GrantLookAtExiled = MkGrantLookAtExiled
   { -- | The exiled cards the permission is written onto.
     cards :: ObjectRef.ObjectRef,
+    -- | CR 406.3: who may look, CR 109.5's "you" by default; Gonti, Night
+    -- Minister's "its controller" names the damaging creature's.
+    player :: PlayerRef.PlayerRef,
     -- | CR 702.75a: whether the permission ALSO follows control of the permanent
-    -- that exiled the card, rather than naming CR 109.5's "you" alone.
+    -- that exiled the card, rather than naming `player` alone.
     followsExiler :: Bool
   }
   deriving (Eq, Ord, Show)
