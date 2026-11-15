@@ -1,17 +1,8 @@
 {
-  "description": "CR 603.6a, 701.23a, 701.20a, 205.3i, 307.5, 602.5d, 111.4, 702.9a: Jeskai Monument's enters trigger fetches only a basic Island, Mountain or Plains; its {1}{U}{R}{W}, {T}, sacrifice ability makes two 1/1 white Bird tokens with flying, only as a sorcery",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "hand": [
-          {
-            "card": "Jeskai Monument",
-            "label": "mon"
-          }
-        ],
         "battlefield": [
           {
             "card": "Jeskai Monument",
@@ -41,6 +32,12 @@
           {
             "card": "Plains",
             "label": "p"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Jeskai Monument",
+            "label": "mon"
           }
         ],
         "library": [
@@ -92,10 +89,10 @@
             "card": "Wind Drake",
             "label": "fill5"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Island"
@@ -121,10 +118,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "library": [
           {
             "card": "Island"
@@ -150,57 +147,58 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 603.6a, 701.23a, 701.20a, 205.3i, 307.5, 602.5d, 111.4, 702.9a: Jeskai Monument's enters trigger fetches only a basic Island, Mountain or Plains; its {1}{U}{R}{W}, {T}, sacrifice ability makes two 1/1 white Bird tokens with flying, only as a sorcery",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$mon",
           "mana": [
             "$w1",
             "$w2",
             null
-          ]
+          ],
+          "object": "$mon"
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "Jeskai Monument#2",
           "mana": [
             "$w3",
             "$i",
             "$m",
             "$p"
-          ]
+          ],
+          "object": "Jeskai Monument#2"
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -209,11 +207,11 @@
             "$lib0"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -222,11 +220,11 @@
             "$lib1"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -235,12 +233,11 @@
             "$lib2"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "Search",
@@ -248,12 +245,12 @@
             "$lib4"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "Shuffle",
@@ -271,12 +268,12 @@
             "$fill5"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Mountain",
@@ -284,26 +281,26 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Witnessed",
-          "player": "bob",
           "is": [
             "Mountain"
-          ]
+          ],
+          "of": "Witnessed",
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Wind Drake",
@@ -311,12 +308,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Jeskai Monument",
@@ -324,89 +321,89 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "Jeskai Monument#2",
           "tapped": false
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "mana": [
+            "$w3",
+            "$i",
+            "$m",
+            "$p"
+          ],
+          "object": "Jeskai Monument#2"
+        }
+      },
       "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "Jeskai Monument#2",
           "mana": [
             "$w3",
             "$i",
             "$m",
             "$p"
-          ]
+          ],
+          "object": "$spare"
         }
-      }
+      },
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$spare",
-          "mana": [
-            "$w3",
-            "$i",
-            "$m",
-            "$p"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "Jeskai Monument#2",
           "mana": [
             "$w3",
             "$i",
             "$m",
             "$p"
-          ]
+          ],
+          "object": "Jeskai Monument#2"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "View": {
+          "is": [],
           "of": "ManaPool",
-          "player": "alice",
-          "is": []
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Jeskai Monument",
@@ -414,12 +411,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Jeskai Monument",
@@ -427,79 +424,79 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$spare",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$w3",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$i",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$m",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$p",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "Bird Token",
           "power": 1,
           "toughness": 1
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Types": {
           "object": "Bird Token",
@@ -507,12 +504,12 @@
             "Creature"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Subtypes": {
           "object": "Bird Token",
@@ -520,52 +517,52 @@
             "Bird"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Colors",
-          "object": "Bird Token",
           "is": [
             "White"
-          ]
+          ],
+          "object": "Bird Token",
+          "of": "Colors"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "Bird Token",
+          "count": 1,
           "keyword": {
             "type": "Flying"
           },
-          "count": 1
+          "object": "Bird Token"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "Bird Token#2",
           "power": 1,
           "toughness": 1
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Types": {
           "object": "Bird Token#2",
@@ -573,12 +570,12 @@
             "Creature"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Subtypes": {
           "object": "Bird Token#2",
@@ -586,40 +583,40 @@
             "Bird"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Colors",
-          "object": "Bird Token#2",
           "is": [
             "White"
-          ]
+          ],
+          "object": "Bird Token#2",
+          "of": "Colors"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "Bird Token#2",
+          "count": 1,
           "keyword": {
             "type": "Flying"
           },
-          "count": 1
+          "object": "Bird Token#2"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Bird Token",
@@ -627,7 +624,10 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     }
   ]
 }

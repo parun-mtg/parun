@@ -1,12 +1,8 @@
 {
-  "description": "CR 602.2, 118.3, 701.21a, 702.12b, 701.8, 611.2a: Unrooted Ancestor's {1}, sacrifice another creature gives it indestructible until end of turn and taps it; Murder's destroy does nothing to it that turn, and kills it the next once the effect has ended",
-  "note": "Turn 1: the Ancestor itself, alice's Forest and bob's Hill Giant are refused as the sacrifice; Wind Drake goes (Bears stay, with no keyword), the Ancestor is tapped and indestructible, and bob's Murder leaves it on the battlefield. Turn 2: still tapped, no longer indestructible, and a second Murder destroys it.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Unrooted Ancestor",
@@ -64,20 +60,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
-        "hand": [
-          {
-            "card": "Murder",
-            "label": "m1"
-          },
-          {
-            "card": "Murder",
-            "label": "m2"
-          }
-        ],
         "battlefield": [
           {
             "card": "Hill Giant",
@@ -96,6 +82,16 @@
             "label": "s3"
           }
         ],
+        "hand": [
+          {
+            "card": "Murder",
+            "label": "m1"
+          },
+          {
+            "card": "Murder",
+            "label": "m2"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -127,10 +123,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "library": [
           {
             "card": "Island"
@@ -162,53 +158,55 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 602.2, 118.3, 701.21a, 702.12b, 701.8, 611.2a: Unrooted Ancestor's {1}, sacrifice another creature gives it indestructible until end of turn and taps it; Murder's destroy does nothing to it that turn, and kills it the next once the effect has ended",
+  "note": "Turn 1: the Ancestor itself, alice's Forest and bob's Hill Giant are refused as the sacrifice; Wind Drake goes (Bears stay, with no keyword), the Ancestor is tapped and indestructible, and bob's Murder leaves it on the battlefield. Turn 2: still tapped, no longer indestructible, and a second Murder destroys it.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$anc",
+          "count": 0,
           "keyword": {
             "type": "Indestructible"
           },
-          "count": 0
+          "object": "$anc"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$anc",
           "tapped": false
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$anc",
           "mana": [
             "$w1",
             null
-          ]
+          ],
+          "object": "$anc"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -217,11 +215,11 @@
             "$anc"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -230,11 +228,11 @@
             "$forest"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -243,12 +241,11 @@
             "$giant"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseSacrifices",
@@ -256,61 +253,61 @@
             "$drake"
           ]
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
       "player": "bob",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$anc",
+          "count": 1,
           "keyword": {
             "type": "Indestructible"
           },
-          "count": 1
+          "object": "$anc"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$anc",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
+          "is": [],
           "of": "ManaPool",
-          "player": "alice",
-          "is": []
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Wind Drake",
@@ -318,12 +315,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -331,50 +328,50 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$bears",
+          "count": 0,
           "keyword": {
             "type": "Indestructible"
           },
-          "count": 0
+          "object": "$bears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
       "do": {
         "Cast": {
-          "object": "$m1",
-          "targets": [
-            "$anc"
-          ],
           "mana": [
             "$s1",
             "$s2",
             "$s3"
+          ],
+          "object": "$m1",
+          "targets": [
+            "$anc"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "bob",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "Count": {
           "card": "Murder",
@@ -382,12 +379,12 @@
           "player": "bob",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "Count": {
           "card": "Unrooted Ancestor",
@@ -395,12 +392,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "Count": {
           "card": "Unrooted Ancestor",
@@ -408,61 +405,61 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "Keywords": {
-          "object": "$anc",
+          "count": 0,
           "keyword": {
             "type": "Indestructible"
           },
-          "count": 0
+          "object": "$anc"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "Tapped": {
           "object": "$anc",
           "tapped": true
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "do": {
         "Cast": {
-          "object": "$m2",
-          "targets": [
-            "$anc"
-          ],
           "mana": [
             "$s1",
             "$s2",
             "$s3"
+          ],
+          "object": "$m2",
+          "targets": [
+            "$anc"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "bob",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "Count": {
           "card": "Unrooted Ancestor",
@@ -470,12 +467,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "Count": {
           "card": "Unrooted Ancestor",
@@ -483,7 +480,10 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     }
   ]
 }

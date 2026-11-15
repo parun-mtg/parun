@@ -1,12 +1,8 @@
 {
-  "description": "CR 602.2, 118.3, 701.21a, 122.1a, 613.4c: Unburied Earthcarver's {2}, sacrifice another creature puts a +1/+1 counter on it; it cannot sacrifice itself, a land or an opponent's creature, and with no other creature of its controller's the ability is not offered",
-  "note": "Turn 1: the Earthcarver, alice's Forest and bob's Hill Giant are refused as the sacrifice; Grizzly Bears goes (1 counter, 3/3) then Wind Drake (2 counters, 4/4) while bob's Giant stays. With two Wastes untapped but no other creature of hers left, a third activation is refused and the counters stay at two.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Unburied Earthcarver",
@@ -80,10 +76,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Hill Giant",
@@ -121,10 +117,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "library": [
           {
             "card": "Island"
@@ -156,29 +152,31 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 602.2, 118.3, 701.21a, 122.1a, 613.4c: Unburied Earthcarver's {2}, sacrifice another creature puts a +1/+1 counter on it; it cannot sacrifice itself, a land or an opponent's creature, and with no other creature of its controller's the ability is not offered",
+  "note": "Turn 1: the Earthcarver, alice's Forest and bob's Hill Giant are refused as the sacrifice; Grizzly Bears goes (1 counter, 3/3) then Wind Drake (2 counters, 4/4) while bob's Giant stays. With two Wastes untapped but no other creature of hers left, a third activation is refused and the counters stay at two.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$ec",
           "mana": [
             "$w1",
             "$w2",
             null
-          ]
+          ],
+          "object": "$ec"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -187,11 +185,11 @@
             "$ec"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -200,11 +198,11 @@
             "$forest"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -213,12 +211,11 @@
             "$giant"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "ChooseSacrifices",
@@ -226,56 +223,56 @@
             "$bears"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$ec",
+          "count": 1,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 1
+          "object": "$ec"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$ec",
           "power": 3,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
+          "is": [],
           "of": "ManaPool",
-          "player": "alice",
-          "is": []
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -283,12 +280,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Wind Drake",
@@ -296,12 +293,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Hill Giant",
@@ -309,59 +306,59 @@
           "player": "bob",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$ec",
           "mana": [
             "$w3",
             "$w4",
             null
-          ]
+          ],
+          "object": "$ec"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$ec",
+          "count": 2,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 2
+          "object": "$ec"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$ec",
           "power": 4,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Wind Drake",
@@ -369,40 +366,40 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "$ec",
           "mana": [
             "$w5",
             "$w6"
-          ]
+          ],
+          "object": "$ec"
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$ec",
+          "count": 2,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 2
+          "object": "$ec"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Unburied Earthcarver",
@@ -410,7 +407,10 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

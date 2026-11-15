@@ -1,12 +1,8 @@
 {
-  "description": "CR 602.2, 118.3, 611.2a, 514.2, 603.2, 502.1: Fleeting Effigy's {2}{R} gives +2/+0 until end of turn (once or twice), and it returns to its owner's hand at the beginning of its controller's end step only",
-  "note": "Turn 1: carol's Effigy cannot be pumped with three Wastes (no red); alice's goes 2/2 to 4/2; bob's Effigy is pumped twice to 6/2. At alice's end step hers returns to hand while bob's and carol's stay. Turn 2: bob's pump is gone (2/2) and his Effigy returns at his own end step while alice's stays in her hand.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
         "battlefield": [
           {
             "card": "Fleeting Effigy",
@@ -61,10 +57,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "battlefield": [
           {
             "card": "Fleeting Effigy",
@@ -127,10 +123,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "battlefield": [
           {
             "card": "Fleeting Effigy",
@@ -181,213 +177,214 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 602.2, 118.3, 611.2a, 514.2, 603.2, 502.1: Fleeting Effigy's {2}{R} gives +2/+0 until end of turn (once or twice), and it returns to its owner's hand at the beginning of its controller's end step only",
+  "note": "Turn 1: carol's Effigy cannot be pumped with three Wastes (no red); alice's goes 2/2 to 4/2; bob's Effigy is pumped twice to 6/2. At alice's end step hers returns to hand while bob's and carol's stay. Turn 2: bob's pump is gone (2/2) and his Effigy returns at his own end step while alice's stays in her hand.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$ae",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "$ae",
           "mana": [
             "$am",
             "$aw1",
             "$aw2",
             null
-          ]
+          ],
+          "object": "$ae"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$ae",
           "power": 4,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
+          "is": [],
           "of": "ManaPool",
-          "player": "alice",
-          "is": []
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$be",
           "power": 2,
           "toughness": 2
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
+      },
       "player": "alice",
-      "do": {
-        "Attack": []
-      }
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 2,
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
       "step": "DeclareAttackers",
-      "player": "bob",
-      "do": {
-        "Attack": []
-      }
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
+      "do": {
+        "Attack": []
+      },
       "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
       "do": {
         "Activate": {
-          "object": "$be",
           "mana": [
             "$bm1",
             "$bw1",
             "$bw2",
             null
-          ]
+          ],
+          "object": "$be"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "bob",
       "do": {
         "Activate": {
-          "object": "$be",
           "mana": [
             "$bm2",
             "$bw3",
             "$bw4"
-          ]
+          ],
+          "object": "$be"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
+      "do": "Pass",
       "player": "bob",
-      "do": "Pass"
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
+      "do": "Pass",
       "player": "bob",
-      "do": "Pass"
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "bob",
       "check": {
         "PowerToughness": {
           "object": "$be",
           "power": 6,
           "toughness": 2
         }
-      }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "bob",
       "check": {
         "View": {
+          "is": [],
           "of": "ManaPool",
-          "player": "bob",
-          "is": []
+          "player": "bob"
         }
-      }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "bob",
       "check": {
         "PowerToughness": {
           "object": "$ae",
           "power": 4,
           "toughness": 2
         }
-      }
+      },
+      "player": "bob",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "carol",
       "refuse": {
         "Activate": {
-          "object": "$ce",
           "mana": [
             "$cw1",
             "$cw2",
             "$cw3"
-          ]
+          ],
+          "object": "$ce"
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "carol",
       "check": {
         "PowerToughness": {
           "object": "$ce",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fleeting Effigy",
@@ -395,12 +392,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fleeting Effigy",
@@ -408,12 +405,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fleeting Effigy",
@@ -421,12 +418,12 @@
           "player": "bob",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fleeting Effigy",
@@ -434,12 +431,12 @@
           "player": "bob",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "EndStep",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fleeting Effigy",
@@ -447,30 +444,30 @@
           "player": "carol",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "PrecombatMain",
-      "player": "bob",
       "check": {
         "PowerToughness": {
           "object": "$be",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "EndStep",
+      "do": "Pass",
       "player": "bob",
-      "do": "Pass"
+      "step": "EndStep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "EndStep",
-      "player": "bob",
       "check": {
         "Count": {
           "card": "Fleeting Effigy",
@@ -478,12 +475,12 @@
           "player": "bob",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "EndStep",
-      "player": "bob",
       "check": {
         "Count": {
           "card": "Fleeting Effigy",
@@ -491,12 +488,12 @@
           "player": "bob",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "EndStep",
-      "player": "bob",
       "check": {
         "Count": {
           "card": "Fleeting Effigy",
@@ -504,7 +501,10 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "bob",
+      "step": "EndStep",
+      "turn": 2
     }
   ]
 }

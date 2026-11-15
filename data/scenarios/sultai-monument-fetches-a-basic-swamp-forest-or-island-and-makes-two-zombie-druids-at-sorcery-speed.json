@@ -1,17 +1,8 @@
 {
-  "description": "CR 603.6a, 701.23a, 701.20a, 205.3i, 307.5, 602.5d, 111.4: Sultai Monument's enters trigger fetches only a basic Swamp, Forest or Island; its {2}{B}{G}{U}, {T}, sacrifice ability makes two 2/2 black Zombie Druid tokens, only as a sorcery",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "hand": [
-          {
-            "card": "Sultai Monument",
-            "label": "mon"
-          }
-        ],
         "battlefield": [
           {
             "card": "Sultai Monument",
@@ -45,6 +36,12 @@
           {
             "card": "Island",
             "label": "i"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Sultai Monument",
+            "label": "mon"
           }
         ],
         "library": [
@@ -96,10 +93,10 @@
             "card": "Wind Drake",
             "label": "fill5"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Island"
@@ -125,10 +122,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "library": [
           {
             "card": "Island"
@@ -154,58 +151,59 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 603.6a, 701.23a, 701.20a, 205.3i, 307.5, 602.5d, 111.4: Sultai Monument's enters trigger fetches only a basic Swamp, Forest or Island; its {2}{B}{G}{U}, {T}, sacrifice ability makes two 2/2 black Zombie Druid tokens, only as a sorcery",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$mon",
           "mana": [
             "$w1",
             "$w2",
             null
-          ]
+          ],
+          "object": "$mon"
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "Sultai Monument#2",
           "mana": [
             "$w3",
             "$w4",
             "$s",
             "$f",
             "$i"
-          ]
+          ],
+          "object": "Sultai Monument#2"
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -214,11 +212,11 @@
             "$lib0"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -227,11 +225,11 @@
             "$lib1"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -240,12 +238,11 @@
             "$lib2"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "Search",
@@ -253,12 +250,12 @@
             "$lib4"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "Shuffle",
@@ -276,12 +273,12 @@
             "$fill5"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Forest",
@@ -289,26 +286,26 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Witnessed",
-          "player": "bob",
           "is": [
             "Forest"
-          ]
+          ],
+          "of": "Witnessed",
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Wind Drake",
@@ -316,12 +313,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Sultai Monument",
@@ -329,92 +326,92 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "Sultai Monument#2",
           "tapped": false
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "mana": [
+            "$w3",
+            "$w4",
+            "$s",
+            "$f",
+            "$i"
+          ],
+          "object": "Sultai Monument#2"
+        }
+      },
       "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "Sultai Monument#2",
           "mana": [
             "$w3",
             "$w4",
             "$s",
             "$f",
             "$i"
-          ]
+          ],
+          "object": "$spare"
         }
-      }
+      },
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$spare",
-          "mana": [
-            "$w3",
-            "$w4",
-            "$s",
-            "$f",
-            "$i"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "Sultai Monument#2",
           "mana": [
             "$w3",
             "$w4",
             "$s",
             "$f",
             "$i"
-          ]
+          ],
+          "object": "Sultai Monument#2"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "View": {
+          "is": [],
           "of": "ManaPool",
-          "player": "alice",
-          "is": []
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Sultai Monument",
@@ -422,12 +419,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Sultai Monument",
@@ -435,90 +432,90 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$spare",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$w3",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$w4",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$s",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$f",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$i",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "Zombie Druid Token",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Types": {
           "object": "Zombie Druid Token",
@@ -526,12 +523,12 @@
             "Creature"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Subtypes": {
           "object": "Zombie Druid Token",
@@ -540,52 +537,52 @@
             "Zombie"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Colors",
-          "object": "Zombie Druid Token",
           "is": [
             "Black"
-          ]
+          ],
+          "object": "Zombie Druid Token",
+          "of": "Colors"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "Zombie Druid Token",
+          "count": 0,
           "keyword": {
             "type": "Flying"
           },
-          "count": 0
+          "object": "Zombie Druid Token"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "Zombie Druid Token#2",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Types": {
           "object": "Zombie Druid Token#2",
@@ -593,12 +590,12 @@
             "Creature"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Subtypes": {
           "object": "Zombie Druid Token#2",
@@ -607,40 +604,40 @@
             "Zombie"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Colors",
-          "object": "Zombie Druid Token#2",
           "is": [
             "Black"
-          ]
+          ],
+          "object": "Zombie Druid Token#2",
+          "of": "Colors"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "Zombie Druid Token#2",
+          "count": 0,
           "keyword": {
             "type": "Flying"
           },
-          "count": 0
+          "object": "Zombie Druid Token#2"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Zombie Druid Token",
@@ -648,7 +645,10 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     }
   ]
 }

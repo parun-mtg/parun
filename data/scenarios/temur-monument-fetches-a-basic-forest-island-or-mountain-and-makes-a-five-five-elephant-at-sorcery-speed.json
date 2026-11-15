@@ -1,17 +1,8 @@
 {
-  "description": "CR 603.6a, 701.23a, 701.20a, 205.3i, 307.5, 602.5d, 111.4: Temur Monument's enters trigger fetches only a basic Forest, Island or Mountain; its {3}{G}{U}{R}, {T}, sacrifice ability makes a 5/5 green Elephant token, only as a sorcery",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "hand": [
-          {
-            "card": "Temur Monument",
-            "label": "mon"
-          }
-        ],
         "battlefield": [
           {
             "card": "Temur Monument",
@@ -49,6 +40,12 @@
           {
             "card": "Mountain",
             "label": "m"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Temur Monument",
+            "label": "mon"
           }
         ],
         "library": [
@@ -100,10 +97,10 @@
             "card": "Wind Drake",
             "label": "fill5"
           }
-        ]
+        ],
+        "name": "alice"
       },
       {
-        "name": "bob",
         "library": [
           {
             "card": "Island"
@@ -129,10 +126,10 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "bob"
       },
       {
-        "name": "carol",
         "library": [
           {
             "card": "Island"
@@ -158,39 +155,39 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 603.6a, 701.23a, 701.20a, 205.3i, 307.5, 602.5d, 111.4: Temur Monument's enters trigger fetches only a basic Forest, Island or Mountain; its {3}{G}{U}{R}, {T}, sacrifice ability makes a 5/5 green Elephant token, only as a sorcery",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$mon",
           "mana": [
             "$w1",
             "$w2",
             null
-          ]
+          ],
+          "object": "$mon"
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "Temur Monument#2",
           "mana": [
             "$w3",
             "$w4",
@@ -198,19 +195,20 @@
             "$f",
             "$i",
             "$m"
-          ]
+          ],
+          "object": "Temur Monument#2"
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -219,11 +217,11 @@
             "$lib0"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -232,11 +230,11 @@
             "$lib1"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Answer": {
@@ -245,12 +243,11 @@
             "$lib2"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "Search",
@@ -258,12 +255,12 @@
             "$lib4"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Answer": {
           "prompt": "Shuffle",
@@ -281,12 +278,12 @@
             "$fill5"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Island",
@@ -294,26 +291,26 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Witnessed",
-          "player": "bob",
           "is": [
             "Island"
-          ]
+          ],
+          "of": "Witnessed",
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Wind Drake",
@@ -321,12 +318,12 @@
           "player": "alice",
           "zone": "Hand"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Temur Monument",
@@ -334,26 +331,44 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "Temur Monument#2",
           "tapped": false
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "player": "alice",
+      "refuse": {
+        "Activate": {
+          "mana": [
+            "$w3",
+            "$w4",
+            "$w5",
+            "$f",
+            "$i",
+            "$m"
+          ],
+          "object": "Temur Monument#2"
+        }
+      },
       "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "Activate": {
-          "object": "Temur Monument#2",
           "mana": [
             "$w3",
             "$w4",
@@ -361,35 +376,16 @@
             "$f",
             "$i",
             "$m"
-          ]
+          ],
+          "object": "$spare"
         }
-      }
+      },
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
-      "refuse": {
-        "Activate": {
-          "object": "$spare",
-          "mana": [
-            "$w3",
-            "$w4",
-            "$w5",
-            "$f",
-            "$i",
-            "$m"
-          ]
-        }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
-          "object": "Temur Monument#2",
           "mana": [
             "$w3",
             "$w4",
@@ -397,32 +393,33 @@
             "$f",
             "$i",
             "$m"
-          ]
+          ],
+          "object": "Temur Monument#2"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "View": {
+          "is": [],
           "of": "ManaPool",
-          "player": "alice",
-          "is": []
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Temur Monument",
@@ -430,12 +427,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Temur Monument",
@@ -443,101 +440,101 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$spare",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$w3",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$w4",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$w5",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$f",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$i",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$m",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "Elephant Token",
           "power": 5,
           "toughness": 5
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Types": {
           "object": "Elephant Token",
@@ -545,12 +542,12 @@
             "Creature"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Subtypes": {
           "object": "Elephant Token",
@@ -558,40 +555,40 @@
             "Elephant"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "View": {
-          "of": "Colors",
-          "object": "Elephant Token",
           "is": [
             "Green"
-          ]
+          ],
+          "object": "Elephant Token",
+          "of": "Colors"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "Elephant Token",
+          "count": 0,
           "keyword": {
             "type": "Flying"
           },
-          "count": 0
+          "object": "Elephant Token"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Elephant Token",
@@ -599,7 +596,10 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     }
   ]
 }
