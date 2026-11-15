@@ -1,5 +1,6 @@
 module Parun.Types.PlayersWho where
 
+import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PlayerRef as PlayerRef
@@ -11,6 +12,8 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 -- Nothing narrows by nothing.
 data PlayersWho = MkPlayersWho
   { players :: PlayerRef.PlayerRef,
-    who :: Maybe (Filter.Filter Keyword.Keyword)
+    who :: Maybe (Filter.Filter Keyword.Keyword),
+    -- | Narrows to the players this holds for, PlayerRef.Candidate read as each (Outpace Oblivion).
+    whose :: Maybe Condition.Condition
   }
   deriving (Eq, Ord, Show)

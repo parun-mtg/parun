@@ -813,6 +813,7 @@ import qualified Parun.Codec.SuspendCountersSpec
 import qualified Parun.Codec.SuspendSpec
 import qualified Parun.Codec.TakeExtraTurnSpec
 import qualified Parun.Codec.TakingSpec
+import qualified Parun.Codec.TapCountSpec
 import qualified Parun.Codec.TapForManaSpec
 import qualified Parun.Codec.TapForTotalPowerSpec
 import qualified Parun.Codec.TapPermanentsSpec
@@ -1913,6 +1914,7 @@ spec s reference corpus = do
   Parun.Codec.TakeExtraTurnSpec.spec s
   Parun.Codec.TakingSpec.spec s
   Parun.Codec.TapSpec.spec s
+  Parun.Codec.TapCountSpec.spec s
   Parun.Codec.TapForManaSpec.spec s
   Parun.Codec.TapForTotalPowerSpec.spec s
   Parun.Codec.TappedForManaSpec.spec s
@@ -2162,6 +2164,7 @@ spec s reference corpus = do
   Parun.ReplySpec.spec s registry
   Parun.ScenarioSpec.corpusSpec s registry
   Parun.ScenarioSpec.loadSpec s
+  Parun.ScenarioSpec.perturbSpec s registry
   Parun.ScenarioSpec.referenceSpec s
   Parun.ScenarioSpec.spec s registry
   Parun.SeatingSpec.spec s registry

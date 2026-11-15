@@ -4,6 +4,7 @@ import qualified Control.Exception as Exception
 import qualified Control.Monad as Monad
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Builder as Builder
+import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -31,14 +32,17 @@ import qualified Parun.Play.Match
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
+import qualified Parun.Scenario.Perturb as Perturb
 import qualified Parun.Slug as Slug
 import qualified Parun.StickerSheets as StickerSheets
 import qualified Parun.Test
 import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Entry as Entry
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.LegalityTable as LegalityTable
+import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.StickerSheet as StickerSheet.Type
 import qualified System.Environment as Environment
 import qualified System.Exit as Exit
@@ -65,14 +69,15 @@ main = do
     ["ingest", path] -> ingest path
     ["oracle"] -> oracle
     "translate" : mtgish : candidates : rest@(_ : _) -> translate mtgish candidates rest
-    "scenario" : paths@(_ : _) -> scenario paths
+    "scenario" : "--perturb" : paths@(_ : _) -> scenario perturbed paths
+    "scenario" : paths@(_ : _) -> scenario plainly paths
     "play" : rest -> Parun.Play.Command.main rest
     "match" : rest -> Parun.Play.Match.main rest
     "bench" : rest -> Environment.withArgs rest Parun.Benchmark.main
     "test" : rest -> Environment.withArgs rest Parun.Test.main
     _ -> do
       name <- Environment.getProgName
-      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format FORMAT] [--pool FILE] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | bench | test)"
+      IO.hPutStrLn IO.stderr $ "usage: " <> name <> " (schema [scenario] | deck [--format FORMAT] [--pool FILE] FILE | ingest FILE | oracle | translate MTGISH CANDIDATES [--out DIR] [--set CODE] [NAME | @FILE...] | scenario [--perturb] FILE... | play [OPTION...] DECK DECK | match [OPTION...] DECK DECK | bench | test)"
       Exit.exitFailure
 
 -- | Reads a deck list and writes back the deck it means, which is what makes a
@@ -392,23 +397,47 @@ scenarioSchema =
 
 -- | Runs each scenario file against the bundled cards and says how it went,
 -- one line each: the first way to drive the engine that is not the test suite.
--- Exits 1 if any did not decode or did not run clean.
-scenario :: [FilePath] -> IO ()
-scenario paths = do
+-- `after` says what else to report of a file that ran clean. Exits 1 if any
+-- did not decode, did not run clean, or `after` reported a failure.
+scenario :: (Registry.Registry IO -> Scenario.Type.Scenario -> IO [(Text.Text, Bool)]) -> [FilePath] -> IO ()
+scenario after paths = do
   registry <- Registry.defaultRoot >>= Registry.loadRoot >>= Registry.defaultRegistry
-  outcomes <- mapM (runOne registry) paths
+  outcomes <- mapM (runOne after registry) paths
   Monad.unless (and outcomes) Exit.exitFailure
 
-runOne :: Registry.Registry IO -> FilePath -> IO Bool
-runOne registry path = do
-  let report message ok = do
+runOne :: (Registry.Registry IO -> Scenario.Type.Scenario -> IO [(Text.Text, Bool)]) -> Registry.Registry IO -> FilePath -> IO Bool
+runOne after registry path = do
+  let report (message, ok) = do
         TextIO.hPutStrLn (if ok then IO.stdout else IO.stderr) (Text.pack (path <> ": ") <> message)
         pure ok
   (_, decoded) <- Load.loadFile path
   case decoded of
-    Left problem -> report (Text.pack "does not decode: " <> problem) False
+    Left problem -> report (Text.pack "does not decode: " <> problem, False)
     Right parsed -> do
       result <- Scenario.run registry parsed
       case result of
-        Left failure -> report (Scenario.render failure) False
-        Right _ -> report (Text.pack "ok") True
+        Left failure -> report (Scenario.render failure, False)
+        Right _ -> do
+          reported <- after registry parsed
+          fmap and (mapM report reported)
+
+-- | A clean run, said plainly.
+plainly :: Registry.Registry IO -> Scenario.Type.Scenario -> IO [(Text.Text, Bool)]
+plainly _ _ = pure [(Text.pack "ok", True)]
+
+-- | The scenario rerun with one check's expected value perturbed at a time
+-- (Parun.Scenario.Perturb): a failure for every perturbation it still passes,
+-- a note for every check it has no perturbation for.
+perturbed :: Registry.Registry IO -> Scenario.Type.Scenario -> IO [(Text.Text, Bool)]
+perturbed registry parsed = do
+  let passes candidate = fmap (either (const False) (const True)) (Scenario.run registry candidate)
+      pointer at = Text.pack $ case at of
+        Perturb.InTimeline n -> "/timeline/" <> show n
+        Perturb.InFinal n -> "/final/" <> show n
+      checkText check = Scenario.renderEntry (Entry.Expect check)
+      describe finding = case finding of
+        Perturb.Survived change -> (pointer (Perturb.location change) <> Text.pack " still passes as " <> checkText (Perturb.perturbed change), False)
+        Perturb.Skipped at check -> (pointer at <> Text.pack " has no perturbation, skipped: " <> checkText check, True)
+  found <- Perturb.findings passes parsed
+  let described = fmap describe (Foldable.toList found)
+  pure (if all snd described then described <> [(Text.pack "ok, no perturbation survived", True)] else described)

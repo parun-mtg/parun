@@ -2495,7 +2495,7 @@ encore cost =
       loop =
         Effect.ForEach
           ForEach.MkForEach
-            { ForEach.ref = ObjectRef.Players PlayersWho.MkPlayersWho {PlayersWho.players = PlayerRef.Relative PlayerRelation.Opponent, PlayersWho.who = Nothing},
+            { ForEach.ref = ObjectRef.Players PlayersWho.MkPlayersWho {PlayersWho.players = PlayerRef.Relative PlayerRelation.Opponent, PlayersWho.who = Nothing, PlayersWho.whose = Nothing},
               ForEach.members = LoopMembers.Every,
               ForEach.slot = encoreOpponentSlot,
               ForEach.body = Seq.fromList [copied, required],
@@ -5629,7 +5629,7 @@ myriad =
       loop =
         Effect.ForEach
           ForEach.MkForEach
-            { ForEach.ref = ObjectRef.Players PlayersWho.MkPlayersWho {PlayersWho.players = PlayerRef.EachOpponentExcept Binding.triggerPlayer, PlayersWho.who = Nothing},
+            { ForEach.ref = ObjectRef.Players PlayersWho.MkPlayersWho {PlayersWho.players = PlayerRef.EachOpponentExcept Binding.triggerPlayer, PlayersWho.who = Nothing, PlayersWho.whose = Nothing},
               ForEach.members = LoopMembers.AnyNumber,
               ForEach.slot = myriadOpponentSlot,
               ForEach.body = Seq.singleton copy,

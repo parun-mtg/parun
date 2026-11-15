@@ -22,7 +22,7 @@ spec s = Spec.describe s "Parun.Codec.CopyTargets" $ do
     Common.assertCodec
       s
       CopyTargets.codec
-      (CopyTargets.ForEach (ObjectRef.AllOf (ObjectRef.EachMatching (Filter.HeldBy Holder.Controller PlayerRelation.You) NonEmpty.:| [ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing)])))
+      (CopyTargets.ForEach (ObjectRef.AllOf (ObjectRef.EachMatching (Filter.HeldBy Holder.Controller PlayerRelation.You) NonEmpty.:| [ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing)])))
       " {\"type\":\"ForEach\",\"value\":{\"type\":\"AllOf\",\"value\":[{\"type\":\"EachMatching\",\"value\":{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}},{\"type\":\"Players\",\"value\":{\"players\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}}}]}} "
   Spec.it s "Stated" $
     Common.assertCodec

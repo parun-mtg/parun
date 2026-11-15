@@ -3285,6 +3285,8 @@ data ObjectRefChildren f = MkObjectRefChildren
     refFilter :: Filter.Filter Keyword.Keyword -> f (Filter.Filter Keyword.Keyword),
     -- | A Quantity a field holds: a count of cards, a walk's weight.
     refQuantity :: Quantity.Quantity -> f Quantity.Quantity,
+    -- | A Condition a field holds: the one a group of players is narrowed by, whole.
+    refCondition :: Condition.Condition -> f Condition.Condition,
     -- | A slot the reference reads: a bound group, an attached-to object.
     refSlot :: SlotName.SlotName -> f SlotName.SlotName,
     -- | A player a field names: whose library, who chooses.
@@ -3305,6 +3307,7 @@ objectRefLeaves =
   MkObjectRefChildren
     { refFilter = pure,
       refQuantity = pure,
+      refCondition = pure,
       refSlot = pure,
       refPlayer = pure,
       refZones = pure,
@@ -3329,7 +3332,7 @@ objectRefChildren c ref = case ref of
   ObjectRef.EachSpell filter_ -> ObjectRef.EachSpell <$> refFilter c filter_
   ObjectRef.EachAbility filter_ -> ObjectRef.EachAbility <$> refFilter c filter_
   ObjectRef.EachOnStack filter_ -> ObjectRef.EachOnStack <$> refFilter c filter_
-  ObjectRef.Players (PlayersWho.MkPlayersWho players who) -> fmap ObjectRef.Players (PlayersWho.MkPlayersWho <$> refPlayer c players <*> traverse (refFilter c) who)
+  ObjectRef.Players (PlayersWho.MkPlayersWho players who whose) -> fmap ObjectRef.Players (PlayersWho.MkPlayersWho <$> refPlayer c players <*> traverse (refFilter c) who <*> traverse (refCondition c) whose)
   ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary seat count deck) -> fmap ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary <$> refPlayer c seat <*> refQuantity c count <*> pure deck)
   ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil seat filter_ weight count deck) -> fmap ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil <$> refPlayer c seat <*> refFilter c filter_ <*> refQuantity c weight <*> refQuantity c count <*> pure deck)
   ObjectRef.TopOfGraveyard seat -> ObjectRef.TopOfGraveyard <$> refPlayer c seat
@@ -3647,7 +3650,7 @@ modificationChildren c modification = case modification of
   Modification.AssignCombatDamage _ -> pure modification
   Modification.AssignCombatDamageAs {} -> pure modification
   Modification.GrantsStationToughness -> pure modification
-  Modification.TapsAsThoughPowerGreater {} -> pure modification
+  Modification.TapsCounting {} -> pure modification
   Modification.LoyaltyIsToughness -> pure modification
   Modification.Intensify quantity -> Modification.Intensify <$> modificationQuantity c quantity
 

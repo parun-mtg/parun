@@ -369,9 +369,13 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     grantsStationToughness :: Bool,
     -- | CR 613.11: how much greater than its power this creature counts toward
     -- each keyword's tap-for-total-power cost
-    -- (Modification.TapsAsThoughPowerGreater), read by
+    -- (Modification.TapsCounting's GreaterBy), read by
     -- Parun.Engine.Cost.tapPowerGiven. Summed across grants.
     tapPowerBonus :: Map.Map KeywordFamily.KeywordFamily Natural.Natural,
+    -- | CR 613.11: the keywords whose tap-for-total-power costs count this
+    -- creature's toughness rather than its power (Modification.TapsCounting's
+    -- UsingToughness), read by Parun.Engine.Cost.tapPowerGiven.
+    tapsUsingToughness :: Set.Set KeywordFamily.KeywordFamily,
     -- | Is this object's loyalty its toughness (Modification.LoyaltyIsToughness)?
     loyaltyIsToughness :: Bool,
     -- | CR 707.2 / 601.2b: the printed additional costs the copiable face

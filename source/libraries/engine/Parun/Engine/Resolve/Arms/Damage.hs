@@ -569,7 +569,7 @@ addMana resolving source controller legal (ManaAddition.MkManaAddition ref produ
       choose manaTypes =
         Monad.when choosesColor $
           State.modify' (Game.recordChoice Chosen.Colors (Game.readingAcquisition resolving source gs0 source) (const (Just (Mana.colorsAmong manaTypes))) source)
-  case Mana.produced legal source gs0 production of
+  case Mana.produced legal (Game.readingAcquisition resolving source gs0 source) source gs0 production of
     -- A settled run needs no question; the COUNT is how many times this one
     -- instruction adds it, and a clause adding mana of two DIFFERENT types
     -- writes two effects, run in printed order (CR 608.2c) -- except CR

@@ -359,7 +359,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertEq s [[Text.pack "Spark deals 1 damage to any target and 1 damage to you."]] (Oracle.abilities brothers)
     let tomb = ring {ActivatedAbility.modal = payload [clause [addMana 1, damage [(you, 2)]]] []}
     Spec.assertEq s [[Text.pack "{T}: Add {G}. Spark deals 2 damage to you.", Text.pack "{T}: Add {G}. Then Spark deals 2 damage to you."]] (Oracle.abilities (withFace (\f -> f {Face.activatedAbilities = [tomb]})))
-    let earthquake = spell [clause [Effect.DealDamage (DealDamage.MkDealDamage (Seq.fromList [DamagePart.MkDamagePart (ObjectRef.EachMatching (Filter.HasCardType CardType.Creature)) (Quantity.Literal 2), DamagePart.MkDamagePart (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing)) (Quantity.Literal 2)]) Nothing Nothing Nothing Nothing Nothing Nothing)]] []
+    let earthquake = spell [clause [Effect.DealDamage (DealDamage.MkDealDamage (Seq.fromList [DamagePart.MkDamagePart (ObjectRef.EachMatching (Filter.HasCardType CardType.Creature)) (Quantity.Literal 2), DamagePart.MkDamagePart (ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing)) (Quantity.Literal 2)]) Nothing Nothing Nothing Nothing Nothing Nothing)]] []
     Spec.assertEq s [[Text.pack "Spark deals 2 damage to each creature and each player."]] (Oracle.abilities earthquake)
     let jagged = spell [clause [damage [(target, 3)]]] [(target, (TargetSlot.required Pool.Creatures Nothing) {TargetSlot.count = SlotCount.Printed (TargetCount.MkTargetCount 2 (Just 2))})]
     Spec.assertEq s (Just (Text.pack "Spark deals 3 damage to each of two target creatures.")) (Oracle.render jagged)
@@ -742,7 +742,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
         ambush = spell [clause [damageBy [(ObjectRef.InSlot target, mountains)]]] [(target, TargetSlot.required Pool.Creatures Nothing)]
     Spec.assertEq s [[Text.pack "Spark deals damage to target creature equal to the number of Mountains you control.", Text.pack "Spark deals damage equal to the number of Mountains you control to target creature.", Text.pack "Spark deals X damage to target creature, where X is the number of Mountains you control."]] (Oracle.abilities ambush)
     let theirs = countOf (Filter.And [Filter.HasCardType CardType.Land, Filter.HeldByRecipient Holder.Controller]) (onBattlefield (PlayerRef.Relative PlayerRelation.AnyPlayer))
-    Spec.assertEq s (Just (Text.pack "Spark deals damage to each player equal to the number of lands they control.")) (Oracle.render (spell [clause [damageBy [(ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing), theirs)]]] []))
+    Spec.assertEq s (Just (Text.pack "Spark deals damage to each player equal to the number of lands they control.")) (Oracle.render (spell [clause [damageBy [(ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing), theirs)]]] []))
     let dealer = SlotName.MkSlotName (Text.pack "dealer")
         fire = Effect.DealDamage (DealDamage.MkDealDamage (Seq.singleton (DamagePart.MkDamagePart (ObjectRef.InSlot target) (powerOf dealer))) (Just dealer) Nothing Nothing Nothing Nothing Nothing)
         slots = [(dealer, TargetSlot.required Pool.Creatures (Just (Filter.HeldBy Holder.Controller PlayerRelation.You))), (target, TargetSlot.required Pool.AnyTarget Nothing)]
@@ -886,7 +886,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     let coin = SlotName.MkSlotName (Text.pack "flip")
         flipping reading = Effect.FlipCoin FlipCoin.MkFlipCoin {FlipCoin.count = FlipCoin.defaultCount, FlipCoin.reading = reading, FlipCoin.slot = coin, FlipCoin.misses = Nothing, FlipCoin.flipper = FlipCoin.defaultFlipper}
         flipped n e = (clause [e]) {Clause.condition = Just (Condition.Compares (Compares.MkCompares (Quantity.InSlot coin) Comparison.Exactly (Quantity.Literal n)))}
-        you' = ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.You) Nothing)
+        you' = ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.You) Nothing Nothing)
         sky reading = spell [clause [flipping reading], flipped 1 (draw (PlayerRef.Relative PlayerRelation.You) 1), flipped 0 (damageBy [(you', Quantity.Literal 1)])] []
     Spec.assertEq s (Just (Text.pack "Flip a coin. If you win the flip, draw a card. If you lose the flip, Spark deals 1 damage to you.")) (Oracle.render (sky CoinReading.Wins))
     -- A flip no one wins (CR 705.2's first sentence) is no "if you win".

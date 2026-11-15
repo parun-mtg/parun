@@ -299,7 +299,7 @@ spec s = Spec.describe s "Parun.Mtgish" $ do
   -- names.
   Spec.it s "reads damage to each opponent as the opponents a PlayerRef names" $ do
     Spec.assertEq s (Right ()) (accepts sizzle)
-    Spec.assertEq s [[ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.Opponent) Nothing)]] [fmap DamagePart.ref (Foldable.toList (DealDamage.parts d)) | Effect.DealDamage d <- spellEffects (translated sizzle)]
+    Spec.assertEq s [[ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.Opponent) Nothing Nothing)]] [fmap DamagePart.ref (Foldable.toList (DealDamage.parts d)) | Effect.DealDamage d <- spellEffects (translated sizzle)]
 
   -- CR 107.4e: a hybrid symbol, as Parun.Ingest reads MTGJSON's "{R/W}".
   Spec.it s "reads a hybrid mana symbol" $ do

@@ -26,9 +26,12 @@
           },
           "modifications": [
             {
-              "type": "TapsAsThoughPowerGreater",
+              "type": "TapsCounting",
               "value": {
-                "greaterBy": 2,
+                "count": {
+                  "type": "GreaterBy",
+                  "value": 2
+                },
                 "keywords": [
                   "Crew",
                   "Saddle"

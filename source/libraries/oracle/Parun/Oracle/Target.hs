@@ -428,9 +428,9 @@ object context determiner ref = case ref of
     r : rs <- traverse (object context determiner) (NonEmpty.toList refs)
     Monad.guard (all (== r) rs && null (mentions r) && number r == Filter.Singular)
     [r]
-  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.You) Nothing) -> [MkReference (Text.pack "you") [] Filter.Singular []]
-  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing) -> [MkReference (Text.pack "each player") [] Filter.Plural []]
-  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.Opponent) Nothing) -> [MkReference (Text.pack "each opponent") [] Filter.Plural []]
+  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.You) Nothing Nothing) -> [MkReference (Text.pack "you") [] Filter.Singular []]
+  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing) -> [MkReference (Text.pack "each player") [] Filter.Plural []]
+  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.Opponent) Nothing Nothing) -> [MkReference (Text.pack "each opponent") [] Filter.Plural []]
   _ -> []
 
 -- | A player as the subject of a sentence, and whether the verb takes the

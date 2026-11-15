@@ -160,6 +160,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype.Type
 import qualified Parun.Types.SubtypeFamily as SubtypeFamily
 import qualified Parun.Types.Supertype as Supertype
+import qualified Parun.Types.TapCount as TapCount
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TextWord as TextWord
 import Parun.Types.Timestamp (Timestamp (MkTimestamp))
@@ -259,7 +260,7 @@ layer m = case m of
   Modification.GrantsStationToughness -> Layer.Ability
   -- CR 613.11, AssignCombatDamage's layer: how a cost counts the creature, a
   -- rules change and not a characteristic.
-  Modification.TapsAsThoughPowerGreater {} -> Layer.Rules
+  Modification.TapsCounting {} -> Layer.Rules
   -- No CR 613.1 layer: intensity is not a characteristic (CR 109.3), so it
   -- applies after every layer, with CR 613.11's rules-modifying effects.
   Modification.Intensify _ -> Layer.Rules
@@ -968,11 +969,15 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- with no count and no source to prefer among several grants.
         Modification.GrantsStationToughness ->
           pc {PC.grantsStationToughness = True}
-        -- CR 613.11: an ACCUMULATION, unlike the marker above -- each grant is
-        -- its own "as though" and they add (docs/decisions.md, "Whether two
-        -- crew power offsets add").
-        Modification.TapsAsThoughPowerGreater keywords n ->
-          pc {PC.tapPowerBonus = Map.unionWith (+) (PC.tapPowerBonus pc) (Map.fromSet (const n) keywords)}
+        -- CR 613.11: a GreaterBy offset is an ACCUMULATION, unlike the marker
+        -- above -- each grant is its own "as though" and they add
+        -- (docs/decisions.md, "Whether two crew power offsets add"). The
+        -- toughness substitution is a marker, as station's is.
+        Modification.TapsCounting keywords count -> case count of
+          TapCount.GreaterBy n ->
+            pc {PC.tapPowerBonus = Map.unionWith (+) (PC.tapPowerBonus pc) (Map.fromSet (const n) keywords)}
+          TapCount.UsingToughness ->
+            pc {PC.tapsUsingToughness = Set.union (PC.tapsUsingToughness pc) keywords}
         -- Alchemy's "intensifies by N": an object with no starting intensity
         -- counts from 0.
         Modification.Intensify n ->
@@ -999,7 +1004,7 @@ bakeGranter :: ObjectId -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbi
 bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . effect, Children.modalCondition = Identity.Identity . condition}
   where
     effect = Identity.runIdentity . Children.effectChildren Children.effectLeaves {Children.onEffect = Identity.Identity . effect, Children.onObjectRef = Identity.Identity . ref, Children.onFilter = Identity.Identity . bake, Children.onQuantity = Identity.Identity . quantity}
-    ref = Identity.runIdentity . Children.objectRefChildren Children.objectRefLeaves {Children.refFilter = Identity.Identity . bake, Children.refNested = Identity.Identity . ref}
+    ref = Identity.runIdentity . Children.objectRefChildren Children.objectRefLeaves {Children.refFilter = Identity.Identity . bake, Children.refCondition = Identity.Identity . condition, Children.refNested = Identity.Identity . ref}
     condition = Identity.runIdentity . Children.conditionChildren Children.conditionLeaves {Children.conditionQuantity = Identity.Identity . quantity, Children.conditionNested = Identity.Identity . condition}
     quantity = Identity.runIdentity . Children.quantityChildren (Children.descendingQuantities (Identity.Identity . quantity)) {Children.nest = Identity.Identity . bake}
     bake = Filter.bakeBound Map.empty (Map.singleton Binding.grantingPermanent (Set.singleton granter)) Map.empty
@@ -1098,7 +1103,7 @@ cardTypesAfter m types = case m of
   Modification.AssignCombatDamage _ -> types
   Modification.AssignCombatDamageAs {} -> types
   Modification.GrantsStationToughness -> types
-  Modification.TapsAsThoughPowerGreater {} -> types
+  Modification.TapsCounting {} -> types
   Modification.Intensify _ -> types
   Modification.LoyaltyIsToughness -> types
   Modification.LandSubtype {} -> types
@@ -2072,7 +2077,7 @@ freezeQuantities viewOf gs announcedOn source context m =
         -- No quantity to freeze: two bare markers.
         Modification.AssignCombatDamage _ -> Just m
         Modification.GrantsStationToughness -> Just m
-        Modification.TapsAsThoughPowerGreater {} -> Just m
+        Modification.TapsCounting {} -> Just m
         -- An enum payload, so no quantity either.
         Modification.AssignCombatDamageAs {} -> Just m
         Modification.Intensify n -> fmap Modification.Intensify (freeze n)
@@ -2131,7 +2136,7 @@ quantitiesOf m = case m of
   Modification.HasFullText _ -> []
   Modification.AssignCombatDamage _ -> []
   Modification.GrantsStationToughness -> []
-  Modification.TapsAsThoughPowerGreater {} -> []
+  Modification.TapsCounting {} -> []
   Modification.AssignCombatDamageAs {} -> []
   Modification.Intensify n -> [n]
   Modification.LoyaltyIsToughness -> []
@@ -2186,7 +2191,7 @@ referenceQuery m = case m of
   Modification.ExchangeTextBoxes -> Nothing
   Modification.AssignCombatDamage _ -> Nothing
   Modification.GrantsStationToughness -> Nothing
-  Modification.TapsAsThoughPowerGreater {} -> Nothing
+  Modification.TapsCounting {} -> Nothing
   Modification.AssignCombatDamageAs {} -> Nothing
   Modification.Intensify _ -> Nothing
   Modification.LoyaltyIsToughness -> Nothing
@@ -2281,7 +2286,7 @@ setsLandSubtype m = case m of
   Modification.ChosenColor _ -> False
   -- An ability-shaping grant, not a type change.
   Modification.GrantsStationToughness -> False
-  Modification.TapsAsThoughPowerGreater {} -> False
+  Modification.TapsCounting {} -> False
   -- Not a characteristic at all.
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
@@ -3622,7 +3627,7 @@ removesAbilities m = case m of
   Modification.AssignCombatDamageAs {} -> False
   -- A grant, GainKeyword's answer above: not a removal.
   Modification.GrantsStationToughness -> False
-  Modification.TapsAsThoughPowerGreater {} -> False
+  Modification.TapsCounting {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
   Modification.ChangeWord {} -> False
@@ -5034,10 +5039,10 @@ modificationWrites m = case m of
   -- REGRESSION FENCE rather than a proved behaviour: no board in the pool
   -- makes another effect's affected set depend on it.
   Modification.GrantsStationToughness -> Set.singleton Keywords
-  -- Writes PC.tapPowerBonus, GrantsStationToughness' reasoning: no reader
-  -- inside the layer fold (Parun.Engine.Cost.tapPowerGiven reads it off the
-  -- finished projection), so a REGRESSION FENCE.
-  Modification.TapsAsThoughPowerGreater {} -> Set.singleton Keywords
+  -- Writes PC.tapPowerBonus and PC.tapsUsingToughness, GrantsStationToughness'
+  -- reasoning: no reader inside the layer fold (Parun.Engine.Cost.tapPowerGiven
+  -- reads them off the finished projection), so a REGRESSION FENCE.
+  Modification.TapsCounting {} -> Set.singleton Keywords
   -- Writes PC.intensity, which no Aspect names: no Filter atom reads it.
   Modification.Intensify _ -> Set.empty
   Modification.LoyaltyIsToughness -> Set.singleton Keywords
@@ -5112,7 +5117,7 @@ modificationReads m = case m of
   Modification.AssignCombatDamage _ -> Set.empty
   Modification.AssignCombatDamageAs {} -> Set.empty
   Modification.GrantsStationToughness -> Set.empty
-  Modification.TapsAsThoughPowerGreater {} -> Set.empty
+  Modification.TapsCounting {} -> Set.empty
   Modification.Intensify n -> quantityReads n
   Modification.LoyaltyIsToughness -> Set.empty
   Modification.LandSubtype {} -> Set.empty
@@ -7137,7 +7142,7 @@ grantsKeywordWhere p m = case m of
   -- Neither marker hands out a Keyword, whatever the station one's name says.
   Modification.AssignCombatDamage _ -> False
   Modification.GrantsStationToughness -> False
-  Modification.TapsAsThoughPowerGreater {} -> False
+  Modification.TapsCounting {} -> False
   Modification.AssignCombatDamageAs {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
@@ -7224,7 +7229,7 @@ grantsMintingType m = case m of
   -- Neither marker writes a card type or subtype.
   Modification.AssignCombatDamage _ -> False
   Modification.GrantsStationToughness -> False
-  Modification.TapsAsThoughPowerGreater {} -> False
+  Modification.TapsCounting {} -> False
   Modification.AssignCombatDamageAs {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
@@ -7322,7 +7327,7 @@ grantsAbilityWhere p m = case m of
   Modification.HasFullText ft -> any (\g -> p g || grantedStaticWrites (grantsAbilityWhere p) g) (FullText.alsoHas ft)
   Modification.AssignCombatDamage _ -> False
   Modification.GrantsStationToughness -> False
-  Modification.TapsAsThoughPowerGreater {} -> False
+  Modification.TapsCounting {} -> False
   Modification.AssignCombatDamageAs {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False

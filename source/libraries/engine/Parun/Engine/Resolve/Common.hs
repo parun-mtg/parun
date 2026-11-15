@@ -27,6 +27,7 @@ import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Combat as Combat
+import qualified Parun.Engine.Condition as Condition
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.CostAdjustments as CostAdjustments.Engine
 import qualified Parun.Engine.Count as Count
@@ -1278,9 +1279,15 @@ objectRefRecipients legal resolving controller source gs ref = case ref of
   -- 608.2h): Disorder's "each player who controls a white creature", proved by
   -- the scenario
   -- cr-608-2c-disorder-deals-damage-to-each-player-who-controls-a-white-creature.
-  ObjectRef.Players (PlayersWho.MkPlayersWho playerRef who) ->
+  -- The Condition narrows them at the same moment, PlayerRef.Candidate read as
+  -- each: Outpace Oblivion's "each player who doesn't have max speed" (CR
+  -- 702.179e), proved by the scenario
+  -- outpace-oblivion-deals-two-to-each-player-without-max-speed.
+  ObjectRef.Players (PlayersWho.MkPlayersWho playerRef who whose) ->
     let context = effectContext gs resolving controller source legal (slotBindings resolving gs)
-     in fmap Recipient.ToPlayer (playersWho (effectViewOf resolving source legal gs) context gs who (apnapPlayersOf playerRef legal resolving source controller gs))
+        viewOf = effectViewOf resolving source legal gs
+        holdsFor pid = all (Condition.holds viewOf context gs source . Condition.forCandidate pid) whose
+     in fmap Recipient.ToPlayer (filter holdsFor (playersWho viewOf context gs who (apnapPlayersOf playerRef legal resolving source controller gs)))
   -- No recipients: the answer needs the chooser asked, which askingObjects does.
   ObjectRef.ChosenCardInGraveyard {} -> []
   ObjectRef.ChosenCardInHand {} -> []
