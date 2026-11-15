@@ -1,0 +1,21 @@
+{
+  "description": "CR 508.1d the Berserkers alone attains the maximum, so it stands",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Berserkers of Blood Ridge", "label": "berserkers", "ready": true },
+          { "card": "Goblin Piker", "label": "piker", "ready": true }
+        ]
+      },
+      { "name": "bob" }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$berserkers"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Attackers": { "attackers": { "$berserkers": "$bob" } } } }
+  ]
+}

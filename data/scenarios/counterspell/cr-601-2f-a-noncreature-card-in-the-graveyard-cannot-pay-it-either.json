@@ -1,0 +1,112 @@
+{
+  "description": "CR 601.2f a noncreature card in the graveyard cannot pay it either",
+  "note": "A graveyard holding exactly one ineligible card tells a Filter-blind implementation apart from an empty-graveyard refusal. The sacrificed Vultures land on top of the Bolt (CR 404.1). The Zone view lists the bottom first.",
+  "board": {
+    "active": "alice",
+    "step": "Untap",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Circling Vultures",
+            "label": "vultures"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Lightning Bolt"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $vultures"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Upkeep",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Circling Vultures",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Exile",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard",
+          "is": [
+            "Lightning Bolt",
+            "Circling Vultures"
+          ]
+        }
+      }
+    }
+  ]
+}

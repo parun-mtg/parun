@@ -1,0 +1,209 @@
+{
+  "description": "CR 734.1 the exert goes back with the declaration and the Drum's tap stands",
+  "note": "Always Watching gives the Initiate vigilance, so CR 508.1f does not tap it and CR 508.1g exerts it untapped; the toll's window then taps it for Springleaf Drum's cost, and alice closes the window short of Ghostly Prison's {2}. Keeping the mana abilities, the Drum's tap of the Initiate stands and its mana floats while the declaration's exert is undone: the Initiate untaps at alice's next untap step. The control reverses them. With the Initiate tapped nothing can attack, so the declaration is not asked again.",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Glory-Bound Initiate",
+            "label": "initiate",
+            "ready": true
+          },
+          {
+            "card": "Always Watching",
+            "label": "watching"
+          },
+          {
+            "card": "Springleaf Drum",
+            "label": "drum"
+          },
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Ghostly Prison",
+            "label": "prison"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$initiate"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExert",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaSource",
+          "with": "$drum"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "OrderCostComponents",
+          "with": [
+            0,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaYield",
+          "with": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseManaSource",
+          "with": null
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ReverseManaAbilities",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$initiate",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$drum",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "ManaPool",
+          "player": "alice",
+          "is": [
+            {
+              "manaType": {
+                "type": "Colored",
+                "value": "White"
+              },
+              "tags": [
+                "Artifact"
+              ],
+              "retention": "Ordinary",
+              "restriction": null,
+              "rider": null,
+              "sourceChoices": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$initiate",
+          "tapped": false
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "description": "CR 612.1 an Evolution on an Evolution rewrites the restriction itself",
+  "note": "Wall in \"The new creature type can't be Wall\" is a creature type word used as a creature type, so the first Evolution, aimed at the second on the stack, replaces it with Frog: the evolved Evolution's prompt forbids Frog, not Wall.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Bog Wraith",
+            "label": "wraith"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Artificial Evolution",
+            "label": "evo-1"
+          },
+          {
+            "card": "Artificial Evolution",
+            "label": "evo-2"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$evo-2",
+          "targets": [
+            "$wraith"
+          ],
+          "mana": [
+            "$i1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$evo-1",
+          "targets": [
+            "Artificial Evolution"
+          ],
+          "mana": [
+            "$i2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseWordSwap": {
+          "from": {
+            "type": "Wall"
+          },
+          "to": {
+            "type": "Frog"
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseWordSwap",
+            "offer": {
+              "source": "Artificial Evolution",
+              "slot": "target",
+              "families": [
+                "CreatureType"
+              ],
+              "forbidden": [
+                {
+                  "type": "Frog"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseWordSwap": {
+          "from": {
+            "type": "Wraith"
+          },
+          "to": {
+            "type": "Elf"
+          }
+        }
+      }
+    }
+  ]
+}

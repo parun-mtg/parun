@@ -1,0 +1,159 @@
+{
+  "description": "CR 608.2c two clauses of one resolution are two trigger events",
+  "note": "The control for the four-Goblin sweep, inside one resolution: the Interment's second clause is its own instruction, so a Goblin and a Zombie leave as two events and the Townsfolk takes two counters. 5/5 is the rules answer; 4/4 would be a bracket drawn around the whole resolution.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Vengeful Townsfolk",
+            "label": "townsfolk"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "goblin"
+          },
+          {
+            "card": "Whipstitched Zombie",
+            "label": "zombie"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Synthetic Twofold Interment",
+            "label": "interment"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": []
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$townsfolk",
+          "power": 3,
+          "toughness": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$interment",
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "OrderTriggers": [
+          "$townsfolk",
+          "$townsfolk"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $townsfolk",
+            "trigger of $townsfolk"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Graveyard",
+          "card": "Goblin Piker",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Graveyard",
+          "card": "Whipstitched Zombie",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$townsfolk",
+          "power": 5,
+          "toughness": 5
+        }
+      }
+    }
+  ]
+}

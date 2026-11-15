@@ -2508,8 +2508,8 @@ eventTriggersGiven scope standing events gs =
 -- Per GROUP and never per scan: several groups can share one CR 117.5 scan
 -- (TurnRegisters.scannedThrough is not bumped until the scan ends), and CR 704.3
 -- makes each state-based-action pass its own single event.
--- Parun.ZoneTriggerSpec's "CR 704.3 two death groups in one trigger scan are two
--- trigger events" is what tells the two readings apart. Shared by
+-- data/scenarios/zone-trigger/cr-704-3-two-death-groups-in-one-trigger-scan-are-two-trigger-events.json
+-- is what tells the two readings apart. Shared by
 -- eventTriggers and inherentTriggers.
 oncePerBatch :: (Ord j, Ord k) => (k -> j) -> [(Maybe k, PendingTrigger)] -> [PendingTrigger]
 oncePerBatch joinOn entries =

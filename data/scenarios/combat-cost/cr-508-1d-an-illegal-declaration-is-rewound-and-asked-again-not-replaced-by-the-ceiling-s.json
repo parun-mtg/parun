@@ -1,0 +1,23 @@
+{
+  "description": "CR 508.1d an illegal declaration is rewound and asked again, not replaced by the ceiling's",
+  "note": "Berserkers of Blood Ridge must attack, so declining is illegal and refused; CR 508.1's preamble asks again and both creatures attack, where the ceiling's smallest declaration sends the Berserkers alone. The control shows the Berserkers alone attains the maximum.",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Berserkers of Blood Ridge", "label": "berserkers", "ready": true },
+          { "card": "Goblin Piker", "label": "piker", "ready": true }
+        ]
+      },
+      { "name": "bob" }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": { "Attack": [] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": ["$berserkers", "$piker"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Attackers": { "attackers": { "$berserkers": "$bob", "$piker": "$bob" } } } }
+  ]
+}

@@ -561,16 +561,6 @@ graveyardEffectZoneTriggerSpec s registry =
             (squeeId, g2) = S.addGraveyardCard squee S.alice g1
         pure (squeeId, beginUpkeep g2)
    in Spec.describe s "GraveyardEffectZoneTrigger" $ do
-        -- The gathering itself: one trigger, and it is Squee's. The count is what
-        -- the Bitterblossom control turns on -- two would mean the scan read the
-        -- graveyard indiscriminately.
-        Spec.it s "CR 113.6m Squee's upkeep trigger is gathered from the graveyard, on its effect's word alone" $ do
-          (squeeId, gs) <- buriedBoard
-          Spec.assertEqWith
-            s
-            "exactly one trigger, from Squee"
-            (fmap PendingTrigger.source (gathered gs))
-            [TriggerSource.OfObject squeeId]
         -- End to end through the real engine: the trigger is placed, resolves,
         -- and CR 400.7's funnel moves the card to alice's hand.
         Spec.it s "CR 113.6m whole card: it resolves and Squee returns to its owner's hand" $ do
@@ -593,15 +583,6 @@ graveyardEffectZoneTriggerSpec s registry =
           Spec.assertEqWith s "the trigger reached the stack anyway" (length (TurnRegisters.stack (GameState.turn placed))) 1
           Spec.assertBool s (Set.member squeeName (namesIn Zone.Graveyard S.alice after)) "Squee is still in the graveyard"
           Spec.assertBool s (not (Set.member squeeName (namesIn Zone.Hand S.alice after))) "and not in hand"
-        -- "Functions ONLY in that zone", the other direction: the same card, the
-        -- same upkeep, one zone away. Nothing but CR 113.6m can withhold it --
-        -- the condition matches a battlefield permanent perfectly well, which is
-        -- exactly what Bitterblossom does from there.
-        Spec.it s "CR 113.6m the same card on the battlefield triggers for nobody" $ do
-          squee <- S.printingOf s registry "Squee, Goblin Nabob"
-          let (_, gs) = S.addPermanent squee S.alice (Setup.emptyGame S.bothPlayers)
-              begun = beginUpkeep gs
-          Spec.assertEqWith s "nothing triggered" (fmap PendingTrigger.source (gathered begun)) []
 
 -- CR 113.6m's exemption and CR 113.6k's second sentence, per trigger condition:
 -- data/cards/synthetic-homing-nabob.json, "When this creature dies or at the
@@ -644,13 +625,6 @@ anyOfEffectZoneTriggerSpec s registry =
           Spec.assertBool s (Set.member nabobName (namesIn Zone.Hand S.alice after)) "the Nabob is in alice's hand"
           Spec.assertBool s (not (Set.member nabobName (namesIn Zone.Graveyard S.alice after))) "and no longer in her graveyard"
           Spec.assertEqWith s "the trigger reached the stack" (length (TurnRegisters.stack (GameState.turn placed))) 1
-        -- The pair, one zone away: the upkeep half functions ONLY in the
-        -- graveyard, so the same upkeep triggers nothing for a Nabob on the
-        -- battlefield.
-        Spec.it s "CR 113.6m the upkeep half does not trigger from the battlefield" $ do
-          nabob <- S.printingOf s registry "Synthetic Homing Nabob"
-          let (_, g1) = S.addPermanent nabob S.alice (Setup.emptyGame S.bothPlayers)
-          Spec.assertEqWith s "nothing triggered" (fmap PendingTrigger.source (gathered (beginUpkeep g1))) []
         -- Only the MATCH is narrowed to the upkeep half: the pending trigger
         -- carries the printed ability, which CR 707.9a's "except it has this
         -- ability" copies off the stack.
@@ -1189,35 +1163,16 @@ permanentDiesSpec s registry =
 --     be observed false.
 --   * a SECOND batch later, answering a second counter. Without it an
 --     implementation that fired once per TURN passes the first board.
---   * two death GROUPS inside ONE CR 117.5 scan, answering two counters.
---     TurnRegisters.scannedThrough is not bumped until the scan, so several groups
---     share one; without this board an implementation that deduped per scan
---     rather than per group passes the other two.
+--   * two death GROUPS inside ONE CR 117.5 scan, answering two counters:
+--     data/scenarios/zone-trigger/cr-704-3-two-death-groups-in-one-trigger-scan-are-two-trigger-events.json.
 --
--- Two more prove the same arity over the OTHER road into a graveyard, a swept
--- Effect.MoveToZone rather than CR 704.3's pass. Synthetic Twofold Interment is
--- both of them: a two-clause sorcery, "put all Goblins into their owners'
--- graveyards" and then the same over Zombies. Four Goblins and no Zombie answer
--- ONE counter, where a Goblin and a Zombie answer two -- one instruction is one
--- event however many permanents it takes, and two instructions are two however
--- few. The second board is what separates "one event" from "one resolution",
--- and neither can be got from the three above, none of which moves a permanent
--- through Parun.Engine.Resolve's opcode at all.
---
--- WHY A SYNTHETIC SWEEPER. Scryfall o:"into their owners' graveyards", 2026-08-27,
--- matches eight printings and not one of them takes a permanent off the
--- battlefield; oracle:/put (all|each|target) .*(creature|permanent)s? .*into (its
--- owner's|their owners') graveyard/ -o:"from your graveyard", same date, matches
--- Bronzebeak Foragers and Gelatinous Cube, both of which move a card out of
--- exile. Every printed mass move from the battlefield to a graveyard is worded
--- as a destruction (CR 701.8) or a sacrifice (CR 701.21), and parun routes those
--- through Event.destroyIn and Event.sacrifice rather than through this opcode. A
--- printing whose own words put several permanents into graveyards would refute
--- the synthetic; nothing in the CR forbids one, CR 400.7 being the same funnel
--- either way.
+-- The same arity over a swept Effect.MoveToZone, one instruction one event
+-- however many it takes and two instructions two, is
+-- data/scenarios/zone-trigger/cr-608-2f-four-goblins-swept-into-graveyards-give-the-townsfolk-one-counter.json
+-- and its CR 608.2c pair, both with Synthetic Twofold Interment.
 --
 -- Lethal damage settled through Engine.settleForPriority rather than a sweeper on
--- the first two boards: a sweeper kills the bearer too, and this card's payload
+-- the two boards here: a sweeper kills the bearer too, and this card's payload
 -- acts on itself, so there would be nothing left to read the counter off. The
 -- deaths are one event either way -- Sba.performStateBasedActions is one
 -- Event.simultaneously bracket.
@@ -1300,115 +1255,6 @@ permanentsDieSpec s registry =
           Spec.assertEqWith s "it was a 4/4 after the first" (S.powerToughnessOf bearer after) (Just (4, 4))
           Spec.assertEqWith s "the third Piker died in a group of its own" (Set.size (deathGroups again)) 2
           Spec.assertEqWith s "and one more trigger reached the stack" (length (TurnRegisters.stack (GameState.turn again))) 1
-        -- The control that separates "once per event group" from "once per trigger
-        -- scan", which the two boards above cannot tell apart: alice's Salt Road
-        -- Skirmish destroys her own Goblin Piker (CR 701.8, one group), then creates
-        -- two 1/1 Warrior tokens later in that same resolution, and the CR 117.5
-        -- settle's state-based-action pass buries both as 0/0 under Night of Souls'
-        -- Betrayal (CR 704.5f, a second group). TurnRegisters.scannedThrough is not
-        -- bumped until the trigger scan, so both groups are read by one scan.
-        --
-        -- TWO counters is the rules answer, CR 704.3 making each pass its own single
-        -- event. 4/4 is 3/3, Night's -1/-1 and two counters; a per-scan dedup leaves
-        -- 3/3 and the per-object reading gives 5/5, so the three readings are three
-        -- different creatures.
-        --
-        -- The bearer survives Night as a 2/2, which is what leaves a permanent to
-        -- read the counters off. The target is pinned by ObjectId rather than left
-        -- to S.identityAnswer's least Recipient.
-        Spec.it s "CR 704.3 two death groups in one trigger scan are two trigger events" $ do
-          swamp <- S.printingOf s registry "Swamp"
-          townsfolk <- S.printingOf s registry "Vengeful Townsfolk"
-          piker <- S.printingOf s registry "Goblin Piker"
-          night <- S.printingOf s registry "Night of Souls' Betrayal"
-          skirmish <- S.printingOf s registry "Salt Road Skirmish"
-          let (bearer, withBearer) = S.addPermanent townsfolk S.alice (Setup.emptyGame S.bothPlayers)
-              (victim, withVictim) = S.addPermanent piker S.alice withBearer
-              (_, withNight) = S.addPermanent night S.alice withVictim
-              withLands = List.foldl' (\gs _ -> snd (S.addPermanent swamp S.alice gs)) withNight [1 :: Int .. 4]
-              (withSpell, spell) = S.handOne skirmish withLands
-              answer :: Prompt.Prompt r -> r
-              answer p = case p of
-                Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToCreature victim))) sets
-                _ -> S.identityAnswer p
-              afterCast = S.runPure answer withSpell (S.cast S.alice spell)
-              resolved = S.runPure answer afterCast Stack.resolveTop
-              settled = S.runPure answer resolved Engine.settleForPriority
-              twice = resolveWholeStack settled
-          Spec.assertEqWith s "the Townsfolk is a 4/4: 2/2 under Night, plus two counters" (S.powerToughnessOf bearer twice) (Just (4, 4))
-          Spec.assertEqWith s "it was a 2/2 before either batch" (S.powerToughnessOf bearer withLands) (Just (2, 2))
-          Spec.assertEqWith s "the Piker and both tokens reached a graveyard" (length (filter (\zc -> ZoneChange.from zc == Zone.Battlefield && ZoneChange.to zc == Zone.Graveyard) (S.zoneChangesOf settled))) 3
-          Spec.assertEqWith s "in two event groups, both inside one scan" (Set.size (deathGroups settled)) 2
-          Spec.assertEqWith s "so two triggers reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 2
-        -- CR 608.2f over the MOVES themselves. alice's Synthetic Twofold Interment
-        -- puts four Goblins into their owners' graveyards in one instruction --
-        -- three of hers and bob's -- and her Townsfolk grows by exactly one.
-        --
-        -- 4/4 is the whole discrimination, and the three Goblins of hers are what
-        -- give it room: 6/6 is the per-mover reading, one counter for each of her
-        -- creatures the sweep buried, and 3/3 is silence. bob's Goblin is in the
-        -- sweep for the first board's reason -- the Filter's "you control" half is
-        -- observed false only where a creature under another controller dies in the
-        -- same event.
-        --
-        -- The Townsfolk is a Citizen Human and survives the sweep, which is what
-        -- leaves a permanent to read the counter off; its own payload acts on
-        -- itself, so a board that buried the bearer could show nothing. No Zombie
-        -- stands here, so the card's second clause takes nothing and this board
-        -- reads one instruction alone.
-        Spec.it s "CR 608.2f four Goblins swept into graveyards give the Townsfolk one counter" $ do
-          swamp <- S.printingOf s registry "Swamp"
-          townsfolk <- S.printingOf s registry "Vengeful Townsfolk"
-          piker <- S.printingOf s registry "Goblin Piker"
-          interment <- S.printingOf s registry "Synthetic Twofold Interment"
-          let (bearer, withBearer) = S.addPermanent townsfolk S.alice (Setup.emptyGame S.bothPlayers)
-              (aliceFirst, withFirst) = S.addPermanent piker S.alice withBearer
-              (aliceSecond, withSecond) = S.addPermanent piker S.alice withFirst
-              (aliceThird, withThird) = S.addPermanent piker S.alice withSecond
-              (bobs, withBobs) = S.addPermanent piker S.bob withThird
-              withLands = List.foldl' (\gs _ -> snd (S.addPermanent swamp S.alice gs)) withBobs [1 :: Int .. 3]
-              (withSpell, spell) = S.handOne interment withLands
-              afterCast = S.runPure S.identityAnswer withSpell (S.cast S.alice spell)
-              resolved = S.runPure S.identityAnswer afterCast Stack.resolveTop
-              settled = S.runPure S.identityAnswer resolved Engine.settleForPriority
-              after = resolveWholeStack settled
-          Spec.assertEqWith s "the Townsfolk is a 4/4: one +1/+1 counter for the whole sweep" (S.powerToughnessOf bearer after) (Just (4, 4))
-          Spec.assertEqWith s "it was a 3/3 before the sweep" (S.powerToughnessOf bearer withLands) (Just (3, 3))
-          Spec.assertEqWith s "all four Goblins left the battlefield" (fmap (\oid -> Game.lookupObject oid resolved) [aliceFirst, aliceSecond, aliceThird, bobs]) [Nothing, Nothing, Nothing, Nothing]
-          Spec.assertEqWith s "and they moved as one event group" (Set.size (deathGroups resolved)) 1
-          Spec.assertEqWith s "so exactly one trigger reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 1
-        -- The control the board above needs, on the same road and inside the same
-        -- resolution: the Interment's SECOND clause is its own instruction, so a
-        -- Goblin and a Zombie leave in two event groups and the Townsfolk takes two
-        -- counters. 5/5 is the rules answer, CR 608.2c making each clause its own
-        -- action; 4/4 is a bracket drawn around the whole resolution rather than
-        -- around one instruction's fold, which is the exact way the board above
-        -- could be passed for the wrong reason.
-        --
-        -- One creature per clause, which is the point: the board above proves that
-        -- a sweep of several fires once, so this one only has to be two sweeps --
-        -- and both sit inside ONE CR 117.5 scan, where two casts would have been
-        -- told apart by the scan boundary alone.
-        Spec.it s "CR 608.2c two clauses of one resolution are two trigger events" $ do
-          swamp <- S.printingOf s registry "Swamp"
-          townsfolk <- S.printingOf s registry "Vengeful Townsfolk"
-          piker <- S.printingOf s registry "Goblin Piker"
-          zombie <- S.printingOf s registry "Whipstitched Zombie"
-          interment <- S.printingOf s registry "Synthetic Twofold Interment"
-          let (bearer, withBearer) = S.addPermanent townsfolk S.alice (Setup.emptyGame S.bothPlayers)
-              (goblin, withGoblin) = S.addPermanent piker S.alice withBearer
-              (undead, withUndead) = S.addPermanent zombie S.alice withGoblin
-              withLands = List.foldl' (\gs _ -> snd (S.addPermanent swamp S.alice gs)) withUndead [1 :: Int .. 3]
-              (withSpell, spell) = S.handOne interment withLands
-              afterCast = S.runPure S.identityAnswer withSpell (S.cast S.alice spell)
-              resolved = S.runPure S.identityAnswer afterCast Stack.resolveTop
-              settled = S.runPure S.identityAnswer resolved Engine.settleForPriority
-              after = resolveWholeStack settled
-          Spec.assertEqWith s "the Townsfolk is a 5/5: one +1/+1 counter per clause" (S.powerToughnessOf bearer after) (Just (5, 5))
-          Spec.assertEqWith s "it was a 3/3 before the spell" (S.powerToughnessOf bearer withLands) (Just (3, 3))
-          Spec.assertEqWith s "both creatures left the battlefield" (fmap (\oid -> Game.lookupObject oid resolved) [goblin, undead]) [Nothing, Nothing]
-          Spec.assertEqWith s "in two event groups, both inside one scan" (Set.size (deathGroups resolved)) 2
-          Spec.assertEqWith s "so two triggers reached the stack" (length (TurnRegisters.stack (GameState.turn settled))) 2
         -- "YOU CONTROL", the HeldBy Controller arm (CR 109.5 against the ability's
         -- controller, CR 603.3a). The pair to the first board, differing in exactly
         -- one thing: the same fixture, the same settle, and only bob's Piker
@@ -1618,9 +1464,8 @@ merenEndStepSpec s registry =
 --
 -- Thragtusk, {4}{G} Creature -- Beast 5/3: "When this creature enters, you gain
 -- 5 life. When this creature leaves the battlefield, create a 3/3 green Beast
--- creature token." The two halves of the same card are here because the enters
--- trigger is what proves the leaves trigger is not merely firing on every zone
--- change the permanent is party to.
+-- creature token." That the enters trigger alone sees its arrival is
+-- data/scenarios/zone-trigger/cr-603-6a-whole-card-casting-thragtusk-gains-5-life-and-its-leaves-trigger-stays-silent-on-the-way-in.json.
 --
 -- Unsummon is what makes CR 400.7e's public-zone proviso a real test rather
 -- than one satisfied by construction, which is all it could be while a death
@@ -1664,12 +1509,6 @@ leavesBattlefieldSpec s registry =
             resolved = S.runPure S.identityAnswer cast Stack.resolveTop
             settled = S.runPure S.identityAnswer resolved Engine.settleForPriority
          in (settled, S.runPure S.identityAnswer settled Stack.resolveTop)
-      beastsOf pid gs =
-        filter
-          -- CR 111.4: Thragtusk does not specify the token's name, so the name
-          -- is its subtype plus the word "Token".
-          (\oid -> fmap Face.name (Game.faceOf oid gs) == Just (CardName.MkCardName $ Text.pack "Beast Token"))
-          (Game.zoneMembers Zone.Battlefield pid gs)
       tuskName = CardName.MkCardName $ Text.pack "Thragtusk"
       -- Every slot stamped on every object currently on the stack, which for
       -- these boards is the one placed trigger.
@@ -1736,18 +1575,6 @@ leavesBattlefieldSpec s registry =
               matches = Event.matchesTrigger (Setup.emptyGame S.bothPlayers) token S.alice (TriggerCondition.Leaves LeavesTrigger.defaultValue)
           Spec.assertBool s (not (matches entry)) "a token's own entry is not a departure"
           Spec.assertBool s (matches gone) "but the same token being exiled is"
-        -- The card's other half, and the proof that the leaves trigger is
-        -- scoped to DEPARTURES: Thragtusk arriving on the battlefield is a zone
-        -- change involving the same permanent, and only the enters trigger may
-        -- see it.
-        Spec.it s "CR 603.6a whole card: casting Thragtusk gains 5 life, and its leaves trigger stays silent on the way in" $ do
-          forest <- S.printingOf s registry "Forest"
-          thragtusk <- S.printingOf s registry "Thragtusk"
-          let (settled, after) = castIt (S.handOne thragtusk (S.landsInPlay forest 5))
-          Spec.assertEqWith s "exactly one trigger, the enters one" (length (TurnRegisters.stack (GameState.turn settled))) 1
-          Spec.assertEqWith s "alice is still at 20 until it resolves" (S.lifeOf S.alice settled) (Just 20)
-          Spec.assertEqWith s "and at 25 once it does" (S.lifeOf S.alice after) (Just 25)
-          Spec.assertEqWith s "with no Beast token anywhere" (length (beastsOf S.alice after)) 0
 
 -- The events a trigger condition GENUINELY fires on (Event.matchesTrigger's own
 -- arms are the spec), so eventBindings is exercised through its matching arm

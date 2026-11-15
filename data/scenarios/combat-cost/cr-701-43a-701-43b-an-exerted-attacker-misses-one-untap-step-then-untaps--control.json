@@ -1,0 +1,135 @@
+{
+  "description": "CR 701.43a a declined exert untaps at the next untap step",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Glory-Bound Initiate",
+            "label": "initiate",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$initiate",
+          "$piker"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseExert",
+          "with": "Declines"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$initiate",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$piker",
+          "tapped": true
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$initiate",
+          "tapped": false
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "Tapped": {
+          "object": "$piker",
+          "tapped": false
+        }
+      }
+    }
+  ]
+}

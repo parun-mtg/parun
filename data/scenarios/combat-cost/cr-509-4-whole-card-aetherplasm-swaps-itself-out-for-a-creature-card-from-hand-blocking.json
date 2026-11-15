@@ -1,0 +1,195 @@
+{
+  "description": "CR 509.4 whole card: Aetherplasm swaps itself out for a creature card from hand, blocking",
+  "note": "Both 2/2s, so the Golem and the Cabal Evangel put onto the battlefield blocking it trade. Life does not discriminate: Aetherplasm's own declaration already made the Golem blocked (CR 509.1h), so bob is at 20 either way and survival is the quantity read. That the arrival never blocked is cr-509-3b-a-creature-put-onto-the-battlefield-blocking-never-blocked.json. No Blockers check: it lists the bounced Aetherplasm, which no reference can name, so blocked status is read off bob's life and the Golem's fate.",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Icehide Golem",
+            "label": "golem",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Aetherplasm",
+            "label": "plasm",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Cabal Evangel",
+            "label": "evangel"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$golem"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Block": {
+          "$plasm": [
+            "$golem"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "ChooseOptional": "Exercises"
+      },
+      "source": "$plasm"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "ChooseOptional": "Exercises"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardInHand",
+          "with": "$evangel"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Battlefield",
+          "card": "Aetherplasm",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Controller",
+          "object": "Cabal Evangel",
+          "is": "bob"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Hand",
+          "is": [
+            "Aetherplasm"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Icehide Golem",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Battlefield",
+          "card": "Cabal Evangel",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Graveyard",
+          "card": "Cabal Evangel",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 20
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 20
+        }
+      }
+    }
+  ]
+}

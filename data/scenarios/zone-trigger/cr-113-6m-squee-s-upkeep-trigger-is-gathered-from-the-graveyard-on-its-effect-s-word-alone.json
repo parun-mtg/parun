@@ -1,0 +1,101 @@
+{
+  "description": "CR 113.6m Squee's upkeep trigger is gathered from the graveyard, on its effect's word alone",
+  "note": "Squee's effect returns it from the graveyard, so its upkeep ability functions there. Bitterblossom in the same graveyard is the control: its effect names no zone, so CR 113.6 leaves it working only on the battlefield and the stack holds Squee's trigger alone. Once it resolves Squee is in hand, and alice has lost no life to Bitterblossom.",
+  "board": {
+    "active": "alice",
+    "step": "Untap",
+    "seats": [
+      {
+        "name": "alice",
+        "graveyard": [
+          {
+            "card": "Bitterblossom",
+            "label": "bitterblossom"
+          },
+          {
+            "card": "Squee, Goblin Nabob",
+            "label": "squee"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $squee"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Upkeep",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "Upkeep",
+      "player": "alice",
+      "do": {
+        "ChooseOptional": "Exercises"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Squee, Goblin Nabob",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 20
+        }
+      }
+    }
+  ]
+}

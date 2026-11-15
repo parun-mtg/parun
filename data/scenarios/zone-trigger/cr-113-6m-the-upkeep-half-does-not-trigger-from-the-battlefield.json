@@ -1,0 +1,57 @@
+{
+  "description": "CR 113.6m the upkeep half does not trigger from the battlefield",
+  "note": "Synthetic Homing Nabob's upkeep half functions only in the graveyard, so the same upkeep triggers nothing for a Nabob on the battlefield.",
+  "board": {
+    "active": "alice",
+    "step": "Untap",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Synthetic Homing Nabob",
+            "label": "nabob"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    }
+  ]
+}

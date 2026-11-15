@@ -1,0 +1,27 @@
+{
+  "description": "CR 508.1j partial payments are not allowed: two Dragons and one land sacrifice nothing",
+  "note": "CR 508.1h totals the declaration, so two Exalted Dragons owe two lands and one cannot pay both. Partial payment is not allowed, so neither attacks: the refused pair is asked again, alice declares nothing, and the Forest is still on the battlefield and both Dragons untapped.",
+  "board": {
+    "active": "alice",
+    "step": "BeginningOfCombat",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Exalted Dragon", "label": "d1", "ready": true },
+          { "card": "Exalted Dragon", "label": "d2", "ready": true },
+          { "card": "Forest", "label": "forest" }
+        ]
+      },
+      { "name": "bob" }
+    ]
+  },
+  "timeline": [
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "refuse": { "Attack": ["$d1", "$d2"] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "do": { "Attack": [] } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Attackers": { "attackers": {} } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Forest", "count": 1 } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Tapped": { "object": "$d1", "tapped": false } } },
+    { "turn": 1, "step": "DeclareAttackers", "player": "alice", "check": { "Tapped": { "object": "$d2", "tapped": false } } }
+  ]
+}

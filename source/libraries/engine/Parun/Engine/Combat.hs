@@ -2722,8 +2722,8 @@ attemptAttackDeclaration perform pid asked forced rejected = do
         -- for. False once this exact declaration has already been rewound,
         -- which is what makes the recursion terminate.
         again = not (Set.member proposal rejected)
-    -- CombatEffectSpec's "CR 508.1d an illegal declaration is rewound and asked
-    -- again, not replaced by the ceiling's" is the proof.
+    -- data/scenarios/combat-cost/cr-508-1d-an-illegal-declaration-is-rewound-and-asked-again-not-replaced-by-the-ceiling-s.json
+    -- is the proof.
     -- The chooser asked again is told why (Bookkeeping.undone).
     if not allowed && again
       then Game.noteUndoing chooser Undoing.IllegalDeclaration >> attemptAttackDeclaration perform pid (Just chooser) False (Set.insert proposal rejected)

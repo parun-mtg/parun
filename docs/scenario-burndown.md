@@ -268,19 +268,19 @@ out: grep for them.
 ### `CombatCostSpec`
 
 - ~~CR 506.8b the window opens at the declaration and runs to the end of the combat phase | `check:other-Turn.afterBlockersDeclared`~~
-- CR 508.1d / 611.2a / 611.2c whole cards: bob's creatures attack alice on his next turn, and only then | `board:attackrequirements`
-- CR 508.1d an illegal declaration is rewound and asked again, not replaced by the ceiling's | `check:other-Combat.legalAttackDeclaration`
-- CR 508.1j partial payments are not allowed: two Dragons and one land sacrifice nothing | `check:combat` `check:helper-allUntapped` `check:helper-stillThere`
-- CR 509.1c a Prized Unicorn does not force a block an Oppressive Rays taxes | `check:other-Combat.legalBlockDeclaration`
-- CR 509.1h an attacker whose only blocker returned to hand stays blocked and assigns nothing | `check:combat`
-- CR 509.1h whole card: Curtain of Light blocks an unblocked attacker, with nothing blocking it | `check:events`
-- CR 509.3c the attacker it is put onto the battlefield blocking becomes blocked | `check:events`
-- CR 509.4 / 608.2f whole card: Mirror Match blocks every attacker with its own copy, and exiles them all | `check:events`
-- CR 509.4 whole card: Aetherplasm swaps itself out for a creature card from hand, blocking | `check:combat`
-- CR 509.4 whole card: Flash Foliage's Saproling blocks the flier it could never have been declared against | `check:events` `check:combat`
-- CR 701.43a / 701.43b an exerted attacker misses one untap step, then untaps | `board:combat` `board:object-exertedby`
-- CR 734.1 a blocker's toll: the Forests stay tapped and their mana floats | `check:helper-floating`
-- CR 734.1 the exert goes back with the declaration and the Drum's tap stands
+- ~~CR 508.1d / 611.2a / 611.2c whole cards: bob's creatures attack alice on his next turn, and only then | `board:attackrequirements`~~
+- ~~CR 508.1d an illegal declaration is rewound and asked again, not replaced by the ceiling's | `check:other-Combat.legalAttackDeclaration`~~
+- ~~CR 508.1j partial payments are not allowed: two Dragons and one land sacrifice nothing | `check:combat` `check:helper-allUntapped` `check:helper-stillThere`~~
+- ~~CR 509.1c a Prized Unicorn does not force a block an Oppressive Rays taxes | `check:other-Combat.legalBlockDeclaration`~~
+- ~~CR 509.1h an attacker whose only blocker returned to hand stays blocked and assigns nothing | `check:combat`~~
+- ~~CR 509.1h whole card: Curtain of Light blocks an unblocked attacker, with nothing blocking it | `check:events`~~
+- ~~CR 509.3c the attacker it is put onto the battlefield blocking becomes blocked | `check:events`~~
+- ~~CR 509.4 / 608.2f whole card: Mirror Match blocks every attacker with its own copy, and exiles them all | `check:events`~~
+- ~~CR 509.4 whole card: Aetherplasm swaps itself out for a creature card from hand, blocking | `check:combat`~~
+- ~~CR 509.4 whole card: Flash Foliage's Saproling blocks the flier it could never have been declared against | `check:events` `check:combat`~~
+- ~~CR 701.43a / 701.43b an exerted attacker misses one untap step, then untaps | `board:combat` `board:object-exertedby`~~
+- ~~CR 734.1 a blocker's toll: the Forests stay tapped and their mana floats | `check:helper-floating`~~
+- ~~CR 734.1 the exert goes back with the declaration and the Drum's tap stands~~
 
 ### `CombatEffectSpec`
 
@@ -427,20 +427,20 @@ out: grep for them.
 
 ### `CounterspellSpec`
 
-- CR 118.12 whole card: an unhacked Lithophage's gate demands the Mountain | `check:helper-namesIn` `check:helper-payResponses`
-- CR 118.12a a creature card in the graveyard pays it and the Vultures survive | `check:helper-isExileResponse` `check:helper-namesIn` `check:helper-payResponses` `check:other-Replay.record` `check:other-Stack.resolveTop`
-- CR 118.12a declining the {B} sacrifices the Zombie to its owner's graveyard | `check:creature-count` `check:helper-payResponses` `check:tapped-count`
-- CR 118.12a paying the {B} leaves the Zombie on the battlefield | `check:helper-payResponses` `check:other-Replay.record` `check:other-Stack.resolveTop` `check:tapped-count`
-- CR 118.3 an empty graveyard cannot pay, so the Vultures are sacrificed | `check:helper-payResponses` `check:other-Replay.record` `check:other-Stack.resolveTop`
-- CR 404.2 with two creature cards it is the TOP one that is exiled | `check:helper-isExileResponse` `check:helper-namesIn` `check:other-Replay.record` `check:other-Stack.resolveTop`
-- CR 601.2f a noncreature card in the graveyard cannot pay it either | `check:helper-namesIn` `check:other-Replay.record` `check:other-Stack.resolveTop`
-- CR 612 the Evolution's own restriction reaches the player being asked | `check:prompt-payload`
-- CR 612.1 an Evolution on an Evolution rewrites the restriction itself | `check:prompt-payload`
-- CR 612.1 an evolved Moonmist's shield spares Goblins instead, so the Werewolf's damage is the prevented one | `check:events` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`
-- CR 613.7 whole card: two Evolutions on the Turn to Frog spell compose | `check:text-changes`
-- CR 702.135b an evolved Ministrant plus a granted afterlife leaves three Spirits
-- CR 704.5g an indestructible creature survives lethal marked damage | `check:creature-count`
-- CR 704.5h an indestructible creature survives deathtouch | `check:creature-count`
+- ~~CR 118.12 whole card: an unhacked Lithophage's gate demands the Mountain | `check:helper-namesIn` `check:helper-payResponses`~~
+- ~~CR 118.12a a creature card in the graveyard pays it and the Vultures survive | `check:helper-isExileResponse` `check:helper-namesIn` `check:helper-payResponses` `check:other-Replay.record` `check:other-Stack.resolveTop`~~
+- ~~CR 118.12a declining the {B} sacrifices the Zombie to its owner's graveyard | `check:creature-count` `check:helper-payResponses` `check:tapped-count`~~
+- ~~CR 118.12a paying the {B} leaves the Zombie on the battlefield | `check:helper-payResponses` `check:other-Replay.record` `check:other-Stack.resolveTop` `check:tapped-count`~~
+- ~~CR 118.3 an empty graveyard cannot pay, so the Vultures are sacrificed | `check:helper-payResponses` `check:other-Replay.record` `check:other-Stack.resolveTop`~~
+- ~~CR 404.2 with two creature cards it is the TOP one that is exiled | `check:helper-isExileResponse` `check:helper-namesIn` `check:other-Replay.record` `check:other-Stack.resolveTop`~~
+- ~~CR 601.2f a noncreature card in the graveyard cannot pay it either | `check:helper-namesIn` `check:other-Replay.record` `check:other-Stack.resolveTop`~~
+- ~~CR 612 the Evolution's own restriction reaches the player being asked | `check:prompt-payload`~~
+- ~~CR 612.1 an Evolution on an Evolution rewrites the restriction itself | `check:prompt-payload`~~
+- ~~CR 612.1 an evolved Moonmist's shield spares Goblins instead, so the Werewolf's damage is the prevented one | `check:events` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`~~
+- ~~CR 613.7 whole card: two Evolutions on the Turn to Frog spell compose | `check:text-changes`~~
+- ~~CR 702.135b an evolved Ministrant plus a granted afterlife leaves three Spirits~~
+- ~~CR 704.5g an indestructible creature survives lethal marked damage | `check:creature-count`~~
+- ~~CR 704.5h an indestructible creature survives deathtouch | `check:creature-count`~~
 
 ### `CrewSpec`
 
@@ -1206,15 +1206,15 @@ out: grep for them.
 
 ### `ZoneTriggerSpec`
 
-- CR 113.6k the trigger carries the whole printed ability | `check:helper-beginUpkeep` `check:helper-gathered` `check:other-Face.triggeredAbilities` `check:other-PendingTrigger.ability` `check:other-S.combinedFace` `check:other-TriggeredAbility.condition`
-- CR 113.6m Squee's upkeep trigger is gathered from the graveyard, on its effect's word alone | `check:helper-gathered` `check:other-PendingTrigger.source`
-- CR 113.6m the same card on the battlefield triggers for nobody | `check:helper-gathered` `check:other-PendingTrigger.source`
-- CR 113.6m the upkeep half does not trigger from the battlefield | `check:helper-beginUpkeep` `check:helper-gathered` `check:other-PendingTrigger.source`
-- CR 400.7e a bounce to a HIDDEN zone binds no became slot, though the source slot is still stamped | `check:other-Binding.became` `check:other-Binding.triggerSource`
-- CR 400.7e a death to a PUBLIC zone does bind became, for the same condition | `check:other-Binding.became` `check:other-Binding.triggerSource`
+- ~~CR 113.6k the trigger carries the whole printed ability | `check:helper-beginUpkeep` `check:helper-gathered` `check:other-Face.triggeredAbilities` `check:other-PendingTrigger.ability` `check:other-S.combinedFace` `check:other-TriggeredAbility.condition`~~
+- ~~CR 113.6m Squee's upkeep trigger is gathered from the graveyard, on its effect's word alone | `check:helper-gathered` `check:other-PendingTrigger.source`~~
+- ~~CR 113.6m the same card on the battlefield triggers for nobody | `check:helper-gathered` `check:other-PendingTrigger.source`~~
+- ~~CR 113.6m the upkeep half does not trigger from the battlefield | `check:helper-beginUpkeep` `check:helper-gathered` `check:other-PendingTrigger.source`~~
+- ~~CR 400.7e a bounce to a HIDDEN zone binds no became slot, though the source slot is still stamped | `check:other-Binding.became` `check:other-Binding.triggerSource`~~
+- ~~CR 400.7e a death to a PUBLIC zone does bind became, for the same condition | `check:other-Binding.became` `check:other-Binding.triggerSource`~~
 - ~~CR 603.10 a permanent that arrived after a death and left again does not witness it | `check:events`~~
-- CR 603.10a a Meren who died earlier in the batch sees neither token buried later in it | `check:events`
-- CR 603.6a whole card: casting Thragtusk gains 5 life, and its leaves trigger stays silent on the way in | `check:helper-beastsOf`
-- CR 608.2c two clauses of one resolution are two trigger events | `check:events`
-- CR 608.2f four Goblins swept into graveyards give the Townsfolk one counter | `check:helper-deathGroups`
-- CR 704.3 two death groups in one trigger scan are two trigger events | `check:events`
+- ~~CR 603.10a a Meren who died earlier in the batch sees neither token buried later in it | `check:events`~~
+- ~~CR 603.6a whole card: casting Thragtusk gains 5 life, and its leaves trigger stays silent on the way in | `check:helper-beastsOf`~~
+- ~~CR 608.2c two clauses of one resolution are two trigger events | `check:events`~~
+- ~~CR 608.2f four Goblins swept into graveyards give the Townsfolk one counter | `check:helper-deathGroups`~~
+- ~~CR 704.3 two death groups in one trigger scan are two trigger events | `check:events`~~

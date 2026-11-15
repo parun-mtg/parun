@@ -4,7 +4,8 @@
 -- carriers -- Parun.Types.UntapRestriction, the set Parun.Engine.UntapRestriction
 -- answers, and Object.doesNotUntapFor, the one-shot Effect.DoesNotUntapNext
 -- stores (CR 508.1g's exert stores Object.exertedBy beside it, and
--- Parun.CombatSpec's Exert group proves that carrier) -- plus
+-- data/scenarios/combat-cost/cr-701-43a-701-43b-an-exerted-attacker-misses-one-untap-step-then-untaps.json
+-- proves that carrier) -- plus
 -- the one place all are subtracted (Parun.Engine.Engine.untapAll); CR 602.1 /
 -- 605.1a read as
 -- Parun.Types.Filter's HasActivatedAbility atom off
@@ -199,7 +200,8 @@ spec s registry = Spec.describe s "UntapRestriction" $ do
 -- it writes, and CR 611.2a's expiry at the untap steps its sentence names. CR
 -- 508.1g's exert writes a SEPARATE flag
 -- (Object.exertedBy), keyed to the exerting player rather than to the victim's
--- controller; Parun.CombatSpec's Exert group is where that path is proved.
+-- controller; data/scenarios/combat-cost/cr-701-43a-the-rider-is-the-exerting-player-s-untap-step-not-the-new-controller-.json
+-- is where that path is proved.
 oneShotSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 oneShotSpec s registry = Spec.describe s "OneShot" $ do
   -- The unit's central claim. Every assertion is made on one board, so none of

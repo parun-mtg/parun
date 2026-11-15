@@ -1,0 +1,100 @@
+{
+  "description": "CR 612 Magical Hack's swap forbids nothing",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Bog Wraith",
+            "label": "wraith"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Magical Hack",
+            "label": "spell"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$spell",
+          "targets": [
+            "$wraith"
+          ],
+          "mana": [
+            "$i1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseWordSwap",
+            "offer": {
+              "source": "Magical Hack",
+              "slot": "target",
+              "families": [
+                "BasicLandType"
+              ],
+              "forbidden": []
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseWordSwap": {
+          "from": {
+            "type": "Swamp"
+          },
+          "to": {
+            "type": "Island"
+          }
+        }
+      }
+    }
+  ]
+}

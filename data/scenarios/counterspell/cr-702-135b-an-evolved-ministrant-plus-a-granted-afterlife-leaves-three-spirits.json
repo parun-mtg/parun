@@ -1,0 +1,270 @@
+{
+  "description": "CR 702.135b an evolved Ministrant plus a granted afterlife leaves three Spirits",
+  "note": "Afterlife Insurance grants afterlife 1 beside the Ministrant's printed afterlife 2, and each instance triggers separately. The Spirit is rule 702.135a's word, which no text change reaches (CR 207.2a), so the Evolution's Spirit -> Elf swap leaves three Spirits.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Swamp",
+            "label": "s4"
+          },
+          {
+            "card": "Swamp",
+            "label": "s5"
+          },
+          {
+            "card": "Swamp",
+            "label": "s6"
+          },
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Ministrant of Obligation",
+            "label": "ministrant"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Artificial Evolution",
+            "label": "evolution"
+          },
+          {
+            "card": "Afterlife Insurance",
+            "label": "insurance"
+          },
+          {
+            "card": "Murder",
+            "label": "murder"
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$evolution",
+          "targets": [
+            "$ministrant"
+          ],
+          "mana": [
+            "$island",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseWordSwap": {
+          "from": {
+            "type": "Spirit"
+          },
+          "to": {
+            "type": "Elf"
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$insurance",
+          "mana": [
+            "$s1",
+            "$s2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$ministrant",
+          "keyword": {
+            "type": "Afterlife",
+            "value": 1
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$ministrant",
+          "keyword": {
+            "type": "Afterlife",
+            "value": 2
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$murder",
+          "mana": [
+            "$s3",
+            "$s4",
+            "$s5",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "OrderTriggers": [
+          "departed Ministrant of Obligation",
+          "departed Ministrant of Obligation"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Spirit Token",
+          "count": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Elf Token",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Subtypes": {
+          "object": "Spirit Token",
+          "subtypes": [
+            "Spirit"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Subtypes": {
+          "object": "Spirit Token#2",
+          "subtypes": [
+            "Spirit"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Subtypes": {
+          "object": "Spirit Token#3",
+          "subtypes": [
+            "Spirit"
+          ]
+        }
+      }
+    }
+  ]
+}
