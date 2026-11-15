@@ -1,0 +1,246 @@
+{
+  "description": "CR 613.7f turning face down restamps the permanent after a removal that had wiped its grant (control)",
+  "note": "The same board without Ixidron's cast: Turn to Frog is younger than the suspect, so CR 613.1f wipes the grant, and the suspect blocks. Repeat Offender is the suspect, suspecting itself with its own {2}{B}: a real road to CR 701.60c's designation, where the Haskell test wrote it onto a Goblin Piker. Suspected is no ability of the card (CR 701.60b), so CR 708.2 leaves it alone and its grant carries the permanent's own timestamp into layer 6 (CR 613.7a); that grant is the one effect on the board whose order against Turn to Frog's removal a turning-over can move. Turn to Frog is a spell, so CR 613.7b stamps it as it resolves. bob's other Goblin Piker, never suspected, is the anti-vacuity leg: it blocks.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "attacker",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-4",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "island-5",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ixidron",
+            "label": "ixidron"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Repeat Offender",
+            "label": "suspect",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "other",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-1",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "bob-island-1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "bob-island-2",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Turn to Frog",
+            "label": "frog"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Activate": {
+          "object": "$suspect",
+          "ability": 0,
+          "mana": [
+            "$swamp-1",
+            "$swamp-2",
+            "$swamp-3",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Designations",
+          "object": "$suspect",
+          "is": [
+            "Suspected"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$suspect",
+          "keyword": {
+            "type": "Menace"
+          },
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Cast": {
+          "object": "$frog",
+          "targets": [
+            "$suspect"
+          ],
+          "mana": [
+            "$bob-island-1",
+            "$bob-island-2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Keywords": {
+          "object": "$suspect",
+          "keyword": {
+            "type": "Menace"
+          },
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$attacker"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Block": {
+          "$suspect": [
+            "$attacker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "alice",
+      "check": {
+        "Blockers": {
+          "attacker": "$attacker",
+          "blockers": [
+            "$suspect"
+          ]
+        }
+      }
+    }
+  ]
+}

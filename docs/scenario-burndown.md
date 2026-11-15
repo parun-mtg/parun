@@ -615,20 +615,20 @@ out: grep for them.
 
 ### `FaceDownSpec`
 
-- CR 601.2c / 708.2a Weaver of Lies turns both announced creatures face down at once | `check:face-down`
-- CR 601.2c the offer is every OTHER morph creature, and all three turn over | `check:face-down` `check:prompt-offers`
-- CR 613.7f turning face down restamps the permanent after a removal that had wiped its grant | `board:object-designations`
-- CR 613.7f turning face up restamps the permanent after a removal that had wiped its grant | `board:object-designations`
-- CR 701.20b a face-down permanent revealed in place draws nothing | `check:events`
-- CR 701.40b the manifest procedure pays the mana cost, CR 702.37e the morph cost | `board:entered-with`
-- CR 701.40d a manifested disguise card is offered both procedures, at two prices | `board:entered-with`
-- CR 701.40g a manifested SORCERY stays face down, and still deals a 2/2's damage | `board:entered-with`
-- CR 701.40g a turn-face-up trigger does not fire for a manifested sorcery | `board:entered-with`
-- CR 702.37b the manifest procedure pays no megamorph cost, so no counter lands | `board:entered-with`
-- CR 708 a manifested CREATURE turns face up, and deals its printed damage | `board:entered-with`
-- CR 708.2a Yedora returns the dead creature as the Forest land it listed | `check:creature-count` `check:face-down` `check:mana-types`
-- CR 708.3 / 708.7 entering face down and turning face up draw nothing
-- CR 708.7 Pine Walker does not untap a creature cast face up
+- ~~CR 601.2c / 708.2a Weaver of Lies turns both announced creatures face down at once | `check:face-down`~~
+- ~~CR 601.2c the offer is every OTHER morph creature, and all three turn over | `check:face-down` `check:prompt-offers`~~
+- ~~CR 613.7f turning face down restamps the permanent after a removal that had wiped its grant | `board:object-designations`~~
+- ~~CR 613.7f turning face up restamps the permanent after a removal that had wiped its grant | `board:object-designations`~~
+- ~~CR 701.20b a face-down permanent revealed in place draws nothing | `check:events`~~
+- ~~CR 701.40b the manifest procedure pays the mana cost, CR 702.37e the morph cost | `board:entered-with`~~
+- ~~CR 701.40d a manifested disguise card is offered both procedures, at two prices | `board:entered-with`~~
+- ~~CR 701.40g a manifested SORCERY stays face down, and still deals a 2/2's damage | `board:entered-with`~~
+- ~~CR 701.40g a turn-face-up trigger does not fire for a manifested sorcery | `board:entered-with`~~
+- ~~CR 702.37b the manifest procedure pays no megamorph cost, so no counter lands | `board:entered-with`~~
+- ~~CR 708 a manifested CREATURE turns face up, and deals its printed damage | `board:entered-with`~~
+- ~~CR 708.2a Yedora returns the dead creature as the Forest land it listed | `check:creature-count` `check:face-down` `check:mana-types`~~
+- ~~CR 708.3 / 708.7 entering face down and turning face up draw nothing~~
+- ~~CR 708.7 Pine Walker does not untap a creature cast face up~~
 
 ### `FlipSpec`
 
@@ -722,23 +722,23 @@ out: grep for them.
 
 ### `LeavesTriggerSpec`
 
-- CR 109.5 an opponent's spell naming ANOTHER player fires nothing | `check:helper-payResponses`
-- CR 113.6k the same ability does not fire from a graveyard | `board:exiledwith` `board:haunting`
-- CR 113.6m the same ability does not function from the battlefield | `board:entered-with` `board:graveyard`
-- CR 305.7 under Blood Moon the same entry triggers nothing | `check:other-Mana.manaTypesOf`
-- CR 400.3 a card leaving bob's graveyard on alice's turn draws nothing | `board:entered-with` `board:graveyard`
-- CR 603.10 a card that reaches a graveyard mid-batch is no witness to an earlier event | `check:other-Game.faceOf`
-- CR 603.10a a card leaving alice's graveyard on her own turn draws her a card | `board:entered-with` `board:graveyard`
-- CR 603.10a the same departure on bob's turn draws nothing | `board:entered-with` `board:graveyard`
-- CR 603.6a two tokens enter together and each trigger names its own | `check:events` `check:other-DamageEvent.amount`
-- CR 603.6a whole card: a Goblin Piker enters and Aether Flash's 2 damage kills it (CR 704.5g) | `check:events` `check:other-DamageEvent.amount`
-- CR 608.2a the intervening if is checked AGAIN as the ability resolves | `board:last-known`
-- CR 608.2h a second Aether Flash resolves with the entrant already dead, and deals nothing | `check:events`
-- CR 614.1 Vizier of Remedies takes persist's counter to zero, so the Goblin returns bare and persists again | `check:helper-countersOn` `check:helper-inGraveyard` `check:helper-named`
-- CR 702.55b/702.55c the haunted creature dying fires the card's rider | `board:haunting`
-- Professor Hojo sacrificed to the cost still triggers | `board:object-designations`
-- Professor Hojo sees a target its own cost sacrificed | `board:object-designations`
-- a card moved from a library into a library is not put into one | `check:other-Event.changeZone`
+- ~~CR 109.5 an opponent's spell naming ANOTHER player fires nothing | `check:helper-payResponses`~~
+- ~~CR 113.6k the same ability does not fire from a graveyard | `board:exiledwith` `board:haunting`~~
+- ~~CR 113.6m the same ability does not function from the battlefield | `board:entered-with` `board:graveyard`~~
+- ~~CR 305.7 under Blood Moon the same entry triggers nothing | `check:other-Mana.manaTypesOf`~~
+- ~~CR 400.3 a card leaving bob's graveyard on alice's turn draws nothing | `board:entered-with` `board:graveyard`~~
+- ~~CR 603.10 a card that reaches a graveyard mid-batch is no witness to an earlier event | `check:other-Game.faceOf`~~
+- ~~CR 603.10a a card leaving alice's graveyard on her own turn draws her a card | `board:entered-with` `board:graveyard`~~
+- ~~CR 603.10a the same departure on bob's turn draws nothing | `board:entered-with` `board:graveyard`~~
+- ~~CR 603.6a two tokens enter together and each trigger names its own | `check:events` `check:other-DamageEvent.amount`~~
+- ~~CR 603.6a whole card: a Goblin Piker enters and Aether Flash's 2 damage kills it (CR 704.5g) | `check:events` `check:other-DamageEvent.amount`~~
+- ~~CR 608.2a the intervening if is checked AGAIN as the ability resolves | `board:last-known`~~
+- ~~CR 608.2h a second Aether Flash resolves with the entrant already dead, and deals nothing | `check:events`~~
+- ~~CR 614.1 Vizier of Remedies takes persist's counter to zero, so the Goblin returns bare and persists again | `check:helper-countersOn` `check:helper-inGraveyard` `check:helper-named`~~
+- ~~CR 702.55b/702.55c the haunted creature dying fires the card's rider | `board:haunting`~~
+- ~~Professor Hojo sacrificed to the cost still triggers | `board:object-designations`~~
+- ~~Professor Hojo sees a target its own cost sacrificed | `board:object-designations`~~
+- ~~a card moved from a library into a library is not put into one | `check:other-Event.changeZone`~~
 
 ### `LibraryOrderSpec`
 
@@ -1129,13 +1129,13 @@ out: grep for them.
 
 ### `TeamSpec`
 
-- CR 502.2a the handoff records what the previous active team cast | `check:events` `check:other-Game.spellsCastLastTurn`
-- CR 702.179d each active teammate's speed rises once | `board:player-speed`
-- CR 805.2 a departed active player's teammate declares the attack | `board:player-status`
-- CR 805.5 a teammate who passed is asked again before the team passes | `check:prompt-order`
-- CR 805.5b a departed active player's teammate receives priority | `board:player-status`
-- CR 805.8 controlling a player controls their team | `check:player-control`
-- CR 805.8 one effect skips a team's step once
+- ~~CR 502.2a the handoff records what the previous active team cast | `check:events` `check:other-Game.spellsCastLastTurn`~~
+- ~~CR 702.179d each active teammate's speed rises once | `board:player-speed`~~
+- ~~CR 805.2 a departed active player's teammate declares the attack | `board:player-status`~~
+- ~~CR 805.5 a teammate who passed is asked again before the team passes | `check:prompt-order`~~
+- ~~CR 805.5b a departed active player's teammate receives priority | `board:player-status`~~
+- ~~CR 805.8 controlling a player controls their team | `check:player-control`~~
+- ~~CR 805.8 one effect skips a team's step once~~
 
 ### `TransformSpec`
 

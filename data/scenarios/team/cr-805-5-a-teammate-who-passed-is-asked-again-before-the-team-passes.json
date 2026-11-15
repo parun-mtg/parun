@@ -1,0 +1,111 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "name": "alice",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "name": "bob",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "swamp",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Dark Ritual",
+            "label": "ritual"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      },
+      {
+        "name": "dave",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain"
+  },
+  "description": "CR 805.5 a teammate who passed is asked again before the team passes",
+  "final": [
+    {
+      "Life": {
+        "life": 17,
+        "player": "carol"
+      }
+    }
+  ],
+  "note": "Under shared team turns the team holds priority (CR 805.5), so once bob casts his Lightning Bolt his team has priority again, and alice, who passed before he cast, is asked before carol's team is (CR 805.5b). Carol answers the Bolt with a Dark Ritual the moment she is asked, so alice's second priority sees the Bolt alone only if she is asked before carol. The control drops the option: priority passes from bob to carol, and alice sees the Ritual on the Bolt.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain"
+          ],
+          "object": "$bolt",
+          "targets": [
+            "$carol"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Lightning Bolt"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$swamp"
+          ],
+          "object": "$ritual"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

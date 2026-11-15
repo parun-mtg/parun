@@ -1,0 +1,31 @@
+{
+  "description": "CR 400.3 a card leaving bob's graveyard on alice's turn draws nothing",
+  "note": "\"Your graveyard\", one difference from the proving scenario: the Reassembling Skeleton and the Swamps paying for it are bob's, and he returns it on alice's turn while her Kishla Skimmer watches. Alice passes once before the activation and once over it, so her checks read the board after it resolved. The Skimmer watches its controller's graveyard alone, so nothing reaches the stack and alice draws nothing.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [{ "card": "Kishla Skimmer", "label": "skimmer" }],
+        "library": [{ "card": "Forest" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Swamp", "label": "swamp-1" },
+          { "card": "Swamp", "label": "swamp-2" }
+        ],
+        "graveyard": [{ "card": "Reassembling Skeleton", "label": "skeleton" }]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "bob", "do": { "Activate": { "object": "$skeleton", "ability": 0, "mana": ["$swamp-1", "$swamp-2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Reassembling Skeleton", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Forest", "count": 0 } } }
+  ]
+}

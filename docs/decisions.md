@@ -1010,8 +1010,8 @@ Entries are ordered by the first rule each cites.
   nothing of order.
 - **Site**: `Parun.Engine.Projection.designationGathered` and
   `Parun.Engine.CombatRestriction.gathered`'s designation rows, proved by
-  `Parun.FaceDownSpec`'s "CR 613.7f turning face down restamps the permanent
-  after a removal that had wiped its grant" and its face-up twin.
+  `data/scenarios/face-down`'s "CR 613.7f turning face down restamps the
+  permanent after a removal that had wiped its grant" and its face-up twin.
 - **Issue**: PR #1607.
 
 ## Plots That Span Centuries replaces a named scheme's set in motion with three off the deck

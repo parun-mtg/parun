@@ -1,0 +1,208 @@
+{
+  "description": "CR 708 a manifested CREATURE turns face up, and deals its printed damage",
+  "note": "The pair to the manifested sorcery: the same board and spell with Hill Giant, a creature card, under the manifest, so CR 701.40g says nothing and the effect turns it face up. Its printed 3 differs from the face-down 2/2's 2. Showstopping Surprise turns the chosen creature face up if it's face down, then it deals damage equal to its power to each other creature, which turns the rule into a number. Soul Summons manifests the top card. Armored Galleon, a 5/4, survives both the face-down 2/2's 2 and a face-up Hill Giant's 3, so its damage is read rather than a death inferred.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains-1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-5",
+            "ready": true
+          },
+          {
+            "card": "Armored Galleon",
+            "label": "galleon",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Soul Summons",
+            "label": "summons"
+          },
+          {
+            "card": "Showstopping Surprise",
+            "label": "surprise"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Goblin Piker"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$summons",
+          "mana": [
+            "$plains-1",
+            "$plains-2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Library",
+          "card": "Hill Giant",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "Hill Giant",
+          "names": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "Hill Giant",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$surprise",
+          "targets": [
+            "Hill Giant"
+          ],
+          "mana": [
+            "$mountain-1",
+            "$mountain-2",
+            "$mountain-3",
+            "$mountain-4",
+            "$mountain-5"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$galleon",
+          "damage": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "Hill Giant",
+          "names": [
+            "Hill Giant"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "Hill Giant",
+          "power": 3,
+          "toughness": 3
+        }
+      }
+    }
+  ]
+}

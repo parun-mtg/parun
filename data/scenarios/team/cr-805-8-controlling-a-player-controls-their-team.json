@@ -1,0 +1,178 @@
+{
+  "board": {
+    "active": "carol",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Island",
+            "label": "alice-island"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice",
+        "team": 1
+      },
+      {
+        "hand": [
+          {
+            "card": "Island",
+            "label": "bob-island"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob",
+        "team": 1
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mindslaver",
+            "label": "slaver",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m4",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "dave",
+        "team": 2
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "PrecombatMain"
+  },
+  "description": "CR 805.8 controlling a player controls their team",
+  "note": "Under shared team turns, controlling a player controls their team (CR 805.8). Carol activates Mindslaver at bob on her own turn, so on alice's team's next turn carol sees both alice's and bob's hands (CR 724.4) and decides alice's attack too, declaring nothing: no Goblin Piker hits her. The control activates nothing; alice sees only her own hand and her Piker attacks carol for 2.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
+          ],
+          "object": "$slaver",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "alice",
+            "bob",
+            "carol"
+          ],
+          "object": "$alice-island",
+          "of": "Seers"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "alice",
+            "bob",
+            "carol"
+          ],
+          "object": "$bob-island",
+          "of": "Seers"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "carol",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 20,
+          "player": "carol"
+        }
+      },
+      "player": "carol",
+      "step": "EndOfCombat",
+      "turn": 2
+    }
+  ]
+}

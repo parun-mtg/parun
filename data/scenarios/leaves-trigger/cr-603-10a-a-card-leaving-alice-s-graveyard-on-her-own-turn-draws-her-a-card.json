@@ -1,0 +1,30 @@
+{
+  "description": "CR 603.10a a card leaving alice's graveyard on her own turn draws her a card",
+  "note": "Kishla Skimmer: \"Whenever a card leaves your graveyard during your turn, draw a card.\" Alice returns her own Reassembling Skeleton on her own turn, so the trigger draws the Forest her library holds. The Skimmer's controller and the Skeleton's owner are one seat here; the two sibling scenarios move the turn and the graveyard one at a time.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Kishla Skimmer", "label": "skimmer" },
+          { "card": "Swamp", "label": "swamp-1" },
+          { "card": "Swamp", "label": "swamp-2" }
+        ],
+        "graveyard": [{ "card": "Reassembling Skeleton", "label": "skeleton" }],
+        "library": [{ "card": "Forest" }]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$skeleton", "ability": 0, "mana": ["$swamp-1", "$swamp-2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": ["trigger of $skimmer"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Reassembling Skeleton", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Forest", "count": 0 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Forest", "count": 1 } } }
+  ]
+}

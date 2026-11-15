@@ -1,0 +1,194 @@
+{
+  "description": "CR 701.40g a turn-face-up trigger does not fire for a manifested sorcery",
+  "note": "CR 701.40g's second sentence: abilities that trigger whenever a permanent is turned face up won't trigger. Aven Farseer is the witness, its trigger scoped to any permanent. It carries three +1/+1 counters so Showstopping Surprise's damage (2 face down, 3 from a face-up Hill Giant) does not kill it before its counter can be read; the Haskell test turned the permanent up through the effect funnel directly to dodge that death. Soul Summons manifests the top card. Prey Upon is under it: nothing triggers, no counter, and it stays face down.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains-1",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-3",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-4",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-5",
+            "ready": true
+          },
+          {
+            "card": "Aven Farseer",
+            "label": "farseer",
+            "ready": true,
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 3
+              }
+            ]
+          }
+        ],
+        "hand": [
+          {
+            "card": "Soul Summons",
+            "label": "summons"
+          },
+          {
+            "card": "Showstopping Surprise",
+            "label": "surprise"
+          }
+        ],
+        "library": [
+          {
+            "card": "Prey Upon"
+          },
+          {
+            "card": "Goblin Piker"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$summons",
+          "mana": [
+            "$plains-1",
+            "$plains-2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$farseer",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$surprise",
+          "targets": [
+            "Prey Upon"
+          ],
+          "mana": [
+            "$mountain-1",
+            "$mountain-2",
+            "$mountain-3",
+            "$mountain-4",
+            "$mountain-5"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Counters": {
+          "object": "$farseer",
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "count": 3
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "Prey Upon",
+          "names": []
+        }
+      }
+    }
+  ]
+}

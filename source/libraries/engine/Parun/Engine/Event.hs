@@ -8373,8 +8373,8 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
     -- not. Tempest Efreet's "put Tempest Efreet from anywhere into that
     -- player's graveyard", with nothing exchanged, is the producer, and
     -- data/scenarios/ante's "already in the graveyard" scenario the proof, and
-    -- Parun.LeavesTriggerSpec's "a card moved from a library into a library"
-    -- the library's.
+    -- data/scenarios/leaves-trigger's "a card moved from a library into a
+    -- library" the library's.
     Just obj | alreadyIn oid obj requestedDest gs -> stayPut oid obj requestedDest requestedPosition False
     Just obj -> do
       let pid = Object.owner obj
@@ -10322,7 +10322,8 @@ counterOne settle before destination counterer source controller oid = do
 -- are appended to: an activation whose cost removes the creature it also targeted
 -- -- Rune-Brand Juggler sacrificing the suspected creature its own ability names
 -- -- still made that creature a target while it stood. Proved by
--- Parun.LeavesTriggerSpec's "Professor Hojo sees a target its own cost sacrificed".
+-- data/scenarios/leaves-trigger's "Professor Hojo sees a target its own cost
+-- sacrificed".
 --
 -- BRACKETED, which is what makes CR 603.2c's first sentence readable: rule
 -- 601.2c makes the chosen objects targets in one announcement, so every event
@@ -12339,7 +12340,8 @@ shuffleLibraryExcept leftOut pid = do
 -- CR 708.12 does NOT move this read, and that is the rule rather than an
 -- oversight: it governs what a revealing ability READS, not what the log records,
 -- and the read is Parun.Types.Filter's RepresentedByCard -- Hauntwoods Shrieker's
--- "if it's a creature card", proved at Parun.FaceDownSpec's CR 708.12 group.
+-- "if it's a creature card", proved at data/scenarios/face-down's CR 708.12
+-- scenarios.
 --
 -- A face-down object's reveal -- CR 708.9's, Hauntwoods Shrieker's or CR
 -- 701.40g's -- shows the card, so its snapshot is that projection face up
@@ -12872,8 +12874,8 @@ withinTriggerLimit gs =
 -- object to tell them apart, where an object-borne ability is CR 113.7's one
 -- instance whoever controls it.
 --
--- The controller component is proved by Parun.TeamSpec's "CR 702.179d each
--- active teammate's speed rises once": under the shared team turns option two
+-- The controller component is proved by data/scenarios/team's "CR 702.179d
+-- each active teammate's speed rises once": under the shared team turns option two
 -- active players each spend their own instance of rule 702.179d's ability.
 -- CR 603.2h's by Parun.EventTriggerSpec's "CR 603.2h a taken instruction is
 -- spent only for the player who took it".
