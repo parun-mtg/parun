@@ -1,0 +1,26 @@
+{
+  "description": "CR 508.5 / 603.2 / 119.3: whenever Agate-Blade Assassin attacks, the player it attacks loses 1 life and its controller gains 1",
+  "note": "Three seats. The Assassin attacks carol, Grizzly Bears attack bob: only carol loses the trigger's 1 life (CR 508.5's defending player is the one it attacks), bob loses none, and the Bears' attack triggers nothing. Distinct life totals; combat damage lands afterwards.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "life": 20, "battlefield": [{"card": "Agate-Blade Assassin", "label": "assassin", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}]},
+      {"name": "bob", "life": 17},
+      {"name": "carol", "life": 15}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$assassin", "$bears"]}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$assassin", "do": {"ChooseAttackTarget": "$carol"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$bears", "do": {"ChooseAttackTarget": "$bob"}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $assassin"]}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Life": {"player": "carol", "life": 14}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}},
+    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Life": {"player": "alice", "life": 21}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "carol", "life": 13}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 15}}},
+    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "alice", "life": 21}}}
+  ]
+}
