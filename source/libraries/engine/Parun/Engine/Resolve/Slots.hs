@@ -3717,7 +3717,7 @@ modeSlots mode =
       -- otherwise dangle.
       askerSlot clause = case Clause.optionality clause of
         Optionality.Mandatory -> Map.empty
-        Optionality.Optional ref -> playerRefSlots ref
+        Optionality.Optional ref _ -> playerRefSlots ref
       -- And every clause's branch CHOOSER, for the same reason one rider over: CR
       -- 608.2d's announcement is scoped to a clause pair and its reference may
       -- name a slot.

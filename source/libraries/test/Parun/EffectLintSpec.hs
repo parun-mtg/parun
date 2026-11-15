@@ -158,6 +158,7 @@ import qualified Parun.Types.LostPermanent as LostPermanent
 import qualified Parun.Types.MakeForetold as MakeForetold
 import qualified Parun.Types.ManaAddition as ManaAddition
 import qualified Parun.Types.ManaRestriction as ManaRestriction
+import qualified Parun.Types.MayPass as MayPass
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Meld as Meld
 import qualified Parun.Types.Mill as Mill
@@ -1042,7 +1043,7 @@ clausePlayerRefs clause =
     <> fmap OrElse.chooser (Maybe.maybeToList (Clause.orElse clause))
     <> case Clause.optionality clause of
       Optionality.Mandatory -> []
-      Optionality.Optional ref -> [ref]
+      Optionality.Optional ref _ -> [ref]
 
 -- Does this carrier pair CR 615.12's "damage can't be prevented" with a
 -- scope narrower than the whole table?
@@ -2556,7 +2557,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
                 Mint.oneModeOf Map.empty (Seq.fromList [Mint.mandatory (Seq.singleton destruction), Clause.MkClause Nothing Nothing Nothing optionality gate Seq.empty])
             }
         payerFace ref = clauseFace (Just (PayGate.MkPayGate ref (CostChoice.MkCostChoice (Cost.Type.MkCost Nothing [] NonEmpty.:| [])) Nothing PayBranch.IfNotPaid PayObligation.Optional Nothing Nothing Nothing Nothing)) Optionality.Mandatory
-        askerFace ref = clauseFace Nothing (Optionality.Optional ref)
+        askerFace ref = clauseFace Nothing (Optionality.Optional ref MayPass.AllSeatsFirst)
         -- CR 111.1's token, whose OWN printed text carries that same predicate:
         -- Face.enchant is a Filter position cardFilters walks, so effectFilters
         -- splices it in beside the creating card's. Binds no slot itself --

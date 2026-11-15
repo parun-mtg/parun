@@ -1,5 +1,6 @@
 module Parun.Types.Optionality where
 
+import qualified Parun.Types.MayPass as MayPass
 import qualified Parun.Types.PlayerRef as PlayerRef
 
 -- | CR 603.5: whether a clause's instructions are OPTIONAL -- the printed "may".
@@ -48,5 +49,10 @@ data Optionality
     -- The seats that ACCEPT are bound under Binding.mayPlayers, which is how the
     -- clause's own instructions say "they" -- Binding.gatePlayers one question
     -- over.
-    Optional PlayerRef.PlayerRef
+    --
+    -- The MayPass is AllSeatsFirst, CR 608.2e's order, unless a ruling has each
+    -- seat decide and act in turn: Círdan the Shipwright's of 2023-06-16, proved
+    -- by Parun.VoteSpec's "CR 101.4b each seat with no votes decides and puts its
+    -- card before the next seat is asked".
+    Optional PlayerRef.PlayerRef MayPass.MayPass
   deriving (Eq, Ord, Show)

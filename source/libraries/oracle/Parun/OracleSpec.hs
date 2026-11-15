@@ -119,6 +119,7 @@ import qualified Parun.Types.ManaProduction as ManaProduction
 import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
+import qualified Parun.Types.MayPass as MayPass
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.Modal as Modal
@@ -366,7 +367,7 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   Spec.it s "render prints a counterspell and an optional instruction" $ do
     let cancel = spell [clause [Effect.Counter (Counter.MkCounter (ObjectRef.InSlot target) Nothing Nothing Nothing)]] [(target, TargetSlot.required Pool.Spells (Just (Filter.Not (Filter.HasCardType CardType.Creature))))]
     Spec.assertEq s (Just (Text.pack "Counter target noncreature spell.")) (Oracle.render cancel)
-    let maybeDraw = spell [(clause [draw (PlayerRef.Relative PlayerRelation.You) 1]) {Clause.optionality = Optionality.Optional (PlayerRef.Relative PlayerRelation.You)}] []
+    let maybeDraw = spell [(clause [draw (PlayerRef.Relative PlayerRelation.You) 1]) {Clause.optionality = Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst}] []
     Spec.assertEq s (Just (Text.pack "You may draw a card.")) (Oracle.render maybeDraw)
 
   -- CR 603.6a / 700.4: "When [this] enters" and "When [this] dies", the
@@ -898,14 +899,14 @@ spec s = Spec.describe s "Parun.Oracle" $ do
   -- it: "If you do" after a "may" (Tweeze), "unless you" before one
   -- (Pillaging Horde), and a pair of which you choose one (Twiddle).
   Spec.it s "render strings a clause with the one it hangs off" $ do
-    let mayDiscard = (clause [discard (PlayerRef.Relative PlayerRelation.You) 1]) {Clause.optionality = Optionality.Optional (PlayerRef.Relative PlayerRelation.You)}
+    let mayDiscard = (clause [discard (PlayerRef.Relative PlayerRelation.You) 1]) {Clause.optionality = Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst}
         ifDone = (clause [draw (PlayerRef.Relative PlayerRelation.You) 1]) {Clause.ifTaken = Just (IfTaken.AnyTaken (NonEmpty.singleton (ClauseIndex.MkClauseIndex 1)))}
         tweeze = spell [clause [damage [(target, 3)]], mayDiscard, ifDone] [(target, TargetSlot.required Pool.AnyTarget Nothing)]
     Spec.assertEq s (Just (Text.pack "Spark deals 3 damage to any target. You may discard a card. If you do, draw a card.")) (Oracle.render tweeze)
     let notDone = (clause [sacrifice]) {Clause.ifTaken = Just (IfTaken.NoneTaken (NonEmpty.singleton (ClauseIndex.MkClauseIndex 0)))}
         horde = triggered (TriggerCondition.Enters EntersTrigger.defaultValue) [mayDiscard, notDone] []
     Spec.assertEq s [[Text.pack "When Spark enters, sacrifice it unless you discard a card.", Text.pack "When Spark enters, sacrifice Spark unless you discard a card."]] (Oracle.abilities (withFace (\f -> (typed [CardType.Creature] [] f) {Face.triggeredAbilities = [horde]})))
-    let either' i c = (clause [c]) {Clause.optionality = Optionality.Optional (PlayerRef.Relative PlayerRelation.You), Clause.orElse = Just (OrElse.MkOrElse (Set.singleton (ClauseIndex.MkClauseIndex i)) (PlayerRef.Relative PlayerRelation.You) False)}
+    let either' i c = (clause [c]) {Clause.optionality = Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst, Clause.orElse = Just (OrElse.MkOrElse (Set.singleton (ClauseIndex.MkClauseIndex i)) (PlayerRef.Relative PlayerRelation.You) False)}
         twiddle = spell [either' 1 (Effect.Tap (Tap.plain (ObjectRef.InSlot target))), either' 0 (Effect.Untap (ObjectRef.InSlot target))] [(target, TargetSlot.required Pool.Permanents Nothing)]
     Spec.assertEq s (Just (Text.pack "You may tap or untap target permanent.")) (Oracle.render twiddle)
 

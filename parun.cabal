@@ -3354,6 +3354,7 @@ library types
     Parun.Types.ManifestedDread
     Parun.Types.MatchOptions
     Parun.Types.MatchScope
+    Parun.Types.MayPass
     Parun.Types.Measure
     Parun.Types.Measures
     Parun.Types.Meld

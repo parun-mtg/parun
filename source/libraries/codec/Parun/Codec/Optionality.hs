@@ -4,6 +4,7 @@ import qualified Data.Maybe as Maybe
 import qualified Parun.Codec.PlayerRef as PlayerRef
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
+import qualified Parun.Types.MayPass as MayPass
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.PlayerRef as PlayerRef.Type
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -13,6 +14,10 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 -- printed "may" names somebody else -- Jungle Wayfinder's "each player may" --
 -- writes a value. 'Arm.optionalPayload' is what takes the tag with or without
 -- one.
+--
+-- MayPass.SeatBySeat is a tag of its own, @OptionalSeatBySeat@, so the default
+-- pass stays the unmarked spelling; it always names its asker, a seat-by-seat
+-- pass needing several seats.
 codec :: Codec.Codec Optionality.Optionality
 codec =
   Arm.tagged
@@ -21,9 +26,17 @@ codec =
       Arm.optionalPayload
         "Optional"
         PlayerRef.codec
-        (Optionality.Optional . Maybe.fromMaybe defaultAsker)
+        (\ref -> Optionality.Optional (Maybe.fromMaybe defaultAsker ref) MayPass.AllSeatsFirst)
         ( \x -> case x of
-            Optionality.Optional ref -> Just (if ref == defaultAsker then Nothing else Just ref)
+            Optionality.Optional ref MayPass.AllSeatsFirst -> Just (if ref == defaultAsker then Nothing else Just ref)
+            _ -> Nothing
+        ),
+      Arm.payload
+        "OptionalSeatBySeat"
+        PlayerRef.codec
+        (\ref -> Optionality.Optional ref MayPass.SeatBySeat)
+        ( \x -> case x of
+            Optionality.Optional ref MayPass.SeatBySeat -> Just ref
             _ -> Nothing
         )
     ]
@@ -36,4 +49,5 @@ defaultAsker = PlayerRef.Type.Relative PlayerRelation.You
 tagOf :: Optionality.Optionality -> String
 tagOf x = case x of
   Optionality.Mandatory {} -> "Mandatory"
-  Optionality.Optional {} -> "Optional"
+  Optionality.Optional _ MayPass.AllSeatsFirst -> "Optional"
+  Optionality.Optional _ MayPass.SeatBySeat -> "OptionalSeatBySeat"

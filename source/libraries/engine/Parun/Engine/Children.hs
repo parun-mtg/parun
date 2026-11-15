@@ -2900,7 +2900,7 @@ clauseChildren c (Clause.MkClause ifTaken condition orElse optionality payGate e
 optionalityChildren :: (Applicative f) => ModalChildren card ability f -> Optionality.Optionality -> f Optionality.Optionality
 optionalityChildren c optionality = case optionality of
   Optionality.Mandatory -> pure optionality
-  Optionality.Optional who -> Optionality.Optional <$> modalPlayer c who
+  Optionality.Optional who pass -> (`Optionality.Optional` pass) <$> modalPlayer c who
 
 -- | One visitor per kind of child a face holds (CR 712.6): its keywords (CR
 -- 702), its abilities (CR 113.1), its spell (CR 700.2), its costs (CR 118.8, 118.9) and

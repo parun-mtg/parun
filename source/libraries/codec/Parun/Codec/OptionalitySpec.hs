@@ -4,6 +4,7 @@ import qualified Data.Text as Text
 import qualified Parun.Codec.Optionality as Optionality
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.Spec as Spec
+import qualified Parun.Types.MayPass as MayPass
 import qualified Parun.Types.Optionality as Optionality
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -23,14 +24,14 @@ spec s = Spec.describe s "Parun.Codec.Optionality" $ do
     Common.assertCodec
       s
       Optionality.codec
-      (Optionality.Optional (PlayerRef.Relative PlayerRelation.You))
+      (Optionality.Optional (PlayerRef.Relative PlayerRelation.You) MayPass.AllSeatsFirst)
       " {\"type\":\"Optional\"} "
   -- Jungle Wayfinder's "each player may", which is what the value is for.
   Spec.it s "Optional, asker written" $
     Common.assertCodec
       s
       Optionality.codec
-      (Optionality.Optional (PlayerRef.Relative PlayerRelation.AnyPlayer))
+      (Optionality.Optional (PlayerRef.Relative PlayerRelation.AnyPlayer) MayPass.AllSeatsFirst)
       " {\"type\":\"Optional\",\"value\":{\"type\":\"Relative\",\"value\":\"AnyPlayer\"}} "
   -- Any other reference round trips too -- the payload is a whole PlayerRef and
   -- not an enum of the two producers.
@@ -38,7 +39,14 @@ spec s = Spec.describe s "Parun.Codec.Optionality" $ do
     Common.assertCodec
       s
       Optionality.codec
-      (Optionality.Optional (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
+      (Optionality.Optional (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))) MayPass.AllSeatsFirst)
       " {\"type\":\"Optional\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
+  -- Círdan the Shipwright's ruling, each seat deciding and acting in turn.
+  Spec.it s "Optional, seat by seat" $
+    Common.assertCodec
+      s
+      Optionality.codec
+      (Optionality.Optional (PlayerRef.EachPlayerExcept (SlotName.MkSlotName (Text.pack "votes"))) MayPass.SeatBySeat)
+      " {\"type\":\"OptionalSeatBySeat\",\"value\":{\"type\":\"EachPlayerExcept\",\"value\":\"votes\"}} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s Optionality.codec
