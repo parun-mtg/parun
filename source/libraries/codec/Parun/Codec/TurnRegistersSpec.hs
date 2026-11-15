@@ -47,6 +47,7 @@ spec s = Spec.describe s "Parun.Codec.TurnRegisters" $ do
           TurnRegisters.activationsThisTurn = Seq.empty,
           TurnRegisters.castPermissionsUsedThisTurn = Map.empty,
           TurnRegisters.rollModifiersUsedThisTurn = Map.empty,
+          TurnRegisters.freeCastsUsedThisTurn = Map.empty,
           TurnRegisters.instructionsTakenThisTurn = Seq.empty,
           TurnRegisters.turnResume = TurnResume.InWindow
         }

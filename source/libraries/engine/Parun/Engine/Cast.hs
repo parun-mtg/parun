@@ -4707,6 +4707,9 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                           -- here rejects, and CR 734.1's reversal restores the
                           -- whole field (Parun.Engine.Reversal).
                           State.modify' (PlayerEffect.spendCastPermission pid (PlayerEffect.permissionSpent permissionUsed))
+                          -- CR 118.9: and the budgeted grant whose cost it
+                          -- paid, for the same reason.
+                          State.modify' (PlayerEffect.spendFreeCast (CandidateCost.spends chosenCandidate))
                           -- CR 601.3: and a cast made under the card's own exile
                           -- permission spends that permission's budget, for the
                           -- same reason.

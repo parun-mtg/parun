@@ -180,6 +180,7 @@ withoutAnnouncement before entry closed = do
   activationsThisTurn <- eventsOf (TurnRegisters.activationsThisTurn . GameState.turn)
   castPermissionsUsedThisTurn <- mapOfSets (TurnRegisters.castPermissionsUsedThisTurn . GameState.turn)
   rollModifiersUsedThisTurn <- mapOfSets (TurnRegisters.rollModifiersUsedThisTurn . GameState.turn)
+  freeCastsUsedThisTurn <- mapOfSets (TurnRegisters.freeCastsUsedThisTurn . GameState.turn)
   instructionsTakenThisTurn <- seqOf (TurnRegisters.instructionsTakenThisTurn . GameState.turn)
   triggeredThisGame <- seqOf (History.triggeredThisGame . GameState.history)
   pendingControl <- mapOf GameState.pendingControl
@@ -261,6 +262,7 @@ withoutAnnouncement before entry closed = do
               TurnRegisters.activationsThisTurn = activationsThisTurn,
               TurnRegisters.castPermissionsUsedThisTurn = castPermissionsUsedThisTurn,
               TurnRegisters.rollModifiersUsedThisTurn = rollModifiersUsedThisTurn,
+              TurnRegisters.freeCastsUsedThisTurn = freeCastsUsedThisTurn,
               TurnRegisters.instructionsTakenThisTurn = instructionsTakenThisTurn,
               TurnRegisters.turnResume = turnResume,
               TurnRegisters.turnAnchor = turnAnchor,

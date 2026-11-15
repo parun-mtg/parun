@@ -751,6 +751,7 @@ candidateCostsGiven permitted pid name oid gs =
                         False
                         Nothing
                         Nothing
+                        Nothing
                  in concatMap
                       (\emerge -> fmap (offer emerge) (victims (Maybe.fromMaybe (Filter.Type.HasCardType CardType.Creature) (Emerge.quality emerge))))
                       (Keyword.emergeCosts onStack)
@@ -914,9 +915,9 @@ candidateCostsGiven permitted pid name oid gs =
               -- the face's additional costs, CR 118.9d; its filter reads the
               -- spell, discardCandidates' Source.
               freeCast =
-                [ untagged (free {Cost.components = instead <> Cost.components free})
-                | let free = withoutPayingManaCost face,
-                  instead <- PlayerEffect.ratherThanManaCost pid oid gs
+                [ (untagged (free {Cost.components = instead <> Cost.components free})) {CandidateCost.spends = budget}
+                | (mana, instead, budget) <- PlayerEffect.ratherThanManaCost pid oid gs,
+                  let free = insteadOfManaCost mana face
                 ]
               ordinary = untagged printed : alternatives <> bestowed <> prototyped <> mutated <> evoked <> emerged <> surged <> spectacled <> prowled <> freerun <> freeCast
            in -- CR 118.8 / 601.2b: every candidate below owes this face's choice
@@ -1048,6 +1049,7 @@ candidateCostsGiven permitted pid name oid gs =
                                 (withAdditional cost {Cost.components = Cost.components cost <> [CostComponent.TapPermanents (TapPermanents.MkTapPermanents (CostAmount.Fixed 1) (criterion vid) False)]})
                                 [ManaCost.MkManaCost [ManaSymbol.Generic (Integer.toNaturalSaturating n)]]
                                 False
+                                Nothing
                                 Nothing
                                 Nothing
                             tappingNone cost = CandidateCost.plain (Just (Keyword.Type.Harmonize cost)) (withAdditional cost)

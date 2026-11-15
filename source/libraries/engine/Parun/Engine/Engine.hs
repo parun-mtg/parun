@@ -2365,6 +2365,9 @@ closeTurn gs =
                 -- Night Shift of the Living Dead's "Do this only once each turn", the
                 -- budget on a CR 706.2 modifier, cleared for every object for its reason.
                 TurnRegisters.rollModifiersUsedThisTurn = Map.empty,
+                -- Warped Space's "Once each turn", the budget on a CR 118.9
+                -- grant, cleared for every object for its reason.
+                TurnRegisters.freeCastsUsedThisTurn = Map.empty,
                 -- CR 603.2h's "that turn": a taken instruction frees its ability at
                 -- the next turn, for every object.
                 TurnRegisters.instructionsTakenThisTurn = Seq.empty,
