@@ -934,7 +934,11 @@ effect context e = case e of
   -- "Sacrifice this creature" (CR 701.21a): one object, which the
   -- instruction's controller sacrifices. A sweep is not spelled out here.
   Effect.Sacrifice (SacrificeEffect.MkSacrificeEffect r@(ObjectRef.InSlot _) Sacrificer.EffectController Nothing) -> acted context (Text.pack "sacrifice ") r
-  Effect.Untap r -> acted context (Text.pack "untap ") r
+  -- Free over several: "all" or "each" (Rally the Troops, Veteran Beastrider).
+  Effect.Untap r -> do
+    determiner <- [Target.All, Target.Each]
+    ref <- Target.object context determiner r
+    [MkPredicate Nothing (Text.pack "untap " <> Target.wording ref) [] (Target.mentions ref) Nothing False]
   -- "That player sacrifices a creature of their choice" (CR 701.21a): a
   -- stated number of permanents a player a slot names chooses. Free: "of their
   -- choice" or not, Oracle wording edicts both ways. A player named otherwise
