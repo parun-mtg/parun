@@ -704,15 +704,15 @@ out: grep for them.
 
 ### `KeywordTriggerSpec`
 
-- CR 509.3e a black creature joining a block a black creature is already in is +2/+0 once | `check:other-Combat.blockersOf`
-- CR 509.3e whole card: a Saproling put onto the battlefield blocking pushes an already-blocked attacker over the floor | `board:combat` `board:object-goadedby`
-- CR 509.3e whole card: two Saprolings arriving at once cross the floor together | `board:combat` `board:object-goadedby`
-- CR 603.3b two DIFFERENT abilities of one source are distinguishable entries | `check:prompt-payload`
-- CR 603.6a two triggers of the SAME ability stay indistinguishable | `check:prompt-payload`
-- CR 613.1f only a removal later than the grant takes the granted restriction away
-- CR 613.1f only a removal later than the grant takes the granted static ability away | `check:abilities`
-- CR 613.7 two Evolutions on Wanderwine Prophets champion a Merfolk | `check:other-Projection.mintedTriggeredAbilitiesOf`
-- CR 702.124j the entry trigger searches the TARGET player's library | `check:events`
+- ~~CR 509.3e a black creature joining a block a black creature is already in is +2/+0 once | `check:other-Combat.blockersOf`~~
+- ~~CR 509.3e whole card: a Saproling put onto the battlefield blocking pushes an already-blocked attacker over the floor | `board:combat` `board:object-goadedby`~~
+- ~~CR 509.3e whole card: two Saprolings arriving at once cross the floor together | `board:combat` `board:object-goadedby`~~
+- ~~CR 603.3b two DIFFERENT abilities of one source are distinguishable entries | `check:prompt-payload`~~
+- ~~CR 603.6a two triggers of the SAME ability stay indistinguishable | `check:prompt-payload`~~
+- ~~CR 613.1f only a removal later than the grant takes the granted restriction away~~
+- ~~CR 613.1f only a removal later than the grant takes the granted static ability away | `check:abilities`~~
+- ~~CR 613.7 two Evolutions on Wanderwine Prophets champion a Merfolk | `check:other-Projection.mintedTriggeredAbilitiesOf`~~
+- ~~CR 702.124j the entry trigger searches the TARGET player's library | `check:events`~~
 
 ### `LearnSpec`
 

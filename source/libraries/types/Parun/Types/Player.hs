@@ -110,8 +110,8 @@ data Player = MkPlayer
     -- Keyed PER COMMANDER, which is CR 702.124d: "when casting a commander with
     -- partner, ignore how many times your other commander has been cast". A
     -- single counter would charge a partner deck's second commander {2} on its
-    -- first cast. Parun.CommanderSpec's "the other commander is untaxed by the
-    -- first one's casts" is the proof. Keyed by the card's identity, as
+    -- first cast. data/scenarios/commander/cr-702-124d-the-other-commander-
+    -- ignores-this-one-s-casts.json is the proof. Keyed by the card's identity, as
     -- `commander` is, so another deck's copy of the same printing that this
     -- player has come to own is a different commander (CR 903.8's "it").
     commanderCasts :: Map.Map CardIdentity.CardIdentity Natural.Natural,

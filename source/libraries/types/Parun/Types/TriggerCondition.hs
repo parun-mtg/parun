@@ -114,8 +114,8 @@ data TriggerCondition
     -- 509.4; Flash Foliage, Aetherplasm). Parun.CombatCostSpec's SwitchBlockers,
     -- ExchangeBlocks and PutOntoBattlefieldBlocking groups,
     -- Parun.KeywordTriggerSpec's SelfBlocksOneOrMore and
-    -- CreatureBecomesBlockedByAtLeast groups and data/scenarios/false-orders/
-    -- are the proof.
+    -- CreatureBecomesBlockedByAtLeast groups, data/scenarios/false-orders/ and
+    -- data/scenarios/keyword-trigger/ are the proof.
     Blocks BlockTrigger.BlockTrigger
   | -- | CR 603.6c: a permanent leaves the battlefield, a CR 603.10a look-back.
     Leaves LeavesTrigger.LeavesTrigger

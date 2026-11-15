@@ -1531,8 +1531,8 @@ monarchOrderingSpec s registry =
          in beginEndStep (resolveAll (S.withEvents [GameEvent.Moved (Moved.moved entered (Projection.project jailer gs3))] gs3))
       -- Records every ordering payload's SOURCES, in order, answering
       -- canonically. The sources are what this group is about (CR 726.2's
-      -- absent one beside a borne one); Parun.KeywordTriggerSpec's battleCrySpec
-      -- asserts on the ability half of the same entries.
+      -- absent one beside a borne one); data/scenarios/keyword-trigger/'s CR
+      -- 603.3b and 603.6a cases assert on the ability half of the same entries.
       recordPayloads :: Prompt.Prompt r -> State.State [[TriggerSource.TriggerSource]] r
       recordPayloads p = case p of
         Prompt.OrderTriggers _ _ entries -> do

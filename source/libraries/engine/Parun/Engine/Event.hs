@@ -2353,8 +2353,8 @@ offerCommandZone zc = do
 
 -- CR 616.1e / 903.9b: the command-zone offer as one of the applicable effects
 -- the affected object's controller picks among, asked ahead of the card-borne
--- rows of CR 616.1e's bucket. A card's row watching a hand (Parun.CommanderSpec's
--- Synthetic Hand Interdiction) stops applying once the offer has moved the
+-- rows of CR 616.1e's bucket. A card's row watching a hand (Synthetic Hand
+-- Interdiction, data/scenarios/commander/) stops applying once the offer has moved the
 -- destination, and the offer stops applying once the row has, so which goes
 -- first decides where the commander ends up.
 --
