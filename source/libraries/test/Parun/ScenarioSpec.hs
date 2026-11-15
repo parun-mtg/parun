@@ -28,15 +28,18 @@ import qualified Parun.JsonSchema.Validate as Validate
 import qualified Parun.Registry as Registry
 import qualified Parun.Scenario as Scenario
 import qualified Parun.Scenario.Load as Load
+import qualified Parun.Scenario.Perturb as Perturb
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Trustworthy.Directory as Directory
 import qualified Parun.Types.Action as A
 import qualified Parun.Types.Answer as Answer
+import qualified Parun.Types.AttackersAre as AttackersAre
 import qualified Parun.Types.BeginningStep as BeginningStep
 import qualified Parun.Types.Board as Board
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.CardName as CardName
+import qualified Parun.Types.Check as Check
 import qualified Parun.Types.Choices as Choices
 import qualified Parun.Types.Concession as Concession
 import qualified Parun.Types.Cost as Cost
@@ -59,6 +62,7 @@ import qualified Parun.Types.Placement as Placement
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Readiness as Readiness
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.Reference as Reference
 import qualified Parun.Types.Reply as Reply
 import qualified Parun.Types.Scenario as Scenario.Type
 import qualified Parun.Types.ScenarioFailure as ScenarioFailure
@@ -66,6 +70,7 @@ import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.TapState as TapState
+import qualified Parun.Types.TappedIs as TappedIs
 import qualified Parun.Types.TeamId as TeamId
 import qualified Parun.Types.Timed as Timed
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -840,6 +845,38 @@ referenceSpec s = Spec.describe s "Scenario reference" $ do
       case sound of
         Left failure -> Spec.assertFailure s ("a name filed under itself failed the run: " <> S.renderFailure failure)
         Right _ -> pure ()
+
+-- Runs each perturbation as a real game: a check the run never reads survives
+-- its perturbation, and one it reads does not.
+perturbSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+perturbSpec s registry = Spec.describe s "Parun.Scenario.Perturb" $ do
+  let decode json = case Common.parse (Text.pack json) >>= Codec.decode Codec.Scenario.codec of
+        Left problem -> Spec.assertFailure s (Text.unpack problem)
+        Right scenario -> pure scenario
+      passes scenario = fmap (either (const False) (const True)) (Scenario.run registry scenario)
+      -- bob draws one Swamp past alice's tapped Howling Mine.
+      mine final =
+        "{\"description\":\"mine\",\"board\":{\"active\":\"bob\",\"step\":\"Upkeep\",\"turn\":2,\"seats\":["
+          <> "{\"name\":\"bob\",\"library\":[{\"card\":\"Swamp\"},{\"card\":\"Swamp\"}]},"
+          <> "{\"name\":\"alice\",\"battlefield\":[{\"card\":\"Howling Mine\",\"label\":\"mine\",\"tapped\":true}],\"library\":[{\"card\":\"Plains\"}]}]},"
+          <> "\"timeline\":[{\"turn\":2,\"step\":\"PrecombatMain\",\"player\":\"bob\",\"check\":{\"Count\":{\"player\":\"bob\",\"zone\":\"Hand\",\"card\":\"Swamp\",\"count\":1}}}],"
+          <> "\"final\":["
+          <> final
+          <> "]}"
+      tapped = "{\"Tapped\":{\"object\":\"$mine\",\"tapped\":true}}"
+      noAttackers = "{\"Attackers\":{\"attackers\":{}}}"
+      mineUntapped = Check.Tapped (TappedIs.MkTappedIs (Reference.Labelled (Label.MkLabel (Text.pack "mine"))) TapState.Untapped)
+      mineTapped = Check.Tapped (TappedIs.MkTappedIs (Reference.Labelled (Label.MkLabel (Text.pack "mine"))) TapState.Tapped)
+  Spec.it s "a scenario whose every check is read reports only the check it cannot perturb" $ do
+    scenario <- decode (mine (tapped <> "," <> noAttackers))
+    found <- Perturb.findings passes scenario
+    Spec.assertEqWith s "the empty attackers check alone, skipped" found (Seq.singleton (Perturb.Skipped (Perturb.InFinal 1) (Check.Attackers (AttackersAre.MkAttackersAre Map.empty))))
+  Spec.it s "a final check the run never reads is reported surviving its perturbation" $ do
+    scenario <- decode (mine tapped)
+    -- A run that drops the final checks, so the Tapped check is vacuous; the
+    -- timeline's Count is still read, and is not reported.
+    found <- Perturb.findings (\candidate -> passes candidate {Scenario.Type.final = Seq.empty}) scenario
+    Spec.assertEqWith s "the Tapped check, flipped" found (Seq.singleton (Perturb.Survived (Perturb.MkPerturbation (Perturb.InFinal 0) mineTapped mineUntapped)))
 
 corpusSpec :: (MonadIO.MonadIO n) => Spec.Spec IO n -> Registry.Registry IO -> n ()
 corpusSpec s registry = Spec.describe s "Scenarios" $ do

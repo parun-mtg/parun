@@ -2162,6 +2162,7 @@ spec s reference corpus = do
   Parun.ReplySpec.spec s registry
   Parun.ScenarioSpec.corpusSpec s registry
   Parun.ScenarioSpec.loadSpec s
+  Parun.ScenarioSpec.perturbSpec s registry
   Parun.ScenarioSpec.referenceSpec s
   Parun.ScenarioSpec.spec s registry
   Parun.SeatingSpec.spec s registry
