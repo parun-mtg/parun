@@ -189,6 +189,17 @@
     },
     {
       "check": {
+        "Tapped": {
+          "object": "$duo",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
         "Life": {
           "life": 19,
           "player": "carol"
@@ -226,17 +237,6 @@
           "object": "$giant",
           "power": 6,
           "toughness": 6
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "Tapped": {
-          "object": "$duo",
-          "tapped": true
         }
       },
       "player": "alice",
@@ -361,11 +361,9 @@
     },
     {
       "check": {
-        "Count": {
-          "card": "Grizzly Bears",
-          "count": 1,
-          "player": "alice",
-          "zone": "Battlefield"
+        "Tapped": {
+          "object": "$duo",
+          "tapped": true
         }
       },
       "player": "alice",
@@ -374,9 +372,11 @@
     },
     {
       "check": {
-        "Tapped": {
-          "object": "$duo",
-          "tapped": true
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
         }
       },
       "player": "alice",

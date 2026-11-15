@@ -1,32 +1,337 @@
 {
-  "description": "CR 601.2c / 108.3 / 608.2c / 121.1 / 701.9a: Calamitous Tide returns up to two target creatures to their owners' hands, then its caster draws two cards and discards one",
-  "note": "Alice controls bob's Hill Giant and her own Grizzly Bears; the Tide returns each to its owner's hand while bob's untargeted Wind Drake stays. She draws Opt and Forest and discards Opt. On turn 3 a second Tide with no target at all (up to two) still draws Divination and Lightning Bolt, and she discards Divination.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
-      {"name": "alice", "battlefield": [{"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Island", "label": "i1"}, {"card": "Island", "label": "i2"}, {"card": "Island", "label": "i3"}, {"card": "Island", "label": "i4"}, {"card": "Island", "label": "i5"}, {"card": "Island", "label": "i6"}], "hand": [{"card": "Calamitous Tide", "label": "tide"}, {"card": "Calamitous Tide", "label": "tide2"}], "library": [{"card": "Opt"}, {"card": "Forest"}, {"card": "Swamp"}, {"card": "Divination"}, {"card": "Lightning Bolt"}, {"card": "Cancel"}]},
-      {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant", "ready": true, "controller": "alice"}, {"card": "Wind Drake", "label": "drake", "ready": true}], "library": [{"card": "Swamp"}, {"card": "Swamp"}]}
-    ]
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "i5"
+          },
+          {
+            "card": "Island",
+            "label": "i6"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Calamitous Tide",
+            "label": "tide"
+          },
+          {
+            "card": "Calamitous Tide",
+            "label": "tide2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Opt"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Divination"
+          },
+          {
+            "card": "Lightning Bolt"
+          },
+          {
+            "card": "Cancel"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "controller": "alice",
+            "label": "giant",
+            "ready": true
+          },
+          {
+            "card": "Wind Drake",
+            "label": "drake",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 601.2c / 108.3 / 608.2c / 121.1 / 701.9a: Calamitous Tide returns up to two target creatures to their owners' hands, then its caster draws two cards and discards one",
+  "note": "Alice controls bob's Hill Giant and her own Grizzly Bears; the Tide returns each to its owner's hand while bob's untargeted Wind Drake stays. She draws Opt and Forest and discards Opt. On turn 3 a second Tide with no target at all (up to two) still draws Divination and Lightning Bolt, and she discards Divination.",
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$tide", "targets": ["$giant", "$bears"], "mana": ["$i1", "$i2", "$i3", "$i4", "$i5", "$i6"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseDiscard", "with": ["Opt"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Hill Giant", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Hill Giant", "count": 0}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Grizzly Bears", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Wind Drake", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Forest", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Opt", "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Library", "is": ["Swamp", "Divination", "Lightning Bolt", "Cancel"]}}},
-    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$tide2", "targets": [], "mana": ["$i1", "$i2", "$i3", "$i4", "$i5", "$i6"]}}},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseDiscard", "with": ["Divination"]}}},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Divination", "count": 1}}},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Lightning Bolt", "count": 1}}},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Calamitous Tide", "count": 2}}},
-    {"turn": 3, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "alice", "zone": "Library", "is": ["Cancel"]}}}
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            "$i5",
+            "$i6"
+          ],
+          "object": "$tide",
+          "targets": [
+            "$giant",
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "Opt"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wind Drake",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Opt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Swamp",
+            "Divination",
+            "Lightning Bolt",
+            "Cancel"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            "$i5",
+            "$i6"
+          ],
+          "object": "$tide2",
+          "targets": []
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": [
+            "Divination"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Divination",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lightning Bolt",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Calamitous Tide",
+          "count": 2,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Cancel"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
   ]
 }

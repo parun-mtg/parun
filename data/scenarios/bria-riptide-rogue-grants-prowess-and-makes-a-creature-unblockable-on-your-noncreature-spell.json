@@ -1,49 +1,474 @@
 {
-  "description": "CR 613.1f / 702.108a / 509.1b: Bria, Riptide Rogue gives other creatures you control prowess, and when you cast a noncreature spell, target creature you control can't be blocked this turn",
-  "note": "Bria and alice's Grizzly Bears have one prowess each, bob's Hill Giant none. Alice's Shock triggers three prowess-style abilities and Bria's; its target cannot be bob's Giant (you control), so it is the Bears. Her Raging Goblin (a creature spell) and bob's Shock (not hers) trigger nothing. Bob cannot block the Bears but can block Bria; two turns later the Bears can be blocked again (this turn).",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
-      {"name": "alice", "battlefield": [{"card": "Bria, Riptide Rogue", "label": "bria", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}, {"card": "Mountain", "label": "m1"}, {"card": "Mountain", "label": "m2"}], "hand": [{"card": "Shock", "label": "shock"}, {"card": "Raging Goblin", "label": "goblin"}], "library": [{"card": "Island"}, {"card": "Island"}]},
-      {"name": "bob", "battlefield": [{"card": "Hill Giant", "label": "giant", "ready": true}, {"card": "Hill Giant", "label": "giant2", "ready": true}, {"card": "Mountain", "label": "bm"}], "hand": [{"card": "Shock", "label": "bshock"}], "library": [{"card": "Island"}, {"card": "Island"}]}
-    ]
+      {
+        "battlefield": [
+          {
+            "card": "Bria, Riptide Rogue",
+            "label": "bria",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "shock"
+          },
+          {
+            "card": "Raging Goblin",
+            "label": "goblin"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant2",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "bm"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shock",
+            "label": "bshock"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 613.1f / 702.108a / 509.1b: Bria, Riptide Rogue gives other creatures you control prowess, and when you cast a noncreature spell, target creature you control can't be blocked this turn",
+  "note": "Bria and alice's Grizzly Bears have one prowess each, bob's Hill Giant none. Alice's Shock triggers three prowess-style abilities and Bria's; its target cannot be bob's Giant (you control), so it is the Bears. Her Raging Goblin (a creature spell) and bob's Shock (not hers) trigger nothing. Bob cannot block the Bears but can block Bria; two turns later the Bears can be blocked again (this turn).",
   "timeline": [
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bears", "keyword": {"type": "Prowess"}, "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$bria", "keyword": {"type": "Prowess"}, "count": 1}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$giant", "keyword": {"type": "Prowess"}, "count": 0}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "$m1", "keyword": {"type": "Prowess"}, "count": 0}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$shock", "targets": ["$bob"], "mana": ["$m1", null]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"OrderTriggers": ["$bria", "$bears", "$bria"]}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"ChooseTargets": {"target": ["$giant"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"ChooseTargets": {"target": ["$bears"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 3, "toughness": 3}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"PowerToughness": {"object": "$bria", "power": 4, "toughness": 4}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Life": {"player": "bob", "life": 18}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$goblin", "mana": ["$m2"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Raging Goblin"]}}},
-    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "do": {"Cast": {"object": "$bshock", "targets": ["$alice"], "mana": ["$bm"]}}},
-    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Shock#2"]}}},
-    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Life": {"player": "alice", "life": 18}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 3, "toughness": 3}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bria", "$bears"]}},
-    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "refuse": {"Block": {"$giant": ["$bears"]}}},
-    {"turn": 1, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$giant": ["$bria"]}}},
-    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Blockers": {"attacker": "$bears", "blockers": null}}},
-    {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Blockers": {"attacker": "$bria", "blockers": ["$giant"]}}},
-    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 15}}},
-    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
-    {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears"]}},
-    {"turn": 3, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$giant2": ["$bears"]}}},
-    {"turn": 3, "step": "DeclareBlockers", "player": "alice", "check": {"Blockers": {"attacker": "$bears", "blockers": ["$giant2"]}}}
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Prowess"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 1,
+          "keyword": {
+            "type": "Prowess"
+          },
+          "object": "$bria"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Prowess"
+          },
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Keywords": {
+          "count": 0,
+          "keyword": {
+            "type": "Prowess"
+          },
+          "object": "$m1"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            null
+          ],
+          "object": "$shock",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$bria",
+          "$bears",
+          "$bria"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$giant"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bria",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m2"
+          ],
+          "object": "$goblin"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Raging Goblin"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$bm"
+          ],
+          "object": "$bshock",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Shock#2"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bria",
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Block": {
+          "$giant": [
+            "$bears"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$giant": [
+            "$bria"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$bears",
+          "blockers": null
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$bria",
+          "blockers": [
+            "$giant"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 15,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": [
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Block": {
+          "$giant2": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$bears",
+          "blockers": [
+            "$giant2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 3
+    }
   ]
 }

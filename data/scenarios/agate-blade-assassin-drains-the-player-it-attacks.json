@@ -1,26 +1,150 @@
 {
-  "description": "CR 508.5 / 603.2 / 119.3: whenever Agate-Blade Assassin attacks, the player it attacks loses 1 life and its controller gains 1",
-  "note": "Three seats. The Assassin attacks carol, Grizzly Bears attack bob: only carol loses the trigger's 1 life (CR 508.5's defending player is the one it attacks), bob loses none, and the Bears' attack triggers nothing. Distinct life totals; combat damage lands afterwards.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
-      {"name": "alice", "life": 20, "battlefield": [{"card": "Agate-Blade Assassin", "label": "assassin", "ready": true}, {"card": "Grizzly Bears", "label": "bears", "ready": true}]},
-      {"name": "bob", "life": 17},
-      {"name": "carol", "life": 15}
-    ]
+      {
+        "battlefield": [
+          {
+            "card": "Agate-Blade Assassin",
+            "label": "assassin",
+            "ready": true
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears",
+            "ready": true
+          }
+        ],
+        "life": 20,
+        "name": "alice"
+      },
+      {
+        "life": 17,
+        "name": "bob"
+      },
+      {
+        "life": 15,
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 508.5 / 603.2 / 119.3: whenever Agate-Blade Assassin attacks, the player it attacks loses 1 life and its controller gains 1",
+  "note": "Three seats. The Assassin attacks carol, Grizzly Bears attack bob: only carol loses the trigger's 1 life (CR 508.5's defending player is the one it attacks), bob loses none, and the Bears' attack triggers nothing. Distinct life totals; combat damage lands afterwards.",
   "timeline": [
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$assassin", "$bears"]}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$assassin", "do": {"ChooseAttackTarget": "$carol"}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "source": "$bears", "do": {"ChooseAttackTarget": "$bob"}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"View": {"of": "Stack", "is": ["trigger of $assassin"]}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "do": "Pass"},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Life": {"player": "carol", "life": 14}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Life": {"player": "bob", "life": 17}}},
-    {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Life": {"player": "alice", "life": 21}}},
-    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "carol", "life": 13}}},
-    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 15}}},
-    {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "alice", "life": 21}}}
+    {
+      "do": {
+        "Attack": [
+          "$assassin",
+          "$bears"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$carol"
+      },
+      "player": "alice",
+      "source": "$assassin",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$bears",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $assassin"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 14,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 17,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 21,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 13,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 15,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 21,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
   ]
 }
