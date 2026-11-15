@@ -26,7 +26,6 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
-import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Int as Int
 import Parun.PlaneswalkerCombatSpec (allTapped, allUntapped, atLife, jaceBoard, stillThere)
 import qualified Parun.Registry as Registry
@@ -779,8 +778,8 @@ blockerEnteredBlocking e = case e of
 -- becomes blocked. Draw a card."
 --
 -- Its window is CastingRestriction.AfterBlockersDeclared, read through
--- Turn.afterBlockersDeclared; castingWindowSpec below is where CR 506.8b's
--- boundary is proved step by step.
+-- Turn.afterBlockersDeclared; data/scenarios/combat-cost/cr-506-8b-the-window-opens-at-the-declaration-and-runs-to-the-end-of-the-combat.json
+-- proves CR 506.8b's boundary step by step.
 --
 -- Sacred Prey ("Whenever this creature becomes blocked, you gain 1 life") is the
 -- observer for CR 509.3c, which says a "becomes blocked" ability triggers on the
@@ -1292,76 +1291,6 @@ putOntoBattlefieldBlockingSpec s registry = Spec.describe s "PutOntoBattlefieldB
         Spec.assertBool s (not (any (blockerWasDeclared . LoggedEvent.event) (TurnRegisters.events (GameState.turn atEnd)))) "CR 509.4: no blocker was declared on this board"
         Spec.assertBool s (S.onBattlefield guard atEnd && S.onBattlefield brigade atEnd) "and both attackers survived their copy's damage, which is what keeps the tokens alive to be exiled"
       _ -> Spec.assertFailure s "fixture should have two attackers"
-
--- CR 506.8b's window, "only during combat after blockers are declared", proved
--- step by step on ONE board.
---
--- Every leg comes from the same curtainBoard: the same two seats, the same two
--- Plains paying the same {1}{W}, the same empty stack, and the same unblocked
--- attacking Prey standing as CR 601.2c's legal target. So no leg can refuse the
--- cast for want of mana, of a target, or of a timing window -- the only thing
--- that moves is where in the combat phase the board sits, which is exactly what
--- CR 506.8b is about.
---
--- The pair that carries the rule is `beforeDeclaration` against `declared`:
--- identical states but for CR 509.1's turn-based action having run. Everything
--- after that pair moves TurnRegisters.phase on the DECLARED board, which is how the
--- combat damage and end of combat steps -- the two the old transcription's
--- declare-blockers-step window left out -- get read.
---
--- What is NOT provable here is CR 506.8f, and by construction rather than by
--- omission: the pool's only route to a skipped declare blockers step is CR
--- 508.8's empty attack, which leaves no attacking creature, and with no
--- attacking creature Curtain of Light has no legal target -- so such a board
--- refuses the cast whatever the gate answers. The gate implements CR 506.8f
--- all the same, since it reads a record only the step itself writes.
-castingWindowSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-castingWindowSpec s registry = Spec.describe s "CastingWindow" $ do
-  Spec.it s "CR 506.8b the window opens at the declaration and runs to the end of the combat phase" $ do
-    plains <- S.printingOf s registry "Plains"
-    piker <- S.printingOf s registry "Goblin Piker"
-    prey <- S.printingOf s registry "Sacred Prey"
-    curtain <- S.printingOf s registry "Curtain of Light"
-    mountain <- S.printingOf s registry "Mountain"
-    bolt <- S.printingOf s registry "Lightning Bolt"
-    let (gs0, _, _, curtainId) = curtainBoard plains piker curtain [prey]
-        (boltId, gs) = S.addHandCard bolt S.bob (snd (S.addPermanent mountain S.bob gs0))
-        -- The declare blockers step reached but not yet run: attackers are
-        -- declared, CR 509.1's turn-based action is not.
-        beforeDeclaration = S.runToStep (Phase.Combat CombatStep.DeclareBlockers) S.aggressiveAnswer gs
-        -- That one action, and nothing else. Blocks are DECLINED so the Prey
-        -- stays an unblocked attacking creature and every later leg keeps the
-        -- same legal target.
-        declared = S.runPure declineBlocks beforeDeclaration (Combat.declareBlockers S.manaPerformer)
-        inStep step =
-          declared
-            { GameState.turn =
-                (GameState.turn declared)
-                  { TurnRegisters.phase = Phase.Combat step
-                  }
-            }
-        -- The other side of CR 506.8b, on the board that has NOT declared: a
-        -- reachable priority window one step earlier.
-        atAttackers =
-          beforeDeclaration
-            { GameState.turn =
-                (GameState.turn beforeDeclaration)
-                  { TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers
-                  }
-            }
-    -- Anti-vacuity: bob's unrestricted instant is castable on every one of these
-    -- boards, so a leg that refuses the Curtain is refusing the Curtain.
-    Spec.assertBool s (all (S.castable S.bob boltId) [beforeDeclaration, declared, inStep CombatStep.CombatDamage, inStep CombatStep.EndOfCombat, atAttackers]) "bob can pay for and legally cast an unrestricted instant on every leg"
-    Spec.assertBool s (not (Turn.afterBlockersDeclared beforeDeclaration)) "the declaration has not happened yet"
-    Spec.assertBool s (Turn.afterBlockersDeclared declared) "and it has after CR 509.1's turn-based action"
-    -- Before the point CR 506.8b names.
-    Spec.assertBool s (not (S.castable S.bob curtainId atAttackers)) "refused in the declare attackers step"
-    Spec.assertBool s (not (S.castable S.bob curtainId beforeDeclaration)) "refused in the declare blockers step before blockers are declared"
-    -- After it. The first was already reachable under the declare-blockers-step
-    -- window this replaced; the last two are what that window lost.
-    Spec.assertBool s (S.castable S.bob curtainId declared) "castable once blockers are declared"
-    Spec.assertBool s (S.castable S.bob curtainId (inStep CombatStep.CombatDamage)) "castable in the combat damage step"
-    Spec.assertBool s (S.castable S.bob curtainId (inStep CombatStep.EndOfCombat)) "castable in the end of combat step"
 
 -- Glory-Bound Initiate {1}{W} Creature -- Human Warrior 3/1, "You may exert this
 -- creature as it attacks. When you do, it gets +1\/+3 and gains lifelink until
@@ -2320,7 +2249,6 @@ spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Combat" $ do
   landSubtypeStripSpec s registry
   becomesBlockedSpec s registry
-  castingWindowSpec s registry
   putOntoBattlefieldBlockingSpec s registry
   switchBlockersSpec s registry
   attackCostSpec s registry

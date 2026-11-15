@@ -267,7 +267,7 @@ out: grep for them.
 
 ### `CombatCostSpec`
 
-- CR 506.8b the window opens at the declaration and runs to the end of the combat phase | `check:other-Turn.afterBlockersDeclared`
+- ~~CR 506.8b the window opens at the declaration and runs to the end of the combat phase | `check:other-Turn.afterBlockersDeclared`~~
 - CR 508.1d / 611.2a / 611.2c whole cards: bob's creatures attack alice on his next turn, and only then | `board:attackrequirements`
 - CR 508.1d an illegal declaration is rewound and asked again, not replaced by the ceiling's | `check:other-Combat.legalAttackDeclaration`
 - CR 508.1j partial payments are not allowed: two Dragons and one land sacrifice nothing | `check:combat` `check:helper-allUntapped` `check:helper-stillThere`
@@ -445,7 +445,7 @@ out: grep for them.
 ### `CrewSpec`
 
 - CR 514.2 the Vehicle stops being a creature at cleanup | `check:power-toughness-none`
-- CR 702.122e crewed by exactly two creatures grants the ability | `check:abilities`
+- ~~CR 702.122e crewed by exactly two creatures grants the ability | `check:abilities`~~
 
 ### `DamageReplacementSpec`
 
@@ -465,7 +465,7 @@ out: grep for them.
 - CR 615.7's allocation lands on the events it was asked about, after the sort | `check:events`
 - CR 615.7's order sits INSIDE one chooser's APNAP turn, not across choosers | `check:prompt-payload`
 - CR 616.1 two players choosing for one batch are asked in APNAP order | `check:prompt-payload`
-- CR 701.14a the fight's replacement runs before its own resolution ends
+- ~~CR 701.14a the fight's replacement runs before its own resolution ends~~
 - CR 701.26b an untapped permanent never becomes untapped, so its stun counter is not spent | `check:helper-countersOn` `check:helper-tapStateOf`
 - CR 702.64a an event at the ceiling never happens | `check:events` `check:other-DamageEvent.amount`
 - a shield over a PLAYER runs CR 615.5's rider, scaled by the amount | `board:replacement`
@@ -646,41 +646,41 @@ out: grep for them.
 ### `GameSpec`
 
 - CR 104.2c gameplay: a Shahrazad subgame won by a team excludes every player on it | `move:nested`
-- CR 400.7/728.2 gameplay: a restart puts Painter's Servant into a library with its chosen colour forgotten | `board:object-chosencolor`
-- CR 514.3 a cleanup step with nothing waiting grants no priority | `check:helper-runCountingActions`
-- CR 514.3a the exception grants a real priority round | `check:prompt-count`
-- CR 514.3a the second cleanup step finds nothing waiting and ends the turn | `check:prompt-count`
-- CR 603.4/100.6a gameplay: Shahrazad and Sindbad does not trigger once the match has had a subgame | `board:subgamesthismatch`
-- CR 605.3a an untapped land's own mana ability is that optional action | `check:other-GameState.lastChoice`
-- CR 607.2a: Karn's -3 files the permanent it exiles against Karn | `check:exile-linked`
-- CR 724.1/724.3 gameplay: Mindslaver hands alice bob's whole turn, then control lapses
-- CR 724.1a gameplay: Word of Command over a Mindslaver hands bob back to alice, not to himself
-- CR 724.3/724.5: alice decides for bob, but bob's resources move
-- CR 724.5 combat: alice declares bob's attackers, so alice takes the hit
-- CR 724.5a: the controller spends only the controlled player's resources
-- CR 724.6 a controlled player concedes themselves; their controller cannot do it for them
-- CR 728.5/728.4 gameplay: Karn's ultimate leaves its own exiles in exile and then plays them | `board:exile-linked`
-- CR 730.1a #153: a question names the game it came from, so a subgame's is not a main-game one | `move:nested`
+- ~~CR 400.7/728.2 gameplay: a restart puts Painter's Servant into a library with its chosen colour forgotten | `board:object-chosencolor`~~
+- ~~CR 514.3 a cleanup step with nothing waiting grants no priority | `check:helper-runCountingActions`~~
+- ~~CR 514.3a the exception grants a real priority round | `check:prompt-count`~~
+- ~~CR 514.3a the second cleanup step finds nothing waiting and ends the turn | `check:prompt-count`~~
+- ~~CR 603.4/100.6a gameplay: Shahrazad and Sindbad does not trigger once the match has had a subgame | `board:subgamesthismatch`~~
+- ~~CR 605.3a an untapped land's own mana ability is that optional action | `check:other-GameState.lastChoice`~~
+- ~~CR 607.2a: Karn's -3 files the permanent it exiles against Karn | `check:exile-linked`~~
+- ~~CR 724.1/724.3 gameplay: Mindslaver hands alice bob's whole turn, then control lapses~~
+- ~~CR 724.1a gameplay: Word of Command over a Mindslaver hands bob back to alice, not to himself~~
+- ~~CR 724.3/724.5: alice decides for bob, but bob's resources move~~
+- ~~CR 724.5 combat: alice declares bob's attackers, so alice takes the hit~~
+- ~~CR 724.5a: the controller spends only the controlled player's resources~~
+- ~~CR 724.6 a controlled player concedes themselves; their controller cannot do it for them~~
+- ~~CR 728.5/728.4 gameplay: Karn's ultimate leaves its own exiles in exile and then plays them | `board:exile-linked`~~
+- ~~CR 730.1a #153: a question names the game it came from, so a subgame's is not a main-game one | `move:nested`~~
 - CR 730.1a/730.1b #137 gameplay: a TRIGGERED ability plays the subgame, and CR 730.1b's winner is bound | `move:nested` `check:other-GameState.subgamesThisMatch`
 - CR 730.1b gameplay: Shahrazad's non-winners each lose half their own life, rounded up | `move:nested`
 - CR 730.1b gameplay: a DRAWN Shahrazad subgame is won by nobody, so every player pays | `move:nested`
 - CR 730.1b/730.3 gameplay: alice casts a subgame spell, bob decks, bob loses 3 | `move:nested`
 - CR 730.5/730.4b gameplay: cards funnel back, main-game board survives, main-game counters untouched | `move:nested`
-- CR 800.4a a player who departs paying a cost is not asked again | `check:prompt-count` `check:other-Player.status`
-- CR 800.4a/117.4 priority after a concede goes to the next seat, and the pass cycle restarts | `check:other-GameState.players` `check:other-Player.status`
-- CR 800.4j after a resolution, priority returns to the next seat, not the departed active player | `board:stack`
-- CR 800.4j the active player having left does not stop the turn: priority starts at the next seat | `check:other-Engine.priorityHolder`
-- CR 800.4j/703.4i the declare-attackers guard is load-bearing at two seats, where the game loop cannot reach this state | `check:combat` `check:other-Projection.controls`
-- CR 800.4k a departed player's turn does not begin | `check:other-TurnRegisters.turnNumber` `check:other-GameState.turnOrder`
-- M5.6a gate: a three-player game survives a concede, and the departed seat still ends its durations | `board:player-effect`
-- M5.6d gate: attacking the monarch takes the crown and frees Palace Jailer's prisoner; attacking the other opponent does neither | `board:exiled-until-monarch`
-- a priority round whose only action is Pass leaves it alone | `check:other-GameState.lastChoice`
-- no player receives priority after the restart resolves | `board:stack`
-- playing lands fills the battlefield, conserving cards, at most one land per turn (CR 305.2) | `board:matchup` `check:object-count`
-- the conceding player departs as Conceded, not Lost | `check:other-GameState.players` `check:other-Player.status`
-- the next step runs the rebuilt turn 1's untap step | `board:stack`
-- the seat walk terminates when every seat has departed | `check:other-TurnRegisters.turnNumber`
-- the step the restart fired in does not advance past turn 1's untap step | `board:stack`
+- ~~CR 800.4a a player who departs paying a cost is not asked again | `check:prompt-count` `check:other-Player.status`~~
+- ~~CR 800.4a/117.4 priority after a concede goes to the next seat, and the pass cycle restarts | `check:other-GameState.players` `check:other-Player.status`~~
+- ~~CR 800.4j after a resolution, priority returns to the next seat, not the departed active player | `board:stack`~~
+- ~~CR 800.4j the active player having left does not stop the turn: priority starts at the next seat | `check:other-Engine.priorityHolder`~~
+- ~~CR 800.4j/703.4i the declare-attackers guard is load-bearing at two seats, where the game loop cannot reach this state | `check:combat` `check:other-Projection.controls`~~
+- ~~CR 800.4k a departed player's turn does not begin | `check:other-TurnRegisters.turnNumber` `check:other-GameState.turnOrder`~~
+- ~~M5.6a gate: a three-player game survives a concede, and the departed seat still ends its durations | `board:player-effect`~~
+- ~~M5.6d gate: attacking the monarch takes the crown and frees Palace Jailer's prisoner; attacking the other opponent does neither | `board:exiled-until-monarch`~~
+- ~~a priority round whose only action is Pass leaves it alone | `check:other-GameState.lastChoice`~~
+- ~~no player receives priority after the restart resolves | `board:stack`~~
+- ~~playing lands fills the battlefield, conserving cards, at most one land per turn (CR 305.2) | `board:matchup` `check:object-count`~~
+- ~~the conceding player departs as Conceded, not Lost | `check:other-GameState.players` `check:other-Player.status`~~
+- ~~the next step runs the rebuilt turn 1's untap step | `board:stack`~~
+- ~~the seat walk terminates when every seat has departed | `check:other-TurnRegisters.turnNumber`~~
+- ~~the step the restart fired in does not advance past turn 1's untap step | `board:stack`~~
 
 ### `GoadSpec`
 
@@ -783,7 +783,7 @@ out: grep for them.
 - CR 106.6 the mana pays an equip cost and casts no spell | `check:other-Object.manaSpent`
 - CR 603.2b on the controller's own upkeep the same trigger pays the controller | `check:helper-poolOf` `check:helper-retainedGreen`
 - CR 605.1b the enters trigger resolves off the stack and adds {R}{G} | `check:helper-plainGreen` `check:helper-plainRed` `check:helper-poolUnits`
-- CR 725.1d ending the turn during combat takes the retained mana before cleanup
+- ~~CR 725.1d ending the turn during combat takes the retained mana before cleanup~~
 
 ### `ManaSpec`
 
@@ -820,7 +820,7 @@ out: grep for them.
 - CR 612.7 / 701.42c a Spy Kit host is a Hanweir Garrison the game never saw, and both it and the land stay exiled
 - CR 701.42a a one-or-more-cards-leave-exile trigger counts both melded cards | `check:events` `check:other-Binding.eventAmount` `check:other-Binding.toAmount` `check:other-Event.eventBindings` `check:other-LoggedEvent.event` `check:other-Moved.change` `check:other-Moved.departures` `check:other-ZoneChange.from` `check:other-ZoneChange.object` `check:other-ZoneChange.to`
 - CR 701.42a the melding ability exiles the pair and puts one permanent onto the battlefield | `check:helper-componentPrintings` `check:helper-townshipName` `check:other-Game.printingOf` `check:other-Object.owner` `check:other-Object.source` `check:other-Printing.card`
-- CR 701.42b/701.42c a token counterpart melds nothing, and the land stays exiled
+- ~~CR 701.42b/701.42c a token counterpart melds nothing, and the land stays exiled~~
 - CR 713.8a the owner arranges the two cards her melded permanent becomes on top of her library | `board:source-ofmeld`
 - CR 713.8c a perpetual grant on a melded permanent follows both cards it becomes | `board:source-ofmeld`
 - CR 713.8e a melded permanent's death is two cards put into a graveyard and one object that moved | `board:source-ofmeld`
@@ -932,10 +932,10 @@ out: grep for them.
 - CR 111.6 a TOKEN put into exile is not a card, so the intervening if fails | `check:events`
 - CR 111.6 a card put into exile from the battlefield satisfies the token's intervening if | `check:events`
 - CR 205.1b the -6 untaps two lands and makes them 5/5 Elemental creature lands with flying and haste | `check:tapped-count`
-- CR 306.8 Lightning Bolt's 3 damage removes all three loyalty counters, and CR 704.5i buries Jace
+- ~~CR 306.8 Lightning Bolt's 3 damage removes all three loyalty counters, and CR 704.5i buries Jace~~
 - CR 603.4 a card put into exile from a hand satisfies the token's intervening if | `check:events`
 - CR 603.4 with nothing exiled this turn the token's ability never triggers | `check:events`
-- CR 606.5 / 704.5i paying the combined -9 spends all nine counters and buries Jace
+- ~~CR 606.5 / 704.5i paying the combined -9 spends all nine counters and buries Jace~~
 - CR 606.5 Carth's added +1 makes Jace's -10 activatable at 9 loyalty | `check:helper-activation`
 - CR 606.6 without Carth the same Jace at 9 loyalty is not offered its -10 | `check:helper-activation`
 
@@ -1013,7 +1013,7 @@ out: grep for them.
 ### `ReplacementSpec`
 
 - CR 119.4 at 2 life the payment is ILLEGAL, so it enters tapped with no life paid | `check:helper-lostLife` `check:helper-warriorOut` `check:other-Engine.priorityLoop`
-- CR 614.12a the copy choice is locked in BEFORE the enters event exists
+- ~~CR 614.12a the copy choice is locked in BEFORE the enters event exists~~
 - CR 614.15 with two artifacts metalcraft is off, so the Blast deals its printed 2 | `check:other-StoredEffects.replacements`
 - CR 614.1c DECLINING with a Kithkin card in hand still enters tapped | `check:helper-revealsOf`
 - CR 614.1c Rustic Clachan REVEALING a Kithkin card enters untapped | `check:events` `check:helper-revealsOf`
@@ -1054,7 +1054,7 @@ out: grep for them.
 
 - CR 701.54 Birthday Escape draws, mints the emblem, and designates the creature its controller chose | `check:helper-temptationsOf`
 - CR 701.54d a player with no creatures is still tempted | `check:helper-temptationsOf` `check:events`
-- CR 701.54e a stolen Ring-bearer is not legendary while its mark survives
+- ~~CR 701.54e a stolen Ring-bearer is not legendary while its mark survives~~
 
 ### `RoomSpec`
 
@@ -1067,14 +1067,14 @@ out: grep for them.
 
 - CR 728.1 / 103.7 a restarted Planechase game sets a new starting plane | `check:other-Planechase.deckOf`
 - CR 728.2 / 103.3a a restart puts a face-up scheme back into the shuffled scheme deck | `check:other-Archenemy.deckOf` `check:events`
-- CR 730.2a the planar deck plays the subgame and comes back | `check:other-Planechase.deckOf` `check:events`
-- CR 730.2a the scheme deck plays the subgame and comes back | `check:other-Archenemy.deckOf` `check:events`
+- ~~CR 730.2a the planar deck plays the subgame and comes back | `check:other-Planechase.deckOf` `check:events`~~
+- ~~CR 730.2a the scheme deck plays the subgame and comes back | `check:other-Archenemy.deckOf` `check:events`~~
 - CR 730.5/713.8 a subgame ending with a melded permanent returns both of its cards to the main-game library | `check:helper-componentsOn` `check:helper-sourcesOf` `check:other-Game.componentsOf` `check:other-GameState.objects` `check:other-GameState.nextObjectId`
 - CR 903.6/903.9c a restarted Commander game puts the melded commander's own card into the command zone and its partner into the deck | `board:source-ofmeld`
 
 ### `ShieldCounterSpec`
 
-- CR 122.1c a rule's destruction is not replaced, though a counter is still there
+- ~~CR 122.1c a rule's destruction is not replaced, though a counter is still there~~
 - CR 701.19c / 704.5g the prohibited creature's shield does not save it from lethal damage | `check:replacement-rows`
 
 ### `SpecialActionSpec`
@@ -1180,7 +1180,7 @@ out: grep for them.
 
 ### `VariableEffectSpec`
 
-- CR 115.6 Rat Out aimed at a creature shrinks it and still makes the Rat
+- ~~CR 115.6 Rat Out aimed at a creature shrinks it and still makes the Rat~~
 - CR 601.2c X=1 announcing three targets destroys only one | `move:out-of-range-answer`
 - CR 603.2c two counters on one creature at once is one trigger | `check:events`
 - CR 608.2c two clauses of one resolution are two trigger events | `check:helper-minusCountersOn` `check:helper-placementGroups`
@@ -1212,7 +1212,7 @@ out: grep for them.
 - CR 113.6m the upkeep half does not trigger from the battlefield | `check:helper-beginUpkeep` `check:helper-gathered` `check:other-PendingTrigger.source`
 - CR 400.7e a bounce to a HIDDEN zone binds no became slot, though the source slot is still stamped | `check:other-Binding.became` `check:other-Binding.triggerSource`
 - CR 400.7e a death to a PUBLIC zone does bind became, for the same condition | `check:other-Binding.became` `check:other-Binding.triggerSource`
-- CR 603.10 a permanent that arrived after a death and left again does not witness it | `check:events`
+- ~~CR 603.10 a permanent that arrived after a death and left again does not witness it | `check:events`~~
 - CR 603.10a a Meren who died earlier in the batch sees neither token buried later in it | `check:events`
 - CR 603.6a whole card: casting Thragtusk gains 5 life, and its leaves trigger stays silent on the way in | `check:helper-beastsOf`
 - CR 608.2c two clauses of one resolution are two trigger events | `check:events`

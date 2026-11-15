@@ -67,7 +67,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 702.35a declining the cast puts the exiled card into its owner's graveyard",
-  "note": "Rule 702.35a's last sentence. Cathartic Reunion's additional cost discards Arrogant Wurm, which madness exiles; alice declines the cast the madness trigger offers. The exiled card is not left in exile, which is what a trigger offering the cast and nothing else would do: it goes to its owner's graveyard, and no Wurm is cast.",
+  "note": "The template's board with the offered cast declined: the Wurm is in exile while the trigger waits, so its later graveyard arrival is the decline's own move, not the discard's; an offer-only trigger would leave it in exile, and the three Forests left untapped could still pay {2}{G}, so no Wurm on the battlefield is the decline.",
   "timeline": [
     {
       "do": {
@@ -114,6 +114,32 @@
       "turn": 1
     },
     {
+      "check": {
+        "Count": {
+          "card": "Arrogant Wurm",
+          "count": 0,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mountain",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "do": "Pass",
       "player": "alice",
       "step": "PrecombatMain",
@@ -145,19 +171,6 @@
     },
     {
       "check": {
-        "Count": {
-          "card": "Arrogant Wurm",
-          "count": 1,
-          "player": "alice",
-          "zone": "Graveyard"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
         "View": {
           "is": [],
           "of": "Zone",
@@ -173,9 +186,9 @@
       "check": {
         "Count": {
           "card": "Arrogant Wurm",
-          "count": 0,
+          "count": 1,
           "player": "alice",
-          "zone": "Battlefield"
+          "zone": "Graveyard"
         }
       },
       "player": "alice",
@@ -195,6 +208,17 @@
           "count": 0,
           "player": "alice",
           "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
         }
       },
       "player": "alice",

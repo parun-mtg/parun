@@ -3931,19 +3931,9 @@ mayhemBoards mountain piker bolt reunion =
       undiscardedBoard = play (snd (S.addHandCard mountain S.alice (snd (S.addHandCard mountain S.alice (snd (S.addGraveyardCard bolt S.alice stocked))))))
    in (discardedBoard, undiscardedBoard)
 
--- CR 702.35a's two abilities, on Arrogant Wurm {3}{G}{G} Creature -- Wurm, 4/4,
--- "Trample" plus madness {2}{G}.
---
--- The discard is performed by a CARD rather than stamped onto the board, mayhem's
--- fixture above: alice casts Cathartic Reunion {1}{R} Sorcery, "As an additional
--- cost to cast this spell, discard two cards. Draw three cards", and the Wurm is
--- one of the two cards it takes.
---
--- BOTH CASES BELOW SHARE ONE BOARD and one cast, and differ in exactly one thing
--- -- how Prompt.OfferedCast is answered, which is rule 702.35a's one decision.
--- The madness cost {2}{G} is cheaper than the printed {3}{G}{G} and paid in a
--- colour the Reunion does not use, so a Wurm on the battlefield here cannot be
--- one cast for its printed cost.
+-- CR 702.35a's two abilities, where a card holds madness from more than its own
+-- printing: Falkenrath Gorger's grant, and a printed madness beside it. The
+-- Arrogant Wurm cases are scenarios under data/scenarios/cast.
 madnessSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 madnessSpec s registry = Spec.describe s "Madness" $ do
   -- CR 613.1f / 702.35a: Falkenrath Gorger GRANTS madness to a Vampire card in
@@ -4061,7 +4051,7 @@ bloodmadAnswer want p = case p of
   _ -> madnessAnswer p
 
 -- Takes rule 702.35a's offered cast and answers everything else as S.identityAnswer
--- does, which is what the declining case reuses unchanged.
+-- does.
 madnessAnswer :: Prompt.Prompt r -> r
 madnessAnswer p = case p of
   Prompt.OfferedCast {} -> OptionalDecision.Exercises
