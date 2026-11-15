@@ -1,0 +1,93 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains"
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2"
+          },
+          {
+            "card": "Pyramids",
+            "label": "pyramids"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Dryad Arbor",
+            "label": "arbor"
+          },
+          {
+            "attached": "arbor",
+            "card": "Wild Growth",
+            "label": "growth"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.8a Pyramids' first mode destroys the Aura on a land",
+  "note": "Pyramids' first mode, 'Destroy target Aura attached to a land', at the Wild Growth on bob's Dryad Arbor.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$plains",
+            "$plains-2"
+          ],
+          "modes": [
+            0
+          ],
+          "object": "$pyramids"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wild Growth",
+          "count": 0,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wild Growth",
+          "count": 1,
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

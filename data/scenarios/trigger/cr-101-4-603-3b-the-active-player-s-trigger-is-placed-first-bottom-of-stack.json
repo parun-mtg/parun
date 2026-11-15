@@ -1,0 +1,44 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Barbarian Outcast",
+            "label": "alice-outcast"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Barbarian Outcast",
+            "label": "bob-outcast"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 101.4/603.3b the active player's trigger is placed first (bottom of stack)",
+  "note": "Barbarian Outcast's CR 603.8 state trigger needs no event, so one Outcast under each player, neither controlling a Swamp, gives two controllers with one trigger apiece: no ordering prompt, only the APNAP walk. alice is active, so hers goes on the stack first and bob's sits on top.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $bob-outcast",
+            "trigger of $alice-outcast"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

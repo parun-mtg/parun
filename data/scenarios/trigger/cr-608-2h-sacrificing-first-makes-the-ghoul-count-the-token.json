@@ -1,0 +1,118 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Island",
+            "label": "island-2"
+          },
+          {
+            "card": "Island",
+            "label": "island-3"
+          },
+          {
+            "card": "Khabál Ghoul",
+            "label": "ghoul"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Tidal Wave",
+            "label": "wave"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 608.2h sacrificing first makes the Ghoul count the token",
+  "note": "alice has Khabál Ghoul and casts Tidal Wave, so at her end step the Ghoul's trigger and the Wave's delayed sacrifice go on the stack in one CR 603.3b choice, asked exactly once: a second ordering prompt would be unscheduled and fail the run. The sacrifice is put on the stack last, so it resolves first: the Wall dies, and the Ghoul counts it as its own effect is applied (CR 608.2h), though the token has no printed card (CR 111.1). The other order is the sibling file.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island",
+            "$island-2",
+            "$island-3"
+          ],
+          "object": "$wave"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$ghoul",
+          "spell of $wave"
+        ]
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wall Token",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$ghoul"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    }
+  ]
+}

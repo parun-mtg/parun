@@ -1,0 +1,110 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Island",
+            "label": "island-2"
+          },
+          {
+            "card": "Bird Maiden",
+            "label": "maiden"
+          },
+          {
+            "card": "Aven Squire",
+            "label": "squire"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Ray of Frost",
+            "label": "ray"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 303.4b a red creature the Aura does NOT enchant decides nothing",
+  "note": "Ray of Frost enchants the white Aven Squire while the red Bird Maiden stands beside it: only the creature the Aura enchants decides 'if enchanted creature is red', so nothing triggers and neither creature is tapped. A clause that matched every creature would tap here.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island",
+            "$island-2"
+          ],
+          "object": "$ray",
+          "targets": [
+            "$squire"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "$squire",
+          "object": "Ray of Frost",
+          "of": "AttachedTo"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$squire",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$maiden",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

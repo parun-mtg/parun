@@ -1749,9 +1749,9 @@ controllerWithLastKnown oid gs = Filter.controller =<< viewWithLastKnownAnywhere
 -- record holds the projection taken as the object ceased, so a Saga that was a
 -- COPY of another card answers with the copy's chapters rather than the printed
 -- card's. Proved by
--- Parun.TriggerSpec's "CR 608.2h the watcher reads the dead Saga's last known
--- information" and its "CR 707.2 a COPY of the Saga answers with the copy's
--- chapters".
+-- data/scenarios/trigger/cr-608-2h-the-watcher-reads-the-dead-saga-s-last-known-information.json
+-- and
+-- data/scenarios/trigger/cr-707-2-a-copy-of-the-saga-answers-with-the-copy-s-chapters.json.
 projectWithLastKnown :: ObjectId -> GameState -> ProjectedCharacteristics
 projectWithLastKnown oid gs = case Game.lastKnownOf oid gs of
   Just lk -> LastKnown.characteristics lk

@@ -2150,9 +2150,10 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- no subtypes and Saga.tracksLore declines it. CR 603.10's first sentence wants
   -- the objects as they were immediately after the event, and the record holds the
   -- projection taken as the Saga ceased -- the copy's chapters for a Saga that was
-  -- a copy, not the printed card's. Proved by Parun.TriggerSpec's "CR 608.2h the
-  -- watcher reads the dead Saga's last known information" and, for the copy, its
-  -- "CR 707.2 a COPY of the Saga answers with the copy's chapters".
+  -- a copy, not the printed card's. Proved by
+  -- data/scenarios/trigger/cr-608-2h-the-watcher-reads-the-dead-saga-s-last-known-information.json
+  -- and, for the copy,
+  -- data/scenarios/trigger/cr-707-2-a-copy-of-the-saga-answers-with-the-copy-s-chapters.json.
   --
   -- CR 508.3 for WatchedAbility.CausedByOwnAttack: the ability's source is
   -- among the creatures whose attacking was its trigger event

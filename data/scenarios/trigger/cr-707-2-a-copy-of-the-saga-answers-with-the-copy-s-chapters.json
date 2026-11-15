@@ -1,0 +1,351 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Island",
+            "label": "island-2"
+          },
+          {
+            "card": "Island",
+            "label": "island-3"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-2"
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain-3"
+          },
+          {
+            "card": "Summon: Choco/Mog",
+            "label": "original"
+          },
+          {
+            "card": "Historian's Boon",
+            "label": "boon"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Copy Enchantment",
+            "label": "copy"
+          },
+          {
+            "card": "Volt Charge",
+            "label": "volt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PostcombatMain"
+  },
+  "description": "CR 707.2 a COPY of the Saga answers with the copy's chapters",
+  "note": "Copy Enchantment enters as a copy of alice's Summon: Choco/Mog, so CR 707.2 puts the Saga's four chapters in its copiable values while its printed card has none. The board starts in the postcombat main phase so the original takes no lore counter on turn 1: the copy enters with one (CR 715.3a) and stays a counter ahead, three to two on alice's third turn (the Haskell test put the copy's counters on directly). Volt Charge's damage and proliferate, on the copy alone, give it its fourth lore counter and kill it (CR 704.5g) before the triggers are placed; chapter IV and Historian's Boon still trigger, and alice gets the Angel. The original never reaches its final chapter, so the Angel can only be the copy's; a reader falling back to the printed card would find no final chapter and stay silent.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island",
+            "$island-2",
+            "$island-3",
+            null
+          ],
+          "object": "$copy"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseCopyTarget": "$original"
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$boon",
+          "Copy Enchantment"
+        ]
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "Lore"
+          },
+          "object": "Copy Enchantment"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Copy Enchantment",
+          "subtypes": [
+            "Saga",
+            "Bird",
+            "Moogle"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$original",
+          "Copy Enchantment"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "OrderTriggers": [
+          "$original",
+          "Copy Enchantment"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 3,
+          "kind": {
+            "type": "Lore"
+          },
+          "object": "Copy Enchantment"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "Lore"
+          },
+          "object": "$original"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain",
+            "$mountain-2",
+            "$mountain-3",
+            null
+          ],
+          "object": "$volt",
+          "targets": [
+            "Copy Enchantment"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseProliferate",
+          "with": [
+            [
+              "Copy Enchantment"
+            ],
+            []
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $boon",
+            "trigger of Copy Enchantment"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Copy Enchantment",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Copy Enchantment",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "Lore"
+          },
+          "object": "$original"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Angel Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 5
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 5
+    }
+  ]
+}

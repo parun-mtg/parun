@@ -1,0 +1,106 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Island",
+            "label": "island-2"
+          },
+          {
+            "card": "Island",
+            "label": "island-3"
+          },
+          {
+            "card": "Soul Warden",
+            "label": "warden"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Tidal Wave",
+            "label": "wave"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.3b one trigger is elided by count alone (Soul Warden, one token)",
+  "note": "Tidal Wave mints one Wall, so Soul Warden triggers once and alice has nothing to order: an unscheduled ordering prompt would fail the run. The control for the two-trigger Khabál Ghoul files, without which 'nothing is asked' cannot be told from 'the batch was never two'.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island",
+            "$island-2",
+            "$island-3"
+          ],
+          "object": "$wave"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $warden"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 21,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wall Token",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
