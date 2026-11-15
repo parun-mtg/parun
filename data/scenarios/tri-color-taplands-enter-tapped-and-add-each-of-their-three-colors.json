@@ -1,0 +1,1339 @@
+{
+ "description": "CR 614.1c, 605.1a, 605.3b, 106.4: each tri-colour tapland enters tapped, and its {T} mana ability adds the one colour its controller picks of its three; the mana lands in the pool at once, without the stack",
+ "note": "Alice has all five taplands untapped on the battlefield and a second copy of each in hand, one played on each of her turns 1, 4, 7, 10 and 13, each tapped on arrival while its twin stays untapped. On turns 1, 4 and 7 each land is tapped for its first, second and third printed colour in turn, so the pool after each tap holds exactly the colours picked so far and never a colour of the land that was not picked: a land giving all three, or only its first, shows.",
+ "board": {
+  "active": "alice",
+  "step": "PrecombatMain",
+  "seats": [
+   {
+    "name": "alice",
+    "battlefield": [
+     {
+      "card": "Frontier Bivouac",
+      "label": "bivouac"
+     },
+     {
+      "card": "Mystic Monastery",
+      "label": "monastery"
+     },
+     {
+      "card": "Nomad Outpost",
+      "label": "outpost"
+     },
+     {
+      "card": "Opulent Palace",
+      "label": "palace"
+     },
+     {
+      "card": "Sandsteppe Citadel",
+      "label": "citadel"
+     }
+    ],
+    "hand": [
+     {
+      "card": "Frontier Bivouac",
+      "label": "newbivouac"
+     },
+     {
+      "card": "Mystic Monastery",
+      "label": "newmonastery"
+     },
+     {
+      "card": "Nomad Outpost",
+      "label": "newoutpost"
+     },
+     {
+      "card": "Opulent Palace",
+      "label": "newpalace"
+     },
+     {
+      "card": "Sandsteppe Citadel",
+      "label": "newcitadel"
+     }
+    ],
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   },
+   {
+    "name": "bob",
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   },
+   {
+    "name": "carol",
+    "library": [
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     },
+     {
+      "card": "Island"
+     }
+    ]
+   }
+  ]
+ },
+ "timeline": [
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 1,
+   "do": {
+    "PlayLand": "$newbivouac"
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 1,
+   "check": {
+    "Tapped": {
+     "object": "Frontier Bivouac#2",
+     "tapped": true
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 4,
+   "do": {
+    "PlayLand": "$newmonastery"
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 4,
+   "check": {
+    "Tapped": {
+     "object": "Mystic Monastery#2",
+     "tapped": true
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 7,
+   "do": {
+    "PlayLand": "$newoutpost"
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 7,
+   "check": {
+    "Tapped": {
+     "object": "Nomad Outpost#2",
+     "tapped": true
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 10,
+   "do": {
+    "PlayLand": "$newpalace"
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 10,
+   "check": {
+    "Tapped": {
+     "object": "Opulent Palace#2",
+     "tapped": true
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 13,
+   "do": {
+    "PlayLand": "$newcitadel"
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 13,
+   "check": {
+    "Tapped": {
+     "object": "Sandsteppe Citadel#2",
+     "tapped": true
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 1,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $bivouac",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Green"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 1,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Green"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 1,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $monastery",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Blue"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 1,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Green"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 1,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $outpost",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Red"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 1,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Green"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 1,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $palace",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Black"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 1,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Green"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Black"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 1,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $citadel",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "White"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 1,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Green"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Black"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "White"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 4,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $bivouac",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Blue"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 4,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 4,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $monastery",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Red"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 4,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 4,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $outpost",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "White"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 4,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "White"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 4,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $palace",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Green"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 4,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "White"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Green"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 4,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $citadel",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Black"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 4,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "White"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Green"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Black"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 7,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $bivouac",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Red"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 7,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 7,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $monastery",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "White"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 7,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "White"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 7,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $outpost",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Black"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 7,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "White"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Black"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 7,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $palace",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Blue"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 7,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "White"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Black"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 7,
+   "do": {
+    "Take": {
+     "action": "ActivateManaAbility $citadel",
+     "yields": [
+      [
+       {
+        "manaType": {
+         "type": "Colored",
+         "value": "Green"
+        },
+        "restriction": null,
+        "retention": "Ordinary",
+        "rider": null,
+        "sourceChoices": null,
+        "tags": []
+       }
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "player": "alice",
+   "step": "PrecombatMain",
+   "turn": 7,
+   "check": {
+    "View": {
+     "of": "ManaPool",
+     "player": "alice",
+     "is": [
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Red"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "White"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Black"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Blue"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      },
+      {
+       "manaType": {
+        "type": "Colored",
+        "value": "Green"
+       },
+       "tags": [],
+       "retention": "Ordinary",
+       "restriction": null,
+       "rider": null,
+       "sourceChoices": null
+      }
+     ]
+    }
+   }
+  }
+ ]
+}
