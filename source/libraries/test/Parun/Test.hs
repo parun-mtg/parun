@@ -803,6 +803,7 @@ import qualified Parun.Codec.StaticAbilitySpec
 import qualified Parun.Codec.StatusSpec
 import qualified Parun.Codec.StepBeganSpec
 import qualified Parun.Codec.StepBeginsSpec
+import qualified Parun.Codec.StepOfSeatsSpec
 import qualified Parun.Codec.StickerKindSpec
 import qualified Parun.Codec.StickerSheetSpec
 import qualified Parun.Codec.StoredResultSpec
@@ -1903,6 +1904,7 @@ spec s reference corpus = do
   Parun.Codec.StatusSpec.spec s
   Parun.Codec.StepBeganSpec.spec s
   Parun.Codec.StepBeginsSpec.spec s
+  Parun.Codec.StepOfSeatsSpec.spec s
   Parun.Codec.StickerKindSpec.spec s
   Parun.Codec.StickerSheetSpec.spec s
   Parun.Codec.StoredResultSpec.spec s

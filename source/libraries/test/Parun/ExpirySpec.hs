@@ -102,6 +102,7 @@ import qualified Parun.Types.ReturnEnding as ReturnEnding
 import qualified Parun.Types.ReturnWatch as ReturnWatch
 import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StepBegan as StepBegan
+import qualified Parun.Types.StepOfSeats as StepOfSeats
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.Teams as Teams
@@ -1228,6 +1229,15 @@ cannonadeSpec s registry = Spec.describe s "BrazenCannonade" $ do
     let gone = S.departs Departure.Type.Conceded S.bob S.threePlayerGame
         armed = effectWith (Expiry.Type.AtEndOfCombatOn (AfterTurn.MkAfterTurn S.bob 1)) gone
     Spec.assertEqWith s "it ended at bob's seat" ((StoredEffects.continuousEffects . GameState.stored) (handoff armed)) []
+  -- CR 800.4m names "that player's next turn": "the next end step" (Niko,
+  -- Light of Hope) names every seat, so one departing ends it only with the rest.
+  Spec.it s "CR 800.4m a step of several seats' turns outlives one of them departing" $ do
+    let gone = S.departs Departure.Type.Conceded S.bob S.threePlayerGame
+        endStep = Phase.Ending EndingStep.EndStep
+        armed seats = effectWith (Expiry.Type.AtStepOf (StepOfSeats.MkStepOfSeats endStep (Set.fromList seats))) gone
+        remaining = length . StoredEffects.continuousEffects . GameState.stored . handoff . armed
+    Spec.assertEqWith s "bob's alone ends at his seat" (remaining [S.bob]) 0
+    Spec.assertEqWith s "every seat's survives it" (remaining [S.alice, S.bob, S.carol]) 1
   -- The paired control is the same two creatures with bob attacking: alice's
   -- Piker then dies blocking, which is not attacking.
   Spec.it s "CR 603.10a an attacking creature alice controls dying deals 2 to each opponent" $ do
