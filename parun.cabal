@@ -1262,6 +1262,8 @@ library codec
     Parun.Codec.Object
     Parun.Codec.ObjectCount
     Parun.Codec.ObjectCountSpec
+    Parun.Codec.ObjectDamage
+    Parun.Codec.ObjectDamageSpec
     Parun.Codec.ObjectId
     Parun.Codec.ObjectIdSpec
     Parun.Codec.ObjectRef
@@ -3406,6 +3408,7 @@ library types
     Parun.Types.NumberFloor
     Parun.Types.Object
     Parun.Types.ObjectCount
+    Parun.Types.ObjectDamage
     Parun.Types.ObjectId
     Parun.Types.ObjectRef
     Parun.Types.ObjectSnapshot

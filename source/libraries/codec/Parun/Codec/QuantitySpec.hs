@@ -49,6 +49,7 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaSymbolKind as ManaSymbolKind
 import qualified Parun.Types.Measure as Measure
 import qualified Parun.Types.NoteFold as NoteFold
+import qualified Parun.Types.ObjectDamage as ObjectDamage
 import qualified Parun.Types.PhaseSelector as PhaseSelector
 import qualified Parun.Types.PlayerAction as PlayerAction
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
@@ -534,13 +535,13 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.DamageDealtThisTurn DamageDirection.DealtTo)
-      " {\"type\":\"DamageDealtThisTurn\",\"value\":\"DealtTo\"} "
+      (Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage DamageDirection.DealtTo Nothing))
+      " {\"type\":\"DamageDealtThisTurn\",\"value\":{\"direction\":\"DealtTo\"}} "
     Common.assertCodec
       s
       Quantity.codec
-      (Quantity.DamageDealtThisTurn DamageDirection.DealtBy)
-      " {\"type\":\"DamageDealtThisTurn\",\"value\":\"DealtBy\"} "
+      (Quantity.DamageDealtThisTurn (ObjectDamage.MkObjectDamage DamageDirection.DealtBy Nothing))
+      " {\"type\":\"DamageDealtThisTurn\",\"value\":{\"direction\":\"DealtBy\"}} "
   -- CR 509.1h's status as a look-back, on the wire the same way again.
   Spec.it s "WasBlockedThisTurn" $
     Common.assertCodec

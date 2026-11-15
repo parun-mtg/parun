@@ -588,6 +588,7 @@ import qualified Parun.Codec.NinjutsuVariantSpec
 import qualified Parun.Codec.NoteFoldSpec
 import qualified Parun.Codec.NumberFloorSpec
 import qualified Parun.Codec.ObjectCountSpec
+import qualified Parun.Codec.ObjectDamageSpec
 import qualified Parun.Codec.ObjectIdSpec
 import qualified Parun.Codec.ObjectRefSpec
 import qualified Parun.Codec.ObjectSnapshotSpec
@@ -1744,6 +1745,7 @@ spec s reference corpus = do
   Parun.Codec.PlayerCountersSpec.spec s
   Parun.Codec.PlayerCounterTallySpec.spec s
   Parun.Codec.DealtDamageSpec.spec s
+  Parun.Codec.ObjectDamageSpec.spec s
   Parun.Codec.LifeDirectionSpec.spec s
   Parun.Codec.LifeTallySpec.spec s
   Parun.Codec.SpellTallySpec.spec s

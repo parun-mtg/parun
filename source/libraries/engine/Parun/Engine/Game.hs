@@ -4304,13 +4304,14 @@ damageDealtToPlayerThisTurn kind by gs pid =
 -- creature was still dealt the damage this counts. The log also outlives the id
 -- CR 400.7 deletes as the creature dies, which is the whole case the Zubera asks
 -- from. Its extent already IS the turn: Parun.Engine.Engine.beginTurnOf clears it
--- at the handoff and nothing else does.
-damageDealtThisTurn :: DamageDirection.DamageDirection -> GameState -> ObjectId -> Natural
-damageDealtThisTurn direction gs oid =
+-- at the handoff and nothing else does. `controlledBy` keeps only damage from
+-- sources that player controlled as it was dealt (Grothama, All-Devouring).
+damageDealtThisTurn :: DamageDirection.DamageDirection -> Maybe PlayerId -> GameState -> ObjectId -> Natural
+damageDealtThisTurn direction controlledBy gs oid =
   sum
     ( Maybe.mapMaybe
         ( \logged -> case (damageDealt (LoggedEvent.event logged), LoggedEvent.event logged) of
-            (Just (recipient, amount), GameEvent.DamageDealt ev) | endOf recipient ev == Just oid -> Just amount
+            (Just (recipient, amount), GameEvent.DamageDealt ev) | endOf recipient ev == Just oid && all ((== DamageEvent.dealtByController ev) . Just) controlledBy -> Just amount
             _ -> Nothing
         )
         (Foldable.toList (TurnRegisters.events (GameState.turn gs)))
