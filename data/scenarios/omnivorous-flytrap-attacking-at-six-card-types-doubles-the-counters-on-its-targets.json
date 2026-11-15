@@ -1,0 +1,194 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Omnivorous Flytrap",
+            "label": "ft",
+            "ready": true
+          },
+          {
+            "card": "Hill Giant",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 3
+              }
+            ],
+            "label": "giant"
+          },
+          {
+            "card": "Walking Corpse",
+            "label": "corpse"
+          },
+          {
+            "card": "Grizzly Bears",
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 5
+              }
+            ],
+            "label": "bears"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Divination"
+          },
+          {
+            "card": "Grizzly Bears"
+          },
+          {
+            "card": "Shock"
+          },
+          {
+            "card": "Pacifism"
+          },
+          {
+            "card": "Sol Ring"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.4, 601.2d, 701.10e: Omnivorous Flytrap attacking with six card types among cards in its controller's graveyard divides two +1/+1 counters between its two targets, then doubles the +1/+1 counters on each of them",
+  "note": "The graveyard holds a land, a sorcery, a creature, an instant, an enchantment and an artifact card: the five-type board of the enters scenario plus Sol Ring. The Hill Giant goes from three to four to eight and the Walking Corpse from none to one to two; the Grizzly Bears with five counters is not a target and keeps five.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$ft"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "targets": [
+            "$giant",
+            "$corpse"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderForEach",
+          "with": [
+            0,
+            1
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 8,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$giant"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 2,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$corpse"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 5,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$bears"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$ft"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Elite Vanguard",
+            "label": "ev"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Monstrous Emergence",
+            "label": "me"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "cw"
+          },
+          {
+            "card": "Divination",
+            "label": "dv"
+          }
+        ],
+        "manaPool": "GG",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Ancient Brontodon",
+            "label": "ab"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "hg"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.4a: Monstrous Emergence's additional cost chooses a creature alice controls, and the spell deals damage equal to that creature's power to its target.",
+  "note": "Elite Vanguard is a 2/1 and the Craw Wurm in hand a 6/4, so the one ask offers both and the damage tells them apart, and power from toughness. Divination and bob's Hill Giant are refused already. The Vanguard stays on the battlefield untapped.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$me",
+          "targets": [
+            "$ab"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseBehold",
+          "with": "$dv"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseBehold",
+          "with": "$hg"
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseBehold",
+          "with": "$ev"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 2,
+          "object": "$ab"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$ev",
+          "tapped": false
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Monstrous Emergence",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Witnessed",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
