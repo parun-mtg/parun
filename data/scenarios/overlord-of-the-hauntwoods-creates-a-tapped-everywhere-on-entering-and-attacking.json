@@ -175,13 +175,26 @@
     {
       "do": {
         "Cast": {
-          "costOffer": {
-            "type": "ByNoKeyword"
-          },
           "mana": [
-            "Everywhere"
+            "Everywhere",
+            null
           ],
-          "object": "$sprite"
+          "object": "$sprite",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Blue"
+                },
+                "restriction": null,
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ]
+          ]
         }
       },
       "player": "alice",
