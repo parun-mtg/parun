@@ -296,8 +296,12 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
       -- Withering Relay's blight is the one cost offered beside both modes and
       -- is not offered beside one. X is unannounced here, so a "choose up to X"
       -- is read with no ceiling, as the modes themselves were above.
+      --
+      -- Each cost is asked at every X the gate asks (Activatable.gateXs). A
+      -- fence: no card pairs a criterion reading X with a second cost, and one
+      -- cost is paid whether offered or not.
       let admitsModes cost = Modal.selectionSatisfiedBy legal (settledGiven Map.empty (const (Natural.length legal)) cost) chosenModes
-          offeredCosts = filter (\cost -> admitsModes cost && Activatable.payableCostAt aimableUnannounced floorX stamp (ActivatedAbility.name ability) spendable pid srcId gs cost) (Activatable.costsFor (PlayerEffect.applying pid gs) pid srcId ability gs)
+          offeredCosts = filter (\cost -> admitsModes cost && any (\x -> Activatable.payableCostAt aimableUnannounced x stamp (ActivatedAbility.name ability) spendable pid srcId gs cost) (Activatable.gateXs mCeiling floorX gs cost)) (Activatable.costsFor (PlayerEffect.applying pid gs) pid srcId ability gs)
       printedCost <- case offeredCosts of
         _ : _ : _ -> CandidateCost.cost <$> Game.choose (Prompt.ChooseCost decider pid abilId (fmap Cost.untagged offeredCosts) Seq.empty)
         [only] -> pure only

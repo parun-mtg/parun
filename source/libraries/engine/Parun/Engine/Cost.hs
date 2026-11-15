@@ -103,6 +103,7 @@ import qualified Parun.Types.Claim as Claim.Type
 import qualified Parun.Types.ClaimAxis as ClaimAxis
 import qualified Parun.Types.Clause as Clause
 import qualified Parun.Types.ClauseIndex as ClauseIndex
+import qualified Parun.Types.Comparison as Comparison
 import qualified Parun.Types.ComputedLife as ComputedLife
 import Parun.Types.Cost (Cost)
 import qualified Parun.Types.Cost as Cost
@@ -164,6 +165,7 @@ import qualified Parun.Types.ManaSymbol as ManaSymbol
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.ManaWindow as ManaWindow
+import qualified Parun.Types.Measures as Measures
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectCount as ObjectCount
@@ -2019,8 +2021,12 @@ componentDemandGrowsWith slot component = case component of
   CostComponent.SacrificeThis -> False
   CostComponent.ReturnThis -> False
   -- CR 701.21a: one permanent per sacrifice, so an X past the matching
-  -- permanents the payer controls refuses.
-  CostComponent.Sacrifice sacrifice -> Sacrifice.count sacrifice == ObjectCount.Exactly announced
+  -- permanents the payer controls refuses. So does one past every measure a
+  -- criterion requires to reach it (Sidisi, Regent of the Mire's "with mana
+  -- value X"), there being finitely many permanents.
+  CostComponent.Sacrifice sacrifice ->
+    Sacrifice.count sacrifice == ObjectCount.Exactly announced
+      || any ((`elem` [Comparison.Exactly, Comparison.AtLeast, Comparison.GreaterThan]) . Measures.comparison) (CostAmount.Engine.criterionReads slot component)
   CostComponent.TapForTotalPower {} -> False
   -- One permanent per tap, Sacrifice's reason.
   CostComponent.TapPermanents tap -> TapPermanents.count tap == announced
