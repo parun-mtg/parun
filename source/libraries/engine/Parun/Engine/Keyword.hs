@@ -4619,8 +4619,9 @@ reconfigured =
 -- paid and it has a time counter on it, it's not a creature" -- a CR 613.1d
 -- layer 4 removal, reconfigured's modification. The paid half is whilePaid's
 -- Quantity.CastUsing, so a copy of an impending permanent (CR 707.2) is a
--- creature even with a time counter on it; Parun.CastSpec's "Impending" group
--- proves both halves.
+-- creature even with a time counter on it; the
+-- data/scenarios/cast/cr-702-176a-cast-for-impending-* scenarios prove both
+-- halves.
 impendingNotCreature :: StaticAbility.StaticAbility (GrantedAbility.GrantedAbility Card)
 impendingNotCreature =
   StaticAbility.MkStaticAbility

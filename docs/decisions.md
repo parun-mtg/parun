@@ -1057,13 +1057,19 @@ Entries are ordered by the first rule each cites.
 - **Question**: Illusionary Mask's "instead it's turned face up" names no
   player. Growing Dread asks who turned a permanent face up. When the face-down
   creature's controller is not the player who activated the Mask, who turned it?
-- **Rules**: CR 614.1a, 708.7; CR of 2026-11-06. CR 708.7 lets the ability
-  that made a permanent face down allow "the permanent's controller" to turn it
-  face up.
+- **Rules**: CR 614.1a, 702.37e, 708.7; CR of 2026-11-06. CR 708.7 lets the
+  ability that made a permanent face down allow "the permanent's controller" to
+  turn it face up. Illusionary Mask's ruling of 2009-10-01 says its ability "has
+  you turn a face-down creature face up"; that ruling's "you" is the one its
+  second sentence forbids to turn "a face-down permanent face up" without morph,
+  the permanent's controller (CR 702.37e), and it addresses a board where that
+  player also activated the Mask.
 - **Decision**: The creature's controller as it turns, CR 708.7's player.
-- **Rejected**: The Mask ability's controller, as the effect's: the
-  replacement is a status the face-down creature carries, and nothing records
-  who granted it once the spell has resolved.
+- **Rejected**: The Mask ability's controller, which the ruling's "you" leans
+  toward read alone: CR 708.7 names no other player an ability can let turn a
+  permanent face up, and the ruling's "you" is that player. Nobody, the
+  replacement turning it with no player acting, so Growing Dread never sees it:
+  the ruling has a player turn it.
 - **Site**: `Parun.Engine.Event.turnFaceUpByStatus`, proved by the scenario
   `cr-614-1a-growing-dread-counts-a-masked-craw-wurm-alice-s-mask-turns-face-up`;
   no scenario changes the creature's control.

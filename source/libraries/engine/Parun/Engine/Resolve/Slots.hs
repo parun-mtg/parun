@@ -1471,8 +1471,9 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.Designate (Designate.MkDesignate _ slot value) -> joinTwo (oneSlot slot) (joinSlots (fmap quantitySlots (Foldable.toList value)))
   Effect.SetClassLevel (SetClassLevel.MkSetClassLevel _ slot) -> oneSlot slot
   Effect.Undesignate _ -> Map.empty
-  -- A READ, Designate's: the slot names the permanent whose half is locked or
-  -- unlocked. WHICH half is chosen at resolution and is no slot of any kind.
+  -- The permanents are the effect's ObjectRef, read at the head through
+  -- effectObjectRefs. WHICH half is chosen at resolution and is no slot of any
+  -- kind.
   Effect.SetHalfLocked _ -> Map.empty
   -- A READ, Designate's: the slot names where the counter goes.
   Effect.CounterAndMark (PermanentActed.MkPermanentActed _ slot) -> oneSlot slot
