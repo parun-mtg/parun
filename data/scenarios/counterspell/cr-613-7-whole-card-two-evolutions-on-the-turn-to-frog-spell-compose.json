@@ -1,0 +1,163 @@
+{
+  "description": "CR 613.7 whole card: two Evolutions on the Turn to Frog spell compose",
+  "note": "Frog -> Elf and then Elf -> Goblin on the Turn to Frog spell: its Frog is an Elf and then a Goblin, so the Wraith becomes a Goblin, which only both swaps landing on the spell can make. A reader looking each word up once in the raw swaps would stop at the first and make an Elf.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Bog Wraith",
+            "label": "wraith"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Turn to Frog",
+            "label": "frog"
+          },
+          {
+            "card": "Artificial Evolution",
+            "label": "evo-1"
+          },
+          {
+            "card": "Artificial Evolution",
+            "label": "evo-2"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$frog",
+          "mana": [
+            "$i1",
+            "$i2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$evo-1",
+          "targets": [
+            "Turn to Frog"
+          ],
+          "mana": [
+            "$i3",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseWordSwap": {
+          "from": {
+            "type": "Frog"
+          },
+          "to": {
+            "type": "Elf"
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$evo-2",
+          "targets": [
+            "Turn to Frog"
+          ],
+          "mana": [
+            "$i4"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseWordSwap": {
+          "from": {
+            "type": "Elf"
+          },
+          "to": {
+            "type": "Goblin"
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Subtypes": {
+          "object": "$wraith",
+          "subtypes": [
+            "Goblin"
+          ]
+        }
+      }
+    }
+  ]
+}

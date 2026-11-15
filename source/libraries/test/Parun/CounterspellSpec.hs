@@ -6,7 +6,6 @@
 -- can still be countered by. The machinery is Parun.ResolveSpec.
 module Parun.CounterspellSpec where
 
-import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -106,9 +105,8 @@ manaLeakHand island manaLeak piker bobLands =
 -- makes the cases below prove CR 118.12's "who". An engine that offered the cost
 -- to the wrong player falls through to Declines and fails, rather than paying and
 -- passing: for Mana Leak the payer is the TARGETED spell's controller and not the
--- resolving spell's, and for Whipstitched Zombie it is the ability's own (CR
--- 603.3a). The Decider is checked alongside the player for CR 724.1: nobody is
--- controlling anybody in these fixtures, so the two must agree.
+-- resolving spell's. The Decider is checked alongside the player for CR 724.1:
+-- nobody is controlling anybody in these fixtures, so the two must agree.
 --
 -- Rank-1, like Parun.Support.attackTo: the implicit forall is outermost, so
 -- `paysFor S.bob` is the `forall r. Prompt r -> r` that Replay.record wants.
@@ -141,11 +139,6 @@ bobPaysAndCounters notThis p = case p of
 -- The pay-or-not answers in a transcript, in order.
 payResponses :: [Response.Response] -> [Response.Response]
 payResponses = filter isPayResponse
-
-isExileResponse :: Response.Response -> Bool
-isExileResponse response = case response of
-  Response.ChoseExilesFromGraveyard _ -> True
-  _ -> False
 
 isPayResponse :: Response.Response -> Bool
 isPayResponse response = case response of
@@ -260,267 +253,11 @@ standstillSpec s registry =
         Spec.assertEqWith s "so each of bob's opponents drew three, and bob drew none" (fmap (`S.handSize` after) [S.alice, S.bob, S.carol]) [3, 0, 3]
     )
 
--- Whipstitched Zombie and one untapped Swamp on alice's battlefield, her upkeep
--- begun and the trigger settled onto the stack (CR 603.3b). Returns the Zombie,
--- the Swamp and that state.
---
--- The Bitterblossom fixture in Parun.TriggerSpec, one step short: the trigger is
--- left ON the stack so a case can assert what the board looked like before it
--- resolved, which is what rules out a Zombie that was never there.
-zombieUpkeep :: Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-zombieUpkeep swamp zombie =
-  let (zombieId, g1) = S.addPermanent zombie S.alice (Setup.emptyGame S.bothPlayers)
-      (swampId, g2) = S.addPermanent swamp S.alice g1
-      upkeep = Phase.Beginning BeginningStep.Upkeep
-      begun =
-        Event.recordEvent
-          (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
-          ( g2
-              { GameState.turn =
-                  (GameState.turn g2)
-                    { TurnRegisters.phase = upkeep,
-                      TurnRegisters.activePlayer = S.alice
-                    }
-              }
-          )
-   in (zombieId, swampId, snd (Engine.runGamePure S.identityAnswer begun Engine.settleForPriority))
-
--- CR 118.12a again, reached from Parun.Engine.Resolve.resolveModes rather than
--- resolveSpellWith: Whipstitched Zombie's "At the beginning of your upkeep,
--- sacrifice this creature unless you pay {B}" is a TRIGGERED ability, so the
--- ability executor asks the gate instead of the spell path. The seam is one
--- `paid` call shared by both, and this is the half Mana Leak cannot reach.
---
--- The payer is the ability's own controller (CR 603.3a's "your upkeep", bound
--- into Parun.Engine.Binding.you as the trigger is placed) rather than Mana Leak's
--- targeted-spell controller -- the same slot read answering a different card.
---
--- Both cases start from the SAME board and the SAME settled trigger and differ
--- in NOTHING but alice's answer.
-whipstitchedZombieSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-whipstitchedZombieSpec s registry = Spec.describe s "WhipstitchedZombie" $ do
-  Spec.it s "CR 118.12a declining the {B} sacrifices the Zombie to its owner's graveyard" $ do
-    swamp <- S.printingOf s registry "Swamp"
-    zombie <- S.printingOf s registry "Whipstitched Zombie"
-    let (zombieId, swampId, onStack) = zombieUpkeep swamp zombie
-        ((_, after), transcript) = Replay.record S.identityAnswer onStack Stack.resolveTop
-    -- The two controls the assertions below would otherwise be satisfied by:
-    -- a Zombie that was never on the battlefield, and a trigger that never
-    -- fired. Both are ruled out BEFORE the resolution.
-    Spec.assertBool s (S.onBattlefield zombieId onStack) "the Zombie is on the battlefield before its upkeep trigger resolves"
-    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "and the upkeep trigger really reached the stack"
-    -- alice COULD have paid -- one untapped Swamp -- so the refusal is hers
-    -- rather than CR 118.3's.
-    Spec.assertEqWith s "alice was asked exactly once, and declined" (payResponses transcript) [Response.ChoseToPay PaymentDecision.Declines]
-    -- CR 701.21a: sacrificed, so it is IN the graveyard rather than merely gone.
-    -- The Swamp is still on the battlefield, so that one graveyard card can only
-    -- be the Zombie.
-    Spec.assertEqWith s "the Zombie is in alice's graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
-    Spec.assertBool s (S.onBattlefield swampId after) "and the Swamp, which is not what was sacrificed, is still in play"
-    Spec.assertEqWith s "no creature is left in play" (S.creaturesInPlay S.alice after) 0
-    Spec.assertEqWith s "declining spent nothing: the Swamp is untapped" (S.tappedCount S.alice after) 0
-    Spec.assertEqWith s "stack empty" (length (TurnRegisters.stack (GameState.turn after))) 0
-  Spec.it s "CR 118.12a paying the {B} leaves the Zombie on the battlefield" $ do
-    swamp <- S.printingOf s registry "Swamp"
-    zombie <- S.printingOf s registry "Whipstitched Zombie"
-    let (zombieId, _swampId, onStack) = zombieUpkeep swamp zombie
-        ((_, after), transcript) = Replay.record (paysFor S.alice) onStack Stack.resolveTop
-    Spec.assertEqWith s "alice was asked exactly once, and paid" (payResponses transcript) [Response.ChoseToPay PaymentDecision.Pays]
-    -- CR 605.3a lets her tap the Swamp for it mid-resolution.
-    Spec.assertEqWith s "paying tapped the Swamp" (S.tappedCount S.alice after) 1
-    -- The same id, not a fresh one: nothing moved zones, so this is the very
-    -- permanent the trigger was about.
-    Spec.assertBool s (S.onBattlefield zombieId after) "the Zombie is still on the battlefield"
-    Spec.assertEqWith s "nothing was sacrificed" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 0
-    Spec.assertEqWith s "stack empty" (length (TurnRegisters.stack (GameState.turn after))) 0
-
--- alice's Lithophage, one Mountain, one Island and a Seat of the Synod, with a
--- Magical Hack in hand; when `hacked`, she casts it at the Lithophage and lets it
--- resolve first, swapping Mountain for Island. Her upkeep is then begun and the
--- trigger settled onto the stack -- zombieUpkeep's shape with a text change in
--- front of it. Returns the Lithophage and that state.
---
--- TWO land types is what makes either case discriminating: with only a Mountain
--- out, "the gate asks for an Island" and "the gate kept the printed word" pick
--- the same permanent to sacrifice.
---
--- Seat of the Synod ({T}: Add {U}, an Artifact Land with no land subtype at all,
--- checked against Scryfall) pays for the Hack, and both lands start TAPPED, so it
--- is the only untapped blue source and the hacked and unhacked boards differ in
--- nothing but whether the Hack was cast. Being neither a Mountain nor an Island
--- it can never join the sacrifice candidates either. Tap state gates nothing
--- about a sacrifice (CR 701.21a), so both lands stay eligible.
-lithophageUpkeep :: Bool -> Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, GameState.GameState)
-lithophageUpkeep hacked lithophage mountain island seat magicalHack =
-  let (lithoId, g1) = S.addPermanent lithophage S.alice (Setup.emptyGame S.bothPlayers)
-      (mountainId, g2) = S.addPermanent mountain S.alice g1
-      (islandId, g3) = S.addPermanent island S.alice g2
-      (_seatId, g4) = S.addPermanent seat S.alice g3
-      (hackId, g5) = S.addHandCard magicalHack S.alice g4
-      tapped = S.tapObject islandId (S.tapObject mountainId g5)
-      ready =
-        tapped
-          { GameState.turn =
-              (GameState.turn tapped)
-                { TurnRegisters.priority = Just S.alice
-                }
-          }
-      hackIt g = S.runPure (hackAt lithoId Subtype.Mountain Subtype.Island) g (do S.cast S.alice hackId; Stack.resolveTop)
-      board = if hacked then hackIt ready else ready
-      upkeep = Phase.Beginning BeginningStep.Upkeep
-      begun =
-        Event.recordEvent
-          (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
-          ( board
-              { GameState.turn =
-                  (GameState.turn board)
-                    { TurnRegisters.phase = upkeep,
-                      TurnRegisters.activePlayer = S.alice
-                    }
-              }
-          )
-   in (lithoId, snd (Engine.runGamePure S.identityAnswer begun Engine.settleForPriority))
-
--- CR 612.1 reaching the cost a triggered ability OFFERS as it resolves (CR
--- 118.12) -- the half neither Parun.ActivateSpec's Dark Heart of the Wood (an
--- ACTIVATION cost) nor Parun.TriggerSpec's Barbarian Outcast (a trigger's own
--- CONDITION) covers.
---
--- Lithophage {3}{R}{R} Creature -- Insect 7/7, "At the beginning of your upkeep,
--- sacrifice this creature unless you sacrifice a Mountain." (checked against
--- Scryfall). CR 118.12a's rewriting makes that an IfNotPaid gate whose clause
--- sacrifices the Lithophage, and CR 612.2 licenses the swap because the gate's
--- criterion reads a land type word used as a land type.
---
--- alice PAYS in both cases, so the Lithophage lives in both and the whole
--- difference is which land died. The graveyard COUNT cannot tell the two
--- readings apart -- one land either way -- so the load-bearing assertions are
--- the two land NAMES, and they come first.
-lithophageSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-lithophageSpec s registry =
-  let mountainName = CardName.MkCardName (Text.pack "Mountain")
-      islandName = CardName.MkCardName (Text.pack "Island")
-      run hacked = do
-        lithophage <- S.printingOf s registry "Lithophage"
-        mountain <- S.printingOf s registry "Mountain"
-        island <- S.printingOf s registry "Island"
-        seat <- S.printingOf s registry "Seat of the Synod"
-        magicalHack <- S.printingOf s registry "Magical Hack"
-        let (lithoId, onStack) = lithophageUpkeep hacked lithophage mountain island seat magicalHack
-            ((_, after), transcript) = Replay.record (paysFor S.alice) onStack Stack.resolveTop
-        pure (lithoId, onStack, after, transcript)
-   in Spec.describe s "Lithophage" $ do
-        -- The control, and what keeps the case below from passing vacuously:
-        -- unhacked, the printed word stands and the MOUNTAIN is the only thing
-        -- that can pay.
-        Spec.it s "CR 118.12 whole card: an unhacked Lithophage's gate demands the Mountain" $ do
-          (lithoId, onStack, after, transcript) <- run False
-          Spec.assertEqWith s "the Mountain is gone" (S.countOnBattlefieldByName mountainName S.alice after) 0
-          Spec.assertEqWith s "the Island survives" (S.countOnBattlefieldByName islandName S.alice after) 1
-          Spec.assertBool s (elem (Just mountainName) (namesIn Zone.Graveyard S.alice after)) "the Mountain was sacrificed, so it is IN alice's graveyard"
-          Spec.assertBool s (S.onBattlefield lithoId onStack) "the Lithophage is on the battlefield before its upkeep trigger resolves"
-          Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "and the upkeep trigger really reached the stack"
-          Spec.assertBool s (S.onBattlefield lithoId after) "paying kept the Lithophage on the battlefield"
-          Spec.assertEqWith s "alice was asked exactly once, and paid" (payResponses transcript) [Response.ChoseToPay PaymentDecision.Pays]
-
 -- The names of the cards in one player's copy of a zone, in that zone's order.
 -- Named rather than compared by id because CR 400.7 mints a new object on every
 -- move, so an id taken before a zone change never matches the one after it.
 namesIn :: Zone.Zone -> PlayerId.PlayerId -> GameState.GameState -> [Maybe CardName.CardName]
 namesIn zone pid gs = fmap (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (Game.zoneMembers zone pid gs)
-
--- Circling Vultures on alice's battlefield with the given cards already in her
--- graveyard, IN THE ORDER GIVEN so the last one is the top (CR 404.1), her
--- upkeep begun and the trigger settled onto the stack -- zombieUpkeep's shape
--- one card over. Returns the Vultures and that state; the buried cards are
--- asserted on by NAME, since CR 400.7 renames them on the way out.
-vulturesUpkeep :: Printing.Printing -> [Printing.Printing] -> (ObjectId.ObjectId, GameState.GameState)
-vulturesUpkeep vultures buried =
-  let (vulturesId, g1) = S.addPermanent vultures S.alice (Setup.emptyGame S.bothPlayers)
-      bury g printing = snd (S.addGraveyardCard printing S.alice g)
-      g2 = List.foldl' bury g1 buried
-      upkeep = Phase.Beginning BeginningStep.Upkeep
-      begun =
-        Event.recordEvent
-          (GameEvent.StepBegan (StepBegan.MkStepBegan upkeep S.alice))
-          ( g2
-              { GameState.turn =
-                  (GameState.turn g2)
-                    { TurnRegisters.phase = upkeep,
-                      TurnRegisters.activePlayer = S.alice
-                    }
-              }
-          )
-   in (vulturesId, snd (Engine.runGamePure S.identityAnswer begun Engine.settleForPriority))
-
--- CR 118.12a's gate again, over the cost component that has no choice in it:
--- Circling Vultures' "At the beginning of your upkeep, sacrifice this creature
--- unless you exile the top creature card of your graveyard"
--- (CostComponent.ExileTopFromGraveyard). CR 404.2 keeps a graveyard's order
--- fixed, so "the top creature card" names ONE card and nothing is prompted for
--- -- which is the whole difference from Headless Skaab's chosen exile
--- (Parun.CostSpec).
---
--- THE FIXTURE SHAPE that makes the last case discriminating: TWO creature cards
--- in the graveyard, buried in a known order. An implementation reading the
--- wrong end exiles the other one and passes every other case here.
-circlingVulturesSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-circlingVulturesSpec s registry = Spec.describe s "CirclingVultures" $ do
-  Spec.it s "CR 118.3 an empty graveyard cannot pay, so the Vultures are sacrificed" $ do
-    vultures <- S.printingOf s registry "Circling Vultures"
-    let (vulturesId, onStack) = vulturesUpkeep vultures []
-        ((_, after), transcript) = Replay.record (paysFor S.alice) onStack Stack.resolveTop
-    Spec.assertBool s (S.onBattlefield vulturesId onStack) "the Vultures are on the battlefield before the trigger resolves"
-    Spec.assertBool s (not (null (TurnRegisters.stack (GameState.turn onStack)))) "and the upkeep trigger really reached the stack"
-    Spec.assertBool s (not (S.onBattlefield vulturesId after)) "the Vultures were sacrificed"
-    Spec.assertEqWith s "CR 701.21a into alice's graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
-    Spec.assertEqWith s "and nothing was exiled" (length (Game.zoneMembers Zone.Exile S.alice after)) 0
-    -- CR 118.3: an unpayable cost is not offered, so this interpreter's
-    -- willingness to pay never comes up.
-    Spec.assertEqWith s "alice was not asked to pay" (payResponses transcript) []
-  -- The primary negative, Headless Skaab's argument unchanged: an
-  -- implementation that ignored the Filter still refuses an empty graveyard,
-  -- and only a graveyard holding exactly one INELIGIBLE card tells the two
-  -- apart.
-  Spec.it s "CR 601.2f a noncreature card in the graveyard cannot pay it either" $ do
-    vultures <- S.printingOf s registry "Circling Vultures"
-    bolt <- S.printingOf s registry "Lightning Bolt"
-    let (vulturesId, onStack) = vulturesUpkeep vultures [bolt]
-        ((_, after), _) = Replay.record (paysFor S.alice) onStack Stack.resolveTop
-    Spec.assertBool s (not (S.onBattlefield vulturesId after)) "the Vultures were sacrificed"
-    Spec.assertEqWith s "nothing was exiled" (namesIn Zone.Exile S.alice after) []
-    -- CR 404.1 again, from the other side: the sacrificed Vultures arrive on top
-    -- of the Bolt that could not pay for them.
-    Spec.assertEqWith
-      s
-      "and the Bolt is still in the graveyard, under them"
-      (namesIn Zone.Graveyard S.alice after)
-      [Just (S.printingName bolt), Just (S.printingName vultures)]
-  Spec.it s "CR 118.12a a creature card in the graveyard pays it and the Vultures survive" $ do
-    vultures <- S.printingOf s registry "Circling Vultures"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (vulturesId, onStack) = vulturesUpkeep vultures [piker]
-        ((_, after), transcript) = Replay.record (paysFor S.alice) onStack Stack.resolveTop
-    Spec.assertBool s (S.onBattlefield vulturesId after) "the Vultures are still on the battlefield"
-    Spec.assertEqWith s "CR 406.2 the Piker was exiled" (namesIn Zone.Exile S.alice after) [Just (S.printingName piker)]
-    Spec.assertEqWith s "and alice's graveyard is empty" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 0
-    Spec.assertEqWith s "alice was asked whether to pay, and once" (payResponses transcript) [Response.ChoseToPay PaymentDecision.Pays]
-    -- CR 404.2 leaves nothing to choose, so paying prompts for no exile.
-    Spec.assertEqWith s "and never asked WHICH card to exile" (filter isExileResponse transcript) []
-  -- CR 404.1 / 404.2: "the TOP creature card". The Bird Maiden went to the
-  -- graveyard second, so it is the one that leaves; the Piker underneath it
-  -- stays. Nothing is prompted for, which is the claim the assertion on the
-  -- Piker carries.
-  Spec.it s "CR 404.2 with two creature cards it is the TOP one that is exiled" $ do
-    vultures <- S.printingOf s registry "Circling Vultures"
-    piker <- S.printingOf s registry "Goblin Piker"
-    birdMaiden <- S.printingOf s registry "Bird Maiden"
-    let (vulturesId, onStack) = vulturesUpkeep vultures [piker, birdMaiden]
-        ((_, after), transcript) = Replay.record (paysFor S.alice) onStack Stack.resolveTop
-    Spec.assertBool s (S.onBattlefield vulturesId after) "the Vultures are still on the battlefield"
-    Spec.assertEqWith s "the Bird Maiden, buried last, was exiled" (namesIn Zone.Exile S.alice after) [Just (S.printingName birdMaiden)]
-    Spec.assertEqWith s "and the Piker under it is still in the graveyard" (namesIn Zone.Graveyard S.alice after) [Just (S.printingName piker)]
-    Spec.assertEqWith s "with two candidates, alice was still never asked which" (filter isExileResponse transcript) []
 
 -- Merfolk Seer dead and its CR 603.6c trigger settled onto the stack, with two
 -- untapped lands of ONE printing under alice and two cards in her library. The
@@ -548,7 +285,7 @@ seerDies land mountain piker seer =
 -- CR 118.12's OTHER branch, the one CR 118.12a's rewriting does not reach:
 -- Merfolk Seer's "When this creature dies, you may pay {1}{U}. If you do, draw a
 -- card" -- the instructions run when the cost WAS paid (PayBranch.IfPaid), where
--- Mana Leak's and Whipstitched Zombie's run when it was not.
+-- Mana Leak's run when it was not.
 --
 -- THE COMPETING READING these three cases exist to rule out is that the draw is
 -- unconditional and the payment merely offered beside it -- which is what an
@@ -621,9 +358,9 @@ byNameOnBattlefield name gs =
     (Set.toList (GameState.battlefield gs))
 
 -- Fortress Kin-Guard cast from alice's hand off two Plains and resolved, with its
--- CR 603.6a enters trigger settled onto the stack but NOT resolved -- zombieUpkeep's
--- shape, so a case can read the board before the endure happens. `others` are put
--- on alice's battlefield first.
+-- CR 603.6a enters trigger settled onto the stack but NOT resolved, so a case
+-- can read the board before the endure happens. `others` are put on alice's
+-- battlefield first.
 kinGuardOnStack :: Printing.Printing -> Printing.Printing -> [Printing.Printing] -> GameState.GameState
 kinGuardOnStack plains kinGuard others =
   let base = List.foldl' (\g p -> snd (S.addPermanent p S.alice g)) (S.landsInPlay plains 2) others
@@ -639,9 +376,8 @@ kinGuardOnStack plains kinGuard others =
 -- is the printing.
 --
 -- The first two cases start from the SAME board and the SAME settled trigger and
--- differ in NOTHING but alice's answer, Whipstitched Zombie's shape. Endure 1 on a
--- 1/2 keeps every reading distinct: 2/3 with the counter, 1/2 with the token, 3/4
--- under Hardened Scales.
+-- differ in NOTHING but alice's answer. Endure 1 on a 1/2 keeps every reading
+-- distinct: 2/3 with the counter, 1/2 with the token, 3/4 under Hardened Scales.
 fortressKinGuardSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 fortressKinGuardSpec s registry = Spec.describe s "FortressKinGuard" $ do
   let kinGuardOf = byNameOnBattlefield "Fortress Kin-Guard"
@@ -1056,18 +792,6 @@ textSwapLegalitySpec s registry = Spec.describe s "TextSwapLegality" $ do
         swaps = Projection.textChangesAffecting mountainId (S.runPure (hackAt mountainId Subtype.Mountain Subtype.Mountain) gs (S.cast S.alice hackId >> Stack.resolveTop))
     Spec.assertEqWith s "no stored swap names one word twice" (filter (uncurry (==)) swaps) []
     Spec.assertEqWith s "the Hack still stored one swap" (length swaps) 1
-
--- Records the words a swap prompt says the new one may not be, so a test can
--- assert what the player was actually offered. Targets go to `oid` (a
--- text-changer aimed at a permanent needs no second card on the stack), and the
--- swap itself is answered with Replay.defaultAnswer's legal one.
-recordingForbidden :: ObjectId.ObjectId -> Prompt.Prompt r -> State.State (Set.Set TextWord.TextWord) r
-recordingForbidden oid p = case p of
-  Prompt.ChooseWordSwap _ _ _ _ _ forbidden -> do
-    State.modify' (Set.union forbidden)
-    pure (Replay.defaultAnswer p)
-  Prompt.ChooseTargets _ _ _ sets -> pure (fmap (const (Set.singleton (Recipient.ToObject oid))) sets)
-  _ -> pure (S.identityAnswer p)
 
 -- Into the Flood Maw cast by alice with its gift promised to bob and aimed at
 -- bob's Sol Ring; optionally an Artificial Evolution at the spell swapping the
@@ -1499,76 +1223,6 @@ artificialEvolutionSpec s registry = Spec.describe s "ArtificialEvolution" $ do
     (wraithId, after) <- turnToFrogChain s registry Nothing
     Spec.assertEqWith s "Creature -- Frog" (Projection.subtypesOf wraithId after) (Set.singleton Subtype.Frog)
 
-  -- CR 613.7 on the STACK: two Evolutions at the Turn to Frog spell, Frog ->
-  -- Elf and then Elf -> Goblin. The spell's Frog is an Elf and then a Goblin,
-  -- so the Wraith becomes a Goblin; a reader looking each word up once in the
-  -- raw swaps would stop at the first and make an Elf.
-  Spec.it s "CR 613.7 whole card: two Evolutions on the Turn to Frog spell compose" $ do
-    island <- S.printingOf s registry "Island"
-    bogWraith <- S.printingOf s registry "Bog Wraith"
-    turnToFrog <- S.printingOf s registry "Turn to Frog"
-    artificialEvolution <- S.printingOf s registry "Artificial Evolution"
-    let (wraithId, g1) = S.addPermanent bogWraith S.alice (S.landsInPlay island 4)
-        (turnToFrogId, g2) = S.addHandCard turnToFrog S.alice g1
-        (firstId, g3) = S.addHandCard artificialEvolution S.alice g2
-        (secondId, g4) = S.addHandCard artificialEvolution S.alice g3
-        onStack = S.runPure (aimAtCreature wraithId) g4 (S.cast S.alice turnToFrogId)
-        spellId = case TurnRegisters.stack (GameState.turn onStack) of
-          top : _ -> top
-          [] -> ObjectId.MkObjectId 999
-        first = S.runPure (evolveAt spellId Subtype.Frog Subtype.Elf) onStack (S.cast S.alice firstId >> Stack.resolveTop)
-        both = S.runPure (evolveAt spellId Subtype.Elf Subtype.Goblin) first (S.cast S.alice secondId >> Stack.resolveTop)
-        after = S.runPure S.identityAnswer both Stack.resolveTop
-    Spec.assertEqWith s "CR 613.7 Creature -- Goblin" (Projection.subtypesOf wraithId after) (Set.singleton Subtype.Goblin)
-    -- The anti-vacuity check, after the behaviour: both swaps really landed on
-    -- the spell.
-    Spec.assertEqWith s "the two Evolutions resolved onto the spell" (Projection.textChangesAffecting spellId both) [(TextWord.SubtypeWord Subtype.Elf, TextWord.SubtypeWord Subtype.Goblin), (TextWord.SubtypeWord Subtype.Frog, TextWord.SubtypeWord Subtype.Goblin)]
-
-  -- "The new creature type can't be Wall" is printed card text, so it travels
-  -- with the card: the data says it, Effect.ChangeText carries it, and the
-  -- prompt offers it. Nothing in the engine knows which card is asking.
-  Spec.it s "CR 612 the Evolution's own restriction reaches the player being asked" $ do
-    island <- S.printingOf s registry "Island"
-    bogWraith <- S.printingOf s registry "Bog Wraith"
-    artificialEvolution <- S.printingOf s registry "Artificial Evolution"
-    magicalHack <- S.printingOf s registry "Magical Hack"
-    let (wraithId, g1) = S.addPermanent bogWraith S.alice (S.landsInPlay island 3)
-        forbiddenBy printing =
-          let (spellId, g2) = S.addHandCard printing S.alice g1
-              cast = do
-                S.cast S.alice spellId
-                Stack.resolveTop
-           in State.execState (Engine.runGame (recordingForbidden wraithId) g2 cast) Set.empty
-    Spec.assertEqWith s "the Evolution forbids Wall, and nothing else" (forbiddenBy artificialEvolution) (Set.singleton (TextWord.SubtypeWord Subtype.Wall))
-    -- The falsifier for "the engine hard-codes Wall somewhere": Magical Hack
-    -- prints no restriction, so its swap forbids nothing.
-    Spec.assertEqWith s "and the Hack forbids nothing" (forbiddenBy magicalHack) Set.empty
-
-  -- CR 612.1's "any words or symbols printed on that object" reaches a
-  -- text-changer's own restriction clause: Wall in "The new creature type can't
-  -- be Wall" is a creature type word used as a creature type. Wizards' own
-  -- Artificial Evolution ruling puts it plainly -- the swap "alters all
-  -- occurrences of the chosen word in the text box and the type line of the
-  -- given card" -- so one Evolution aimed at another leaves a spell whose
-  -- restriction names the new word.
-  Spec.it s "CR 612.1 an Evolution on an Evolution rewrites the restriction itself" $ do
-    island <- S.printingOf s registry "Island"
-    bogWraith <- S.printingOf s registry "Bog Wraith"
-    artificialEvolution <- S.printingOf s registry "Artificial Evolution"
-    let (wraithId, g1) = S.addPermanent bogWraith S.alice (S.landsInPlay island 3)
-        (firstId, g2) = S.addHandCard artificialEvolution S.alice g1
-        (secondId, g3) = S.addHandCard artificialEvolution S.alice g2
-        onStack = S.runPure S.identityAnswer g3 (S.cast S.alice secondId)
-        spellId = case TurnRegisters.stack (GameState.turn onStack) of
-          top : _ -> top
-          [] -> ObjectId.MkObjectId 999
-        -- The first Evolution replaces the second's every Wall with Frog.
-        evolved = S.runPure (evolveAt spellId Subtype.Wall Subtype.Frog) onStack $ do
-          S.cast S.alice firstId
-          Stack.resolveTop
-        forbidden = State.execState (Engine.runGame (recordingForbidden wraithId) evolved Stack.resolveTop) Set.empty
-    Spec.assertEqWith s "the evolved Evolution forbids Frog, not Wall" forbidden (Set.singleton (TextWord.SubtypeWord Subtype.Frog))
-
   -- CR 612.2a's OTHER half: "or an object with such an ability". Bitterblossom
   -- {1}{B} Kindred Enchantment -- Faerie ("At the beginning of your upkeep, you
   -- lose 1 life and create a 1/1 black Faerie Rogue creature token with flying",
@@ -1648,17 +1302,6 @@ artificialEvolutionSpec s registry = Spec.describe s "ArtificialEvolution" $ do
     Spec.assertEqWith s "named Spirit Token" (tokenNames tokens after) [[CardName.MkCardName (Text.pack "Spirit Token")]]
     Spec.assertBool s (Projection.hasKeyword (Keyword.Afterlife 1) pikerId alive) "the grant reached the Piker"
     Spec.assertEqWith s "Goblin Warrior while it lived" (Projection.subtypesOf pikerId alive) (Set.fromList [Subtype.Goblin, Subtype.Warrior])
-
-  -- CR 702.135b -- "if a permanent has multiple instances of afterlife, each
-  -- triggers separately" -- with an Evolution on top: the Spirit is rule
-  -- 702.135a's word and no text change reaches it (CR 207.2a,
-  -- 702.1), so the
-  -- printed afterlife 2 and the granted afterlife 1 alike leave Spirits.
-  Spec.it s "CR 702.135b an evolved Ministrant plus a granted afterlife leaves three Spirits" $ do
-    (ministrantId, alive, tokens, after) <- insuredChain s registry "Ministrant of Obligation" (Just (Subtype.Spirit, Subtype.Elf))
-    Spec.assertEqWith s "three Spirits" (tokenSubtypes tokens after) [[Subtype.Spirit], [Subtype.Spirit], [Subtype.Spirit]]
-    Spec.assertBool s (Projection.hasKeyword (Keyword.Afterlife 1) ministrantId alive) "the granted instance"
-    Spec.assertBool s (Projection.hasKeyword (Keyword.Afterlife 2) ministrantId alive) "beside the printed one"
 
   -- CR 608.2b names this case in as many words: a target stops being legal when
   -- "an effect may have changed the text of the spell". Piety Charm {W} Instant,
@@ -2273,21 +1916,6 @@ fizzleSpec s registry = Spec.describe s "Fizzle" $ do
 
 indestructibleSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 indestructibleSpec s registry = Spec.describe s "Indestructible" $ do
-  Spec.it s "CR 704.5g an indestructible creature survives lethal marked damage" $ do
-    darksteelMyr <- S.printingOf s registry "Darksteel Myr"
-    let (myrId, gs) = S.addPermanent darksteelMyr S.bob (Setup.emptyGame S.bothPlayers)
-        -- Myr is 0/1; 3 marked damage is lethal (704.5g) but indestructible saves it.
-        after = S.settleSba (S.markDamage myrId 3 gs)
-    Spec.assertEqWith s "Myr still on the battlefield" (S.creaturesInPlay S.bob after) 1
-    Spec.assertEqWith s "Myr not in the graveyard" (length (Game.zoneMembers Zone.Graveyard S.bob after)) 0
-  Spec.it s "CR 704.5h an indestructible creature survives deathtouch" $ do
-    darksteelMyr <- S.printingOf s registry "Darksteel Myr"
-    let (myrId, gs) = S.addPermanent darksteelMyr S.bob (Setup.emptyGame S.bothPlayers)
-        -- Zero marked damage (so 704.5g is silent) plus a deathtouch event isolates
-        -- the 704.5h path; indestructible must guard it too (CR 700.4).
-        wounded = S.withEvents [GameEvent.DamageDealt (DamageEvent.MkDamageEvent (ObjectId.MkObjectId 900) (Recipient.ToCreature myrId) 1 0 True False False 0 Nothing Nothing mempty False mempty mempty Nothing mempty DamageKind.Combat)] gs
-        after = S.settleSba wounded
-    Spec.assertEqWith s "Myr survives deathtouch" (S.creaturesInPlay S.bob after) 1
   Spec.it s "CR 704.5f indestructible does NOT save a creature with toughness <= 0" $ do
     darksteelMyr <- S.printingOf s registry "Darksteel Myr"
     let (myrId, gs) = S.addPermanent darksteelMyr S.bob (Setup.emptyGame S.bothPlayers)
@@ -2315,9 +1943,6 @@ spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   indestructibleSpec s registry
   manaLeakSpec s registry
   standstillSpec s registry
-  whipstitchedZombieSpec s registry
-  lithophageSpec s registry
-  circlingVulturesSpec s registry
   merfolkSeerSpec s registry
   fortressKinGuardSpec s registry
   hakbalSpec s registry

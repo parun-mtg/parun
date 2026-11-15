@@ -1,0 +1,62 @@
+{
+  "description": "CR 704.5g an indestructible creature survives lethal marked damage",
+  "note": "Darksteel Myr is 0/1 with 3 damage marked, lethal under CR 704.5g, but an indestructible permanent ignores that state-based action (CR 702.12b).",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice"
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Darksteel Myr",
+            "label": "myr",
+            "damage": 3
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Battlefield",
+          "card": "Darksteel Myr",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Graveyard",
+          "card": "Darksteel Myr",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$myr",
+          "damage": 3
+        }
+      }
+    }
+  ]
+}

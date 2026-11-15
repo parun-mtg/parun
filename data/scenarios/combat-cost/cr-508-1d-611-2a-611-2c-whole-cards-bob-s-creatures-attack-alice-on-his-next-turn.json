@@ -1,0 +1,50 @@
+{
+  "description": "CR 508.1d / 611.2a / 611.2c whole cards: bob's creatures attack alice on his next turn, and only then",
+  "note": "alice casts Taunt at bob through Vedalken Orrery on bob's own turn 2: his current turn is not his next one (CR 611.2a), so his empty declaration stands. bob's Hill Giant enters after the spell resolved, so only a class re-read at each declaration reaches it (CR 611.2c). On turn 4 an empty declaration is refused and both creatures attack; on turn 6 nothing is required.",
+  "board": {
+    "active": "bob",
+    "turn": 2,
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Vedalken Orrery", "label": "orrery" },
+          { "card": "Island", "label": "island" }
+        ],
+        "hand": [{ "card": "Taunt", "label": "taunt" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          { "card": "Goblin Piker", "label": "piker", "ready": true },
+          { "card": "Mountain", "label": "m1" },
+          { "card": "Mountain", "label": "m2" },
+          { "card": "Mountain", "label": "m3" },
+          { "card": "Mountain", "label": "m4" }
+        ],
+        "hand": [{ "card": "Hill Giant", "label": "giant-card" }],
+        "library": [{ "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }, { "card": "Island" }]
+      }
+    ]
+  },
+  "timeline": [
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$taunt", "targets": ["$bob"], "mana": ["$island"] } } },
+    { "turn": 2, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 2, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } },
+    { "turn": 2, "step": "DeclareAttackers", "player": "bob", "check": { "Attackers": { "attackers": {} } } },
+    { "turn": 2, "step": "PostcombatMain", "player": "bob", "do": { "Cast": { "object": "$giant-card", "mana": ["$m1", "$m2", "$m3", "$m4"] } } },
+    { "turn": 2, "step": "EndStep", "player": "bob", "check": { "Count": { "player": "bob", "zone": "Battlefield", "card": "Hill Giant", "count": 1 } } },
+    { "turn": 2, "step": "EndStep", "player": "bob", "check": { "Life": { "player": "alice", "life": 20 } } },
+    { "turn": 4, "step": "DeclareAttackers", "player": "bob", "refuse": { "Attack": [] } },
+    { "turn": 4, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": ["$piker", "Hill Giant"] } },
+    { "turn": 4, "step": "DeclareAttackers", "player": "bob", "check": { "Attackers": { "attackers": { "$piker": "$alice", "Hill Giant": "$alice" } } } },
+    { "turn": 4, "step": "EndStep", "player": "bob", "check": { "Life": { "player": "alice", "life": 15 } } },
+    { "turn": 6, "step": "DeclareAttackers", "player": "bob", "do": { "Attack": [] } }
+  ],
+  "final": [
+    { "Life": { "player": "alice", "life": 15 } },
+    { "Attackers": { "attackers": {} } }
+  ]
+}

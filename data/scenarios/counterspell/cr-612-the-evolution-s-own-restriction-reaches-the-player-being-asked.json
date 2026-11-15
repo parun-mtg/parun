@@ -1,0 +1,105 @@
+{
+  "description": "CR 612 the Evolution's own restriction reaches the player being asked",
+  "note": "\"The new creature type can't be Wall\" is printed text, so it travels with the card and the swap prompt forbids Wall and nothing else. The control is Magical Hack, which prints no restriction.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Bog Wraith",
+            "label": "wraith"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Artificial Evolution",
+            "label": "spell"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$spell",
+          "targets": [
+            "$wraith"
+          ],
+          "mana": [
+            "$i1",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseWordSwap",
+            "offer": {
+              "source": "Artificial Evolution",
+              "slot": "target",
+              "families": [
+                "CreatureType"
+              ],
+              "forbidden": [
+                {
+                  "type": "Wall"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseWordSwap": {
+          "from": {
+            "type": "Wraith"
+          },
+          "to": {
+            "type": "Elf"
+          }
+        }
+      }
+    }
+  ]
+}
