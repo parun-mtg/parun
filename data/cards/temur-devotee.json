@@ -1,1 +1,125 @@
-{"faces":[{"name":"Temur Devotee","oracleText":"Defender\n{1}: Add {G}, {U}, or {R}. Activate only once each turn.","typeLine":{"types":["Creature"],"subtypes":["Druid","Human"]},"manaCost":[{"type":"Generic","value":1},{"type":"OfType","value":{"type":"Colored","value":"Blue"}}],"power":{"type":"Literal","value":3},"toughness":{"type":"Literal","value":3},"keywords":[{"type":"Defender"}],"activatedAbilities":[{"cost":{"mana":[{"type":"Generic","value":1}]},"modal":{"modes":[{"clauses":[{"effects":[{"type":"AddMana","value":{"production":{"type":"OfType","value":{"type":"Colored","value":"Green"}}}}]}]},{"clauses":[{"effects":[{"type":"AddMana","value":{"production":{"type":"OfType","value":{"type":"Colored","value":"Blue"}}}}]}]},{"clauses":[{"effects":[{"type":"AddMana","value":{"production":{"type":"OfType","value":{"type":"Colored","value":"Red"}}}}]}]}]},"restrictions":[{"type":"TimesEachTurn","value":1}]}]}]}
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Green"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Blue"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Red"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "restrictions": [
+            {
+              "type": "TimesEachTurn",
+              "value": 1
+            }
+          ]
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Defender"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Temur Devotee",
+      "oracleText": "Defender\n{1}: Add {G}, {U}, or {R}. Activate only once each turn.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "typeLine": {
+        "subtypes": [
+          "Druid",
+          "Human"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

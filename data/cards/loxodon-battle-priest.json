@@ -1,1 +1,111 @@
-{"faces":[{"name":"Loxodon Battle Priest","oracleText":"At the beginning of combat on your turn, put a +1/+1 counter on another target creature you control.","typeLine":{"types":["Creature"],"subtypes":["Cleric","Elephant"]},"manaCost":[{"type":"Generic","value":4},{"type":"OfType","value":{"type":"Colored","value":"White"}}],"power":{"type":"Literal","value":3},"toughness":{"type":"Literal","value":5},"triggeredAbilities":[{"condition":{"type":"StepBegins","value":{"phase":{"type":"Combat","value":"BeginningOfCombat"},"scope":{"type":"PlayersTurn","value":{"type":"Relative","value":"You"}}}},"modal":{"modes":[{"clauses":[{"effects":[{"type":"PutCounters","value":{"kind":{"type":"PlusOnePlusOne"},"quantity":{"type":"Literal","value":1},"ref":{"type":"InSlot","value":"target"}}}]}],"targetSlots":{"target":{"pool":{"type":"Creatures"},"filter":{"type":"And","value":[{"type":"Not","value":{"type":"IsSource"}},{"type":"HeldBy","value":{"holder":"Controller","relation":"You"}}]}}}}]}}]}]}
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 4
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Loxodon Battle Priest",
+      "oracleText": "At the beginning of combat on your turn, put a +1/+1 counter on another target creature you control.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 5
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Combat",
+                "value": "BeginningOfCombat"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "Not",
+                          "value": {
+                            "type": "IsSource"
+                          }
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Cleric",
+          "Elephant"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -1,1 +1,101 @@
-{"faces":[{"name":"Undergrowth Leopard","oracleText":"Vigilance\n{1}, Sacrifice this creature: Destroy target artifact or enchantment.","typeLine":{"types":["Creature"],"subtypes":["Cat"]},"manaCost":[{"type":"Generic","value":1},{"type":"OfType","value":{"type":"Colored","value":"Green"}}],"power":{"type":"Literal","value":2},"toughness":{"type":"Literal","value":2},"keywords":[{"type":"Vigilance"}],"activatedAbilities":[{"cost":{"mana":[{"type":"Generic","value":1}],"components":[{"type":"SacrificeThis"}]},"modal":{"modes":[{"clauses":[{"effects":[{"type":"Destroy","value":{"ref":{"type":"InSlot","value":"target"},"regenerability":"Regenerable"}}]}],"targetSlots":{"target":{"pool":{"type":"Permanents"},"filter":{"type":"Or","value":[{"type":"HasCardType","value":"Artifact"},{"type":"HasCardType","value":"Enchantment"}]}}}}]}}]}]}
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "SacrificeThis"
+              }
+            ],
+            "mana": [
+              {
+                "type": "Generic",
+                "value": 1
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Destroy",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "regenerability": "Regenerable"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "filter": {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Artifact"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Enchantment"
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "Permanents"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "keywords": [
+        {
+          "type": "Vigilance"
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Undergrowth Leopard",
+      "oracleText": "Vigilance\n{1}, Sacrifice this creature: Destroy target artifact or enchantment.",
+      "power": {
+        "type": "Literal",
+        "value": 2
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Cat"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

@@ -1,1 +1,104 @@
-{"faces":[{"name":"Frontier Bivouac","oracleText":"This land enters tapped.\n{T}: Add {G}, {U}, or {R}.","typeLine":{"types":["Land"]},"activatedAbilities":[{"cost":{"mana":[],"components":[{"type":"TapThis"}]},"modal":{"modes":[{"clauses":[{"effects":[{"type":"AddMana","value":{"production":{"type":"OfType","value":{"type":"Colored","value":"Green"}}}}]}]},{"clauses":[{"effects":[{"type":"AddMana","value":{"production":{"type":"OfType","value":{"type":"Colored","value":"Blue"}}}}]}]},{"clauses":[{"effects":[{"type":"AddMana","value":{"production":{"type":"OfType","value":{"type":"Colored","value":"Red"}}}}]}]}]}}],"replacementEffects":[{"effect":{"type":"EntryR","value":{"matching":{"type":"IsSource"},"rewrite":{"type":"Tapped"}}}}]}]}
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "components": [
+              {
+                "type": "TapThis"
+              }
+            ],
+            "mana": []
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Green"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Blue"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "AddMana",
+                        "value": {
+                          "production": {
+                            "type": "OfType",
+                            "value": {
+                              "type": "Colored",
+                              "value": "Red"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "name": "Frontier Bivouac",
+      "oracleText": "This land enters tapped.\n{T}: Add {G}, {U}, or {R}.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "Tapped"
+              }
+            }
+          }
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Land"
+        ]
+      }
+    }
+  ]
+}
