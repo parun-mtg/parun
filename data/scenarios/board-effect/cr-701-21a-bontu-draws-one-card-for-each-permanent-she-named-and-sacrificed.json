@@ -1,0 +1,195 @@
+{
+  "description": "CR 701.21a draws one card for each permanent she named and sacrificed",
+  "note": "God-Eternal Bontu enters and alice is offered her eight other permanents, neither Bontu nor bob's Giant; she names the Piker and the Sentry, sacrifices both and draws two. The Rest in Peace sibling exiles them instead.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "swamp"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-3"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-4"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-5"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "goblin-piker"
+          },
+          {
+            "card": "Ogre Sentry",
+            "label": "ogre-sentry"
+          },
+          {
+            "card": "Bird Maiden",
+            "label": "bird-maiden"
+          }
+        ],
+        "hand": [
+          {
+            "card": "God-Eternal Bontu",
+            "label": "bontu"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$bontu",
+          "mana": [
+            "$swamp",
+            "$swamp-2",
+            "$swamp-3",
+            "$swamp-4",
+            "$swamp-5"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseAnyNumberOfPermanents",
+            "offer": {
+              "source": "God-Eternal Bontu",
+              "purpose": "Permanents",
+              "earlier": [],
+              "least": 0,
+              "among": [
+                "$swamp",
+                "$swamp-2",
+                "$swamp-3",
+                "$swamp-4",
+                "$swamp-5",
+                "$goblin-piker",
+                "$ogre-sentry",
+                "$bird-maiden"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberOfPermanents",
+          "with": [
+            "$goblin-piker",
+            "$ogre-sentry"
+          ]
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "View": {
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Graveyard",
+        "is": [
+          "Goblin Piker#5",
+          "Ogre Sentry"
+        ]
+      }
+    },
+    {
+      "Count": {
+        "player": "alice",
+        "zone": "Hand",
+        "card": "Goblin Piker",
+        "count": 2
+      }
+    },
+    {
+      "Count": {
+        "player": "alice",
+        "zone": "Battlefield",
+        "card": "Bird Maiden",
+        "count": 1
+      }
+    },
+    {
+      "Count": {
+        "player": "alice",
+        "zone": "Battlefield",
+        "card": "God-Eternal Bontu",
+        "count": 1
+      }
+    },
+    {
+      "Count": {
+        "player": "bob",
+        "zone": "Battlefield",
+        "card": "Hill Giant",
+        "count": 1
+      }
+    }
+  ]
+}

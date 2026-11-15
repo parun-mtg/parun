@@ -201,11 +201,17 @@ lookingUpCards ::
 lookingUpCards registry failed answer asked = case Asked.prompt asked of
   Prompt.LookUpCard name -> fetched failed (Registry.fetchCard registry name)
   Prompt.ReferenceCards predicate amount -> fmap (referenceCards (Asked.game asked) predicate amount) (fetched failed (Registry.cards registry))
-  Prompt.ReferenceNames predicate ->
-    let context = Filter.contextIn (Asked.game asked) Nothing Nothing
-        admitted face = Filter.matches context (Projection.viewOfCard face) predicate
-     in fmap (concatMap (fmap fst . filter (admitted . snd) . Card.referenceViews)) (fetched failed (Registry.cards registry))
+  Prompt.ReferenceNames predicate -> fmap (referenceNames (Asked.game asked) predicate) (fetched failed (Registry.cards registry))
   _ -> answer asked
+
+-- | CR 108.1: Prompt.ReferenceNames' answer over the reference's cards: every
+-- name the filter admits, each judged by the view Card.referenceViews pairs it
+-- with. Parun.Scenario answers it so too.
+referenceNames :: GameState.GameState -> Filter.Type.Filter Keyword.Keyword -> [Card.Type.Card] -> [CardName.CardName]
+referenceNames gs predicate =
+  let context = Filter.contextIn gs Nothing Nothing
+      admitted face = Filter.matches context (Projection.viewOfCard face) predicate
+   in concatMap (fmap fst . filter (admitted . snd) . Card.referenceViews)
 
 -- | CR 108.1: Prompt.ReferenceCards' answer over the reference's cards: the
 -- first-face name of each the filter admits. Parun.Scenario answers it so too.

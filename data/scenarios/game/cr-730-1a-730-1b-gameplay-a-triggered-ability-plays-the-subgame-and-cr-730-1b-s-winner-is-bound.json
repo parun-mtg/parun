@@ -1,0 +1,424 @@
+{
+  "description": "CR 730.1a/730.1b #137 gameplay: a TRIGGERED ability plays the subgame, and CR 730.1b's winner is bound",
+  "note": "Shahrazad and Sindbad deals bob 3 combat damage and its trigger plays a subgame with each library as the deck. alice's six and bob's four are short of CR 730.3's opening hand, so carol, with eight, wins; she pays nothing, alice halves 20 to 10 and bob 10 to 5. The subgame is on the match's books (CR 100.6a): on turn 4 the same hit takes bob to 2 and triggers nothing.",
+  "board": {
+    "active": "alice",
+    "step": "DeclareAttackers",
+    "seats": [
+      {
+        "name": "alice",
+        "life": 20,
+        "battlefield": [
+          {
+            "card": "Shahrazad and Sindbad",
+            "label": "sindbad",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "life": 13,
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "life": 9,
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$sindbad"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "source": "$sindbad",
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      }
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RandomFirstPlayer",
+          "with": "alice"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain",
+            "Mountain#2",
+            "Mountain#3",
+            "Mountain#4",
+            "Mountain#5",
+            "Mountain#6"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain#7",
+            "Mountain#8",
+            "Mountain#9",
+            "Mountain#10"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain#11",
+            "Mountain#12",
+            "Mountain#13",
+            "Mountain#14",
+            "Mountain#15",
+            "Mountain#16",
+            "Mountain#17",
+            "Mountain#18"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "bob",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "carol",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain",
+            "Mountain#2",
+            "Mountain#3",
+            "Mountain#4",
+            "Mountain#5",
+            "Mountain#6"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain#7",
+            "Mountain#8",
+            "Mountain#9",
+            "Mountain#10"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain#11",
+            "Mountain#12",
+            "Mountain#13",
+            "Mountain#14",
+            "Mountain#15",
+            "Mountain#16",
+            "Mountain#17",
+            "Mountain#18"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 10
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 5
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "carol",
+          "life": 9
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Result",
+          "is": null
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library",
+          "is": [
+            "Mountain",
+            "Mountain#2",
+            "Mountain#3",
+            "Mountain#4",
+            "Mountain#5",
+            "Mountain#6"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library",
+          "is": [
+            "Mountain#7",
+            "Mountain#8",
+            "Mountain#9",
+            "Mountain#10"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "carol",
+          "zone": "Library",
+          "is": [
+            "Mountain#11",
+            "Mountain#12",
+            "Mountain#13",
+            "Mountain#14",
+            "Mountain#15",
+            "Mountain#16",
+            "Mountain#17",
+            "Mountain#18"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 4,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$sindbad"
+        ]
+      }
+    },
+    {
+      "turn": 4,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "source": "$sindbad",
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      }
+    },
+    {
+      "turn": 4,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 2
+        }
+      }
+    },
+    {
+      "turn": 4,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    }
+  ]
+}

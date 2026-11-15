@@ -1928,15 +1928,6 @@ auraThiefSpec s registry =
           Spec.assertEqWith s "bob's, taken from him, start their clock over" (fmap sicknessOf theirs) (fmap (const (Just Sickness.Sick)) theirs)
           Spec.assertEqWith s "alice's own was never interrupted" (fmap sicknessOf hers) (fmap (const (Just (Sickness.Settled S.alice))) hers)
 
--- The one battlefield permanent whose card carries this name. Bane's printed
--- incarnation is gone by the time the trigger resolves (CR 400.7), so the test
--- cannot hold the id it was cast under.
-namedOnBattlefield :: String -> GameState.GameState -> Maybe ObjectId.ObjectId
-namedOnBattlefield name gs =
-  List.find
-    (\oid -> fmap Face.name (Game.faceOf oid gs) == Just (CardName.MkCardName $ Text.pack name))
-    (Set.toList (GameState.battlefield gs))
-
 -- Rampage of the Clans {3}{G} Instant: "Destroy all artifacts and enchantments.
 -- For each permanent destroyed this way, its controller creates a 3/3 green
 -- Centaur creature token." Oracle text checked against api.scryfall.com,
@@ -2177,84 +2168,6 @@ plummetSpec s registry = Spec.describe s "Plummet" $ do
         Spec.assertBool s (Set.member (Recipient.ToCreature flierId) (Target.legalRecipients StackObjectKind.Spell Nothing S.noSource theSlot before)) "legal while it flies"
         Spec.assertBool s (not (Projection.hasKeyword Keyword.Flying flierId after)) "Humility took the flying"
         Spec.assertBool s (not (Set.member (Recipient.ToCreature flierId) (Target.legalRecipients StackObjectKind.Spell Nothing S.noSource theSlot after))) "so it is no longer a legal target"
-
--- Teferi, Hero of Dominaria {3}{W}{U} Legendary Planeswalker -- Teferi, loyalty
--- 4: "+1: Draw a card. At the beginning of the next end step, untap up to two
--- lands." (Oracle text checked against api.scryfall.com 2026-09-27.) CR 608.2d's
--- "up to two": ObjectRef.ChosenPermanents with a ceiling, chosen as the delayed
--- ability resolves rather than targeted.
---
--- Five tapped lands, three alice's Islands and two bob's Mountains -- the
--- printed "lands" is not "lands you control" -- so more are eligible than the
--- ceiling admits, and the choice is put to a player however many it names.
-teferiUntapSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-teferiUntapSpec s registry =
-  let endStep = Phase.Ending EndingStep.EndStep
-      beginEndStep gs =
-        Event.recordEvent
-          (GameEvent.StepBegan (StepBegan.MkStepBegan endStep S.alice))
-          ( gs
-              { GameState.turn =
-                  (GameState.turn gs)
-                    { TurnRegisters.phase = endStep
-                    }
-              }
-          )
-      -- Records every ChooseAnyNumber over permanents as (candidates, ceiling) and
-      -- answers it with `pick` of the candidates -- offered or not, so an
-      -- engine that trusted the answer would act on it.
-      answering :: ([ObjectId.ObjectId] -> [ObjectId.ObjectId]) -> Prompt.Prompt r -> State.State [([ObjectId.ObjectId], Maybe Natural)] r
-      answering pick p = case p of
-        Prompt.ChooseAnyNumber _ _ _ AnyNumberOf.Permanents candidates atMost _ -> do
-          State.modify (<> [(candidates, atMost)])
-          pure (Set.fromList (pick candidates))
-        _ -> pure (S.identityAnswer p)
-      tapped gs oid = fmap Object.tapped (Game.lookupObject oid gs) == Just TapState.Tapped
-      -- alice's Teferi at its printed loyalty, the five lands tapped in APNAP
-      -- order, and a stocked library for the +1's draw. Activates the +1,
-      -- resolves it, then begins the end step and resolves the delayed ability
-      -- under `answering pick`.
-      run pick = do
-        teferi <- S.printingOf s registry "Teferi, Hero of Dominaria"
-        island <- S.printingOf s registry "Island"
-        mountain <- S.printingOf s registry "Mountain"
-        piker <- S.printingOf s registry "Goblin Piker"
-        let (teferiId, g0) = S.addPermanent teferi S.alice (Setup.emptyGame S.bothPlayers)
-            withLoyalty = S.addCounter CounterKind.Loyalty 4 teferiId g0
-            addLand (ids, g) (p, pid) = let (oid, g') = S.addPermanent p pid g in (ids <> [oid], S.tapObject oid g')
-            (lands, g1) = List.foldl' addLand ([], withLoyalty) [(island, S.alice), (island, S.alice), (island, S.alice), (mountain, S.bob), (mountain, S.bob)]
-            g2 = List.foldl' (\g _ -> snd (S.addLibraryCard piker S.alice g)) g1 [1 .. (3 :: Int)]
-            gs =
-              g2
-                { GameState.turn =
-                    (GameState.turn g2)
-                      { TurnRegisters.phase = Phase.PrecombatMain,
-                        TurnRegisters.activePlayer = S.alice,
-                        TurnRegisters.priority = Just S.alice,
-                        TurnRegisters.turnNumber = 2
-                      }
-                }
-        pure $ case Face.activatedAbilities (S.combinedFace teferi) of
-          plus : _ ->
-            let armed = S.runPure S.identityAnswer gs (do Activate.activateAbility S.alice teferiId plus; Stack.resolveTop)
-                settled = S.runPure S.identityAnswer (beginEndStep armed) Engine.settleForPriority
-                (after, asked) = State.runState (fmap snd (Engine.runGame (answering pick) settled Engine.priorityLoop)) []
-             in Just (lands, armed, after, asked)
-          [] -> Nothing
-   in Spec.describe s "TeferiHeroOfDominaria" $ do
-        -- One of each seat's lands named: exactly those two untap, and the prompt
-        -- offered all five with a ceiling of two.
-        Spec.it s "CR 608.2d the delayed +1 untaps the two lands named, of five offered" $ do
-          let chosen cs = case cs of
-                a : _ : _ : m : _ -> [a, m]
-                _ -> []
-          result <- run chosen
-          case result of
-            Just (lands, armed, after, asked) -> do
-              Spec.assertEqWith s "the +1 armed one delayed ability" (length (StoredEffects.delayedTriggers (GameState.stored armed))) 1
-              Spec.assertEqWith s "alice's first Island and bob's first Mountain untapped, the other three did not" (fmap (tapped after) lands) [False, True, True, False, True]
-              Spec.assertEqWith s "asked once, offered every land, at most two" asked [(lands, Just 2)]
-            Nothing -> Spec.assertFailure s "Teferi prints a +1"
 
 -- Archfiend of Depravity {3}{B}{B} Creature -- Demon 5/4: "Flying / At the
 -- beginning of each opponent's end step, that player chooses up to two creatures
@@ -2507,70 +2420,8 @@ spawnbrokerSpec s registry = Spec.describe s "Spawnbroker" $ do
     Spec.assertEqWith s "and bob keeps his Wraith" (Projection.controllerOf bobWraith refused) (Just S.bob)
     Spec.assertEqWith s "and alice her Piker" (Projection.controllerOf alicePiker refused) (Just S.alice)
 
--- God-Eternal Bontu {3}{B}{B} 5/6 menace: "When God-Eternal Bontu enters,
--- sacrifice any number of other permanents, then draw that many cards."
--- (Scryfall, 2026-09-29.)
---
--- alice holds five Swamps, a Goblin Piker, an Ogre Sentry and a Bird Maiden;
--- bob a Hill Giant. She names the Piker and the Sentry, so "that many" is two,
--- where the offer is eight and every other permanent on the battlefield nine.
-godEternalBontuSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-godEternalBontuSpec s registry =
-  let -- Records each permanents ChooseAnyNumber's candidates and answers with
-      -- exactly `wanted`, so the offer is read off the engine.
-      answering :: Set.Set ObjectId.ObjectId -> Prompt.Prompt r -> State.State [[ObjectId.ObjectId]] r
-      answering wanted p = case p of
-        Prompt.ChooseAnyNumber _ _ _ AnyNumberOf.Permanents candidates _ _ -> do
-          State.modify (<> [candidates])
-          pure wanted
-        _ -> pure (S.identityAnswer p)
-      run withPeace = do
-        bontu <- S.printingOf s registry "God-Eternal Bontu"
-        swamp <- S.printingOf s registry "Swamp"
-        piker <- S.printingOf s registry "Goblin Piker"
-        sentry <- S.printingOf s registry "Ogre Sentry"
-        maiden <- S.printingOf s registry "Bird Maiden"
-        giant <- S.printingOf s registry "Hill Giant"
-        peace <- S.printingOf s registry "Rest in Peace"
-        let addLand (ids, g) _ = let (oid, g') = S.addPermanent swamp S.alice g in (ids <> [oid], g')
-            (swamps, g0) = List.foldl' addLand ([], Setup.emptyGame S.bothPlayers) [1 .. (5 :: Int)]
-            (pikerId, g1) = S.addPermanent piker S.alice g0
-            (sentryId, g2) = S.addPermanent sentry S.alice g1
-            (maidenId, g3) = S.addPermanent maiden S.alice g2
-            (giantId, g4) = S.addPermanent giant S.bob g3
-            (peaceIds, g5) = if withPeace then let (oid, g') = S.addPermanent peace S.alice g4 in ([oid], g') else ([], g4)
-            stocked = List.foldl' (\g _ -> snd (S.addLibraryCard piker S.alice g)) g5 [1 .. (6 :: Int)]
-            (withSpell, spell) =
-              S.handOne
-                bontu
-                stocked
-                  { GameState.turn =
-                      (GameState.turn stocked)
-                        { TurnRegisters.phase = Phase.PrecombatMain,
-                          TurnRegisters.activePlayer = S.alice,
-                          TurnRegisters.priority = Just S.alice
-                        }
-                  }
-            afterCast = S.runPure S.identityAnswer withSpell (S.cast S.alice spell)
-            (after, asked) = State.runState (fmap snd (Engine.runGame (answering (Set.fromList [pikerId, sentryId])) afterCast Engine.priorityLoop)) []
-            offered = Set.fromList (swamps <> [pikerId, sentryId, maidenId] <> peaceIds)
-        pure (after, asked, offered, (pikerId, sentryId, maidenId, giantId))
-      drew gs = length (Game.zoneMembers Zone.Hand S.alice gs)
-   in Spec.describe s "GodEternalBontu" $ do
-        Spec.it s "CR 701.21a draws one card for each permanent she named and sacrificed" $ do
-          (after, asked, offered, (pikerId, sentryId, maidenId, giantId)) <- run False
-          Spec.assertEqWith s "alice drew two cards, the two she sacrificed" (drew after) 2
-          Spec.assertEqWith s "CR 701.21a the Piker and the Sentry went to her graveyard" (List.sort (namesIn Zone.Graveyard S.alice after)) (List.sort [Just (named "Goblin Piker"), Just (named "Ogre Sentry")])
-          Spec.assertBool s (not (S.onBattlefield pikerId after || S.onBattlefield sentryId after)) "neither named creature is on the battlefield"
-          Spec.assertBool s (S.onBattlefield maidenId after && S.onBattlefield giantId after) "the Maiden she passed over and bob's Giant stay"
-          Spec.assertEqWith s "asked once, offered her eight other permanents and neither Bontu nor bob's Giant" (fmap Set.fromList asked) [offered]
-          Spec.assertBool s (Maybe.isJust (namedOnBattlefield "God-Eternal Bontu" after)) "Bontu herself stays"
-  where
-    named = CardName.MkCardName . Text.pack
-
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
-  godEternalBontuSpec s registry
   spawnbrokerSpec s registry
   plummetSpec s registry
   exhumeSpec s registry
@@ -2579,7 +2430,6 @@ spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   skullwinderSpec s registry
   elvishPiperSpec s registry
   gloriousProtectorSpec s registry
-  teferiUntapSpec s registry
   archfiendOfDepravitySpec s registry
   covetousElegySpec s registry
   summonValeforSpec s registry

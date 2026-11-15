@@ -1,0 +1,545 @@
+{
+  "description": "CR 604.2/730.4a gameplay: Death Wish takes Titania's Song out of the main game and its effect goes on applying there",
+  "note": "Titania's Song animates alice's Jade Statue as a 4/4. In the Shahrazad subgame she casts Death Wish, whose unrestricted filter is offered her main-game Song, Statue and Plains (CR 730.4), and takes the Song. Leaving the main game is leaving the battlefield, so the Song's own text keeps its effect applying there until end of turn (CR 604.2): back in the main game the Statue is still a 4/4 artifact creature. The answer names the Song by its main-game id, which the Prompt check beside it pins.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Titania's Song",
+            "label": "song"
+          },
+          {
+            "card": "Jade Statue",
+            "label": "statue"
+          },
+          {
+            "card": "Plains",
+            "label": "plains"
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shahrazad",
+            "label": "shahrazad"
+          }
+        ],
+        "library": [
+          {
+            "card": "Death Wish"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          },
+          {
+            "card": "Swamp"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$statue",
+          "power": 4,
+          "toughness": 4
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$shahrazad",
+          "mana": [
+            "$plains",
+            "$plains-2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RandomFirstPlayer",
+          "with": "alice"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Death Wish",
+            "Swamp",
+            "Swamp#2",
+            "Swamp#3",
+            "Swamp#4",
+            "Swamp#5",
+            "Swamp#6",
+            "Swamp#7",
+            "Swamp#8"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain",
+            "Mountain#2",
+            "Mountain#3",
+            "Mountain#4",
+            "Mountain#5",
+            "Mountain#6",
+            "Mountain#7",
+            "Mountain#8",
+            "Mountain#9"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "bob",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "PlayLand": "Swamp#3"
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Cleanup",
+      "player": "bob",
+      "depth": 1,
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseDiscard",
+            "offer": {
+              "from": [
+                "Mountain#2",
+                "Mountain#3",
+                "Mountain#4",
+                "Mountain#5",
+                "Mountain#6",
+                "Mountain#7",
+                "Mountain#8",
+                "Mountain#9"
+              ],
+              "count": 1,
+              "earlier": []
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Cleanup",
+      "player": "bob",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": []
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "PlayLand": "Swamp#2"
+      }
+    },
+    {
+      "turn": 4,
+      "step": "Cleanup",
+      "player": "bob",
+      "depth": 1,
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseDiscard",
+            "offer": {
+              "from": [
+                "Mountain",
+                "Mountain#2",
+                "Mountain#3",
+                "Mountain#4",
+                "Mountain#5",
+                "Mountain#6",
+                "Mountain#7",
+                "Mountain#9"
+              ],
+              "count": 1,
+              "earlier": []
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 4,
+      "step": "Cleanup",
+      "player": "bob",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": []
+        }
+      }
+    },
+    {
+      "turn": 5,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "PlayLand": "Swamp"
+      }
+    },
+    {
+      "turn": 5,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Cast": {
+          "object": "Death Wish",
+          "mana": [
+            "Swamp#4",
+            "Swamp#6",
+            "Swamp#8"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 5,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "do": "Pass"
+    },
+    {
+      "turn": 5,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOptional",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 5,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseFromOutsideTheGame",
+            "offer": {
+              "names": [
+                "Titania's Song (game on hold)",
+                "Jade Statue (game on hold)",
+                "Plains (game on hold)",
+                "Plains (game on hold)",
+                "Shahrazad (game on hold)"
+              ],
+              "least": 1,
+              "most": 1,
+              "among": [
+                {
+                  "type": "InAnotherGame",
+                  "value": 0
+                },
+                {
+                  "type": "InAnotherGame",
+                  "value": 1
+                },
+                {
+                  "type": "InAnotherGame",
+                  "value": 2
+                },
+                {
+                  "type": "InAnotherGame",
+                  "value": 3
+                },
+                {
+                  "type": "InAnotherGame",
+                  "value": 23
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 5,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseFromOutsideTheGame",
+          "with": [
+            {
+              "type": "InAnotherGame",
+              "value": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Swamp",
+            "Swamp#2",
+            "Swamp#3",
+            "Swamp#4",
+            "Swamp#5",
+            "Swamp#6",
+            "Swamp#7",
+            "Swamp#8",
+            "Titania's Song",
+            "Death Wish"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain",
+            "Mountain#2",
+            "Mountain#3",
+            "Mountain#4",
+            "Mountain#5",
+            "Mountain#6",
+            "Mountain#7",
+            "Mountain#8",
+            "Mountain#9"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$statue",
+          "power": 4,
+          "toughness": 4
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Types": {
+          "object": "$statue",
+          "types": [
+            "Artifact",
+            "Creature"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Battlefield",
+          "card": "Titania's Song",
+          "count": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Library",
+          "card": "Titania's Song",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 20
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 10
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Result",
+          "is": null
+        }
+      }
+    }
+  ]
+}

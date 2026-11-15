@@ -1,0 +1,309 @@
+{
+  "description": "CR 727.2 a trampler that trades with its blocker still hands the initiative over",
+  "note": "bob takes the initiative with Aarakocra Sneak. On alice's turn her War Mammoth (3/3 trample) is blocked by his Boggart Brute (3/2): it assigns the Brute its lethal 2 and tramples 1 over, and the two trade. The Mammoth is gone before the trigger scan, but the damage still took the initiative for alice (CR 603.10), so she ventures into Undercity; carol, outside the combat, ventures into nothing.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island-1"
+          },
+          {
+            "card": "Island",
+            "label": "island-2"
+          },
+          {
+            "card": "Island",
+            "label": "island-3"
+          },
+          {
+            "card": "Island",
+            "label": "island-4"
+          },
+          {
+            "card": "Boggart Brute",
+            "label": "brute"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Aarakocra Sneak",
+            "label": "sneak"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "bl1"
+          },
+          {
+            "card": "Island",
+            "label": "bl2"
+          },
+          {
+            "card": "Island",
+            "label": "bl3"
+          }
+        ],
+        "dungeons": [
+          "Undercity"
+        ]
+      },
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "War Mammoth",
+            "label": "mammoth"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest",
+            "label": "al1"
+          },
+          {
+            "card": "Forest",
+            "label": "al2"
+          },
+          {
+            "card": "Forest",
+            "label": "al3"
+          }
+        ],
+        "dungeons": [
+          "Undercity"
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ],
+        "dungeons": [
+          "Undercity"
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Cast": {
+          "object": "$sneak",
+          "mana": [
+            "$island-1",
+            "$island-2",
+            "$island-3",
+            "$island-4"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$bl1",
+            "$bl2",
+            "$bl3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndStep",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Command",
+          "is": [
+            "Undercity"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$mammoth"
+        ]
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "source": "$mammoth",
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      }
+    },
+    {
+      "turn": 2,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Block": {
+          "$brute": [
+            "$mammoth"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "CombatDamage",
+      "player": "alice",
+      "source": "$mammoth",
+      "do": {
+        "AssignDamage": {
+          "$brute": 2,
+          "$bob": 1
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "CombatDamage",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": []
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "CombatDamage",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$al2",
+            "$al3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 19
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard",
+          "is": [
+            "War Mammoth"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Graveyard",
+          "is": [
+            "Boggart Brute"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command",
+          "is": [
+            "Undercity#2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndOfCombat",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "carol",
+          "zone": "Command",
+          "is": []
+        }
+      }
+    }
+  ]
+}

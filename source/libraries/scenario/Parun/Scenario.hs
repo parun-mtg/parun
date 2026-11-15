@@ -845,6 +845,7 @@ answerDedicated decider asked =
         -- CR 108.1: the interpreter's question, answered from the reference.
         Prompt.Type.LookUpCard name -> lookUp name
         Prompt.Type.ReferenceCards predicate amount -> fmap (Interpreter.referenceCards gs predicate amount) referenceWhole
+        Prompt.Type.ReferenceNames predicate -> fmap (Interpreter.referenceNames gs predicate) referenceWhole
         -- CR 724.6: keyed on the conceding player, whom no one decides for.
         Prompt.Type.Concede pid -> do
           key <- whenOf gs pid

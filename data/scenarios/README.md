@@ -10,7 +10,7 @@ set or list one element short or long, a null made something and back),
 naming each change the scenario still passes and each check it has no change
 for; it exits 1 when one passes or a file fails as written. `parun
 schema scenario` prints the schema. A test moved from a Haskell spec goes in a
-subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones still to move.
+subdirectory named for that spec.
 
 - **Board.** `seats` in turn order, each with a `name`, `life` (default 20),
   player `counters` (`[{ "key": "Energy", "value": 3 }]`), a

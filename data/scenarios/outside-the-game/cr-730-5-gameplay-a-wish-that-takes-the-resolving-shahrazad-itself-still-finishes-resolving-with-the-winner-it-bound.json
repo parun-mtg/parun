@@ -1,0 +1,436 @@
+{
+  "description": "CR 730.5 gameplay: a wish that takes the resolving Shahrazad itself still finishes resolving with the winner it bound",
+  "note": "alice casts Shahrazad; in the subgame she casts Burning Wish and takes the Shahrazad still resolving on the main game's stack, which CR 730.4 offers as a sorcery she owns outside the subgame. bob decks on turn 6, so alice wins, and Shahrazad finishes resolving with that winner bound: bob alone halves. alice's 20 is the discriminating total. The card came back to her main-game library, not her graveyard.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "plains"
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Shahrazad",
+            "label": "shahrazad"
+          }
+        ],
+        "library": [
+          {
+            "card": "Burning Wish"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$shahrazad",
+          "mana": [
+            "$plains",
+            "$plains-2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "RandomFirstPlayer",
+          "with": "alice"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Burning Wish",
+            "Mountain",
+            "Mountain#2",
+            "Mountain#3",
+            "Mountain#4",
+            "Mountain#5",
+            "Mountain#6",
+            "Mountain#7",
+            "Mountain#8"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain#9",
+            "Mountain#10",
+            "Mountain#11",
+            "Mountain#12",
+            "Mountain#13",
+            "Mountain#14",
+            "Mountain#15",
+            "Mountain#16",
+            "Mountain#17"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "Untap",
+      "player": "bob",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "DeclareMulligan",
+          "with": "Keep"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "PlayLand": "Mountain#5"
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Cleanup",
+      "player": "bob",
+      "depth": 1,
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseDiscard",
+            "offer": {
+              "from": [
+                "Mountain#9",
+                "Mountain#10",
+                "Mountain#11",
+                "Mountain#12",
+                "Mountain#13",
+                "Mountain#14",
+                "Mountain#15",
+                "Mountain#17"
+              ],
+              "count": 1,
+              "earlier": []
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Cleanup",
+      "player": "bob",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": []
+        }
+      }
+    },
+    {
+      "turn": 4,
+      "step": "Cleanup",
+      "player": "bob",
+      "depth": 1,
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseDiscard",
+            "offer": {
+              "from": [
+                "Mountain#6",
+                "Mountain#7",
+                "Mountain#8",
+                "Mountain#9",
+                "Mountain#10",
+                "Mountain#11",
+                "Mountain#13",
+                "Mountain#17"
+              ],
+              "count": 1,
+              "earlier": []
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 4,
+      "step": "Cleanup",
+      "player": "bob",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseDiscard",
+          "with": []
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "PlayLand": "Mountain#6"
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Cast": {
+          "object": "Burning Wish",
+          "mana": [
+            "Mountain#13",
+            "Mountain#17"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "do": "Pass"
+    },
+    {
+      "turn": 3,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "depth": 1,
+      "do": {
+        "Answer": {
+          "prompt": "ChooseOptional",
+          "with": "Exercises"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain",
+            "Mountain#2",
+            "Mountain#3",
+            "Mountain#4",
+            "Mountain#10",
+            "Mountain#13",
+            "Mountain#14",
+            "Shahrazad",
+            "Burning Wish",
+            "Mountain#17"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Mountain#5",
+            "Mountain#6",
+            "Mountain#7",
+            "Mountain#8",
+            "Mountain#9",
+            "Mountain#11",
+            "Mountain#12",
+            "Mountain#15",
+            "Mountain#16"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 20
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "bob",
+          "life": 10
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Library",
+          "card": "Shahrazad",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Result",
+          "is": null
+        }
+      }
+    }
+  ]
+}
