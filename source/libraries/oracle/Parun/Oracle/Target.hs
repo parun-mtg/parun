@@ -594,7 +594,9 @@ counted c one many = concatMap andOr $ case c of
 
 -- | Free: a plural instant-or-sorcery head reads "and/or" (Scholar of the Ages,
 -- Ghitu Lavarunner), as does any plural disjunction of target cards
--- (Archenemy's Charm's "one or two target creature and/or planeswalker cards").
+-- (Archenemy's Charm's "one or two target creature and/or planeswalker cards"),
+-- and so may a plural disjunction of target permanents (Lagorin, Soul of
+-- Alacria's "up to two target Mounts and/or Vehicles").
 andOr :: (Text.Text, Filter.Number) -> [(Text.Text, Filter.Number)]
 andOr (words', Filter.Plural)
   | Text.isInfixOf orCards words' = [(words', Filter.Plural), (Text.replace orCards (Text.pack "instant and/or sorcery cards") words', Filter.Plural)]
@@ -603,7 +605,12 @@ andOr (words', Filter.Plural)
     Text.isInfixOf orWord after,
     Text.isInfixOf (Text.pack " cards") after =
       [(words', Filter.Plural), (before <> Text.replace orWord (Text.pack " and/or ") after, Filter.Plural)]
+  | (before, after) <- Text.breakOnEnd (Text.pack "target ") words',
+    not (Text.null before),
+    Text.isInfixOf andWord after =
+      [(words', Filter.Plural), (before <> Text.replace andWord (Text.pack " and/or ") after, Filter.Plural)]
   where
+    andWord = Text.pack " and "
     orCards = Text.pack "instant or sorcery cards"
     orWord = Text.pack " or "
 andOr other = [other]
