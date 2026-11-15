@@ -322,9 +322,9 @@ data Quantity
     -- that log.
     --
     -- Parun.ConditionSpec's Ashling the Pilgrim and Rumor Gatherer groups are
-    -- what prove the count, and Parun.CopySpec's what proves rule 707.10b's third
-    -- sentence here: a copy of the ability counts toward the same total, the copy
-    -- keeping the original's Source.
+    -- what prove the count, and data/scenarios/copy's CR 707.10b cases what prove
+    -- rule 707.10b's third sentence here: a copy of the ability counts toward
+    -- the same total, the copy keeping the original's Source.
     TimesThisTurn AbilityAct.AbilityAct
   | -- | CR 602.2 / 608.2i: how many of the turn's activations by that player
     -- match, read off TurnRegisters.activationsThisTurn -- The Chain Veil's "if you

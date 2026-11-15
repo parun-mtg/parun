@@ -109,7 +109,6 @@ out: grep for them.
 - `check:replacement-rows`: the replacement effects stored
 - `move:ActivateManaAbility`: a mana ability activated while a cost is paid, not at priority
 - `move:ChooseCost-offered-cast`
-- `ref:stack-ability-occurrence`: one of several identical abilities on the stack
 
 ## Tests
 
@@ -350,8 +349,8 @@ out: grep for them.
 - ~~CR 702.103e a bestowed copy whose host died resolves as a token creature | `check:helper-rollickersOn` `check:other-Game.isToken`~~
 - ~~CR 702.128a embalm exiles the card for a white Zombie token copy with no mana cost, and a Clone of it keeps all three | `check:mana-value`~~
 - ~~CR 702.129a eternalize makes a black 4/4 Zombie token copy, and neither it nor a Clone of it is a Doom Blade target | `check:mana-value`~~
-- CR 707.10b a copy of a triggered ability still counts once the original has been countered | `ref:stack-ability-occurrence`
-- CR 707.10b a copy of an activated ability still counts once the original has been countered | `ref:stack-ability-occurrence`
+- ~~CR 707.10b a copy of a triggered ability still counts once the original has been countered | `ref:stack-ability-occurrence`~~
+- ~~CR 707.10b a copy of an activated ability still counts once the original has been countered | `ref:stack-ability-occurrence`~~
 - ~~CR 707.10c a card the copied X does not reach is not offered | `check:legal-targets` `move:out-of-range-answer`~~
 - ~~CR 707.13 Garth One-Eye's cast copy of Black Lotus has Black Lotus's characteristics and resolves as a token | `check:other-Object.castFrom` `check:other-GameState.outsideCopies`~~
 - ~~CR 707.13 a declined copy leaves nothing behind, and a name the reference does not know makes no copy | `check:other-GameState.outsideCopies` `check:other-GameState.namedCopyChoices` `board:card-reference`~~

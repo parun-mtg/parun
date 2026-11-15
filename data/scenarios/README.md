@@ -60,7 +60,10 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   whose id no longer names one, counted the same way --- a card that has moved
   zones among them, since CR 400.7 left its old self behind. `"trigger of $x"` and `"ability of $x"`
   name the topmost triggered or activated ability on the stack from that
-  source, which may have left the game (CR 113.7a).
+  source, which may have left the game (CR 113.7a). `"stack 2"` is the object
+  second from the top of the stack as the move reads it, which names an ability
+  under an identical copy of it (CR 707.10); a spell being cast is already on
+  top as its targets are chosen (CR 601.2a).
 - **Timeline.** Each entry is keyed by `turn`, `step` and the `player` who
   decides, and carries `do` (a move) or `check`. An entry for a subgame (CR
   730.1a) adds its `depth`, 1 for the main game's subgame, and names that
