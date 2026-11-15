@@ -1,0 +1,90 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Into the Wilds",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 609.3 an empty library looks at nothing and raises no question",
+  "final": [
+    {
+      "View": {
+        "is": [],
+        "of": "Zone",
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "Into the Wilds' upkeep trigger over an empty library: there is no top card, so nothing is looked at, the land clause finds nothing and no may is raised (an unscheduled ChooseOptional would fail the run). The trigger still resolves.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of Into the Wilds"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Into the Wilds",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    }
+  ]
+}

@@ -926,8 +926,8 @@ damageRecipient gs recipient = case recipient of
 -- greatest of the calculated amounts for each of the card types it has", and the
 -- greatest excess is what the lowest bar leaves. Only reachable for a permanent
 -- that is more than one of the three at once, which takes Liquimetal Coating and
--- March of the Machines to build (Parun.DamageSpec's ExcessDamage group casts
--- Flame Spill at that Jace Beleren); one card type is the ordinary case.
+-- March of the Machines to build (data/scenarios/damage/'s CR 120.4a scenarios
+-- cast Flame Spill at that Jace Beleren); one card type is the ordinary case.
 --
 -- Nothing when the recipient has none of them: a player (CR 120.3a's business,
 -- and not a permanent at all) or an object that is no longer there to project.
@@ -1073,7 +1073,7 @@ settleExcess board events = snd (List.mapAccumL share Map.empty events)
 -- CR 120.4b and CR 120.4c only. CR 120.4a runs BEFORE this, on the event list
 -- rather than on the batch: redirectExcess above has already split any event
 -- whose effect stated where its excess goes, so what arrives here is what CR
--- 120.4b deals. Parun.DamageSpec's ExcessDamage group is the proof.
+-- 120.4b deals. data/scenarios/damage/'s CR 120.4a scenarios are the proof.
 --
 -- Two halves, so a caller that brackets the batch as one event can keep CR
 -- 702.15e's separate life gain events OUT of the bracket: `processDamage` is the

@@ -28,15 +28,15 @@
           },
           {
             "card": "Mountain",
-            "label": "m0"
-          },
-          {
-            "card": "Mountain",
             "label": "m1"
           },
           {
             "card": "Mountain",
             "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
           }
         ],
         "hand": [
@@ -54,11 +54,12 @@
     "step": "PrecombatMain"
   },
   "description": "CR 120.4a the excess is the greatest across the card types the permanent has",
-  "note": "Liquimetal Coating under March of the Machines makes alice's Jace Beleren a 3/3 artifact creature planeswalker with 1 damage marked and loyalty 3. Flame Spill's 4 at him has two bars: lethal damage 2 (CR 120.6) and loyalty 3 (CR 306.5c); the greatest excess, 2, goes to alice, where the loyalty bar alone would send 1. Jace's 3 marked damage and 1 loyalty are not checked: CR 704.5g destroys him before the next priority.",
+  "note": "Liquimetal Coating makes Jace an artifact and March of the Machines makes him a 3/3 creature (CR 205.1b), still a planeswalker. With 1 marked, CR 120.6's lethal damage is 2 and CR 306.5c's loyalty is 3, so Flame Spill's 4 leaves an excess of 2 or 1; the greatest, 2, goes to alice, his controller. Jace is gone by the next priority (3 marked on a 3/3, CR 704.5g), so the 2 that stayed are read off alice's life.",
   "timeline": [
     {
       "do": {
         "Activate": {
+          "ability": 0,
           "object": "$coating",
           "targets": [
             "$jace"
@@ -131,9 +132,9 @@
       "do": {
         "Cast": {
           "mana": [
-            "$m0",
             "$m1",
-            "$m2"
+            "$m2",
+            "$m3"
           ],
           "object": "$spill",
           "targets": [
@@ -146,31 +147,7 @@
       "turn": 1
     },
     {
-      "check": {
-        "View": {
-          "is": [
-            "Flame Spill"
-          ],
-          "of": "Stack"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
       "do": "Pass",
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "View": {
-          "is": [],
-          "of": "Stack"
-        }
-      },
       "player": "alice",
       "step": "PrecombatMain",
       "turn": 1
@@ -188,9 +165,11 @@
     },
     {
       "check": {
-        "Life": {
-          "life": 20,
-          "player": "bob"
+        "Count": {
+          "card": "Jace Beleren",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
         }
       },
       "player": "alice",

@@ -1112,7 +1112,7 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- (Curiosity's ruling). It is not redundant with the attack: CR 614.9's
   -- redirection replaces the event's recipient and nothing else, so Harm's Way
   -- can turn an attacker's combat damage onto its own controller.
-  -- Parun.FlipSpec's "CR 603.2 Harm's Way sends Akki's combat damage to alice,
+  -- data/scenarios/flip's "CR 603.2 Harm's Way sends Akki's combat damage to alice,
   -- and Akki does not flip" proves the relation, and data/scenarios/event-trigger's
   -- "Teysa ignores combat damage dealt to another player" a bystander's.
   --
@@ -2185,7 +2185,7 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
           TriggerSource.Sourceless -> False
           TriggerSource.OfObject srcId ->
             PlayerRelation.holds (Game.teams gs) relation you (AbilityTriggered.controller record)
-              && ( let pc = Projection.projectWithLastKnown srcId gs
+              && ( let pc = Projection.projectWithLastKnown Map.empty srcId gs
                     in Saga.tracksLore pc && Saga.chapterOf (AbilityTriggered.ability record) == Just (Saga.finalChapterOf pc)
                  )
      in case (watched, event) of

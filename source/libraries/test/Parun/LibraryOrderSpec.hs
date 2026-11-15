@@ -34,21 +34,15 @@ import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
-import qualified Parun.Types.ActivatedAbility as ActivatedAbility
-import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.BeginningStep as BeginningStep
-import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.ClauseIndex as ClauseIndex
 import qualified Parun.Types.CombatStep as CombatStep
-import qualified Parun.Types.Copyability as Copyability
-import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CounterKind as CounterKind
-import qualified Parun.Types.CreateEmblem as CreateEmblem
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Departure as Departure.Type
 import qualified Parun.Types.Designation as Designation
@@ -61,10 +55,8 @@ import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GainControl as GainControl
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
-import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.Mode as Mode
 import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeInstance as ModeInstance
@@ -85,7 +77,6 @@ import qualified Parun.Types.PlayerQuantity as PlayerQuantity
 import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerSacrifices as PlayerSacrifices
-import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
@@ -298,38 +289,6 @@ nessianAspSpec s registry = Spec.describe s "NessianAsp" $ do
         Spec.assertEqWith s "monstrosity still puts its four on" (countersOn aspId after) (Just 5)
         Spec.assertEqWith s "and still marks it monstrous" (monstrousOf aspId after) (Just True)
         Spec.assertEqWith s "so it reads 9/10" (S.powerToughnessOf aspId after) (Just (9, 10))
-      abilities -> Spec.assertFailure s ("expected one monstrosity ability, got " <> show (length abilities))
-  -- CR 701.37b: "once a permanent becomes monstrous, it stays monstrous until it
-  -- leaves the battlefield". The designation is per-incarnation state, so CR
-  -- 400.7's new object has none -- the same reading Object.newIncarnation gives
-  -- counters, which the Unsummon case above proves for CR 122.2.
-  Spec.it s "CR 701.37b the designation leaves with the permanent" $ do
-    forest <- S.printingOf s registry "Forest"
-    island <- S.printingOf s registry "Island"
-    asp <- S.printingOf s registry "Nessian Asp"
-    unsummon <- S.printingOf s registry "Unsummon"
-    let (aspId, placed) = S.addPermanent asp S.alice (S.landsInPlay forest 16)
-        (_, withIsland) = S.addPermanent island S.alice placed
-        board =
-          withIsland
-            { GameState.turn =
-                (GameState.turn withIsland)
-                  { TurnRegisters.priority = Just S.alice
-                  }
-            }
-    case Activatable.abilitiesFor aspId board of
-      [ability] -> do
-        let once = S.runPure S.identityAnswer board $ do
-              Activate.activateAbility S.alice aspId ability
-              Stack.resolveTop
-            (withSpell, spellId) = S.handOne unsummon once
-            bounced = S.runPure S.identityAnswer withSpell $ do
-              S.cast S.alice spellId
-              Stack.resolveTop
-            -- Total (no `head`): the Asp is the only card that can be in hand.
-            inHand = fmap (\h -> maybe True (Set.member Designation.Monstrous . Object.designations) (Game.lookupObject h bounced)) (Game.zoneMembers Zone.Hand S.alice bounced)
-        Spec.assertEqWith s "monstrous on the battlefield" (monstrousOf aspId once) (Just True)
-        Spec.assertEqWith s "the bounced incarnation is not monstrous" inHand [False]
       abilities -> Spec.assertFailure s ("expected one monstrosity ability, got " <> show (length abilities))
 
 untapSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
@@ -713,17 +672,6 @@ scryPromptSpec s registry = Spec.describe s "ScryPrompt" $ do
     let after = runScry (scryAnswer ([], [])) ballId board
     Spec.assertEqWith s "not asked" (asks ballId board) 0
     Spec.assertEqWith s "and the library is what it was" (scryLibrary after) ids
-  -- CR 701.22b: "if a player is instructed to scry 0, no scry event occurs."
-  -- Driven through the opcode rather than a card, no printing scrying zero and
-  -- Crystal Ball's count being fixed at two.
-  Spec.it s "CR 701.22b scry 0 raises no prompt and moves nothing" $ do
-    (ids, ballId, board) <- scryBoard s registry 4
-    let scryZero = Effect.Scry (PlayerQuantity.MkPlayerQuantity (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 0))
-        zero = Resolve.applyEffect ballId ballId S.alice Map.empty Map.empty scryZero
-        asked = State.execState (Engine.runGame counting board zero) 0
-        after = S.runPure (scryAnswer ([], [])) board zero
-    Spec.assertEqWith s "not asked" asked 0
-    Spec.assertEqWith s "and the library is what it was" (scryLibrary after) ids
   -- CR 614.6: Eligeth, Crossroads Augur ("If you would scry a number of cards,
   -- draw that many cards instead.") replaces the scry outright: two cards drawn,
   -- nothing looked at, and no CR 701.22d event for "whenever you scry".
@@ -824,7 +772,7 @@ surveilOpcodeBoard s registry stock = do
         }
     )
 
-surveilPromptSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+surveilPromptSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 surveilPromptSpec s registry = Spec.describe s "SurveilPrompt" $ do
   let counting :: Prompt.Prompt r -> State.State Int r
       counting p = case p of
@@ -835,10 +783,6 @@ surveilPromptSpec s registry = Spec.describe s "SurveilPrompt" $ do
       surveilTwo = Effect.Surveil (Surveil.MkSurveil (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 2) Nothing)
       apply effect sourceId = Resolve.applyEffect sourceId sourceId S.alice Map.empty Map.empty effect
       asks effect sourceId gs = State.execState (Engine.runGame counting gs (apply effect sourceId)) 0
-  -- Nothing to LOOK at, the one case rule 701.25a's process cannot run on.
-  Spec.it s "CR 701.25a an empty library raises no surveil prompt" $ do
-    (_, sourceId, board) <- surveilOpcodeBoard s registry 0
-    Spec.assertEqWith s "not asked" (asks surveilTwo sourceId board) 0
   -- The case that separates surveil from scry, and the reason this pair exists:
   -- with ONE card that is the whole library, Parun.Engine.Resolve.Common.decideScry asks
   -- nothing because top and bottom are the same position -- but a graveyard is
@@ -849,29 +793,6 @@ surveilPromptSpec s registry = Spec.describe s "SurveilPrompt" $ do
     Spec.assertEqWith s "asked once" (asks surveilTwo sourceId board) 1
     Spec.assertEqWith s "and the card it named left the library" (Game.zoneMembers Zone.Library S.alice after) []
     Spec.assertEqWith s "for the graveyard" (surveilGraveyard after) [cardNamed "Bird Maiden"]
-  -- CR 701.25c: "if a player is instructed to surveil 0, no surveil event
-  -- occurs." Driven through the opcode, no printing surveilling zero.
-  Spec.it s "CR 701.25c surveil 0 raises no prompt and moves nothing" $ do
-    (ids, sourceId, board) <- surveilOpcodeBoard s registry 2
-    let surveilZero = Effect.Surveil (Surveil.MkSurveil (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 0) Nothing)
-        after = S.runPure (surveilAnswer ([], [])) board (apply surveilZero sourceId)
-    Spec.assertEqWith s "not asked" (asks surveilZero sourceId board) 0
-    Spec.assertEqWith s "and the library is what it was" (Game.zoneMembers Zone.Library S.alice after) ids
-    Spec.assertEqWith s "with an empty graveyard" (surveilGraveyard after) []
-
-enhancedSurveillanceSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-enhancedSurveillanceSpec s registry = Spec.describe s "EnhancedSurveillance" $ do
-  -- CR 701.25c: surveil 0 is no surveil, so there is nothing for the
-  -- enchantment to widen. Driven through the opcode, no printing surveilling
-  -- zero.
-  Spec.it s "CR 701.25c Enhanced Surveillance does not turn surveil 0 into a surveil" $ do
-    (ids, sourceId, base) <- surveilOpcodeBoard s registry 2
-    enhanced <- S.printingOf s registry "Enhanced Surveillance"
-    let board = snd (S.addPermanent enhanced S.alice base)
-        surveilZero = Effect.Surveil (Surveil.MkSurveil (PlayerRef.Relative PlayerRelation.You) (Quantity.Literal 0) Nothing)
-        after = S.runPure (surveilAnswer (ids, [])) board (Resolve.applyEffect sourceId sourceId S.alice Map.empty Map.empty surveilZero)
-    Spec.assertEqWith s "the library is what it was" (Game.zoneMembers Zone.Library S.alice after) ids
-    Spec.assertEqWith s "with an empty graveyard" (surveilGraveyard after) []
 
 -- Answers Prompt.ChooseFateseal with a FIXED pair of lists, surveilAnswer's
 -- posture and for its reason.
@@ -915,63 +836,6 @@ fatesealSpec s registry = Spec.describe s "Fateseal" $ do
       (let after = S.runPure (fatesealAnswer ([top], [])) two apply in fmap (\oid -> fmap S.nameOf (Game.cardOf oid after)) (Game.zoneMembers Zone.Library S.bob after))
       (fmap (\oid -> fmap S.nameOf (Game.cardOf oid two)) [deep, top])
 
--- CR 701.44a: "certain spells and abilities instruct a permanent to explore. To
--- do so, that permanent's controller reveals the top card of their library. If a
--- land card is revealed this way, that player puts that card into their hand.
--- Otherwise, that player puts a +1/+1 counter on the exploring permanent and may
--- put the revealed card into their graveyard."
---
--- Merfolk Branchwalker {1}{G} Creature -- Merfolk Scout 2/1, "When this creature
--- enters, it explores", cast off two Forests and run to a stable board, so CR
--- 603.6a's enters trigger is placed by the engine rather than by the fixture.
---
--- The library is STACKED so the branch is chosen rather than drawn: the top card
--- is this helper's argument and a Bird Maiden always sits beneath it. Every case
--- below is the same board with one card changed, which is what makes the land
--- and nonland branches a pair rather than two unrelated boards. Branchwalker
--- enters BARE, so the one +1/+1 counter the nonland branch adds cannot be
--- confused with a counter it already had.
-exploreBoard ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  [String] ->
-  m (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-exploreBoard s registry deck = do
-  forest <- S.printingOf s registry "Forest"
-  branchwalker <- S.printingOf s registry "Merfolk Branchwalker"
-  myr <- S.printingOf s registry "Darksteel Myr"
-  printings <- mapM (S.printingOf s registry) deck
-  let -- A second creature alice controls, so "the exploring permanent" is told
-      -- apart from "a creature you control": rule 701.44a's counter goes on the
-      -- one that explored and this one must stay bare.
-      (bystander, withMyr) = S.addPermanent myr S.alice (S.landsInPlay forest 2)
-      (withSpell, spell) = S.handOne branchwalker withMyr
-      -- addLibraryCard puts its card ON TOP, so the deepest is stocked first.
-      deal gs printing = snd (S.addLibraryCard printing S.alice gs)
-      stocked = List.foldl' deal withSpell (reverse printings)
-  pure (spell, bystander, stocked)
-
--- Answers Prompt.ChooseExplore with a FIXED decision, whatever the engine
--- offers. Pinned rather than derived: an answerer that read the prompt's own
--- fields would still produce a legal answer after a mutation broke which card
--- was revealed, and these cases would stay green over a broken choice.
-exploreAnswer :: OptionalDecision.OptionalDecision -> Prompt.Prompt r -> r
-exploreAnswer decision p = case p of
-  Prompt.ChooseExplore {} -> decision
-  _ -> S.identityAnswer p
-
--- Cast the Branchwalker and settle: the creature spell resolves, its enters
--- trigger is placed, and the next round of passes resolves that.
-runExplore ::
-  (forall r. Prompt.Prompt r -> r) ->
-  ObjectId.ObjectId ->
-  GameState.GameState ->
-  GameState.GameState
-runExplore answer spell gs =
-  let afterCast = S.runPure answer gs (S.cast S.alice spell)
-   in S.runPure answer afterCast Engine.priorityLoop
-
 -- The card NAMES in one of alice's zones, in zone order. Names and not ids
 -- because CR 400.7 mints a fresh incarnation for the card a move takes out of
 -- the library, so the id the fixture stocked is gone by the time the assertion
@@ -994,52 +858,6 @@ revealedNames gs =
               fmap (Text.unpack . CardName.unwrap) (Maybe.listToMaybe (Set.toList (PC.names pc)))
         _ -> Nothing
    in Maybe.mapMaybe revealedName (S.eventsOf gs)
-
-exploreSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-exploreSpec s registry = Spec.describe s "Explore" $ do
-  -- The LAND branch. Nothing else on the board differs from the two cases below:
-  -- the top card is a Mountain rather than a Goblin Piker.
-  Spec.it s "CR 701.44a a revealed land card goes to hand, with no counter and no question" $ do
-    (spell, bystander, board) <- exploreBoard s registry ["Mountain", "Bird Maiden"]
-    let after = runExplore (exploreAnswer OptionalDecision.Exercises) spell board
-        walker = namedOnBattlefield "Merfolk Branchwalker" after
-    Spec.assertBool s (Maybe.isJust walker) "the Branchwalker resolved onto the battlefield"
-    Spec.assertEqWith s "stack empty: the spell and its trigger both resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
-    Spec.assertEqWith s "the Mountain left the top of the library" (zoneNames Zone.Library after) ["Bird Maiden"]
-    Spec.assertEqWith s "and is in hand" (zoneNames Zone.Hand after) ["Mountain"]
-    -- CR 701.20a: the reveal is public, so it is in the log every player reads.
-    Spec.assertEqWith s "the Mountain was revealed on the way" (revealedNames after) ["Mountain"]
-    Spec.assertEqWith s "nothing was binned" (zoneNames Zone.Graveyard after) []
-    -- The counter is the discriminator between the branches: rule 701.44a's
-    -- "otherwise" is the only sentence that puts one on.
-    Spec.assertEqWith s "CR 701.44a no +1/+1 counter on the land branch" (plusOnePlusOnesOn walker after) 0
-    Spec.assertEqWith s "and none on the other creature alice controls" (plusOnePlusOnesOn (Just bystander) after) 0
-  -- The NONLAND branch, exercising the "may". Same board, Goblin Piker on top.
-  Spec.it s "CR 701.44a a revealed nonland card grows the explorer, and the choice bins it" $ do
-    (spell, bystander, board) <- exploreBoard s registry ["Goblin Piker", "Bird Maiden"]
-    let after = runExplore (exploreAnswer OptionalDecision.Exercises) spell board
-        walker = namedOnBattlefield "Merfolk Branchwalker" after
-    Spec.assertBool s (Maybe.isJust walker) "the Branchwalker resolved onto the battlefield"
-    Spec.assertEqWith s "one +1/+1 counter" (plusOnePlusOnesOn walker after) 1
-    Spec.assertEqWith s "the Piker is in the graveyard" (zoneNames Zone.Graveyard after) ["Goblin Piker"]
-    Spec.assertEqWith s "the Maiden it was sitting on is now the top card" (zoneNames Zone.Library after) ["Bird Maiden"]
-    -- The TOP card and not just a card: the Maiden beneath it was never shown.
-    Spec.assertEqWith s "only the Piker was revealed" (revealedNames after) ["Goblin Piker"]
-    Spec.assertEqWith s "a nonland card never reaches the hand" (zoneNames Zone.Hand after) []
-    -- The counter went on the permanent that EXPLORED, not on every creature.
-    Spec.assertEqWith s "the bystanding creature stayed bare" (plusOnePlusOnesOn (Just bystander) after) 0
-  -- CR 701.44b: the permanent explores "even if some or all of those actions were
-  -- impossible". No card is revealed, so nothing is a land card and the
-  -- "otherwise" branch runs -- the counter goes on with no card to ask about.
-  Spec.it s "CR 701.44b an empty library still grows the explorer" $ do
-    (spell, bystander, board) <- exploreBoard s registry []
-    let after = runExplore (exploreAnswer OptionalDecision.Exercises) spell board
-        walker = namedOnBattlefield "Merfolk Branchwalker" after
-    Spec.assertBool s (Maybe.isJust walker) "the Branchwalker resolved onto the battlefield"
-    Spec.assertEqWith s "one +1/+1 counter" (plusOnePlusOnesOn walker after) 1
-    Spec.assertEqWith s "no card moved anywhere" (zoneNames Zone.Hand after <> zoneNames Zone.Graveyard after) []
-    Spec.assertEqWith s "and nothing was revealed" (revealedNames after) []
-    Spec.assertEqWith s "the bystanding creature stayed bare" (plusOnePlusOnesOn (Just bystander) after) 0
 
 -- Hakbal of the Surging Soul {2}{G}{U} Legendary Creature -- Merfolk Scout 3/3,
 -- "At the beginning of combat on your turn, each Merfolk creature you control
@@ -1247,9 +1065,9 @@ runWildsUpkeep answer gs =
       settled = S.runPure answer began Engine.settleForPriority
    in S.runPure answer settled Engine.priorityLoop
 
--- Answers CR 603.5's "may" with a FIXED decision, exploreAnswer's posture and
--- for its reason: an answerer deriving its answer from the prompt would still
--- answer legally after a mutation broke which card was looked at.
+-- Answers CR 603.5's "may" with a FIXED decision: an answerer deriving its
+-- answer from the prompt would still answer legally after a mutation broke which
+-- card was looked at.
 wildsAnswer :: OptionalDecision.OptionalDecision -> Prompt.Prompt r -> r
 wildsAnswer decision p = case p of
   Prompt.ChooseOptional {} -> decision
@@ -1295,13 +1113,6 @@ lookAtSpec s registry = Spec.describe s "LookAt" $ do
     let after = runWildsUpkeep (wildsAnswer OptionalDecision.Exercises) (snd (S.addPermanent warren S.alice board))
     Spec.assertEqWith s "the Piker the Warren made a land left the library" (zoneNames Zone.Library after) ["Bird Maiden"]
     Spec.assertEqWith s "and is on the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Goblin Piker")) S.alice after) 1
-  -- CR 609.3: an empty library has no top card, so the look names nothing, the
-  -- slot goes unbound and the clause after it finds no land.
-  Spec.it s "CR 609.3 an empty library looks at nothing and does nothing" $ do
-    board <- wildsBoard s registry []
-    let after = runWildsUpkeep (wildsAnswer OptionalDecision.Exercises) board
-    Spec.assertEqWith s "the library is still empty" (zoneNames Zone.Library after) []
-    Spec.assertEqWith s "stack empty: the trigger resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
 
 -- alice's Clone copying bob's Mudbutton Clanger, over a library holding one
 -- card. The Clone is a Goblin Warrior by CR 707.2 and a Shapeshifter as printed,
@@ -1403,7 +1214,7 @@ ponderSpec s registry = Spec.describe s "PutBackInOrder" $ do
         asks n = State.execState (Engine.runGame counting board (Resolve.applyEffect S.noSource S.noSource S.alice Map.empty Map.empty (topOf n))) 0
     Spec.assertEqWith s "one card asks nothing; two are a decision" (asks 1, asks 2) (0, 1)
 
-lookAtPromptSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+lookAtPromptSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 lookAtPromptSpec s registry = Spec.describe s "LookAtPrompt" $ do
   let counting :: Prompt.Prompt r -> State.State Int r
       counting p = case p of
@@ -1430,12 +1241,6 @@ lookAtPromptSpec s registry = Spec.describe s "LookAtPrompt" $ do
   Spec.it s "a looked-at land card is asked about" $ do
     board <- wildsBoard s registry ["Forest", "Bird Maiden"]
     Spec.assertEqWith s "asked once" (asks board) 1
-  Spec.it s "a looked-at nonland card raises no question" $ do
-    board <- wildsBoard s registry ["Bird Maiden", "Forest"]
-    Spec.assertEqWith s "not asked" (asks board) 0
-  Spec.it s "CR 609.3 an empty library raises no question" $ do
-    board <- wildsBoard s registry []
-    Spec.assertEqWith s "not asked" (asks board) 0
 
 slotTarget :: SlotName.SlotName
 slotTarget = SlotName.MkSlotName (Text.pack "target")
@@ -1524,133 +1329,14 @@ playerSacrificesSpec s registry = Spec.describe s "PlayerSacrifices" $ do
     Spec.assertEqWith s "nothing to choose" asked 0
     Spec.assertBool s (not (S.onBattlefield his after)) "but it still died"
 
-createEmblemSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-createEmblemSpec s registry = Spec.describe s "CreateEmblem" $ do
-  Spec.it s "CR 114.2 CreateEmblem puts an emblem in the command zone under the resolver" $ do
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (src, gs0) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
-        act = Resolve.applyEffect src src S.alice Map.empty Map.empty (Effect.CreateEmblem (CreateEmblem.MkCreateEmblem (Printing.card piker) (PlayerRef.Relative PlayerRelation.You)))
-        after = S.runPure S.identityAnswer gs0 act
-        emblems = filter (\oid -> fmap Object.zone (Game.lookupObject oid after) == Just Zone.Command) (Set.toList (GameState.command after))
-    Spec.assertEqWith s "one emblem in command" (Set.size (GameState.command after)) 1
-    Spec.assertEqWith s "owned by the resolver" (fmap (\oid -> fmap Object.owner (Game.lookupObject oid after)) emblems) [Just S.alice]
-
-becomeMonarchSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-becomeMonarchSpec s registry = Spec.describe s "BecomeMonarch" $ do
-  Spec.it s "CR 726 BecomeMonarch TheController makes the resolver the monarch" $ do
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (src, gs0) = S.addPermanent piker S.alice (Setup.emptyGame S.bothPlayers)
-        after = S.runPure S.identityAnswer gs0 (Resolve.applyEffect src src S.alice Map.empty Map.empty (Effect.BecomeMonarch MonarchTarget.TheController))
-    Spec.assertEqWith s "alice is monarch" (GameState.monarch after) (Just S.alice)
-    Spec.assertBool s (elem (GameEvent.BecameMonarch S.alice) (S.eventsOf after)) "a BecameMonarch event was recorded"
-
--- The slot Denethor's crown half names, and the slot its damage half names.
-denethorCrownSlot, denethorDamageSlot :: SlotName.SlotName
-denethorCrownSlot = SlotName.MkSlotName (Text.pack "player")
-denethorDamageSlot = SlotName.MkSlotName (Text.pack "damage")
-
--- Fills every CR 601.2c slot BY NAME from `answers`, and records the map it
--- returned.
---
--- Both halves matter, and both are about this being the pool's first card with
--- TWO target slots in one mode. S.identityAnswer fills every slot with the
--- lowest-sorting legal recipient, so left to itself it answers both slots the
--- same shape and "bob became the monarch" could be an accident of PlayerId
--- ordering rather than of the crown reading its own slot; overriding by name is
--- what makes the two slots differ. Recording is how the test asserts the map it
--- fed in is the map the engine received, instead of inferring it from the board.
-answerSlots ::
-  Map.Map SlotName.SlotName (Set.Set Recipient.Recipient) ->
-  Prompt.Prompt r ->
-  State.State [Map.Map SlotName.SlotName (Set.Set Recipient.Recipient)] r
-answerSlots answers p = case p of
-  Prompt.ChooseTargets {} -> do
-    let deflt = S.identityAnswer p
-        filled = Map.union (Map.intersection answers deflt) deflt
-    State.modify' (<> [filled])
-    pure filled
-  _ -> pure (S.identityAnswer p)
-
--- Denethor, Stone Seer -- "{3}{R}, {T}, Sacrifice Denethor: Target player
--- becomes the monarch. Denethor deals 3 damage to any target."
---
--- The printed card also has "When Denethor enters, scry 2", which
--- data/cards/denethor-stone-seer.json now carries: Effect.Scry landed with
--- Crystal Ball. It reaches none of the assertions below -- S.addPermanent places
--- the permanent rather than moving it there, so no CR 603.2 entry trigger is
--- gathered, and the ability under test is the activated one.
---
--- Settled under alice, who already holds the crown, with four Mountains to pay
--- the {3}{R} and priority in hand. The first activated ability of the card is
--- the one under test; the empty fallback is ActivateSpec.theAbility's, and would
--- fail every assertion below rather than silently pass one.
---
--- FOUR seats. At two players "target player" and "the controller's one opponent"
--- name the same seat, so a two-seat board cannot tell which arm the resolver
--- took; three separate the crown's target (bob) from the damage's (carol) from
--- the controller (alice). The fourth (dave) is what lets CR 608.2b's
--- all-targets-illegal case be reached by conceding both targets without CR
--- 104.2a ending the game first.
-denethorBoard ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  m (ActivatedAbility.ActivatedAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card), ObjectId.ObjectId, GameState.GameState)
-denethorBoard s registry = do
-  denethor <- S.printingOf s registry "Denethor, Stone Seer"
-  mountain <- S.printingOf s registry "Mountain"
-  let lands = List.foldl' (\gs _ -> snd (S.addPermanent mountain S.alice gs)) (Setup.emptyGame S.fourPlayers) [1 .. 4 :: Int]
-      (srcId, gs1) = S.addPermanent denethor S.alice lands
-      ability = case Face.activatedAbilities (S.combinedFace denethor) of
-        ab : _ -> ab
-        [] -> ActivatedAbility.MkActivatedAbility (Cost.Type.MkCost (Just (ManaCost.MkManaCost [])) []) [] [] Nothing (Mint.oneModeOf Map.empty Seq.empty) [] (Activator.Related PlayerRelation.You) Nothing Nothing Nothing Copyability.Copyable Nothing
-  pure
-    ( ability,
-      srcId,
-      S.withMonarch
-        S.alice
-        ( gs1
-            { GameState.turn =
-                (GameState.turn gs1)
-                  { TurnRegisters.priority = Just S.alice
-                  }
-            }
-        )
-    )
-
--- CR 726.1: "The monarch is a designation a player can have. There is no monarch
--- in a game until an effect instructs a player to become the monarch." Every
--- BecomeMonarch before this one derived the player it crowned -- the resolving
--- controller, or CR 726.2's controller of the damaging creature. Denethor is the
--- first card in the pool whose crown reads a TARGET slot, so the player it names
--- is the activator's CHOICE, announced under CR 601.2c and re-checked under CR
--- 608.2b like any other target.
---
--- CR 601.2c is what lets the two slots coexist: "if the spell uses the word
--- 'target' in multiple places, the same object or player can be chosen once for
--- each instance of the word 'target'". Denethor writes it twice, so the crown
--- and the damage are independent choices that may or may not land on one player.
-targetedMonarchSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-targetedMonarchSpec s registry = Spec.describe s "TargetedMonarch" $ do
-  Spec.it s "CR 726.1/726.3 the crown goes to the TARGETED player, not the controller and not the damage's target" $ do
-    (ability, srcId, gs0) <- denethorBoard s registry
-    let answers = Map.fromList [(denethorCrownSlot, Set.singleton (Recipient.ToPlayer S.bob)), (denethorDamageSlot, Set.singleton (Recipient.ToPlayer S.carol))]
-        act = do Activate.activateAbility S.alice srcId ability; Stack.resolveTop
-        ((_, after), asked) = State.runState (Engine.runGame (answerSlots answers) gs0 act) []
-    Spec.assertEqWith s "alice held the crown going in" (GameState.monarch gs0) (Just S.alice)
-    Spec.assertEqWith s "CR 601.2c asked once, for both slots, and got the map fed in" asked [answers]
-    Spec.assertEqWith s "CR 726.3 the crown moved to bob, the targeted player" (GameState.monarch after) (Just S.bob)
-    Spec.assertBool s (elem (GameEvent.BecameMonarch S.bob) (S.eventsOf after)) "and the crowning event names bob"
-    Spec.assertEqWith s "CR 115.4 carol, the any-target, took the 3" (S.lifeOf S.carol after) (Just 17)
-    Spec.assertEqWith s "bob took none of it" (S.lifeOf S.bob after) (Just 20)
-    Spec.assertEqWith s "and neither did alice" (S.lifeOf S.alice after) (Just 20)
-    Spec.assertEqWith s "the cost sacrificed Denethor into alice's graveyard" (length (Game.zoneMembers Zone.Graveyard S.alice after)) 1
-    Spec.assertEqWith s "and the ability left the stack" (TurnRegisters.stack (GameState.turn after)) []
-
+-- CR 726.1: Denethor, Stone Seer's crown reads a TARGET slot. Its gameplay is
+-- data/scenarios/library-order/'s CR 726.1/726.3 scenario.
+targetedMonarchSpec :: (Monad m) => Spec.Spec m n -> n ()
+targetedMonarchSpec s = Spec.describe s "TargetedMonarch" $ do
   -- The classification half, asserted directly. slotsOf is the READ side of the
   -- D4 dataflow lint and has no runtime consumer: Resolve.resolveModes re-derives
   -- CR 608.2b's legality from the card's declared targetSlots, so the gameplay
-  -- cases above pass whatever slotsOf answers.
+  -- scenario passes whatever slotsOf answers.
   --
   -- The InSlot line is now ALSO covered by CardSpec's dataflow lint, which since
   -- #1043 states its equality over an activated ability's modes too -- reverting
@@ -1756,68 +1442,6 @@ exileUntilMonarchSpec s registry = Spec.describe s "ExileUntilMonarch" $ do
     Spec.assertEqWith s "the watch is still armed" (Map.size (GameState.movedUntil noMonarch)) 1
     Spec.assertEqWith s "and nothing returned" (Set.size (GameState.battlefield noMonarch)) 0
 
-  -- SYNTHETIC. "Synthetic Regency Swap" {1}{W} Sorcery: "Target player becomes
-  -- the monarch. Then you become the monarch." Two crownings in ONE resolution,
-  -- which is what #208 needs and what no printing does: Scryfall
-  -- oracle:"become the monarch" (2026-08-20) returns fifty-five cards, and the
-  -- five that can crown somebody other than their controller -- Denethor, Stone
-  -- Seer, Eomer, King of Rohan, Garland, Royal Kidnapper, Jared Carthalion, True
-  -- Heir and M'Baku, Jabari Chieftain -- each crown exactly one player per
-  -- resolution, so every printed sequence of two crownings has a settle between
-  -- them. Nothing in rule 726 forbids a card that crowns twice; a printing that
-  -- does replaces this one.
-  --
-  -- The crown ends the resolution where it began, so NO reading of the current
-  -- monarch, at this settle or any later one, can see that bob held it. Only the
-  -- crowning itself can.
-  Spec.it s "CR 726 a crown that goes to an opponent and back inside one resolution still frees the prisoner" $ do
-    piker <- S.printingOf s registry "Goblin Piker"
-    plains <- S.printingOf s registry "Plains"
-    palaceJailer <- S.printingOf s registry "Palace Jailer"
-    regencySwap <- S.printingOf s registry "Synthetic Regency Swap"
-    let (_, g1) = S.addPermanent piker S.carol S.threePlayerGame
-        g2 = S.landsFor plains S.alice 2 g1
-        (_, g3) = S.entersWithTrigger palaceJailer S.alice g2
-        -- Palace Jailer's two entry triggers resolve: alice takes the crown, and
-        -- carol's Piker -- the only creature an opponent controls, so the target
-        -- is forced -- is exiled under the watch.
-        armed = S.runPure S.identityAnswer g3 Engine.priorityLoop
-        (withSpell, spell) = S.handOne regencySwap armed
-        -- FILTER the offered set rather than building a recipient: CR 608.2b
-        -- re-reads the target at resolution, and a hand-built one is a different
-        -- recipient the re-read would drop.
-        crownsTo :: PlayerId.PlayerId -> Prompt.Prompt r -> r
-        crownsTo who p = case p of
-          Prompt.ChooseTargets _ _ _ sets -> S.preferring (== Recipient.ToPlayer who) sets
-          _ -> S.identityAnswer p
-        -- `crownsTo who` is spelled out at each call rather than let-bound:
-        -- MonoLocalBinds (this module turns GADTs on) would fix a local binding
-        -- at one `r`, where S.runPure asks for a rank-2 answerer.
-        run who =
-          let castGs = S.runPure (crownsTo who) withSpell (S.cast S.alice spell)
-              resolved = S.runPure (crownsTo who) castGs Stack.resolveTop
-           in S.runPure (crownsTo who) resolved Engine.settleForPriority
-        -- Run A: the crown goes to bob and comes straight back to alice.
-        toBob = run S.bob
-        -- Run B: the same board and the same spell, with alice naming HERSELF.
-        -- She is not her own opponent, and the second crowning finds her already
-        -- crowned, so no opponent becomes the monarch at any point.
-        toAlice = run S.alice
-    -- The fixture really is what the test claims.
-    Spec.assertEqWith s "alice holds the crown before the spell" (GameState.monarch withSpell) (Just S.alice)
-    Spec.assertEqWith s "exactly one creature is under the watch" (Map.size (GameState.movedUntil withSpell)) 1
-    Spec.assertEqWith s "and carol's Piker is off the battlefield" (S.creaturesInPlay S.carol withSpell) 0
-    -- Run A, the behaviour this case exists to prove. CR 400.7 gives the
-    -- returning card yet another id, so carol's creature COUNT is what survives.
-    Spec.assertEqWith s "bob's reign inside the resolution freed the prisoner" (S.creaturesInPlay S.carol toBob) 1
-    Spec.assertEqWith s "though the crown is back with alice, so no later look at the monarch could tell" (GameState.monarch toBob) (Just S.alice)
-    Spec.assertEqWith s "and the watch is discharged" (Map.size (GameState.movedUntil toBob)) 0
-    -- Run B: one different answer, and nothing else.
-    Spec.assertEqWith s "alice crowning herself frees nobody" (S.creaturesInPlay S.carol toAlice) 0
-    Spec.assertEqWith s "she is still the monarch" (GameState.monarch toAlice) (Just S.alice)
-    Spec.assertEqWith s "and the watch is still armed" (Map.size (GameState.movedUntil toAlice)) 1
-    Spec.assertEqWith s "both runs resolved the spell" (length (TurnRegisters.stack (GameState.turn toBob)), length (TurnRegisters.stack (GameState.turn toAlice))) (0, 0)
-
 -- Palace Jailer's exile as its card file spells it: CR 610.3's move with CR
 -- 726's ending, out of the slot's target and into exile.
 jailerExile :: SlotName.SlotName -> Effect.Effect card ability
@@ -1919,44 +1543,6 @@ optionalEffectSpec s registry =
       pikerName = CardName.MkCardName (Text.pack "Goblin Piker")
       swampName = CardName.MkCardName (Text.pack "Swamp")
       aliceNamesIn zone gs = List.sort (Maybe.mapMaybe (\oid -> fmap Face.name (Game.faceOf oid gs)) (Game.zoneMembers zone S.alice gs))
-      -- Deadly Complication {1}{B}{R} Sorcery, "Choose one or both -- * Destroy
-      -- target creature. * Put a +1/+1 counter on target suspected creature you
-      -- control. You may have it become no longer suspected." (name, cost, type
-      -- line and oracle text checked against Scryfall.) The shape CR 608.2b's
-      -- fizzle cannot remove: choosing BOTH modes means one live target keeps the
-      -- whole spell resolving, so the other mode's "may" is reached with every
-      -- slot it reads already dead.
-      --
-      -- alice: two Swamps and two Mountains for the cost, the spell in hand, and
-      -- a Person of Interest whose CR 603.6a enters trigger has resolved, so she
-      -- controls the board's one suspected creature. The Detective that trigger
-      -- also makes is a second creature she controls that is NOT suspected, so
-      -- the suspect slot's filter is doing work. bob's Goblin Piker is mode 0's
-      -- victim -- his, so its destruction is visible as a permanent alice never
-      -- controlled and cannot be confused with the Person mode 1 names.
-      deadlyComplicationBoard = do
-        swamp <- S.printingOf s registry "Swamp"
-        mountain <- S.printingOf s registry "Mountain"
-        complication <- S.printingOf s registry "Deadly Complication"
-        poi <- S.printingOf s registry "Person of Interest"
-        piker <- S.printingOf s registry "Goblin Piker"
-        let base = S.landsFor mountain S.alice 2 (S.landsInPlay swamp 2)
-            (victim, g1) = S.addPermanent piker S.bob base
-            (poiId, g2) = S.entersWithTrigger poi S.alice g1
-            settled = S.runPure S.identityAnswer g2 (Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
-            (g3, spellId) = S.handOne complication settled
-        pure
-          ( g3
-              { GameState.turn =
-                  (GameState.turn g3)
-                    { TurnRegisters.priority = Just S.alice
-                    }
-              },
-            spellId,
-            victim,
-            poiId
-          )
-      isSuspected oid gs = fmap (Set.member Designation.Suspected . Object.designations) (Game.lookupObject oid gs)
    in Spec.describe s "OptionalEffect" $ do
         -- The prompt itself, not just its consequence: recording the run puts
         -- the answer in the transcript, which is the only place a raised
@@ -2041,44 +1627,6 @@ optionalEffectSpec s registry =
           Spec.assertEqWith s "taking the return leaves the other two milled cards in the graveyard" (aliceNamesIn Zone.Graveyard after) [pikerName, swampName]
           Spec.assertEqWith s "and exactly one land card is in the hand" (aliceNamesIn Zone.Hand after) [forestName]
           Spec.assertEqWith s "the may was asked once, and taken" (filter isOptionalResponse transcript) [Response.ChoseOptional OptionalDecision.Exercises]
-        -- The live half of the pair below, and the control that says the guard is
-        -- not simply refusing to ask: the same board, the same answer, the same
-        -- two modes, differing only in whether mode 1's target is still there.
-        -- With it there the "may" is a real question, is asked once, and taking
-        -- it ends CR 701.60a's designation.
-        Spec.it s "CR 603.5 whole card: Deadly Complication's optional clause is asked about while its target lives" $ do
-          (gs, spellId, victim, poiId) <- deadlyComplicationBoard
-          let cast = S.runPure (deadlyComplicationAnswer victim poiId) gs (S.cast S.alice spellId)
-              ((_, after), transcript) = Replay.record (deadlyComplicationAnswer victim poiId) cast Stack.resolveTop
-          Spec.assertEqWith s "the may was asked exactly once, and taken" (filter isOptionalResponse transcript) [Response.ChoseOptional OptionalDecision.Exercises]
-          Spec.assertEqWith s "so the Person is no longer suspected" (isSuspected poiId after) (Just False)
-          Spec.assertEqWith s "the mandatory clause put its +1/+1 counter on" (plusOnePlusOnesOn (Just poiId) after) 1
-          Spec.assertEqWith s "and the other mode destroyed bob's Goblin Piker" (Game.lookupObject victim after) Nothing
-
--- Chooses BOTH of Deadly Complication's modes, aims each slot at the permanent
--- that slot's mode is about, and takes the "may" whenever one is offered. Rank-1
--- for exerciseOptional's reason. The recipients are FILTERED out of the offered
--- set rather than built, so a slot the engine offers under another recipient
--- shape is not silently replaced by one CR 608.2b would drop. A slot named
--- neither of the card's two gets the empty answer, which fails the target
--- announcement rather than aiming somewhere plausible.
-deadlyComplicationAnswer :: ObjectId.ObjectId -> ObjectId.ObjectId -> Prompt.Prompt r -> r
-deadlyComplicationAnswer victim suspect p =
-  let aimAt :: SlotName.SlotName -> (Natural, Set.Set Recipient.Recipient) -> Set.Set Recipient.Recipient
-      aimAt slot (_, offered)
-        | slot == creatureSlot = Set.filter ((== Just victim) . Recipient.objectOf) offered
-        | slot == suspectSlot = Set.filter ((== Just suspect) . Recipient.objectOf) offered
-        | otherwise = Set.empty
-   in case p of
-        Prompt.ChooseModes {} -> Seq.fromList (fmap ModeIndex.MkModeIndex [0, 1])
-        Prompt.ChooseTargets _ _ _ sets -> Map.mapWithKey aimAt sets
-        Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-        _ -> S.identityAnswer p
-
--- Deadly Complication's two slot names (data/cards/deadly-complication.json).
-creatureSlot, suspectSlot :: SlotName.SlotName
-creatureSlot = SlotName.MkSlotName (Text.pack "creature")
-suspectSlot = SlotName.MkSlotName (Text.pack "suspect")
 
 -- Takes every printed "may" it is offered. Rank-1 like Parun.Support.attackTo: the
 -- implicit forall is outermost, so this is the `forall r. Prompt r -> r` that
@@ -2094,15 +1642,6 @@ isOptionalResponse :: Response.Response -> Bool
 isOptionalResponse r = case r of
   Response.ChoseOptional _ -> True
   _ -> False
-
--- The one battlefield permanent whose card carries this name. CR 400.7 mints a
--- fresh object on every move, so a test that crossed a zone change cannot hold
--- the id it started from. Parun.MassEffectSpec keeps its own copy.
-namedOnBattlefield :: String -> GameState.GameState -> Maybe ObjectId.ObjectId
-namedOnBattlefield name gs =
-  List.find
-    (\oid -> fmap Face.name (Game.faceOf oid gs) == Just (CardName.MkCardName $ Text.pack name))
-    (Set.toList (GameState.battlefield gs))
 
 -- How many +1/+1 counters (CR 122.6) sit on a permanent, 0 for none.
 plusOnePlusOnesOn :: Maybe ObjectId.ObjectId -> GameState.GameState -> Natural
@@ -2124,17 +1663,13 @@ spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   scrySpec s registry
   scryPromptSpec s registry
   surveilPromptSpec s registry
-  enhancedSurveillanceSpec s registry
   fatesealSpec s registry
-  exploreSpec s registry
   exploreOrderSpec s registry
   lookAtSpec s registry
   kinshipSpec s registry
   ponderSpec s registry
   lookAtPromptSpec s registry
   playerSacrificesSpec s registry
-  createEmblemSpec s registry
-  becomeMonarchSpec s registry
-  targetedMonarchSpec s registry
+  targetedMonarchSpec s
   exileUntilMonarchSpec s registry
   optionalEffectSpec s registry

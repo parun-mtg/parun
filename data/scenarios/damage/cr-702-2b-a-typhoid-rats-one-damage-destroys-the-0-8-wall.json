@@ -5,17 +5,16 @@
       {
         "battlefield": [
           {
-            "card": "Typhoid Rats",
-            "label": "rats",
-            "ready": true
-          },
-          {
-            "card": "Forest",
-            "label": "f0"
-          },
-          {
             "card": "Forest",
             "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Typhoid Rats",
+            "label": "dealer"
           }
         ],
         "hand": [
@@ -30,8 +29,7 @@
         "battlefield": [
           {
             "card": "Wall of Stone",
-            "label": "wall",
-            "ready": true
+            "label": "wall"
           }
         ],
         "name": "bob"
@@ -40,29 +38,16 @@
     "step": "PrecombatMain"
   },
   "description": "CR 702.2b a Typhoid Rats' one damage destroys the 0/8 Wall",
-  "note": "Rabid Bite has alice's 1/1 Typhoid Rats deal 1 to bob's 0/8 Wall of Stone. Rabid Bite has no deathtouch and 1 is far short of 8, so the Wall's destruction is CR 704.5h reading the Rat as the damage's source; the Llanowar Elves control in Parun.DamageSpec leaves the same 1 on a surviving Wall.",
+  "note": "CR 702.2b reads the source's deathtouch: one damage destroys a 0/8 only if the Rat dealt it. The Wall is gone by the next priority, so the 1 marked on it is read in the Llanowar Elves twin, another 1/1 that differs only in the keyword and leaves the Wall standing.",
   "timeline": [
     {
       "do": {
         "Cast": {
           "mana": [
-            "$f0",
-            "$f1"
+            "$f1",
+            "$f2"
           ],
           "object": "$bite"
-        }
-      },
-      "player": "alice",
-      "step": "PrecombatMain",
-      "turn": 1
-    },
-    {
-      "check": {
-        "View": {
-          "is": [
-            "Rabid Bite"
-          ],
-          "of": "Stack"
         }
       },
       "player": "alice",
@@ -77,9 +62,11 @@
     },
     {
       "check": {
-        "View": {
-          "is": [],
-          "of": "Stack"
+        "Count": {
+          "card": "Rabid Bite",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
         }
       },
       "player": "alice",

@@ -23,9 +23,9 @@ data MonarchWatch = MkMonarchWatch
     --
     -- A recorded EVENT rather than a remembered holder: comparing the current
     -- monarch against the one seen at the last look cannot tell an unmoved crown
-    -- from one that moved away and came back, which is what Parun.LibraryOrderSpec's
-    -- "a crown that goes to an opponent and back inside one resolution still frees
-    -- the prisoner" proves (see #208).
+    -- from one that moved away and came back, which is what
+    -- data/scenarios/library-order/'s "a crown that goes to an opponent and back
+    -- inside one resolution still frees the prisoner" proves (see #208).
     due :: Maybe EventGroup.EventGroup
   }
   deriving (Eq, Ord, Show)

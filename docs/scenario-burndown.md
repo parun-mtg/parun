@@ -229,6 +229,7 @@ out: grep for them.
 - CR 702.34a the flashback cost exiles the card; the permission's printed cost does not | `board:player-effect`
 - CR 702.34a the granted cost, not the printed one, is what a graveyard cast pays | `board:continuous-effect`
 - CR 702.34a/113.6f the grant creates the cast-from-graveyard permission, not just a price | `check:other-Cost.costsFor` `board:second-board`
+- ~~CR 702.35a declining the cast puts the exiled card into its owner's graveyard~~
 - CR 702.48a / 118.9d a Patron cast free by cascade is still offered the Goblin sacrifice | `move:ChooseCost-offered-cast`
 - CR 707.10 a Double Major copy of a dashed Scout attacks and is returned
 - CR 707.2 / 400.7 a Clone of a dashed Scout and the Scout flickered neither have haste nor return | `board:delayed-trigger` `board:object-castusing`
@@ -266,6 +267,7 @@ out: grep for them.
 
 ### `CombatCostSpec`
 
+- ~~CR 506.8b the window opens at the declaration and runs to the end of the combat phase | `check:other-Turn.afterBlockersDeclared`~~
 - CR 508.1d / 611.2a / 611.2c whole cards: bob's creatures attack alice on his next turn, and only then | `board:attackrequirements`
 - CR 508.1d an illegal declaration is rewound and asked again, not replaced by the ceiling's | `check:other-Combat.legalAttackDeclaration`
 - CR 508.1j partial payments are not allowed: two Dragons and one land sacrifice nothing | `check:combat` `check:helper-allUntapped` `check:helper-stillThere`
@@ -443,6 +445,7 @@ out: grep for them.
 ### `CrewSpec`
 
 - CR 514.2 the Vehicle stops being a creature at cleanup | `check:power-toughness-none`
+- ~~CR 702.122e crewed by exactly two creatures grants the ability | `check:abilities`~~
 
 ### `DamageReplacementSpec`
 
@@ -462,6 +465,7 @@ out: grep for them.
 - CR 615.7's allocation lands on the events it was asked about, after the sort | `check:events`
 - CR 615.7's order sits INSIDE one chooser's APNAP turn, not across choosers | `check:prompt-payload`
 - CR 616.1 two players choosing for one batch are asked in APNAP order | `check:prompt-payload`
+- ~~CR 701.14a the fight's replacement runs before its own resolution ends~~
 - CR 701.26b an untapped permanent never becomes untapped, so its stun counter is not spent | `check:helper-countersOn` `check:helper-tapStateOf`
 - CR 702.64a an event at the ceiling never happens | `check:events` `check:other-DamageEvent.amount`
 - a shield over a PLAYER runs CR 615.5's rider, scaled by the amount | `board:replacement`
@@ -469,21 +473,23 @@ out: grep for them.
 
 ### `DamageSpec`
 
-- CR 120.1/120.2b the event credits the targeted creature, and CR 120.3f pays ITS controller | `check:events`
-- CR 120.3f a Goblin Piker dealing the same two gains nobody anything | `check:events`
-- CR 120.4a Flame Spill's excess goes to the creature's controller | `check:helper-subtract`
-- CR 120.4a/120.6 the bar is lethal damage, not toughness | `check:helper-subtract`
-- CR 701.14c a self-fight is ONE damage event, so one shield counter answers it | `board:object-turnedoverat` `board:replacement`
-- CR 701.14c one shield counter answers the whole self-fight | `board:object-turnedoverat` `board:replacement`
-- CR 701.14c the one blow is TWICE its power | `board:continuous-effect` `board:object-turnedoverat` `board:replacement`
-- CR 702.16k bob's damage is prevented when bob was chosen and marked when carol was | `board:object-chosenplayer`
-- CR 702.2b Llanowar Elves' one damage leaves the Wall standing | `check:events`
-- CR 704.5j a Thalia and an Urborg coexist under one controller | `check:helper-inPlay`
-- CR 704.5j two copies of a NON-legendary creature both survive | `check:helper-inPlay`
-- CR 704.5j two players may each control a Thalia | `check:helper-inPlay`
-- CR 704.5k a lone world permanent survives | `check:helper-inPlay`
-- CR 704.5k whole cards: resolving Living Plane buries the Concordant Crossroads already out | `board:object-worldsince`
-- life <= 0 loses | `check:other-GameState.players` `check:other-Player.commander` `check:other-Player.commanderCasts` `check:other-Player.commanderDamage` `check:other-Player.companion` `check:other-Player.companionTaken` `check:other-Player.completedDungeonNames` `check:other-Player.completedDungeons` `check:other-Player.counters` `check:other-Player.designations` `check:other-Player.dungeons` `check:other-Player.outsideTheGame` `check:other-Player.ringTemptations` `check:other-Player.speed` `check:other-Player.startingDeck` `check:other-Player.status`
+- ~~CR 120.1/120.2b the event credits the targeted creature, and CR 120.3f pays ITS controller | `check:events`~~
+- ~~CR 120.3f a Goblin Piker dealing the same two gains nobody anything | `check:events`~~
+- ~~CR 120.4a Flame Spill's excess goes to the creature's controller | `check:helper-subtract`~~
+- ~~CR 120.4a the excess is the greatest across the card types the permanent has~~
+- ~~CR 120.4a/120.6 the bar is lethal damage, not toughness | `check:helper-subtract`~~
+- ~~CR 701.14c a self-fight is ONE damage event, so one shield counter answers it | `board:object-turnedoverat` `board:replacement`~~
+- ~~CR 701.14c one shield counter answers the whole self-fight | `board:object-turnedoverat` `board:replacement`~~
+- ~~CR 701.14c the one blow is TWICE its power | `board:continuous-effect` `board:object-turnedoverat` `board:replacement`~~
+- ~~CR 702.16k bob's damage is prevented when bob was chosen and marked when carol was | `board:object-chosenplayer`~~
+- ~~CR 702.2b Llanowar Elves' one damage leaves the Wall standing | `check:events`~~
+- ~~CR 702.2b a Typhoid Rats' one damage destroys the 0/8 Wall | `check:events`~~
+- ~~CR 704.5j a Thalia and an Urborg coexist under one controller | `check:helper-inPlay`~~
+- ~~CR 704.5j two copies of a NON-legendary creature both survive | `check:helper-inPlay`~~
+- ~~CR 704.5j two players may each control a Thalia | `check:helper-inPlay`~~
+- ~~CR 704.5k a lone world permanent survives | `check:helper-inPlay`~~
+- ~~CR 704.5k whole cards: resolving Living Plane buries the Concordant Crossroads already out | `board:object-worldsince`~~
+- ~~life <= 0 loses | `check:other-GameState.players` `check:other-Player.commander` `check:other-Player.commanderCasts` `check:other-Player.commanderDamage` `check:other-Player.companion` `check:other-Player.companionTaken` `check:other-Player.completedDungeonNames` `check:other-Player.completedDungeons` `check:other-Player.counters` `check:other-Player.designations` `check:other-Player.dungeons` `check:other-Player.outsideTheGame` `check:other-Player.ringTemptations` `check:other-Player.speed` `check:other-Player.startingDeck` `check:other-Player.status`~~
 
 ### `DaytimeSpec`
 
@@ -627,11 +633,11 @@ out: grep for them.
 
 ### `FlipSpec`
 
-- CR 603.2 Akki flips on the NONCOMBAT damage Soul's Fire makes it deal to bob | `check:events`
-- CR 603.2 Harm's Way sends Akki's combat damage to alice, and Akki does not flip
-- CR 603.2 the same noncombat damage aimed at alice does not flip Akki | `check:events`
+- ~~CR 603.2 Akki flips on the NONCOMBAT damage Soul's Fire makes it deal to bob | `check:events`~~
+- ~~CR 603.2 Harm's Way sends Akki's combat damage to alice, and Akki does not flip~~
+- ~~CR 603.2 the same noncombat damage aimed at alice does not flip Akki | `check:events`~~
 - CR 707.3 a Clone of Akki Lavarunner flips into Tok-Tok, and a Clone of that is Akki | `check:mana-value`
-- CR 710.2 Akki flips into Tok-Tok, keeping CR 710.1c's mana value and colour | `check:helper-costReadings` `check:helper-isLegendary`
+- CR 710.2 Akki flips into Tok-Tok, keeping CR 710.1c's mana value and colour | `check:mana-value`
 
 ### `ForageSpec`
 
@@ -737,23 +743,23 @@ out: grep for them.
 
 ### `LibraryOrderSpec`
 
-- CR 114.2 CreateEmblem puts an emblem in the command zone under the resolver | `check:other-GameState.command` `check:other-Object.owner` `check:other-Object.zone`
-- CR 302.6 GainControl does NOT re-Sick a permanent its controller already controlled | `check:other-Object.sickness`
-- CR 603.5 whole card: Deadly Complication's optional clause is asked about while its target lives | `board:object-designations`
-- CR 609.3 an empty library looks at nothing and does nothing | `check:helper-zoneNames`
-- CR 609.3 an empty library raises no question | `check:helper-asks`
-- CR 701.22b scry 0 raises no prompt and moves nothing | `check:helper-scryLibrary`
-- CR 701.25a an empty library raises no surveil prompt | `check:helper-asks`
-- CR 701.25c Enhanced Surveillance does not turn surveil 0 into a surveil | `check:helper-surveilGraveyard`
-- CR 701.25c surveil 0 raises no prompt and moves nothing | `check:helper-asks` `check:helper-surveilGraveyard`
-- CR 701.37b the designation leaves with the permanent | `board:object-designations`
-- CR 701.44a a revealed land card goes to hand, with no counter and no question | `check:helper-revealedNames` `check:events`
-- CR 701.44a a revealed nonland card grows the explorer, and the choice bins it | `check:helper-revealedNames` `check:events`
-- CR 701.44b an empty library still grows the explorer | `check:helper-revealedNames` `check:events`
-- CR 726 BecomeMonarch TheController makes the resolver the monarch | `check:events`
-- CR 726 a crown that goes to an opponent and back inside one resolution still frees the prisoner | `board:exiled-until-monarch`
-- CR 726.1/726.3 the crown goes to the TARGETED player, not the controller and not the damage's target | `check:prompt-payload`
-- a looked-at nonland card raises no question | `check:helper-asks`
+- ~~CR 114.2 CreateEmblem puts an emblem in the command zone under the resolver | `check:other-GameState.command` `check:other-Object.owner` `check:other-Object.zone`~~
+- ~~CR 302.6 GainControl does NOT re-Sick a permanent its controller already controlled | `check:other-Object.sickness`~~
+- ~~CR 603.5 whole card: Deadly Complication's optional clause is asked about while its target lives | `board:object-designations`~~
+- ~~CR 609.3 an empty library looks at nothing and does nothing | `check:helper-zoneNames`~~
+- ~~CR 609.3 an empty library raises no question | `check:helper-asks`~~
+- ~~CR 701.22b scry 0 raises no prompt and moves nothing | `check:helper-scryLibrary`~~
+- ~~CR 701.25a an empty library raises no surveil prompt | `check:helper-asks`~~
+- ~~CR 701.25c Enhanced Surveillance does not turn surveil 0 into a surveil | `check:helper-surveilGraveyard`~~
+- ~~CR 701.25c surveil 0 raises no prompt and moves nothing | `check:helper-asks` `check:helper-surveilGraveyard`~~
+- ~~CR 701.37b the designation leaves with the permanent | `board:object-designations`~~
+- ~~CR 701.44a a revealed land card goes to hand, with no counter and no question | `check:helper-revealedNames` `check:events`~~
+- ~~CR 701.44a a revealed nonland card grows the explorer, and the choice bins it | `check:helper-revealedNames` `check:events`~~
+- ~~CR 701.44b an empty library still grows the explorer | `check:helper-revealedNames` `check:events`~~
+- ~~CR 726 BecomeMonarch TheController makes the resolver the monarch | `check:events`~~
+- ~~CR 726 a crown that goes to an opponent and back inside one resolution still frees the prisoner | `board:exiled-until-monarch`~~
+- ~~CR 726.1/726.3 the crown goes to the TARGETED player, not the controller and not the damage's target | `check:prompt-payload`~~
+- ~~a looked-at nonland card raises no question | `check:helper-asks`~~
 
 ### `LifeReplacementSpec`
 
@@ -777,6 +783,7 @@ out: grep for them.
 - CR 106.6 the mana pays an equip cost and casts no spell | `check:other-Object.manaSpent`
 - CR 603.2b on the controller's own upkeep the same trigger pays the controller | `check:helper-poolOf` `check:helper-retainedGreen`
 - CR 605.1b the enters trigger resolves off the stack and adds {R}{G} | `check:helper-plainGreen` `check:helper-plainRed` `check:helper-poolUnits`
+- ~~CR 725.1d ending the turn during combat takes the retained mana before cleanup~~
 
 ### `ManaSpec`
 
@@ -813,6 +820,7 @@ out: grep for them.
 - CR 612.7 / 701.42c a Spy Kit host is a Hanweir Garrison the game never saw, and both it and the land stay exiled
 - CR 701.42a a one-or-more-cards-leave-exile trigger counts both melded cards | `check:events` `check:other-Binding.eventAmount` `check:other-Binding.toAmount` `check:other-Event.eventBindings` `check:other-LoggedEvent.event` `check:other-Moved.change` `check:other-Moved.departures` `check:other-ZoneChange.from` `check:other-ZoneChange.object` `check:other-ZoneChange.to`
 - CR 701.42a the melding ability exiles the pair and puts one permanent onto the battlefield | `check:helper-componentPrintings` `check:helper-townshipName` `check:other-Game.printingOf` `check:other-Object.owner` `check:other-Object.source` `check:other-Printing.card`
+- ~~CR 701.42b/701.42c a token counterpart melds nothing, and the land stays exiled~~
 - CR 713.8a the owner arranges the two cards her melded permanent becomes on top of her library | `board:source-ofmeld`
 - CR 713.8c a perpetual grant on a melded permanent follows both cards it becomes | `board:source-ofmeld`
 - CR 713.8e a melded permanent's death is two cards put into a graveyard and one object that moved | `board:source-ofmeld`
@@ -924,8 +932,10 @@ out: grep for them.
 - CR 111.6 a TOKEN put into exile is not a card, so the intervening if fails | `check:events`
 - CR 111.6 a card put into exile from the battlefield satisfies the token's intervening if | `check:events`
 - CR 205.1b the -6 untaps two lands and makes them 5/5 Elemental creature lands with flying and haste | `check:tapped-count`
+- ~~CR 306.8 Lightning Bolt's 3 damage removes all three loyalty counters, and CR 704.5i buries Jace~~
 - CR 603.4 a card put into exile from a hand satisfies the token's intervening if | `check:events`
 - CR 603.4 with nothing exiled this turn the token's ability never triggers | `check:events`
+- ~~CR 606.5 / 704.5i paying the combined -9 spends all nine counters and buries Jace~~
 - CR 606.5 Carth's added +1 makes Jace's -10 activatable at 9 loyalty | `check:helper-activation`
 - CR 606.6 without Carth the same Jace at 9 loyalty is not offered its -10 | `check:helper-activation`
 
@@ -1003,6 +1013,7 @@ out: grep for them.
 ### `ReplacementSpec`
 
 - CR 119.4 at 2 life the payment is ILLEGAL, so it enters tapped with no life paid | `check:helper-lostLife` `check:helper-warriorOut` `check:other-Engine.priorityLoop`
+- ~~CR 614.12a the copy choice is locked in BEFORE the enters event exists~~
 - CR 614.15 with two artifacts metalcraft is off, so the Blast deals its printed 2 | `check:other-StoredEffects.replacements`
 - CR 614.1c DECLINING with a Kithkin card in hand still enters tapped | `check:helper-revealsOf`
 - CR 614.1c Rustic Clachan REVEALING a Kithkin card enters untapped | `check:events` `check:helper-revealsOf`
@@ -1043,6 +1054,7 @@ out: grep for them.
 
 - CR 701.54 Birthday Escape draws, mints the emblem, and designates the creature its controller chose | `check:helper-temptationsOf`
 - CR 701.54d a player with no creatures is still tempted | `check:helper-temptationsOf` `check:events`
+- ~~CR 701.54e a stolen Ring-bearer is not legendary while its mark survives~~
 
 ### `RoomSpec`
 
@@ -1055,11 +1067,14 @@ out: grep for them.
 
 - CR 728.1 / 103.7 a restarted Planechase game sets a new starting plane | `check:other-Planechase.deckOf`
 - CR 728.2 / 103.3a a restart puts a face-up scheme back into the shuffled scheme deck | `check:other-Archenemy.deckOf` `check:events`
+- ~~CR 730.2a the planar deck plays the subgame and comes back | `check:other-Planechase.deckOf` `check:events`~~
+- ~~CR 730.2a the scheme deck plays the subgame and comes back | `check:other-Archenemy.deckOf` `check:events`~~
 - CR 730.5/713.8 a subgame ending with a melded permanent returns both of its cards to the main-game library | `check:helper-componentsOn` `check:helper-sourcesOf` `check:other-Game.componentsOf` `check:other-GameState.objects` `check:other-GameState.nextObjectId`
 - CR 903.6/903.9c a restarted Commander game puts the melded commander's own card into the command zone and its partner into the deck | `board:source-ofmeld`
 
 ### `ShieldCounterSpec`
 
+- ~~CR 122.1c a rule's destruction is not replaced, though a counter is still there~~
 - CR 701.19c / 704.5g the prohibited creature's shield does not save it from lethal damage | `check:replacement-rows`
 
 ### `SpecialActionSpec`
@@ -1134,17 +1149,21 @@ out: grep for them.
 - CR 701.27h a permanent with its front face up is not one | `check:helper-faceNameOf` `check:other-GameState.daytime`
 - CR 701.27h not one even if it had its back face up previously | `board:daytime`
 - CR 702.161a the front face, which has no living metal, is a creature on either turn | `check:helper-faceNameOf`
+- ~~CR 701.27j/701.27f the same trigger's enters limb fires on a Piper cast at night~~
 
 ### `TurnSpec`
 
 - CR 500.5a an until-end-of-combat effect expires though the end of combat step never ran | `check:other-StoredEffects.continuousEffects`
+- ~~CR 500.7 damage can't be prevented during the Gambit's own extra turn, and on no other | `check:player-effects`~~
 - CR 500.7 several extra turns from one effect are added in APNAP order | `check:extra-turns`
 - CR 500.7 the skip stays on Savor's own extra turn, not on a later-created one | `board:extraturns` `board:extraturnunderway` `board:turnanchor`
 - CR 500.8 Aurelia's added combat phase goes AFTER this one, not inside it | `check:other-TurnRegisters.remaining` `check:other-Turn.expandExtraPhase`
 - CR 508.8 a creature put onto the battlefield attacking keeps the two steps | `check:combat` `check:other-Combat.skipEmptyCombat` `check:other-TurnRegisters.remaining`
 - CR 511.3 combat is emptied though the end of combat step never ran | `check:other-Turn.afterBlockersDeclared`
 - CR 511.3 the control end of combat step runs, and the phase's end sweeps anyway | `check:other-Turn.afterBlockersDeclared`
+- ~~CR 603.7a uncleaved, alice loses at the end step of the unpreventable extra turn~~
 - CR 614.10a the end of combat step never begins, and the phase ends anyway | `check:helper-began` `check:other-TurnRegisters.remaining`
+- ~~CR 725.1d ending the turn during combat expires that phase's effects~~
 - CR 725.1d ending the turn skips straight to the cleanup step
 - CR 725.1f no player gets priority once the turn has ended | `check:prompt-count`
 - CR 725.2d ending the combat phase skips straight to the next phase
@@ -1161,6 +1180,7 @@ out: grep for them.
 
 ### `VariableEffectSpec`
 
+- ~~CR 115.6 Rat Out aimed at a creature shrinks it and still makes the Rat~~
 - CR 601.2c X=1 announcing three targets destroys only one | `move:out-of-range-answer`
 - CR 603.2c two counters on one creature at once is one trigger | `check:events`
 - CR 608.2c two clauses of one resolution are two trigger events | `check:helper-minusCountersOn` `check:helper-placementGroups`
@@ -1192,6 +1212,7 @@ out: grep for them.
 - CR 113.6m the upkeep half does not trigger from the battlefield | `check:helper-beginUpkeep` `check:helper-gathered` `check:other-PendingTrigger.source`
 - CR 400.7e a bounce to a HIDDEN zone binds no became slot, though the source slot is still stamped | `check:other-Binding.became` `check:other-Binding.triggerSource`
 - CR 400.7e a death to a PUBLIC zone does bind became, for the same condition | `check:other-Binding.became` `check:other-Binding.triggerSource`
+- ~~CR 603.10 a permanent that arrived after a death and left again does not witness it | `check:events`~~
 - CR 603.10a a Meren who died earlier in the batch sees neither token buried later in it | `check:events`
 - CR 603.6a whole card: casting Thragtusk gains 5 life, and its leaves trigger stays silent on the way in | `check:helper-beastsOf`
 - CR 608.2c two clauses of one resolution are two trigger events | `check:events`
