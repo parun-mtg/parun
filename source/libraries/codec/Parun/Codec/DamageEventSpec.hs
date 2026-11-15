@@ -11,6 +11,7 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Subtype as Subtype
+import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
@@ -38,11 +39,12 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByCreatureTypes = Set.singleton Subtype.Rogue,
           DamageEvent.dealtByCommander = True,
           DamageEvent.dealtByCardTypes = Set.singleton CardType.Artifact,
+          DamageEvent.dealtBySupertypes = Set.singleton Supertype.Legendary,
           DamageEvent.dealtFromZone = Nothing,
           DamageEvent.recipientCardTypes = Set.empty,
           DamageEvent.kind = DamageKind.Combat
         }
-      " {\"source\":1,\"target\":{\"type\":\"ToPlayer\",\"value\":2},\"amount\":3,\"dealtByDeathtouch\":true,\"dealtByWither\":true,\"dealtByToxic\":2,\"dealtByController\":4,\"dealtByCreatureTypes\":[\"Rogue\"],\"dealtByCommander\":true,\"dealtByCardTypes\":[\"Artifact\"],\"kind\":\"Combat\"} "
+      " {\"source\":1,\"target\":{\"type\":\"ToPlayer\",\"value\":2},\"amount\":3,\"dealtByDeathtouch\":true,\"dealtByWither\":true,\"dealtByToxic\":2,\"dealtByController\":4,\"dealtByCreatureTypes\":[\"Rogue\"],\"dealtByCommander\":true,\"dealtByCardTypes\":[\"Artifact\"],\"dealtBySupertypes\":[\"Legendary\"],\"kind\":\"Combat\"} "
   -- CR 120.3c's recipient tag and CR 608's noncombat damage are each the other
   -- arm of their type. CR 702.15b's lifelink payee is a concrete PlayerId, and
   -- CR 120.10's excess, CR 400.1's zone and CR 120.3's recipient card types
@@ -65,6 +67,7 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByCreatureTypes = Set.empty,
           DamageEvent.dealtByCommander = False,
           DamageEvent.dealtByCardTypes = Set.empty,
+          DamageEvent.dealtBySupertypes = Set.empty,
           DamageEvent.dealtFromZone = Just Zone.Stack,
           DamageEvent.recipientCardTypes = Set.singleton CardType.Planeswalker,
           DamageEvent.kind = DamageKind.Noncombat
@@ -90,6 +93,7 @@ spec s = Spec.describe s "Parun.Codec.DamageEvent" $ do
           DamageEvent.dealtByCreatureTypes = Set.empty,
           DamageEvent.dealtByCommander = False,
           DamageEvent.dealtByCardTypes = Set.empty,
+          DamageEvent.dealtBySupertypes = Set.empty,
           DamageEvent.dealtFromZone = Nothing,
           DamageEvent.recipientCardTypes = Set.empty,
           DamageEvent.kind = DamageKind.Combat

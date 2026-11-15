@@ -16,6 +16,7 @@ import qualified Parun.Codec.Color as Color
 import qualified Parun.Codec.ControlMargin as ControlMargin
 import qualified Parun.Codec.CounterKind as CounterKind
 import qualified Parun.Codec.CounterLinked as CounterLinked
+import qualified Parun.Codec.DamageKind as DamageKind
 import qualified Parun.Codec.DealtDamageTo as DealtDamageTo
 import qualified Parun.Codec.Designation as Designation
 import qualified Parun.Codec.EnteredZone as EnteredZone
@@ -51,6 +52,7 @@ import qualified Parun.Types.ActivationCriteria as ActivationCriteria.Type
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.CounterKind as CounterKind
+import qualified Parun.Types.DamageKind as DamageKind.Type
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.Hop as Hop
@@ -149,7 +151,7 @@ codec keywordCodec =
       Arm.nullary "ConvokedSourceThisTurn" Filter.ConvokedSourceThisTurn,
       Arm.nullary "SaddledSourceThisTurn" Filter.SaddledSourceThisTurn,
       Arm.payload "CantPayKeywordCost" KeywordCostPart.codec Filter.CantPayKeywordCost (\x -> case x of Filter.CantPayKeywordCost y -> Just y; _ -> Nothing),
-      Arm.optionalPayload "DealtDamageThisTurn" (codec keywordCodec) Filter.DealtDamageThisTurn (\x -> case x of Filter.DealtDamageThisTurn y -> Just y; _ -> Nothing),
+      Arm.optionalPayload "DealtDamageThisTurn" (dealtDamageThisTurn keywordCodec) (maybe (Filter.DealtDamageThisTurn Nothing Nothing) (uncurry Filter.DealtDamageThisTurn)) (\x -> case x of Filter.DealtDamageThisTurn Nothing Nothing -> Just Nothing; Filter.DealtDamageThisTurn k b -> Just (Just (k, b)); _ -> Nothing),
       Arm.nullary "LostLifeThisTurn" Filter.LostLifeThisTurn,
       Arm.nullary "ActivatedThisTurn" Filter.ActivatedThisTurn,
       Arm.payload "DealtDamageTo" DealtDamageTo.codec Filter.DealtDamageTo (\x -> case x of Filter.DealtDamageTo y -> Just y; _ -> Nothing),
@@ -228,6 +230,14 @@ controls keywordCodec =
     (,)
       <$> Fields.required "margin" ControlMargin.codec fst
       <*> Fields.required "filter" (codec keywordCodec) snd
+
+-- | Which damage counts: its kind, and the filter its source matched.
+dealtDamageThisTurn :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (Maybe DamageKind.Type.DamageKind, Maybe (Filter.Filter keyword))
+dealtDamageThisTurn keywordCodec =
+  Fields.object $
+    (,)
+      <$> Fields.defaulted "kind" Nothing (Common.maybe DamageKind.codec) fst
+      <*> Fields.defaulted "by" Nothing (Common.maybe (codec keywordCodec)) snd
 
 -- | How many of the slot's objects the candidate must own, and which count.
 ownsBound :: (Typeable.Typeable keyword, Eq keyword) => Codec.Codec keyword -> Codec.Codec (Natural.Natural, SlotName.SlotName, Filter.Filter keyword)

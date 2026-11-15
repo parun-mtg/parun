@@ -9,6 +9,7 @@ import qualified Parun.Codec.ObjectId as ObjectId
 import qualified Parun.Codec.PlayerId as PlayerId
 import qualified Parun.Codec.Recipient as Recipient
 import qualified Parun.Codec.Subtype as Subtype
+import qualified Parun.Codec.Supertype as Supertype
 import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -37,6 +38,7 @@ codec = Fields.object $ do
   dealtByCreatureTypes <- Fields.defaulted "dealtByCreatureTypes" Set.empty (Common.set Subtype.codec) DamageEvent.dealtByCreatureTypes
   dealtByCommander <- Fields.defaulted "dealtByCommander" False Common.boolean DamageEvent.dealtByCommander
   dealtByCardTypes <- Fields.defaulted "dealtByCardTypes" Set.empty (Common.set CardType.codec) DamageEvent.dealtByCardTypes
+  dealtBySupertypes <- Fields.defaulted "dealtBySupertypes" Set.empty (Common.set Supertype.codec) DamageEvent.dealtBySupertypes
   dealtFromZone <- Fields.defaulted "dealtFromZone" Nothing (Common.maybe Zone.codec) DamageEvent.dealtFromZone
   recipientCardTypes <- Fields.defaulted "recipientCardTypes" Set.empty (Common.set CardType.codec) DamageEvent.recipientCardTypes
   kind <- Fields.required "kind" DamageKind.codec DamageEvent.kind
@@ -55,6 +57,7 @@ codec = Fields.object $ do
         DamageEvent.dealtByCreatureTypes = dealtByCreatureTypes,
         DamageEvent.dealtByCommander = dealtByCommander,
         DamageEvent.dealtByCardTypes = dealtByCardTypes,
+        DamageEvent.dealtBySupertypes = dealtBySupertypes,
         DamageEvent.dealtFromZone = dealtFromZone,
         DamageEvent.recipientCardTypes = recipientCardTypes,
         DamageEvent.kind = kind

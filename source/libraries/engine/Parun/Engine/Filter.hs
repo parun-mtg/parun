@@ -992,6 +992,7 @@ dealtByView ev =
     { identity = Just (DamageEvent.source ev),
       controller = DamageEvent.dealtByController ev,
       cardTypes = DamageEvent.dealtByCardTypes ev,
+      supertypes = DamageEvent.dealtBySupertypes ev,
       subtypes = DamageEvent.dealtByCreatureTypes ev,
       commander = DamageEvent.dealtByCommander ev,
       zone = DamageEvent.dealtFromZone ev
@@ -2672,7 +2673,7 @@ matches context view predicate = case predicate of
   -- A source filter admits only damage from a source it matches as it dealt the
   -- damage (dealtByView), under the same context, so "you controlled" is still
   -- the perspective's.
-  Filter.DealtDamageThisTurn by -> any (\ev -> all (matches context (dealtByView ev)) by) (dealtDamageThisTurn view)
+  Filter.DealtDamageThisTurn kind by -> any (\ev -> all (== DamageEvent.kind ev) kind && all (matches context (dealtByView ev)) by) (dealtDamageThisTurn view)
   -- CR 119.3 / 608.2i: the same look-back asked of a player's life total,
   -- filled by Parun.Engine.Count.playerView and False for every object.
   Filter.LostLifeThisTurn -> lostLifeThisTurn view
@@ -3330,7 +3331,7 @@ manaValueThresholds predicate = case predicate of
   Filter.DeclaredBlockerThisCombat -> []
   Filter.LeftLibraryThisTurn _ -> []
   Filter.CantPayKeywordCost _ -> []
-  Filter.DealtDamageThisTurn by -> foldMap manaValueThresholds by
+  Filter.DealtDamageThisTurn _ by -> foldMap manaValueThresholds by
   Filter.LostLifeThisTurn -> []
   Filter.ActivatedThisTurn -> []
   Filter.DealtDamageTo _ -> []
@@ -3516,7 +3517,7 @@ statesAQuality predicate = case predicate of
   Filter.DeclaredBlockerThisCombat -> True
   Filter.LeftLibraryThisTurn _ -> True
   Filter.CantPayKeywordCost _ -> True
-  Filter.DealtDamageThisTurn _ -> True
+  Filter.DealtDamageThisTurn _ _ -> True
   Filter.LostLifeThisTurn -> True
   Filter.ActivatedThisTurn -> True
   Filter.DealtDamageTo _ -> True
@@ -3704,7 +3705,7 @@ readsSourceValues predicate = case predicate of
   Filter.DeclaredBlockerThisCombat -> False
   Filter.LeftLibraryThisTurn _ -> False
   Filter.CantPayKeywordCost _ -> False
-  Filter.DealtDamageThisTurn by -> any readsSourceValues by
+  Filter.DealtDamageThisTurn _ by -> any readsSourceValues by
   Filter.LostLifeThisTurn -> False
   Filter.ActivatedThisTurn -> False
   Filter.DealtDamageTo _ -> False

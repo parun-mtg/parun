@@ -14,6 +14,7 @@ import qualified Parun.Types.Color as Color
 import qualified Parun.Types.ControlMargin as ControlMargin
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterLinked as CounterLinked
+import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Designation as Designation
 import qualified Parun.Types.EnteredZone as EnteredZone
@@ -402,9 +403,10 @@ data Filter keyword
     -- has damage dealt to both -- was DEALT DAMAGE earlier this turn.
     -- DeclaredThisTurn's look-back read one event arm over
     -- (GameEvent.DamageDealt), and not Object.damage being positive: a wither or
-    -- infect source marks nothing at all (CR 120.3d). Just a filter admits only
+    -- infect source marks nothing at all (CR 120.3d). Just a kind admits only
+    -- that damage (CR 510.2's combat damage, Blitzball), and Just a filter only
     -- damage from a source it matched as it dealt the damage.
-    DealtDamageThisTurn (Maybe (Filter keyword))
+    DealtDamageThisTurn (Maybe DamageKind.DamageKind) (Maybe (Filter keyword))
   | -- | CR 119.3 / 608.2i: the candidate PLAYER lost life earlier this turn --
     -- Rix Maadi Guildmage's "target player who lost life this turn".
     LostLifeThisTurn

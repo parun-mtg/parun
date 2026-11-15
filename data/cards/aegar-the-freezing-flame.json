@@ -82,33 +82,35 @@
                   "filter": {
                     "type": "DealtDamageThisTurn",
                     "value": {
-                      "type": "And",
-                      "value": [
-                        {
-                          "type": "Or",
-                          "value": [
-                            {
-                              "type": "HasSubtype",
-                              "value": "Giant"
-                            },
-                            {
-                              "type": "HasSubtype",
-                              "value": "Wizard"
-                            },
-                            {
-                              "type": "IsInZone",
-                              "value": "Stack"
+                      "by": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "Or",
+                            "value": [
+                              {
+                                "type": "HasSubtype",
+                                "value": "Giant"
+                              },
+                              {
+                                "type": "HasSubtype",
+                                "value": "Wizard"
+                              },
+                              {
+                                "type": "IsInZone",
+                                "value": "Stack"
+                              }
+                            ]
+                          },
+                          {
+                            "type": "HeldBy",
+                            "value": {
+                              "holder": "Controller",
+                              "relation": "You"
                             }
-                          ]
-                        },
-                        {
-                          "type": "HeldBy",
-                          "value": {
-                            "holder": "Controller",
-                            "relation": "You"
                           }
-                        }
-                      ]
+                        ]
+                      }
                     }
                   },
                   "scope": {
