@@ -1,0 +1,116 @@
+{
+  "board": {
+    "active": "alice",
+    "attackOption": "Leftward",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "carol"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Firkraag, Cunning Instigator",
+            "label": "firkraag",
+            "ready": true
+          },
+          {
+            "card": "Alluring Siren",
+            "label": "siren",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Grizzly Bears"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "Firkraag, Cunning Instigator rewards a creature required to attack a player it cannot attack",
+  "note": "CR 506.7: Alluring Siren requires the Goblin Piker to attack bob, whom attack left (CR 803.1a) puts out of its reach, so it attacks carol; the requirement applied to it all the same, so its damage to carol counts.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "object": "$siren"
+        }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$piker"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$piker": "$carol"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 1,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$firkraag"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Grizzly Bears",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

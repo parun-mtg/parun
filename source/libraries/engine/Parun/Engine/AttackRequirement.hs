@@ -111,6 +111,24 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 -- which no per-creature predicate could carry either.
 instances :: [ObjectId] -> [AttackTarget.AttackTarget] -> GameState -> Requirement.Instances (ObjectId, AttackTarget.AttackTarget)
 instances candidates targets gs =
+  let gathered = gathering candidates targets gs
+   in Requirement.gather (concatMap (\(atoms, _, _) -> atoms) gathered) (concatMap (\(_, sets, _) -> sets) gathered) []
+
+-- CR 506.7: the candidates some per-creature requirement in force names, read
+-- off its SUBJECT axis alone. Not the creatures of `instances`' pairs: a
+-- requirement naming a defender not among `targets` mints no pair (Alluring
+-- Siren's ruling) yet still requires the creature to attack. A requirement on
+-- the player (RequirementArity.AnySubject, Trove of Temptation) requires no
+-- creature. Proved by the Firkraag, Cunning Instigator scenario whose Alluring
+-- Siren names a player the creature cannot attack (CR 803.1a).
+required :: [ObjectId] -> [AttackTarget.AttackTarget] -> GameState -> Set.Set ObjectId
+required candidates targets gs =
+  Set.fromList (concatMap (\(_, _, subjects) -> subjects) (gathering candidates targets gs))
+
+-- The walk behind `instances` and `required`: per requirement, its pairs, its
+-- groups and the creatures its subject axis names.
+gathering :: [ObjectId] -> [AttackTarget.AttackTarget] -> GameState -> [([(ObjectId, AttackTarget.AttackTarget)], [Set.Set (ObjectId, AttackTarget.AttackTarget)], [ObjectId])]
+gathering candidates targets gs =
   let -- Hoisted out of the walk as BlockRequirement.instances hoists them, and
       -- both unforced until some permanent actually declares a requirement.
       setEffs = Projection.setLandSubtypeEffects gs
@@ -122,7 +140,7 @@ instances candidates targets gs =
       fromGrant source = mconcat (fmap (fromRequirement source []) (RuleAbilities.attackRequirements (grantedRules source)))
       fromPermanent source = case RuleAbilities.attackRequirements (Projection.ruleAbilitiesOf source gs) of
         -- Every permanent in almost every game.
-        [] -> ([], [])
+        [] -> ([], [], [])
         requirements ->
           -- The same two ability losses BlockRequirement.instances asks
           -- about: CR 305.7's basic-land subtype set, and CR 604.2 against a
@@ -143,7 +161,7 @@ instances candidates targets gs =
               -- changes the words printed on THAT object, and the subject clause
               -- below is printed on the card stating the requirement.
               mconcat (fmap (fromRequirement source (Projection.readerTextChanges source gs)) requirements)
-            else ([], [])
+            else ([], [], [])
       -- One whole-board projection and one grant walk for the whole walk, both
       -- unforced until some permanent actually reaches `named`.
       pcs = Projection.projectAll gs
@@ -163,21 +181,22 @@ instances candidates targets gs =
       -- CR 612.1: a hacked "Swamps attack each combat if able" requires Islands.
       fromRequirement source changes requirement =
         let subject = AttackRequirement.subject requirement
+            creatures = filter (named source (if null changes then subject else Projection.rewriteAffected changes subject)) candidates
             announcements = do
-              creature <- filter (named source (if null changes then subject else Projection.rewriteAffected changes subject)) candidates
+              creature <- creatures
               target <- admissible source requirement
               pure (creature, target)
          in if not (inForce source changes requirement)
-              then ([], [])
+              then ([], [], [])
               else case AttackRequirement.arity requirement of
-                RequirementArity.EachSubject -> (announcements, [])
+                RequirementArity.EachSubject -> (announcements, [], creatures)
                 -- ONE group for the whole requirement, where the blocking twin
                 -- mints one per attacker its object axis names: this side's
                 -- object axis narrows WHOM to attack rather than naming a
                 -- second set of creatures, so every announcement obeying the
                 -- sentence belongs to the same group and attacking with any one
                 -- creature obeys it once.
-                RequirementArity.AnySubject -> ([], [Set.fromList announcements])
+                RequirementArity.AnySubject -> ([], [Set.fromList announcements], [])
       -- CR 508.1d's OBJECT axis. An unnarrowed requirement mints a pair per
       -- announcement CR 508.1b admits, so any announcement obeys it; a narrowed
       -- one mints only the announcements against the player it names, and
@@ -324,13 +343,15 @@ instances candidates targets gs =
       fromStored active =
         let obeying = maybe targets (\target -> filter (== target) targets) (ActiveAttackRequirement.defender active)
             creatures = RestrictedCreatures.covered (ActiveAttackRequirement.controller active) (ActiveAttackRequirement.source active) (ActiveAttackRequirement.attacker active) candidates gs
-         in ( if Expiry.begun gs (ActiveAttackRequirement.expiry active)
+            begun = Expiry.begun gs (ActiveAttackRequirement.expiry active)
+         in ( if begun
                 then do
                   creature <- creatures
                   target <- obeying
                   pure (creature, target)
                 else [],
-              []
+              [],
+              if begun then creatures else []
             )
       -- CR 701.15b, off the THIRD carrier (Object.goadedBy): a goaded creature
       -- "attacks each combat if able and attacks a player other than the
@@ -365,7 +386,8 @@ instances candidates targets gs =
             goader <- Set.toList (Goad.goadedBy creature gs)
             fmap (\target -> (creature, target)) targets
               <> fmap (\target -> (creature, target)) (filter (\target -> target /= AttackTarget.OfPlayer goader && isPlayer target) targets),
-          []
+          [],
+          [creature | not (Set.null (Goad.goadedBy creature gs))]
         )
       isPlayer target = case target of
         AttackTarget.OfPlayer _ -> True
@@ -375,4 +397,4 @@ instances candidates targets gs =
         fmap (\source -> fromPermanent source <> fromGrant source) (Set.toList (GameState.battlefield gs))
           <> fmap fromStored (StoredEffects.attackRequirements (GameState.stored gs))
           <> fmap fromGoad candidates
-   in Requirement.gather (concatMap fst gathered) (concatMap snd gathered) []
+   in gathered
