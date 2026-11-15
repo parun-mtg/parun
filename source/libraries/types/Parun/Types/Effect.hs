@@ -108,6 +108,7 @@ import qualified Parun.Types.RepeatIf as RepeatIf
 import qualified Parun.Types.Replace as Replace
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
+import qualified Parun.Types.ReselectAttack as ReselectAttack
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RollDie as RollDie
 import qualified Parun.Types.SacrificeEffect as SacrificeEffect
@@ -542,9 +543,10 @@ data Effect card ability
     -- what the resolving controller chooses among the players and planeswalkers
     -- a player is attacking (Tahngarth, First Mate).
     JoinAttack JoinAttack.JoinAttack
-  | -- | CR 508.7: the resolving controller reselects which player, planeswalker
-    -- or battle each named attacking creature is attacking (Portal Mage).
-    ReselectAttack ObjectRef.ObjectRef
+  | -- | CR 508.7: the resolving controller may reselect what each named
+    -- attacking creature is attacking, among the kinds the payload allows
+    -- (Capricopian, Portal Mage).
+    ReselectAttack ReselectAttack.ReselectAttack
   | -- | CR 509.3b's third road onto the battlefield's blocking side: an effect
     -- makes creatures ALREADY in combat block the other of two attacking
     -- creatures (General Jarkeld). The slot holds both attackers, one instance

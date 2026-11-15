@@ -658,6 +658,9 @@ enters context board gs bearer you t event = case Game.enteredBattlefieldChange 
 --   a creature", so no characteristic is read.
 -- - Bound compares against the object CR 603.7c's captured environment named,
 --   read out of `bindings` through Binding.objectSlots.
+-- - Chosen compares against the objects the bearer's linked ability chose (CR
+--   607.2d), for the acquisition the bearer's abilities have (CR 607.5), off
+--   CR 608.2h's record where the bearer left beside them (CR 603.10a).
 --
 -- Batching is not read here: this matcher sees one event at a time, so a
 -- Batching.OneOrMore trigger answers True for every member of its CR 704.3 /
@@ -693,6 +696,7 @@ leaves bindings context before gs bearer you t event = case event of
       LeavingPermanent.Attached -> maybe False (Set.member bearer . LastKnown.attached) (Game.lastKnownOf departed gs)
       LeavingPermanent.Haunted -> Map.lookup bearer (GameState.haunting gs) == Just departed
       LeavingPermanent.Bound slot -> Map.lookup slot (Binding.objectSlots bindings) == Just departed
+      LeavingPermanent.Chosen -> any (Set.member departed) (Game.choiceWithLastKnown Chosen.Objects (Game.acquisitionOf bearer gs) bearer gs)
 
 -- CR 400.7: a card left the zone the trigger names, for the destination it
 -- names or any, from the pile it names or any, on a turn the scope admits.

@@ -16,4 +16,6 @@ data LeavingPermanent
     Haunted
   | -- | CR 603.7c: the object bound at this slot as the ability was created.
     Bound SlotName.SlotName
+  | -- | CR 607.2d: an object the bearer's linked ability last chose (Object.chosenObjects).
+    Chosen
   deriving (Eq, Ord, Show)

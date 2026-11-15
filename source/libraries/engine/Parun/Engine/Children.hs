@@ -13,6 +13,7 @@ import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
+import qualified Parun.Types.ActivationScope as ActivationScope
 import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.ActiveLaterPayment as ActiveLaterPayment
@@ -413,6 +414,7 @@ import qualified Parun.Types.Replace as Replace
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
+import qualified Parun.Types.ReselectAttack as ReselectAttack
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Reveal as Reveal
@@ -1190,7 +1192,7 @@ effectChildren c effect = case effect of
   Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat removed unblocking) -> fmap (\rewritten -> Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat rewritten unblocking)) (onObjectRef c removed)
   Effect.BecomesBlocked named -> fmap Effect.BecomesBlocked (onSlot c named)
   Effect.BlockAttacker ref -> fmap Effect.BlockAttacker (onObjectRef c ref)
-  Effect.ReselectAttack ref -> fmap Effect.ReselectAttack (onObjectRef c ref)
+  Effect.ReselectAttack (ReselectAttack.MkReselectAttack ref kinds) -> fmap (\r -> Effect.ReselectAttack (ReselectAttack.MkReselectAttack r kinds)) (onObjectRef c ref)
   Effect.JoinAttack (JoinAttack.MkJoinAttack creature alongside) -> fmap Effect.JoinAttack (JoinAttack.MkJoinAttack <$> onObjectRef c creature <*> onPlayer c alongside)
   Effect.SwitchBlockers named -> fmap Effect.SwitchBlockers (onSlot c named)
   Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks first second) -> fmap Effect.ExchangeBlocks (ExchangeBlocks.MkExchangeBlocks <$> onSlot c first <*> onSlot c second)
@@ -1231,8 +1233,8 @@ effectChildren c effect = case effect of
   Effect.PlaySubgame named -> fmap Effect.PlaySubgame (onSlot c named)
   Effect.ChoosePlayer (ChoosePlayer.MkChoosePlayer pool named) -> fmap (Effect.ChoosePlayer . ChoosePlayer.MkChoosePlayer pool) (onSlot c named)
   Effect.ChoosePlayerAtRandom (ChoosePlayerAtRandom.MkChoosePlayerAtRandom pool named) -> fmap (Effect.ChoosePlayerAtRandom . ChoosePlayerAtRandom.MkChoosePlayerAtRandom pool) (onSlot c named)
-  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents permanents named pileChooser rest) ->
-    fmap Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents <$> onChosenPermanents c permanents <*> onSlot c named <*> traverse (onPlayer c) pileChooser <*> traverse (onSlot c) rest)
+  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents permanents named pileChooser rest linked) ->
+    fmap Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents <$> onChosenPermanents c permanents <*> onSlot c named <*> traverse (onPlayer c) pileChooser <*> traverse (onSlot c) rest <*> pure linked)
   Effect.ChooseGroup (ChooseGroup.MkChooseGroup among named about) -> fmap Effect.ChooseGroup (ChooseGroup.MkChooseGroup <$> groupingChildren c among <*> onSlot c named <*> traverse (onObjectRef c) about)
   Effect.RollDie (RollDie.MkRollDie sides count modifier reading named other roller highest store) ->
     fmap
@@ -1566,6 +1568,7 @@ triggerConditionChildren c condition = case condition of
           LeavingPermanent.Attached -> pure permanent
           LeavingPermanent.Haunted -> pure permanent
           LeavingPermanent.Bound slot_ -> fmap LeavingPermanent.Bound (triggerSlot c slot_)
+          LeavingPermanent.Chosen -> pure permanent
       )
   TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger card from to whose turn batching) ->
     fmap TriggerCondition.LeavesZone (LeavesZoneTrigger.MkLeavesZoneTrigger <$> actingChildren c card <*> pure from <*> pure to <*> pure whose <*> triggerTurn c turn <*> pure batching)
@@ -3271,7 +3274,7 @@ data ObjectRefChildren f = MkObjectRefChildren
     refZones :: ZoneScope.ZoneScope -> f ZoneScope.ZoneScope,
     -- | Who chooses a card out of a graveyard (CR 608.2d), whole.
     refChooser :: Chooser.Chooser -> f Chooser.Chooser,
-    -- | A nested reference: AtRandom's, AllOf's.
+    -- | A nested reference: OneAmong's, AllOf's.
     refNested :: ObjectRef.ObjectRef -> f ObjectRef.ObjectRef,
     -- | The events the engine looks back over to resolve the reference.
     refLooksBack :: HistoryRead.HistoryRead -> f ()
@@ -3331,7 +3334,7 @@ objectRefChildren c ref = case ref of
   ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong bound filter_) -> fmap ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong <$> refSlot c bound <*> refFilter c filter_)
   ObjectRef.RandomCard (RandomCard.MkRandomCard zone seat filter_ count) -> fmap ObjectRef.RandomCard (RandomCard.MkRandomCard zone <$> refPlayer c seat <*> refFilter c filter_ <*> refQuantity c count)
   ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard players filter_ count) -> fmap ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard <$> refZones c players <*> refFilter c filter_ <*> refQuantity c count)
-  ObjectRef.AtRandom inner -> ObjectRef.AtRandom <$> refNested c inner
+  ObjectRef.OneAmong selection inner -> ObjectRef.OneAmong selection <$> refNested c inner
   ObjectRef.ChosenPermanents choice -> ObjectRef.ChosenPermanents <$> chosenPermanentsChildren c choice
   ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound bound filter_ zone) -> fmap ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound <$> refSlot c bound <*> refFilter c filter_ <*> pure zone)
   ObjectRef.AttackedBy bound -> ObjectRef.AttackedBy <$> refSlot c bound
@@ -3774,7 +3777,7 @@ spendScopeChildren :: (Applicative f) => ManaChildren f -> SpendScope.SpendScope
 spendScopeChildren c payments = case payments of
   SpendScope.EveryPayment -> pure payments
   SpendScope.Casting spell -> SpendScope.Casting <$> manaCriterion c spell
-  SpendScope.Activating source -> SpendScope.Activating <$> manaCriterion c source
+  SpendScope.Activating (ActivationScope.MkActivationScope source lentBy) -> fmap SpendScope.Activating (ActivationScope.MkActivationScope <$> manaCriterion c source <*> traverse (manaCriterion c) lentBy)
 
 -- | One visitor per kind of child a damage pattern holds: the damage a
 -- prevention or replacement effect matches (CR 614.1a, 615.1a).
@@ -3786,17 +3789,18 @@ data DamagePatternChildren f = MkDamagePatternChildren
     -- | The one source the damage is dealt by (CR 400.7).
     damageObject :: ObjectId.ObjectId -> f ObjectId.ObjectId,
     -- | The slot the recipient is bound to.
-    damageSlot :: SlotName.SlotName -> f SlotName.SlotName
+    damageSlot :: SlotName.SlotName -> f SlotName.SlotName,
+    -- | The player recipient's relation (CR 109.5, 608.2h), whole.
+    damageWhose :: ControllerRelation.ControllerRelation -> f ControllerRelation.ControllerRelation
   }
 
--- | A damage pattern's children. Its damage kind and the recipient's relation
--- to the controller are left as they are.
+-- | A damage pattern's children. Its damage kind is left as it is.
 damagePatternChildren :: (Applicative f) => DamagePatternChildren f -> DamagePattern.DamagePattern -> f DamagePattern.DamagePattern
 damagePatternChildren c (DamagePattern.MkDamagePattern whichKind whatSource whatRecipient whoRecipient whichRecipient whichSource boundRecipient) =
   DamagePattern.MkDamagePattern whichKind
     <$> damageFilter c whatSource
     <*> traverse (damageFilter c) whatRecipient
-    <*> pure whoRecipient
+    <*> traverse (damageWhose c) whoRecipient
     <*> traverse (damageRecipient c) whichRecipient
     <*> traverse (damageObject c) whichSource
     <*> traverse (damageSlot c) boundRecipient

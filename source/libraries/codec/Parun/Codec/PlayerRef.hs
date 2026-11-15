@@ -52,6 +52,7 @@ codec =
       -- card data beside it.
       Arm.payload "HolderOfObject" holderOfObject (uncurry PlayerRef.HolderOfObject) (\x -> case x of PlayerRef.HolderOfObject h y -> Just (h, y); _ -> Nothing),
       Arm.payload "PlayerHostOfBound" SlotName.codec PlayerRef.PlayerHostOfBound (\x -> case x of PlayerRef.PlayerHostOfBound y -> Just y; _ -> Nothing),
+      Arm.payload "AttackedByBound" SlotName.codec PlayerRef.AttackedByBound (\x -> case x of PlayerRef.AttackedByBound y -> Just y; _ -> Nothing),
       Arm.payload "ChosenPlayerOfBound" (Common.tuple SlotName.codec PlayerChoice.codec) (uncurry PlayerRef.ChosenPlayerOfBound) (\x -> case x of PlayerRef.ChosenPlayerOfBound y z -> Just (y, z); _ -> Nothing),
       -- CR 508.6's set, which a card writes: Curse of Vitality names "each
       -- opponent attacking that player".
@@ -75,6 +76,7 @@ tagOf x = case x of
   PlayerRef.Candidate {} -> "Candidate"
   PlayerRef.HolderOfBound {} -> "HolderOfBound"
   PlayerRef.PlayerHostOfBound {} -> "PlayerHostOfBound"
+  PlayerRef.AttackedByBound {} -> "AttackedByBound"
   PlayerRef.HolderOfObject {} -> "HolderOfObject"
   PlayerRef.ChosenPlayerOfBound {} -> "ChosenPlayerOfBound"
   PlayerRef.Attacking {} -> "Attacking"

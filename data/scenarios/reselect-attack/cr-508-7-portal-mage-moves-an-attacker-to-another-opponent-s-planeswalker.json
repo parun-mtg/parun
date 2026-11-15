@@ -140,15 +140,6 @@
       "turn": 1
     },
     {
-      "do": {
-        "ChooseOptional": "Exercises"
-      },
-      "player": "bob",
-      "source": "Portal Mage",
-      "step": "DeclareAttackers",
-      "turn": 1
-    },
-    {
       "player": "bob",
       "refuse": {
         "Answer": {

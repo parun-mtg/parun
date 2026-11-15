@@ -469,8 +469,15 @@ spec s = Spec.describe s "Parun.Codec.ObjectRef" $ do
     Common.assertCodec
       s
       ObjectRef.codec
-      (ObjectRef.AtRandom (ObjectRef.AllOf (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "yours")) NonEmpty.:| [ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "theirs"))])))
+      (ObjectRef.OneAmong CardSelection.AtRandom (ObjectRef.AllOf (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "yours")) NonEmpty.:| [ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "theirs"))])))
       " {\"type\":\"AtRandom\",\"value\":{\"type\":\"AllOf\",\"value\":[{\"type\":\"InSlot\",\"value\":\"yours\"},{\"type\":\"InSlot\",\"value\":\"theirs\"}]}} "
+  -- Zack Fair's "an Equipment that was attached to Zack Fair": the inner ref under the chosen tag.
+  Spec.it s "OneChosenAmong" $
+    Common.assertCodec
+      s
+      ObjectRef.codec
+      (ObjectRef.OneAmong CardSelection.ByChoice (ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound (SlotName.MkSlotName (Text.pack "self")) (Filter.HasSubtype Subtype.Equipment) Zone.Battlefield)))
+      " {\"type\":\"OneChosenAmong\",\"value\":{\"type\":\"AttachedToBound\",\"value\":{\"slot\":\"self\",\"filter\":{\"type\":\"HasSubtype\",\"value\":\"Equipment\"}}}} "
   -- Guards against a decoder that read every payload as one arm. The arms are
   -- all objects, so only the tag separates them, and a duplicated tag would
   -- collapse two of these. The two graveyard arms are the pair it really

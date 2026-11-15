@@ -67,12 +67,18 @@
                             {
                               "type": "ReselectAttack",
                               "value": {
-                                "type": "InSlot",
-                                "value": "creature"
+                                "creature": {
+                                  "type": "InSlot",
+                                  "value": "creature"
+                                },
+                                "kinds": [
+                                  "OfPlayer",
+                                  "OfPlaneswalker",
+                                  "OfBattle"
+                                ]
                               }
                             }
                           ],
-                          "members": "AnyNumber",
                           "ref": {
                             "type": "InSlot",
                             "value": "target"

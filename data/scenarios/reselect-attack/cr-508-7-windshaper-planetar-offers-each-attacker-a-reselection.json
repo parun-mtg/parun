@@ -87,8 +87,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 508.7: Windshaper Planetar's controller picks which attacking creatures to reselect, and moves only those",
-  "note": "Three seats under attack multiple players, so each picked attacker has bob and carol to choose between; Hill Giant, not picked, is never asked about and stays on bob.",
+  "description": "CR 508.7: Windshaper Planetar offers each attacking creature a reselection, its current target the decline",
+  "note": "Three seats under attack multiple players. Grizzly Bears moves to carol; Hill Giant is offered the same choice and keeps bob, which declines it.",
   "timeline": [
     {
       "do": {
@@ -151,12 +151,10 @@
     {
       "do": {
         "Answer": {
-          "prompt": "ChooseLoopMembers",
+          "prompt": "OrderForEach",
           "with": [
-            [
-              "Object",
-              "$bears"
-            ]
+            0,
+            1
           ]
         }
       },
@@ -175,6 +173,22 @@
         }
       },
       "player": "bob",
+      "source": "$bears",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAttackTarget",
+          "with": [
+            "Player",
+            "bob"
+          ]
+        }
+      },
+      "player": "bob",
+      "source": "$giant",
       "step": "DeclareAttackers",
       "turn": 1
     },

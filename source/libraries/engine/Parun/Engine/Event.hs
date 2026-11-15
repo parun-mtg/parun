@@ -11581,6 +11581,7 @@ lastKnownFrom gs oid obj =
     (Object.chosenSubtype obj)
     (Object.chosenCardType obj)
     (Object.chosenNumber obj)
+    (Object.chosenObjects obj)
     -- CR 607.5: which of its abilities' links a leave trigger reads.
     (Game.acquisitionOf oid gs)
     -- CR 508.1k / 509.1g.

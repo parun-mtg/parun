@@ -79,8 +79,8 @@
     ],
     "step": "PrecombatMain"
   },
-  "description": "CR 508.7: Tuvok, Chief Tactical Officer reselects for each of its targets its controller picks, and only those",
-  "note": "Three seats under attack multiple players. Both attackers are targeted; only Grizzly Bears is picked, so Hill Giant stays on bob.",
+  "description": "CR 508.7: Tuvok, Chief Tactical Officer offers each of its targets a reselection, its current target the decline",
+  "note": "Three seats under attack multiple players. Both attackers are targeted; Grizzly Bears moves to carol, and Hill Giant keeps bob, which declines it.",
   "timeline": [
     {
       "do": {
@@ -154,12 +154,10 @@
     {
       "do": {
         "Answer": {
-          "prompt": "ChooseLoopMembers",
+          "prompt": "OrderForEach",
           "with": [
-            [
-              "Creature",
-              "$bears"
-            ]
+            0,
+            1
           ]
         }
       },
@@ -178,6 +176,22 @@
         }
       },
       "player": "bob",
+      "source": "$bears",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAttackTarget",
+          "with": [
+            "Player",
+            "bob"
+          ]
+        }
+      },
+      "player": "bob",
+      "source": "$giant",
       "step": "DeclareAttackers",
       "turn": 1
     },

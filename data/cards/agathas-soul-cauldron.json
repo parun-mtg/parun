@@ -173,24 +173,26 @@
               "scope": {
                 "type": "Activating",
                 "value": {
-                  "type": "And",
-                  "value": [
-                    {
-                      "type": "IsInZone",
-                      "value": "Battlefield"
-                    },
-                    {
-                      "type": "HasCardType",
-                      "value": "Creature"
-                    },
-                    {
-                      "type": "HeldBy",
-                      "value": {
-                        "holder": "Controller",
-                        "relation": "You"
+                  "source": {
+                    "type": "And",
+                    "value": [
+                      {
+                        "type": "IsInZone",
+                        "value": "Battlefield"
+                      },
+                      {
+                        "type": "HasCardType",
+                        "value": "Creature"
+                      },
+                      {
+                        "type": "HeldBy",
+                        "value": {
+                          "holder": "Controller",
+                          "relation": "You"
+                        }
                       }
-                    }
-                  ]
+                    ]
+                  }
                 }
               },
               "which": {

@@ -68,6 +68,7 @@ import qualified Parun.Types.ActivateManaAbilities as ActivateManaAbilities
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.ActivationProhibition as ActivationProhibition
 import qualified Parun.Types.ActivationRestriction as ActivationRestriction
+import qualified Parun.Types.ActivationScope as ActivationScope
 import qualified Parun.Types.ActivationsThisTurn as ActivationsThisTurn
 import qualified Parun.Types.Activator as Activator
 import qualified Parun.Types.AffectPlayers as AffectPlayers
@@ -101,6 +102,7 @@ import qualified Parun.Types.AttackCost as AttackCost
 import qualified Parun.Types.AttackCount as AttackCount
 import qualified Parun.Types.AttackLimitUnless as AttackLimitUnless
 import qualified Parun.Types.AttackRequirement as AttackRequirement
+import qualified Parun.Types.AttackTargetKind as AttackTargetKind
 import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
@@ -428,6 +430,7 @@ import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
 import qualified Parun.Types.RequirementArity as RequirementArity
+import qualified Parun.Types.ReselectAttack as ReselectAttack
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Reveal as Reveal
@@ -830,7 +833,7 @@ objectRefPositions =
         ("turn-face-down", Effect.TurnFaceDown (TurnFaceDown.MkTurnFaceDown (plantedRef "tf") FaceDownCharacteristics.defaultValue), [plantedRef "tf"]),
         ("remove-from-combat", Effect.RemoveFromCombat (RemoveFromCombat.MkRemoveFromCombat (plantedRef "rc") Unblocking.StayBlocked), [plantedRef "rc"]),
         ("block-attacker", Effect.BlockAttacker (plantedRef "ba"), [plantedRef "ba"]),
-        ("reselect-attack", Effect.ReselectAttack (plantedRef "ra"), [plantedRef "ra"]),
+        ("reselect-attack", Effect.ReselectAttack (ReselectAttack.MkReselectAttack (plantedRef "ra") (Set.singleton AttackTargetKind.OfPlayer)), [plantedRef "ra"]),
         ("join-attack", Effect.JoinAttack (JoinAttack.MkJoinAttack (plantedRef "ja") (PlayerRef.Relative PlayerRelation.You)), [plantedRef "ja"]),
         ("gain-control", Effect.GainControl (GainControl.MkGainControl Duration.UntilEndOfTurn (plantedRef "gc") Nothing (PlayerRef.Relative PlayerRelation.You)), [plantedRef "gc"]),
         ("require-block", Effect.RequireBlock (RequireBlock.MkRequireBlock Duration.UntilEndOfTurn (RestrictedCreatures.Named (plantedRef "rb-blocker")) (Just (RestrictedCreatures.Named (plantedRef "rb-attacker"))) RequirementArity.EachSubject), [plantedRef "rb-blocker", plantedRef "rb-attacker"]),
@@ -917,7 +920,7 @@ playerRefPositions =
         ("divide", Effect.Divide (Divide.MkDivide one (plantedRef "dv") (plantedPlayer "dv") (SlotName.MkSlotName (Text.pack "split"))), [plantedPlayer "dv"]),
         ("cloak", Effect.Cloak (Cloak.MkCloak (plantedPlayer "ck") (Just (plantedPlayer "ck-library"))), [plantedPlayer "ck", plantedPlayer "ck-library"]),
         ("manifestDread", Effect.ManifestDread (ManifestDread.MkManifestDread (plantedPlayer "md") one Nothing), [plantedPlayer "md"]),
-        ("choose-permanents", Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty) (SlotName.MkSlotName (Text.pack "cp")) (Just (plantedPlayer "cp-piles")) Nothing), [plantedPlayer "cp", plantedPlayer "cp-piles"]),
+        ("choose-permanents", Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.Type.And []) (plantedPlayer "cp") (HowMany.UpTo Nothing) Nothing Zone.Battlefield Set.empty) (SlotName.MkSlotName (Text.pack "cp")) (Just (plantedPlayer "cp-piles")) Nothing False), [plantedPlayer "cp", plantedPlayer "cp-piles"]),
         ("discard-counted", Effect.Discard (Discard.Counted (CountedDiscard.MkCountedDiscard (plantedPlayer "dc") one Nothing)), [plantedPlayer "dc"]),
         ("discard-any-number", Effect.Discard (Discard.AnyNumber (AnyNumberDiscard.MkAnyNumberDiscard (plantedPlayer "da") (AnyNumberMatching.MkAnyNumberMatching (Filter.Type.And []) Nothing) Nothing)), [plantedPlayer "da"]),
         ("player-sacrifices", Effect.PlayerSacrifices (PlayerSacrifices.MkPlayerSacrifices (plantedPlayer "ps") Nothing (Filter.Type.And []) one Nothing), [plantedPlayer "ps"]),
@@ -3413,7 +3416,7 @@ objectRefFilters ref = case ref of
   ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound _ f _) -> unframed [f]
   ObjectRef.AttackedBy _ -> []
   ObjectRef.FromAnywhere _ -> []
-  ObjectRef.AtRandom inner -> objectRefFilters inner
+  ObjectRef.OneAmong _ inner -> objectRefFilters inner
   ObjectRef.AllOf refs -> foldMap objectRefFilters refs
 
 -- The Filter a Count folds over (CR 608.2h). Delegated to the *Counts family
@@ -4026,7 +4029,7 @@ playerEffectFilters playerEffect = case playerEffect of
   PlayerEffect.SpendManaAsThough clause -> case SpendManaAsThough.scope clause of
     SpendScope.EveryPayment -> []
     SpendScope.Casting spell -> [spell]
-    SpendScope.Activating source -> [source]
+    SpendScope.Activating (ActivationScope.MkActivationScope source lentBy) -> source : Maybe.maybeToList lentBy
   -- CR 702.18a / 702.11c's scope is a PlayerScope, not a Filter: the set it names
   -- is players. CR 702.11d's quality is a Filter over the aiming object.
   PlayerEffect.CantBeTargetedBy _ quality -> Maybe.maybeToList quality
@@ -5315,7 +5318,7 @@ effectFilters effect = case effect of
   Effect.Fight _ -> []
   Effect.RemoveFromCombat payload -> frame SourceHostFramed (objectRefFilters (RemoveFromCombat.removed payload))
   Effect.BlockAttacker ref -> frame SourceHostFramed (objectRefFilters ref)
-  Effect.ReselectAttack ref -> frame SourceHostFramed (objectRefFilters ref)
+  Effect.ReselectAttack payload -> frame SourceHostFramed (objectRefFilters (ReselectAttack.creature payload))
   Effect.JoinAttack payload -> frame SourceHostFramed (objectRefFilters (JoinAttack.creature payload))
   Effect.BecomesBlocked _ -> []
   Effect.SwitchBlockers _ -> []
@@ -5427,7 +5430,7 @@ effectFilters effect = case effect of
   Effect.ChoosePlayer _ -> []
   Effect.ChoosePlayerAtRandom _ -> []
   Effect.ChooseGroup _ -> []
-  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _) -> unframed [ChosenPermanents.filter choice] <> frame Unframed (foldMap quantityFilters (Resolve.chosenPermanentsQuantities choice))
+  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _ _) -> unframed [ChosenPermanents.filter choice] <> frame Unframed (foldMap quantityFilters (Resolve.chosenPermanentsQuantities choice))
   -- CR 706.2's modifier is a Quantity, so its filters are reachable here.
   Effect.RollDie rollDie -> frame Unframed (quantityFilters (RollDie.count rollDie) <> foldMap quantityFilters (RollDie.modifier rollDie))
   -- CR 705.1's number of coins is a Quantity, so its filters are reachable here.

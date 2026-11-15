@@ -80,7 +80,7 @@ data Response
     -- Parun.Types.ObjectRef.RandomCard -- Merfolk Spy's "a card at random from
     -- their hand", Gate to Seatower's seek -- or for a
     -- Parun.Types.ObjectRef.RandomCardInGraveyard, Ghoulraiser's "a Zombie card
-    -- at random from your graveyard", or for a Parun.Types.ObjectRef.AtRandom,
+    -- at random from your graveyard", or for a Parun.Types.ObjectRef.OneAmong at random,
     -- Capricious Efreet's "one of them".
     --
     -- Its own constructor rather than ChoseCardInHand reused, though both may

@@ -219,6 +219,7 @@ import qualified Parun.Types.Repeat as Repeat
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
+import qualified Parun.Types.ReselectAttack as ReselectAttack
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RollDie as RollDie
@@ -1152,7 +1153,8 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
 -- Excruciator print, and the last two describe a recipient rather than naming
 -- one -- Lava Burst's "if Lava Burst would deal damage to a creature" writes
 -- `whatRecipient`, and no printing in the pool writes `whoRecipient` on THIS
--- carrier.
+-- carrier. A `whoRecipient` naming players by id or by slot is the engine's
+-- (engineOnlyPatternOffends).
 --
 -- `boundRecipient` is how Whippoorwill says it and is NOT swept: it names a SLOT,
 -- which is printed text's own way of pointing at a target, and
@@ -1163,9 +1165,9 @@ unpreventableScopeOffends scope playerEffect = case playerEffect of
 -- Exhaustive rather than a wildcard, this file's discipline for a sum.
 unpreventablePatternOffends :: PlayerEffect.PlayerEffect -> Bool
 unpreventablePatternOffends playerEffect = case playerEffect of
-  PlayerEffect.DamageCantBePrevented pattern_ -> Maybe.isJust (DamagePattern.whichRecipient pattern_) || Maybe.isJust (DamagePattern.whichSource pattern_)
-  PlayerEffect.DamageCantBeRedirected pattern_ -> Maybe.isJust (DamagePattern.whichRecipient pattern_) || Maybe.isJust (DamagePattern.whichSource pattern_)
-  PlayerEffect.DamageAsThoughSourceHad pattern_ _ -> Maybe.isJust (DamagePattern.whichRecipient pattern_) || Maybe.isJust (DamagePattern.whichSource pattern_)
+  PlayerEffect.DamageCantBePrevented pattern_ -> engineOnlyPatternOffends pattern_
+  PlayerEffect.DamageCantBeRedirected pattern_ -> engineOnlyPatternOffends pattern_
+  PlayerEffect.DamageAsThoughSourceHad pattern_ _ -> engineOnlyPatternOffends pattern_
   PlayerEffect.CantSearchLibraries _ -> False
   PlayerEffect.SearchesTopOfLibraries _ -> False
   PlayerEffect.HasProtectionFrom _ -> False
@@ -1220,6 +1222,21 @@ unpreventablePatternOffends playerEffect = case playerEffect of
   PlayerEffect.RevealsDraw _ -> False
   PlayerEffect.Precluded _ -> False
   PlayerEffect.Shows _ -> False
+
+-- The fields of one such pattern only the engine writes. `whoRecipient` offends
+-- as an Among, which names players by id, and as an InSlot, which only
+-- Effect.Replace's install bakes and which this carrier would read as nobody.
+engineOnlyPatternOffends :: DamagePattern.DamagePattern -> Bool
+engineOnlyPatternOffends pattern_ =
+  Maybe.isJust (DamagePattern.whichRecipient pattern_)
+    || Maybe.isJust (DamagePattern.whichSource pattern_)
+    || maybe False bakedOnly (DamagePattern.whoRecipient pattern_)
+  where
+    bakedOnly rel = case rel of
+      ControllerRelation.Among _ -> True
+      ControllerRelation.InSlot _ -> True
+      ControllerRelation.Related _ -> False
+      ControllerRelation.EnchantedPlayers -> False
 
 -- The non-vacuity half of both lints above: is this a damage-event prohibition
 -- at all -- CR 615.12's or CR 614.9's? A wildcard is right here, where it is not
@@ -1315,6 +1332,7 @@ data Question
   | RandomInGraveyard
   | RandomInLibrary
   | RandomAmong
+  | ChosenAmong
   | OnePermanent
   | SeveralPermanents
   | PermanentsUpTo
@@ -1363,7 +1381,8 @@ questionOf ref = case ref of
     HiddenZone.Hand -> Just RandomInHand
     HiddenZone.Library -> Just RandomInLibrary
   ObjectRef.RandomCardInGraveyard {} -> Just RandomInGraveyard
-  ObjectRef.AtRandom {} -> Just RandomAmong
+  ObjectRef.OneAmong CardSelection.AtRandom _ -> Just RandomAmong
+  ObjectRef.OneAmong CardSelection.ByChoice _ -> Just ChosenAmong
   ObjectRef.ChosenPermanents choice -> case ChosenPermanents.count choice of
     _ | not (Set.null (ChosenPermanents.ownZones choice)) -> Just AcrossOwnZones
     _ | ChosenPermanents.zone choice /= Zone.Battlefield -> Just OffBattlefield
@@ -1385,7 +1404,7 @@ chooserRef = Maybe.isJust . questionOf
 -- reached, so this is the fence that keeps a card from loading a combination no
 -- test reaches. A position read through the pure objectRefObjects allows none.
 --
--- A move's: every question but SeveralPermanents. The scenario
+-- A move's: every question but SeveralPermanents and ChosenAmong. The scenario
 -- ransack-sends-the-chosen-to-the-bottom-and-orders-the-rest reaches
 -- AnyCardsFromAmong, and
 -- cr-601-2f-gorex-exiles-any-number-of-creature-cards-and-returns-them-at-random
@@ -1394,7 +1413,7 @@ chooserRef = Maybe.isJust . questionOf
 -- which Mirror of Fate's scenario reaches through Effect.ChoosePermanents; no
 -- permanent opcode's test reaches it.
 movedQuestions :: [Question]
-movedQuestions = filter (/= SeveralPermanents) [minBound .. maxBound]
+movedQuestions = filter (`notElem` [SeveralPermanents, ChosenAmong]) [minBound .. maxBound]
 
 -- The battlefield questions, for the opcodes that act on PERMANENTS -- Tovolar,
 -- Dire Overlord's transform, Teferi, Hero of Dominaria's untap, God-Eternal
@@ -1435,7 +1454,8 @@ effectObjectRefs effect =
         Effect.AttachTarget {} -> []
         Effect.AttachTargetToEach {} -> []
         Effect.AttachBound {} -> []
-        Effect.AttachAll (AttachAll.MkAttachAll ref _) -> [(permanentQuestions, ref)]
+        -- ChosenAmong: the Zack Fair scenarios.
+        Effect.AttachAll (AttachAll.MkAttachAll ref _) -> [(ChosenAmong : permanentQuestions, ref)]
         -- The dealers are swept through the pure objectRefObjects too.
         Effect.DealDamage (DealDamage.MkDealDamage parts _ dealers _ _ _ _) -> read_ (Foldable.toList dealers <> fmap DamagePart.ref (Foldable.toList parts))
         Effect.ModifyTarget (ModifyTarget.MkModifyTarget _ _ ref _) -> [(permanentQuestions, ref)]
@@ -1574,7 +1594,7 @@ effectObjectRefs effect =
         Effect.Fight {} -> []
         Effect.RemoveFromCombat payload -> read_ [RemoveFromCombat.removed payload]
         Effect.BlockAttacker ref -> read_ [ref]
-        Effect.ReselectAttack ref -> read_ [ref]
+        Effect.ReselectAttack payload -> read_ [ReselectAttack.creature payload]
         Effect.JoinAttack payload -> read_ [JoinAttack.creature payload]
         Effect.BecomesBlocked {} -> []
         -- The pair comes out of a target slot, not an ObjectRef.
@@ -2167,8 +2187,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           ObjectRef.AttackedBy _ -> True
           -- TRUE, InSlot's answer: the slot's object, followed.
           ObjectRef.FromAnywhere _ -> True
-          -- TRUE: one draw names one object, however many the pool holds.
-          ObjectRef.AtRandom _ -> True
+          -- TRUE: one draw or pick names one object, however many the pool holds.
+          ObjectRef.OneAmong _ _ -> True
           -- FALSE: several refs together name several objects.
           ObjectRef.AllOf _ -> False
         -- Does a choice's count name at most one? A COMPUTED count is plural
@@ -2233,6 +2253,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           PlayerRef.HolderOfBound {} -> True
           -- One seat -- the arm above's answer, the host itself a player.
           PlayerRef.PlayerHostOfBound _ -> True
+          -- One seat -- the arm above's answer, the attacked player.
+          PlayerRef.AttackedByBound _ -> True
           -- One seat -- the arm above's answer, baked; unreachable from card
           -- data, Specific's answer.
           PlayerRef.HolderOfObject _ _ -> True
@@ -3684,8 +3706,15 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           PlayerEffect.DamageCantBePrevented pattern_ ->
             PlayerEffect.DamageCantBePrevented pattern_ {DamagePattern.whichKind = Just DamageKind.Combat}
           other -> other
+        who rel playerEffect = case playerEffect of
+          PlayerEffect.DamageCantBePrevented pattern_ ->
+            PlayerEffect.DamageCantBePrevented pattern_ {DamagePattern.whoRecipient = Just rel}
+          other -> other
     Spec.assertBool s (not (offends card)) "the real Excruciator names a source and no recipient, and is accepted"
     Spec.assertBool s (offends (over bake)) "and the same clause naming a shielded player is rejected"
+    Spec.assertBool s (offends (over (who (ControllerRelation.Among (Set.singleton S.alice))))) "and the same clause naming its player half by id is rejected"
+    Spec.assertBool s (offends (over (who (ControllerRelation.InSlot (SlotName.MkSlotName (Text.pack "thatPlayer")))))) "and the same clause naming its player half by slot is rejected"
+    Spec.assertBool s (not (offends (over (who (ControllerRelation.Related PlayerRelation.You))))) "and the same clause naming its player half as you is accepted"
     -- Frenzied Baloth's axis, which is authorable and must stay so: narrowing by
     -- KIND is not what this lint bans.
     Spec.assertBool s (not (offends (over kind))) "narrowing the same clause to combat damage is accepted"

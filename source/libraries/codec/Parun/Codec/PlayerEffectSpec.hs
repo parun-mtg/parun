@@ -14,6 +14,7 @@ import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CombatDeclaration as CombatDeclaration
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.CostChange as CostChange
 import qualified Parun.Types.CostModifier as CostModifier
 import qualified Parun.Types.CostSubject as CostSubject
@@ -405,8 +406,8 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.DamageAsThoughSourceHad (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing (Just PlayerRelation.You) Nothing Nothing Nothing) Keyword.Infect)
-      " {\"type\":\"DamageAsThoughSourceHad\",\"value\":{\"matching\":{\"whoRecipient\":\"You\"},\"keyword\":{\"type\":\"Infect\"}}} "
+      (PlayerEffect.DamageAsThoughSourceHad (DamagePattern.MkDamagePattern Nothing (Filter.And []) Nothing (Just (ControllerRelation.Related PlayerRelation.You)) Nothing Nothing Nothing) Keyword.Infect)
+      " {\"type\":\"DamageAsThoughSourceHad\",\"value\":{\"matching\":{\"whoRecipient\":{\"type\":\"You\"}},\"keyword\":{\"type\":\"Infect\"}}} "
   -- CR 701.23 / Leonin Arbiter.
   Spec.it s "CantSearchLibraries" $
     Common.assertCodec

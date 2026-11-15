@@ -3384,32 +3384,35 @@ joinAttack chooser alongside oid = do
     target <- announceAttackTarget chooser oid options
     putOntoBattlefieldAttacking (Specified target) oid
 
--- CR 508.7: `chooser` reselects which player, planeswalker or battle the
--- attacking creature is attacking (Portal Mage). The candidates are CR 508.1b's
+-- CR 508.7: `chooser` may reselect what the attacking creature is attacking,
+-- among the kinds of target `kinds` allows: Capricopian's "which player" or
+-- Portal Mage's "which player or permanent". The candidates are CR 508.1b's
 -- (declarableTargets), which already are CR 508.7c-e's: the defending players
 -- are opponents of every attacking player (CR 506.2, 805.10a) within range of
 -- influence (CR 801.3), and only the chosen one under any option but
 -- attacking multiple players. Nothing else is asked of them, CR 508.7b
 -- exempting the creature from the declaration's requirements and
--- restrictions, and nothing is paid.
--- Through announceAttackTarget, elided at one candidate, and a no-op at none or
--- for a creature no longer attacking.
+-- restrictions, and nothing is paid. Its current target heads the offer as
+-- the decline, which is indistinguishable from reselecting it (CR 508.7a);
+-- elided at one candidate, and a no-op for a creature not attacking.
 --
 -- Only the attack's present is rewritten: what it is attacking, and the seats
 -- recorded for it as it joined combat, which CR 508.5 and CR 802.2a move with
 -- the target and CR 506.4 compares against from now on. Combat.declaredAttacked
 -- and the rest of the declaration's history keep the declared choice (CR
--- 508.7a), and no event is recorded, the creature not having attacked again.
+-- 508.7a), and no event is recorded, the creature not having attacked again
+-- (Capricopian's ruling that "whenever this creature attacks" does not
+-- trigger).
 --
 -- Not implemented: keeping an attacking band on one target (CR 702.22d) when
 -- one of its members is reselected (#7688).
-reselectAttack :: PlayerId -> ObjectId -> Game ()
-reselectAttack chooser oid = do
+reselectAttack :: Set AttackTargetKind.AttackTargetKind -> PlayerId -> ObjectId -> Game ()
+reselectAttack kinds chooser oid = do
   gs <- State.get
-  let attacking = Map.member oid (Combat.attackers (TurnRegisters.combat (GameState.turn gs)))
-  Monad.forM_ (NonEmpty.nonEmpty (if attacking then declarableTargets gs else [])) $ \options -> do
-    target <- announceAttackTarget chooser oid options
-    State.modify' $ \g ->
+  let allowed target = Set.member (attackTargetKind target) kinds
+  Monad.forM_ (Map.lookup oid (Combat.attackers (TurnRegisters.combat (GameState.turn gs)))) $ \current -> do
+    target <- announceAttackTarget chooser oid (current NonEmpty.:| List.delete current (filter allowed (declarableTargets gs)))
+    Monad.when (target /= current) . State.modify' $ \g ->
       let c = TurnRegisters.combat (GameState.turn g)
           reseat seat = Map.alter (const seat) oid
        in g

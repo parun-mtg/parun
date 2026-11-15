@@ -481,6 +481,8 @@ playerRefSlots ref = case ref of
   PlayerRef.HolderOfBound _ _ slot -> Map.singleton slot SlotArity.One
   -- Read at arity one for that arm's reason.
   PlayerRef.PlayerHostOfBound slot -> Map.singleton slot SlotArity.One
+  -- Read at arity one for that arm's reason.
+  PlayerRef.AttackedByBound slot -> Map.singleton slot SlotArity.One
   -- Read at arity one for that arm's reason: a slot naming several objects names
   -- no one chooser.
   PlayerRef.ChosenPlayerOfBound slot _ -> Map.singleton slot SlotArity.One
@@ -615,7 +617,7 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   -- come through the scope, and the COUNT is TopOfLibrary's read.
   ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard scope filter_ count) -> joinSlots [zoneScopeSlots scope, filterSlotsOf filter_, quantitySlots count]
   -- The pool's own reads.
-  ObjectRef.AtRandom inner -> objectRefSlots inner
+  ObjectRef.OneAmong _ inner -> objectRefSlots inner
   -- EachMatching's answer: the candidates come off the battlefield, so only the
   -- Filter reads a slot of its own. The CHOOSER's slots are the generic
   -- playerRefSlots fold this case is joined into, ChosenCardFromAmong's route
@@ -689,7 +691,7 @@ objectRefQuantities ref = case ref of
   -- How many cards randomness names out of each graveyard -- Make a Wish's
   -- printed two. The arm above's regression fence, for its reason.
   ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard _ _ count) -> [count]
-  ObjectRef.AtRandom inner -> objectRefQuantities inner
+  ObjectRef.OneAmong _ inner -> objectRefQuantities inner
   -- At most how many permanents are chosen -- Teferi, Hero of Dominaria's
   -- printed two.
   ObjectRef.ChosenPermanents choice -> chosenPermanentsQuantities choice
@@ -741,7 +743,7 @@ objectRefPlayerRefs ref = case ref of
   -- ChosenCardInGraveyard's answer: the graveyards are named by a ZoneScope,
   -- which is not a PlayerRef, and randomness names no seat at all.
   ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard _ _ _) -> []
-  ObjectRef.AtRandom inner -> objectRefPlayerRefs inner
+  ObjectRef.OneAmong _ inner -> objectRefPlayerRefs inner
   -- The seat that picks off the battlefield -- Wormfang Crab's opponent, and
   -- by default CR 608.2c's resolving controller. Pinned as the arm above is.
   ObjectRef.ChosenPermanents choice -> [ChosenPermanents.chooser choice]
@@ -1486,7 +1488,7 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.ChoosePlayerAtRandom _ -> Map.empty
   -- The slot is a DEFINITION; the reads are the ceiling's and the Filter's, and
   -- the chooser is a PlayerRef, reported at the head with every other one.
-  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _) ->
+  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _ _) ->
     joinSlots (filterSlotsOf (ChosenPermanents.filter choice) : fmap quantitySlots (chosenPermanentsQuantities choice))
   -- A DEFINITION for the result slot (boundSlots below), but CR 706.2's modifier
   -- is a READ: the instruction's own Quantity may name a slot an earlier effect
@@ -1901,10 +1903,13 @@ overRelations f re = case re of
   ReplacementEffect.GameLossR r -> (\w -> ReplacementEffect.GameLossR r {GameLossR.whose = w}) <$> f (GameLossR.whose r)
   ReplacementEffect.PlaneswalkR r -> (\w -> ReplacementEffect.PlaneswalkR r {PlaneswalkR.whose = w}) <$> f (PlaneswalkR.whose r)
   ReplacementEffect.PhaseR r -> (\w -> ReplacementEffect.PhaseR r {PhaseR.phases = (PhaseR.phases r) {PhasePattern.whosePhase = w}}) <$> f (PhasePattern.whosePhase (PhaseR.phases r))
-  -- CR 109.5's relation rides EntryR's Filter (Filter.HeldBy Holder.Controller) and DamageR's
-  -- PlayerRelation; the other four name no player at all.
+  -- The player half of the recipient (CR 120.3a); the object half rides a Filter.
+  ReplacementEffect.DamageR r ->
+    let pat = DamageR.matching r
+     in (\w -> ReplacementEffect.DamageR r {DamageR.matching = pat {DamagePattern.whoRecipient = w}}) <$> traverse f (DamagePattern.whoRecipient pat)
+  -- CR 109.5's relation rides EntryR's Filter (Filter.HeldBy Holder.Controller); the
+  -- other four name no player at all.
   ReplacementEffect.EntryR _ -> pure re
-  ReplacementEffect.DamageR _ -> pure re
   ReplacementEffect.DestructionR _ -> pure re
   ReplacementEffect.TurnUpR _ -> pure re
   ReplacementEffect.AttachR _ -> pure re
@@ -3387,7 +3392,7 @@ objectRefObjects legal resolving controller source gs ref = case ref of
   -- Randomness, answered for real by Resolve.Effect.askingObjects.
   ObjectRef.RandomCard _ -> []
   ObjectRef.RandomCardInGraveyard _ -> []
-  ObjectRef.AtRandom _ -> []
+  ObjectRef.OneAmong _ _ -> []
 
 -- The CARDS in one player's library, top first (CR 401.2): a token shuffled in
 -- is there until CR 704.5d removes it (CR 111.7), and is not a card.

@@ -114,7 +114,7 @@ data Prompt r where
   -- Decider: randomness is not a choice.
   RandomFirstPlayer :: NonEmpty.NonEmpty PlayerId.PlayerId -> Prompt PlayerId.PlayerId
   -- | Which object randomness named (Parun.Types.ObjectRef.RandomCard,
-  -- Parun.Types.ObjectRef.RandomCardInGraveyard, Parun.Types.ObjectRef.AtRandom,
+  -- Parun.Types.ObjectRef.RandomCardInGraveyard, Parun.Types.ObjectRef.OneAmong at random,
   -- Parun.Types.DiscardCards' selection).
   -- Neither Decider nor PlayerId: randomness is not a choice, so who it is
   -- asked of is unobservable; the caller filters the answer back.
@@ -844,7 +844,8 @@ data Prompt r where
   -- 115.1, CR 115.10a). Also CR
   -- 509.4: which attacker a creature entering blocking blocks, the ObjectId
   -- then being that creature. Also CR 701.3a: the one destination a group of
-  -- attachments moves to (Parun.Types.Effect's AttachAll). Also CR 616.1:
+  -- attachments moves to (Parun.Types.Effect's AttachAll), and the one object
+  -- a chosen Parun.Types.ObjectRef.OneAmong names. Also CR 616.1:
   -- which Opposition Agent's exile applies to a search's finds. The Seq is
   -- ChooseAnyNumber's.
   ChoosePermanent :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ObjectId.ObjectId -> Seq.Seq (PlayerId.PlayerId, Set.Set ObjectId.ObjectId) -> Prompt ObjectId.ObjectId

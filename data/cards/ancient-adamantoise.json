@@ -80,7 +80,9 @@
                     }
                   ]
                 },
-                "whoRecipient": "You"
+                "whoRecipient": {
+                  "type": "You"
+                }
               },
               "rewrite": {
                 "type": "RedirectMatching",

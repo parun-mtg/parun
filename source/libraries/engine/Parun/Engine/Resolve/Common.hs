@@ -9,6 +9,7 @@ import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -24,6 +25,7 @@ import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Blight as Blight
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Cast as Cast
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Count as Count
@@ -860,10 +862,13 @@ askingObjects offered resolving source controller legal chosen ref = case ref of
   ObjectRef.RandomCardInGraveyard random -> randomCardsInGraveyard resolving source controller legal random
   -- Capricious Efreet's "one of them": the pool read or asked first, then one
   -- drawn from it. The pool's InSlot reads `legal`, so a target CR 608.2b made
-  -- illegal is not among them.
-  ObjectRef.AtRandom inner -> do
+  -- illegal is not among them. Zack Fair's "an Equipment that was attached to
+  -- Zack Fair" is the controller's pick instead (CR 608.2d), unasked at one.
+  ObjectRef.OneAmong selection inner -> do
     pool <- askingObjects offered resolving source controller legal chosen inner
-    Maybe.maybeToList <$> Game.drawAmong Prompt.RandomObject pool
+    Maybe.maybeToList <$> case selection of
+      CardSelection.AtRandom -> Game.drawAmong Prompt.RandomObject pool
+      CardSelection.ByChoice -> Game.chooseAmong (\decider who candidates -> Prompt.ChoosePermanent decider who source candidates Seq.empty) controller pool
   -- Tovolar's "any number of Human Werewolves you control", read off a board CR
   -- 702.145c has already turned him over on.
   ObjectRef.ChosenPermanents choice -> snd <$> chosenPermanents AnyNumberOf.Permanents legal resolving controller source choice
@@ -1282,7 +1287,7 @@ objectRefRecipients legal resolving controller source gs ref = case ref of
   -- No recipients, for the same reason.
   ObjectRef.RandomCard _ -> []
   ObjectRef.RandomCardInGraveyard _ -> []
-  ObjectRef.AtRandom _ -> []
+  ObjectRef.OneAmong _ _ -> []
   ObjectRef.ChosenPermanents _ -> []
   -- A read, so the sweep answers it.
   ObjectRef.AttachedToBound _ -> fmap Recipient.ToObject (objectRefObjects legal resolving controller source gs ref)
@@ -1636,7 +1641,7 @@ installDamageRow resolving targets slots controller source duration kind rewrite
                     -- when it began. Both halves are Nothing for a row
                     -- whose recipient the resolution BAKED below instead.
                     DamagePattern.whatRecipient = fst describedRecipient,
-                    DamagePattern.whoRecipient = snd describedRecipient,
+                    DamagePattern.whoRecipient = fmap ControllerRelation.Related (snd describedRecipient),
                     DamagePattern.whichRecipient = recipient,
                     -- CR 609.7a's chosen source or CR 601.2c's targeted
                     -- one, baked for the recipient's reason -- both were
@@ -1718,6 +1723,33 @@ bakeRelation players rel = case rel of
   ControllerRelation.Related _ -> rel
   ControllerRelation.EnchantedPlayers -> rel
   ControllerRelation.Among _ -> rel
+
+-- CR 608.2h: every Filter.HeldByBound a floating row's filters carry, baked to
+-- the one player its slot named (Filter.bakeBound), since the slot dies with
+-- this resolution and Replacement.candidateContext frames only the objects the
+-- row captured. Lightning, Army of One's "a permanent that player controls".
+-- Objects are left to the row's captured slots, which CR 400.7h re-keys.
+bakeRowPlayers :: Map.Map SlotName (Set PlayerId) -> ReplacementEffect.ReplacementEffect card ability effect -> ReplacementEffect.ReplacementEffect card ability effect
+bakeRowPlayers players =
+  Identity.runIdentity
+    . Children.replacementEffectChildren
+      Children.replacementLeaves
+        { Children.replacementFilter = bake,
+          Children.replacementDamage = Children.damagePatternChildren damage
+        }
+  where
+    one named = case Set.toList named of
+      [pid] -> Just pid
+      _ -> Nothing
+    bake = Identity.Identity . Filter.bakeBound (Map.mapMaybe one players) Map.empty Map.empty
+    damage =
+      Children.MkDamagePatternChildren
+        { Children.damageFilter = bake,
+          Children.damageRecipient = pure,
+          Children.damageObject = pure,
+          Children.damageSlot = pure,
+          Children.damageWhose = pure
+        }
 
 -- CR 611.2c: a combat restriction's stored class, every slot it names baked
 -- (Parun.Engine.Filter.bakeBound) since the slots die with this resolution: its
@@ -3715,7 +3747,7 @@ effectIsImpossible asked resolving source controller legal gs effect = case effe
   Effect.ChoosePlayerAtRandom {} -> False
   -- The ask askingObjects makes of the same choice, so "choose a creature"
   -- over an empty board is impossible and "up to" never is.
-  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _) -> choosesFromNothing (ObjectRef.ChosenPermanents choice)
+  Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _ _) -> choosesFromNothing (ObjectRef.ChosenPermanents choice)
   Effect.RollDie {} -> False
   Effect.FlipCoin {} -> False
   Effect.Guess guess -> choosesFromNothing (Guess.subject guess)

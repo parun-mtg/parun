@@ -1104,7 +1104,7 @@ refReachesLibrary ref = case ref of
   -- the ref itself reaches no library.
   ObjectRef.RandomCardInGraveyard _ -> False
   -- Whatever the pool it draws from reaches.
-  ObjectRef.AtRandom inner -> refReachesLibrary inner
+  ObjectRef.OneAmong _ inner -> refReachesLibrary inner
   -- The battlefield, the arm this one offers a subset of: EachMatching's
   -- answer, unchanged by a chooser standing between the sweep and the set.
   ObjectRef.ChosenPermanents _ -> False

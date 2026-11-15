@@ -2514,11 +2514,13 @@ everyTriggerCondition =
     TriggerCondition.LeavesZone (LeavesZoneTrigger.self Zone.Exile) {LeavesZoneTrigger.card = ActingPermanent.Matching Filter.Type.IsSource, LeavesZoneTrigger.batching = Batching.OneOrMore},
     TriggerCondition.Leaves (LeavesTrigger.dies LeavingPermanent.Haunted),
     -- CR 603.6c's fields off the shapes card data prints: a hidden destination
-    -- alone, public and hidden together, a bystander or bound subject naming no
-    -- destination, a batch naming none, and a haunted creature leaving anywhere.
+    -- alone, public and hidden together, a bystander, bound or chosen subject
+    -- naming no destination, a batch naming none, and a haunted creature leaving
+    -- anywhere.
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.destinations = Set.singleton (OwnedZone.MkOwnedZone Zone.Hand PlayerRelation.AnyPlayer)},
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Matching Filter.Type.IsSource, LeavesTrigger.destinations = Set.fromList [OwnedZone.MkOwnedZone Zone.Graveyard PlayerRelation.AnyPlayer, OwnedZone.MkOwnedZone Zone.Library PlayerRelation.You]},
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Bound (SlotName.MkSlotName (Text.pack "target"))},
+    TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Chosen},
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Matching Filter.Type.IsSource, LeavesTrigger.batching = Batching.OneOrMore},
     TriggerCondition.Leaves LeavesTrigger.defaultValue {LeavesTrigger.permanent = LeavingPermanent.Haunted},
     TriggerCondition.Countered (CounteringTrigger.MkCounteringTrigger CounteredKind.Spell PlayerRelation.You PlayerRelation.You),

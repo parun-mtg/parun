@@ -51,7 +51,9 @@
                 "type": "Infect"
               },
               "matching": {
-                "whoRecipient": "You"
+                "whoRecipient": {
+                  "type": "You"
+                }
               }
             }
           },

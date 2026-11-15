@@ -15,7 +15,8 @@ codec =
       Arm.payload "Matching" (Filter.codec Keyword.codec) LeavingPermanent.Matching (\x -> case x of LeavingPermanent.Matching y -> Just y; _ -> Nothing),
       Arm.nullary "Attached" LeavingPermanent.Attached,
       Arm.nullary "Haunted" LeavingPermanent.Haunted,
-      Arm.payload "Bound" SlotName.codec LeavingPermanent.Bound (\x -> case x of LeavingPermanent.Bound y -> Just y; _ -> Nothing)
+      Arm.payload "Bound" SlotName.codec LeavingPermanent.Bound (\x -> case x of LeavingPermanent.Bound y -> Just y; _ -> Nothing),
+      Arm.nullary "Chosen" LeavingPermanent.Chosen
     ]
 
 tagOf :: LeavingPermanent.LeavingPermanent -> String
@@ -25,3 +26,4 @@ tagOf x = case x of
   LeavingPermanent.Attached {} -> "Attached"
   LeavingPermanent.Haunted {} -> "Haunted"
   LeavingPermanent.Bound {} -> "Bound"
+  LeavingPermanent.Chosen {} -> "Chosen"

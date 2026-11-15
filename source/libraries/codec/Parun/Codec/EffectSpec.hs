@@ -27,6 +27,7 @@ import qualified Parun.Types.ArrangeInLibrary as ArrangeInLibrary
 import qualified Parun.Types.AttachAll as AttachAll
 import qualified Parun.Types.AttachBound as AttachBound
 import qualified Parun.Types.AttachTarget as AttachTarget
+import qualified Parun.Types.AttackTargetKind as AttackTargetKind
 import qualified Parun.Types.AttackTargetRef as AttackTargetRef
 import qualified Parun.Types.BecomeCopy as BecomeCopy
 import qualified Parun.Types.BeginningStep as BeginningStep
@@ -212,6 +213,7 @@ import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
 import qualified Parun.Types.RequireAttack as RequireAttack
 import qualified Parun.Types.RequireBlock as RequireBlock
 import qualified Parun.Types.RequirementArity as RequirementArity
+import qualified Parun.Types.ReselectAttack as ReselectAttack
 import qualified Parun.Types.RestrictedCreatures as RestrictedCreatures
 import qualified Parun.Types.Reveal as Reveal
 import qualified Parun.Types.RollDie as RollDie
@@ -1951,8 +1953,8 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ReselectAttack (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
-      " {\"type\":\"ReselectAttack\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
+      (Effect.ReselectAttack (ReselectAttack.MkReselectAttack (ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "self"))) (Set.singleton AttackTargetKind.OfPlayer)))
+      " {\"type\":\"ReselectAttack\",\"value\":{\"creature\":{\"type\":\"InSlot\",\"value\":\"self\"},\"kinds\":[\"OfPlayer\"]}} "
   Spec.it s "JoinAttack" $
     Common.assertJsonCodec
       s
@@ -2477,7 +2479,7 @@ spec s = Spec.describe s "Parun.Codec.Effect" $ do
       s
       toJson
       fromJson
-      (Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "thatPlayer"))) (HowMany.UpTo (Just (Quantity.Literal 2))) Nothing Zone.Battlefield Set.empty) (SlotName.MkSlotName (Text.pack "chosen")) Nothing Nothing))
+      (Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents (ChosenPermanents.MkChosenPermanents (Filter.HasCardType CardType.Creature) (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "thatPlayer"))) (HowMany.UpTo (Just (Quantity.Literal 2))) Nothing Zone.Battlefield Set.empty) (SlotName.MkSlotName (Text.pack "chosen")) Nothing Nothing False))
       " {\"type\":\"ChoosePermanents\",\"value\":{\"permanents\":{\"filter\":{\"type\":\"HasCardType\",\"value\":\"Creature\"},\"chooser\":{\"type\":\"InSlot\",\"value\":\"thatPlayer\"},\"count\":{\"type\":\"UpTo\",\"value\":{\"type\":\"Literal\",\"value\":2}}},\"slot\":\"chosen\"}} "
   Spec.it s "ChooseGroup" $
     Common.assertJsonCodec

@@ -121,6 +121,7 @@ import qualified Parun.Types.Prompt as Prompt
 import Parun.Types.Recipient (Recipient)
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.RemoveFromCombat as RemoveFromCombat
+import qualified Parun.Types.ReselectAttack as ReselectAttack
 import Parun.Types.Result (Result)
 import qualified Parun.Types.Result as Result
 import qualified Parun.Types.RollDie as RollDie
@@ -1380,8 +1381,12 @@ choosePlayerAtRandom resolving source controller choice = do
 -- picks" (Covetous Elegy) and "CR 101.4b the later opponent is told the earlier
 -- one's pick, asked or not" (Summon: Valefor). A pile chooser's take is
 -- Common.takePile's to record.
+--
+-- CR 607.2d: a linked choice is also assigned to the source's record for the
+-- acquisition the resolving ability came with (CR 607.5), an empty pick
+-- clearing it. The Zenos yae Galvus scenarios prove it.
 choosePermanents :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ChoosePermanents.ChoosePermanents -> Game ()
-choosePermanents resolving source controller legal (ChoosePermanents.MkChoosePermanents choice slot pileChooser rest) = do
+choosePermanents resolving source controller legal (ChoosePermanents.MkChoosePermanents choice slot pileChooser rest linked) = do
   candidates <- State.gets (\gs -> chosenCandidates legal resolving controller source gs choice)
   picked <- case pileChooser of
     Nothing -> do
@@ -1403,6 +1408,8 @@ choosePermanents resolving source controller legal (ChoosePermanents.MkChoosePer
         _ -> snd <$> Common.chosenPermanents AnyNumberOf.IntoPile legal resolving controller source choice
       Common.takePile resolving source controller legal chooserRef matching split
   Monad.unless (null picked) (State.modify' (Common.bindObjectsSlot resolving slot (Seq.fromList picked)))
+  let note g = Game.recordChoice Chosen.Objects (Game.readingAcquisition resolving source g source) (const (if null picked then Nothing else Just (Set.fromList picked))) source g
+  Monad.when linked (State.modify' note)
   Monad.forM_ rest $ \restSlot -> do
     let others = filter (`notElem` picked) candidates
     Monad.unless (null others) (State.modify' (Common.bindObjectsSlot resolving restSlot (Seq.fromList others)))
@@ -2018,12 +2025,12 @@ joinAttack resolving source controller legal (JoinAttack.MkJoinAttack ref alongs
     _ -> pure ()
 
 -- CR 508.7 for each named creature, through Combat.reselectAttack, which owns
--- the candidates and the rewrite. The resolving controller chooses (Portal
--- Mage's "you may reselect").
-reselectAttack :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ObjectRef -> Game ()
-reselectAttack resolving source controller legal ref = do
+-- the candidates, the decline and the rewrite. The resolving controller
+-- chooses (Capricopian's and Portal Mage's "you may").
+reselectAttack :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set Recipient) -> ReselectAttack.ReselectAttack -> Game ()
+reselectAttack resolving source controller legal (ReselectAttack.MkReselectAttack ref kinds) = do
   gs <- State.get
-  Monad.mapM_ (Combat.reselectAttack controller) (objectRefObjects legal resolving controller source gs ref)
+  Monad.mapM_ (Combat.reselectAttack kinds controller) (objectRefObjects legal resolving controller source gs ref)
 
 -- CR 509.3b's third producer, through Combat.switchBlockers, which owns the
 -- whole reassignment: General Jarkeld's hypothetical legality test over CR

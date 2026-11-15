@@ -1,10 +1,10 @@
 module Parun.Types.DamagePattern where
 
+import qualified Parun.Types.ControllerRelation as ControllerRelation
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ObjectId as ObjectId
-import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.SlotName as SlotName
 
@@ -69,9 +69,13 @@ import qualified Parun.Types.SlotName as SlotName
 -- player", which is not what any other Filter position means.
 --
 -- `whoRecipient` is the PLAYER half of that same printed question -- CR 120.3a's
--- other kind of recipient, which no Filter can describe -- as CR 109.5's relation
--- to the row's own controller. Divine Deflection's "dealt to you" is `Just You`;
--- a pattern saying nothing about a player carries Nothing.
+-- other kind of recipient, which no Filter can describe -- as the
+-- ControllerRelation every other replacement pattern's player is. Divine
+-- Deflection's "dealt to you" is `Just (Related You)`, CR 109.5's relation to the
+-- row's own controller; Lightning, Army of One's "that player" is `Just (InSlot
+-- thatPlayer)`, which Parun.Engine.Resolve.Arms.Objects's Effect.Replace arm
+-- bakes into Among as it installs the row (CR 608.2h). A pattern saying nothing
+-- about a player carries Nothing.
 --
 -- The two printed halves are DISJOINED rather than conjoined, and that is what
 -- lets ONE shield cover a player and objects at once: Divine Deflection's "you
@@ -128,7 +132,7 @@ data DamagePattern = MkDamagePattern
   { whichKind :: Maybe DamageKind.DamageKind,
     whatSource :: Filter.Filter Keyword.Keyword,
     whatRecipient :: Maybe (Filter.Filter Keyword.Keyword),
-    whoRecipient :: Maybe PlayerRelation.PlayerRelation,
+    whoRecipient :: Maybe ControllerRelation.ControllerRelation,
     whichRecipient :: Maybe Recipient.Recipient,
     whichSource :: Maybe ObjectId.ObjectId,
     boundRecipient :: Maybe SlotName.SlotName
