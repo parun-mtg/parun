@@ -1136,9 +1136,13 @@ placeBorne srcId pending = do
       -- proves.
       State.modify' (Target.rememberModes memoryKey modal srcId chosenModes)
       -- CR 603.3d: targets for the chosen mode(s) only, chosen as the ability is
-      -- placed. A mode with no target slots asks nothing.
+      -- placed. A mode with no target slots asks nothing. Offered, announced
+      -- and judged against `seed`, so a slot's bound reads the X CR 107.3m
+      -- inherits (Dune Drifter's "mana value X or less"), which
+      -- data/scenarios/dune-drifter-returns-a-card-up-to-the-x-its-spell-announced.json
+      -- proves.
       let slots = Target.announcedSlots controller srcId gs (Modal.modesTargetSlots chosenModes modal)
-          sets = Target.legalSets StackObjectKind.TriggeredAbility Nothing (Just controller) False bound srcId slots gs
+          sets = Target.legalSets StackObjectKind.TriggeredAbility Nothing (Just controller) False seed srcId slots gs
           -- CR 603.3d's "identical to the process ... listed in rules 601.2c-d",
           -- and 601.2c's single announcement: an answer whose slots read each
           -- other is judged WHOLE, exactly as a cast's is
@@ -1193,8 +1197,8 @@ placeBorne srcId pending = do
           -- Not implemented: revealing a card CR 406.4's draw picked out of a
           -- face-down pile here (#5424).
           attempt rejected = do
-            (chosen, _, seats) <- Target.chooseTargets Nothing controller abilId srcId bound inheritedX slots sets
-            if Target.selectionLegal StackObjectKind.TriggeredAbility Nothing (Just controller) bound srcId inheritedX slots sets chosen gs
+            (chosen, _, seats) <- Target.chooseTargets Nothing controller abilId srcId seed inheritedX slots sets
+            if Target.selectionLegal StackObjectKind.TriggeredAbility Nothing (Just controller) seed srcId inheritedX slots sets chosen gs
               then pure (Just (chosen, seats))
               else
                 let key = Map.intersectionWith Set.intersection chosen sets
