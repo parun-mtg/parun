@@ -1813,6 +1813,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Maelstrom Pulse", 1), -- its destroy's object
         ("Rat King, Verminister", 1), -- its return's object
         ("Pattern Matcher", 1), -- its search's filter, at AnyPermanent
+        ("Central Elevator", 1), -- its search's filter, negated, at AnyPermanent
         ("Seasinger", 1), -- its ability's target slot, Controller at AnyPermanent
         ("Key to the Side-Door", 1), -- its ability's discard cost, at AnyPermanent
         ("Spellweaver Helix", 2) -- its intervening "if"'s Count filter and its choice's filter

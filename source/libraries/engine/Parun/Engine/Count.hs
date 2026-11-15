@@ -632,6 +632,9 @@ aggregate quantityOf aggregation members = case aggregation of
   Aggregation.Distinct DistinctOf.PlaneswalkerTypes -> toInteger (Set.size (Set.filter Subtype.isPlaneswalkerType (Set.unions (fmap (Filter.subtypes . snd) members))))
   -- CR 122.1: a kind no member holds a counter of adds nothing.
   Aggregation.Distinct DistinctOf.CounterKinds -> toInteger (Set.size (Set.unions (fmap (Map.keysSet . Map.filter (> 0) . Filter.counters . snd) members)))
+  -- CR 201.2b counts names, not members: a Room with both doors unlocked adds
+  -- two (CR 709.5), a nameless one none.
+  Aggregation.Distinct DistinctOf.Names -> toInteger (Set.size (Set.unions (fmap (Filter.names . snd) members)))
   -- The size of the largest group of members holding one value in common --
   -- not "pairwise sharing", which is not transitive (a Human Cleric, a Human
   -- Rogue and an Elf Rogue are no three sharing a type). A member joins a group
@@ -1747,6 +1750,9 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- carry and never could, so a past event records none -- `designations`
       -- above, same sentence.
       Filter.classLevel = Nothing,
+      -- CR 709.5c: a designation, so a past event records none -- `designations`
+      -- above, same sentence.
+      Filter.unlockedHalves = Set.empty,
       Filter.paidCosts = Map.empty,
       -- CR 702.104b's record is a field of an OBJECT, which a
       -- ProjectedCharacteristics does not carry -- `designations` above, same

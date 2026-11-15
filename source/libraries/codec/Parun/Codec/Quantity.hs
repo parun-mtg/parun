@@ -174,6 +174,7 @@ codec =
       Arm.payload "ControlGainedThisTurn" PlayerRef.codec (Quantity.ControlGained ControlWindow.ThisTurn) (\x -> case x of Quantity.ControlGained ControlWindow.ThisTurn y -> Just y; _ -> Nothing),
       Arm.payload "PlayedBy" PlayerRef.codec Quantity.PlayedBy (\x -> case x of Quantity.PlayedBy y -> Just y; _ -> Nothing),
       Arm.nullary "ClassLevel" Quantity.ClassLevel,
+      Arm.nullary "UnlockedDoors" Quantity.UnlockedDoors,
       -- CR 508.3b's record, with only a PlayerRef on the wire: what is counted
       -- comes from the combat record rather than from anything the card names.
       Arm.payload "OpponentsAttacked" PlayerRef.codec Quantity.OpponentsAttacked (\x -> case x of Quantity.OpponentsAttacked y -> Just y; _ -> Nothing),
@@ -355,6 +356,7 @@ tagOf x = case x of
   Quantity.ControlGained ControlWindow.ThisTurn _ -> "ControlGainedThisTurn"
   Quantity.PlayedBy {} -> "PlayedBy"
   Quantity.ClassLevel {} -> "ClassLevel"
+  Quantity.UnlockedDoors {} -> "UnlockedDoors"
   Quantity.OpponentsAttacked {} -> "OpponentsAttacked"
   Quantity.AttackersDeclaredThisTurn {} -> "AttackersDeclaredThisTurn"
   Quantity.AttackersDeclaredThisCombat {} -> "AttackersDeclaredThisCombat"

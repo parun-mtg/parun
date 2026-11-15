@@ -87,6 +87,7 @@ import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.ProductionTag as ProductionTag
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RoomHalf as RoomHalf
 import qualified Parun.Types.SlotArity as SlotArity
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.StickerContent as StickerContent
@@ -811,6 +812,11 @@ data View = MkView
     -- off the battlefield, a player, an event snapshot -- the vacuous posture
     -- `ringBearerFor` above takes.
     classLevel :: Maybe ClassLevel.ClassLevel,
+    -- CR 709.5c: the halves holding an unlocked designation, read live off
+    -- Object.unlockedHalves. Empty for every candidate with no permanent to read
+    -- it off, classLevel's posture; LastKnown files none, and no printed card
+    -- counts a departed Room's doors.
+    unlockedHalves :: Set.Set RoomHalf.RoomHalf,
     -- CR 601.2b: how many times was each optional additional cost a keyword of
     -- this candidate offers declared? Read off Object.paidCosts, or off
     -- LastKnown.paidCosts for an object that has left its zone (CR 608.2h), and
@@ -1194,6 +1200,8 @@ nobodyView =
       -- CR 717.2b: a level is a designation A PERMANENT can have, and a player is
       -- not one -- `designations` above, same sentence.
       classLevel = Nothing,
+      -- CR 709.5c: the unlocked designations are a permanent's.
+      unlockedHalves = Set.empty,
       paidCosts = Map.empty,
       -- CR 702.104a's tribute is a creature's static ability, and a player is not
       -- one -- `designations` above, same sentence.
