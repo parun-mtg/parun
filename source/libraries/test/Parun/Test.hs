@@ -59,6 +59,7 @@ import qualified Parun.Codec.ActiveLaterPaymentSpec
 import qualified Parun.Codec.ActiveObjectProhibitionSpec
 import qualified Parun.Codec.ActivePlayerEffectSpec
 import qualified Parun.Codec.ActiveReplacementSpec
+import qualified Parun.Codec.ActorSpec
 import qualified Parun.Codec.AffectPlayersSpec
 import qualified Parun.Codec.AffectedPlayersSpec
 import qualified Parun.Codec.AffectedSpec
@@ -297,7 +298,6 @@ import qualified Parun.Codec.CreateSpec
 import qualified Parun.Codec.CrewRoleSpec
 import qualified Parun.Codec.CrewingSpec
 import qualified Parun.Codec.CyclingSpec
-import qualified Parun.Codec.DamageDealerSpec
 import qualified Parun.Codec.DamageDirectionSpec
 import qualified Parun.Codec.DamageEventSpec
 import qualified Parun.Codec.DamageIsSpec
@@ -1388,7 +1388,7 @@ spec s reference corpus = do
   Parun.Codec.DamageDirectionSpec.spec s
   Parun.Codec.DamageEventSpec.spec s
   Parun.Codec.DamageIsSpec.spec s
-  Parun.Codec.DamageDealerSpec.spec s
+  Parun.Codec.ActorSpec.spec s
   Parun.Codec.DamageKindSpec.spec s
   Parun.Codec.DamageRecipientSpec.spec s
   Parun.Codec.DamageTriggerSpec.spec s

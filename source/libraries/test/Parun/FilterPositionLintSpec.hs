@@ -40,6 +40,7 @@ import qualified Parun.Support as S
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.Activator as Activator
+import qualified Parun.Types.Actor as Actor
 import qualified Parun.Types.AffectPlayers as AffectPlayers
 import qualified Parun.Types.Affected as Affected
 import qualified Parun.Types.AffectedPlayers as AffectedPlayers
@@ -101,7 +102,6 @@ import qualified Parun.Types.CounterSubject as CounterSubject
 import qualified Parun.Types.CounterTrigger as CounterTrigger
 import qualified Parun.Types.Create as Create
 import qualified Parun.Types.Cycling as Cycling
-import qualified Parun.Types.DamageDealer as DamageDealer
 import qualified Parun.Types.DamagedParty as DamagedParty
 import qualified Parun.Types.DealtDamageTo as DealtDamageTo
 import qualified Parun.Types.Destroy as Destroy
@@ -2983,7 +2983,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   Spec.it s "CR 120.1 no card asks what its source dealt outside the positions that fill it" $ do
     ps <- S.allPrintings s corpus
     let bySource atom = case atom of
-          Filter.Type.DealtDamageTo asked -> DealtDamageTo.dealer asked == DamageDealer.Source
+          Filter.Type.DealtDamageTo asked -> DealtDamageTo.dealer asked == Actor.Source
           _ -> False
         atoms = decodedAtoms "DealtDamageTo" bySource
         admitted c = sum [atoms (atomJson f) | (framing, f) <- cardFilters c, elem framing [SourceHostFramed, InTargetSlot]]
@@ -2992,12 +2992,38 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
     Spec.assertEqWith s "the atom sits only where the source's damage is filled" (fmap (S.nameOf . Printing.card) offenders) []
     hellkite <- S.printingOf s registry "Steel Hellkite"
     Spec.assertEqWith s "NOT vacuous: Steel Hellkite's is accepted" (admitted (S.combinedFace hellkite), outside (S.combinedFace hellkite)) (1, 0)
-    let atom = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Anyone, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = DamageDealer.Source}
+    let atom = Filter.Type.DealtDamageTo DealtDamageTo.MkDealtDamageTo {DealtDamageTo.party = DamagedParty.Anyone, DealtDamageTo.kind = Nothing, DealtDamageTo.window = Lookback.ThisTurn, DealtDamageTo.dealer = Actor.Source}
         planted =
           (S.combinedFace hellkite)
             { Face.staticAbilities =
                 [ StaticAbility.MkStaticAbility
                     (Affected.Matching (Filter.Type.And [Filter.Type.Or [Filter.Type.HasCardType CardType.Creature, Filter.Type.Not atom]]))
+                    Nothing
+                    Set.empty
+                    Nothing
+                    Nothing
+                    (NonEmpty.singleton Modification.LoseAllAbilities)
+                ]
+            }
+    Spec.assertEqWith s "a planted atom in an affected set is seen" (outside planted) 1
+  -- CR 702.122c: what the SOURCE crewed is filled where what it dealt is
+  -- (Projection.withCharacteristicsOf), which Parun.Engine.Event.Match's
+  -- bearer context reaches too, so a trigger condition is admitted as well.
+  Spec.it s "CR 702.122c no card asks what its source crewed outside the positions that fill it" $ do
+    ps <- S.allPrintings s corpus
+    let bySource atom = atom == Filter.Type.CrewedThisTurn Actor.Source
+        atoms = decodedAtoms "CrewedThisTurn" bySource
+        admitted c = sum [atoms (atomJson f) | (framing, f) <- cardFilters c, elem framing [SourceHostFramed, InTargetSlot, TriggerConditionFramed]]
+        outside c = atoms (Codec.encode (Face.Codec.codec Card.codec) c) - admitted c
+        offenders = filter (anyFace (\c -> outside c /= 0) . Printing.card) ps
+    Spec.assertEqWith s "the atom sits only where the source's crewing is filled" (fmap (S.nameOf . Printing.card) offenders) []
+    balthier <- S.printingOf s registry "Balthier and Fran"
+    Spec.assertEqWith s "NOT vacuous: Balthier and Fran's is accepted" (admitted (S.combinedFace balthier), outside (S.combinedFace balthier)) (1, 0)
+    let planted =
+          (S.combinedFace balthier)
+            { Face.staticAbilities =
+                [ StaticAbility.MkStaticAbility
+                    (Affected.Matching (Filter.Type.And [Filter.Type.HasCardType CardType.Creature, Filter.Type.CrewedThisTurn Actor.Source]))
                     Nothing
                     Set.empty
                     Nothing

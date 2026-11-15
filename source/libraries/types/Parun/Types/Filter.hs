@@ -3,6 +3,7 @@ module Parun.Types.Filter where
 import qualified Numeric.Natural as Natural
 import qualified Parun.Types.AbilityKind as AbilityKind
 import qualified Parun.Types.ActivationCriteria as ActivationCriteria
+import qualified Parun.Types.Actor as Actor
 import qualified Parun.Types.AloneAmong as AloneAmong
 import qualified Parun.Types.Anchor as Anchor
 import qualified Parun.Types.BlockRole as BlockRole
@@ -380,13 +381,14 @@ data Filter keyword
     -- Meloku the Clouded Mirror). Parun.FilterPositionLintSpec's "no card asks
     -- CantPayKeywordCost" is what keeps a card out of the position.
     CantPayKeywordCost KeywordCostPart.KeywordCostPart
-  | -- | CR 702.122c: the candidate is a creature that crewed the SOURCE earlier
-    -- this turn -- Subterranean Schooner's "target creature that crewed it this
-    -- turn", read back off GameEvent.Crewed.
-    CrewedSourceThisTurn
+  | -- | CR 702.122c: the actor crewed the other end earlier this turn -- the
+    -- candidate the source (Subterranean Schooner's "target creature that crewed
+    -- it this turn"), or the source the candidate (Balthier and Fran's "a Vehicle
+    -- crewed by Balthier and Fran this turn"), read back off GameEvent.Crewed.
+    CrewedThisTurn Actor.Actor
   | -- | CR 702.51c: the candidate is a creature that CONVOKED the SOURCE earlier
     -- this turn -- Venerated Loxodon's "each creature that convoked it", read
-    -- back off GameEvent.Convoked. CrewedSourceThisTurn's relation one keyword
+    -- back off GameEvent.Convoked. CrewedThisTurn's relation one keyword
     -- over, and one hop longer: that event names the SPELL, which CR 400.7 ends
     -- as it resolves, so Parun.Engine.Count.convokedThisTurn follows
     -- it onto the permanent that spell became -- CR 400.7d, which lets an ability

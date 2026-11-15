@@ -142,7 +142,8 @@
                 "targetSlots": {
                   "target": {
                     "filter": {
-                      "type": "CrewedSourceThisTurn"
+                      "type": "CrewedThisTurn",
+                      "value": "Candidate"
                     },
                     "pool": {
                       "type": "Creatures"

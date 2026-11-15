@@ -623,7 +623,7 @@ filterChildren children predicate = case predicate of
   Filter.CouldAttackThisTurn -> pure predicate
   Filter.LeftLibraryThisTurn _ -> pure predicate
   Filter.CantPayKeywordCost _ -> pure predicate
-  Filter.CrewedSourceThisTurn -> pure predicate
+  Filter.CrewedThisTurn _ -> pure predicate
   Filter.ConvokedSourceThisTurn -> pure predicate
   Filter.SaddledSourceThisTurn -> pure predicate
   Filter.DealtDamageThisTurn by -> fmap Filter.DealtDamageThisTurn (traverse (nest children) by)

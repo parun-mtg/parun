@@ -1665,7 +1665,8 @@ withCharacteristicsOf object gs context =
           Filter.sourceSectors = foldMap (Sector.sectorsIn . Filter.designations) view,
           Filter.sourceNames = foldMap Filter.names view,
           Filter.sourceDealtDamage = Count.dealtDamageTo object gs,
-          Filter.sourceDealtDamageEarlier = Count.dealtDamageEarlier object gs
+          Filter.sourceDealtDamageEarlier = Count.dealtDamageEarlier object gs,
+          Filter.sourceCrewed = Count.crewedThisTurn object gs
         }
 
 -- CR 509.1b: the context a pairwise blocking restriction or cost is matched
@@ -4482,7 +4483,7 @@ filterReads f = case f of
     _ -> Set.empty
   Filter.Type.EnteredThisTurn _ -> Set.empty
   Filter.Type.CountersPutThisTurn _ _ -> Set.empty
-  Filter.Type.CrewedSourceThisTurn -> Set.empty
+  Filter.Type.CrewedThisTurn _ -> Set.empty
   Filter.Type.ConvokedSourceThisTurn -> Set.empty
   Filter.Type.SaddledSourceThisTurn -> Set.empty
   -- Reads the CONTROLLER, which layer 2 moves: CR 302.6's continuity claim is
@@ -4802,7 +4803,7 @@ filterReadsPeers f = case f of
   Filter.Type.DealtDamageTo _ -> False
   Filter.Type.EnteredThisTurn _ -> False
   Filter.Type.CountersPutThisTurn _ _ -> False
-  Filter.Type.CrewedSourceThisTurn -> False
+  Filter.Type.CrewedThisTurn _ -> False
   Filter.Type.ConvokedSourceThisTurn -> False
   Filter.Type.SaddledSourceThisTurn -> False
   Filter.Type.ControlledSinceTurnBegan -> False

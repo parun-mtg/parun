@@ -318,7 +318,7 @@ filterNames asking criterion = case criterion of
   Filter.CouldAttackThisTurn -> keyed asking
   Filter.LeftLibraryThisTurn how -> keyed asking <> case how of LibraryDeparture.Drawn -> mempty; LibraryDeparture.LastDrawn -> mempty; LibraryDeparture.Milled -> history asking HistoryRead.Mills
   Filter.CantPayKeywordCost _ -> contextNames asking
-  Filter.CrewedSourceThisTurn -> keyed asking <> history asking HistoryRead.Crews
+  Filter.CrewedThisTurn _ -> keyed asking <> history asking HistoryRead.Crews
   Filter.ConvokedSourceThisTurn -> keyed asking <> history asking HistoryRead.Convokes <> history asking HistoryRead.Moves
   Filter.SaddledSourceThisTurn -> keyed asking <> history asking HistoryRead.Saddles
   Filter.DealtDamageThisTurn nested -> keyed asking <> history asking HistoryRead.Damage <> foldMap (filterNames asking) nested
