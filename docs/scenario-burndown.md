@@ -449,27 +449,27 @@ out: grep for them.
 
 ### `DamageReplacementSpec`
 
-- CR 120.4 one sentence naming alice twice deals her ONE event, of 6 | `check:events`
-- CR 614.9 a 1-damage event moves whole, and the row is spent by it | `check:events` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`
-- CR 614.9 guard: a destination that left the battlefield makes the effect do nothing | `check:helper-redirectRows`
-- CR 614.9 the redirection covers the creature the spell named and not the other | `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`
-- CR 615.5 the prevented three come off as three +1/+1 counters | `check:helper-aimCreature` `check:helper-countersOn`
-- CR 615.7 NONcombat damage from that same creature is prevented | `check:helper-amounts` `check:helper-shieldsLeft`
-- CR 615.7 a simultaneous batch contends for the 2, and alice divides it | `check:events`
-- CR 615.7 combat damage from a creature the Beast's controller does NOT control is prevented | `check:helper-amounts` `check:helper-shieldsLeft`
-- CR 615.7 once spent, the next event stays whole | `check:other-Damage.applyDamage`
-- CR 615.7 one shield over you AND your permanents is a single shared pool | `check:events`
-- CR 615.7 the next 1 of a 3-damage event moves and the other 2 stay where they were aimed | `check:events` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`
-- CR 615.7 the shield still prevents the Goblin Piker's 3 whole | `check:helper-amounts` `check:helper-shieldsLeft`
-- CR 615.7 without Spider-Punk the shield prevents the whole 3 | `check:helper-amounts` `check:helper-shieldsLeft`
-- CR 615.7's allocation lands on the events it was asked about, after the sort | `check:events`
-- CR 615.7's order sits INSIDE one chooser's APNAP turn, not across choosers | `check:prompt-payload`
-- CR 616.1 two players choosing for one batch are asked in APNAP order | `check:prompt-payload`
+- ~~CR 120.4 one sentence naming alice twice deals her ONE event, of 6 | `check:events`~~
+- ~~CR 614.9 a 1-damage event moves whole, and the row is spent by it | `check:events` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`~~
+- ~~CR 614.9 guard: a destination that left the battlefield makes the effect do nothing | `check:helper-redirectRows`~~
+- ~~CR 614.9 the redirection covers the creature the spell named and not the other | `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`~~
+- ~~CR 615.5 the prevented three come off as three +1/+1 counters | `check:helper-aimCreature` `check:helper-countersOn`~~
+- ~~CR 615.7 NONcombat damage from that same creature is prevented | `check:helper-amounts` `check:helper-shieldsLeft`~~
+- ~~CR 615.7 a simultaneous batch contends for the 2, and alice divides it | `check:events`~~
+- ~~CR 615.7 combat damage from a creature the Beast's controller does NOT control is prevented | `check:helper-amounts` `check:helper-shieldsLeft`~~
+- ~~CR 615.7 once spent, the next event stays whole | `check:other-Damage.applyDamage`~~
+- ~~CR 615.7 one shield over you AND your permanents is a single shared pool | `check:events`~~
+- ~~CR 615.7 the next 1 of a 3-damage event moves and the other 2 stay where they were aimed | `check:events` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`~~
+- ~~CR 615.7 the shield still prevents the Goblin Piker's 3 whole | `check:helper-amounts` `check:helper-shieldsLeft`~~
+- ~~CR 615.7 without Spider-Punk the shield prevents the whole 3 | `check:helper-amounts` `check:helper-shieldsLeft`~~
+- ~~CR 615.7's allocation lands on the events it was asked about, after the sort | `check:events`~~
+- ~~CR 615.7's order sits INSIDE one chooser's APNAP turn, not across choosers | `check:prompt-payload`~~
+- ~~CR 616.1 two players choosing for one batch are asked in APNAP order | `check:prompt-payload`~~
 - ~~CR 701.14a the fight's replacement runs before its own resolution ends~~
-- CR 701.26b an untapped permanent never becomes untapped, so its stun counter is not spent | `check:helper-countersOn` `check:helper-tapStateOf`
-- CR 702.64a an event at the ceiling never happens | `check:events` `check:other-DamageEvent.amount`
-- a shield over a PLAYER runs CR 615.5's rider, scaled by the amount | `board:replacement`
-- the combat-only shield leaves noncombat damage alone, rider and all (CR 608) | `check:helper-preventAllRows`
+- ~~CR 701.26b an untapped permanent never becomes untapped, so its stun counter is not spent | `check:helper-countersOn` `check:helper-tapStateOf`~~
+- ~~CR 702.64a an event at the ceiling never happens | `check:events` `check:other-DamageEvent.amount`~~
+- ~~a shield over a PLAYER runs CR 615.5's rider, scaled by the amount | `board:replacement`~~
+- ~~the combat-only shield leaves noncombat damage alone, rider and all (CR 608) | `check:helper-preventAllRows`~~
 
 ### `DamageSpec`
 
@@ -949,19 +949,19 @@ out: grep for them.
 
 ### `PlayerEffectSpec`
 
-- CR 119.3 with no restriction Renewed Faith's 6 lands | `check:events` `check:helper-lifeGainsOf`
-- CR 119.7 bob's Giant Cindermaw stops alice gaining anything | `check:events` `check:helper-lifeGainsOf`
-- CR 119.8 alice's Platinum Emperion takes the 3 damage without the 3 life | `check:events` `check:helper-lifeLossesOf` `check:other-DamageEvent.amount` `check:other-DamageEvent.target`
-- CR 120.3a with no restriction the Bolt's 3 damage costs 3 life | `check:events` `check:helper-lifeLossesOf`
-- CR 601.2f payment spends the total cost | `check:tapped-count`
-- CR 601.2f whole cards: the rewritten filter decides a real cast
-- CR 612.1 an evolved Edgewalker discounts Zombies and no longer discounts Clerics | `check:helper-textChangesAffecting` `check:helper-totalManaCost`
-- CR 612.2 a land-type pair leaves the creature-type filter alone | `check:helper-textChangesAffecting` `check:helper-totalManaCost`
-- CR 612.5 the evolved discount moves to the Piker with the text box | `check:helper-totalManaCost` `check:helper-textBoxHolderOf`
-- CR 613.11 an increase after Reliquary Tower still leaves no maximum | `check:other-PlayerEffect.maximumHandSize`
-- CR 613.11 the Cindermaw's controller can't gain either | `check:events` `check:helper-lifeGainsOf`
-- CR 613.8b an Evolution on the Piker waits for the Edgewalker's text | `check:helper-totalManaCost` `check:helper-textChangesAffecting`
-- without the reducer the same spell is full price | `check:helper-green` `check:helper-totalManaCost`
+- ~~CR 119.3 with no restriction Renewed Faith's 6 lands | `check:events` `check:helper-lifeGainsOf`~~
+- ~~CR 119.7 bob's Giant Cindermaw stops alice gaining anything | `check:events` `check:helper-lifeGainsOf`~~
+- ~~CR 119.8 alice's Platinum Emperion takes the 3 damage without the 3 life | `check:events` `check:helper-lifeLossesOf` `check:other-DamageEvent.amount` `check:other-DamageEvent.target`~~
+- ~~CR 120.3a with no restriction the Bolt's 3 damage costs 3 life | `check:events` `check:helper-lifeLossesOf`~~
+- ~~CR 601.2f payment spends the total cost | `check:tapped-count`~~
+- ~~CR 601.2f whole cards: the rewritten filter decides a real cast~~
+- ~~CR 612.1 an evolved Edgewalker discounts Zombies and no longer discounts Clerics | `check:helper-textChangesAffecting` `check:helper-totalManaCost`~~
+- ~~CR 612.2 a land-type pair leaves the creature-type filter alone | `check:helper-textChangesAffecting` `check:helper-totalManaCost`~~
+- ~~CR 612.5 the evolved discount moves to the Piker with the text box | `check:helper-totalManaCost` `check:helper-textBoxHolderOf`~~
+- ~~CR 613.11 an increase after Reliquary Tower still leaves no maximum | `check:other-PlayerEffect.maximumHandSize`~~
+- ~~CR 613.11 the Cindermaw's controller can't gain either | `check:events` `check:helper-lifeGainsOf`~~
+- ~~CR 613.8b an Evolution on the Piker waits for the Edgewalker's text | `check:helper-totalManaCost` `check:helper-textChangesAffecting`~~
+- ~~without the reducer the same spell is full price | `check:helper-green` `check:helper-totalManaCost`~~
 
 ### `PopulateSpec`
 

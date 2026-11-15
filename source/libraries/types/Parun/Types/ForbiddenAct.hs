@@ -10,14 +10,17 @@ data ForbiddenAct
     --
     -- A STATIC restriction rather than a replacement, which is why
     -- Parun.Engine.Event.resolveLifeGain consults it AHEAD of the proposal;
-    -- Parun.PlayerEffectSpec's GiantCindermaw group proves it.
+    -- the scenario cr-119-7-bob-s-giant-cindermaw-stops-alice-gaining-anything
+    -- proves it.
     GainLife
   | -- | CR 119.8 / Platinum Emperion.
     --
     -- Damage is still DEALT to such a player -- CR 120.3a's RESULT is what does
     -- not happen -- and CR 119.8's last sentence makes a pay-life cost
-    -- unpayable. Parun.PlayerEffectSpec's PlatinumEmperion and GreedUnderEmperion
-    -- groups prove the two.
+    -- unpayable. The scenarios
+    -- cr-119-8-alice-s-platinum-emperion-takes-the-3-damage-without-the-3-life and
+    -- cr-119-8-alice-s-platinum-emperion-makes-greed-s-cost-unpayable prove the
+    -- two.
     LoseLife
   | -- | CR 121.2b / 121.3 / Spirit of the Labyrinth: drawing more than this many
     -- cards each turn; 0 is Mornsong Aria's "can't draw cards".
