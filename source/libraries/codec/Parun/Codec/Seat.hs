@@ -5,6 +5,7 @@ module Parun.Codec.Seat where
 import qualified Control.Monad as Monad
 import qualified Data.Map.Strict as Map
 import qualified Data.Sequence as Seq
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Parun.Codec.CardName as CardName
 import qualified Parun.Codec.DraftNote as DraftNote
@@ -46,6 +47,7 @@ codec = Fields.object $ do
   sideDecks <- Fields.defaulted "sideDecks" Map.empty (Common.keyedList (Common.keyValue SideDeck.codec (Common.seq Placement.codec))) Seat.sideDecks
   startingDeck <- Fields.defaulted "startingDeck" Map.empty (Common.multiset CardName.codec) Seat.startingDeck
   outsideTheGame <- Fields.defaulted "outsideTheGame" Map.empty (Common.multiset CardName.codec) Seat.outsideTheGame
+  dungeons <- Fields.defaulted "dungeons" Set.empty (Common.set CardName.codec) Seat.dungeons
   draftNotes <- Fields.defaulted "draftNotes" Map.empty (Common.keyedList (Common.keyValue CardName.codec (Common.seq DraftNote.codec))) Seat.draftNotes
   pure
     Seat.MkSeat
@@ -68,6 +70,7 @@ codec = Fields.object $ do
         Seat.sideDecks = sideDecks,
         Seat.startingDeck = startingDeck,
         Seat.outsideTheGame = outsideTheGame,
+        Seat.dungeons = dungeons,
         Seat.draftNotes = draftNotes
       }
 

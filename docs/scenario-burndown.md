@@ -48,7 +48,6 @@ out: grep for them.
 - `board:entered-with`: linked "entered with" records
 - `board:source-ofmerge`
 - `check:legal-targets`: the legal targets for a slot
-- `board:dungeons`: dungeons
 - `board:daytime`
 - `board:source-ofmeld`
 - `check:delayed-triggers`: the delayed triggers armed
@@ -527,19 +526,19 @@ out: grep for them.
 
 ### `DungeonSpec`
 
-- CR 118.12a Veils of Fear offers each player the discard and only the seats that declined lose the life | `board:dungeons`
+- ~~CR 118.12a Veils of Fear offers each player the discard and only the seats that declined lose the life | `board:dungeons`~~
 - ~~CR 309.2 a deck's dungeon cards are recorded on its player and minted into no zone | `check:other-Game.printingOf` `check:other-GameState.objects` `check:other-GameState.players` `check:other-Player.dungeons`~~
-- CR 309.2a a player owning two dungeons chooses which one to enter | `board:dungeons`
-- CR 309.4c / 701.22a Cave Entrance's Scry 1 puts the top card where its controller says | `board:dungeons`
-- CR 309.5a a room with two arrows asks which one to follow, and the answer decides the room | `board:dungeons`
-- CR 309.7 / 603.4 Acererak asks WHICH dungeon was completed, not how many | `board:dungeons`
-- CR 309.7 / 702.4b completing a dungeon is remembered, and Gloom Stalker's double strike reads it | `board:dungeons`
-- CR 309.7 completing a dungeon triggers Dungeon Crawler out of the graveyard | `board:dungeons`
-- CR 701.24a Throne of the Dead Three's "then shuffle" randomises the library and moves nothing | `board:dungeons`
-- CR 701.49a the first venture puts the dungeon in the command zone with the marker on the topmost room | `board:dungeons`
-- CR 701.49b / 309.3 venturing again advances the one dungeon instead of entering another | `board:dungeons`
-- CR 701.49d venturing into Undercity enters the dungeon carrying that quality, where a plain venture enters the other | `board:dungeons`
-- CR 704.5t / 701.49a the bottommost room ends the dungeon, and venturing again starts a new one | `board:dungeons`
+- ~~CR 309.2a a player owning two dungeons chooses which one to enter | `board:dungeons`~~
+- ~~CR 309.4c / 701.22a Cave Entrance's Scry 1 puts the top card where its controller says | `board:dungeons`~~
+- ~~CR 309.5a a room with two arrows asks which one to follow, and the answer decides the room | `board:dungeons`~~
+- ~~CR 309.7 / 603.4 Acererak asks WHICH dungeon was completed, not how many | `board:dungeons`~~
+- ~~CR 309.7 / 702.4b completing a dungeon is remembered, and Gloom Stalker's double strike reads it | `board:dungeons`~~
+- ~~CR 309.7 completing a dungeon triggers Dungeon Crawler out of the graveyard | `board:dungeons`~~
+- ~~CR 701.24a Throne of the Dead Three's "then shuffle" randomises the library and moves nothing | `board:dungeons`~~
+- ~~CR 701.49a the first venture puts the dungeon in the command zone with the marker on the topmost room | `board:dungeons`~~
+- ~~CR 701.49b / 309.3 venturing again advances the one dungeon instead of entering another | `board:dungeons`~~
+- ~~CR 701.49d venturing into Undercity enters the dungeon carrying that quality, where a plain venture enters the other | `board:dungeons`~~
+- ~~CR 704.5t / 701.49a the bottommost room ends the dungeon, and venturing again starts a new one | `board:dungeons`~~
 
 ### `EarthbendSpec`
 
@@ -690,7 +689,7 @@ out: grep for them.
 
 ### `InitiativeSpec`
 
-- CR 727.2 a trampler that trades with its blocker still hands the initiative over | `board:combat` `board:dungeons` `board:initiative`
+- CR 727.2 a trampler that trades with its blocker still hands the initiative over | `board:combat` `board:initiative`
 
 ### `InvestigateSpec`
 

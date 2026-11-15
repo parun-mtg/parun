@@ -426,7 +426,7 @@ stage registry board =
             Nothing -> do
               seatsPlaced <- placeSeats registry (NonEmpty.toList seated) (Staged.MkStaged positioned ids Map.empty)
               placed <- either (pure . Left) (placeStack registry board) seatsPlaced
-              withDecks <- either (pure . Left) (recordCounted registry (NonEmpty.toList seated)) placed
+              withDecks <- either (pure . Left) (recordOutsideCards registry (NonEmpty.toList seated)) placed
               pure (fmap (designateDefenders . settleStartingLife) (withDecks >>= attachAll (placementsOf board)))
 
 -- | CR 500.7: each seat's turns of the game on a board that starts at `turn`
@@ -455,17 +455,16 @@ settleStartingLife board =
       record pid p = p {Player.startingLife = Setup.startingLifeOf (MatchScope.settings (GameState.match gs)) seats pid (Player.commander p) (Setup.lifeModifierOf pid gs)}
    in board {Staged.state = gs {GameState.players = Map.mapWithKey record (GameState.players gs)}}
 
--- | Each seat's cards counted by name, as setup would have recorded them, each
--- card interned as a placement's is: its starting deck (CR 103.2a) and the
--- cards it has outside the game (CR 400.11a).
-recordCounted :: (Monad m) => Registry.Registry m -> [(Seat.Seat, PlayerId.PlayerId)] -> Staged.Staged -> m (Either Failure.ScenarioFailure Staged.Staged)
-recordCounted registry seated board = Monad.foldM record (Right board) [(pid, field, name, count) | (seat, pid) <- seated, field <- fields, (name, count) <- Map.toAscList (fst field seat)]
+-- | CR 103.2a / 400.11a / 309.2: each seat's starting deck, cards outside the
+-- game and dungeons, as setup would have recorded them, each card interned as
+-- a placement's is.
+recordOutsideCards :: (Monad m) => Registry.Registry m -> [(Seat.Seat, PlayerId.PlayerId)] -> Staged.Staged -> m (Either Failure.ScenarioFailure Staged.Staged)
+recordOutsideCards registry seated board = Monad.foldM record (Right board) (decks <> outside <> dungeons)
   where
-    fields =
-      [ (Seat.startingDeck, \stamp p -> p {Player.startingDeck = stamp (Player.startingDeck p)}),
-        (Seat.outsideTheGame, \stamp p -> p {Player.outsideTheGame = stamp (Player.outsideTheGame p)})
-      ]
-    record next (pid, (_, onPlayer), name, count) = case next of
+    decks = [(pid, name, \printingId p -> p {Player.startingDeck = Map.insertWith (+) printingId count (Player.startingDeck p)}) | (seat, pid) <- seated, (name, count) <- Map.toAscList (Seat.startingDeck seat)]
+    outside = [(pid, name, \printingId p -> p {Player.outsideTheGame = Map.insertWith (+) printingId count (Player.outsideTheGame p)}) | (seat, pid) <- seated, (name, count) <- Map.toAscList (Seat.outsideTheGame seat)]
+    dungeons = [(pid, name, \printingId p -> p {Player.dungeons = Set.insert printingId (Player.dungeons p)}) | (seat, pid) <- seated, name <- Set.toAscList (Seat.dungeons seat)]
+    record next (pid, name, stamp) = case next of
       Left failure -> pure (Left failure)
       Right sofar -> do
         found <- Registry.fetchCard registry name
@@ -474,7 +473,7 @@ recordCounted registry seated board = Monad.foldM record (Right board) [(pid, fi
           Right Nothing -> Left (Failure.MkUnknownCard name)
           Right (Just card) ->
             let (printingId, interned) = Game.intern (Printing.ofCard card) (Staged.state sofar)
-             in Right sofar {Staged.state = interned {GameState.players = Map.adjust (onPlayer (Map.insertWith (+) printingId count)) pid (GameState.players interned)}}
+             in Right sofar {Staged.state = interned {GameState.players = Map.adjust (stamp printingId) pid (GameState.players interned)}}
 
 -- | One unrestricted unit of a type, as a board floats it (CR 106.4).
 plainUnit :: ManaType.ManaType -> ManaUnit.ManaUnit

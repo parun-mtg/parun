@@ -255,6 +255,7 @@ playerSetup pid =
       Seat.sideDecks = Map.empty,
       Seat.startingDeck = Map.empty,
       Seat.outsideTheGame = Map.empty,
+      Seat.dungeons = Set.empty,
       Seat.draftNotes = Map.empty
     }
 
