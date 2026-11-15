@@ -762,6 +762,7 @@ barredAnnouncements candidates gs =
         RuleWaiver.AttackSickness -> not (Maybe.maybe False (\pid -> Summoning.settledOrHasty pid oid gs) (Projection.controllerOf oid gs))
         RuleWaiver.Defender -> Projection.hasKeyword Keyword.Defender oid gs
         RuleWaiver.ActivationSickness -> False
+        RuleWaiver.CleanupDamage -> False
    in Set.fromList
         ( do
             oid <- candidates

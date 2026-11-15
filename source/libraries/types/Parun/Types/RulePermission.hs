@@ -5,11 +5,12 @@ import qualified Parun.Types.AimedAt as AimedAt
 import qualified Parun.Types.Condition as Condition
 import qualified Parun.Types.RuleWaiver as RuleWaiver
 
--- | CR 702.3b / 302.6 / 613.11: one printed permission lifting a rule for the
--- creatures it names -- "this creature can attack as though it didn't have
--- defender" (Prison Barricade kicked), "can attack as though it had haste"
+-- | CR 702.3b / 302.6 / 514.2 / 613.11: one printed permission lifting a rule
+-- for the creatures it names -- "this creature can attack as though it didn't
+-- have defender" (Prison Barricade kicked), "can attack as though it had haste"
 -- (Instill Energy), "you may activate abilities of creatures you control as
--- though those creatures had haste" (Thousand-Year Elixir).
+-- though those creatures had haste" (Thousand-Year Elixir), "damage isn't
+-- removed from this creature during cleanup steps" (Ancient Adamantoise).
 --
 -- A permission rather than an arm of Parun.Types.CombatRestriction, for
 -- Parun.Types.BlockPermission's reason: a restriction forbids a declaration and

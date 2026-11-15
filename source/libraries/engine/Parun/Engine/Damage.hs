@@ -20,6 +20,7 @@ import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
 import qualified Parun.Engine.Replacement as Replacement
+import qualified Parun.Engine.RulePermission as RulePermission
 import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Integer as Integer
 import qualified Parun.Extra.Natural as Natural
@@ -54,6 +55,7 @@ import Parun.Types.PlayerId (PlayerId)
 import qualified Parun.Types.Prevention as Prevention
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
+import qualified Parun.Types.RuleWaiver as RuleWaiver
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Teams as Teams
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -63,11 +65,15 @@ import qualified Parun.Types.TurnUpEvent as TurnUpEvent
 --
 -- Every object, not just battlefield ones: the field exists on all of them, and
 -- CR 514.2 covers phased-out permanents too. Being selective is how a stale mark
--- survives.
+-- survives. The one exception is a RuleWaiver.CleanupDamage permission in force
+-- (Ancient Adamantoise), asked of the battlefield, so a phased-out permanent
+-- neither keeps its damage nor gives one (CR 702.26b). Scenario
+-- ancient-adamantoise-keeps-its-damage-through-cleanup proves it.
 removeAllDamage :: GameState -> GameState
 removeAllDamage gs =
-  let clear obj = obj {Object.damage = 0}
-   in gs {GameState.objects = fmap clear (GameState.objects gs)}
+  let kept = Set.map fst (Set.filter ((== RuleWaiver.CleanupDamage) . snd) (Map.keysSet (RulePermission.waivers (Set.toList (GameState.battlefield gs)) gs)))
+      clear oid obj = if Set.member oid kept then obj else obj {Object.damage = 0}
+   in gs {GameState.objects = Map.mapWithKey clear (GameState.objects gs)}
 
 -- CR 506.4: a permanent is removed from combat if it leaves the battlefield. The
 -- liveness test every combat-damage read shares, because the combat record

@@ -5753,7 +5753,7 @@ activatedAbilityFilters ability =
 --     701.21a / 101.2), `untapRestrictions` (CR 502.3 / 101.2),
 --     `keywordCostRestrictions` (CR 702.122d / 101.2),
 --     `targetRestrictions` (CR 115 / 101.2),
---     `rulePermissions` (CR 702.3b / 302.6),
+--     `rulePermissions` (CR 702.3b / 302.6 / 514.2),
 --     `entryRestrictions` (CR 400.4a / 101.2),
 --     `counterRestrictions` (CR 122.6 / 101.2),
 --     `counterLimits` (CR 122.4, its kind alone),

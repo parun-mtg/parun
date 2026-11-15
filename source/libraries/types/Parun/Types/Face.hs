@@ -587,10 +587,11 @@ data Face card = MkFace
     -- spells" (Dense Foliage); read by Parun.Engine.TargetRestriction, rewritten
     -- by no layer, for blockRequirements' CR 613.11 reason.
     targetRestrictions :: [TargetRestriction.TargetRestriction Affected.Affected],
-    -- | CR 604.1/604.2 / 702.3b / 302.6: this face's printed RULE
+    -- | CR 604.1/604.2 / 702.3b / 302.6 / 514.2: this face's printed RULE
     -- PERMISSIONS -- "can attack as though it didn't have defender", "you may
     -- activate abilities of creatures you control as though those creatures
-    -- had haste"; read by
+    -- had haste", "damage isn't removed from this creature during cleanup
+    -- steps"; read by
     -- Parun.Engine.RulePermission, rewritten by no layer, for
     -- blockRequirements' CR 613.11 reason.
     rulePermissions :: [RulePermission.RulePermission],
