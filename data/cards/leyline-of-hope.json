@@ -1,0 +1,138 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Leyline of Hope",
+      "openingHandActions": [
+        {
+          "effects": [
+            {
+              "type": "MoveToZone",
+              "value": {
+                "ref": {
+                  "type": "InSlot",
+                  "value": "self"
+                },
+                "zone": "Battlefield"
+              }
+            }
+          ]
+        }
+      ],
+      "oracleText": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nIf you would gain life, you gain that much life plus 1 instead.\nAs long as you have at least 7 life more than your starting life total, creatures you control get +2/+2.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "LifeGainR",
+            "value": {
+              "rewrite": {
+                "type": "Scaled",
+                "value": {
+                  "type": "AddMore",
+                  "value": {
+                    "type": "Literal",
+                    "value": 1
+                  }
+                }
+              },
+              "whose": {
+                "type": "You"
+              }
+            }
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "And",
+              "value": [
+                {
+                  "type": "HasCardType",
+                  "value": "Creature"
+                },
+                {
+                  "type": "HeldBy",
+                  "value": {
+                    "holder": "Controller",
+                    "relation": "You"
+                  }
+                }
+              ]
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "AtLeast",
+              "measured": {
+                "type": "LifeTotal",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              },
+              "threshold": {
+                "type": "Plus",
+                "value": {
+                  "left": {
+                    "type": "StartingLifeTotal",
+                    "value": {
+                      "type": "Relative",
+                      "value": "You"
+                    }
+                  },
+                  "right": {
+                    "type": "Literal",
+                    "value": 7
+                  }
+                }
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "ModifyPowerToughness",
+              "value": {
+                "power": {
+                  "type": "Literal",
+                  "value": 2
+                },
+                "toughness": {
+                  "type": "Literal",
+                  "value": 2
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}
