@@ -116,6 +116,7 @@ codec =
       Arm.payload "HasPlayerDesignation" PlayerDesignationTally.codec Quantity.HasPlayerDesignation (\x -> case x of Quantity.HasPlayerDesignation y -> Just y; _ -> Nothing),
       Arm.payload "IsStartingPlayer" PlayerRef.codec Quantity.IsStartingPlayer (\x -> case x of Quantity.IsStartingPlayer y -> Just y; _ -> Nothing),
       Arm.payload "IsActivePlayer" PlayerRef.codec Quantity.IsActivePlayer (\x -> case x of Quantity.IsActivePlayer y -> Just y; _ -> Nothing),
+      Arm.payload "TurnsBegun" PlayerRef.codec Quantity.TurnsBegun (\x -> case x of Quantity.TurnsBegun y -> Just y; _ -> Nothing),
       Arm.payload "PlayerCounters" PlayerCounterTally.codec Quantity.PlayerCounters (\x -> case x of Quantity.PlayerCounters y -> Just y; _ -> Nothing),
       -- CR 700.5's number: a PlayerRef and the colours it is measured to, which
       -- Parun.Types.Devotion holds as a SET so "to black and green" is one reading
@@ -326,6 +327,7 @@ tagOf x = case x of
   Quantity.HasPlayerDesignation {} -> "HasPlayerDesignation"
   Quantity.IsStartingPlayer {} -> "IsStartingPlayer"
   Quantity.IsActivePlayer {} -> "IsActivePlayer"
+  Quantity.TurnsBegun {} -> "TurnsBegun"
   Quantity.PlayerCounters {} -> "PlayerCounters"
   Quantity.Devotion {} -> "Devotion"
   Quantity.PartySize {} -> "PartySize"
