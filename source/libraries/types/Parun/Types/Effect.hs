@@ -895,8 +895,9 @@ data Effect card ability
     -- rulebook's and is minted by Parun.Engine.Airbend rather than through this
     -- opcode.
     GrantPlayFromExile GrantPlayFromExile.GrantPlayFromExile
-  | -- | CR 406.3: CR 109.5's "you" may look at the face-down exiled cards the
-    -- payload names, for as long as they remain in exile (Extract Power), and
+  | -- | CR 406.3: the payload's player (CR 109.5's "you" unless it names
+    -- another) may look at the face-down exiled cards the payload names, for
+    -- as long as they remain in exile (Extract Power), and
     -- CR 702.75a's rider names the exiling permanent's controller besides
     -- (Windbrisk Heights).
     --

@@ -851,7 +851,7 @@ objectRefPositions =
         ("exchange-card-zones", Effect.ExchangeCardZones (ExchangeCardZones.MkExchangeCardZones (plantedRef "ec") (ObjectRef.ChosenCardInHand handChoice)), [plantedRef "ec", ObjectRef.ChosenCardInHand handChoice]),
         ("offer-cast", Effect.OfferCast (OfferCast.MkOfferCast (plantedRef "oc") (PlayerRef.Relative PlayerRelation.You) CastObligation.Optional PermissionVerb.Cast CastOffer.defaultValue CastRepetition.Once False False Nothing), [plantedRef "oc"]),
         ("grant-play-from-exile", Effect.GrantPlayFromExile (GrantPlayFromExile.MkGrantPlayFromExile Duration.UntilEndOfTurn (PlayerRef.Relative PlayerRelation.You) (plantedRef "gp") ManaSpending.AsProduced Nothing Nothing PermissionVerb.Play 0 TapState.Untapped TapState.Untapped Nothing [] GrantZone.Exile), [plantedRef "gp"]),
-        ("grant-look-at-exiled", Effect.GrantLookAtExiled (GrantLookAtExiled.MkGrantLookAtExiled (plantedRef "gl") False), [plantedRef "gl"]),
+        ("grant-look-at-exiled", Effect.GrantLookAtExiled (GrantLookAtExiled.MkGrantLookAtExiled (plantedRef "gl") (PlayerRef.Relative PlayerRelation.You) False), [plantedRef "gl"]),
         ("make-plotted", Effect.MakePlotted (plantedRef "mp"), [plantedRef "mp"]),
         ("make-foretold", Effect.MakeForetold (MakeForetold.MkMakeForetold (plantedRef "mf") Nothing), [plantedRef "mf"]),
         ("make-warped", Effect.MakeWarped (plantedRef "mw"), [plantedRef "mw"]),
@@ -932,6 +932,7 @@ playerRefPositions =
         ("choose-number", Effect.ChooseNumber (ChooseNumber.MkChooseNumber (SlotName.MkSlotName (Text.pack "number")) Nothing (plantedPlayer "cn-chooser")), [plantedPlayer "cn-chooser"]),
         ("offer-cast", Effect.OfferCast (OfferCast.MkOfferCast (plantedRef "oc-ref") (plantedPlayer "oc-caster") CastObligation.Optional PermissionVerb.Cast CastOffer.defaultValue CastRepetition.Once False False Nothing), [plantedPlayer "oc-caster"]),
         ("grant-play-from-exile", Effect.GrantPlayFromExile (GrantPlayFromExile.MkGrantPlayFromExile Duration.UntilEndOfTurn (plantedPlayer "gp-player") (plantedRef "gp-ref") ManaSpending.AsProduced Nothing Nothing PermissionVerb.Play 0 TapState.Untapped TapState.Untapped Nothing [] GrantZone.Exile), [plantedPlayer "gp-player"]),
+        ("grant-look-at-exiled", Effect.GrantLookAtExiled (GrantLookAtExiled.MkGrantLookAtExiled (plantedRef "gl-ref") (plantedPlayer "gl-player") False), [plantedPlayer "gl-player"]),
         -- CR 611.2a's reference nested in the DURATION rather than in a field of
         -- the opcode -- the seat the window is counted against (Suspend
         -- Aggression). Planted on this opcode because it is the one a card writes

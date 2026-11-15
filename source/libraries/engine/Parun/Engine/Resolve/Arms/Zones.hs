@@ -874,7 +874,8 @@ grantPlayFromExile resolving source controller legal (GrantPlayFromExile.MkGrant
       GrantZone.AnyPublic -> not (Game.isHiddenZone at)
 
 -- CR 406.3: write the look permission onto every object the ObjectRef names,
--- as CR 109.5's "you", plus CR 702.75a's ExileLooker.TheExiler where the
+-- for each player the PlayerRef names (CR 109.5's "you" unless the card says
+-- otherwise), plus CR 702.75a's ExileLooker.TheExiler where the
 -- payload asks for it. BOTH, and rule 702.75a's hideaway wants both: the
 -- player it instructed to look at the cards before exiling one face down is
 -- rule 406.3's continuing looker whatever happens to the permanent afterwards.
@@ -886,7 +887,7 @@ grantLookAtExiled :: ObjectId -> ObjectId -> PlayerId -> Map.Map SlotName (Set R
 grantLookAtExiled resolving source controller legal grant =
   State.modify' $ \gs ->
     let granted =
-          Set.insert (ExileLooker.ThePlayer controller) $
+          Set.union (Set.fromList (fmap ExileLooker.ThePlayer (playerRefPlayers legal resolving source controller gs (GrantLookAtExiled.player grant)))) $
             if GrantLookAtExiled.followsExiler grant then Set.singleton ExileLooker.TheExiler else Set.empty
         allow o = o {Object.exileLookers = Set.union granted (Object.exileLookers o)}
      in gs {GameState.objects = foldr (Map.adjust allow) (GameState.objects gs) (objectRefObjects legal resolving controller source gs (GrantLookAtExiled.cards grant))}
