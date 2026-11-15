@@ -18,5 +18,7 @@ spec s = Spec.describe s "Parun.Codec.ViewIs" $ do
     Common.assertCodec s ViewIs.codec (ViewIs.Type.MkViewIs View.Type.Zone (Just (Label.Type.MkLabel (Text.pack "bob"))) Nothing (Just Zone.Type.Hand) (Reply.Type.Array [Reply.Type.Text (Text.pack "Hill Giant")])) " {\"of\":\"Zone\",\"player\":\"bob\",\"zone\":\"Hand\",\"is\":[\"Hill Giant\"]} "
   Spec.it s "a prompt, by kind and offer" $
     Common.assertCodec s ViewIs.codec (ViewIs.Type.MkViewIs View.Type.Prompt Nothing Nothing Nothing (Reply.Type.Object [(Text.pack "kind", Reply.Type.Text (Text.pack "RollDie")), (Text.pack "offer", Reply.Type.Object [(Text.pack "sides", Reply.Type.Number 20)])])) " {\"of\":\"Prompt\",\"is\":{\"kind\":\"RollDie\",\"offer\":{\"sides\":20}}} "
+  Spec.it s "the prompts asked, by decider and kind" $
+    Common.assertCodec s ViewIs.codec (ViewIs.Type.MkViewIs View.Type.Asked Nothing Nothing Nothing (Reply.Type.Array [Reply.Type.Array [Reply.Type.Text (Text.pack "alice"), Reply.Type.Text (Text.pack "ChooseDiscard")], Reply.Type.Array [Reply.Type.Null, Reply.Type.Text (Text.pack "Shuffle")]])) " {\"of\":\"Asked\",\"is\":[[\"alice\",\"ChooseDiscard\"],[null,\"Shuffle\"]]} "
   Spec.it s "has a schema" $
     Common.assertHasSchema s ViewIs.codec

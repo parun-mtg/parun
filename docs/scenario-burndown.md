@@ -71,7 +71,7 @@ out: grep for them.
 - `check:creature-count`: how many creatures a player controls
 - `check:combat`: combat state beyond attackers and blockers
 - `check:mana-value`: an object's mana value
-- `check:prompt-order`: the order prompts were asked in
+- `check:prompt-order`: the order priority was offered in
 - `board:objects-ids`
 - `board:object-classlevel`
 - `board:foretold`: a foretold card
@@ -174,7 +174,7 @@ out: grep for them.
 
 ### `CastProhibitionSpec`
 
-- CR 101.4 the active player is asked to name a card first | `check:prompt-order`
+- CR 101.4 the active player is asked to name a card first
 - CR 101.4b the later chooser knows the name the earlier one chose | `check:prompt-payload`
 - CR 201.4 a name no card has is refused and the chooser is asked again
 - CR 201.4 a slug the registry answers to is not a card's name | `check:other-Registry.fetchCard`
@@ -254,7 +254,7 @@ out: grep for them.
 
 ### `CoinSpec`
 
-- CR 705.2 only the flipping player calls, and calls before the coin comes up | `check:prompt-order`
+- CR 705.2 only the flipping player calls, and calls before the coin comes up
 
 ### `ColorSpec`
 
@@ -1030,7 +1030,7 @@ out: grep for them.
 - CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers | `check:prompt-payload`
 - CR 101.4b a later seat knows what the seats before it answered for that land | `check:prompt-payload`
 - CR 110.5b whole card: Nature's Lore puts the Forest it finds onto the battlefield UNTAPPED | `check:events`
-- CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives | `check:prompt-order`
+- CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives
 - CR 118.12a each land is its own offer, and any player's payment saves only that land | `check:prompt-payload`
 - CR 607.2a: killing the OTHER Dragon returns the OTHER card | `board:exile-linked`
 - CR 607.2a: the dead Dragon returns the card IT exiled, not the other Dragon's | `board:exile-linked`
@@ -1200,9 +1200,9 @@ out: grep for them.
 
 ### `ZoneChangeSpec`
 
-- CR 401.2 each attacking creature's OWNER picks the end, not the resolving controller | `check:prompt-order`
+- CR 401.2 each attacking creature's OWNER picks the end, not the resolving controller
 - CR 401.7 Temporal Cleansing: the OWNER picks second from the top, and it lands under the top card | `check:prompt-payload`
-- CR 701.9 / 101.4 Tinybones Joins Up has every targeted player discard, in APNAP order | `check:prompt-order`
+- ~~CR 701.9 / 101.4 Tinybones Joins Up has every targeted player discard, in APNAP order | `check:prompt-order`~~
 
 ### `ZoneTriggerSpec`
 
