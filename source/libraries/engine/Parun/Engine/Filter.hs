@@ -3782,6 +3782,15 @@ readsSourceValues predicate = case predicate of
   Filter.IsPreparedSpell -> False
   Filter.HasInsetFrame _ -> False
 
+-- The comparisons a target slot's Filter makes against its computed bound
+-- (Operand.EnclosingAmount), for Parun.Engine.Activatable.boundXs.
+enclosingReads :: Filter.Filter Keyword.Type.Keyword -> [Measures.Measures]
+enclosingReads = Const.getConst . reads_
+  where
+    reads_ predicate = case predicate of
+      Filter.Measures measures | Measures.operand measures == Operand.EnclosingAmount -> Const.Const [measures]
+      _ -> Children.filterChildren (Children.descending reads_) predicate
+
 -- The slots a Filter READS. Parun.Engine.Resolve.Slots.modeSlots folds this over a
 -- mode's target slots, which is what makes the card dataflow lint see a slot
 -- named in a FILTER rather than in an effect: a card reading "that player" under
