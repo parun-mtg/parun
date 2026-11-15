@@ -1707,15 +1707,15 @@ copyStampOf obj = Binding.copyOf (Object.bindings obj) Applicative.<|> Object.du
 -- CR 707.2 / 601.2b-f: `face` with the cast-time values its copy stamp carries
 -- laid over it -- mana cost, additional and alternative costs, its own cost
 -- reductions and its keywords -- so a card carrying copiable values other than
--- its printing's is cast at the copied card's price. Parun.ConjureSpec's "a
--- duplicate of a Clone costs / owes / offers / takes / has" cases prove every
--- field but the cost choices.
+-- its printing's is cast at the copied card's price. data/scenarios/conjure's
+-- "a duplicate of a Clone costs / owes / offers / takes / has" cases prove
+-- every field but the cost choices.
 --
 -- The stamp describes the card's NORMAL characteristics alone, so it is laid
 -- over the front face and nothing else: CR 716.3a casts an Adventure with only
 -- its alternative characteristics, and CR 708.4 a face-down spell with only
--- those. Parun.ConjureSpec's "CR 716.3a a duplicate of Flaxen Intruder" proves
--- the first.
+-- those. data/scenarios/conjure's "CR 716.3a a duplicate of Flaxen Intruder"
+-- proves the first.
 --
 -- A stamp's halves and Adventure or Omen half are the copied card's own faces,
 -- so castableFacesOf below offers them as they are and this leaves them alone.
@@ -1737,9 +1737,10 @@ castingFaceOf obj card face = case copyStampOf obj of
 -- its copy stamp when it has one, since the halves (CR 709.5b) and the Adventure
 -- or Omen half (CR 716.2b, 721.2b) are copiable values: the stamp's halves, or
 -- the front face under the stamp beside the stamp's alternative spell. The
--- printed card's otherwise. Parun.ConjureSpec's "CR 707.2/709.5b a duplicate of
--- a copied Room is cast as a door" and "CR 707.2/716.2b a duplicate of a Clone
--- of Flaxen Intruder is cast as Welcome Home" prove the two stamped arms.
+-- printed card's otherwise. data/scenarios/conjure's "CR 707.2/709.5b a
+-- duplicate of a copied Room is cast as a door" and "CR 707.2/716.2b a
+-- duplicate of a Clone of Flaxen Intruder is cast as Welcome Home" prove the
+-- two stamped arms.
 castableFacesOf :: Object.Object -> Card -> [Face Card]
 castableFacesOf obj card = case copyStampOf obj of
   Nothing -> Card.castableFaces card
@@ -1751,8 +1752,8 @@ castableFacesOf obj card = case copyStampOf obj of
 -- sibling for Card.landFaces. A copy stamp's card types decide: a card carrying a
 -- land's copiable values plays as that land, and one carrying anything else
 -- offers no land face -- the printed card's back face included (CR 707.8).
--- Parun.ConjureSpec's "CR 707.2/305.1 a duplicate of a Clone of Dryad Arbor is
--- played as a land" proves the first.
+-- data/scenarios/conjure's "CR 707.2/305.1 a duplicate of a Clone of Dryad
+-- Arbor" proves the first.
 landFacesOf :: Object.Object -> Card -> [(Maybe CardName.CardName, Face Card)]
 landFacesOf obj card = case copyStampOf obj of
   Nothing -> Card.landFaces card

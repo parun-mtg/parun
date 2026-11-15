@@ -1,0 +1,144 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "hand": [
+          {
+            "card": "Marina Vendrell",
+            "label": "marina"
+          }
+        ],
+        "library": [
+          {
+            "card": "Pacifism",
+            "label": "pac"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Roaring Furnace",
+            "label": "room"
+          },
+          {
+            "card": "Island",
+            "label": "island"
+          },
+          {
+            "card": "Glorious Anthem",
+            "label": "anthem"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Savannah Lions",
+            "label": "lions"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp"
+          }
+        ],
+        "manaPool": "WUBRG",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Marina Vendrell: when she enters, reveal the top seven cards, put all enchantment cards among them into your hand and the rest on the bottom in a random order (CR 701.20a)",
+  "note": "Three enchantments (an Aura, a Room, a plain enchantment) sit among four non-enchantments in the top seven; the Swamp eighth stays on top, so exactly seven were revealed and the rest went to the bottom in the order the random arrangement gave.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$marina"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$lions",
+            "$bears",
+            "$giant",
+            "$island"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pacifism",
+            "Roaring Furnace",
+            "Glorious Anthem"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$swamp",
+            "Island#4",
+            "Hill Giant",
+            "Grizzly Bears",
+            "Savannah Lions"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

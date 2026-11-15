@@ -71,7 +71,7 @@ out: grep for them.
 - `check:creature-count`: how many creatures a player controls
 - `check:combat`: combat state beyond attackers and blockers
 - `check:mana-value`: an object's mana value
-- `check:prompt-order`: the order prompts were asked in
+- `check:prompt-order`: the order priority was offered in
 - `board:objects-ids`
 - `board:object-classlevel`
 - `board:foretold`: a foretold card
@@ -174,7 +174,7 @@ out: grep for them.
 
 ### `CastProhibitionSpec`
 
-- ~~CR 101.4 the active player is asked to name a card first | `check:prompt-order`~~
+- ~~CR 101.4 the active player is asked to name a card first~~
 - ~~CR 101.4b the later chooser knows the name the earlier one chose | `check:prompt-payload`~~
 - ~~CR 201.4 a name no card has is refused and the chooser is asked again~~
 - ~~CR 201.4 a slug the registry answers to is not a card's name | `check:other-Registry.fetchCard`~~
@@ -254,7 +254,7 @@ out: grep for them.
 
 ### `CoinSpec`
 
-- CR 705.2 only the flipping player calls, and calls before the coin comes up | `check:prompt-order`
+- CR 705.2 only the flipping player calls, and calls before the coin comes up
 
 ### `ColorSpec`
 
@@ -333,39 +333,39 @@ out: grep for them.
 
 - CR 400.7j Calim's Breath cannot exile the discarded Calim as one of the two others | `move:ReferenceCards`
 - CR 400.7j Calim's Breath returns the Calim its cost discarded, tapped | `move:ReferenceCards`
-- CR 603.4 conjure behind an intervening if: 4 life gained puts a castable Mox Pearl in hand | `board:stage-no-card-named-mox-pearl`
-- CR 702.140e a duplicate of a mutated Headless Skaab owes the Skaab's additional cost | `board:source-ofmerge`
-- CR 702.178a at max speed the Smasher returns the duplicate with haste, and the end step sacrifices it | `board:exile-linked` `board:player-speed`
-- CR 702.178a one short of max speed, the duplicate stays in exile | `board:exile-linked` `board:player-speed`
-- CR 707.2/702.37e a duplicate of a Clone of Ainok Tracker is cast face down and turned up for its morph cost | `check:tapped-count`
-- CR 707.2/709.5b a duplicate of a copied Room is cast as a door
-- CR 707.2/716.2b a duplicate of a Clone of Flaxen Intruder is cast as Welcome Home | `check:tapped-count`
-- CR 716.3a a duplicate of Flaxen Intruder cast as Welcome Home costs Welcome Home's cost
-- CR 731.2/731.3 a duplicate of a Clone that merged as the spell is the Cubwarden again | `board:source-ofmerge`
-- CR 731.3/707.2 a duplicate of a Clone split out of a merge is the Piker again | `board:source-ofmerge`
-- Gate to Seatower's seek puts the nonland card randomness named into the hand, leaving the library's order | `board:stage-no-card-named-gate-to-seatower`
-- Kari Zev's Ragavan attacks without being declared and goes home at the next end step | `board:stage-no-card-named-ragavan-nimble-pilferer`
+- ~~CR 603.4 conjure behind an intervening if: 4 life gained puts a castable Mox Pearl in hand | `board:stage-no-card-named-mox-pearl`~~
+- ~~CR 702.140e a duplicate of a mutated Headless Skaab owes the Skaab's additional cost | `board:source-ofmerge`~~
+- ~~CR 702.178a at max speed the Smasher returns the duplicate with haste, and the end step sacrifices it | `board:exile-linked` `board:player-speed`~~
+- ~~CR 702.178a one short of max speed, the duplicate stays in exile | `board:exile-linked` `board:player-speed`~~
+- ~~CR 707.2/702.37e a duplicate of a Clone of Ainok Tracker is cast face down and turned up for its morph cost | `check:tapped-count`~~
+- ~~CR 707.2/709.5b a duplicate of a copied Room is cast as a door~~
+- ~~CR 707.2/716.2b a duplicate of a Clone of Flaxen Intruder is cast as Welcome Home | `check:tapped-count`~~
+- ~~CR 716.3a a duplicate of Flaxen Intruder cast as Welcome Home costs Welcome Home's cost~~
+- ~~CR 731.2/731.3 a duplicate of a Clone that merged as the spell is the Cubwarden again | `board:source-ofmerge`~~
+- ~~CR 731.3/707.2 a duplicate of a Clone split out of a merge is the Piker again | `board:source-ofmerge`~~
+- ~~Gate to Seatower's seek puts the nonland card randomness named into the hand, leaving the library's order | `board:stage-no-card-named-gate-to-seatower`~~
+- ~~Kari Zev's Ragavan attacks without being declared and goes home at the next end step | `board:stage-no-card-named-ragavan-nimble-pilferer`~~
 - a conjure from the file registry's reference never conjures a synthetic card | `move:ReferenceCards`
-- conjure into exile puts the duplicate in the conjurer's exile, exiled with the conjuring creature | `check:exile-linked`
+- ~~conjure into exile puts the duplicate in the conjurer's exile, exiled with the conjuring creature | `check:exile-linked`~~
 
 ### `CopySpec`
 
-- CR 702.103e a bestowed copy whose host died resolves as a token creature | `check:helper-rollickersOn` `check:other-Game.isToken`
-- CR 702.128a embalm exiles the card for a white Zombie token copy with no mana cost, and a Clone of it keeps all three | `check:mana-value`
-- CR 702.129a eternalize makes a black 4/4 Zombie token copy, and neither it nor a Clone of it is a Doom Blade target | `check:mana-value`
+- ~~CR 702.103e a bestowed copy whose host died resolves as a token creature | `check:helper-rollickersOn` `check:other-Game.isToken`~~
+- ~~CR 702.128a embalm exiles the card for a white Zombie token copy with no mana cost, and a Clone of it keeps all three | `check:mana-value`~~
+- ~~CR 702.129a eternalize makes a black 4/4 Zombie token copy, and neither it nor a Clone of it is a Doom Blade target | `check:mana-value`~~
 - CR 707.10b a copy of a triggered ability still counts once the original has been countered | `ref:stack-ability-occurrence`
 - CR 707.10b a copy of an activated ability still counts once the original has been countered | `ref:stack-ability-occurrence`
-- CR 707.10c a card the copied X does not reach is not offered | `check:legal-targets` `move:out-of-range-answer`
-- CR 707.13 Garth One-Eye's cast copy of Black Lotus has Black Lotus's characteristics and resolves as a token | `check:other-Object.castFrom` `check:other-GameState.outsideCopies`
-- CR 707.13 a declined copy leaves nothing behind, and a name the reference does not know makes no copy | `check:other-GameState.outsideCopies` `check:other-GameState.namedCopyChoices` `board:card-reference`
-- CR 707.13 a second activation of the same Garth does not offer Black Lotus again | `check:named-copy-choices`
-- CR 707.14 a Clone of the face-down 3/3 connects and creates no copy | `check:abilities`
-- CR 707.14 the face-down Divination connects and alice casts a copy of Divination for free | `check:outside-the-game`
-- CR 707.2 an Adventure that becomes a copy of a Bolt goes to the graveyard
-- CR 707.2a a copy of Blood Moon goes on setting land subtypes once the original is exiled | `check:mana-types` `check:abilities`
-- CR 708.2 a face-down copy of Silent Arbiter no longer bounds the attack | `check:face-down` `check:bindings`
-- CR 708.2 the face-down permanent is a nameless 3/3 creature with the two listed abilities | `check:abilities`
-- Omni-Changeling's copy is every creature type, and so is a token copy of it (CR 604.3a)
+- ~~CR 707.10c a card the copied X does not reach is not offered | `check:legal-targets` `move:out-of-range-answer`~~
+- ~~CR 707.13 Garth One-Eye's cast copy of Black Lotus has Black Lotus's characteristics and resolves as a token | `check:other-Object.castFrom` `check:other-GameState.outsideCopies`~~
+- ~~CR 707.13 a declined copy leaves nothing behind, and a name the reference does not know makes no copy | `check:other-GameState.outsideCopies` `check:other-GameState.namedCopyChoices` `board:card-reference`~~
+- ~~CR 707.13 a second activation of the same Garth does not offer Black Lotus again | `check:named-copy-choices`~~
+- ~~CR 707.14 a Clone of the face-down 3/3 connects and creates no copy | `check:abilities`~~
+- ~~CR 707.14 the face-down Divination connects and alice casts a copy of Divination for free | `check:outside-the-game`~~
+- ~~CR 707.2 an Adventure that becomes a copy of a Bolt goes to the graveyard~~
+- ~~CR 707.2a a copy of Blood Moon goes on setting land subtypes once the original is exiled | `check:mana-types` `check:abilities`~~
+- ~~CR 708.2 a face-down copy of Silent Arbiter no longer bounds the attack | `check:face-down` `check:bindings`~~
+- ~~CR 708.2 the face-down permanent is a nameless 3/3 creature with the two listed abilities | `check:abilities`~~
+- ~~Omni-Changeling's copy is every creature type, and so is a token copy of it (CR 604.3a)~~
 
 ### `CostSpec`
 
@@ -493,19 +493,19 @@ out: grep for them.
 
 ### `DaytimeSpec`
 
-- CR 502.2 neither day nor night: the check does not happen | `check:other-GameState.daytime`
-- CR 502.2 night and only one spell last turn stays night | `board:daytime`
-- CR 502.2/702.145f night and two spells last turn becomes day | `board:daytime`
-- CR 603.4 two Wolves are not three, so it stays day | `board:daytime`
-- CR 608.2d an answer naming what was never offered turns nothing over | `board:daytime`
-- CR 608.2d naming nothing is a legal answer and turns nothing over | `board:daytime`
-- CR 608.2d the chooser names the Human Werewolf and it turns over | `board:daytime`
-- CR 702.145b by day the same spell enters front face up | `board:daytime`
-- CR 702.145d controlling a daybound permanent makes it day | `check:helper-faceNameOf` `check:helper-frontName` `check:other-GameState.daytime`
-- CR 712.10 by day that spell enters front face up | `board:daytime`
-- CR 732.1 a game with no daybound permanent stays neither day nor night | `check:other-GameState.daytime`
-- CR 732.1/702.145c Tovolar's upkeep trigger makes it night and transforms him | `board:daytime`
-- CR 732.2 the handoff records what the previous turn's active player cast | `check:other-Game.spellsCastLastTurn` `check:events`
+- ~~CR 502.2 neither day nor night: the check does not happen | `check:other-GameState.daytime`~~
+- ~~CR 502.2 night and only one spell last turn stays night | `board:daytime`~~
+- ~~CR 502.2/702.145f night and two spells last turn becomes day | `board:daytime`~~
+- ~~CR 603.4 two Wolves are not three, so it stays day | `board:daytime`~~
+- ~~CR 608.2d an answer naming what was never offered turns nothing over | `board:daytime`~~
+- ~~CR 608.2d naming nothing is a legal answer and turns nothing over | `board:daytime`~~
+- ~~CR 608.2d the chooser names the Human Werewolf and it turns over | `board:daytime`~~
+- ~~CR 702.145b by day the same spell enters front face up | `board:daytime`~~
+- ~~CR 702.145d controlling a daybound permanent makes it day | `check:helper-faceNameOf` `check:helper-frontName` `check:other-GameState.daytime`~~
+- ~~CR 712.10 by day that spell enters front face up | `board:daytime`~~
+- ~~CR 732.1 a game with no daybound permanent stays neither day nor night | `check:other-GameState.daytime`~~
+- ~~CR 732.1/702.145c Tovolar's upkeep trigger makes it night and transforms him | `board:daytime`~~
+- ~~CR 732.2 the handoff records what the previous turn's active player cast | `check:other-Game.spellsCastLastTurn` `check:events`~~
 
 ### `DepartureSpec`
 
@@ -530,7 +530,7 @@ out: grep for them.
 ### `DungeonSpec`
 
 - CR 118.12a Veils of Fear offers each player the discard and only the seats that declined lose the life | `board:dungeons`
-- CR 309.2 a deck's dungeon cards are recorded on its player and minted into no zone | `check:other-Game.printingOf` `check:other-GameState.objects` `check:other-GameState.players` `check:other-Player.dungeons`
+- ~~CR 309.2 a deck's dungeon cards are recorded on its player and minted into no zone | `check:other-Game.printingOf` `check:other-GameState.objects` `check:other-GameState.players` `check:other-Player.dungeons`~~
 - CR 309.2a a player owning two dungeons chooses which one to enter | `board:dungeons`
 - CR 309.4c / 701.22a Cave Entrance's Scry 1 puts the top card where its controller says | `board:dungeons`
 - CR 309.5a a room with two arrows asks which one to follow, and the answer decides the room | `board:dungeons`
@@ -1030,7 +1030,7 @@ out: grep for them.
 - CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers | `check:prompt-payload`
 - CR 101.4b a later seat knows what the seats before it answered for that land | `check:prompt-payload`
 - CR 110.5b whole card: Nature's Lore puts the Forest it finds onto the battlefield UNTAPPED | `check:events`
-- CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives | `check:prompt-order`
+- CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives
 - CR 118.12a each land is its own offer, and any player's payment saves only that land | `check:prompt-payload`
 - CR 607.2a: killing the OTHER Dragon returns the OTHER card | `board:exile-linked`
 - CR 607.2a: the dead Dragon returns the card IT exiled, not the other Dragon's | `board:exile-linked`
@@ -1096,8 +1096,8 @@ out: grep for them.
 ### `SpeedSpec`
 
 - ~~CR 119.2 damage to an opponent raises your speed too | `check:helper-speedOf` `check:helper-subtract`~~
-- CR 305.7 a Blood Moon'd Raceway starts nobody's engines | `check:helper-speedOf`
-- CR 604.1 the grant is re-asked, not latched | `check:abilities`
+- ~~CR 305.7 a Blood Moon'd Raceway starts nobody's engines | `check:helper-speedOf`~~
+- ~~CR 604.1 the grant is re-asked, not latched | `check:abilities`~~
 - ~~CR 702.178a past 4 the Raceway keeps its max speed ability | `board:player-speed`~~
 - ~~CR 702.178b whole card: activating it exiles the Surveyor and draws | `board:player-speed`~~
 - ~~CR 702.179c a card's own text raises the speed a player already has | `check:speed` `check:inherent-triggers-spent`~~
@@ -1108,25 +1108,25 @@ out: grep for them.
 - ~~CR 702.179d speed stops at 4 | `board:player-speed`~~
 - ~~CR 702.179d the increase happens only once each turn | `board:player-speed`~~
 - ~~CR 702.179d your own life loss raises nothing | `check:helper-speedOf` `check:helper-subtract`~~
-- CR 704.5aa a player controlling Muraganda Raceway with no speed gets speed 1 | `check:helper-speedOf`
+- ~~CR 704.5aa a player controlling Muraganda Raceway with no speed gets speed 1 | `check:helper-speedOf`~~
 - ~~CR 704.5aa does not fire again once speed exists | `check:speed`~~
 
 ### `TargetSpec`
 
-- CR 115.7d / 702.21a an unchanged target already illegal may stay, and the new one draws ward | `check:bindings`
-- CR 115.7d a new target that makes an unchanged target illegal is refused | `check:spell-targets`
-- CR 601.2c Bioshift's second slot cannot be a creature its first slot's controller does not control | `check:prompt-payload`
-- CR 601.2c Dwell on the Past's card slot is scoped to the player its other slot targets | `check:other-Target.legalSets`
-- CR 601.2c Fall of the Hammer's victim slot cannot be the creature its dealer slot names | `check:legal-targets`
-- CR 601.2c the joint check re-derives a jointly judged slot against the announced X | `check:legal-targets`
-- CR 601.2c the slot admits exactly the creature with a counter on it | `check:helper-abolisherOf` `check:legal-targets`
-- CR 601.2c whole card: hexproof from black leaves alice's Doom Blade no legal target, hexproof from white leaves it one | `board:continuous-effect`
-- CR 602.2a/115.5 Adric's ability is not offered its own object among the abilities it may counter | `check:legal-targets` `check:events`
-- CR 608.2b Doom Blade fizzles when its target gains shroud in response | `board:continuous-effect`
-- CR 700.2d a repeated mode's computed bound measures its own occurrence's sibling slot | `check:legal-targets`
-- CR 700.2d a repeated mode's filter reads its own occurrence's sibling slot, not the first's | `check:legal-targets`
-- CR 701.24c Dwell on the Past shuffles the targeted player's library even when both targeted cards have left the graveyard | `move:other-changeZone`
-- CR 702.16k / 702.16b a Saltfield Recluse the chosen player steals in response no longer weakens the Nemesis | `board:object-chosenplayer`
+- ~~CR 115.7d / 702.21a an unchanged target already illegal may stay, and the new one draws ward | `check:bindings`~~
+- ~~CR 115.7d a new target that makes an unchanged target illegal is refused | `check:spell-targets`~~
+- ~~CR 601.2c Bioshift's second slot cannot be a creature its first slot's controller does not control | `check:prompt-payload`~~
+- ~~CR 601.2c Dwell on the Past's card slot is scoped to the player its other slot targets | `check:other-Target.legalSets`~~
+- ~~CR 601.2c Fall of the Hammer's victim slot cannot be the creature its dealer slot names | `check:legal-targets`~~
+- ~~CR 601.2c the joint check re-derives a jointly judged slot against the announced X | `check:legal-targets`~~
+- ~~CR 601.2c the slot admits exactly the creature with a counter on it | `check:helper-abolisherOf` `check:legal-targets`~~
+- ~~CR 601.2c whole card: hexproof from black leaves alice's Doom Blade no legal target, hexproof from white leaves it one | `board:continuous-effect`~~
+- ~~CR 602.2a/115.5 Adric's ability is not offered its own object among the abilities it may counter | `check:legal-targets` `check:events`~~
+- ~~CR 608.2b Doom Blade fizzles when its target gains shroud in response | `board:continuous-effect`~~
+- ~~CR 700.2d a repeated mode's computed bound measures its own occurrence's sibling slot | `check:legal-targets`~~
+- ~~CR 700.2d a repeated mode's filter reads its own occurrence's sibling slot, not the first's | `check:legal-targets`~~
+- ~~CR 701.24c Dwell on the Past shuffles the targeted player's library even when both targeted cards have left the graveyard | `move:other-changeZone`~~
+- ~~CR 702.16k / 702.16b a Saltfield Recluse the chosen player steals in response no longer weakens the Nemesis | `board:object-chosenplayer`~~
 
 ### `TeamSpec`
 
@@ -1200,9 +1200,9 @@ out: grep for them.
 
 ### `ZoneChangeSpec`
 
-- CR 401.2 each attacking creature's OWNER picks the end, not the resolving controller | `check:prompt-order`
+- CR 401.2 each attacking creature's OWNER picks the end, not the resolving controller
 - CR 401.7 Temporal Cleansing: the OWNER picks second from the top, and it lands under the top card | `check:prompt-payload`
-- CR 701.9 / 101.4 Tinybones Joins Up has every targeted player discard, in APNAP order | `check:prompt-order`
+- ~~CR 701.9 / 101.4 Tinybones Joins Up has every targeted player discard, in APNAP order | `check:prompt-order`~~
 
 ### `ZoneTriggerSpec`
 

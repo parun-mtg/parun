@@ -23,8 +23,8 @@ import qualified Parun.Types.GraveyardOrder as GraveyardOrder.Type
 import qualified Parun.Types.ManaType as ManaType
 import qualified Parun.Types.Seat as Seat
 
--- | Life defaults to CR 119.1's twenty, the mana pool to empty, and the
--- graveyard order to Indifferent.
+-- | Life defaults to CR 119.1's twenty, the mana pool to empty, speed to none
+-- (CR 702.179b), and the graveyard order to Indifferent.
 codec :: Codec.Codec Seat.Seat
 codec = Fields.object $ do
   name <- Fields.required "name" Label.codec Seat.name
@@ -33,6 +33,7 @@ codec = Fields.object $ do
   team <- Fields.defaulted "team" Nothing (Common.maybe TeamId.codec) Seat.team
   range <- Fields.defaulted "range" Nothing (Common.maybe Common.natural) Seat.range
   emperor <- Fields.defaulted "emperor" False Common.boolean Seat.emperor
+  speed <- Fields.defaulted "speed" Nothing (Common.maybe Common.natural) Seat.speed
   graveyardOrder <- Fields.defaulted "graveyardOrder" GraveyardOrder.Type.Indifferent GraveyardOrder.codec Seat.graveyardOrder
   manaPool <- Fields.defaulted "manaPool" [] symbols Seat.manaPool
   battlefield <- Fields.defaulted "battlefield" Seq.empty (Common.seq Placement.codec) Seat.battlefield
@@ -53,6 +54,7 @@ codec = Fields.object $ do
         Seat.team = team,
         Seat.range = range,
         Seat.emperor = emperor,
+        Seat.speed = speed,
         Seat.graveyardOrder = graveyardOrder,
         Seat.manaPool = manaPool,
         Seat.battlefield = battlefield,

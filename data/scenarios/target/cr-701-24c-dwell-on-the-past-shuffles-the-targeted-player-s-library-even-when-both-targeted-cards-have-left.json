@@ -1,0 +1,261 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Dwell on the Past",
+            "label": "dwell"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker",
+            "label": "her-top"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "her-deeper"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Goblin Piker",
+            "label": "his"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "his-other"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker",
+            "label": "his-top"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "his-deeper"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Goblin Piker",
+            "label": "hers"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Faerie Macabre",
+            "label": "macabre"
+          }
+        ],
+        "library": [
+          {
+            "card": "Lightning Bolt",
+            "label": "carol-top"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "carol-deeper"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.24c Dwell on the Past shuffles the targeted player's library even when both targeted cards have left the graveyard",
+  "note": "CR 701.24c: a library is shuffled even if none of the objects are where they're expected to be. CR 608.2b fizzles only a spell whose targets are all illegal, so when carol's Faerie Macabre exiles both targeted cards from bob's graveyard in response (the Haskell original moved them directly), Dwell on the Past's player slot stays legal and the spell resolves with nothing to shuffle in, and bob's library must be shuffled anyway. The shuffle is observed as the Shuffle prompt arriving and the order its answer sets (reversed), the only way a shuffle shows (CR 701.24a). Three seats and three seeded two-card libraries: alice casts, bob is targeted, carol is neither, so the library shuffled is the one the spell names, not the controller's nor everyone's, and an unscheduled Shuffle of either other library would fail the run. The --control file lets the cards stay.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest"
+          ],
+          "object": "$dwell",
+          "targetsBySlot": {
+            "cards": [
+              "$his",
+              "$his-other"
+            ],
+            "player": [
+              "$bob"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Dwell on the Past"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "object": "$macabre",
+          "targets": [
+            "$his",
+            "$his-other"
+          ]
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$his-deeper",
+            "$his-top"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$his-deeper",
+            "$his-top"
+          ],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$her-top",
+            "$her-deeper"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$carol-top",
+            "$carol-deeper"
+          ],
+          "of": "Zone",
+          "player": "carol",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$hers",
+            "Faerie Macabre"
+          ],
+          "of": "Zone",
+          "player": "carol",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Muraganda Raceway",
+            "label": "raceway"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 704.5aa a player controlling Muraganda Raceway with no speed gets speed 1",
+  "note": "Neither seat starts with a speed. The state-based action before alice's first priority starts her engines; bob, controlling no such permanent, still has none, the falsifier for an implementation that gave everybody speed.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": 1,
+          "of": "Speed",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": null,
+          "of": "Speed",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

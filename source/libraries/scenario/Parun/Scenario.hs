@@ -212,7 +212,10 @@ data Rehearsal = MkRehearsal
     replaying :: Bool,
     -- | Where a replayed recording stopped: the state the first prompt past
     -- its last entry was asked in.
-    ended :: Maybe GameState.GameState
+    ended :: Maybe GameState.GameState,
+    -- | Each prompt other than priority asked so far, oldest first, by turn,
+    -- decider and kind: what the Asked view reads.
+    promptsAsked :: Seq.Seq (Natural, Maybe Label.Label, Text.Text)
   }
 
 type Run = State.StateT Rehearsal (Either Halt)
@@ -327,7 +330,8 @@ rehearsalOf timeline board =
           audited = Nothing,
           reference = Nothing,
           replaying = False,
-          ended = Nothing
+          ended = Nothing,
+          promptsAsked = Seq.empty
         }
 
 -- | What a finished run still owes: choices its last action never used, and
@@ -391,6 +395,7 @@ stage registry board =
               counters = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.counters seat)) (NonEmpty.toList seated))
               orders = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.graveyardOrder seat)) (NonEmpty.toList seated))
               notes = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.draftNotes seat)) (NonEmpty.toList seated))
+              speeds = Map.fromList (fmap (\(seat, pid) -> (pid, Seat.speed seat)) (NonEmpty.toList seated))
               positioned =
                 base
                   { GameState.turn =
@@ -402,7 +407,7 @@ stage registry board =
                         },
                     GameState.turnsBegun = turnsBegunBy base active (Board.turn board),
                     GameState.manaPool = Map.fromList [(pid, Mana.Type.MkMana (fmap plainUnit (Seat.manaPool seat))) | (seat, pid) <- NonEmpty.toList seated, not (null (Seat.manaPool seat))],
-                    GameState.players = Map.mapWithKey (\pid p -> p {Player.life = Map.findWithDefault (Player.life p) pid lives, Player.counters = Map.findWithDefault (Player.counters p) pid counters, Player.graveyardOrder = Map.findWithDefault (Player.graveyardOrder p) pid orders, Player.draftNotes = Map.findWithDefault (Player.draftNotes p) pid notes}) (GameState.players base),
+                    GameState.players = Map.mapWithKey (\pid p -> p {Player.life = Map.findWithDefault (Player.life p) pid lives, Player.counters = Map.findWithDefault (Player.counters p) pid counters, Player.graveyardOrder = Map.findWithDefault (Player.graveyardOrder p) pid orders, Player.draftNotes = Map.findWithDefault (Player.draftNotes p) pid notes, Player.speed = Map.findWithDefault (Player.speed p) pid speeds}) (GameState.players base),
                     GameState.monarch = monarch
                   }
           case misseat of
@@ -681,7 +686,9 @@ answerScheduled asked = do
   if not (null (Asked.enclosing asked))
     then failWith (Failure.MkNestedGamePrompt (TurnRegisters.turnNumber (GameState.turn gs)) (TurnRegisters.phase (GameState.turn gs)) decider kind)
     else do
-      Monad.when (recorded prompt && kind /= Text.pack "ChooseAction") (runPromptChecks gs decider prompt)
+      Monad.when (recorded prompt && kind /= Text.pack "ChooseAction") $ do
+        runPromptChecks gs decider prompt
+        State.modify' (\rehearsal -> rehearsal {promptsAsked = promptsAsked rehearsal Seq.|> (TurnRegisters.turnNumber (GameState.turn gs), decider, kind)})
       -- CR 734.1: a refused move is reversed, so the engine's next prompt is
       -- the one it answered, asked again. A prompt the move raises on its way
       -- there -- a payment's own choices, an Answer the timeline schedules,
@@ -2192,6 +2199,9 @@ renderView gs asked viewIs =
         View.ManaPool -> do
           pid <- needPlayer
           pure (encoded Codec.Mana.codec (Map.findWithDefault (Mana.Type.MkMana []) pid (GameState.manaPool gs)))
+        View.Speed -> do
+          pid <- needPlayer
+          pure (maybe ReplyType.Null (ReplyType.Number . toInteger) (Map.lookup pid (GameState.players gs) >>= Player.speed))
         View.Daytime -> pure (maybe ReplyType.Null (encoded Codec.Daytime.codec) (GameState.daytime gs))
         View.Protector -> do
           oid <- needObject
@@ -2230,6 +2240,10 @@ renderView gs asked viewIs =
           let seers = [pid | pid <- GameState.seating gs, Visibility.sees pid oid gs == Visibility.Type.Visible]
           labels <- mapM labelOf seers
           pure (ReplyType.Array (fmap (ReplyType.Text . Label.unwrap) labels))
+        View.Asked -> do
+          let turn = TurnRegisters.turnNumber (GameState.turn gs)
+              row (_, decider, kind) = ReplyType.Array [maybe ReplyType.Null (ReplyType.Text . Label.unwrap) decider, ReplyType.Text kind]
+          pure . ReplyType.Array . fmap row . filter (\(at, _, _) -> at == turn) . Foldable.toList =<< State.gets promptsAsked
         View.Witnessed -> do
           pid <- needPlayer
           let nameOf snapshot = Text.intercalate (Text.pack " // ") (fmap CardName.unwrap (Set.toAscList (ProjectedCharacteristics.names snapshot)))

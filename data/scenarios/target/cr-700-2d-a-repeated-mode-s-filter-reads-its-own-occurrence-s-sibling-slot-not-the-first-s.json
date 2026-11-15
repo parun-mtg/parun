@@ -1,0 +1,320 @@
+{
+  "description": "CR 700.2d a repeated mode's filter reads its own occurrence's sibling slot, not the first's",
+  "note": "CR 700.2d puts a printed \"another\" on a mode chosen twice, so the victim filter's slot name must follow the occurrence as the key and pool do: read under its printed name from occurrence 1 it would name occurrence 0's dealer, and the creature occurrence 1 itself named would become a legal victim of its own damage. Synthetic Hammer Refrain (choose two, repeatable: Fall of the Hammer's mode, or draw a card) because no printed card repeating a mode prints two targets with one restricting the other. Two Pikers for alice, so the two dealers differ only by slot; bob's Wall of Stone survives 4. Occurrence 1 naming its own dealer as victim reverses the cast (CR 601.2e), so occurrence 0's damage never happens either; naming the Wall, both Pikers' damage reaches it. The target prompt still offers occurrence 1's victim slot every creature, its own dealer included, and its dealer slot only alice's two.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "d1"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "d2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Synthetic Hammer Refrain",
+            "label": "refrain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Wall of Stone",
+            "label": "wall"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$refrain",
+          "modes": [
+            0,
+            0
+          ],
+          "mana": [
+            "$m1",
+            "$m2"
+          ],
+          "targetsBySlot": {
+            "dealer": [
+              "$d1"
+            ],
+            "victim": [
+              "$wall"
+            ],
+            "dealer#1": [
+              "$d2"
+            ],
+            "victim#1": [
+              "$d2"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Synthetic Hammer Refrain",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$wall",
+          "damage": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$d2",
+          "damage": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$refrain",
+          "mana": [
+            "$m1",
+            "$m2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseModes",
+          "with": [
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseTargets",
+            "offer": {
+              "source": "Synthetic Hammer Refrain",
+              "slots": [
+                [
+                  "dealer",
+                  [
+                    1,
+                    [
+                      [
+                        "Creature",
+                        "$d1"
+                      ],
+                      [
+                        "Creature",
+                        "$d2"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "dealer#1",
+                  [
+                    1,
+                    [
+                      [
+                        "Creature",
+                        "$d1"
+                      ],
+                      [
+                        "Creature",
+                        "$d2"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "victim",
+                  [
+                    1,
+                    [
+                      [
+                        "Creature",
+                        "$d1"
+                      ],
+                      [
+                        "Creature",
+                        "$d2"
+                      ],
+                      [
+                        "Creature",
+                        "$wall"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "victim#1",
+                  [
+                    1,
+                    [
+                      [
+                        "Creature",
+                        "$d1"
+                      ],
+                      [
+                        "Creature",
+                        "$d2"
+                      ],
+                      [
+                        "Creature",
+                        "$wall"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTargets",
+          "with": [
+            [
+              "dealer",
+              [
+                [
+                  "Creature",
+                  "$d1"
+                ]
+              ]
+            ],
+            [
+              "victim",
+              [
+                [
+                  "Creature",
+                  "$wall"
+                ]
+              ]
+            ],
+            [
+              "dealer#1",
+              [
+                [
+                  "Creature",
+                  "$d2"
+                ]
+              ]
+            ],
+            [
+              "victim#1",
+              [
+                [
+                  "Creature",
+                  "$wall"
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Damage": {
+          "object": "$wall",
+          "damage": 4
+        }
+      }
+    }
+  ]
+}

@@ -2349,7 +2349,8 @@ eternalize =
 --
 -- THE EXCEPTIONS ride the CreateCopy, so CR 707.9b writes them into the
 -- token's copiable values and a copy of the token inherits them, which
--- Parun.CopySpec's graveyardTokenCopySpec proves with a Clone.
+-- data/scenarios/copy's cr-702-128a and cr-702-129a scenarios prove with a
+-- Clone.
 graveyardTokenCopy :: [CopyException.CopyException (GrantedAbility.GrantedAbility Card)] -> Cost Keyword -> ActivatedAbility Card (GrantedAbility.GrantedAbility Card)
 graveyardTokenCopy exceptions cost =
   let copied =

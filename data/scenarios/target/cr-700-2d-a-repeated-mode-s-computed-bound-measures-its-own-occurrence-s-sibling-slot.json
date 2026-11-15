@@ -1,0 +1,407 @@
+{
+  "description": "CR 700.2d a repeated mode's computed bound measures its own occurrence's sibling slot",
+  "note": "CR 202.3's computed bound is the slot's third read of a sibling, and on a repeated mode (CR 700.2d) it must measure its own occurrence's gauge: measuring occurrence 0's would let occurrence 1 destroy a creature it could not afford. Synthetic Measured Refrain (choose two, repeatable: tap up to two target creatures you control, then destroy target creature with mana value at most the number of those; or draw a card) because no printed repeatable mode has a computed bound. Three Pikers for alice, so the two gauges differ only by slot and by how many each holds. Occurrence 0 taps two and names bob's mana value 2 Piker; occurrence 1 taps one, so naming his other Piker (mana value 2) reverses the cast (CR 601.2e) and occurrence 0's victim survives too, while naming the mana value 1 Typhoid Rats destroys both. The target prompt still offers occurrence 1's victim slot every creature, its bound measured against every announcement its gauge could make, so the reversal is the joint check and not a slot emptied.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s3"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "gauge-a"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "gauge-b"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "gauge-c"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Synthetic Measured Refrain",
+            "label": "refrain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "victim"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "dear"
+          },
+          {
+            "card": "Typhoid Rats",
+            "label": "cheap"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "Cast": {
+          "object": "$refrain",
+          "modes": [
+            0,
+            0
+          ],
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3"
+          ],
+          "targetsBySlot": {
+            "gauge": [
+              "$gauge-a",
+              "$gauge-b"
+            ],
+            "victim": [
+              "$victim"
+            ],
+            "gauge#1": [
+              "$gauge-c"
+            ],
+            "victim#1": [
+              "$dear"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "alice",
+          "zone": "Hand",
+          "card": "Synthetic Measured Refrain",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Battlefield",
+          "is": [
+            "$victim",
+            "$dear",
+            "$cheap"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$refrain",
+          "mana": [
+            "$s1",
+            "$s2",
+            "$s3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseModes",
+          "with": [
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "AnnounceTargets",
+          "with": [
+            [
+              "gauge",
+              2
+            ],
+            [
+              "gauge#1",
+              1
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseTargets",
+            "offer": {
+              "source": "Synthetic Measured Refrain",
+              "slots": [
+                [
+                  "gauge",
+                  [
+                    2,
+                    [
+                      [
+                        "Creature",
+                        "$gauge-a"
+                      ],
+                      [
+                        "Creature",
+                        "$gauge-b"
+                      ],
+                      [
+                        "Creature",
+                        "$gauge-c"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "gauge#1",
+                  [
+                    1,
+                    [
+                      [
+                        "Creature",
+                        "$gauge-a"
+                      ],
+                      [
+                        "Creature",
+                        "$gauge-b"
+                      ],
+                      [
+                        "Creature",
+                        "$gauge-c"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "victim",
+                  [
+                    1,
+                    [
+                      [
+                        "Creature",
+                        "$gauge-a"
+                      ],
+                      [
+                        "Creature",
+                        "$gauge-b"
+                      ],
+                      [
+                        "Creature",
+                        "$gauge-c"
+                      ],
+                      [
+                        "Creature",
+                        "$victim"
+                      ],
+                      [
+                        "Creature",
+                        "$dear"
+                      ],
+                      [
+                        "Creature",
+                        "$cheap"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "victim#1",
+                  [
+                    1,
+                    [
+                      [
+                        "Creature",
+                        "$gauge-a"
+                      ],
+                      [
+                        "Creature",
+                        "$gauge-b"
+                      ],
+                      [
+                        "Creature",
+                        "$gauge-c"
+                      ],
+                      [
+                        "Creature",
+                        "$victim"
+                      ],
+                      [
+                        "Creature",
+                        "$dear"
+                      ],
+                      [
+                        "Creature",
+                        "$cheap"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTargets",
+          "with": [
+            [
+              "gauge",
+              [
+                [
+                  "Creature",
+                  "$gauge-a"
+                ],
+                [
+                  "Creature",
+                  "$gauge-b"
+                ]
+              ]
+            ],
+            [
+              "victim",
+              [
+                [
+                  "Creature",
+                  "$victim"
+                ]
+              ]
+            ],
+            [
+              "gauge#1",
+              [
+                [
+                  "Creature",
+                  "$gauge-c"
+                ]
+              ]
+            ],
+            [
+              "victim#1",
+              [
+                [
+                  "Creature",
+                  "$cheap"
+                ]
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "player": "bob",
+          "zone": "Graveyard",
+          "card": "Typhoid Rats",
+          "count": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Battlefield",
+          "is": [
+            "$dear"
+          ]
+        }
+      }
+    }
+  ]
+}

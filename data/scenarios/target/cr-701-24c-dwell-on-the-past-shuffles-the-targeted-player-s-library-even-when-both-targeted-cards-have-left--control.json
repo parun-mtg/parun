@@ -1,0 +1,207 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Dwell on the Past",
+            "label": "dwell"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker",
+            "label": "her-top"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "her-deeper"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Goblin Piker",
+            "label": "his"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "his-other"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker",
+            "label": "his-top"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "his-deeper"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "graveyard": [
+          {
+            "card": "Goblin Piker",
+            "label": "hers"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Faerie Macabre",
+            "label": "macabre"
+          }
+        ],
+        "library": [
+          {
+            "card": "Lightning Bolt",
+            "label": "carol-top"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "carol-deeper"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.24c Dwell on the Past shuffles the targeted player's library even when both targeted cards have left the graveyard",
+  "note": "The control for cr-701-24c-dwell-on-the-past-shuffles-the-targeted-player-s-library-even-when-both-targeted-cards-have-left: the same board and cast with carol's Faerie Macabre left in her hand. Bob's graveyard loses exactly the two named cards, his library gains exactly two, and carol's graveyard Piker, the same printing as one of his, stays, so it was his graveyard the cards came from.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest"
+          ],
+          "object": "$dwell",
+          "targetsBySlot": {
+            "cards": [
+              "$his",
+              "$his-other"
+            ],
+            "player": [
+              "$bob"
+            ]
+          }
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Dwell on the Past"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$his-top",
+            "$his-deeper",
+            "Goblin Piker#5",
+            "Lightning Bolt#4"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "bob",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Goblin Piker",
+          "count": 2,
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Lightning Bolt",
+          "count": 2,
+          "player": "bob",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$hers"
+          ],
+          "of": "Zone",
+          "player": "carol",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

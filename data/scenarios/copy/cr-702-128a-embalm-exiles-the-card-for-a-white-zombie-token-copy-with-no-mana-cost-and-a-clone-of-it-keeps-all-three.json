@@ -1,0 +1,459 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tah-Crop Skirmisher",
+            "label": "twin"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "i5"
+          },
+          {
+            "card": "Island",
+            "label": "i6"
+          },
+          {
+            "card": "Island",
+            "label": "i7"
+          },
+          {
+            "card": "Island",
+            "label": "i8"
+          },
+          {
+            "card": "Island",
+            "label": "i9"
+          },
+          {
+            "card": "Island",
+            "label": "i10"
+          },
+          {
+            "card": "Island",
+            "label": "i11"
+          },
+          {
+            "card": "Island",
+            "label": "i12"
+          },
+          {
+            "card": "Island",
+            "label": "i13"
+          },
+          {
+            "card": "Island",
+            "label": "i14"
+          }
+        ],
+        "graveyard": [
+          {
+            "card": "Tah-Crop Skirmisher",
+            "label": "gy"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Clone",
+            "label": "clone-a"
+          },
+          {
+            "card": "Clone",
+            "label": "clone-b"
+          },
+          {
+            "card": "Displacement Wave",
+            "label": "wave"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.128a embalm exiles the card for a white Zombie token copy with no mana cost, and a Clone of it keeps all three",
+  "note": "Tah-Crop Skirmisher, a blue 2/1 Snake Warrior with a mana cost, so the white Zombie token with none differs on every excepted characteristic (CR 707.9b). Embalm is offered from the graveyard in a main phase, not in the end step (CR 602.5d), and not from the Skirmisher on the battlefield, which has the ability too but whose cost exiles a graveyard card (CR 113.6m). The card is exiled to pay the cost. A Clone of the token is the copiable-values tripwire: it takes the exceptions with it, where a Clone of the printed card beside it is the control. Displacement Wave for X = 0 reads the mana values: it returns the token (which ceases to exist, CR 111.7) and the Clone of it, both mana value 0 (CR 202.3a), and leaves the Clone of the card and the card itself.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "ActivateManaAbility $i1",
+            "ActivateManaAbility $i2",
+            "ActivateManaAbility $i3",
+            "ActivateManaAbility $i4",
+            "ActivateManaAbility $i5",
+            "ActivateManaAbility $i6",
+            "ActivateManaAbility $i7",
+            "ActivateManaAbility $i8",
+            "ActivateManaAbility $i9",
+            "ActivateManaAbility $i10",
+            "ActivateManaAbility $i11",
+            "ActivateManaAbility $i12",
+            "ActivateManaAbility $i13",
+            "ActivateManaAbility $i14"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "EndStep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "PlayLand Island#18",
+            "Cast $clone-a",
+            "Cast $clone-b",
+            "Cast $wave",
+            "Activate $gy",
+            "ActivateManaAbility $i1",
+            "ActivateManaAbility $i2",
+            "ActivateManaAbility $i3",
+            "ActivateManaAbility $i4",
+            "ActivateManaAbility $i5",
+            "ActivateManaAbility $i6",
+            "ActivateManaAbility $i7",
+            "ActivateManaAbility $i8",
+            "ActivateManaAbility $i9",
+            "ActivateManaAbility $i10",
+            "ActivateManaAbility $i11",
+            "ActivateManaAbility $i12",
+            "ActivateManaAbility $i13",
+            "ActivateManaAbility $i14"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Activate": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            null
+          ],
+          "object": "$gy"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Tah-Crop Skirmisher",
+          "count": 1,
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Tah-Crop Skirmisher",
+          "count": 0,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "White"
+          ],
+          "object": "Tah-Crop Skirmisher#3",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Tah-Crop Skirmisher#3",
+          "subtypes": [
+            "Snake",
+            "Warrior",
+            "Zombie"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "Tah-Crop Skirmisher#3",
+          "power": 2,
+          "toughness": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i5",
+            "$i6",
+            "$i7",
+            "$i8",
+            null
+          ],
+          "object": "$clone-a"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseCopyTarget": "Tah-Crop Skirmisher#3"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i9",
+            "$i10",
+            "$i11",
+            "$i12",
+            null
+          ],
+          "object": "$clone-b"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseCopyTarget": "$twin"
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "White"
+          ],
+          "object": "Clone",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Clone",
+          "subtypes": [
+            "Snake",
+            "Warrior",
+            "Zombie"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Blue"
+          ],
+          "object": "Clone#2",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Clone#2",
+          "subtypes": [
+            "Snake",
+            "Warrior"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Tah-Crop Skirmisher",
+          "count": 4,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$i13",
+            "$i14"
+          ],
+          "object": "$wave",
+          "x": 0
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Clone",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Tah-Crop Skirmisher",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Tah-Crop Skirmisher",
+          "count": 0,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}

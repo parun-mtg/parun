@@ -1,0 +1,92 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tovolar, Dire Overlord",
+            "label": "tovolar"
+          },
+          {
+            "card": "Russet Wolves"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "b-forest"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Fog",
+            "label": "fog"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.4 two Wolves are not three, so it stays day",
+  "note": "CR 603.4's intervening \"if\", with one Wolf too few: Tovolar plus one Russet Wolves is two, so nothing triggers and the designation does not move. The falsifier for a trigger that fired on the step alone. The board is cr-732-1-702-145c-tovolar-s-upkeep-trigger-makes-it-night-and-transforms-him's less one Russet Wolves: day from Tovolar at the first settle (CR 702.145d) on bob's turn, and bob's Fog keeps alice's untap step from making it night (CR 502.2). Read at alice's draw step, after the upkeep.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$b-forest"
+          ],
+          "object": "$fog"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "Day",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Tovolar, Dire Overlord"
+          ],
+          "object": "$tovolar"
+        }
+      },
+      "player": "alice",
+      "step": "DrawStep",
+      "turn": 2
+    }
+  ]
+}
