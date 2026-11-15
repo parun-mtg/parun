@@ -1314,6 +1314,7 @@ data Question
   | RandomInGraveyard
   | RandomInLibrary
   | RandomAmong
+  | ChosenAmong
   | OnePermanent
   | SeveralPermanents
   | PermanentsUpTo
@@ -1362,7 +1363,8 @@ questionOf ref = case ref of
     HiddenZone.Hand -> Just RandomInHand
     HiddenZone.Library -> Just RandomInLibrary
   ObjectRef.RandomCardInGraveyard {} -> Just RandomInGraveyard
-  ObjectRef.AtRandom {} -> Just RandomAmong
+  ObjectRef.OneAmong CardSelection.AtRandom _ -> Just RandomAmong
+  ObjectRef.OneAmong CardSelection.ByChoice _ -> Just ChosenAmong
   ObjectRef.ChosenPermanents choice -> case ChosenPermanents.count choice of
     _ | not (Set.null (ChosenPermanents.ownZones choice)) -> Just AcrossOwnZones
     _ | ChosenPermanents.zone choice /= Zone.Battlefield -> Just OffBattlefield
@@ -1384,7 +1386,7 @@ chooserRef = Maybe.isJust . questionOf
 -- reached, so this is the fence that keeps a card from loading a combination no
 -- test reaches. A position read through the pure objectRefObjects allows none.
 --
--- A move's: every question but SeveralPermanents. The scenario
+-- A move's: every question but SeveralPermanents and ChosenAmong. The scenario
 -- ransack-sends-the-chosen-to-the-bottom-and-orders-the-rest reaches
 -- AnyCardsFromAmong, and
 -- cr-601-2f-gorex-exiles-any-number-of-creature-cards-and-returns-them-at-random
@@ -1393,7 +1395,7 @@ chooserRef = Maybe.isJust . questionOf
 -- which Mirror of Fate's scenario reaches through Effect.ChoosePermanents; no
 -- permanent opcode's test reaches it.
 movedQuestions :: [Question]
-movedQuestions = filter (/= SeveralPermanents) [minBound .. maxBound]
+movedQuestions = filter (`notElem` [SeveralPermanents, ChosenAmong]) [minBound .. maxBound]
 
 -- The battlefield questions, for the opcodes that act on PERMANENTS -- Tovolar,
 -- Dire Overlord's transform, Teferi, Hero of Dominaria's untap, God-Eternal
@@ -1434,7 +1436,8 @@ effectObjectRefs effect =
         Effect.AttachTarget {} -> []
         Effect.AttachTargetToEach {} -> []
         Effect.AttachBound {} -> []
-        Effect.AttachAll (AttachAll.MkAttachAll ref _) -> [(permanentQuestions, ref)]
+        -- ChosenAmong: the Zack Fair scenarios.
+        Effect.AttachAll (AttachAll.MkAttachAll ref _) -> [(ChosenAmong : permanentQuestions, ref)]
         -- The dealers are swept through the pure objectRefObjects too.
         Effect.DealDamage (DealDamage.MkDealDamage parts _ dealers _ _ _ _) -> read_ (Foldable.toList dealers <> fmap DamagePart.ref (Foldable.toList parts))
         Effect.ModifyTarget (ModifyTarget.MkModifyTarget _ _ ref _) -> [(permanentQuestions, ref)]
@@ -2164,8 +2167,8 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
           ObjectRef.AttackedBy _ -> True
           -- TRUE, InSlot's answer: the slot's object, followed.
           ObjectRef.FromAnywhere _ -> True
-          -- TRUE: one draw names one object, however many the pool holds.
-          ObjectRef.AtRandom _ -> True
+          -- TRUE: one draw or pick names one object, however many the pool holds.
+          ObjectRef.OneAmong _ _ -> True
           -- FALSE: several refs together name several objects.
           ObjectRef.AllOf _ -> False
         -- Does a choice's count name at most one? A COMPUTED count is plural

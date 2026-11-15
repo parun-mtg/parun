@@ -3266,7 +3266,7 @@ data ObjectRefChildren f = MkObjectRefChildren
     refZones :: ZoneScope.ZoneScope -> f ZoneScope.ZoneScope,
     -- | Who chooses a card out of a graveyard (CR 608.2d), whole.
     refChooser :: Chooser.Chooser -> f Chooser.Chooser,
-    -- | A nested reference: AtRandom's, AllOf's.
+    -- | A nested reference: OneAmong's, AllOf's.
     refNested :: ObjectRef.ObjectRef -> f ObjectRef.ObjectRef,
     -- | The events the engine looks back over to resolve the reference.
     refLooksBack :: HistoryRead.HistoryRead -> f ()
@@ -3326,7 +3326,7 @@ objectRefChildren c ref = case ref of
   ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong bound filter_) -> fmap ObjectRef.EachCardFromAmong (EachCardFromAmong.MkEachCardFromAmong <$> refSlot c bound <*> refFilter c filter_)
   ObjectRef.RandomCard (RandomCard.MkRandomCard zone seat filter_ count) -> fmap ObjectRef.RandomCard (RandomCard.MkRandomCard zone <$> refPlayer c seat <*> refFilter c filter_ <*> refQuantity c count)
   ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard players filter_ count) -> fmap ObjectRef.RandomCardInGraveyard (RandomCardInGraveyard.MkRandomCardInGraveyard <$> refZones c players <*> refFilter c filter_ <*> refQuantity c count)
-  ObjectRef.AtRandom inner -> ObjectRef.AtRandom <$> refNested c inner
+  ObjectRef.OneAmong selection inner -> ObjectRef.OneAmong selection <$> refNested c inner
   ObjectRef.ChosenPermanents choice -> ObjectRef.ChosenPermanents <$> chosenPermanentsChildren c choice
   ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound bound filter_ zone) -> fmap ObjectRef.AttachedToBound (AttachedToBound.MkAttachedToBound <$> refSlot c bound <*> refFilter c filter_ <*> pure zone)
   ObjectRef.AttackedBy bound -> ObjectRef.AttackedBy <$> refSlot c bound
