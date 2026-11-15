@@ -6,6 +6,7 @@ import qualified Parun.Codec.Batching as Batching
 import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.StackObjectKind as StackObjectKind
 import qualified Parun.Codec.TargetedSubject as TargetedSubject
+import qualified Parun.Codec.Zone as Zone
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
@@ -19,10 +20,12 @@ codec = Fields.object $ do
   relation <- Fields.defaulted "relation" (BecomesTargetedTrigger.relation BecomesTargetedTrigger.defaultValue) PlayerRelation.codec BecomesTargetedTrigger.relation
   kinds <- Fields.defaulted "kinds" (BecomesTargetedTrigger.kinds BecomesTargetedTrigger.defaultValue) (Common.set StackObjectKind.codec) BecomesTargetedTrigger.kinds
   batching <- Fields.defaulted "batching" (BecomesTargetedTrigger.batching BecomesTargetedTrigger.defaultValue) Batching.codec BecomesTargetedTrigger.batching
+  zones <- Fields.defaulted "zones" (BecomesTargetedTrigger.zones BecomesTargetedTrigger.defaultValue) (Common.set Zone.codec) BecomesTargetedTrigger.zones
   pure
     BecomesTargetedTrigger.MkBecomesTargetedTrigger
       { BecomesTargetedTrigger.subject = subject,
         BecomesTargetedTrigger.relation = relation,
         BecomesTargetedTrigger.kinds = kinds,
-        BecomesTargetedTrigger.batching = batching
+        BecomesTargetedTrigger.batching = batching,
+        BecomesTargetedTrigger.zones = zones
       }

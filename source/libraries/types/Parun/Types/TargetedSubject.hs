@@ -6,8 +6,9 @@ import qualified Parun.Types.PlayerRelation as PlayerRelation
 -- | CR 115.1 / 601.2c: which targets a becomes-targeted condition watches --
 -- permanents, players standing in a relation to CR 109.5's "you", or both.
 data TargetedSubject
-  = -- | A permanent the subject admits: ward's bearer, Venerated Rotpriest's
-    -- "a creature you control" (CR 702.21a, 601.2c).
+  = -- | A permanent the subject admits, or a spell under
+    -- BecomesTargetedTrigger.zones: ward's bearer, Venerated Rotpriest's "a
+    -- creature you control" (CR 702.21a, 601.2c).
     Permanent ActingPermanent.ActingPermanent
   | -- | A player alone: Dormant Gomazoa's "whenever you become the target of a
     -- spell" (CR 109.5).

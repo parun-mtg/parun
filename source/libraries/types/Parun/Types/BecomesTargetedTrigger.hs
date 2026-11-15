@@ -8,6 +8,7 @@ import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.TargetedSubject as TargetedSubject
+import qualified Parun.Types.Zone as Zone
 
 -- | CR 601.2c: which targets becoming targets fire the ability, by which
 -- announcement road, and per target or per batch (CR 603.2c).
@@ -17,7 +18,8 @@ import qualified Parun.Types.TargetedSubject as TargetedSubject
 data BecomesTargetedTrigger = MkBecomesTargetedTrigger
   { -- | The targets the condition watches: the bearer (CR 702.21a's ward), a
     -- permanent the Filter admits, read off CR 603.10's sample of the
-    -- battlefield at the announcement (Event.becameTarget), a player (Dormant
+    -- battlefield at the announcement (Event.becameTarget) or, under `zones`,
+    -- a spell on the stack, a player (Dormant
     -- Gomazoa's "you"), or either (Leyline of Combustion, Loki, God of
     -- Mischief).
     subject :: TargetedSubject.TargetedSubject,
@@ -33,7 +35,11 @@ data BecomesTargetedTrigger = MkBecomesTargetedTrigger
     kinds :: Set.Set StackObjectKind.StackObjectKind,
     -- | Once per targeted permanent (Venerated Rotpriest) or once for the whole
     -- announcement (Professor Hojo's "one or more").
-    batching :: Batching.Batching
+    batching :: Batching.Batching,
+    -- | Where a Matching subject's object target is read (CR 115.1): the
+    -- battlefield, or the stack too for Surrak, Elusive Hunter's "or a
+    -- creature spell you control". A Self subject compares ids and ignores it.
+    zones :: Set.Set Zone.Zone
   }
   deriving (Eq, Ord, Show)
 
@@ -46,7 +52,8 @@ defaultValue =
     { subject = TargetedSubject.Permanent ActingPermanent.Self,
       relation = PlayerRelation.AnyPlayer,
       kinds = Set.fromList [minBound .. maxBound],
-      batching = Batching.EachOccurrence
+      batching = Batching.EachOccurrence,
+      zones = Set.singleton Zone.Battlefield
     }
 
 -- | "Whenever a [permanent] becomes the target of a spell or ability": a

@@ -13,6 +13,7 @@ import qualified Parun.Types.Holder as Holder
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.TargetedSubject as TargetedSubject
+import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 spec s = Spec.describe s "Parun.Codec.BecomesTargetedTrigger" $ do
@@ -26,7 +27,8 @@ spec s = Spec.describe s "Parun.Codec.BecomesTargetedTrigger" $ do
       BecomesTargetedTrigger.defaultValue {BecomesTargetedTrigger.relation = PlayerRelation.Opponent}
       " {\"relation\":\"Opponent\"} "
   -- Leyline of Combustion's "you and/or" over Professor Hojo's creatures you
-  -- control, Loki, God of Mischief's either ability, one batch.
+  -- control, Loki, God of Mischief's either ability, one batch, Surrak, Elusive
+  -- Hunter's stack beside the battlefield.
   Spec.it s "round-trips every field" $
     Common.assertCodec
       s
@@ -35,8 +37,9 @@ spec s = Spec.describe s "Parun.Codec.BecomesTargetedTrigger" $ do
           { BecomesTargetedTrigger.subject = TargetedSubject.PlayerOrPermanent PlayerRelation.You (ActingPermanent.Matching (Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You])),
             BecomesTargetedTrigger.relation = PlayerRelation.Opponent,
             BecomesTargetedTrigger.kinds = Set.fromList [StackObjectKind.ActivatedAbility, StackObjectKind.TriggeredAbility],
-            BecomesTargetedTrigger.batching = Batching.OneOrMore
+            BecomesTargetedTrigger.batching = Batching.OneOrMore,
+            BecomesTargetedTrigger.zones = Set.fromList [Zone.Battlefield, Zone.Stack]
           }
       )
-      " {\"subject\":{\"type\":\"PlayerOrPermanent\",\"value\":{\"player\":\"You\",\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]}}}},\"relation\":\"Opponent\",\"kinds\":[\"ActivatedAbility\",\"TriggeredAbility\"],\"batching\":\"OneOrMore\"} "
+      " {\"subject\":{\"type\":\"PlayerOrPermanent\",\"value\":{\"player\":\"You\",\"permanent\":{\"type\":\"Matching\",\"value\":{\"type\":\"And\",\"value\":[{\"type\":\"HasCardType\",\"value\":\"Creature\"},{\"type\":\"HeldBy\",\"value\":{\"holder\":\"Controller\",\"relation\":\"You\"}}]}}}},\"relation\":\"Opponent\",\"kinds\":[\"ActivatedAbility\",\"TriggeredAbility\"],\"batching\":\"OneOrMore\",\"zones\":[\"Battlefield\",\"Stack\"]} "
   Spec.it s "has a schema" $ Common.assertHasSchema s BecomesTargetedTrigger.codec
