@@ -1,0 +1,235 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Possession Engine",
+            "label": "eng"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "UUUUU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Possession Engine: when this Vehicle enters, its controller gains control of target creature an opponent controls for as long as they control the Vehicle, and that creature can't attack or block for as long",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$eng"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$piker"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$bears"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "object": "$bears",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$giant"
+        ]
+      },
+      "player": "bob",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Block": {
+          "$bears": [
+            "$giant"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Block": {}
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 2
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Attack": [
+          "$bears"
+        ]
+      },
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": "alice",
+          "object": "$bears",
+          "of": "Controller"
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 3
+    }
+  ]
+}

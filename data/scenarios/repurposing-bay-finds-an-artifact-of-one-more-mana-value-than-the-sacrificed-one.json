@@ -1,0 +1,184 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Repurposing Bay",
+            "label": "bay"
+          },
+          {
+            "card": "Sol Ring",
+            "label": "ring"
+          }
+        ],
+        "library": [
+          {
+            "card": "Memnite",
+            "label": "mem"
+          },
+          {
+            "card": "Mind Stone",
+            "label": "stone"
+          },
+          {
+            "card": "Sol Ring",
+            "label": "ring2"
+          }
+        ],
+        "manaPool": "CC",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Repurposing Bay sacrifices another artifact and searches for an artifact card with mana value one more than the sacrificed artifact's, put onto the battlefield",
+  "note": "The sacrificed Sol Ring has mana value 1; the library holds Memnite (0), another Sol Ring (1) and Mind Stone (2), so Memnite and the Sol Ring, matching the sacrificed value rather than one more, are refused.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "costOrder": [
+            0,
+            1
+          ],
+          "mana": [
+            null
+          ],
+          "object": "$bay"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$mem"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$ring2"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Search",
+          "with": [
+            "$stone"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$mem",
+            "$ring2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Mind Stone",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Sol Ring",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

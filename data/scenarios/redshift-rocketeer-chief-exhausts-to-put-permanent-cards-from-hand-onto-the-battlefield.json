@@ -1,0 +1,249 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Redshift, Rocketeer Chief",
+            "label": "red",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Lightning Bolt"
+          },
+          {
+            "card": "Wind Drake"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "RGCCCCCCCC",
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "Redshift, Rocketeer Chief taps for X mana of one color, X its power, spendable only to activate abilities, and pays with it for its exhaust ability, which puts any number of permanent cards from its controller's hand onto the battlefield",
+  "note": "Ten mana in the pool and Redshift's two red pay {10}{R}{G}. Lightning Bolt, an instant, is refused; Hill Giant and a Forest go onto the battlefield and Wind Drake stays in hand.",
+  "timeline": [
+    {
+      "do": {
+        "Activate": {
+          "ability": 1,
+          "mana": [
+            "$red"
+          ],
+          "object": "$red",
+          "yields": [
+            [
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                "restriction": {
+                  "activations": {
+                    "type": "And",
+                    "value": []
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              },
+              {
+                "manaType": {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                "restriction": {
+                  "activations": {
+                    "type": "And",
+                    "value": []
+                  }
+                },
+                "retention": "Ordinary",
+                "rider": null,
+                "sourceChoices": null,
+                "tags": []
+              }
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Answer": {
+          "prompt": "ChooseCardsInHand",
+          "with": [
+            "Lightning Bolt"
+          ]
+        }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCardsInHand",
+          "with": [
+            "Hill Giant",
+            "Forest"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "OrderTimestamps": [
+          "Hill Giant",
+          "Forest"
+        ]
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Forest",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Wind Drake",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

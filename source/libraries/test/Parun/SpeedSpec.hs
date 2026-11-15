@@ -381,7 +381,7 @@ maxSpeedSpec s registry = Spec.describe s "MaxSpeed" $ do
   -- direction. Parun rules that speed may go past 4 and that 4 OR MORE is max
   -- speed -- Parun.Engine.Speed.maxSpeed's comment carries the ruling -- and this
   -- case is what records it, so a later CR clarification is this assertion plus
-  -- the AtLeast gate in the two "Max speed --" cards.
+  -- the AtLeast gate in every "Max speed --" card.
   --
   -- Gameplay level throughout, and through the CARD rather than through atSpeed:
   -- Alice is put at 3 and Synthetic Speed Boost's "each player's speed increases
