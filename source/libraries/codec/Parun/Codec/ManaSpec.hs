@@ -23,7 +23,8 @@ plain manaType =
       ManaUnit.rider = Nothing,
       ManaUnit.spendTrigger = Nothing,
       ManaUnit.sourceChoices = Nothing,
-      ManaUnit.sourceLastExiled = Nothing
+      ManaUnit.sourceLastExiled = Nothing,
+      ManaUnit.producer = Nothing
     }
 
 plainJson :: String -> String
@@ -54,7 +55,8 @@ spec s = Spec.describe s "Parun.Codec.Mana" $ do
                 ManaUnit.rider = Nothing,
                 ManaUnit.spendTrigger = Nothing,
                 ManaUnit.sourceChoices = Nothing,
-                ManaUnit.sourceLastExiled = Nothing
+                ManaUnit.sourceLastExiled = Nothing,
+                ManaUnit.producer = Nothing
               }
           ]
       )

@@ -827,6 +827,13 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       (Filter.TagWasSpent ProductionTag.Artifact)
       " {\"type\":\"TagWasSpent\",\"value\":\"Artifact\"} "
+  -- Tecutlan, the Searing Rift's "using mana produced by Tecutlan".
+  Spec.it s "PaidWithManaFromSource" $
+    Common.assertCodec
+      s
+      codec
+      Filter.PaidWithManaFromSource
+      " {\"type\":\"PaidWithManaFromSource\"} "
   -- Hallar, the Firefletcher's "if that spell was kicked".
   Spec.it s "Paid" $
     Common.assertCodec

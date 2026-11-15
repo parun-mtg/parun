@@ -2804,7 +2804,8 @@ floating color =
       ManaUnit.rider = Nothing,
       ManaUnit.spendTrigger = Nothing,
       ManaUnit.sourceChoices = Nothing,
-      ManaUnit.sourceLastExiled = Nothing
+      ManaUnit.sourceLastExiled = Nothing,
+      ManaUnit.producer = Nothing
     }
 
 -- CR 302.6: as if the object had been under alice's control since her turn began.

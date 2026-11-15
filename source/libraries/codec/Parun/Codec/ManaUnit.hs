@@ -15,15 +15,16 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.ManaUnit as ManaUnit
 
--- | All eight axes, CR 106.6's three included: a restriction is a predicate over
+-- | All nine axes, CR 106.6's three included: a restriction is a predicate over
 -- the object being paid for and a rider is an effect on it, so both ride the
 -- unit rather than being recoverable from the source that made it.
 --
 -- Every key REQUIRED, unlike Parun.Codec.ManaAddition's. This is game state
 -- rather than card data, written and read back by the replay transcript, so a
--- defaulted key would let a dropped field round trip silently. The two
--- exceptions are `sourceLastExiled` and `spendTrigger`, Nothing on all but Ice
--- Cauldron's and Pyromancer's Goggles' mana and so written only when set, which
+-- defaulted key would let a dropped field round trip silently. The three
+-- exceptions are `sourceLastExiled`, `spendTrigger` and `producer`, Nothing on
+-- all but Ice Cauldron's, Pyromancer's Goggles' and Tecutlan's mana and so
+-- written only when set, which
 -- keeps the pools every scenario renders unchanged; their round trip is still
 -- exact.
 codec :: Codec.Codec ManaUnit.ManaUnit
@@ -36,6 +37,7 @@ codec = Fields.object $ do
   sourceChoices <- Fields.required "sourceChoices" (Common.maybe SourceChoices.codec) ManaUnit.sourceChoices
   spendTrigger <- Fields.defaulted "spendTrigger" Nothing (Common.maybe SpendTrigger.codec) ManaUnit.spendTrigger
   sourceLastExiled <- Fields.defaulted "sourceLastExiled" Nothing (Common.maybe ObjectId.codec) ManaUnit.sourceLastExiled
+  producer <- Fields.defaulted "producer" Nothing (Common.maybe ObjectId.codec) ManaUnit.producer
   pure
     ManaUnit.MkManaUnit
       { ManaUnit.manaType = manaType,
@@ -45,5 +47,6 @@ codec = Fields.object $ do
         ManaUnit.rider = rider,
         ManaUnit.spendTrigger = spendTrigger,
         ManaUnit.sourceChoices = sourceChoices,
-        ManaUnit.sourceLastExiled = sourceLastExiled
+        ManaUnit.sourceLastExiled = sourceLastExiled,
+        ManaUnit.producer = producer
       }

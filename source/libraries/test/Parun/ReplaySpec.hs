@@ -127,7 +127,7 @@ oneMana :: Color.Color -> ManaOption.ManaOption
 oneMana color =
   let -- CR 109.5's "you", which is what a basic land's intrinsic ability means
       -- by "add" (Parun.Codec.ManaAddition.defaultPlayer).
-      yield = Map.singleton (PlayerRef.Relative PlayerRelation.You) (Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored color, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}])
+      yield = Map.singleton (PlayerRef.Relative PlayerRelation.You) (Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored color, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}])
    in ManaOption.MkManaOption
         { ManaOption.cost = Mint.intrinsicManaCost,
           ManaOption.restrictions = [],
@@ -1168,7 +1168,7 @@ combatReplaySpec s =
         -- transcript like any other. The pair differs in one field, so a decode
         -- returning the head would pass one leg by accident.
         Spec.it s "ChooseManaToSpend round-trips through the transcript" $ do
-          let plain = ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Red, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}
+          let plain = ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Red, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
               snow = plain {ManaUnit.tags = Set.singleton ProductionTag.Snow}
               p = Prompt.ChooseManaToSpend decider S.alice (plain NonEmpty.:| [snow])
           Spec.assertEqWith s "the plain one round trips" (Replay.decode p (Replay.encode p plain)) (Just plain)
@@ -1178,7 +1178,7 @@ combatReplaySpec s =
         -- transcript like any other. Two pools, so a decode returning the head
         -- would pass one leg by accident.
         Spec.it s "ChooseManaSpentOnX round-trips through the transcript" $ do
-          let unit color = ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored color, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}
+          let unit color = ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored color, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
               black = Mana.Type.MkMana [unit Color.Black]
               red = Mana.Type.MkMana [unit Color.Red]
               p = Prompt.ChooseManaSpentOnX decider S.alice (ObjectId.MkObjectId 7) (black NonEmpty.:| [red])

@@ -680,7 +680,7 @@ burningTreeResolved bte pid =
 -- One green mana with no production tags, plainRed's twin: what the Emissary's
 -- trigger adds alongside it.
 plainGreen :: ManaUnit.ManaUnit
-plainGreen = ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Green, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}
+plainGreen = ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Green, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
 
 -- CR 608.2d's OTHER reading of "choose": a scope that admits the CONTROLLER.
 -- Stadium Vendors ({3}{R} 3/3 Creature -- Goblin, "When this creature enters,
@@ -1231,7 +1231,8 @@ hawkerMana manaType =
       ManaUnit.rider = Nothing,
       ManaUnit.spendTrigger = Nothing,
       ManaUnit.sourceChoices = Nothing,
-      ManaUnit.sourceLastExiled = Nothing
+      ManaUnit.sourceLastExiled = Nothing,
+      ManaUnit.producer = Nothing
     }
 
 -- CR 106.6's SECOND shape, and the one no card in the pool reached before: a
@@ -1603,7 +1604,7 @@ recordingManaTypes manaType p = case p of
 -- One mana of `color` carrying no production tag, plainRed's and plainGreen's
 -- generalisation: CR 107.4h reads the SOURCE, and Quirion Sentinel is not snow.
 plainColor :: Color.Color -> ManaUnit.ManaUnit
-plainColor color = ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored color, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}
+plainColor color = ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored color, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
 
 -- CR 601.2g's window offers one source per interchangeability class rather than
 -- one per permanent (#217): three Llanowar Elves that nothing tells apart are one
@@ -2350,7 +2351,7 @@ freeze oid gs =
 -- One mana of one type carrying no production tag: what a basic land really puts
 -- in a pool, and the unit the Celestial Dawn cases below seat directly.
 plainOf :: ManaType.ManaType -> ManaUnit.ManaUnit
-plainOf manaType = ManaUnit.MkManaUnit {ManaUnit.manaType = manaType, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}
+plainOf manaType = ManaUnit.MkManaUnit {ManaUnit.manaType = manaType, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
 
 -- A cost of exactly one symbol, so a payability answer is about that symbol and
 -- nothing else.
@@ -2372,7 +2373,7 @@ payable :: PlayerId.PlayerId -> ManaCost.ManaCost -> GameState.GameState -> Bool
 payable = Mana.canPay Cost.manaActivations
 
 plainRed :: ManaUnit.ManaUnit
-plainRed = ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Red, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}
+plainRed = ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Red, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
 
 -- CR 106.6 naming a SPECIAL ACTION rather than a cast or an activation. Overgrown
 -- Zealot ({1}{G} Creature -- Elf Druid 0/4, "{T}: Add one mana of any color." /

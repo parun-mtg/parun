@@ -4392,6 +4392,7 @@ filterReads f = case f of
   Filter.Type.HeldByPlayer holder _ -> holderReads holder
   Filter.Type.HeldByRecipient holder -> holderReads holder
   Filter.Type.IsSource -> Set.empty
+  Filter.Type.PaidWithManaFromSource -> Set.empty
   -- Reads an IDENTITY, IsBound's answer below.
   Filter.Type.IsObject _ -> Set.empty
   -- CR 115.1 / 109.3: a target is a property of a stack object and no
@@ -4779,6 +4780,7 @@ filterReadsPeers f = case f of
   Filter.Type.HeldByPlayer _ _ -> False
   Filter.Type.HeldByRecipient _ -> False
   Filter.Type.IsSource -> False
+  Filter.Type.PaidWithManaFromSource -> False
   Filter.Type.IsObject _ -> False
   Filter.Type.TargetsSource -> False
   Filter.Type.HasSingleTarget -> False

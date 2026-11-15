@@ -66,6 +66,8 @@ import qualified Parun.Types.IgnoredAbility as IgnoredAbility
 import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LoggedEvent as LoggedEvent
+import qualified Parun.Types.Mana as Mana
+import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.MeldSource as MeldSource
 import qualified Parun.Types.MergeComponent as MergeComponent
 import qualified Parun.Types.MonarchWatch as MonarchWatch
@@ -273,7 +275,7 @@ representatives pcs gs candidates =
 --
 --   * The zones and GameState.objects hold every object symmetrically, and what
 --     one object says about another is namedByAnother's question.
---   * GameState.players, GameState.manaPool, GameState.pendingControl,
+--   * GameState.players, GameState.pendingControl,
 --     GameState.control (keyed by a player, and every PlayerControl on the stack
 --     names a Decider, a lifetime and rule 724.7's restriction -- no object),
 --     GameState.monarch, GameState.initiative, GameState.drewFromEmpty,
@@ -689,6 +691,14 @@ namedByRelation oid gs =
         || any (any (any (spentActivationNames oid) . Map.keys) . Map.elems . TurnRegisters.activatedThisTurn) parked
         || any (any (activationNames oid) . TurnRegisters.activationsThisTurn) parked
         || any (any (attackedLastTurnNames oid) . Game.attacksInOwnLastTurn gs) (GameState.seating gs)
+        -- CR 106.3: a unit naming its producer (ManaUnit.producer), in a pool
+        -- or among what paid for an object (CR 601.2h).
+        || any (producedBy oid) (Map.elems (GameState.manaPool gs))
+        || any (producedBy oid . Object.manaSpent) (Map.elems (GameState.objects gs))
+
+-- Does some unit of this mana name the object as its producer?
+producedBy :: ObjectId -> Mana.Mana -> Bool
+producedBy oid = any ((== Just oid) . ManaUnit.producer) . Mana.unwrap
 
 -- The objects a GameState.phasedOut row names BEYOND its key: none, since CR
 -- 702.26a's stored value is the player the permanent phased out under, bar a CR

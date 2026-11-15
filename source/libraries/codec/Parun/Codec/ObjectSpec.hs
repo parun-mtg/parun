@@ -205,7 +205,8 @@ spec s = Spec.describe s "Parun.Codec.Object" $ do
                     ManaUnit.rider = Nothing,
                     ManaUnit.spendTrigger = Nothing,
                     ManaUnit.sourceChoices = Nothing,
-                    ManaUnit.sourceLastExiled = Nothing
+                    ManaUnit.sourceLastExiled = Nothing,
+                    ManaUnit.producer = Nothing
                   }
               ],
           Object.announcedX = Just 20,

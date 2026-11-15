@@ -2016,6 +2016,14 @@ comparesCandidates predicate = case predicate of
   Filter.Measures (Measures.MkMeasures _ _ (Operand.OfEachOtherCandidate _)) -> True
   _ -> Monoid.getAny (Const.getConst (Children.filterChildren (Children.descending (Const.Const . Monoid.Any . comparesCandidates)) predicate))
 
+-- Does the Filter carry Filter.PaidWithManaFromSource anywhere, so that the
+-- object whose ability holds it must stamp its mana with itself
+-- (Parun.Engine.Mana.producerOf)?
+readsProducer :: Filter.Filter keyword -> Bool
+readsProducer predicate = case predicate of
+  Filter.PaidWithManaFromSource -> True
+  _ -> Monoid.getAny (Const.getConst (Children.filterChildren (Children.descending (Const.Const . Monoid.Any . readsProducer)) predicate))
+
 -- CR 208.1 / 202.3: the number a Measure names on a view, Nothing where the
 -- object has none (CR 208.3's noncreature, a player).
 measureOf :: Measure.Measure -> View -> Maybe Integer
@@ -2401,6 +2409,11 @@ matches context view predicate = case predicate of
   Filter.IsSource -> case (identity view, source context) of
     (Just oid, Just src) -> oid == src
     _ -> False
+  -- CR 106.3: a unit names its producer only where that producer asks
+  -- (Parun.Types.ManaUnit.producer), so every other unit is Nothing here.
+  Filter.PaidWithManaFromSource -> case source context of
+    Just src -> any ((== Just src) . ManaUnit.producer) (Mana.unwrap (manaSpent view))
+    Nothing -> False
   -- The baked half: the candidate IS this object, with no source to relate it to.
   -- Vacuously False off an object, `identity` being Nothing for a player view.
   Filter.IsObject named -> identity view == Just named
@@ -3307,6 +3320,7 @@ manaValueThresholds predicate = case predicate of
   Filter.HeldByPlayer _ _ -> []
   Filter.HeldByRecipient _ -> []
   Filter.IsSource -> []
+  Filter.PaidWithManaFromSource -> []
   Filter.IsObject _ -> []
   Filter.TargetsSource -> []
   Filter.HasSingleTarget -> []
@@ -3483,6 +3497,7 @@ statesAQuality predicate = case predicate of
   Filter.HeldByPlayer _ _ -> True
   Filter.HeldByRecipient _ -> True
   Filter.IsSource -> True
+  Filter.PaidWithManaFromSource -> True
   Filter.IsObject _ -> True
   -- CR 701.23b for IsSource's reason, and unreachable from a search besides: a
   -- card in a library targets nothing.
@@ -3687,6 +3702,7 @@ readsSourceValues predicate = case predicate of
   Filter.HeldByPlayer _ _ -> False
   Filter.HeldByRecipient _ -> False
   Filter.IsSource -> False
+  Filter.PaidWithManaFromSource -> False
   Filter.IsObject _ -> False
   Filter.TargetsSource -> False
   Filter.HasSingleTarget -> False

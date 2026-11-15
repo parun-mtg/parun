@@ -169,7 +169,7 @@ conquerorCounter = CounterKind.Named (CounterName.UnsafeMkCounterName (Text.pack
 -- One mana unit of `mt`, untagged -- what tapping a land for its one mana ability
 -- floats.
 oneUnit :: ManaType.ManaType -> Mana.Type.Mana
-oneUnit mt = Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = mt, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}]
+oneUnit mt = Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = mt, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}]
 
 pikerCost :: ManaCost.ManaCost
 pikerCost = ManaCost.MkManaCost [ManaSymbol.Generic 1, ManaSymbol.OfType (ManaType.Colored Color.Red)]
@@ -245,7 +245,7 @@ manaSpec s registry = Spec.describe s "Mana" $ do
           s
           "pool"
           (Game.poolOf S.alice after)
-          (Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Red, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}])
+          (Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Red, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}])
 
   Spec.it s "two Mountains can pay {1}{R}" $ do
     mountain <- S.printingOf s registry "Mountain"
@@ -1334,7 +1334,7 @@ paysWithWhite p = case p of
   Prompt.ChooseManaSource _ _ _ candidates -> Just (NonEmpty.head candidates)
   Prompt.ChooseManaYield _ _ _ candidates ->
     S.optionYielding
-      (Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.White, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}])
+      (Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.White, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}])
       candidates
   _ -> S.identityAnswer p
 
@@ -1492,7 +1492,7 @@ palladiumMyrSpec s registry = Spec.describe s "Palladium Myr" $ do
         -- CR 106.3: the Myr is an artifact whichever yield is taken, so both
         -- units carry ProductionTag.Artifact -- including the {G} Ashaya's land
         -- grant adds, which is a land that is still an artifact.
-        artifactUnit t = ManaUnit.MkManaUnit {ManaUnit.manaType = t, ManaUnit.tags = Set.singleton ProductionTag.Artifact, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}
+        artifactUnit t = ManaUnit.MkManaUnit {ManaUnit.manaType = t, ManaUnit.tags = Set.singleton ProductionTag.Artifact, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
         green = artifactUnit (ManaType.Colored Color.Green)
         colorless = artifactUnit ManaType.Colorless
     Spec.assertEqWith
@@ -1808,7 +1808,7 @@ manaConfluenceSpec s registry = Spec.describe s "Mana Confluence" $ do
     urborg <- S.printingOf s registry "Urborg, Tomb of Yawgmoth"
     let (confluenceId, g1) = S.addPermanent manaConfluence S.alice (Setup.emptyGame S.bothPlayers)
         (_, gs) = S.addPermanent urborg S.alice g1
-        black = Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Black, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}]
+        black = Mana.Type.MkMana [ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Black, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}]
         -- The offered black option that is CR 305.6's free one, or the printed
         -- one that charges the life -- `printed` picks which.
         buysBlack :: Bool -> Prompt.Prompt r -> r
@@ -1834,7 +1834,7 @@ manaConfluenceSpec s registry = Spec.describe s "Mana Confluence" $ do
 prefersDoubleBlack :: Prompt.Prompt r -> r
 prefersDoubleBlack p = case p of
   Prompt.ChooseManaYield _ _ _ candidates ->
-    let unit = ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Black, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}
+    let unit = ManaUnit.MkManaUnit {ManaUnit.manaType = ManaType.Colored Color.Black, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
      in S.optionYielding (Mana.Type.MkMana [unit, unit]) candidates
   _ -> S.identityAnswer p
 
@@ -3456,7 +3456,7 @@ yieldTypes = fmap ManaUnit.manaType . Mana.yieldUnits
 gateBoard :: Printing.Printing -> (ObjectId.ObjectId, GameState.GameState)
 gateBoard gate =
   let (gateId, g1) = S.addPermanent gate S.alice (Setup.emptyGame S.bothPlayers)
-      unit manaType = ManaUnit.MkManaUnit {ManaUnit.manaType = manaType, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing}
+      unit manaType = ManaUnit.MkManaUnit {ManaUnit.manaType = manaType, ManaUnit.tags = Set.empty, ManaUnit.retention = ManaRetention.Ordinary, ManaUnit.restriction = Nothing, ManaUnit.rider = Nothing, ManaUnit.spendTrigger = Nothing, ManaUnit.sourceChoices = Nothing, ManaUnit.sourceLastExiled = Nothing, ManaUnit.producer = Nothing}
    in (gateId, Mana.addMana S.alice [unit whiteType, unit blueType] g1)
 
 whiteType :: ManaType.ManaType
@@ -4251,7 +4251,8 @@ unitOf manaType =
       ManaUnit.rider = Nothing,
       ManaUnit.spendTrigger = Nothing,
       ManaUnit.sourceChoices = Nothing,
-      ManaUnit.sourceLastExiled = Nothing
+      ManaUnit.sourceLastExiled = Nothing,
+      ManaUnit.producer = Nothing
     }
 
 -- Targets `victim`, takes `color` wherever a mana yield offers it, and records
@@ -5052,7 +5053,8 @@ genericBarSpec s = Spec.describe s "CR 107.4b mana barred from generic mana" $ d
             ManaUnit.rider = Nothing,
             ManaUnit.spendTrigger = Nothing,
             ManaUnit.sourceChoices = Nothing,
-            ManaUnit.sourceLastExiled = Nothing
+            ManaUnit.sourceLastExiled = Nothing,
+            ManaUnit.producer = Nothing
           }
       jegantha = fmap (unit True) [Color.White, Color.Blue, Color.Black, Color.Red, Color.Green]
       spent cost pool = fmap (List.sort . Mana.Type.unwrap . fst) (Mana.spend [] ManaSpending.AsProduced 0 (ManaCost.MkManaCost cost) (Mana.Type.MkMana pool))

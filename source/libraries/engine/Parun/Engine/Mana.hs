@@ -6,15 +6,18 @@ import qualified Data.Bifunctor as Bifunctor
 import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.Either as Either
 import qualified Data.Foldable as Foldable
+import qualified Data.Functor.Const as Const
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Monoid as Monoid
 import qualified Data.Ord as Ord
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Binding as Binding
+import qualified Parun.Engine.Children as Children
 import qualified Parun.Engine.Claim as Claim
 import qualified Parun.Engine.Commander as Commander
 import qualified Parun.Engine.Condition as Condition
@@ -139,6 +142,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.Supertype as Supertype
 import qualified Parun.Types.TappedForMana as TappedForMana
+import qualified Parun.Types.TriggerCondition as TriggerCondition
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -681,7 +685,8 @@ manaSuppliesGiven xCeiling capacity watch rewritesOf pcs pid borrowed oid gs =
             ManaUnit.rider = Nothing,
             ManaUnit.spendTrigger = Nothing,
             ManaUnit.sourceChoices = Nothing,
-            ManaUnit.sourceLastExiled = Nothing
+            ManaUnit.sourceLastExiled = Nothing,
+            ManaUnit.producer = Nothing
           }
       -- CR 601.2h / 608.2h on the supply side: a yield reading the permanent
       -- its cost sacrifices or exiles -- Priest of Yawgmoth's "equal to the
@@ -938,7 +943,8 @@ triggerAdds pid gs pending = case PendingTrigger.source pending of
               ManaUnit.rider = ManaAddition.rider addition,
               ManaUnit.spendTrigger = spendTriggerOf (TriggeredAbility.name (PendingTrigger.ability pending)) controller source gs =<< ManaAddition.whenSpent addition,
               ManaUnit.sourceChoices = sourceChoicesOf source gs,
-              ManaUnit.sourceLastExiled = lastExiledWith Nothing (Game.acquisitionOf source gs) source gs
+              ManaUnit.sourceLastExiled = lastExiledWith Nothing (Game.acquisitionOf source gs) source gs,
+              ManaUnit.producer = producerOf Map.empty source gs
             }
         adds addition
           | List.notElem pid (Maybe.fromMaybe [] (Players.named resolutionReads gs (ManaAddition.player addition))) = [[]]
@@ -1075,7 +1081,8 @@ pricedOptionsVisiting visited rewritesOf paid poolBoard pcs oid gs =
               whenSpent <- ManaAddition.whenSpent addition
               spendTriggerOf reader controller oid gs whenSpent,
             ManaUnit.sourceChoices = choices,
-            ManaUnit.sourceLastExiled = lastExiledWith reader (Game.acquisitionFor reader oid gs) oid gs
+            ManaUnit.sourceLastExiled = lastExiledWith reader (Game.acquisitionFor reader oid gs) oid gs,
+            ManaUnit.producer = producerOf pcs oid gs
           }
       -- CR 106.3's count, read off the BOARD rather than off the card: Cabal
       -- Coffers' "Add {B} for each Swamp you control" is ONE instruction whose
@@ -1292,6 +1299,30 @@ sourceChoicesOf oid gs = case Game.lookupObject oid gs of
     let choices = SourceContext.choicesOf (Game.acquisitionOf oid gs) oid gs
      in if Map.null (SourceChoices.names choices) && Set.null (SourceChoices.colors choices) && Maybe.isNothing (SourceChoices.subtype choices) then Nothing else Just choices {SourceChoices.acquisition = Acquisition.Own}
 
+-- CR 106.3: what this object's mana names as its producer
+-- (Parun.Types.ManaUnit.producer) -- the object itself where one of its
+-- triggered abilities asks after mana it produced (Filter.PaidWithManaFromSource),
+-- read off the projection as the mana is made, and Nothing otherwise.
+--
+-- Not implemented: a producer that lacks the ability as it makes the mana and
+-- regains it before the mana is spent never names itself (#7773).
+producerOf :: Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> Maybe ObjectId
+producerOf pcs oid gs = case Game.lookupObject oid gs of
+  Just _ | any (triggerReadsProducer . TriggeredAbility.condition) (PC.triggeredAbilities (Projection.projectGiven pcs oid gs)) -> Just oid
+  _ -> Nothing
+
+-- Does a trigger condition, nested ones included, carry
+-- Filter.PaidWithManaFromSource?
+triggerReadsProducer :: TriggerCondition.TriggerCondition -> Bool
+triggerReadsProducer =
+  Monoid.getAny
+    . Const.getConst
+    . Children.triggerConditionChildren
+      Children.triggerLeaves
+        { Children.triggerFilter = Const.Const . Monoid.Any . Filter.readsProducer,
+          Children.triggerNested = Const.Const . Monoid.Any . triggerReadsProducer
+        }
+
 -- CR 607.2a's production-time capture, sourceChoicesOf's twin: the last
 -- card exiled with this source that is still in exile, baked onto every unit it
 -- adds (Parun.Types.ManaUnit.sourceLastExiled). Only a card the mana ability
@@ -1366,7 +1397,8 @@ lifeForManaUnit manaType =
       ManaUnit.rider = Nothing,
       ManaUnit.spendTrigger = Nothing,
       ManaUnit.sourceChoices = Nothing,
-      ManaUnit.sourceLastExiled = Nothing
+      ManaUnit.sourceLastExiled = Nothing,
+      ManaUnit.producer = Nothing
     }
 
 -- The types in one yield, in printed order.
