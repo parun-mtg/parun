@@ -1,7 +1,6 @@
 {
   "faces": [
     {
-      "name": "Toby, Beastie Befriender",
       "manaCost": [
         {
           "type": "Generic",
@@ -15,106 +14,12 @@
           }
         }
       ],
+      "name": "Toby, Beastie Befriender",
       "oracleText": "When Toby enters, create a 4/4 white Beast creature token with \"This token can't attack or block alone.\"\nAs long as you control four or more creature tokens, creature tokens you control have flying.",
       "power": {
         "type": "Literal",
         "value": 1
       },
-      "toughness": {
-        "type": "Literal",
-        "value": 1
-      },
-      "typeLine": {
-        "subtypes": [
-          "Human",
-          "Wizard"
-        ],
-        "supertypes": [
-          "Legendary"
-        ],
-        "types": [
-          "Creature"
-        ]
-      },
-      "triggeredAbilities": [
-        {
-          "condition": {
-            "type": "Enters",
-            "value": {}
-          },
-          "modal": {
-            "modes": [
-              {
-                "clauses": [
-                  {
-                    "effects": [
-                      {
-                        "type": "Create",
-                        "value": {
-                          "card": {
-                            "faces": [
-                              {
-                                "colorIndicator": [
-                                  "White"
-                                ],
-                                "combatRestrictions": [
-                                  {
-                                    "type": "CantAttackAlone",
-                                    "value": {
-                                      "affected": {
-                                        "type": "Matching",
-                                        "value": {
-                                          "type": "IsSource"
-                                        }
-                                      }
-                                    }
-                                  },
-                                  {
-                                    "type": "CantBlockAlone",
-                                    "value": {
-                                      "affected": {
-                                        "type": "Matching",
-                                        "value": {
-                                          "type": "IsSource"
-                                        }
-                                      }
-                                    }
-                                  }
-                                ],
-                                "name": "Beast Token",
-                                "power": {
-                                  "type": "Literal",
-                                  "value": 4
-                                },
-                                "toughness": {
-                                  "type": "Literal",
-                                  "value": 4
-                                },
-                                "typeLine": {
-                                  "subtypes": [
-                                    "Beast"
-                                  ],
-                                  "types": [
-                                    "Creature"
-                                  ]
-                                }
-                              }
-                            ]
-                          },
-                          "quantity": {
-                            "type": "Literal",
-                            "value": 1
-                          }
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      ],
       "staticAbilities": [
         {
           "affected": {
@@ -195,7 +100,102 @@
             }
           ]
         }
-      ]
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "White"
+                                ],
+                                "combatRestrictions": [
+                                  {
+                                    "type": "CantAttackAlone",
+                                    "value": {
+                                      "affected": {
+                                        "type": "Matching",
+                                        "value": {
+                                          "type": "IsSource"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "type": "CantBlockAlone",
+                                    "value": {
+                                      "affected": {
+                                        "type": "Matching",
+                                        "value": {
+                                          "type": "IsSource"
+                                        }
+                                      }
+                                    }
+                                  }
+                                ],
+                                "name": "Beast Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 4
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 4
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Beast"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Wizard"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
     }
   ]
 }

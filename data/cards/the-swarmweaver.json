@@ -1,7 +1,6 @@
 {
   "faces": [
     {
-      "name": "The Swarmweaver",
       "manaCost": [
         {
           "type": "Generic",
@@ -22,88 +21,12 @@
           }
         }
       ],
-      "oracleText": "When The Swarmweaver enters, create two 1/1 black and green Insect creature tokens with flying.\nDelirium \u2014 As long as there are four or more card types among cards in your graveyard, Insects and Spiders you control get +1/+1 and have deathtouch.",
+      "name": "The Swarmweaver",
+      "oracleText": "When The Swarmweaver enters, create two 1/1 black and green Insect creature tokens with flying.\nDelirium — As long as there are four or more card types among cards in your graveyard, Insects and Spiders you control get +1/+1 and have deathtouch.",
       "power": {
         "type": "Literal",
         "value": 2
       },
-      "toughness": {
-        "type": "Literal",
-        "value": 3
-      },
-      "typeLine": {
-        "subtypes": [
-          "Scarecrow"
-        ],
-        "supertypes": [
-          "Legendary"
-        ],
-        "types": [
-          "Artifact",
-          "Creature"
-        ]
-      },
-      "triggeredAbilities": [
-        {
-          "condition": {
-            "type": "Enters",
-            "value": {}
-          },
-          "modal": {
-            "modes": [
-              {
-                "clauses": [
-                  {
-                    "effects": [
-                      {
-                        "type": "Create",
-                        "value": {
-                          "card": {
-                            "faces": [
-                              {
-                                "colorIndicator": [
-                                  "Black",
-                                  "Green"
-                                ],
-                                "keywords": [
-                                  {
-                                    "type": "Flying"
-                                  }
-                                ],
-                                "name": "Insect Token",
-                                "power": {
-                                  "type": "Literal",
-                                  "value": 1
-                                },
-                                "toughness": {
-                                  "type": "Literal",
-                                  "value": 1
-                                },
-                                "typeLine": {
-                                  "subtypes": [
-                                    "Insect"
-                                  ],
-                                  "types": [
-                                    "Creature"
-                                  ]
-                                }
-                              }
-                            ]
-                          },
-                          "quantity": {
-                            "type": "Literal",
-                            "value": 2
-                          }
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      ],
       "staticAbilities": [
         {
           "affected": {
@@ -189,7 +112,84 @@
             }
           ]
         }
-      ]
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 3
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "Enters",
+            "value": {}
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Black",
+                                  "Green"
+                                ],
+                                "keywords": [
+                                  {
+                                    "type": "Flying"
+                                  }
+                                ],
+                                "name": "Insect Token",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 1
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Insect"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 2
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Scarecrow"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
     }
   ]
 }

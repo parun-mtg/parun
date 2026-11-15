@@ -1,6 +1,21 @@
 {
   "faces": [
     {
+      "keywords": [
+        {
+          "type": "Ward",
+          "value": {
+            "cost": {
+              "mana": [
+                {
+                  "type": "Generic",
+                  "value": 2
+                }
+              ]
+            }
+          }
+        }
+      ],
       "manaCost": [
         {
           "type": "Generic",
@@ -87,22 +102,7 @@
         "types": [
           "Enchantment"
         ]
-      },
-      "keywords": [
-        {
-          "type": "Ward",
-          "value": {
-            "cost": {
-              "mana": [
-                {
-                  "type": "Generic",
-                  "value": 2
-                }
-              ]
-            }
-          }
-        }
-      ]
+      }
     }
   ]
 }

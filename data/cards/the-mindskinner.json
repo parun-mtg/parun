@@ -1,7 +1,23 @@
 {
   "faces": [
     {
-      "name": "The Mindskinner",
+      "combatRestrictions": [
+        {
+          "type": "CantBeBlockedBy",
+          "value": {
+            "affected": {
+              "type": "Matching",
+              "value": {
+                "type": "IsSource"
+              }
+            },
+            "blockers": {
+              "type": "And",
+              "value": []
+            }
+          }
+        }
+      ],
       "manaCost": [
         {
           "type": "OfType",
@@ -25,44 +41,12 @@
           }
         }
       ],
+      "name": "The Mindskinner",
       "oracleText": "The Mindskinner can't be blocked.\nIf a source you control would deal damage to an opponent, prevent that damage and each opponent mills that many cards.",
       "power": {
         "type": "Literal",
         "value": 10
       },
-      "toughness": {
-        "type": "Literal",
-        "value": 1
-      },
-      "typeLine": {
-        "subtypes": [
-          "Nightmare"
-        ],
-        "supertypes": [
-          "Legendary"
-        ],
-        "types": [
-          "Enchantment",
-          "Creature"
-        ]
-      },
-      "combatRestrictions": [
-        {
-          "type": "CantBeBlockedBy",
-          "value": {
-            "affected": {
-              "type": "Matching",
-              "value": {
-                "type": "IsSource"
-              }
-            },
-            "blockers": {
-              "type": "And",
-              "value": []
-            }
-          }
-        }
-      ],
       "replacementEffects": [
         {
           "effect": {
@@ -101,7 +85,23 @@
             }
           }
         }
-      ]
+      ],
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "typeLine": {
+        "subtypes": [
+          "Nightmare"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature",
+          "Enchantment"
+        ]
+      }
     }
   ]
 }
