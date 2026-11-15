@@ -1,0 +1,71 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Hero of Bladehold",
+            "label": "hero",
+            "ready": true
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "DeclareAttackers"
+  },
+  "description": "CR 603.3b two DIFFERENT abilities of one source are distinguishable entries",
+  "note": "The proving test for #61. Hero of Bladehold's battle cry and its token-maker are two distinct abilities of one source keyed on one attack, so the one ordering prompt offers two entries that must differ, where a source-only payload rendered both as the Hero alone. The order's consequence is cr-603-3b-702-91a-resolving-the-token-maker-first-pumps-the-soldiers.json.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$hero"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "OrderTriggers",
+            "offer": [
+              {
+                "source": "$hero"
+              },
+              {
+                "source": "$hero",
+                "text": "Whenever Hero of Bladehold attacks, other attacking creatures get +1/+0 until end of turn."
+              }
+            ]
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "OrderTriggers",
+          "with": [
+            1,
+            0
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Shimatsu the Bloodcloaked",
+            "commander": true,
+            "counters": [
+              {
+                "key": {
+                  "type": "PlusOnePlusOne"
+                },
+                "value": 1
+              }
+            ],
+            "label": "shimatsu"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island1"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Unsummon",
+            "label": "bounce"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "Upkeep"
+  },
+  "description": "CR 903.9b declining leaves it in her hand",
+  "final": [
+    {
+      "Count": {
+        "card": "Shimatsu the Bloodcloaked",
+        "count": 0,
+        "player": "alice",
+        "zone": "Command"
+      }
+    },
+    {
+      "Count": {
+        "card": "Shimatsu the Bloodcloaked",
+        "count": 1,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    }
+  ],
+  "note": "CR 903.9b is a may: declining leaves the commander where the spell sent it, the falsifier for a redirect made unasked.",
+  "timeline": [
+    {
+      "check": {
+        "Count": {
+          "card": "Shimatsu the Bloodcloaked",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Shimatsu the Bloodcloaked",
+          "count": 0,
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island1"
+          ],
+          "object": "$bounce"
+        }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReturnCommander",
+          "with": "Leaves"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    }
+  ]
+}

@@ -8,7 +8,6 @@
 module Parun.KeywordTriggerSpec where
 
 import qualified Control.Monad.Trans.State.Strict as State
-import qualified Data.Containers.ListUtils as ListUtils
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -30,7 +29,6 @@ import qualified Parun.Engine.Replay as Replay
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Soulbond as Soulbond
 import qualified Parun.Engine.Stack as Stack
-import qualified Parun.Extra.Natural as Natural.Extra
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -45,7 +43,6 @@ import qualified Parun.Types.BlockCount as BlockCount
 import qualified Parun.Types.BlockRole as BlockRole
 import qualified Parun.Types.BlockTrigger as BlockTrigger
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.CombatDamageAmount as CombatDamageAmount
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.Cost as Cost
 import qualified Parun.Types.CounterKind as CounterKind
@@ -53,7 +50,6 @@ import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Decider as Decider
 import qualified Parun.Types.Face as Face
-import qualified Parun.Types.Filter as Filter.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword.Type
@@ -65,16 +61,13 @@ import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerId as PlayerId
-import qualified Parun.Types.ProjectedCharacteristics as PC
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Response as Response
 import qualified Parun.Types.SpellCast as SpellCast
 import qualified Parun.Types.Subtype as Subtype
-import qualified Parun.Types.TextWord as TextWord
 import qualified Parun.Types.TriggerCondition as TriggerCondition
-import qualified Parun.Types.TriggerEntry as TriggerEntry
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -301,81 +294,22 @@ annihilatorSpec s registry =
 -- minted by Parun.Engine.Keyword
 -- and gathered by the same Parun.Engine.Event.Trigger.eventTriggers scan.
 --
--- Hero of Bladehold is the card, and it is here for a second reason: battle cry
--- and its printed "whenever this creature attacks, create two 1/1 white Soldier
--- creature tokens that are tapped and attacking" are TWO DISTINCT triggered
--- abilities of ONE source keyed on ONE event, so declaring it as an attacker
--- puts two entries into a single CR 603.3b ordering choice. That is #61's case:
--- under a source-only payload the two are identical on the wire while their
--- order genuinely matters, since battle cry pumps "each OTHER attacking
--- creature" and CR 611.2c fixes the affected set as the effect begins.
---
--- The card's official ruling (2011-06-01) states the outcome this group pins:
--- "Whenever Hero of Bladehold attacks, both abilities will trigger. You can put
--- them onto the stack in any order. If the token-creating ability resolves
--- first, the tokens each get +1/+0 until end of turn from the battle cry
--- ability."
-battleCrySpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-battleCrySpec s registry =
-  let -- Records every CR 603.3b ordering payload offered, verbatim, answering it
-      -- canonically and leaving every other prompt to the aggressive answerer --
-      -- which declares every legal attacker, so the declaration really happens.
-      recordEntries :: Prompt.Prompt r -> State.State [[TriggerEntry.TriggerEntry]] r
-      recordEntries p = case p of
-        Prompt.OrderTriggers _ _ entries -> do
-          State.modify' (<> [entries])
-          pure (zipWith const [0 ..] entries)
-        _ -> pure (S.aggressiveAnswer p)
-   in Spec.describe s "BattleCry" $ do
-        -- CR 702.91b: "If a creature has multiple instances of battle cry, each
-        -- triggers separately." So the count is a MULTIPLICITY, exactly as CR
-        -- 702.70b makes poisonous' one -- the falsifier is a mint that collapses
-        -- the count to a single ability. Asked of the mint directly rather than
-        -- of a board, unlike poisonous' own gameplay-level pair: no card in this
-        -- pool prints battle cry twice, and nothing here grants it, so a second
-        -- instance is not reachable through play (Snake Cult Initiation is what
-        -- makes it reachable for poisonous).
-        Spec.it s "CR 702.91b each instance of battle cry is its own ability" $ do
-          Spec.assertEqWith s "battle cry held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.BattleCry 2)) [Keyword.battleCry, Keyword.battleCry]
-          Spec.assertEqWith s "and held once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.BattleCry 1)) [Keyword.battleCry]
-        -- THE proving test (#61). One source, two DIFFERENT abilities, one
-        -- event: the payload's two entries must not be the same value, or the
-        -- player being asked for an order has no way to say which order they
-        -- mean. The falsifier is the source-only payload this replaced, where
-        -- both entries read `OfObject hero`.
-        Spec.it s "CR 603.3b two DIFFERENT abilities of one source are distinguishable entries" $ do
-          hero <- S.printingOf s registry "Hero of Bladehold"
-          let (gs, _, _) = S.combatBoardOf [hero] []
-              (_, payloads) = State.runState (Engine.runGame recordEntries gs Engine.runStep) []
-          case payloads of
-            [[a, b]] -> do
-              Spec.assertBool s (a /= b) "the two entries are distinguishable"
-              Spec.assertEqWith s "both hang on the one Hero" (TriggerEntry.source a) (TriggerEntry.source b)
-              Spec.assertEqWith s "and exactly one of them is rule 702.91a's battle cry" (length (filter ((==) Keyword.battleCry . TriggerEntry.ability) [a, b])) 1
-            other -> Spec.assertFailure s ("expected one ordering payload of two entries, got " <> show (fmap length other))
-        -- The other half of #61: two triggers of the SAME ability must stay
-        -- INDISTINGUISHABLE, or the engine would be asking a question with no
-        -- answer. CR 603.6a fires the watcher's ability once per entering
-        -- creature, and Hero of Bladehold's token-maker puts two Soldiers onto
-        -- the battlefield at once, so the second ordering choice of the same
-        -- combat is a pair of entries differing only in which token each
-        -- remembers -- a difference the entry deliberately does not carry.
-        --
-        -- The watcher is Aether Flash rather than Soul Warden BECAUSE its payload
-        -- reads the entrant: Engine.orderInert now elides the prompt outright for
-        -- a watcher that reads nothing, so a batch that still reaches the wire is
-        -- the only place two equal entries can be observed at all.
-        Spec.it s "CR 603.6a two triggers of the SAME ability stay indistinguishable" $ do
-          hero <- S.printingOf s registry "Hero of Bladehold"
-          aetherFlash <- S.printingOf s registry "Aether Flash"
-          case S.combatBoardOf [hero, aetherFlash] [] of
-            (gs, [_, flashId], _) -> case snd (State.runState (Engine.runGame recordEntries gs Engine.runStep) []) of
-              [[a, b], [w1, w2]] -> do
-                Spec.assertBool s (a /= b) "the Hero's two abilities are still distinguishable"
-                Spec.assertEqWith s "the second choice is the Flash's" (TriggerEntry.source w1) (TriggerSource.OfObject flashId)
-                Spec.assertEqWith s "and its two triggers are the same ability from the same source" w1 w2
-              other -> Spec.assertFailure s ("expected two ordering payloads of two entries each, got " <> show (fmap length other))
-            _ -> Spec.assertFailure s "fixture should give alice a Hero and an Aether Flash"
+-- Hero of Bladehold's two attack triggers, one CR 603.3b ordering choice, are
+-- scenarios under data/scenarios/keyword-trigger/.
+battleCrySpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+battleCrySpec s _ =
+  Spec.describe s "BattleCry" $ do
+    -- CR 702.91b: "If a creature has multiple instances of battle cry, each
+    -- triggers separately." So the count is a MULTIPLICITY, exactly as CR
+    -- 702.70b makes poisonous' one -- the falsifier is a mint that collapses
+    -- the count to a single ability. Asked of the mint directly rather than
+    -- of a board, unlike poisonous' own gameplay-level pair: no card in this
+    -- pool prints battle cry twice, and nothing here grants it, so a second
+    -- instance is not reachable through play (Snake Cult Initiation is what
+    -- makes it reachable for poisonous).
+    Spec.it s "CR 702.91b each instance of battle cry is its own ability" $ do
+      Spec.assertEqWith s "battle cry held twice is two abilities" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.BattleCry 2)) [Keyword.battleCry, Keyword.battleCry]
+      Spec.assertEqWith s "and held once is one" (Keyword.triggeredAbilitiesOf (Map.singleton Keyword.Type.BattleCry 1)) [Keyword.battleCry]
 
 -- CR 702.108a: "Prowess is a triggered ability. 'Prowess' means 'Whenever you
 -- cast a noncreature spell, this creature gets +1/+1 until end of turn.'" The
@@ -665,42 +599,6 @@ selfBlocksOneOrMoreSpec s registry =
         pure (S.combatBoardOf ours yours)
       atDamage :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> GameState.GameState
       atDamage = S.runToStep (Phase.Combat CombatStep.CombatDamage)
-      -- `board` with one creature card added to bob's HAND, which is what
-      -- Aetherplasm's second clause puts onto the battlefield blocking. The hand
-      -- holds that card alone, so the two arrival legs below differ in the CARD
-      -- and in nothing else.
-      plasmBoard mine theirs card = do
-        (gs0, ours, yours) <- board mine theirs
-        printing <- S.printingOf s registry card
-        let (handId, withCard) = S.addHandCard printing S.bob gs0
-        pure (withCard, ours, yours, handId)
-      -- Declares `blockers` against the lone attacker, takes both of
-      -- Aetherplasm's printed "may"s, and takes `card` out of hand.
-      --
-      -- The offer is FILTERED rather than replaced: clause 0 has already put
-      -- Aetherplasm back in hand beside it and both are creature cards, so the
-      -- choice is a real one, and a leg where `card` is not offered takes the
-      -- fallback instead of succeeding on a hand-built id.
-      --
-      -- The declaration is spelled out here rather than left to the answerer
-      -- S.runToStep was handed: that function stops when the phase first
-      -- matches, which is BEFORE CR 509.1's turn-based action, so an answer of
-      -- Map.empty would silently leave the attacker unblocked.
-      swapping :: ObjectId.ObjectId -> [ObjectId.ObjectId] -> ObjectId.ObjectId -> Prompt.Prompt r -> r
-      swapping attacker blockers card p = case p of
-        Prompt.DeclareBlockers {} -> Map.fromList (fmap (\b -> (b, Set.singleton attacker)) blockers)
-        Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-        Prompt.ChooseCardInHand _ _ _ offered -> Maybe.fromMaybe (NonEmpty.head offered) (List.find (== card) (NonEmpty.toList offered))
-        _ -> S.aggressiveAnswer p
-      survivors :: String -> GameState.GameState -> Int
-      survivors name = S.countOnBattlefieldByName (CardName.MkCardName (Text.pack name)) S.bob
-      -- The ids Combat.blockers holds for an attacker, narrowed to the ones
-      -- still on the battlefield. Nothing prunes a blocker's id as it leaves
-      -- (Parun.Engine.Damage's liveness filter is what makes the assignment
-      -- right), and Aetherplasm leaves ALIVE, so its stale id is still in the
-      -- set below.
-      liveBlockers :: ObjectId.ObjectId -> GameState.GameState -> [ObjectId.ObjectId]
-      liveBlockers attacker gs = filter (`S.onBattlefield` gs) (Set.toList (Combat.blockersOf attacker gs))
    in Spec.describe s "SelfBlocksOneOrMore" $ do
         -- The proving test for the BLOCKING half, and its control: two boards
         -- differing only in the attacker's colour.
@@ -728,30 +626,6 @@ selfBlocksOneOrMoreSpec s registry =
                 (S.powerToughnessOf attacking (atDamage S.aggressiveAnswer black), S.powerToughnessOf control (atDamage S.aggressiveAnswer other))
                 (Just (5, 3), Just (3, 3))
             _ -> Spec.assertFailure s "fixture should give alice one Serra Inquisitors on each board"
-        -- The CROSSING and not the arrival: an admitted creature that joins an
-        -- attacker ALREADY blocked by an admitted one is no second becoming, so
-        -- the ability fires once for the whole combat. The case above's board
-        -- with a Bog Wraith 3/3 declared alongside Aetherplasm, and nothing else
-        -- changed -- the declaration fires the trigger there, and the Ancestor
-        -- arrives into a block a black creature is already part of.
-        --
-        -- Read at the combat damage step, before damage: the Wraith's 3 kills a
-        -- 5/3 and a 7/3 alike, so the survivors cannot tell the two apart.
-        Spec.it s "CR 509.3e a black creature joining a block a black creature is already in is +2/+0 once" $ do
-          (gs, mine, theirs, ancestor) <- plasmBoard ["Serra Inquisitors"] ["Aetherplasm", "Bog Wraith"] "Disowned Ancestor"
-          case (mine, theirs) of
-            ([inquisitors], [plasm, wraith]) -> do
-              let joined = atDamage (swapping inquisitors [plasm, wraith] ancestor) gs
-              Spec.assertEqWith s "one pump, not two" (S.powerToughnessOf inquisitors joined) (Just (5, 3))
-              -- Anti-vacuity: the arrival did come and did join THIS attacker's
-              -- block, so the single pump is the crossing and not a clause that
-              -- never ran.
-              Spec.assertEqWith
-                s
-                "CR 509.4: the Wraith and the Ancestor are both blocking the Inquisitors"
-                (length (liveBlockers inquisitors joined), survivors "Disowned Ancestor" joined)
-                (2, 1)
-            _ -> Spec.assertFailure s "fixture should give alice one Serra Inquisitors, and bob an Aetherplasm and a Wraith"
 
 -- CR 509.3e read by a BYSTANDER on the ATTACKING side: "whenever a creature
 -- attacking one of your opponents becomes blocked by two or more creatures".
@@ -812,15 +686,6 @@ creatureBecomesBlockedByAtLeastSpec s registry =
         let lands = List.foldl' (\g _ -> snd (S.addPermanent forest S.bob g)) gs0 (replicate (3 * copies) ())
             stocked = List.foldl' (\g _ -> snd (S.addLibraryCard forest S.bob (snd (S.addHandCard foliage S.bob g)))) lands (replicate copies ())
         pure (stocked, ours, yours)
-      -- foliageBoard with a Doubling Season on the DEFENDING seat, which is the
-      -- whole difference: CR 614.16 makes one Flash Foliage mint two Saprolings,
-      -- and Combat.putOntoBattlefieldBlocking puts BOTH onto the battlefield
-      -- blocking the same attacker before any player gets priority (CR 509.2a).
-      -- One copy of the spell, so nothing here is a second casting.
-      doublingFoliageBoard mine theirs = do
-        (gs0, ours, yours) <- foliageBoard 1 mine theirs
-        season <- S.printingOf s registry "Doubling Season"
-        pure (snd (S.addPermanent season S.bob gs0), ours, yours)
       -- The attack declared and the game handed over AT the declare blockers
       -- step. S.runToStep stops when the phase first matches, which is BEFORE CR
       -- 509.1's turn-based action, so the declaration is still ahead of the
@@ -908,76 +773,6 @@ creatureBecomesBlockedByAtLeastSpec s registry =
                 (firedBy seifer (afterCombat elves [first, second] gs))
                 1
             _ -> Spec.assertFailure s "fixture should give alice an Elves and a Seifer, and bob two Giants"
-        -- Rule 509.3e's SECOND sentence, "effects that add or remove blockers
-        -- can also cause such abilities to trigger", and the one producer the
-        -- pool has for it: a creature PUT ONTO THE BATTLEFIELD blocking. The
-        -- Elves is declared blocked by ONE Hill Giant, which leaves the floor
-        -- uncrossed and Seifer silent, and then Flash Foliage's Saproling joins
-        -- the block and crosses it. That arrival records no
-        -- GameEvent.AttackerBlocked at all -- CR 509.3c's "only if the attacking
-        -- creature was an unblocked creature at that time" withholds it, and
-        -- that guard is the rule's own and not a shortcut -- so the arm the
-        -- cases above exercise cannot see it.
-        --
-        -- WHAT DOES NOT DISCRIMINATE, and each is a board a reader reaches for
-        -- before this one:
-        --
-        --   * the cases above's TWO-Giant declaration with the token added as a
-        --     third blocker. The trigger fired at the declaration already, so
-        --     both readings agree at one dead Giant.
-        --   * the token as the attacker's FIRST blocker, which is how
-        --     Parun.CombatEffectSpec's Flash Foliage boards are built. The count
-        --     reaches one against a floor of two and both readings stay silent.
-        --     The declared Hill Giant is not decoration: it is what makes the
-        --     arrival a CROSSING rather than an arrival.
-        --   * leaving CR 510.1c's division to the fixture. Two blockers really
-        --     do ask the attacker's controller, and the Elves' single point
-        --     landing on the 1/1 Saproling instead kills one creature under both
-        --     readings and leaves the Giant standing under both. Pinned by id in
-        --     `casting`.
-        --   * counting Seifer's triggers. A partial fix that fires the trigger
-        --     with nothing bound under `thatAttackingCreature` grants deathtouch
-        --     to nobody and passes a count. The Giant's death is the quantity;
-        --     the count comes after it.
-        Spec.it s "CR 509.3e whole card: a Saproling put onto the battlefield blocking pushes an already-blocked attacker over the floor" $ do
-          (gs, mine, theirs) <- foliageBoard 1 ["Llanowar Elves", "Seifer, Balamb Rival"] ["Hill Giant"]
-          case (mine, theirs) of
-            ([elves, seifer], [giant]) -> do
-              let declared = atBlockers elves [giant] gs
-                  joined = S.runToStep (Phase.Combat CombatStep.EndOfCombat) (casting elves [giant] elves giant) declared
-                  -- The control: the same board and the same declaration, with
-                  -- the spell left in bob's hand. One blocker, floor uncrossed,
-                  -- no deathtouch.
-                  alone = S.runToStep (Phase.Combat CombatStep.EndOfCombat) (declaring elves [giant]) declared
-              Spec.assertEqWith
-                s
-                "the Giant dies to the 1/1 once the token joins the block, and lives when it does not"
-                (giants joined, giants alone)
-                (0, 1)
-              -- The control leg really fought, so the difference above is CR
-              -- 704.5h and not a combat that did not happen.
-              Spec.assertEqWith
-                s
-                "control: the lone blocker took the Elves' one point and lived through it"
-                (S.damageOf giant alone)
-                (Just 1)
-              -- Anti-vacuity on the firing leg: the token did arrive and did
-              -- join THIS attacker's block, so the Giant's death is the
-              -- crossing rather than a spell that fizzled.
-              Spec.assertEqWith
-                s
-                "CR 509.4: two creatures are blocking the Elves on the firing leg"
-                (Set.size (Combat.blockersOf elves (S.runToStep (Phase.Combat CombatStep.CombatDamage) (casting elves [giant] elves giant) declared)))
-                2
-              -- Rule 509.3e's arity, after the gameplay quantity: the arrival
-              -- fires it once, and the declaration that preceded it fired it not
-              -- at all.
-              Spec.assertEqWith
-                s
-                "and Seifer triggered exactly once across the whole combat"
-                (firedBy seifer joined)
-                1
-            _ -> Spec.assertFailure s "fixture should give alice an Elves and a Seifer, and bob one Giant"
         -- The floor really is a floor: the same arrival with NO declared blocker
         -- under it takes the count to one, not two, and nothing fires. The board
         -- is the case above's, Hill Giant included, and the ONE difference is
@@ -1030,46 +825,6 @@ creatureBecomesBlockedByAtLeastSpec s registry =
               Spec.assertEqWith
                 s
                 "and Seifer triggered once, on the arrival that took the count to two"
-                (firedBy seifer joined)
-                1
-            _ -> Spec.assertFailure s "fixture should give alice an Elves and a Seifer, and bob one Giant"
-        -- Rule 509.3e's floor crossed by TWO arrivals at once, which is the case
-        -- no per-arrival reading of the live blocker count can state: CR 614.16
-        -- doubles Flash Foliage's Saproling, so the block goes from one declared
-        -- Hill Giant straight to three and the count never lands on two. The
-        -- attacker plainly did become blocked by two or more creatures, and once.
-        --
-        -- The case above's board with a Doubling Season added on the defending
-        -- seat and one Flash Foliage instead of two, so the difference from it is
-        -- the SIMULTANEITY rather than the number of arrivals: there the count
-        -- steps 1, 2, 3 and here it jumps 1, 3.
-        Spec.it s "CR 509.3e whole card: two Saprolings arriving at once cross the floor together" $ do
-          (gs, mine, theirs) <- doublingFoliageBoard ["Llanowar Elves", "Seifer, Balamb Rival"] ["Hill Giant"]
-          case (mine, theirs) of
-            ([elves, seifer], [giant]) -> do
-              let declared = atBlockers elves [giant] gs
-                  joined = S.runToStep (Phase.Combat CombatStep.EndOfCombat) (casting elves [giant] elves giant) declared
-                  -- The control: the same board and the same declaration with the
-                  -- spell left in bob's hand, so the Giant faces the Elves alone.
-                  alone = S.runToStep (Phase.Combat CombatStep.EndOfCombat) (declaring elves [giant]) declared
-              Spec.assertEqWith
-                s
-                "the Giant dies to the 1/1 once the two Saprolings join the block, and lives when they do not"
-                (giants joined, giants alone)
-                (0, 1)
-              -- Anti-vacuity: the doubling really happened and both tokens really
-              -- are blocking THIS attacker, so the death above is the crossing
-              -- rather than a spell that fizzled or a Season that did nothing.
-              Spec.assertEqWith
-                s
-                "CR 614.16: three creatures are blocking the Elves on the firing leg"
-                (Set.size (Combat.blockersOf elves (S.runToStep (Phase.Combat CombatStep.CombatDamage) (casting elves [giant] elves giant) declared)))
-                3
-              -- Rule 509.3e's arity, after the gameplay quantity: the pair of
-              -- arrivals is ONE crossing, not one apiece.
-              Spec.assertEqWith
-                s
-                "and Seifer triggered exactly once across the whole combat"
                 (firedBy seifer joined)
                 1
             _ -> Spec.assertFailure s "fixture should give alice an Elves and a Seifer, and bob one Giant"
@@ -2107,36 +1862,6 @@ championSpec s registry =
           Spec.assertEqWith s "CR 702.72a nothing was exiled" (namesIn Zone.Exile S.bob after) []
           Spec.assertEqWith s "the Russet Wolves alice would have exiled stayed" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Russet Wolves")) S.bob after) 1
           Spec.assertEqWith s "and so did the Goblin Piker" (S.countOnBattlefieldByName pikerName S.alice after) 1
-        -- CR 612.1 / 613.7 through the keyword's payload: two Artificial Evolutions ({U}
-        -- Instant, "Change the text of target spell or permanent by replacing
-        -- all instances of one creature type with another. The new creature
-        -- type can't be Wall." -- checked against Scryfall 2026-09-24) on the
-        -- Prophet, Merfolk -> Elf and then Elf -> Merfolk. The keyword ends
-        -- Champion a Merfolk, and the entry ability rule 702.72a mints from it
-        -- has to say Merfolk too, not the Elf a first-match lookup of the raw
-        -- swaps gives.
-        Spec.it s "CR 613.7 two Evolutions on Wanderwine Prophets champion a Merfolk" $ do
-          island <- S.printingOf s registry "Island"
-          prophets <- S.printingOf s registry "Wanderwine Prophets"
-          evolution <- S.printingOf s registry "Artificial Evolution"
-          let (prophetId, b0) = S.addPermanent prophets S.alice (S.landsInPlay island 2)
-              (b1, firstId) = S.handOne evolution b0
-              (b2, secondId) = S.handOne evolution b1
-              evolving :: (Subtype.Subtype, Subtype.Subtype) -> Prompt.Prompt r -> r
-              evolving (from, to) p = case p of
-                Prompt.ChooseTargets _ _ _ offers -> S.preferring ((== Just prophetId) . Recipient.objectOf) offers
-                Prompt.ChooseWordSwap {} -> (TextWord.SubtypeWord from, TextWord.SubtypeWord to)
-                _ -> S.identityAnswer p
-              toElf = (Subtype.Merfolk, Subtype.Elf)
-              toMerfolk = (Subtype.Elf, Subtype.Merfolk)
-              first = S.runPure (evolving toElf) b2 (S.cast S.alice firstId >> Stack.resolveTop)
-              both = S.runPure (evolving toMerfolk) first (S.cast S.alice secondId >> Stack.resolveTop)
-              championOf quality = Keyword.triggeredAbilitiesOf (Map.singleton (Keyword.Type.Champion (Filter.Type.HasSubtype quality)) 1)
-              mintedOn gs = Projection.mintedTriggeredAbilitiesOf (Projection.project prophetId gs)
-          Spec.assertBool s (mintedOn both == championOf Subtype.Merfolk) "CR 613.7 the minted entry ability exiles another Merfolk"
-          -- The anti-vacuity check, after the behaviour: the first Evolution
-          -- alone really moved the ability onto Elves.
-          Spec.assertBool s (mintedOn first == championOf Subtype.Elf) "after the first Evolution alone it exiles another Elf"
 
         -- Rule 702.72a's SECOND ability, off the first's board: the Prophet dies
         -- and the linked pile empties back onto the battlefield -- under BOB's
@@ -2490,9 +2215,7 @@ graftSpec s registry =
 -- creature assigns combat damage equal to its toughness rather than its
 -- power", checked against api.scryfall.com 2026-09-23) grants a STATIC
 -- ability. The backed-up Piker is a 3/2, so its toughness and its power are
--- different amounts of damage. Turn to Frog ({1}{U} Instant, loses all
--- abilities until end of turn) is the CR 613.1f removal whose timestamp,
--- before or after the grant's, decides whether the Piker keeps it.
+-- different amounts of damage.
 --
 -- Chomping Kavu ({3}{G} Creature -- Kavu 3/3, "Backup 1 / This creature can't
 -- be blocked by creatures with power 2 or less", checked against
@@ -2786,29 +2509,6 @@ backupSpec s registry =
               Spec.assertEqWith s "where its power was 3" (Projection.powerOf pikerId backed) (Just 3)
               Spec.assertEqWith s "and its toughness 2" (Projection.toughnessOf pikerId backed) (Just 2)
             _ -> Spec.assertFailure s "fixture should give alice a Piker"
-        -- CR 613.1f in CR 613.7 timestamp order, as a pair differing only in
-        -- which resolves first. A removal applied BEFORE the grant has nothing
-        -- to remove yet, so the Piker has the ability; one applied after takes
-        -- it away. Turn to Frog's 1/1 plus the counter is a 2/2, so the pair is
-        -- read off the projected flag rather than the damage.
-        Spec.it s "CR 613.1f only a removal later than the grant takes the granted static ability away" $ do
-          piker <- S.printingOf s registry "Goblin Piker"
-          negotiator <- S.printingOf s registry "Streetwise Negotiator"
-          frog <- S.printingOf s registry "Turn to Frog"
-          island <- S.printingOf s registry "Island"
-          case S.combatBoardOf [piker] [] of
-            (gs0, [pikerId], _) -> do
-              let (card, staged) = S.addHandCard negotiator S.alice (S.landsFor island S.alice 2 gs0)
-                  (frogId, armed) = S.addHandCard frog S.alice staged
-                  frogged g = S.runPure (targeting pikerId) g (S.cast S.alice frogId >> Stack.resolveTop)
-                  frogFirst = entersTargeting pikerId card (frogged armed)
-                  frogLast = frogged (entersTargeting pikerId card armed)
-                  toughnessFlag g = PC.combatDamageAmount (Projection.project pikerId g) == Just CombatDamageAmount.EqualToToughness
-              Spec.assertBool s (toughnessFlag frogFirst) "CR 613.1f the grant after Turn to Frog left the Piker holding it"
-              Spec.assertBool s (not (toughnessFlag frogLast)) "CR 613.1f Turn to Frog after the grant took it away"
-              Spec.assertEqWith s "the Frog really resolved first, leaving a 1/1 with the counter" (Projection.powerOf pikerId frogFirst) (Just 2)
-              Spec.assertEqWith s "and last" (Projection.powerOf pikerId frogLast) (Just 2)
-            _ -> Spec.assertFailure s "fixture should give alice a Piker"
         -- CR 305.7's last clause: Blood Moon makes the nonbasic Dryad Arbor a
         -- Mountain and strips its rules text, but not an ability another
         -- effect granted. Aspirant's Ascent makes the backed-up Arbor a 3/5
@@ -2837,28 +2537,6 @@ backupSpec s registry =
               Spec.assertEqWith s "where its power was 3" (Projection.powerOf arborId pumped) (Just 3)
               Spec.assertBool s (Set.member Subtype.Mountain (Projection.subtypesOf arborId pumped)) "and Blood Moon really had made it a Mountain"
             _ -> Spec.assertFailure s "fixture should give alice a Dryad Arbor"
-        -- CR 613.1f in CR 613.7 timestamp order, the static half's pair over a
-        -- rule ability: a Turn to Frog before the grant leaves the Piker barring
-        -- the Evangel, one after takes the restriction away. Either way the
-        -- Piker is a 2/2.
-        Spec.it s "CR 613.1f only a removal later than the grant takes the granted restriction away" $ do
-          piker <- S.printingOf s registry "Goblin Piker"
-          evangel <- S.printingOf s registry "Cabal Evangel"
-          kavu <- S.printingOf s registry "Chomping Kavu"
-          frog <- S.printingOf s registry "Turn to Frog"
-          island <- S.printingOf s registry "Island"
-          case S.combatBoardOf [piker] [evangel] of
-            (gs0, [pikerId], [evangelId]) -> do
-              let (card, staged) = S.addHandCard kavu S.alice (S.landsFor island S.alice 2 gs0)
-                  (frogId, armed) = S.addHandCard frog S.alice staged
-                  frogged g = S.runPure (targeting pikerId) g (S.cast S.alice frogId >> Stack.resolveTop)
-                  frogFirst = entersTargeting pikerId card (frogged armed)
-                  frogLast = frogged (entersTargeting pikerId card armed)
-              Spec.assertBool s (not (mayBlock evangelId pikerId frogFirst)) "CR 613.1f the grant after Turn to Frog left the Piker unblockable by the 2/2"
-              Spec.assertBool s (mayBlock evangelId pikerId frogLast) "CR 613.1f Turn to Frog after the grant took the restriction away"
-              Spec.assertEqWith s "the Frog really resolved first, leaving a 1/1 with the counter" (Projection.powerOf pikerId frogFirst) (Just 2)
-              Spec.assertEqWith s "and last" (Projection.powerOf pikerId frogLast) (Just 2)
-            _ -> Spec.assertFailure s "fixture should give alice a Piker and bob an Evangel"
         -- CR 305.7's last clause over a rule ability: Blood Moon strips the
         -- Dryad Arbor's rules text but not the restriction backup granted it.
         Spec.it s "CR 305.7 a Blood Moon'd Dryad Arbor keeps the restriction backup granted it" $ do
@@ -2981,73 +2659,3 @@ spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
   selfBlocksCreatureSpec s registry
   selfBecomesBlockedSpec s registry
   selfAttacksUnblockedSpec s registry
-  partnerWithSpec s registry
-
--- CR 702.124j's SECOND ability: "When this permanent enters, target player may
--- search their library for a card named [name], reveal it, put it into their
--- hand, then shuffle." Silvar, Devourer of the Free names Trynn, Champion of
--- Freedom, and is CAST rather than placed, so the entry is the game's own.
---
--- THREE seats, because two collapse "target player" onto "the one opponent" and
--- an engine that searched the CONTROLLER's library would be caught only by luck.
--- alice casts, carol is targeted, and bob is the seat neither role names.
---
--- A Trynn in EVERY library, because one library holding the only copy cannot
--- tell "read carol's library" from "read every library". The Goblin Piker in
--- carol's library gives Filter.HasName a card to reject; it is added second, so
--- Support.addLibraryCard makes it the head and a filter that admitted everything
--- would fetch it instead.
-partnerWithSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-partnerWithSpec s registry =
-  let board swamp mountain piker silvar trynn =
-        let lands =
-              List.foldl'
-                (\g p -> snd (S.addPermanent p S.alice g))
-                S.threePlayerGame
-                [swamp, swamp, swamp, mountain, mountain]
-            (aliceCard, g1) = S.addLibraryCard trynn S.alice lands
-            (bobCard, g2) = S.addLibraryCard trynn S.bob g1
-            (_, g3) = S.addLibraryCard trynn S.carol g2
-            (carolPiker, g4) = S.addLibraryCard piker S.carol g3
-            (gs, spellId) = S.handOne silvar g4
-         in (gs, spellId, aliceCard, bobCard, carolPiker)
-      settle :: (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> ObjectId.ObjectId -> GameState.GameState
-      settle answer gs spellId =
-        let cast = snd (Engine.runGamePure answer gs (S.cast S.alice spellId))
-         in snd (Engine.runGamePure answer cast Engine.priorityLoop)
-      handNamesOf pid gs = fmap (`S.soleFaceName` gs) (Game.zoneMembers Zone.Hand pid gs)
-   in Spec.describe s "Partner with" $ do
-        Spec.it s "CR 702.124j the entry trigger searches the TARGET player's library" $ do
-          swamp <- S.printingOf s registry "Swamp"
-          mountain <- S.printingOf s registry "Mountain"
-          piker <- S.printingOf s registry "Goblin Piker"
-          silvar <- S.printingOf s registry "Silvar, Devourer of the Free"
-          trynn <- S.printingOf s registry "Trynn, Champion of Freedom"
-          let (gs, spellId, aliceCard, bobCard, carolPiker) = board swamp mountain piker silvar trynn
-              settled = settle atCarolSearching gs spellId
-              trynnName = CardName.MkCardName (Text.pack "Trynn, Champion of Freedom")
-          Spec.assertEqWith s "CR 702.124j: the named card is in the TARGETED player's hand" (handNamesOf S.carol settled) [trynnName]
-          -- By name: the search looked at it and the shuffle reordered it, so it
-          -- is a new object (CR 701.20d / 701.20e).
-          Spec.assertEqWith s "CR 702.124j: and carol's library kept only the card the name rejected" (fmap (`S.soleFaceName` settled) (Game.zoneMembers Zone.Library S.carol settled)) [S.soleFaceName carolPiker gs]
-          Spec.assertEqWith s "the caster's own library is untouched" (Game.zoneMembers Zone.Library S.alice settled) [aliceCard]
-          Spec.assertEqWith s "and so is the third seat's" (Game.zoneMembers Zone.Library S.bob settled) [bobCard]
-          Spec.assertEqWith s "CR 702.124j: the find was revealed, which is the rule's own word" (fmap fst (S.revealsOf settled)) [S.carol]
-
--- Silvar's answerer: aim the trigger at carol wherever she is offered (a
--- preference rather than a filter, so a slot she is no candidate for still gets
--- a legal answer), then exercise rule 702.124j's "may" and take the find ONLY as
--- carol.
---
--- Both pins are on carol rather than on "whoever is asked": an engine that put
--- the option or the search to the spell's controller finds nothing at all,
--- rather than being helpfully answered with a legal choice.
-atCarolSearching :: Prompt.Prompt r -> r
-atCarolSearching p = case p of
-  Prompt.ChooseTargets _ _ _ sets ->
-    fmap
-      (\(n, legal) -> Set.fromList (take (Natural.Extra.toIntSaturating n) (ListUtils.nubOrd (filter (== Recipient.ToPlayer S.carol) (Set.toAscList legal) <> Set.toAscList legal))))
-      sets
-  Prompt.ChooseOptional _ pid _ _ _ _ -> if pid == S.carol then OptionalDecision.Exercises else OptionalDecision.Declines
-  Prompt.Search _ pid matches cap -> if pid == S.carol then List.genericTake cap matches else []
-  _ -> S.identityAnswer p

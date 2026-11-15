@@ -1,0 +1,168 @@
+{
+  "board": {
+    "active": "carol",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Kalakscion, Hunger Tyrant",
+            "commander": true,
+            "label": "kalakscion"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Jedit Ojanen",
+            "commander": true,
+            "label": "jedit"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island1"
+          },
+          {
+            "card": "Island",
+            "label": "island2"
+          },
+          {
+            "card": "Island",
+            "label": "island3"
+          },
+          {
+            "card": "Island",
+            "label": "island4"
+          },
+          {
+            "card": "Island",
+            "label": "island5"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Evacuation",
+            "label": "evacuation"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 903.9b the offer applies once per commander in the same event",
+  "final": [
+    {
+      "Count": {
+        "card": "Kalakscion, Hunger Tyrant",
+        "count": 1,
+        "player": "alice",
+        "zone": "Command"
+      }
+    },
+    {
+      "Count": {
+        "card": "Kalakscion, Hunger Tyrant",
+        "count": 0,
+        "player": "alice",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Jedit Ojanen",
+        "count": 1,
+        "player": "bob",
+        "zone": "Hand"
+      }
+    },
+    {
+      "Count": {
+        "card": "Jedit Ojanen",
+        "count": 0,
+        "player": "bob",
+        "zone": "Command"
+      }
+    }
+  ],
+  "note": "Evacuation returns two commanders in one event (CR 608.2f), and CR 903.9b may apply to it more than once. Carol casts it so neither owner is the caster, and alice accepts while bob declines: one application would leave one card in its owner's hand unasked.",
+  "timeline": [
+    {
+      "check": {
+        "Count": {
+          "card": "Kalakscion, Hunger Tyrant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Jedit Ojanen",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$island1",
+            "$island2",
+            "$island3",
+            "$island4",
+            "$island5"
+          ],
+          "object": "$evacuation"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReturnCommander",
+          "with": "Returns"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ReturnCommander",
+          "with": "Leaves"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
