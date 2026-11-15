@@ -2010,15 +2010,21 @@ representativeEvents cond =
         -- causes for AnyDiscard, since CR 702.29a makes cycling a discard; the
         -- cycling cause alone for Cycled; and for ExiledForMadness the madness
         -- set NON-EMPTY, the cause being irrelevant to it. A OneOrMore batch
-        -- binds its one card as its amount.
+        -- binds its one card as its amount. Each way's discard paying a cost
+        -- that announced X (CR 107.3e; reinforce X's for madness) beside one
+        -- with none, the X a Self trigger binds only sometimes.
         TriggerCondition.Discards discardTrigger -> case DiscardTrigger.way discardTrigger of
           DiscardWay.AnyDiscard ->
-            noTable (discarded DiscardCause.Ordinary Nothing)
-              NonEmpty.:| [noTable (discarded DiscardCause.ToPayCyclingCost Nothing)]
-          DiscardWay.Cycled -> one (discarded DiscardCause.ToPayCyclingCost Nothing)
-          DiscardWay.ExiledForMadness -> one (discarded DiscardCause.Ordinary (Just MadnessCost.OwnManaCost))
+            noTable (discarded DiscardCause.Ordinary Nothing Nothing)
+              NonEmpty.:| [noTable (discarded DiscardCause.ToPayCyclingCost Nothing Nothing), noTable (discarded DiscardCause.ToPayCyclingCost Nothing (Just 2))]
+          DiscardWay.Cycled ->
+            noTable (discarded DiscardCause.ToPayCyclingCost Nothing Nothing)
+              NonEmpty.:| [noTable (discarded DiscardCause.ToPayCyclingCost Nothing (Just 2))]
+          DiscardWay.ExiledForMadness ->
+            noTable (discarded DiscardCause.Ordinary (Just MadnessCost.OwnManaCost) Nothing)
+              NonEmpty.:| [noTable (discarded DiscardCause.Ordinary (Just MadnessCost.OwnManaCost) (Just 2))]
           where
-            discarded cause madness = GameEvent.Discarded (Discarded.MkDiscarded S.alice departed cause madness Nothing)
+            discarded cause madness announcedX = GameEvent.Discarded (Discarded.MkDiscarded S.alice departed cause madness Nothing announcedX)
         -- The ordinal matches the condition's own, so the event is one this
         -- condition genuinely admits -- an event it rejected would pin nothing,
         -- eventBindings being consulted only for a match.

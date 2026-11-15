@@ -1,5 +1,6 @@
 module Parun.Types.Discarded where
 
+import qualified Numeric.Natural as Natural
 import qualified Parun.Types.Cause as Cause
 import qualified Parun.Types.DiscardCause as DiscardCause
 import qualified Parun.Types.Keyword as Keyword
@@ -36,6 +37,11 @@ data Discarded = MkDiscarded
     madness :: Maybe (MadnessCost.MadnessCost Keyword.Keyword),
     -- | CR 609.1: the spell or ability whose effect made the
     -- discard, Parun.Types.Moved's `causedBy` for the same act.
-    causedBy :: Maybe Cause.Cause
+    causedBy :: Maybe Cause.Cause,
+    -- | CR 107.3e: the X announced for the ability whose activation cost this
+    -- discard of the card itself paid; Nothing for every other discard, and
+    -- for an ability with no X. Carried on the event, Parun.Types.TurnedFaceUp's
+    -- reason: CR 702.29c's trigger reads it, and the ability may be gone by then.
+    announcedX :: Maybe Natural.Natural
   }
   deriving (Eq, Ord, Show)

@@ -1249,7 +1249,7 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
   -- leaves the bearer out (Megrim watches someone else's hand), and reads the
   -- Filter off the card with last known information once it has moved on. Batching is `batchScoped`'s, never this arm's.
   TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger subject way _) -> case event of
-    GameEvent.Discarded (Discarded.MkDiscarded discarder card cause madness _) ->
+    GameEvent.Discarded (Discarded.MkDiscarded discarder card cause madness _ _) ->
       let admitsWay = case way of
             DiscardWay.AnyDiscard -> True
             DiscardWay.Cycled -> cause == DiscardCause.ToPayCyclingCost

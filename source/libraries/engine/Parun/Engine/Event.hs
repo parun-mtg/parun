@@ -5259,7 +5259,7 @@ apply settle batch applied batchPrevented candidate event =
           _ -> do
             answer <- Game.choose (Prompt.ChooseDiscard (Decide.deciderFor pid gs) pid held 1 Seq.empty)
             pure (Maybe.listToMaybe (filter (`elem` held) answer <> held))
-        discarded <- asEffect (maybe (pure Seq.empty) (discardReturning settle DiscardCause.ByEffect pid) picked)
+        discarded <- asEffect (maybe (pure Seq.empty) (discardReturning settle DiscardCause.ByEffect Nothing pid) picked)
         if null discarded
           then asEffect (Monad.void (millFrom settle pid 1))
           else drawInstruction settle DrawKind.Other (spentWith candidate applied) pid 1
@@ -12127,7 +12127,7 @@ offerMiracleReveal pid drawn = do
 -- loop must record nothing (CR 603.2g). The id recorded is the one the funnel
 -- MINTED, since CR 702.29c's abilities trigger from wherever the card winds up.
 discard :: Game () -> DiscardCause.DiscardCause -> PlayerId -> ObjectId -> Game ()
-discard settle cause pid oid = Monad.void (discardReturning settle cause pid oid)
+discard settle cause pid oid = Monad.void (discardReturning settle cause Nothing pid oid)
 
 -- CR 118.12: run `body` as the "[do something]" of a resolving "If [a player]
 -- does" (True): "the action [do something] is a cost, paid when the spell or
@@ -12189,8 +12189,8 @@ resolvingCounterCause pid gs
 -- by the time anything reads the slot, so binding it would name an object no
 -- reader of the destination zone can find. Nothing for a move that did not
 -- complete -- an unknown id, or a CR 616.1 loop the player cancelled.
-discardReturning :: Game () -> DiscardCause.DiscardCause -> PlayerId -> ObjectId -> Game (Seq.Seq ObjectId)
-discardReturning settle cause pid oid = do
+discardReturning :: Game () -> DiscardCause.DiscardCause -> Maybe Natural -> PlayerId -> ObjectId -> Game (Seq.Seq ObjectId)
+discardReturning settle cause announcedX pid oid = do
   before <- State.get
   -- READ BEFORE THE MOVE: CR 400.7 deletes this incarnation, so the hand card's
   -- own keywords are unreadable by the time the funnel returns.
@@ -12228,7 +12228,7 @@ discardReturning settle cause pid oid = do
   Monad.forM_ moved $ \newId -> do
     applied <- madnessChoice pid newId (madnessOf newId)
     causer <- State.gets (Scratch.causing . GameState.scratch)
-    State.modify' (recordEvent (GameEvent.Discarded (Discarded.MkDiscarded pid newId cause applied causer)))
+    State.modify' (recordEvent (GameEvent.Discarded (Discarded.MkDiscarded pid newId cause applied causer announcedX)))
   pure moved
 
 -- CR 616.1 / 702.35a: which of the card's madness abilities was the replacement

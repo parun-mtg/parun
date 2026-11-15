@@ -370,14 +370,17 @@ eventBindingsOver board gs bearerBecame becameInGraveyard bearer you cond event 
   -- CR 603.2c's batch reading instead counts "that much" (Magmakin
   -- Artillerist): one card per Discarded event, summed across the group by
   -- batchBindings, beside the discarder batchPartition splits the group by.
-  -- A Self discard stamps nothing: its card is the bearer, whom
+  -- A Self discard stamps no object: its card is the bearer, whom
   -- CR 113.7a's source slot already names, and its discarder is the owner CR
-  -- 113.8 and CR 108.4a make the controller, whom Binding.setYou names.
-  (TriggerCondition.Discards trigger, GameEvent.Discarded (Discarded.MkDiscarded discarder card _ _ _)) -> case (DiscardTrigger.subject trigger, DiscardTrigger.batching trigger) of
+  -- 113.8 and CR 108.4a make the controller, whom Binding.setYou names. It
+  -- stamps CR 107.3e's X where the discard paid an X ability's cost
+  -- (Discarded.announcedX): Webstrike Elite's "mana value X" is the cycling
+  -- ability's X, data/scenarios/webstrike-elite-* the proof.
+  (TriggerCondition.Discards trigger, GameEvent.Discarded (Discarded.MkDiscarded discarder card _ _ _ announcedX)) -> case (DiscardTrigger.subject trigger, DiscardTrigger.batching trigger) of
     (DiscardSubject.Discarder _, Batching.OneOrMore) -> Binding.setEventAmount 1 (Binding.setTriggerPlayer discarder Map.empty)
     (DiscardSubject.Self, Batching.OneOrMore) -> Binding.setEventAmount 1 Map.empty
     (DiscardSubject.Discarder _, Batching.EachOccurrence) -> Binding.setBecame card (Binding.setTriggerPlayer discarder Map.empty)
-    (DiscardSubject.Self, Batching.EachOccurrence) -> Map.empty
+    (DiscardSubject.Self, Batching.EachOccurrence) -> maybe Map.empty (\x -> Binding.fromChoices Map.empty (Just x) Seq.empty) announcedX
   -- The drawing player, a discarder's player slot for CR 121.1's draw (Underworld
   -- Dreams' "that player").
   (TriggerCondition.PlayerDrawsNthCard _, GameEvent.Drew (Drew.MkDrew drawer _)) ->
@@ -1852,9 +1855,9 @@ eventBindingSlots cond = case cond of
 -- the ceiling from the floor is the BRANCHES disagreeing rather than any one
 -- event's shape. LeavesZone with no destination has a Binding.handArrival
 -- that turns on the event's `to`. A Self TurnedFaceUp's X only a cost carrying
--- one binds, and PlayerManifestsDread's cards CR 701.62b fires without. The
--- conditional slots that turn on GAME STATE instead -- an Attached Leaves with a
--- destination on CR 400.7f's arrival, a bystander Leaves' owner on CR 608.2h's
+-- one binds, a Self Discards' X likewise, and PlayerManifestsDread's cards CR
+-- 701.62b fires without. The conditional slots that turn on GAME STATE
+-- instead -- an Attached Leaves with a destination on CR 400.7f's arrival, a bystander Leaves' owner on CR 608.2h's
 -- record -- the floor claims outright, for the reasons leavesSlots gives.
 --
 -- A WILDCARD here where eventBindingSlots forbids one, the asymmetry being which
@@ -1912,6 +1915,9 @@ eventBindingSlotsSometimes cond = case cond of
       (eventBindingSlots cond)
   TriggerCondition.CausedBy narrowed -> eventBindingSlotsSometimes (CausedBy.condition narrowed)
   TriggerCondition.TurnedFaceUp subject -> snd (turnedFaceUpSlots subject)
+  -- CR 107.3e's X, which only a discard paying an X ability's cost binds
+  -- (eventBindings' Discards arm).
+  TriggerCondition.Discards (DiscardTrigger.MkDiscardTrigger DiscardSubject.Self _ Batching.EachOccurrence) -> Set.singleton Binding.variableX
   -- CR 701.62a's cards put into the graveyard, which an empty or one-card
   -- library, or a replacement sending the card elsewhere, leaves without any.
   -- data/cards/paranormal-analyst.json is the reader, and finding nothing there

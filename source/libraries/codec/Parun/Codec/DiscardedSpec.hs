@@ -23,7 +23,8 @@ spec s = Spec.describe s "Parun.Codec.Discarded" $ do
             Discarded.card = ObjectId.MkObjectId 7,
             Discarded.cause = DiscardCause.ToPayCyclingCost,
             Discarded.madness = Nothing,
-            Discarded.causedBy = Nothing
+            Discarded.causedBy = Nothing,
+            Discarded.announcedX = Nothing
           }
       )
       " {\"player\":0,\"card\":7,\"cause\":\"ToPayCyclingCost\",\"madness\":null} "
@@ -38,7 +39,8 @@ spec s = Spec.describe s "Parun.Codec.Discarded" $ do
             Discarded.card = ObjectId.MkObjectId 5,
             Discarded.cause = DiscardCause.Ordinary,
             Discarded.madness = Just MadnessCost.OwnManaCost,
-            Discarded.causedBy = Nothing
+            Discarded.causedBy = Nothing,
+            Discarded.announcedX = Nothing
           }
       )
       " {\"player\":1,\"card\":5,\"cause\":\"Ordinary\",\"madness\":{\"type\":\"OwnManaCost\"}} "
@@ -53,8 +55,25 @@ spec s = Spec.describe s "Parun.Codec.Discarded" $ do
             Discarded.card = ObjectId.MkObjectId 4,
             Discarded.cause = DiscardCause.ByEffect,
             Discarded.madness = Nothing,
-            Discarded.causedBy = Just (Cause.MkCause (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 7) Nothing)
+            Discarded.causedBy = Just (Cause.MkCause (PlayerId.MkPlayerId 1) (ObjectId.MkObjectId 7) Nothing),
+            Discarded.announcedX = Nothing
           }
       )
       " {\"player\":0,\"card\":4,\"cause\":\"ByEffect\",\"madness\":null,\"causedBy\":{\"controller\":1,\"source\":7}} "
+  -- CR 107.3e: a cycle whose cycling cost announced X (Webstrike Elite), the
+  -- one shape the defaulted key appears in.
+  Spec.it s "MkDiscarded, a cycle with an announced X" $
+    Common.assertCodec
+      s
+      Discarded.codec
+      ( Discarded.MkDiscarded
+          { Discarded.player = PlayerId.MkPlayerId 0,
+            Discarded.card = ObjectId.MkObjectId 7,
+            Discarded.cause = DiscardCause.ToPayCyclingCost,
+            Discarded.madness = Nothing,
+            Discarded.causedBy = Nothing,
+            Discarded.announcedX = Just 2
+          }
+      )
+      " {\"player\":0,\"card\":7,\"cause\":\"ToPayCyclingCost\",\"madness\":null,\"announcedX\":2} "
   Spec.it s "has a schema" $ Common.assertHasSchema s Discarded.codec
