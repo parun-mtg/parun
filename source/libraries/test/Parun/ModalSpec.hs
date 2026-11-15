@@ -37,7 +37,6 @@ import qualified Parun.Types.Draw as Draw
 import qualified Parun.Types.Effect as Effect
 import qualified Parun.Types.Face as Face
 import qualified Parun.Types.Filter as Filter.Type
-import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
@@ -47,7 +46,6 @@ import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeInstance as ModeInstance
 import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
-import qualified Parun.Types.Moved as Moved
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
@@ -59,13 +57,11 @@ import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.SlotName as SlotName
-import qualified Parun.Types.Source as Source
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.TargetSlot as TargetSlot
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
-import qualified Parun.Types.ZoneChange as ZoneChange
 
 -- Chaos Charm's three modes, in printed order (CR 700.2 / data/cards/chaos-charm.json):
 --   0. destroy target Wall
@@ -352,42 +348,6 @@ triggerModalSpec s registry = Spec.describe s "M4h trigger modal (CR 700.2b/603.
           "with Aether Channeler the only nonland permanent, only modes 0 and 2 are fillable"
           (Target.fillableModes StackObjectKind.Spell Nothing Nothing Map.empty acId Map.empty modal gs)
           (Set.fromList [ModeIndex.MkModeIndex 0, ModeIndex.MkModeIndex 2])
-
-  -- CR 603.3c/700.2b: "If no mode is chosen, the ability is removed from
-  -- the stack." This is the trigger-only rule -- a SPELL that can't choose
-  -- is simply never offered (CR 601.2c elides the cast entirely, M4g), but
-  -- a TRIGGER is already placed on the stack before modes are chosen
-  -- (CR 603.3d), so an unfillable trigger must be taken back OFF the
-  -- stack. Gated by a new synthetic fixture: Synthetic Modal Trigger's ETB
-  -- is ChooseExactly 1 over two NonlandPermanentTarget (self-excluding,
-  -- CR "another") modes; with the fixture as the ONLY nonland permanent on
-  -- the board, both modes' legal target sets are empty, so NEITHER mode is
-  -- fillable and the trigger must be removed rather than forced or
-  -- prompted (CreatureTarget would be self-fillable here and could never
-  -- exercise this path -- spec sec 9).
-  Spec.it s "no legal mode removes the trigger from the stack (CR 603.3c)" $ do
-    smtPrinting <- S.printingOf s registry "Synthetic Modal Trigger"
-    mountain <- S.printingOf s registry "Mountain"
-    let gs0 = S.landsInPlay mountain 2
-        (smtId, gs1) = S.addPermanent smtPrinting S.alice gs0
-        entered = ZoneChange.MkZoneChange smtId smtId Zone.Stack Zone.Battlefield
-        gs2 = S.withEvents [GameEvent.Moved (Moved.moved entered (Projection.project smtId gs1))] gs1
-        answer :: Prompt.Prompt r -> r
-        answer = S.identityAnswer
-        placed = snd (Engine.runGamePure answer gs2 (Engine.placePendingTriggers []))
-        stackHasTrigger =
-          any
-            ( \abilId -> case Game.lookupObject abilId placed of
-                Just obj -> case Object.source obj of
-                  Source.OfTrigger _ -> True
-                  _ -> False
-                Nothing -> False
-            )
-            (TurnRegisters.stack (GameState.turn placed))
-    Spec.assertBool s (not stackHasTrigger) "the trigger was removed from the stack, not left lingering"
-    Spec.assertEqWith s "Synthetic Modal Trigger still on the battlefield (nothing bounced or exiled)" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Synthetic Modal Trigger") S.alice placed) 1
-    Spec.assertEqWith s "alice's hand is still empty (nothing bounced)" (length (Game.zoneMembers Zone.Hand S.alice placed)) 0
-    Spec.assertEqWith s "nothing was exiled" (length (Game.zoneMembers Zone.Exile S.alice placed)) 0
 
 -- CR 603.3c / 700.2b: a triggered ability's mode announcement is judged against
 -- its printed instruction exactly as a cast's (Cast.castProposed) and an

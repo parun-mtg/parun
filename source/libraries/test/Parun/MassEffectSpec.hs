@@ -664,14 +664,9 @@ graspingTentaclesSpec s registry =
 -- GRAVEYARD to your hand", the same sentence with the batch swapped for the
 -- zone. So the board buries a permanent card BEFORE the mill: every other clause
 -- of Midnight Tilling's sentence admits it, and only "from among them" keeps it
--- out. A reading that ignored the slot would offer four candidates where this one
--- offers three, and the answers below are pinned by INDEX into the offer, so the
--- two readings hand back different cards rather than the same one.
---
--- The milled Murder is the type half of the same filter, kept honest by a batch
--- that is not all permanent cards; bob's buried Ogre Sentry is CR 400.1's other
--- graveyard, which "your" excludes.
-midnightTillingSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+-- out. data/scenarios/mass-effect/cr-701-17c-the-return-chooses-among-the-milled-cards-not-among-the-graveyard.json
+-- reads the offer, which leaves it out; the case below is the empty batch.
+midnightTillingSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 midnightTillingSpec s registry =
   let -- alice: four Forests for the {1}{G}, one permanent card already in her
       -- graveyard, `stock` into her library BOTTOM FIRST (S.addLibraryCard puts
@@ -705,45 +700,12 @@ midnightTillingSpec s registry =
           | clause == ClauseIndex.MkClauseIndex 1 -> OptionalDecision.Exercises
         Prompt.ChooseCardFromAmong _ _ _ offered -> nth n offered
         _ -> S.identityAnswer p
-      cast :: (forall r. Prompt.Prompt r -> r) -> (ObjectId.ObjectId, GameState.GameState) -> GameState.GameState
-      cast answer (spellId, gs) =
-        let announced = S.runPure answer gs (S.cast S.alice spellId)
-         in S.runPure answer announced Stack.resolveTop
-      setup = do
-        forest <- S.printingOf s registry "Forest"
-        tilling <- S.printingOf s registry "Midnight Tilling"
-        hero <- S.printingOf s registry "Benalish Hero"
-        sentry <- S.printingOf s registry "Ogre Sentry"
-        island <- S.printingOf s registry "Island"
-        swamp <- S.printingOf s registry "Swamp"
-        maiden <- S.printingOf s registry "Bird Maiden"
-        murder <- S.printingOf s registry "Murder"
-        piker <- S.printingOf s registry "Goblin Piker"
-        -- Bottom to top: the Island is never reached, and the top four are milled
-        -- in the order Goblin Piker, Murder, Bird Maiden, Swamp.
-        pure (board forest tilling hero sentry [island, swamp, maiden, murder, piker])
-      -- What stays behind when nothing is returned: the card buried before the
-      -- mill, all four milled cards, and the spell itself (CR 608.2n).
-      allBuried = List.sort ([named "Benalish Hero", named "Bird Maiden", named "Goblin Piker", named "Midnight Tilling", named "Murder"] <> [named "Swamp"])
    in Spec.describe s "MidnightTilling" $ do
-        -- The headline, and the case the whole unit exists for: the SECOND card
-        -- the offer names is the second MILLED permanent card, not the second
-        -- permanent card in the graveyard.
-        Spec.it s "CR 701.17c the return chooses among the milled cards, not among the graveyard" $ do
-          gs <- setup
-          let after = cast (taking 1) gs
-          Spec.assertEqWith s "the second milled permanent card is the one in alice's hand" (namesIn Zone.Hand S.alice after) [named "Bird Maiden"]
-          Spec.assertEqWith
-            s
-            "the permanent card buried before the mill was never a candidate, and neither was the milled Murder"
-            (List.sort (namesIn Zone.Graveyard S.alice after))
-            (List.delete (named "Bird Maiden") allBuried)
-          Spec.assertEqWith s "and the other graveyard was not looked in" (namesIn Zone.Graveyard S.bob after) [named "Ogre Sentry"]
         -- CR 608.2d: four milled Murders leave no permanent card among them, so
         -- the return is impossible and the "may" is not put -- though the
         -- graveyard holds the Benalish Hero buried before the mill, which a pool
-        -- read ignoring "from among them" would count. The cases above, which
-        -- take the "may", are the control.
+        -- read ignoring "from among them" would count. The mass-effect
+        -- scenarios taking the "may" are the control.
         Spec.it s "CR 608.2d the return is not offered when no permanent card was milled" $ do
           forest <- S.printingOf s registry "Forest"
           tilling <- S.printingOf s registry "Midnight Tilling"
@@ -775,12 +737,10 @@ midnightTillingSpec s registry =
 --
 -- The library is stocked so that the offer and the group differ: an Island and a
 -- Murder sit among the five and match neither card type, so a reading that
--- ignored the filter would offer five cards where this one offers three. The
--- answers below are pinned by INDEX into the offer, so the two readings hand back
--- different cards rather than the same one. A Swamp sits SIXTH, below the five, so
--- a reveal of the wrong depth is visible in the library as well as in the
--- graveyard.
-communeWithTheGodsSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+-- ignored the filter would offer five cards where this one offers three
+-- (data/scenarios/mass-effect/cr-701-20e-the-choice-ranges-over-the-matching-revealed-cards-not-over-all-five.json).
+-- The case below is the group with no matching card.
+communeWithTheGodsSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 communeWithTheGodsSpec s registry =
   let -- alice: two Forests for the {1}{G}, `stock` into her library BOTTOM FIRST
       -- (S.addLibraryCard puts each new card on top), Commune with the Gods in
@@ -812,42 +772,10 @@ communeWithTheGodsSpec s registry =
           | clause == ClauseIndex.MkClauseIndex 1 -> OptionalDecision.Exercises
         Prompt.ChooseCardFromAmong _ _ _ offered -> nth n offered
         _ -> S.identityAnswer p
-      cast :: (forall r. Prompt.Prompt r -> r) -> (ObjectId.ObjectId, GameState.GameState) -> GameState.GameState
-      cast answer (spellId, gs) =
-        let announced = S.runPure answer gs (S.cast S.alice spellId)
-         in S.runPure answer announced Stack.resolveTop
-      setup = do
-        forest <- S.printingOf s registry "Forest"
-        commune <- S.printingOf s registry "Commune with the Gods"
-        island <- S.printingOf s registry "Island"
-        swamp <- S.printingOf s registry "Swamp"
-        maiden <- S.printingOf s registry "Bird Maiden"
-        moon <- S.printingOf s registry "Bad Moon"
-        murder <- S.printingOf s registry "Murder"
-        piker <- S.printingOf s registry "Goblin Piker"
-        -- Bottom to top: the Swamp is never revealed, and the five above it are
-        -- Island, Goblin Piker, Murder, Bad Moon, Bird Maiden -- so the offer is
-        -- Goblin Piker, Bad Moon, Bird Maiden.
-        pure (board forest commune [swamp, maiden, moon, murder, piker, island])
-      -- What the graveyard holds when nothing is taken: all five revealed cards
-      -- and the spell itself (CR 608.2n).
-      allBuried = List.sort [named "Bad Moon", named "Bird Maiden", named "Commune with the Gods", named "Goblin Piker", named "Island", named "Murder"]
    in Spec.describe s "CommuneWithTheGods" $ do
-        -- The headline: the SECOND card the offer names is the second revealed
-        -- card matching the filter, not the second revealed card.
-        Spec.it s "CR 701.20e the choice ranges over the matching revealed cards, not over all five" $ do
-          gs <- setup
-          let after = cast (taking 1) gs
-          Spec.assertEqWith s "the second matching revealed card is the one in alice's hand" (namesIn Zone.Hand S.alice after) [named "Bad Moon"]
-          Spec.assertEqWith
-            s
-            "and the rest -- the two unmatched cards included -- are in the graveyard"
-            (List.sort (namesIn Zone.Graveyard S.alice after))
-            (List.delete (named "Bad Moon") allBuried)
-          Spec.assertEqWith s "the sixth card was never revealed" (namesIn Zone.Library S.alice after) [named "Swamp"]
         -- CR 608.2d: a group holding no matching card makes the move impossible,
-        -- so the "may" is not put and the rest is all of it. The pair with the
-        -- headline differs in exactly one thing -- which cards are stocked.
+        -- so the "may" is not put and the rest is all of it. The CR 701.20e
+        -- scenario, the pair, differs in exactly one thing: which cards are stocked.
         Spec.it s "CR 608.2d a group with no matching card is not offered and buries all five" $ do
           forest <- S.printingOf s registry "Forest"
           commune <- S.printingOf s registry "Commune with the Gods"
@@ -868,8 +796,8 @@ communeWithTheGodsSpec s registry =
 
 -- ObjectRef.ChosenCardInGraveyard's COUNT: one gather taking more than one card
 -- out of each named graveyard, where portOfKarfellSpec and graspingTentaclesSpec
--- above take one. ancestralMemoriesSpec below is the same count over a bound
--- group rather than a zone.
+-- above take one. The Ancestral Memories scenarios in data/scenarios/mass-effect
+-- are the same count over a bound group rather than a zone.
 --
 -- Fall of the Thran {5}{W} Enchantment - Saga, "I -- Destroy all lands. II, III
 -- -- Each player returns two land cards from their graveyard to the
@@ -1026,125 +954,6 @@ fallOfTheThranSpec s registry =
             (onBattlefield after)
             (List.sort [(named "Fall of the Thran", Just S.alice), (named "Plains", Just S.alice)])
           Spec.assertEqWith s "and nobody was asked anything" sizes []
-
--- ObjectRef.ChosenCardFromAmong's COUNT: "from among them" taking more than one
--- card out of one bound group, where communeWithTheGodsSpec above takes one.
---
--- Ancestral Memories {2}{U}{U}{U} Sorcery, "Look at the top seven cards of your
--- library. Put two of them into your hand and the rest into your graveyard."
--- (name, cost, type line and Oracle text checked against api.scryfall.com,
--- 2026-09-01). The whole card is transcribed.
---
--- Three clauses: CR 701.20e's look binds the seven as a group and leaves them in
--- the library (rule 701.20b), the choice takes two of them, and "the rest" is the
--- SAME slot read by ObjectRef.InSlot -- which finds both chosen cards gone, CR
--- 400.7 having minted new objects for them on the way to the hand.
---
--- The two asks are pinned by INDEX through a State-threaded answerer, since a
--- pure one cannot tell the second ask from the first. Both legs below index 5 and
--- 0 of the offers, in the two orders, and the second leg is what proves the
--- EXCLUSION: index 5 of the untouched seven is the Bad Moon, and index 5 of the
--- six the first ask left is the Bird Maiden, so an implementation that re-offered
--- the taken card would name a different pair. An eighth card sits below the seven
--- so the look's own depth stays observable.
-ancestralMemoriesSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-ancestralMemoriesSpec s registry =
-  let -- alice: five Islands for the {2}{U}{U}{U}, `stock` into her library BOTTOM
-      -- FIRST (S.addLibraryCard puts each new card on top), Ancestral Memories in
-      -- hand. Returns the spell's id.
-      board island memories stock =
-        let mana = S.landsFor island S.alice 5 S.threePlayerGame
-            withStock = List.foldl' (\g printing -> snd (S.addLibraryCard printing S.alice g)) mana stock
-            (withSpell, spellId) = S.handOne memories withStock
-         in ( spellId,
-              withSpell
-                { GameState.turn =
-                    (GameState.turn withSpell)
-                      { TurnRegisters.priority = Just S.alice
-                      }
-                }
-            )
-      named = Just . CardName.MkCardName . Text.pack
-      nth n offered = Maybe.fromMaybe (NonEmpty.head offered) (Maybe.listToMaybe (drop n (NonEmpty.toList offered)))
-      -- One index per ask, taken in order, and the SIZE of each offer recorded
-      -- beside it -- so a second ask that never happened and a second ask over the
-      -- wrong candidates are both visible.
-      taking :: Prompt.Prompt r -> State.State ([Int], [Int]) r
-      taking p = case p of
-        Prompt.ChooseCardFromAmong _ _ _ offered -> do
-          (indices, sizes) <- State.get
-          State.put (drop 1 indices, sizes <> [length (NonEmpty.toList offered)])
-          pure (nth (Maybe.fromMaybe 0 (Maybe.listToMaybe indices)) offered)
-        _ -> pure (S.identityAnswer p)
-      cast :: [Int] -> (ObjectId.ObjectId, GameState.GameState) -> (GameState.GameState, [Int])
-      cast script (spellId, gs) =
-        let ((_, announced), afterCast) = State.runState (Engine.runGame taking gs (S.cast S.alice spellId)) (script, [])
-            ((_, after), afterResolve) = State.runState (Engine.runGame taking announced Stack.resolveTop) afterCast
-         in (after, snd afterResolve)
-      setup = do
-        island <- S.printingOf s registry "Island"
-        memories <- S.printingOf s registry "Ancestral Memories"
-        swamp <- S.printingOf s registry "Swamp"
-        maiden <- S.printingOf s registry "Bird Maiden"
-        moon <- S.printingOf s registry "Bad Moon"
-        murder <- S.printingOf s registry "Murder"
-        piker <- S.printingOf s registry "Goblin Piker"
-        giant <- S.printingOf s registry "Hill Giant"
-        forest <- S.printingOf s registry "Forest"
-        mountain <- S.printingOf s registry "Mountain"
-        -- Bottom to top: the Swamp is never looked at, and the seven above it are
-        -- Mountain, Forest, Hill Giant, Goblin Piker, Murder, Bad Moon, Bird
-        -- Maiden read top down, which is the order the offer takes.
-        pure (board island memories [swamp, maiden, moon, murder, piker, giant, forest, mountain])
-      -- The graveyard when nothing is taken: the seven looked-at cards and the
-      -- spell itself (CR 608.2n).
-      allBuried =
-        List.sort
-          [ named "Ancestral Memories",
-            named "Bad Moon",
-            named "Bird Maiden",
-            named "Forest",
-            named "Goblin Piker",
-            named "Hill Giant",
-            named "Mountain",
-            named "Murder"
-          ]
-      burying takens = List.sort (List.foldl' (flip List.delete) allBuried takens)
-   in Spec.describe s "AncestralMemories" $ do
-        -- The headline: TWO cards come out of the one group, and both are the ones
-        -- the answers named.
-        Spec.it s "CR 608.2d two cards are taken from among the seven, both of them chosen" $ do
-          gs <- setup
-          let (after, sizes) = cast [5, 0] gs
-          Spec.assertEqWith
-            s
-            "both chosen cards are in alice's hand"
-            (List.sort (namesIn Zone.Hand S.alice after))
-            (List.sort [named "Bad Moon", named "Mountain"])
-          Spec.assertEqWith
-            s
-            "and the other five are in the graveyard"
-            (List.sort (namesIn Zone.Graveyard S.alice after))
-            (burying [named "Bad Moon", named "Mountain"])
-          Spec.assertEqWith s "the eighth card was never looked at" (namesIn Zone.Library S.alice after) [named "Swamp"]
-          Spec.assertEqWith s "two asks, the second over one fewer candidate" sizes [7, 6]
-        -- The paired control, and the proof that the second ask cannot re-offer the
-        -- first ask's card: the SAME two indices in the other order. Index 5 of the
-        -- untouched seven is the Bad Moon; index 5 of what the Mountain's removal
-        -- leaves is the Bird Maiden.
-        Spec.it s "CR 608.2d the second choice is made among the cards the first left" $ do
-          gs <- setup
-          let (after, _) = cast [0, 5] gs
-          Spec.assertEqWith
-            s
-            "the Mountain and the Bird Maiden are in alice's hand"
-            (List.sort (namesIn Zone.Hand S.alice after))
-            (List.sort [named "Bird Maiden", named "Mountain"])
-          Spec.assertEqWith
-            s
-            "and the Bad Moon is among the rest"
-            (List.sort (namesIn Zone.Graveyard S.alice after))
-            (burying [named "Bird Maiden", named "Mountain"])
 
 -- The counted reveal-until walk: ObjectRef.TopOfLibraryUntil's Quantity counting
 -- MATCHES, where data/scenarios/mass-effect pins the same walk at one match
@@ -1382,21 +1191,6 @@ carthTheLionSpec s registry =
               after = S.runPure answer placed Stack.resolveTop
           Spec.assertEqWith s "the first planeswalker card comes to hand instead" (namesIn Zone.Hand S.alice after) [named "Jace Beleren"]
           Spec.assertEqWith s "and that is the object revealed" (revealed after) [idOf ids "Jace Beleren"]
-        -- CR 608.2d: no planeswalker card among the seven, so the reveal is
-        -- impossible and the move hanging on it with it; the "may" is not put.
-        -- The headline, which takes the "may", is the control.
-        Spec.it s "CR 608.2d Carth the Lion's reveal is not offered without a planeswalker among them" $ do
-          carth <- S.printingOf s registry "Carth the Lion"
-          printings <- Monad.mapM (S.printingOf s registry) ["Swamp", "Bird Maiden", "Forest", "Murder", "Goblin Piker", "Murder", "Island", "Island"]
-          let (stocked, _) = stock printings (Setup.emptyGame S.bothPlayers)
-              (_, entered) = S.entersWithTrigger carth S.alice stocked
-              answer :: Prompt.Prompt r -> r
-              answer = answering (Just 0) Nothing
-              placed = S.runPure answer entered (Engine.placePendingTriggers [])
-              ((_, after), asked) = Replay.record answer placed Stack.resolveTop
-          Spec.assertEqWith s "CR 608.2d the may was never put" [d | Response.ChoseOptional d <- asked] []
-          Spec.assertEqWith s "nothing reached alice's hand" (namesIn Zone.Hand S.alice after) []
-          Spec.assertEqWith s "and nothing was revealed" (revealed after) []
         -- The same board under a test-local Carth whose put-into-hand is a
         -- GainControl of the revealed card, which no printing states: the
         -- dependent instruction carries a PlayerRef ("you", unslotted), which
@@ -1817,7 +1611,6 @@ spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   fallOfTheThranSpec s registry
   midnightTillingSpec s registry
   communeWithTheGodsSpec s registry
-  ancestralMemoriesSpec s registry
   openTheWaySpec s registry
   carthTheLionSpec s registry
   uncoveredCluesSpec s registry

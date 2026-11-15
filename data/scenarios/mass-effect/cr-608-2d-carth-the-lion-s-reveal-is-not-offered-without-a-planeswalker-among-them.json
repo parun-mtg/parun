@@ -1,0 +1,183 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "swamp-1"
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp-2"
+          },
+          {
+            "card": "Forest",
+            "label": "forest-1"
+          },
+          {
+            "card": "Forest",
+            "label": "forest-2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Carth the Lion",
+            "label": "carth"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island",
+            "label": "l1"
+          },
+          {
+            "card": "Island",
+            "label": "l2"
+          },
+          {
+            "card": "Murder",
+            "label": "l3"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "l4"
+          },
+          {
+            "card": "Murder",
+            "label": "l5"
+          },
+          {
+            "card": "Forest",
+            "label": "l6"
+          },
+          {
+            "card": "Bird Maiden",
+            "label": "l7"
+          },
+          {
+            "card": "Swamp",
+            "label": "l8"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 608.2d Carth the Lion's reveal is not offered without a planeswalker among them",
+  "note": "No planeswalker card among the top seven, so the reveal is impossible and the move to hand hanging on it with it: the may is not put (an unscheduled prompt fails the run), nothing reaches alice's hand, bob is shown nothing, and the seven go to the bottom in the order the randomness names (the Shuffle answer, deepest first), below the Swamp the look never reached. The paired Haskell case, which takes the may, is the control.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$swamp-1",
+            "$swamp-2",
+            "$forest-1",
+            "$forest-2"
+          ],
+          "object": "$carth"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "$l3",
+            "$l7",
+            "$l1",
+            "$l6",
+            "$l2",
+            "$l4",
+            "$l5"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$l8",
+            "Murder",
+            "Goblin Piker",
+            "Island",
+            "Forest#3",
+            "Island#2",
+            "Bird Maiden",
+            "Murder#2"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Hand"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Witnessed",
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

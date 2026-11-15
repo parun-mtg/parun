@@ -696,11 +696,11 @@ out: grep for them.
 
 ### `InvestigateSpec`
 
-- CR 609.3 an empty hand reveals nothing and casts nothing | `check:helper-board` `check:helper-bobsHand` `check:helper-revealed` `check:helper-rolling`
-- CR 701.20a a random reveal shows the card randomness named, not the first in hand | `check:events`
-- CR 701.20a and the middle card, which no fixed reading of the hand reaches | `check:events`
-- CR 701.20a the same board with a different roll reveals a different card | `check:events`
-- CR 701.60a a spell ends the designation, and CR 701.60c's menace and can't-block end with it | `board:object-designations`
+- ~~CR 609.3 an empty hand reveals nothing and casts nothing | `check:helper-board` `check:helper-bobsHand` `check:helper-revealed` `check:helper-rolling`~~
+- ~~CR 701.20a a random reveal shows the card randomness named, not the first in hand | `check:events`~~
+- ~~CR 701.20a and the middle card, which no fixed reading of the hand reaches | `check:events`~~
+- ~~CR 701.20a the same board with a different roll reveals a different card | `check:events`~~
+- ~~CR 701.60a a spell ends the designation, and CR 701.60c's menace and can't-block end with it | `board:object-designations`~~
 
 ### `KeywordTriggerSpec`
 
@@ -806,11 +806,11 @@ out: grep for them.
 
 ### `MassEffectSpec`
 
-- CR 608.2d Carth the Lion's reveal is not offered without a planeswalker among them | `check:helper-namesIn` `check:helper-revealed`
-- CR 608.2d the second choice is made among the cards the first left | `check:prompt-candidates`
-- CR 608.2d two cards are taken from among the seven, both of them chosen | `check:prompt-candidates`
-- CR 701.17c the return chooses among the milled cards, not among the graveyard | `check:prompt-candidates`
-- CR 701.20e the choice ranges over the matching revealed cards, not over all five | `check:prompt-candidates`
+- ~~CR 608.2d Carth the Lion's reveal is not offered without a planeswalker among them | `check:helper-namesIn` `check:helper-revealed`~~
+- ~~CR 608.2d the second choice is made among the cards the first left | `check:prompt-candidates`~~
+- ~~CR 608.2d two cards are taken from among the seven, both of them chosen | `check:prompt-candidates`~~
+- ~~CR 701.17c the return chooses among the milled cards, not among the graveyard | `check:prompt-candidates`~~
+- ~~CR 701.20e the choice ranges over the matching revealed cards, not over all five | `check:prompt-candidates`~~
 
 ### `MeldSpec`
 
@@ -839,9 +839,9 @@ out: grep for them.
 
 ### `ModalSpec`
 
-- CR 608.2b the damage mode fizzles when its only target leaves before resolution | `check:events`
-- casting the damage mode binds the 'damaged' slot, never 'wall' | `check:bindings`
-- no legal mode removes the trigger from the stack (CR 603.3c) | `check:helper-nothing`
+- ~~CR 608.2b the damage mode fizzles when its only target leaves before resolution | `check:events`~~
+- ~~casting the damage mode binds the 'damaged' slot, never 'wall' | `check:bindings`~~
+- ~~no legal mode removes the trigger from the stack (CR 603.3c) | `check:helper-nothing`~~
 
 ### `MoveCounterSpec`
 
@@ -1153,24 +1153,24 @@ out: grep for them.
 
 ### `TurnSpec`
 
-- CR 500.5a an until-end-of-combat effect expires though the end of combat step never ran | `check:other-StoredEffects.continuousEffects`
-- CR 500.7 damage can't be prevented during the Gambit's own extra turn, and on no other | `check:player-effects`
-- CR 500.7 several extra turns from one effect are added in APNAP order | `check:extra-turns`
-- CR 500.7 the skip stays on Savor's own extra turn, not on a later-created one | `board:extraturns` `board:extraturnunderway` `board:turnanchor`
-- CR 500.8 Aurelia's added combat phase goes AFTER this one, not inside it | `check:other-TurnRegisters.remaining` `check:other-Turn.expandExtraPhase`
-- CR 508.8 a creature put onto the battlefield attacking keeps the two steps | `check:combat` `check:other-Combat.skipEmptyCombat` `check:other-TurnRegisters.remaining`
-- CR 511.3 combat is emptied though the end of combat step never ran | `check:other-Turn.afterBlockersDeclared`
-- CR 511.3 the control end of combat step runs, and the phase's end sweeps anyway | `check:other-Turn.afterBlockersDeclared`
-- CR 603.7a uncleaved, alice loses at the end step of the unpreventable extra turn
-- CR 614.10a the end of combat step never begins, and the phase ends anyway | `check:helper-began` `check:other-TurnRegisters.remaining`
-- CR 725.1d ending the turn during combat expires that phase's effects
-- CR 725.1d ending the turn skips straight to the cleanup step
-- CR 725.1f no player gets priority once the turn has ended | `check:prompt-count`
-- CR 725.2d ending the combat phase skips straight to the next phase
-- CR 725.2f no player gets priority once the combat phase has ended | `check:prompt-count`
-- CR 725.2g ending the combat phase outside one does nothing | `board:combat` `board:continuous-effect`
-- advance on an empty schedule hands off the turn | `check:other-TurnRegisters.remaining` `check:other-TurnRegisters.turnNumber` `check:other-Turn.firstPhase` `check:other-Turn.laterPhases`
-- advance pops the schedule head into the current phase | `check:other-TurnRegisters.remaining`
+- ~~CR 500.5a an until-end-of-combat effect expires though the end of combat step never ran | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 500.7 damage can't be prevented during the Gambit's own extra turn, and on no other | `check:player-effects`~~
+- ~~CR 500.7 several extra turns from one effect are added in APNAP order | `check:extra-turns`~~
+- ~~CR 500.7 the skip stays on Savor's own extra turn, not on a later-created one | `board:extraturns` `board:extraturnunderway` `board:turnanchor`~~
+- ~~CR 500.8 Aurelia's added combat phase goes AFTER this one, not inside it | `check:other-TurnRegisters.remaining` `check:other-Turn.expandExtraPhase`~~
+- ~~CR 508.8 a creature put onto the battlefield attacking keeps the two steps | `check:combat` `check:other-Combat.skipEmptyCombat` `check:other-TurnRegisters.remaining`~~
+- ~~CR 511.3 combat is emptied though the end of combat step never ran | `check:other-Turn.afterBlockersDeclared`~~
+- ~~CR 511.3 the control end of combat step runs, and the phase's end sweeps anyway | `check:other-Turn.afterBlockersDeclared`~~
+- ~~CR 603.7a uncleaved, alice loses at the end step of the unpreventable extra turn~~
+- ~~CR 614.10a the end of combat step never begins, and the phase ends anyway | `check:helper-began` `check:other-TurnRegisters.remaining`~~
+- ~~CR 725.1d ending the turn during combat expires that phase's effects~~
+- ~~CR 725.1d ending the turn skips straight to the cleanup step~~
+- ~~CR 725.1f no player gets priority once the turn has ended | `check:prompt-count`~~
+- ~~CR 725.2d ending the combat phase skips straight to the next phase~~
+- ~~CR 725.2f no player gets priority once the combat phase has ended | `check:prompt-count`~~
+- ~~CR 725.2g ending the combat phase outside one does nothing | `board:combat` `board:continuous-effect`~~
+- ~~advance on an empty schedule hands off the turn | `check:other-TurnRegisters.remaining` `check:other-TurnRegisters.turnNumber` `check:other-Turn.firstPhase` `check:other-Turn.laterPhases`~~
+- ~~advance pops the schedule head into the current phase | `check:other-TurnRegisters.remaining`~~
 
 ### `UntapRestrictionSpec`
 
