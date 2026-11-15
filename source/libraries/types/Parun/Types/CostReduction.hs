@@ -38,7 +38,7 @@ data CostReduction = MkCostReduction
     --
     -- A ManaCost and not a number, for Parun.Types.AppliedReduction's reason: CR
     -- 118.7 reduces a cost by mana of a stated type, and
-    -- Parun.Engine.Cost.applyAdjustments already reads a reduction's generic and
+    -- Parun.Engine.CostAdjustments.applyAdjustments already reads a reduction's generic and
     -- typed halves apart -- Ertai's Scorn's {U} is a typed one.
     amount :: ManaCost.ManaCost,
     -- | How many times 'amount' comes off -- Thrasta's "for each other spell

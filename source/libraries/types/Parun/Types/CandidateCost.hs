@@ -46,7 +46,7 @@ data CandidateCost = MkCandidateCost
     -- increase BEFORE any reduction: a candidate whose mana had the amount
     -- subtracted out would floor at {0} before a tax was added, and pay the tax in
     -- full. Parun.Engine.Cast.payableCostAt and Parun.Engine.Cast.castProposed both
-    -- hand them to Parun.Engine.Cost.plusReductions, so the gate that offers the
+    -- hand them to Parun.Engine.CostAdjustments.plusReductions, so the gate that offers the
     -- cast and the total that prices it cannot disagree.
     --
     -- Empty wherever the rule that offered it states no reduction. CR 702.48a's is the

@@ -487,7 +487,7 @@ affectedBy pid oid name gs =
 --
 -- The order changes no answer for a cost adjustment, and CR 613.11 is why: it
 -- excepts cost effects from timestamp order and defers to CR 601.2f, which
--- Parun.Engine.Cost.applyAdjustments implements itself by applying every increase
+-- Parun.Engine.CostAdjustments.applyAdjustments implements itself by applying every increase
 -- before any reduction. Every other consumer here folds order-independently -- a
 -- disjunction of prohibitions (CR 101.2) or a sum of grants (CR 305.2) -- which
 -- leaves maximumHandSize below as the axis's one ordered fold.
@@ -1823,7 +1823,7 @@ spellCostAdjustments targets pid oid gs =
 -- Parun.Engine.Cost.selfReductions repeats Thrasta's, so a typed amount needs no
 -- arithmetic; a repeated addition is its components repeated. Each reduction
 -- keeps its OWN floor and colour confinement (Parun.Types.AppliedReduction),
--- which Parun.Engine.Cost.applyAdjustments applies as that reduction lands.
+-- which Parun.Engine.CostAdjustments.applyAdjustments applies as that reduction lands.
 --
 -- Additions are CONCATENATED rather than resolved between, because two effects
 -- each adding a cost both add it, and each keeps its SCALE for

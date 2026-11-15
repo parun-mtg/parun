@@ -1973,6 +1973,7 @@ library engine
     Parun.Engine.Conspiracy
     Parun.Engine.Contraption
     Parun.Engine.Cost
+    Parun.Engine.CostAdjustments
     Parun.Engine.CostAmount
     Parun.Engine.Count
     Parun.Engine.CounterLimit

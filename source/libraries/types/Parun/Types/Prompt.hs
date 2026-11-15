@@ -1079,6 +1079,6 @@ data Prompt r where
   -- `Hybrid t t`.
   ChooseHybridHalf :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> ManaSymbol.ManaSymbol -> NonEmpty.NonEmpty ManaSymbol.ManaSymbol -> Prompt ManaSymbol.ManaSymbol
   -- | CR 601.2f: which of the totals the cost reductions' orders reach the
-  -- payer takes, cheapest first (Parun.Engine.Cost.applyAdjustments); raised
+  -- payer takes, cheapest first (Parun.Engine.CostAdjustments.applyAdjustments); raised
   -- only where two totals differ, and not filtered by payability.
   ChooseReducedCost :: Decider.Decider -> PlayerId.PlayerId -> ObjectId.ObjectId -> NonEmpty.NonEmpty ManaCost.ManaCost -> Prompt ManaCost.ManaCost

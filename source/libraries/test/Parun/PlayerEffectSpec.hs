@@ -110,6 +110,7 @@ import qualified Parun.Engine.Action as Action
 import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Cost as Cost
+import qualified Parun.Engine.CostAdjustments as CostAdjustments.Engine
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Expiry as Expiry
@@ -363,21 +364,21 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "unchanged"
-        (Cost.applyAdjustments (adjustments [] []) (ManaCost.MkManaCost [ManaSymbol.Generic 1, red]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] []) (ManaCost.MkManaCost [ManaSymbol.Generic 1, red]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1, red])
 
     Spec.it s "CR 601.2f an increase adds generic mana" $
       Spec.assertEqWith
         s
         "{R} taxed by {1} is {1}{R}"
-        (Cost.applyAdjustments (adjustments [generic 1] []) (ManaCost.MkManaCost [red]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [generic 1] []) (ManaCost.MkManaCost [red]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1, red])
 
     Spec.it s "CR 601.2f an increase adds a coloured symbol" $
       Spec.assertEqWith
         s
         "{1}{B} taxed by Derelor's {B} is {1}{B}{B}"
-        (Cost.applyAdjustments (adjustments [ManaCost.MkManaCost [black]] []) (ManaCost.MkManaCost [ManaSymbol.Generic 1, black]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [ManaCost.MkManaCost [black]] []) (ManaCost.MkManaCost [ManaSymbol.Generic 1, black]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1, black, black])
 
     -- CR 118.7a: "Effects that reduce a cost by an amount of generic mana
@@ -387,21 +388,21 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{U} reduced by {1} is still {U}"
-        (Cost.applyAdjustments (adjustments [] [generic 1]) (ManaCost.MkManaCost [blue]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [generic 1]) (ManaCost.MkManaCost [blue]))
         (ManaCost.MkManaCost [blue])
 
     Spec.it s "CR 118.7a a reduction takes only the generic component" $
       Spec.assertEqWith
         s
         "{2}{U} reduced by {1} is {1}{U}"
-        (Cost.applyAdjustments (adjustments [] [generic 1]) (ManaCost.MkManaCost [ManaSymbol.Generic 2, blue]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [generic 1]) (ManaCost.MkManaCost [ManaSymbol.Generic 2, blue]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1, blue])
 
     Spec.it s "CR 601.2f the total can't be reduced below {0}" $
       Spec.assertEqWith
         s
         "{1} reduced by {3} is {0}"
-        (Cost.applyAdjustments (adjustments [] [generic 3]) (ManaCost.MkManaCost [ManaSymbol.Generic 1]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [generic 3]) (ManaCost.MkManaCost [ManaSymbol.Generic 1]))
         (ManaCost.MkManaCost [])
 
     -- THE ORDER TEST, in the small. Increase first gives {1}{U}, which the
@@ -411,7 +412,7 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{U} +{1} -{1} is {U}"
-        (Cost.applyAdjustments (adjustments [generic 1] [generic 1]) (ManaCost.MkManaCost [blue]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [generic 1] [generic 1]) (ManaCost.MkManaCost [blue]))
         (ManaCost.MkManaCost [blue])
 
     -- CR 118.7's typed half, which CR 118.7a's generic half above cannot
@@ -420,14 +421,14 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{1}{W}{B} reduced by {W}{B} is {1}"
-        (Cost.applyAdjustments (adjustments [] [ManaCost.MkManaCost [white, black]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [ManaCost.MkManaCost [white, black]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1])
 
     Spec.it s "CR 118.7 one reducing symbol takes exactly one matching symbol" $
       Spec.assertEqWith
         s
         "{W}{W} reduced by {W} is {W}"
-        (Cost.applyAdjustments (adjustments [] [ManaCost.MkManaCost [white]]) (ManaCost.MkManaCost [white, white]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [ManaCost.MkManaCost [white]]) (ManaCost.MkManaCost [white, white]))
         (ManaCost.MkManaCost [white])
 
     -- THE HEADLINE FALSIFIER for the typed half, in its two readings. CR 118.7b:
@@ -437,7 +438,7 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{1}{W} reduced by {W}{B} is {0}"
-        (Cost.applyAdjustments (adjustments [] [ManaCost.MkManaCost [white, black]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [ManaCost.MkManaCost [white, black]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white]))
         (ManaCost.MkManaCost [])
 
     -- THE OTHER READING, on the same cost and the same reduction, which is what
@@ -450,7 +451,7 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{1}{W} reduced by a confined {W}{B} is {1}"
-        (Cost.applyAdjustments (confinedAdjustments [ManaCost.MkManaCost [white, black]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white]))
+        (CostAdjustments.Engine.applyAdjustments (confinedAdjustments [ManaCost.MkManaCost [white, black]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1])
 
     -- Ruling: "If you have more than one of these on the battlefield, the cost
@@ -461,7 +462,7 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{1}{W}{B} reduced by {W}{B} twice is {0}"
-        (Cost.applyAdjustments (adjustments [] [ManaCost.MkManaCost [white, black], ManaCost.MkManaCost [white, black]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [ManaCost.MkManaCost [white, black], ManaCost.MkManaCost [white, black]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
         (ManaCost.MkManaCost [])
 
     -- The same pooling under Edgewalker's own sentence, which is what two
@@ -471,7 +472,7 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{1}{W}{B} reduced by a confined {W}{B} twice is {1}"
-        (Cost.applyAdjustments (confinedAdjustments [ManaCost.MkManaCost [white, black], ManaCost.MkManaCost [white, black]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
+        (CostAdjustments.Engine.applyAdjustments (confinedAdjustments [ManaCost.MkManaCost [white, black], ManaCost.MkManaCost [white, black]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1])
 
     -- CR 118.7c's own wording, which CR 118.7b's arm does not reach: the cost
@@ -483,7 +484,7 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{2}{W} reduced by {W}{W} is {1}"
-        (Cost.applyAdjustments (adjustments [] [ManaCost.MkManaCost [white, white]]) (ManaCost.MkManaCost [ManaSymbol.Generic 2, white]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [ManaCost.MkManaCost [white, white]]) (ManaCost.MkManaCost [ManaSymbol.Generic 2, white]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1])
 
     -- CR 118.7d, the colourless half of the same sentence, which is a DIFFERENT
@@ -494,7 +495,7 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{2}{C} reduced by {C}{C} is {1}"
-        (Cost.applyAdjustments (adjustments [] [ManaCost.MkManaCost [colorless, colorless]]) (ManaCost.MkManaCost [ManaSymbol.Generic 2, colorless]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [ManaCost.MkManaCost [colorless, colorless]]) (ManaCost.MkManaCost [ManaSymbol.Generic 2, colorless]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1])
 
     -- CR 118.7a is NOT the mirror image: a GENERIC reduction that exceeds the
@@ -505,7 +506,7 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{1}{W} reduced by {2} is {W}"
-        (Cost.applyAdjustments (adjustments [] [generic 2]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [generic 2]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white]))
         (ManaCost.MkManaCost [white])
 
     -- CR 118.7f, in the small: the two SIDES of the cancellation read a
@@ -517,14 +518,14 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{1}{G} reduced by {G/P} is {1}"
-        (Cost.applyAdjustments (adjustments [] [ManaCost.MkManaCost [phyrexianGreen]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, green]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [ManaCost.MkManaCost [phyrexianGreen]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, green]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1])
 
     Spec.it s "a Phyrexian symbol in the COST is not what a reduction of its colour takes" $
       Spec.assertEqWith
         s
         "{G/P} reduced by {G} is still {G/P}"
-        (Cost.applyAdjustments (adjustments [] [ManaCost.MkManaCost [green]]) (ManaCost.MkManaCost [phyrexianGreen]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [ManaCost.MkManaCost [green]]) (ManaCost.MkManaCost [phyrexianGreen]))
         (ManaCost.MkManaCost [phyrexianGreen])
 
     -- CR 118.7e, in the small: WHICH TWO THINGS the payer is choosing between.
@@ -588,12 +589,12 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{1}{W}{B} reduced by the white half is {1}{B}"
-        (Cost.applyAdjustments (adjustments [] [ManaCost.MkManaCost [white]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [ManaCost.MkManaCost [white]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1, black])
       Spec.assertEqWith
         s
         "{1}{W}{B} reduced by the black half is {1}{W}"
-        (Cost.applyAdjustments (adjustments [] [ManaCost.MkManaCost [black]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [ManaCost.MkManaCost [black]]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, white, black]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1, white])
 
     -- CR 118.7g, in the small, and the other arm where the two sides part
@@ -603,7 +604,7 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{2}{U} reduced by {S} is {1}{U}"
-        (Cost.applyAdjustments (adjustments [] [ManaCost.MkManaCost [ManaSymbol.Snow]]) (ManaCost.MkManaCost [ManaSymbol.Generic 2, blue]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [ManaCost.MkManaCost [ManaSymbol.Snow]]) (ManaCost.MkManaCost [ManaSymbol.Generic 2, blue]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1, blue])
 
     -- CR 107.4h's half of the same split: "Effects that reduce the amount of
@@ -618,7 +619,7 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{1}{S} reduced by {1} is {S}"
-        (Cost.applyAdjustments (adjustments [] [generic 1]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, ManaSymbol.Snow]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [generic 1]) (ManaCost.MkManaCost [ManaSymbol.Generic 1, ManaSymbol.Snow]))
         (ManaCost.MkManaCost [ManaSymbol.Snow])
 
     -- The two halves of ONE reduction, on the two halves of one cost: CR
@@ -628,7 +629,7 @@ adjustmentSpec s =
       Spec.assertEqWith
         s
         "{2}{U} reduced by {1}{U} is {1}"
-        (Cost.applyAdjustments (adjustments [] [ManaCost.MkManaCost [ManaSymbol.Generic 1, blue]]) (ManaCost.MkManaCost [ManaSymbol.Generic 2, blue]))
+        (CostAdjustments.Engine.applyAdjustments (adjustments [] [ManaCost.MkManaCost [ManaSymbol.Generic 1, blue]]) (ManaCost.MkManaCost [ManaSymbol.Generic 2, blue]))
         (ManaCost.MkManaCost [ManaSymbol.Generic 1])
 
 -- alice controls Thalia and `n` untapped Mountains; her hand holds one

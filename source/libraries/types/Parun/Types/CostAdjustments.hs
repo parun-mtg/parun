@@ -11,7 +11,7 @@ import qualified Parun.Types.ManaCost as ManaCost
 -- states -- and the non-mana components other effects add to it. Gathered by
 -- Parun.Engine.Cost (spellAdjustments, activationAdjustments, and plusReductions
 -- for the amount a CR 601.2b announcement brings with it) and consumed by
--- Parun.Engine.Cost.applyAdjustments and Parun.Engine.Cost.plusComponents;
+-- Parun.Engine.CostAdjustments.applyAdjustments and Parun.Engine.Cost.plusComponents;
 -- nothing else builds one.
 --
 -- The increases and the reductions are kept APART, never summed into one signed
@@ -30,7 +30,7 @@ data CostAdjustments = MkCostAdjustments
     -- PER REDUCTION rather than over the pool, because each sentence says "this
     -- effect": a floored reduction beside an unfloored one leaves a different
     -- total depending on which of the two the floor is checked against, and only
-    -- the reduction that states it is bound by it. Parun.Engine.Cost.applyAdjustments
+    -- the reduction that states it is bound by it. Parun.Engine.CostAdjustments.applyAdjustments
     -- folds them one at a time for that reason.
     reductions :: [AppliedReduction.AppliedReduction],
     -- | CR 601.2f's other half of "cost increases", the one that is not mana at

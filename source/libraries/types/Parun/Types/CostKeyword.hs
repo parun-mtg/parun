@@ -1,12 +1,15 @@
 module Parun.Types.CostKeyword where
 
+import Numeric.Natural (Natural)
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Keyword as Keyword
+import qualified Parun.Types.ManaCost as ManaCost
 
 -- | A rule-702 keyword whose whole payload is one [cost], named WITHOUT that
 -- cost: what Parun.Types.Modification's GainKeywordAtManaCost hands out, priced
--- at the receiving card's own mana cost (CR 202.1a). One constructor per
--- keyword a printed "the [keyword] cost is equal to its mana cost" grants.
+-- at the receiving card's own mana cost (CR 202.1a), plus or minus what a
+-- payload states. One constructor per keyword a printed "the [keyword] cost is
+-- equal to its mana cost" grants.
 data CostKeyword
   = -- | CR 702.34a (Lier, Disciple of the Drowned).
     Flashback
@@ -30,6 +33,10 @@ data CostKeyword
     Replicate
   | -- | CR 702.119a (Herigast, Erupting Nullkite).
     Emerge
+  | -- | CR 702.94a (Aminatou, Veil Piercer), the mana cost reduced by this amount (CR 118.7).
+    Miracle ManaCost.ManaCost
+  | -- | CR 702.138a (Confession Dial), the mana cost plus exiling this many other cards from your graveyard.
+    Escape Natural
   | -- | CR 702.196a (Scotty, Miracle Worker), with Parun.Types.BeamMeUp's unreturnable.
     BeamMeUp (Maybe (Filter.Filter Keyword.Keyword))
   deriving (Eq, Ord, Show)
