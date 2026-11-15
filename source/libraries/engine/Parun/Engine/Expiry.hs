@@ -22,12 +22,14 @@ module Parun.Engine.Expiry where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.State.Strict as State
+import qualified Data.Foldable as Foldable
 import qualified Data.Functor.Const as Const
 import qualified Data.Functor.Identity as Identity
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Condition as Condition
@@ -51,6 +53,7 @@ import qualified Parun.Types.ActiveReplacement as ActiveReplacement
 import qualified Parun.Types.AfterObjectTurn as AfterObjectTurn
 import qualified Parun.Types.AfterTurn as AfterTurn
 import qualified Parun.Types.BeginningStep as BeginningStep
+import qualified Parun.Types.Bookkeeping as Bookkeeping
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.ContinuousEffect as ContinuousEffect
 import qualified Parun.Types.ControlDuration as ControlDuration
@@ -90,6 +93,7 @@ import qualified Parun.Types.StoredEffects as StoredEffects
 import Parun.Types.StoredKind (StoredKind)
 import qualified Parun.Types.StoredKind as StoredKind
 import qualified Parun.Types.TurnRegisters as TurnRegisters
+import qualified Parun.Types.TurnWindow as TurnWindow
 import qualified Parun.Types.UntilPaid as UntilPaid
 import qualified Parun.Types.While as While
 
@@ -580,11 +584,35 @@ sweep moment gs = keepWhere (\source -> not . endsAt gs moment source) gs
 -- CR 116.2d's ignores are among the rows swept: every printed one says until
 -- end of turn, so Leonin Arbiter stops the next turn's searches again, with
 -- nothing to reinstate.
+--
+-- A delayed trigger whose duration ends here LAPSES instead of going
+-- (TurnWindow.Lapsed): CR 514.2 ends it in the same action as the control
+-- effects it may watch, so it still sees that action's events
+-- (Stolen Uniform's ruling: it triggers "whether it's because the 'until end
+-- of turn' duration ended"). Proved by
+-- data/scenarios/stolen-uniform-unattaches-the-equipment-when-control-returns-at-cleanup.json.
 dropAtCleanup :: GameState -> GameState
 dropAtCleanup gs =
   let swept = sweep Cleanup gs
+      -- The group Engine.cleanupSecondAction's bracket froze.
+      ended = Bookkeeping.nextEventGroup (GameState.bookkeeping gs)
+      ending entry = any (endsAt gs Cleanup (DelayedTrigger.source entry)) (DelayedTrigger.expiry entry)
+      -- Only an entry that could fire now: one waiting for a later turn's onset
+      -- has nothing left to see, and goes as any other row does.
+      lapse entry
+        | not (ending entry) = Just entry
+        | otherwise = case DelayedTrigger.window entry of
+            TurnWindow.AnyTurn -> Just entry {DelayedTrigger.window = TurnWindow.Lapsed ended}
+            TurnWindow.OnTurn n
+              | n == TurnRegisters.turnNumber (GameState.turn gs) -> Just entry {DelayedTrigger.window = TurnWindow.Lapsed ended}
+            TurnWindow.Lapsed _ -> Just entry
+            _ -> Nothing
+      kept = Seq.fromList (Maybe.mapMaybe lapse (Foldable.toList (StoredEffects.delayedTriggers (GameState.stored gs))))
    in -- Rule 702.171b's mark holds no Expiry, so traverseExpiries does not walk it.
-      swept {GameState.objects = clearedSaddles (GameState.objects swept)}
+      swept
+        { GameState.objects = clearedSaddles (GameState.objects swept),
+          GameState.stored = (GameState.stored swept) {StoredEffects.delayedTriggers = kept}
+        }
 
 -- CR 611.2b: drop every While whose condition has stopped holding. The effect
 -- is DELETED, not masked: the duration is one continuous period, so an effect

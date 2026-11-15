@@ -1,6 +1,7 @@
 module Parun.Types.TurnWindow where
 
 import qualified Numeric.Natural as Natural
+import qualified Parun.Types.EventGroup as EventGroup
 import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Timestamp as Timestamp
 
@@ -16,11 +17,13 @@ import qualified Parun.Types.Timestamp as Timestamp
 -- trip.
 --
 -- The arms are one LIFE CYCLE rather than independent choices, and it only
--- ever narrows: AnyTurn stands still, and an onset-gated entry goes
--- NextTurnOf or OnExtraTurn -> OnTurn n -> gone. Parun.Engine.Event is
+-- ever narrows: AnyTurn stands still, an onset-gated entry goes
+-- NextTurnOf or OnExtraTurn -> OnTurn n -> gone, and either live window goes
+-- Lapsed -> gone as CR 514.2 ends a stated duration. Parun.Engine.Event is
 -- the only engine module that may case on this type, the standing
--- Parun.Engine.Expiry has over Expiry; Parun.Engine.Engine.beginTurn asks it for
--- the transitions at the one moment they can happen.
+-- Parun.Engine.Expiry has over Expiry, save Expiry.dropAtCleanup's lapse;
+-- Parun.Engine.Engine.beginTurn asks it for the transitions at the one moment
+-- they can happen.
 data TurnWindow
   = -- | Onset.Immediately: no turn restriction at all, which is CR 603.7a's floor
     -- and the common case. The
@@ -67,4 +70,6 @@ data TurnWindow
     -- begins. Dropped once that turn is no longer pending without having begun
     -- (CR 800.4k).
     OnExtraTurn Timestamp.Timestamp
+  | -- | CR 514.2: a stated duration ended in this event group, whose events it still sees.
+    Lapsed EventGroup.EventGroup
   deriving (Eq, Ord, Show)

@@ -2658,10 +2658,15 @@ skipWholePhase phase = do
 -- In Grand Melee, every permanent and pool, other turns running or not
 -- (docs/decisions.md, "Whether Grand Melee's cleanup and pool emptying reach
 -- every turn").
+--
+-- One event group (Event.simultaneously), whose control changes are sampled
+-- inside it: a "this turn" delayed trigger the sweep ends sees them, its
+-- duration ending in the same action (Expiry.dropAtCleanup).
 cleanupSecondAction :: Game ()
-cleanupSecondAction = do
+cleanupSecondAction = Event.simultaneously $ do
   State.modify' Damage.removeAllDamage
   State.modify' Expiry.dropAtCleanup
+  Monad.void Event.sampleControl
   State.modify' Mana.endManaRetention
 
 -- CR 614.1b / CR 500.11: THIS STEP is skipped -- proceed past it as though it
