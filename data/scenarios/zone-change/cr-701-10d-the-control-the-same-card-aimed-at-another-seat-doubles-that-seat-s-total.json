@@ -1,0 +1,143 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Plains",
+            "label": "land-1"
+          },
+          {
+            "card": "Plains",
+            "label": "land-2"
+          },
+          {
+            "card": "Plains",
+            "label": "land-3"
+          },
+          {
+            "card": "Plains",
+            "label": "land-4"
+          },
+          {
+            "card": "Plains",
+            "label": "land-5"
+          },
+          {
+            "card": "Plains",
+            "label": "land-6"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Beacon of Immortality",
+            "label": "spell"
+          }
+        ],
+        "life": 4,
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Ajani's Pridemate",
+            "label": "bob-mate"
+          }
+        ],
+        "life": 27,
+        "name": "bob"
+      },
+      {
+        "life": 13,
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.10d the control: the same card aimed at another seat doubles THAT seat's total",
+  "note": "The Beacon board differing only in the seat the target names: alice's 4 becomes 8 and bob's Pridemate stays silent, since the gain was not his.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$land-1",
+            "$land-2",
+            "$land-3",
+            "$land-4",
+            "$land-5",
+            "$land-6"
+          ],
+          "object": "$spell",
+          "targets": [
+            "$alice"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "Shuffle",
+          "with": [
+            "Beacon of Immortality"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 8,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 27,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 13,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Counters": {
+          "count": 0,
+          "kind": {
+            "type": "PlusOnePlusOne"
+          },
+          "object": "$bob-mate"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    }
+  ]
+}
