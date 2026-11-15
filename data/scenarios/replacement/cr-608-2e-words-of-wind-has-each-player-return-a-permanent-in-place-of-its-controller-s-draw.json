@@ -1,0 +1,65 @@
+{
+  "description": "CR 608.2e Words of Wind has each player return a permanent in place of its controller's draw",
+  "note": "alice activates Words of Wind in her upkeep. Her draw step's draw never happens (CR 614.6): Hill Giant stays on her library. Each player chooses a permanent they control in APNAP order, alice first (CR 101.4), and both chosen permanents return to their owners' hands; Words of Wind, Island and Forest stay.",
+  "board": {
+    "active": "alice",
+    "turn": 2,
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Words of Wind",
+            "label": "words"
+          },
+          {
+            "card": "Island",
+            "label": "island",
+            "ready": true
+          },
+          {
+            "card": "Memnite",
+            "label": "memnite"
+          }
+        ],
+        "library": [
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Mountain"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "library": [
+          {
+            "card": "Mountain"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": {"Activate": {"object": "$words", "mana": ["$island"]}}},
+    {"turn": 2, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "do": {"Answer": {"prompt": "ChoosePermanent", "with": "$memnite"}}},
+    {"turn": 2, "step": "DrawStep", "player": "bob", "do": {"Answer": {"prompt": "ChoosePermanent", "with": "$bears"}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Library", "card": "Hill Giant", "count": 1}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Memnite", "count": 1}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Words of Wind", "count": 1}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Hand", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 2, "step": "DrawStep", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Forest", "count": 1}}}
+  ]
+}
