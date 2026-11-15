@@ -1,0 +1,239 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Black"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        }
+      ],
+      "name": "Hollowmurk Siege",
+      "oracleText": "As this enchantment enters, choose Sultai or Abzan.\n• Sultai — Whenever a counter is put on a creature you control, draw a card. This ability triggers only once each turn.\n• Abzan — Whenever you attack, put a +1/+1 counter on target attacking creature. It gains menace until end of turn.",
+      "replacementEffects": [
+        {
+          "effect": {
+            "type": "EntryR",
+            "value": {
+              "matching": {
+                "type": "IsSource"
+              },
+              "rewrite": {
+                "type": "ChooseQuality",
+                "value": {
+                  "type": "Word",
+                  "value": [
+                    "Sultai",
+                    "Abzan"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ],
+      "staticAbilities": [
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "ChosenNumber"
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 1
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "CountersChange",
+                    "value": {
+                      "holder": {
+                        "type": "Permanent",
+                        "value": {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Creature"
+                            },
+                            {
+                              "type": "HeldBy",
+                              "value": {
+                                "holder": "Controller",
+                                "relation": "You"
+                              }
+                            }
+                          ]
+                        }
+                      },
+                      "kind": {
+                        "type": "OfAnyKind"
+                      },
+                      "motion": {
+                        "type": "Put",
+                        "value": "AnyPlayer"
+                      }
+                    }
+                  },
+                  "limit": {
+                    "type": "OncePerTurn"
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "Draw",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "You"
+                                  },
+                                  "quantity": {
+                                    "type": "Literal",
+                                    "value": 1
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "affected": {
+            "type": "Matching",
+            "value": {
+              "type": "IsSource"
+            }
+          },
+          "condition": {
+            "type": "Compares",
+            "value": {
+              "comparison": "Exactly",
+              "measured": {
+                "type": "ChosenNumber"
+              },
+              "threshold": {
+                "type": "Literal",
+                "value": 2
+              }
+            }
+          },
+          "modifications": [
+            {
+              "type": "GainAbility",
+              "value": {
+                "type": "Triggered",
+                "value": {
+                  "condition": {
+                    "type": "Attacks",
+                    "value": {
+                      "type": "Declaration",
+                      "value": {
+                        "player": "You"
+                      }
+                    }
+                  },
+                  "modal": {
+                    "modes": [
+                      {
+                        "clauses": [
+                          {
+                            "effects": [
+                              {
+                                "type": "PutCounters",
+                                "value": {
+                                  "kind": {
+                                    "type": "PlusOnePlusOne"
+                                  },
+                                  "quantity": {
+                                    "type": "Literal",
+                                    "value": 1
+                                  },
+                                  "ref": {
+                                    "type": "InSlot",
+                                    "value": "target"
+                                  }
+                                }
+                              },
+                              {
+                                "type": "ModifyTarget",
+                                "value": {
+                                  "duration": {
+                                    "type": "UntilEndOfTurn"
+                                  },
+                                  "modification": {
+                                    "type": "GainKeyword",
+                                    "value": {
+                                      "type": "Menace"
+                                    }
+                                  },
+                                  "ref": {
+                                    "type": "InSlot",
+                                    "value": "target"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ],
+                        "targetSlots": {
+                          "target": {
+                            "filter": {
+                              "type": "IsAttacking"
+                            },
+                            "pool": {
+                              "type": "Creatures"
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "typeLine": {
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}
