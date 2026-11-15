@@ -473,23 +473,23 @@ out: grep for them.
 
 ### `DamageSpec`
 
-- CR 120.1/120.2b the event credits the targeted creature, and CR 120.3f pays ITS controller | `check:events`
-- CR 120.3f a Goblin Piker dealing the same two gains nobody anything | `check:events`
-- CR 120.4a Flame Spill's excess goes to the creature's controller | `check:helper-subtract`
-- CR 120.4a the excess is the greatest across the card types the permanent has
-- CR 120.4a/120.6 the bar is lethal damage, not toughness | `check:helper-subtract`
-- CR 701.14c a self-fight is ONE damage event, so one shield counter answers it | `board:object-turnedoverat` `board:replacement`
-- CR 701.14c one shield counter answers the whole self-fight | `board:object-turnedoverat` `board:replacement`
-- CR 701.14c the one blow is TWICE its power | `board:continuous-effect` `board:object-turnedoverat` `board:replacement`
-- CR 702.16k bob's damage is prevented when bob was chosen and marked when carol was | `board:object-chosenplayer`
-- CR 702.2b Llanowar Elves' one damage leaves the Wall standing | `check:events`
-- CR 702.2b a Typhoid Rats' one damage destroys the 0/8 Wall | `check:events`
-- CR 704.5j a Thalia and an Urborg coexist under one controller | `check:helper-inPlay`
-- CR 704.5j two copies of a NON-legendary creature both survive | `check:helper-inPlay`
-- CR 704.5j two players may each control a Thalia | `check:helper-inPlay`
-- CR 704.5k a lone world permanent survives | `check:helper-inPlay`
-- CR 704.5k whole cards: resolving Living Plane buries the Concordant Crossroads already out | `board:object-worldsince`
-- life <= 0 loses | `check:other-GameState.players` `check:other-Player.commander` `check:other-Player.commanderCasts` `check:other-Player.commanderDamage` `check:other-Player.companion` `check:other-Player.companionTaken` `check:other-Player.completedDungeonNames` `check:other-Player.completedDungeons` `check:other-Player.counters` `check:other-Player.designations` `check:other-Player.dungeons` `check:other-Player.outsideTheGame` `check:other-Player.ringTemptations` `check:other-Player.speed` `check:other-Player.startingDeck` `check:other-Player.status`
+- ~~CR 120.1/120.2b the event credits the targeted creature, and CR 120.3f pays ITS controller | `check:events`~~
+- ~~CR 120.3f a Goblin Piker dealing the same two gains nobody anything | `check:events`~~
+- ~~CR 120.4a Flame Spill's excess goes to the creature's controller | `check:helper-subtract`~~
+- ~~CR 120.4a the excess is the greatest across the card types the permanent has~~
+- ~~CR 120.4a/120.6 the bar is lethal damage, not toughness | `check:helper-subtract`~~
+- ~~CR 701.14c a self-fight is ONE damage event, so one shield counter answers it | `board:object-turnedoverat` `board:replacement`~~
+- ~~CR 701.14c one shield counter answers the whole self-fight | `board:object-turnedoverat` `board:replacement`~~
+- ~~CR 701.14c the one blow is TWICE its power | `board:continuous-effect` `board:object-turnedoverat` `board:replacement`~~
+- ~~CR 702.16k bob's damage is prevented when bob was chosen and marked when carol was | `board:object-chosenplayer`~~
+- ~~CR 702.2b Llanowar Elves' one damage leaves the Wall standing | `check:events`~~
+- ~~CR 702.2b a Typhoid Rats' one damage destroys the 0/8 Wall | `check:events`~~
+- ~~CR 704.5j a Thalia and an Urborg coexist under one controller | `check:helper-inPlay`~~
+- ~~CR 704.5j two copies of a NON-legendary creature both survive | `check:helper-inPlay`~~
+- ~~CR 704.5j two players may each control a Thalia | `check:helper-inPlay`~~
+- ~~CR 704.5k a lone world permanent survives | `check:helper-inPlay`~~
+- ~~CR 704.5k whole cards: resolving Living Plane buries the Concordant Crossroads already out | `board:object-worldsince`~~
+- ~~life <= 0 loses | `check:other-GameState.players` `check:other-Player.commander` `check:other-Player.commanderCasts` `check:other-Player.commanderDamage` `check:other-Player.companion` `check:other-Player.companionTaken` `check:other-Player.completedDungeonNames` `check:other-Player.completedDungeons` `check:other-Player.counters` `check:other-Player.designations` `check:other-Player.dungeons` `check:other-Player.outsideTheGame` `check:other-Player.ringTemptations` `check:other-Player.speed` `check:other-Player.startingDeck` `check:other-Player.status`~~
 
 ### `DaytimeSpec`
 
@@ -633,11 +633,11 @@ out: grep for them.
 
 ### `FlipSpec`
 
-- CR 603.2 Akki flips on the NONCOMBAT damage Soul's Fire makes it deal to bob | `check:events`
-- CR 603.2 Harm's Way sends Akki's combat damage to alice, and Akki does not flip
-- CR 603.2 the same noncombat damage aimed at alice does not flip Akki | `check:events`
+- ~~CR 603.2 Akki flips on the NONCOMBAT damage Soul's Fire makes it deal to bob | `check:events`~~
+- ~~CR 603.2 Harm's Way sends Akki's combat damage to alice, and Akki does not flip~~
+- ~~CR 603.2 the same noncombat damage aimed at alice does not flip Akki | `check:events`~~
 - CR 707.3 a Clone of Akki Lavarunner flips into Tok-Tok, and a Clone of that is Akki | `check:mana-value`
-- CR 710.2 Akki flips into Tok-Tok, keeping CR 710.1c's mana value and colour | `check:helper-costReadings` `check:helper-isLegendary`
+- CR 710.2 Akki flips into Tok-Tok, keeping CR 710.1c's mana value and colour | `check:mana-value`
 
 ### `ForageSpec`
 
@@ -743,23 +743,23 @@ out: grep for them.
 
 ### `LibraryOrderSpec`
 
-- CR 114.2 CreateEmblem puts an emblem in the command zone under the resolver | `check:other-GameState.command` `check:other-Object.owner` `check:other-Object.zone`
-- CR 302.6 GainControl does NOT re-Sick a permanent its controller already controlled | `check:other-Object.sickness`
-- CR 603.5 whole card: Deadly Complication's optional clause is asked about while its target lives | `board:object-designations`
-- CR 609.3 an empty library looks at nothing and does nothing | `check:helper-zoneNames`
-- CR 609.3 an empty library raises no question | `check:helper-asks`
-- CR 701.22b scry 0 raises no prompt and moves nothing | `check:helper-scryLibrary`
-- CR 701.25a an empty library raises no surveil prompt | `check:helper-asks`
-- CR 701.25c Enhanced Surveillance does not turn surveil 0 into a surveil | `check:helper-surveilGraveyard`
-- CR 701.25c surveil 0 raises no prompt and moves nothing | `check:helper-asks` `check:helper-surveilGraveyard`
-- CR 701.37b the designation leaves with the permanent | `board:object-designations`
-- CR 701.44a a revealed land card goes to hand, with no counter and no question | `check:helper-revealedNames` `check:events`
-- CR 701.44a a revealed nonland card grows the explorer, and the choice bins it | `check:helper-revealedNames` `check:events`
-- CR 701.44b an empty library still grows the explorer | `check:helper-revealedNames` `check:events`
-- CR 726 BecomeMonarch TheController makes the resolver the monarch | `check:events`
-- CR 726 a crown that goes to an opponent and back inside one resolution still frees the prisoner | `board:exiled-until-monarch`
-- CR 726.1/726.3 the crown goes to the TARGETED player, not the controller and not the damage's target | `check:prompt-payload`
-- a looked-at nonland card raises no question | `check:helper-asks`
+- ~~CR 114.2 CreateEmblem puts an emblem in the command zone under the resolver | `check:other-GameState.command` `check:other-Object.owner` `check:other-Object.zone`~~
+- ~~CR 302.6 GainControl does NOT re-Sick a permanent its controller already controlled | `check:other-Object.sickness`~~
+- ~~CR 603.5 whole card: Deadly Complication's optional clause is asked about while its target lives | `board:object-designations`~~
+- ~~CR 609.3 an empty library looks at nothing and does nothing | `check:helper-zoneNames`~~
+- ~~CR 609.3 an empty library raises no question | `check:helper-asks`~~
+- ~~CR 701.22b scry 0 raises no prompt and moves nothing | `check:helper-scryLibrary`~~
+- ~~CR 701.25a an empty library raises no surveil prompt | `check:helper-asks`~~
+- ~~CR 701.25c Enhanced Surveillance does not turn surveil 0 into a surveil | `check:helper-surveilGraveyard`~~
+- ~~CR 701.25c surveil 0 raises no prompt and moves nothing | `check:helper-asks` `check:helper-surveilGraveyard`~~
+- ~~CR 701.37b the designation leaves with the permanent | `board:object-designations`~~
+- ~~CR 701.44a a revealed land card goes to hand, with no counter and no question | `check:helper-revealedNames` `check:events`~~
+- ~~CR 701.44a a revealed nonland card grows the explorer, and the choice bins it | `check:helper-revealedNames` `check:events`~~
+- ~~CR 701.44b an empty library still grows the explorer | `check:helper-revealedNames` `check:events`~~
+- ~~CR 726 BecomeMonarch TheController makes the resolver the monarch | `check:events`~~
+- ~~CR 726 a crown that goes to an opponent and back inside one resolution still frees the prisoner | `board:exiled-until-monarch`~~
+- ~~CR 726.1/726.3 the crown goes to the TARGETED player, not the controller and not the damage's target | `check:prompt-payload`~~
+- ~~a looked-at nonland card raises no question | `check:helper-asks`~~
 
 ### `LifeReplacementSpec`
 
