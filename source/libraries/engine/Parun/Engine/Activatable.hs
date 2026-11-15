@@ -674,8 +674,8 @@ breakpointXs offsets mCeiling floorX gs compared =
 boundReadsX :: Modal.Type.Modal card ability -> Bool
 boundReadsX = any (any (maybe False (Set.member Binding.variableX . QuantitySlot.allSlots) . TargetSlot.amount) . Mode.targetSlots) . Modal.Type.modes
 
--- The values of X activatableGiven asks an activation at: the cost's own
--- (`costXs`, gateXs), and where a target's bound reads the X (boundReadsX),
+-- The values of X activatableGiven asks an activation at, and Cast.fillableXs
+-- a spell: the cost's own (`costXs`, either module's gateXs), and where a target's bound reads the X (boundReadsX),
 -- also every X at which that bound meets a compared measure of some object
 -- (Filter.enclosingReads): each such value, the one before it and the one
 -- after it, which reach the pool's bounds of X, X plus 1 and less than X. In

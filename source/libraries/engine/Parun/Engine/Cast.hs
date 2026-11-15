@@ -11,6 +11,7 @@ import qualified Data.Sequence as Seq
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Numeric.Natural (Natural)
+import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.ActivationRestriction as ActivationRestriction
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
@@ -47,6 +48,7 @@ import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Types.AbilityName as AbilityName
 import qualified Parun.Types.ActivePlayerEffect as ActivePlayerEffect
 import qualified Parun.Types.ActiveReplacement as ActiveReplacement
+import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.BuybackDecision as BuybackDecision
 import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
@@ -444,8 +446,11 @@ flashOn oid face gs =
 -- 702.140a's spell "targets a non-Human creature", so a mutate candidate is
 -- announceable only where such a creature is, and the slot exists only on the
 -- board that announcement produces (`proposedFor` again).
-targetable :: Maybe Keyword -> PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
-targetable castFor pid oid name gs = case proposedFace oid name gs of
+--
+-- `seed` is empty, or CR 601.2b's X alone where the gate asks at an X
+-- (fillableXs): a bound reading it then narrows as at CR 601.2c.
+targetable :: Map.Map SlotName.SlotName Binding.Type.Binding -> Maybe Keyword -> PlayerId -> ObjectId -> CardName.CardName -> GameState -> Bool
+targetable seed castFor pid oid name gs = case proposedFace oid name gs of
   Nothing -> False
   Just printed ->
     let -- CR 612.1: the spell text castProposed's announcement will read.
@@ -463,7 +468,7 @@ targetable castFor pid oid name gs = case proposedFace oid name gs of
         -- asked per candidate (candidateFillable below); the MODES are still
         -- judged.
         given = Map.union (Card.enchantSlotMapGiven (Projection.enchantOf oid gs)) (Card.mutateSlotMapGiven (maybe False Object.mutating (Game.lookupObject oid gs)))
-        fillableWhen chosen paid = Target.fillableModes StackObjectKind.Spell Nothing (Just pid) Map.empty oid given (trimModalForCandidate castFor paid (Face.spell chosen)) gs
+        fillableWhen chosen paid = Target.fillableModes StackObjectKind.Spell Nothing (Just pid) seed oid given (trimModalForCandidate castFor paid (Face.spell chosen)) gs
         -- CR 700.2e: castable when SOME player the caster could have choose
         -- has a selection to make, each reading the slots as that player's
         -- "that player" bakes them. The bake is a REGRESSION FENCE: Fatal
@@ -521,8 +526,12 @@ chosenBy chooser face = case Face.modeChooser face of
 -- `gateXs` names rather than the least alone: the cast is legal if SOME
 -- announcement can be complied with (CR 601.2), and that spell's least X is
 -- its dearest.
-payableCost :: Maybe (Seq.Seq ModeIndex.ModeIndex) -> [ManaCost.ManaCost] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
-payableCost modes extra spending pid oid gs cost = any (\x -> payableCostAt modes x extra spending pid oid gs cost) (gateXs pid oid gs cost)
+--
+-- `among` narrows those values to the ones the rest of the announcement
+-- admits: `const id` once the targets are not in question, fillableXs at an
+-- offer gate.
+payableCost :: (Cost Keyword -> [Natural] -> [Natural]) -> Maybe (Seq.Seq ModeIndex.ModeIndex) -> [ManaCost.ManaCost] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCost among modes extra spending pid oid gs cost = any (\x -> payableCostAt modes x extra spending pid oid gs cost) (among cost (gateXs pid oid gs cost))
 
 -- The values of X a gate asks a cost at. CR 601.2b's least X alone, unless the
 -- spell's own reduction reads the X (readsAnnouncedX): then payability is no longer
@@ -632,8 +641,8 @@ payableCostAt modes x extra spending pid oid gs =
 
 -- `payableCost` with the board's projection and CR 601.2g supply sweep handed
 -- in, so an enumeration over a hand builds the projection once (#435).
-payableCostGiven :: Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> [ManaCost.ManaCost] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
-payableCostGiven pcs sources extra spending pid oid gs cost = any (\x -> payableCostAtGiven Nothing pcs sources x extra spending pid oid gs cost) (gateXs pid oid gs cost)
+payableCostGiven :: (Cost Keyword -> [Natural] -> [Natural]) -> Map.Map ObjectId PC.ProjectedCharacteristics -> Mana.Sources -> [ManaCost.ManaCost] -> ManaSpending -> PlayerId -> ObjectId -> GameState -> Cost Keyword -> Bool
+payableCostGiven among pcs sources extra spending pid oid gs cost = any (\x -> payableCostAtGiven Nothing pcs sources x extra spending pid oid gs cost) (among cost (gateXs pid oid gs cost))
 
 -- `payableCostAt` with the projection and sweep handed in.
 --
@@ -982,7 +991,7 @@ entwineOffer spending pid oid candidates gs = case Game.faceOf oid gs of
     let modal = Face.spell face
         legal = Target.fillableModes StackObjectKind.Spell Nothing (Just pid) Map.empty oid (Card.enchantSlotMap face) modal gs
     Monad.guard (Natural.length legal == Modal.modeCount modal)
-    Monad.guard (any (\(extra, candidate) -> payableCost (Just (Seq.fromList (Set.toAscList legal))) extra spending pid oid gs (Cost.plus candidate cost)) candidates)
+    Monad.guard (any (\(extra, candidate) -> payableCost (const id) (Just (Seq.fromList (Set.toAscList legal))) extra spending pid oid gs (Cost.plus candidate cost)) candidates)
     pure cost
 
 -- CR 601.2f: one candidate cost with every optional additional payment announced
@@ -1042,7 +1051,7 @@ announceOptionalCosts held modes spending pid sid candidates offers gs =
       -- One more declaration, for the instance asked about or, for a cost
       -- asked once, the next of the object's own.
       declared keyword which paid = Map.insertWith Map.union keyword (Map.singleton (Maybe.fromMaybe (KeywordInstance.Own (Natural.length (Map.findWithDefault Map.empty keyword paid) + 1)) which) 1) paid
-      payable keyword which paid cost = any (\(castFor, (extra, candidate)) -> payableCost (Just modes) extra spending pid sid (stampPaidCosts (declared keyword which paid) sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) cost)) candidates
+      payable keyword which paid cost = any (\(castFor, (extra, candidate)) -> payableCost (const id) (Just modes) extra spending pid sid (stampPaidCosts (declared keyword which paid) sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) cost)) candidates
       choose keyword which limit = KickerDecision.unwrap <$> Game.choose (Prompt.ChooseKicker (Decide.deciderFor pid gs) pid sid keyword which limit)
       -- An instance asked nothing, its cost unpayable, still holds its place.
       answer keyword which limit cost paid = if payable keyword (Just which) paid cost then choose keyword (Just which) limit else pure 0
@@ -1414,9 +1423,25 @@ candidateAllowed pid oid proposed candidate =
 -- moments: CR 601.2f's additional costs (kicker, entwine) land between them and
 -- can add target slots, so a candidate's fillability is re-derived at CR 601.2c
 -- proper (Cast.castProposed) against what the whole announcement chose.
-candidateFillable :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> CandidateCost.CandidateCost -> Bool
-candidateFillable pid oid name proposed candidate =
-  targetable (CandidateCost.keyword candidate) pid oid name (proposedFor pid oid (CandidateCost.keyword candidate) proposed)
+candidateFillable :: Map.Map SlotName.SlotName Binding.Type.Binding -> PlayerId -> ObjectId -> CardName.CardName -> GameState -> CandidateCost.CandidateCost -> Bool
+candidateFillable seed pid oid name proposed candidate =
+  targetable seed (CandidateCost.keyword candidate) pid oid name (proposedFor pid oid (CandidateCost.keyword candidate) proposed)
+
+-- CR 601.2b / 601.2c / 601.2e: where a target's bound reads the X (Stir the
+-- Grave's "mana value X or less"), the unseeded targets admit every recipient
+-- some X could reach, and the cost some other X may pay, so a candidate is
+-- castable only at an X where both hold: of the cost's own values (`costXs`,
+-- gateXs) and the bound's (Activatable.boundXs), the ones its targets fill at.
+-- `costXs` unchanged otherwise. The cast scenarios "Stir the Grave is not
+-- offered where no X pays the cost and names a target" prove it.
+fillableXs :: PlayerId -> ObjectId -> CardName.CardName -> GameState -> CandidateCost.CandidateCost -> Cost Keyword -> [Natural] -> [Natural]
+fillableXs pid oid name proposed candidate cost costXs = case proposedFace oid name proposed of
+  Just face
+    | Activatable.boundReadsX (Face.spell face) ->
+        let board = proposedFor pid oid (CandidateCost.keyword candidate) proposed
+            fillsAt x = candidateFillable (Map.singleton Binding.variableX (Binding.toAmount x)) pid oid name proposed candidate
+         in filter fillsAt (Activatable.boundXs (Cost.maximumX pid oid face board) (leastX (Just face) cost) (Face.spell face) board costXs)
+  _ -> costXs
 
 -- CR 601.3e / 719.3a: CR 601.3's zone permission asked of ONE candidate, on the
 -- board its own choice produces: Serra Paragon admits a graveyard Autonomous
@@ -2119,9 +2144,9 @@ castableGiven shared pid oid name facing gs = any (castableUnderHeld shared pid 
 castableUnderHeld :: Maybe ([Projection.ControlGrant], Map.Map ObjectId PC.ProjectedCharacteristics) -> PlayerId -> ObjectId -> CardName.CardName -> Facing.Facing -> GameState -> Bool
 castableUnderHeld shared pid oid name facing gs =
   let proposed = asProposed oid name facing gs
-      payable extra spending board cost = case shared of
-        Just (grants, pcs) -> payableCostGiven pcs (Cost.supplyManaSourcesGiven (Cost.manaActivationsGiven (PlayerEffect.applying pid board)) grants pcs pid board) extra spending pid oid board cost
-        Nothing -> payableCost Nothing extra spending pid oid board cost
+      payable among extra spending board cost = case shared of
+        Just (grants, pcs) -> payableCostGiven among pcs (Cost.supplyManaSourcesGiven (Cost.manaActivationsGiven (PlayerEffect.applying pid board)) grants pcs pid board) extra spending pid oid board cost
+        Nothing -> payableCost among Nothing extra spending pid oid board cost
       -- CR 601.3, CR 601.2c and CR 601.2b, asked TOGETHER and per candidate,
       -- because CR 702.103d makes them one question: a candidate is one this
       -- player may announce when the board its own choice produces neither
@@ -2149,7 +2174,7 @@ castableUnderHeld shared pid oid name facing gs =
       candidateOk candidate =
         candidateAllowed pid oid proposed candidate
           && candidateInZone pid oid name proposed candidate
-          && candidateFillable pid oid name proposed candidate
+          && candidateFillable Map.empty pid oid name proposed candidate
           && any (wayPayable candidate) (extras candidate)
       -- CR 118.9: a way's alternative cost, laid over the candidate it fits.
       wayPayable candidate (extra, less, wayGives, alternative) = case (alternative, proposedFace oid name proposed) of
@@ -2158,7 +2183,7 @@ castableUnderHeld shared pid oid name facing gs =
         (Just _, Just face) -> case underAlternative (candidateAllowed pid oid proposed) face alternative candidate of
           Nothing -> False
           Just cost -> payableUnder candidate extra less wayGives cost
-      payableUnder candidate extra less wayGives cost = payable (CandidateCost.reductions candidate <> less) (spendingWith wayGives pid oid proposed) (proposedFor pid oid (CandidateCost.keyword candidate) proposed) (withPermissionCosts extra cost)
+      payableUnder candidate extra less wayGives cost = payable (fillableXs pid oid name proposed candidate) (CandidateCost.reductions candidate <> less) (spendingWith wayGives pid oid proposed) (proposedFor pid oid (CandidateCost.keyword candidate) proposed) (withPermissionCosts extra cost)
    in cardGatesOk pid oid name proposed
         && lookGateOk pid oid name gs proposed
         -- Gated HERE, upstream of Action.legalActions, because the engine never
@@ -2628,14 +2653,15 @@ castableWhenOffered spending pid oid name candidates proposed =
     --
     -- A REGRESSION FENCE on this path rather than a proved behaviour: no board in
     -- the pool puts a CastOffer together with a bestow card and either a
-    -- prohibition or an empty battlefield, so reverting the per-candidate reading
-    -- here leaves the suite green. `castable` and `castSpellWith` are where the
-    -- same two predicates are proved.
+    -- prohibition or an empty battlefield, or with an X-reading target bound
+    -- (fillableXs), so reverting the per-candidate reading here leaves the
+    -- suite green. `castable` and `castSpellWith` are where the same predicates
+    -- are proved.
     && any
       ( \candidate ->
           candidateAllowed pid oid proposed candidate
-            && candidateFillable pid oid name proposed candidate
-            && payableCost Nothing (CandidateCost.reductions candidate) (spendingWith spending pid oid proposed) pid oid (proposedFor pid oid (CandidateCost.keyword candidate) proposed) (CandidateCost.cost candidate)
+            && candidateFillable Map.empty pid oid name proposed candidate
+            && payableCost (fillableXs pid oid name proposed candidate) Nothing (CandidateCost.reductions candidate) (spendingWith spending pid oid proposed) pid oid (proposedFor pid oid (CandidateCost.keyword candidate) proposed) (CandidateCost.cost candidate)
       )
       candidates
     && printedRestrictionsOk pid oid name proposed
@@ -2846,7 +2872,7 @@ castSpellWith perform timed offered applied widened pid oid name facing = Event.
               -- candidateInZone only where `castable` gated the cast: an
               -- offered cast (CR 608.2g) and one made while searching carry
               -- their own permission.
-              (\candidate -> candidateAllowed pid oid proposed candidate && (not timed || candidateInZone pid oid name proposed candidate) && candidateFillable pid oid name proposed candidate)
+              (\candidate -> candidateAllowed pid oid proposed candidate && (not timed || candidateInZone pid oid name proposed candidate) && candidateFillable Map.empty pid oid name proposed candidate)
               ( fmap
                   (\candidate -> candidate {CandidateCost.cost = taxed (CandidateCost.cost candidate)})
                   ((if timed then candidatesWithWays pid oid name proposed else id) (windowedCandidates timed pid oid name proposed (if null applied then Cost.candidateCostsGiven offered pid name oid proposed else applied)))
@@ -3956,7 +3982,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
       -- Carried as the additional Cost itself rather than as a flag, entwine's
       -- reason: the candidate costs below and the CR 702.27a stamp read one value.
       let buybackAffordable extra =
-            any (\(castFor, (reduced, candidate)) -> payableCost (Just chosenModes) reduced spending pid sid (stampPaidCosts paid sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) extra)) keyedCandidates
+            any (\(castFor, (reduced, candidate)) -> payableCost (const id) (Just chosenModes) reduced spending pid sid (stampPaidCosts paid sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withOptionalPayments paid candidate) extra)) keyedCandidates
       boughtBack <- case Keyword.buybackCost keywords of
         Nothing -> pure Nothing
         Just extra
@@ -3981,7 +4007,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
       -- is offered, and where one is, the player answers.
       let withBoughtBack candidate = maybe candidate (Cost.plus candidate) boughtBack
           spliceAffordable extra =
-            any (\(castFor, (reduced, candidate)) -> payableCost (Just chosenModes) reduced spending pid sid (stampPaidCosts paid sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withBoughtBack (withOptionalPayments paid candidate)) extra)) keyedCandidates
+            any (\(castFor, (reduced, candidate)) -> payableCost (const id) (Just chosenModes) reduced spending pid sid (stampPaidCosts paid sid (proposedUnder held pid sid castFor gs)) (Cost.plus (withBoughtBack (withOptionalPayments paid candidate)) extra)) keyedCandidates
           spliceOffers = filter (spliceAffordable . snd) (Maybe.mapMaybe (spliceOffer pid sid gs) (Game.zoneMembers Zone.Hand pid gs))
       spliced <- if null spliceOffers then pure [] else Game.choose (Prompt.ChooseSplice decider pid sid spliceOffers)
       -- CR 702.47b: "you can't splice any one card onto the same spell more than
@@ -4051,7 +4077,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
           withFolded = fmap (\candidate -> (candidate {CandidateCost.cost = folded (CandidateCost.cost candidate)}, candidate)) candidateCosts
           payableUnder candidate (extra, less, wayGives, alternative) = case underAlternative allowed face alternative candidate of
             Nothing -> False
-            Just cost -> payableCost (Just chosenModes) (CandidateCost.reductions candidate <> less) (widerSpending baseSpending wayGives) pid sid (stampPaidCosts paid sid (proposedUnder held pid sid (CandidateCost.keyword candidate) gs)) (withPermissionCosts extra (folded cost))
+            Just cost -> payableCost (const id) (Just chosenModes) (CandidateCost.reductions candidate <> less) (widerSpending baseSpending wayGives) pid sid (stampPaidCosts paid sid (proposedUnder held pid sid (CandidateCost.keyword candidate) gs)) (withPermissionCosts extra (folded cost))
           payableCandidates =
             [ shown
             | (shown, candidate) <- withFolded,
@@ -4274,7 +4300,7 @@ castProposed perform baseSpending pid oid sid printedFace castFrom preparedFor k
                   withX o = o {Object.bindings = Map.union (Binding.fromChoices Map.empty mAmount Seq.empty) (Object.bindings o)}
                   announcedBoard = bestowedGs {GameState.objects = Map.adjust withX sid (GameState.objects bestowedGs)}
                   refused = Maybe.isJust mAmount && maybe False (refusedAt chosenCandidate permissionUsed) (Filter.manaValue (Projection.viewOfObject sid announcedBoard))
-              if overCeiling || underFloor || refused || not (payableCost (Just chosenModes) chosenReductions chosenSpending pid sid announcedBoard announcedAtX)
+              if overCeiling || underFloor || refused || not (payableCost (const id) (Just chosenModes) chosenReductions chosenSpending pid sid announcedBoard announcedAtX)
                 then reject
                 else do
                   -- CR 601.2b's own order puts the hybrid and Phyrexian
