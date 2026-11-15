@@ -14,11 +14,8 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import qualified Numeric.Natural as Natural
-import Parun.DamageReplacementSpec (tapStateOf)
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Cast as Cast
-import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -30,15 +27,13 @@ import qualified Parun.Engine.Replay as Replay
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Extra.Int as Int
-import Parun.PreventionSpec (answersFor, castAndResolve, counterBoard, countersOn, newestNamed, nextTurn, raceAnswer, theAbility, wasAskedToReplace)
+import Parun.PreventionSpec (answersFor, castAndResolve, counterBoard, countersOn, newestNamed, raceAnswer, theAbility, wasAskedToReplace)
 import qualified Parun.Registry as Registry
-import Parun.ReplacementSpec (controlledNamed, declineLastRiot, riotAsks, riotBoard, riotChoosing, wasAskedForRiot)
+import Parun.ReplacementSpec (controlledNamed, declineLastRiot, riotBoard, riotChoosing, wasAskedForRiot)
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
 import qualified Parun.Types.Acquisition as Acquisition
-import qualified Parun.Types.AnyNumberOf as AnyNumberOf
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.Color as Color
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
@@ -47,7 +42,6 @@ import qualified Parun.Types.EntryRewrite as EntryRewrite
 import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Filter as Filter.Type
-import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.Modification as Modification
@@ -66,13 +60,10 @@ import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementEntry as ReplacementEntry
 import qualified Parun.Types.Response as Response
-import qualified Parun.Types.Revealed as Revealed
-import qualified Parun.Types.Sickness as Sickness
 import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
-import qualified Parun.Types.Zone as Zone
 
 riotSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 riotSpec s registry = Spec.describe s "Riot (CR 702.136)" $ do
@@ -101,38 +92,6 @@ riotSpec s registry = Spec.describe s "Riot (CR 702.136)" $ do
         let asked = answersFor S.identityAnswer gs (S.cast S.alice pikerCard >> Stack.resolveTop)
          in Spec.assertBool s (not (wasAskedForRiot asked)) "no ChooseRiot was raised"
       _ -> Spec.assertFailure s "fixture did not deal a card"
-  -- CR 702.136b: "If a permanent has multiple instances of riot, each works
-  -- separately." Zhur-Taa Goblin PRINTS riot and Rhythm of the Wild GRANTS it to
-  -- her nontoken creatures, so the goblin enters holding riot twice -- two
-  -- textually identical replacement abilities on ONE source, which is the shape
-  -- CR 614.5's identity had to learn to tell apart.
-  --
-  -- The single-riot leg in the same case is what keeps the counter count from
-  -- being read as a doubling: one instance still asks once and still yields one
-  -- counter, on a board differing only in the enchantment.
-  Spec.it s "CR 702.136b riot twice is asked twice, and both counters land" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    forest <- S.printingOf s registry "Forest"
-    zhurTaa <- S.printingOf s registry "Zhur-Taa Goblin"
-    rhythm <- S.printingOf s registry "Rhythm of the Wild"
-    let (gs, held) = riotBoard mountain 1 forest 1 [zhurTaa]
-        (_, board) = S.addPermanent rhythm S.alice gs
-        answer = riotChoosing OptionalDecision.Exercises
-    case held of
-      goblinCard : _ ->
-        let play = S.cast S.alice goblinCard >> Stack.resolveTop
-            after = S.runPure answer board play
-         in case newestNamed (CardName.MkCardName $ Text.pack "Zhur-Taa Goblin") after of
-              Nothing -> Spec.assertFailure s "Zhur-Taa Goblin did not reach the battlefield"
-              Just goblin -> do
-                Spec.assertEqWith s "two ChooseRiot were raised" (riotAsks (answersFor answer board play)) 2
-                Spec.assertEqWith s "one ChooseRiot without the grant" (riotAsks (answersFor answer gs play)) 1
-                Spec.assertEqWith s "two +1/+1 counters" (countersOn CounterKind.PlusOnePlusOne goblin after) 2
-                -- Printed 2/2 (CR 613.4c, layer 7c).
-                Spec.assertEqWith s "power" (Projection.powerOf goblin after) (Just 4)
-                Spec.assertEqWith s "toughness" (Projection.toughnessOf goblin after) (Just 4)
-                Spec.assertBool s (not (Projection.hasKeyword Keyword.Haste goblin after)) "no haste"
-      _ -> Spec.assertFailure s "fixture did not deal a card"
   -- CR 702.136b's "each works separately" read at its sharpest: the rule's own
   -- consequence is that one instance may take the counter while the other takes
   -- haste, which no single application of riot can produce -- CR 702.136a's two
@@ -158,120 +117,6 @@ riotSpec s registry = Spec.describe s "Riot (CR 702.136)" $ do
                 Spec.assertBool s (Maybe.isNothing desync) "the transcript answered every prompt"
                 Spec.assertEqWith s "the exercised instance's counter" (countersOn CounterKind.PlusOnePlusOne goblin after) 1
                 Spec.assertBool s (Projection.hasKeyword Keyword.Haste goblin after) "and the declined instance's haste"
-      _ -> Spec.assertFailure s "fixture did not deal a card"
-
--- Answer unleash's "may" one way, and everything else the way S.aggressiveAnswer
--- does -- riotChoosing's shape, one keyword over.
-unleashChoosing :: OptionalDecision.OptionalDecision -> Prompt.Prompt r -> r
-unleashChoosing choice p = case p of
-  Prompt.ChooseUnleash {} -> choice
-  _ -> S.aggressiveAnswer p
-
--- How many times unleash's "may" was put to a player.
-unleashAsks :: [Response.Response] -> Int
-unleashAsks responses =
-  let isUnleash r = case r of
-        Response.ChoseUnleash _ -> True
-        _ -> False
-   in length (filter isUnleash responses)
-
--- CR 702.98a's two static abilities, on Gore-House Chainwalker ({1}{R} 2/1 with
--- unleash) -- the first keyword in parun to mint a COMBAT RESTRICTION, where riot
--- above mints only a replacement effect.
---
--- Gameplay-level throughout: every case casts the card and answers the prompt, so
--- the counter and the restriction are both reached the way a game reaches them.
--- The two answers are asserted against each other on boards differing in nothing
--- but the answer, which is what keeps `canBlock` answering False for the reason
--- under test rather than for a tapped or missing creature.
-unleashSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-unleashSpec s registry = Spec.describe s "Unleash (CR 702.98)" $ do
-  Spec.it s "CR 702.98a taking the counter makes it bigger and stops it blocking" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    forest <- S.printingOf s registry "Forest"
-    chainwalker <- S.printingOf s registry "Gore-House Chainwalker"
-    spider <- S.printingOf s registry "Giant Spider"
-    let (gs0, held) = riotBoard mountain 2 forest 0 [chainwalker]
-        -- A second creature on the SAME board, so a blanket "nobody may block"
-        -- bug cannot pass: the minted restriction has to be narrow to the
-        -- permanent holding the keyword. Giant Spider rather than a second
-        -- Chainwalker, and 2/1 against 2/5, so no reading of the board confuses
-        -- the two.
-        (bystander, gs) = S.addPermanent spider S.alice gs0
-        answer = unleashChoosing OptionalDecision.Exercises
-    case held of
-      card : _ ->
-        let play = S.cast S.alice card >> Stack.resolveTop
-            after = S.runPure answer gs play
-         in case newestNamed (CardName.MkCardName $ Text.pack "Gore-House Chainwalker") after of
-              Nothing -> Spec.assertFailure s "Gore-House Chainwalker did not reach the battlefield"
-              Just walker -> do
-                Spec.assertEqWith s "one ChooseUnleash was raised" (unleashAsks (answersFor answer gs play)) 1
-                Spec.assertEqWith s "one +1/+1 counter" (countersOn CounterKind.PlusOnePlusOne walker after) 1
-                -- Printed 2/1, so the counter shows in the projection (CR 613.4c,
-                -- layer 7c).
-                Spec.assertEqWith s "power" (Projection.powerOf walker after) (Just 3)
-                Spec.assertEqWith s "toughness" (Projection.toughnessOf walker after) (Just 2)
-                -- CR 509.1b through rule 702.98a's second static ability.
-                Spec.assertBool s (not (Combat.canBlock S.alice walker after)) "it cannot block"
-                Spec.assertBool s (Combat.canBlock S.alice bystander after) "the Spider beside it can"
-                Spec.assertEqWith s "and only the Spider is offered" (Combat.legalBlockers S.alice after) [bystander]
-      _ -> Spec.assertFailure s "fixture did not deal a card"
-  -- THE PAIR THAT MAKES THE RESTRICTION REAL. Same board, same fixture, opposite
-  -- answer: rule 702.98a's second ability keys on the counter, so declining puts
-  -- the creature back among the legal blockers.
-  Spec.it s "CR 702.98a declining leaves a 2/1 that can block" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    forest <- S.printingOf s registry "Forest"
-    chainwalker <- S.printingOf s registry "Gore-House Chainwalker"
-    spider <- S.printingOf s registry "Giant Spider"
-    let (gs0, held) = riotBoard mountain 2 forest 0 [chainwalker]
-        (bystander, gs) = S.addPermanent spider S.alice gs0
-        answer = unleashChoosing OptionalDecision.Declines
-    case held of
-      card : _ ->
-        let after = S.runPure answer gs (S.cast S.alice card >> Stack.resolveTop)
-         in case newestNamed (CardName.MkCardName $ Text.pack "Gore-House Chainwalker") after of
-              Nothing -> Spec.assertFailure s "Gore-House Chainwalker did not reach the battlefield"
-              Just walker -> do
-                Spec.assertEqWith s "no counters" (countersOn CounterKind.PlusOnePlusOne walker after) 0
-                Spec.assertEqWith s "power" (Projection.powerOf walker after) (Just 2)
-                Spec.assertEqWith s "toughness" (Projection.toughnessOf walker after) (Just 1)
-                -- Rule 702.98a states no consequence for declining, where riot
-                -- grants haste, so the board holds nothing but a 2/1.
-                Spec.assertBool s (not (Projection.hasKeyword Keyword.Haste walker after)) "no haste"
-                Spec.assertBool s (Combat.canBlock S.alice walker after) "it can block"
-                Spec.assertEqWith s "and both creatures are offered" (List.sort (Combat.legalBlockers S.alice after)) (List.sort [bystander, walker])
-      _ -> Spec.assertFailure s "fixture did not deal a card"
-  -- CR 702.98a says "a +1/+1 counter", not "that counter", so the restriction is
-  -- not a fact about how the permanent entered. A counter arriving later shuts
-  -- blocking off on a board where the controller DECLINED, which no reading tied
-  -- to the entry replacement can produce.
-  Spec.it s "CR 702.98a a +1/+1 counter arriving later shuts blocking off too" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    forest <- S.printingOf s registry "Forest"
-    chainwalker <- S.printingOf s registry "Gore-House Chainwalker"
-    spider <- S.printingOf s registry "Giant Spider"
-    let (gs0, held) = riotBoard mountain 2 forest 0 [chainwalker]
-        (bystander, gs) = S.addPermanent spider S.alice gs0
-        answer = unleashChoosing OptionalDecision.Declines
-    case held of
-      card : _ ->
-        let after = S.runPure answer gs (S.cast S.alice card >> Stack.resolveTop)
-         in case newestNamed (CardName.MkCardName $ Text.pack "Gore-House Chainwalker") after of
-              Nothing -> Spec.assertFailure s "Gore-House Chainwalker did not reach the battlefield"
-              Just walker -> do
-                -- A STATE fixture for the counters, S.addCounter's documented use:
-                -- nothing in the pool puts a +1/+1 counter on each of two
-                -- creatures at a moment this board can reach.
-                let counted = S.addCounter CounterKind.PlusOnePlusOne 1 bystander (S.addCounter CounterKind.PlusOnePlusOne 1 walker after)
-                Spec.assertBool s (Combat.canBlock S.alice walker after) "without the counter it blocks"
-                Spec.assertBool s (not (Combat.canBlock S.alice walker counted)) "with one it cannot"
-                -- THE COUNTER IS NOT THE WHOLE CONDITION. The Spider carries the
-                -- same counter and no unleash, so the restriction has to name its
-                -- own source (CR 109.5) rather than every counter-bearing
-                -- creature on the board.
-                Spec.assertBool s (Combat.canBlock S.alice bystander counted) "the Spider with the same counter still blocks"
       _ -> Spec.assertFailure s "fixture did not deal a card"
 
 -- alice controls three untapped Swamps on a THREE-SEAT board and holds one
@@ -305,45 +150,8 @@ bloodthirstXBoard forest woodKin sentry =
       (held, gs) = S.addHandCard woodKin S.alice withSentry
    in (readyForAlice gs, held, bobsSentry)
 
--- alice controls six untapped Forests on a two-seat board and holds one Feral
--- Throwback ({4}{G}{G} 3/3 Beast, "Amplify 2" and provoke) beside three Beast
--- cards and one Ogre Sentry, in her precombat main phase with priority. Returns
--- the state, the Throwback in hand, and the three Beast cards in the order they
--- were added.
---
--- THREE Beasts and a reveal of two: rule 702.38a's "any number" is only a real
--- choice where the offer is bigger than the answer, and the two numbers must not
--- coincide with the multiplier either.
---
--- The Ogre Sentry is the card that makes "share a creature type WITH IT" mean
--- something. It is a CREATURE card in the same hand, so a reading that offered
--- every card, or every creature card, is told apart from rule 702.38a's by the
--- counters alone.
-amplifyBoard :: Printing.Printing -> Printing.Printing -> [Printing.Printing] -> Printing.Printing -> (GameState.GameState, ObjectId.ObjectId, [ObjectId.ObjectId])
-amplifyBoard forest throwback beasts sentry =
-  let lands = S.landsFor forest S.alice 6 (Setup.emptyGame S.bothPlayers)
-      (beastIds, withBeasts) = List.foldl' (\(ids, gs) beast -> let (oid, gs2) = S.addHandCard beast S.alice gs in (ids <> [oid], gs2)) ([], lands) beasts
-      (_, withSentry) = S.addHandCard sentry S.alice withBeasts
-      (held, gs3) = S.addHandCard throwback S.alice withSentry
-   in (readyForAlice gs3, held, beastIds)
-
--- Reveals exactly `wanted`, filtered to what rule 702.38a's offer actually held.
--- FILTERED rather than trusted, and pinned by identity rather than by index: an
--- answerer that searched for a legal card would find one again after a mutation.
-revealing :: [ObjectId.ObjectId] -> Prompt.Prompt r -> r
-revealing wanted p = case p of
-  Prompt.ChooseAnyNumber _ _ _ AnyNumberOf.ToReveal offered _ _ -> Set.fromList (filter (`List.elem` offered) wanted)
-  _ -> S.identityAnswer p
-
--- Reveals every card the engine offered, which is what makes the offer itself
--- observable on the board: one wrongly offered card is two more counters.
-revealingEverything :: Prompt.Prompt r -> r
-revealingEverything p = case p of
-  Prompt.ChooseAnyNumber _ _ _ AnyNumberOf.ToReveal offered _ _ -> Set.fromList offered
-  _ -> S.identityAnswer p
-
--- alice, in her precombat main phase, with priority. Applied by the fixture above
--- and again after a turn handoff, which leaves the game in CR 502's untap step.
+-- alice, in her precombat main phase, with priority. Applied by the board
+-- fixtures around it.
 readyForAlice :: GameState.GameState -> GameState.GameState
 readyForAlice gs =
   gs
@@ -548,325 +356,6 @@ bloodthirstSpec s registry =
             Nothing -> Spec.assertFailure s "Petrified Wood-Kin did not reach the battlefield"
             Just kin -> Spec.assertEqWith s "three +1/+1 counters, not ten" (countersOn CounterKind.PlusOnePlusOne kin after) 3
 
--- The one permanent a move added to the battlefield, or Nothing when it added
--- none or several. `newestNamed` above cannot answer this one: a face-down
--- permanent has no name at all (CR 708.2a).
-arrivedOne :: GameState.GameState -> GameState.GameState -> Maybe ObjectId.ObjectId
-arrivedOne before after =
-  case Set.toList (Set.difference (GameState.battlefield after) (GameState.battlefield before)) of
-    [oid] -> Just oid
-    _ -> Nothing
-
--- The board at the START of each of the next `n` turns, oldest first -- so the
--- board a turn LEFT is the next element, and a turn's own first step is still
--- ahead of the element that names it. Top-level rather than a `where` binding
--- because the answer is rank-2 and GHC will not infer it, the same reason
--- castEach above is.
-turnStarts :: (forall r. Prompt.Prompt r -> r) -> Int -> GameState.GameState -> [GameState.GameState]
-turnStarts answer n gs =
-  if n <= 0
-    then []
-    else let next = nextTurn answer gs in next : turnStarts answer (n - 1) next
-
--- Answer CR 616.1's choice between two untap-step skips by the row's SOURCE:
--- True takes Brine Elemental's row, False the other one, which on that board is
--- Savor the Moment's. By source and not by index, because Replacement.collect
--- emits the floating store newest-first while installTurnSkips prepends -- so a
--- change in either order must not silently swap what an answer means.
---
--- Savor's row is named by exclusion rather than by its own id: CR 400.7 minted a
--- new object as the card moved to the stack, and the id the fixture holds is the
--- hand card's.
-skipAnswer :: Bool -> ObjectId.ObjectId -> Prompt.Prompt r -> r
-skipAnswer wantBrine brine p = case p of
-  Prompt.ChooseReplacement _ _ entries ->
-    let wanted = if wantBrine then (== brine) else (/= brine)
-     in maybe 0 Int.toNaturalSaturating (List.findIndex (wanted . ReplacementEntry.source) entries)
-  _ -> S.identityAnswer p
-
--- Three seats (CR 800.1), alice active in her precombat main phase:
---
---   * alice holds Savor the Moment and has three untapped Islands for its
---     {1}{U}{U}, plus one TAPPED Goblin Piker as her observable;
---   * bob holds Brine Elemental and has ten untapped Islands -- CR 702.37a's {3}
---     for the face-down cast, plus CR 702.37e's {5}{U}{U} to turn it back up;
---   * carol has a TAPPED Goblin Piker of her own and nothing else.
---
--- Three seats and not two: at two, "each opponent" and "each player" name the
--- same set, and carol is what shows the trigger reached bob's opponents rather
--- than everybody.
---
--- The Pikers are the observable, for the reason data/scenarios/turn's Savor the
--- Moment files have one: CR 502.3 untaps the ACTIVE player's permanents, so a turn whose untap step
--- happened leaves its player's Piker untapped and a turn whose untap step was
--- skipped leaves it tapped -- and nothing else in these cases taps or untaps
--- either. Lands go in through S.addPermanent too, which puts any printing on the
--- battlefield untapped; only the mana matters here, never the card type.
---
--- Libraries are stocked because these cases run seven whole turns, and CR 104.3c
--- decks a player who draws from an empty one.
-brineBoard ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  (GameState.GameState, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId)
-brineBoard island savor brine piker =
-  let addLands pid n g = List.foldl' (\acc _ -> snd (S.addPermanent island pid acc)) g [1 .. (n :: Int)]
-      withLands = addLands S.bob 10 (addLands S.alice 3 S.threePlayerGame)
-      (alicePiker, g1) = S.addPermanent piker S.alice withLands
-      (carolPiker, g2) = S.addPermanent piker S.carol g1
-      (savorId, g3) = S.addHandCard savor S.alice g2
-      (brineId, g4) = S.addHandCard brine S.bob g3
-      stock g pid = List.foldl' (\g5 _ -> snd (S.addLibraryCard piker pid g5)) g [1 .. (15 :: Int)]
-      stocked = List.foldl' stock g4 [S.alice, S.bob, S.carol]
-   in ( Game.overTurn
-          ( \registers ->
-              registers
-                { TurnRegisters.phase = Phase.PrecombatMain,
-                  TurnRegisters.activePlayer = S.alice,
-                  TurnRegisters.priority = Just S.alice,
-                  TurnRegisters.turnNumber = 1
-                }
-          )
-          (S.tapObject carolPiker (S.tapObject alicePiker stocked)),
-        savorId,
-        brineId,
-        alicePiker,
-        carolPiker
-      )
-
--- Arm both effects on brineBoard: alice casts Savor the Moment, then bob casts
--- Brine Elemental face down for CR 702.37a's {3} and turns it face up for CR
--- 702.37e's {5}{U}{U}. Nothing when the face-down cast did not land. Hands back
--- the board and the Brine Elemental permanent, whose id `skipAnswer` names its
--- row by.
---
--- The turn-face-up special action is taken through Parun.Engine.FaceDown directly,
--- as Parun.FaceDownSpec's cases do: CR 702.37e's "any time you have priority" is
--- satisfied by the engine offering the action to the priority holder alone, and
--- what this fixture needs is bob taking it during ALICE's turn. The card's
--- "when this creature is turned face up" ability triggers on the special action
--- and resolves in the priority loop like any other (CR 603.2).
-brineArmed ::
-  Printing.Printing ->
-  GameState.GameState ->
-  ObjectId.ObjectId ->
-  ObjectId.ObjectId ->
-  Maybe (GameState.GameState, ObjectId.ObjectId)
-brineArmed brine gs savorId brineId =
-  let withSavor = S.runPure S.identityAnswer gs (S.cast S.alice savorId >> Stack.resolveTop)
-      down =
-        S.runPure
-          S.identityAnswer
-          withSavor
-          (Cast.castSpell S.manaPerformer S.bob brineId (S.printingName brine) (Facing.faceDown FaceDownReason.Morphed) >> Stack.resolveTop)
-   in do
-        permanent <- arrivedOne withSavor down
-        pure (S.runPure S.identityAnswer down (FaceDown.turnFaceUp S.manaPerformer S.bob TurnUpProcedure.Morph permanent >> Engine.priorityLoop), permanent)
-
--- The seven-turn timeline the two answering cases below share, plus carol's
--- negative control alongside it: alice's own turn (1), Savor's extra turn (2),
--- bob's (3), carol's (4), alice's again (5), bob's (6), carol's again (7).
---
--- `aliceAfter` is what the answer decided -- alice's Piker once her turn 5 has run
--- -- and `left` is how many floating rows the extra turn's cleanup left behind.
---
--- Top-level rather than a `where` binding because the answer is rank-2 and GHC
--- will not infer it, the same reason castEach above is.
-assertBrineRun ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  (forall r. Prompt.Prompt r -> r) ->
-  GameState.GameState ->
-  ObjectId.ObjectId ->
-  ObjectId.ObjectId ->
-  Maybe TapState.TapState ->
-  Int ->
-  m ()
-assertBrineRun s answer gs alicePiker carolPiker aliceAfter left =
-  case turnStarts answer 7 gs of
-    [startExtra, startBob, startCarol, startAlice, startBobAgain, startCarolAgain, startLast] -> do
-      -- The schedule the rest is read against, pinned first so a mis-ordered turn
-      -- cannot be mistaken for a mis-applied skip.
-      Spec.assertEqWith
-        s
-        "the turns run alice (extra), bob, carol, alice, bob, carol, alice"
-        (fmap (TurnRegisters.activePlayer . GameState.turn) [startExtra, startBob, startCarol, startAlice, startBobAgain, startCarolAgain, startLast])
-        [S.alice, S.bob, S.carol, S.alice, S.bob, S.carol, S.alice]
-      -- CR 500.11: the extra turn's untap step is skipped either way -- one of the
-      -- two rows takes it, and WHICH one is exactly what is not observable yet.
-      Spec.assertEqWith s "the extra turn untapped nothing of alice's" (tapStateOf alicePiker startBob) (Just TapState.Tapped)
-      -- carol's negative control: ONE row applies to her untap step, so CR 616.1
-      -- has nothing to choose and the prompt is correctly elided -- and that one
-      -- row takes exactly one untap step of hers.
-      Spec.assertBool
-        s
-        (not (wasAskedToReplace (answersFor answer startCarol Engine.runStep)))
-        "carol's lone skip is not a choice, so she is asked nothing"
-      Spec.assertEqWith s "carol's own untap step was skipped" (tapStateOf carolPiker startAlice) (Just TapState.Tapped)
-      Spec.assertEqWith s "and her NEXT one happened" (tapStateOf carolPiker startLast) (Just TapState.Untapped)
-      -- THE OBSERVABLE, and read off the BOARD rather than off a row index:
-      -- `collect` and installTurnSkips disagree about which end of the store they
-      -- work from, so an ordering change must be unable to flip this. alice's turn
-      -- 5 has run by startBobAgain.
-      Spec.assertEqWith s "alice's following untap step, as the answer decided it" (tapStateOf alicePiker startBobAgain) aliceAfter
-      -- The store behind it, asserted last so the board is what fails first: the
-      -- extra turn's cleanup swept Savor's Expiry.AtCleanup row if it was still
-      -- there, and kept every Expiry.Never one.
-      Spec.assertEqWith s "and the extra turn's cleanup left this many rows" (length (StoredEffects.replacements (GameState.stored startBob))) left
-    _ -> Spec.assertFailure s "the seven turns did not run"
-
--- Brine Elemental {4}{U}{U} Creature -- Elemental 5/4: "Morph {5}{U}{U} / When
--- this creature is turned face up, each opponent skips their next untap step",
--- alongside Savor the Moment ({1}{U}{U} Sorcery: "Take an extra turn after this
--- one. Skip the untap step of that turn.").
---
--- CR 614.10a states the outcome outright: "if two effects each cause a player to
--- skip their next occurrence, that player must skip the next two; one effect will
--- be satisfied in skipping the first occurrence, while the other will remain until
--- another occurrence can be skipped."
---
--- What makes this pair the discriminating one is that the two rows are equal in
--- their `effect` -- each a PhaseR naming alice's untap step -- and unequal in
--- LIFETIME. Brine's is Expiry.Never, so it waits however many turns it must;
--- Savor's is Expiry.AtCleanup, because "the untap step of THAT turn" dies with the
--- turn it named. Which of the two CR 616.1 spends is therefore observable a turn
--- of alice's later, and the choice is hers to make -- CR 616.1's "affected
--- player", which for a step beginning is whose step it is.
-brineElementalSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-brineElementalSpec s registry = Spec.describe s "BrineElemental" $ do
-  let boardOf = do
-        island <- S.printingOf s registry "Island"
-        savor <- S.printingOf s registry "Savor the Moment"
-        brine <- S.printingOf s registry "Brine Elemental"
-        piker <- S.printingOf s registry "Goblin Piker"
-        let (gs, savorId, brineId, alicePiker, carolPiker) = brineBoard island savor brine piker
-        pure (brineArmed brine gs savorId brineId, alicePiker, carolPiker)
-  -- The setup control: the two spells armed three rows, and not four. bob is the
-  -- ability's controller, so CR 806.1's free-for-all opponents are alice and carol
-  -- while bob himself gets nothing; Savor's own row is added as its extra turn
-  -- BEGINS (CR 500.11), which is why it is missing until the first handoff ran.
-  Spec.it s "CR 614.1b Brine Elemental arms one skip per opponent, and Savor's turn one more" $ do
-    (armed, _, _) <- boardOf
-    case armed of
-      Nothing -> Spec.assertFailure s "the face-down cast did not reach the battlefield"
-      Just (gs, _) -> do
-        Spec.assertEqWith s "the trigger armed one row per opponent, so two" (length (StoredEffects.replacements (GameState.stored gs))) 2
-        case turnStarts S.identityAnswer 1 gs of
-          [atExtra] -> do
-            Spec.assertEqWith
-              s
-              "and the extra turn is alice's second"
-              (TurnRegisters.turnNumber (GameState.turn atExtra), TurnRegisters.activePlayer (GameState.turn atExtra))
-              (2, S.alice)
-            Spec.assertEqWith s "whose beginning added Savor's own, for three" (length (StoredEffects.replacements (GameState.stored atExtra))) 3
-          _ -> Spec.assertFailure s "the extra turn did not begin"
-  -- THE ELISION GOING AWAY. Two rows apply to one untap step and they are not
-  -- interchangeable, so CR 616.1's choice is a real one and the affected player
-  -- has to be asked for it.
-  --
-  -- Fails against a `distinguishing` that compares `effect` alone: the two rows
-  -- are equal in `effect`, so the prompt is elided and the engine spends whichever
-  -- row it happened to collect first.
-  Spec.it s "CR 616.1 two skips alike in effect but not in lifetime raise a choice" $ do
-    (armed, _, _) <- boardOf
-    case armed of
-      Nothing -> Spec.assertFailure s "the face-down cast did not reach the battlefield"
-      Just (gs, brine) ->
-        case turnStarts (skipAnswer True brine) 1 gs of
-          [atExtra] ->
-            Spec.assertBool
-              s
-              (wasAskedToReplace (answersFor (skipAnswer True brine) atExtra Engine.runStep))
-              "a ChooseReplacement was raised for the extra turn's untap step"
-          _ -> Spec.assertFailure s "the extra turn did not begin"
-  -- Answering SAVOR's row: it is the one consumed, and Brine's Expiry.Never row
-  -- remains to take alice's NEXT untap step -- CR 614.10a's "the other will remain
-  -- until another occurrence can be skipped". So her Piker is still tapped after
-  -- the following turn of hers. Two rows survive the extra turn's cleanup, both of
-  -- them Brine's.
-  Spec.it s "CR 614.10a spending Savor's row leaves Brine's to take the following untap step" $ do
-    (armed, alicePiker, carolPiker) <- boardOf
-    case armed of
-      Nothing -> Spec.assertFailure s "the face-down cast did not reach the battlefield"
-      Just (gs, brine) ->
-        assertBrineRun s (skipAnswer False brine) gs alicePiker carolPiker (Just TapState.Tapped) 2
-  -- Answering BRINE's row: it is consumed, and Savor's row survives the untap step
-  -- only to be swept at that same turn's cleanup, since "the untap step of THAT
-  -- turn" is scoped to the turn it named (Expiry.AtCleanup; CR 514.2). Nothing is
-  -- left to take alice's following untap step, so it happens and her Piker untaps.
-  -- One row survives the cleanup, carol's.
-  --
-  -- This is the half that reads LIFETIME rather than merely which row was picked:
-  -- were Savor's row armed Expiry.Never like Brine's, it would survive the cleanup,
-  -- take the following untap step too, and leave this case reading Tapped.
-  Spec.it s "CR 614.10a spending Brine's row lets Savor's expire with its own turn" $ do
-    (armed, alicePiker, carolPiker) <- boardOf
-    case armed of
-      Nothing -> Spec.assertFailure s "the face-down cast did not reach the battlefield"
-      Just (gs, brine) ->
-        assertBrineRun s (skipAnswer True brine) gs alicePiker carolPiker (Just TapState.Untapped) 1
-
--- alice casts a Coldsteel Heart off two Mountains and resolves it, answering CR
--- 616.1's race with `pick` and CR 614.1c's colour with blue. Returns every
--- ChooseReplacement payload raised, the finished board, and the permanent that
--- entered.
---
--- BLUE and not the default: Replay.defaultAnswer falls back to white, so a
--- colour assertion against white would pass on a game that asked nothing.
---
--- The payloads are recorded through State the way choosersAsked records player
--- ids -- mid-game, because the discriminating observable here is what reached
--- the wire, not what the board settled on (see the group below).
-castColdsteel ::
-  Printing.Printing ->
-  Printing.Printing ->
-  ([ReplacementEntry.ReplacementEntry] -> Natural.Natural) ->
-  ([[ReplacementEntry.ReplacementEntry]], GameState.GameState, Maybe ObjectId.ObjectId)
-castColdsteel mountain coldsteel pick =
-  let (withCard, oid) = S.handOne coldsteel (S.landsInPlay mountain 2)
-      step :: Prompt.Prompt r -> State.State [[ReplacementEntry.ReplacementEntry]] r
-      step p = case p of
-        Prompt.ChooseReplacement _ _ entries -> do
-          State.modify' (<> [entries])
-          pure (pick entries)
-        Prompt.ChooseColor {} -> pure Color.Blue
-        _ -> pure (S.identityAnswer p)
-      ((_, after), payloads) = State.runState (Engine.runGame step withCard (S.cast S.alice oid >> Stack.resolveTop)) []
-      entered = case Set.toList (Set.difference (GameState.battlefield after) (GameState.battlefield withCard)) of
-        o : _ -> Just o
-        [] -> Nothing
-   in (payloads, after, entered)
-
--- CR 616.1 with CR 614.1c and CR 614.1d. Coldsteel Heart ({2} Snow Artifact,
--- "This artifact enters tapped." / "As this artifact enters, choose a color." /
--- "{T}: Add one mana of the chosen color.") is one source with TWO applicable
--- replacement effects for one entry event -- both ReplacementBucket.Other, both
--- ReplacementOrigin.Other -- so both reach `choose` in a single iteration and
--- the payload must say which is which (#74).
-coldsteelHeartSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-coldsteelHeartSpec s registry = Spec.describe s "Coldsteel Heart (CR 616.1)" $ do
-  -- THE PROVING CASE. Asserted on the PROMPT PAYLOAD and not on the board, and
-  -- that is not a shortcut: CR 616.1f re-collects and CR 614.5 gives each effect
-  -- one opportunity, so the artifact ends up tapped with the chosen colour
-  -- whichever candidate is picked. A board-level assertion here would be
-  -- over-determined and would pass under the [ObjectId] payload this replaces.
-  --
-  -- The payload LIST is asserted to have exactly one element before anything is
-  -- said about its contents: a card file that lost one of the two replacements
-  -- would leave one candidate, elide the prompt, and make a "every payload had
-  -- two distinct entries" assertion pass over zero payloads.
-  Spec.it s "CR 616.1 two entry replacements of ONE source are distinct entries" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    coldsteel <- S.printingOf s registry "Coldsteel Heart"
-    case castColdsteel mountain coldsteel (const 0) of
-      ([entries], _, _) -> do
-        Spec.assertEqWith s "CR 616.1e offered both candidates" (length entries) 2
-        Spec.assertEqWith s "and the player can tell them apart" (Set.size (Set.fromList entries)) 2
-        Spec.assertEqWith s "though both come from the same permanent" (Set.size (Set.fromList (fmap ReplacementEntry.source entries))) 1
-      (payloads, _, _) -> Spec.assertFailure s ("expected exactly one ChooseReplacement, got " <> show (length payloads))
-
 -- CR 614.1c with CR 120.3a. Stuffy Doll, {5} Artifact Creature -- Construct 0/1,
 -- whole text: "Indestructible / As this creature enters, choose a player. /
 -- Whenever this creature is dealt damage, it deals that much damage to the chosen
@@ -988,25 +477,6 @@ stuffyDollSpec s registry =
                 "CR 400.7 the rebuilt object forgot the player it chose"
                 (fmap (Map.lookup PlayerChoice.AsEntersOrTransforms . Map.findWithDefault Map.empty Acquisition.Own . Object.chosenPlayers . Object.newIncarnation) (Game.lookupObject dollId gs))
                 (Just Nothing)
-            _ -> Spec.assertFailure s "the Doll did not reach the battlefield"
-        -- The fourth clause, and the one that makes the card self-contained: {T}
-        -- deals 1 to itself, which re-enters the trigger with a DIFFERENT number.
-        -- 1 against the case above's 3 separates "reads the event" from "reads a
-        -- constant".
-        Spec.it s "CR 120.1 the Doll's own {T} ability feeds its own trigger" $ do
-          doll <- S.printingOf s registry "Stuffy Doll"
-          mountain <- S.printingOf s registry "Mountain"
-          case castDoll doll mountain S.bob of
-            (gs, Just dollId, _) -> do
-              -- CR 302.6: the Doll was cast this turn, so its {T} ability is
-              -- unactivatable until its controller's next turn begins. Settled by
-              -- hand rather than by driving a turn cycle, which would add a draw
-              -- step and CR 104.3c to a case about one printed clause.
-              let unsick g = g {GameState.objects = Map.adjust (\o -> o {Object.sickness = Sickness.Settled S.alice}) dollId (GameState.objects g)}
-                  activated = S.runPure S.identityAnswer (unsick gs) (Activate.activateAbility S.alice dollId (theAbility doll))
-                  after = resolveAll (settleAll activated)
-              Spec.assertEqWith s "CR 120.3a bob loses exactly 1, not 3" (lives after) (Just 20, Just 19, Just 20)
-              Spec.assertEqWith s "CR 120.3e and 1 is marked on the Doll" (fmap Object.damage (Game.lookupObject dollId after)) (Just 1)
             _ -> Spec.assertFailure s "the Doll did not reach the battlefield"
 
 -- CR 122.1 / 122.6 with CR 614.1: Vorinclex, Monstrous Raider ({4}{G}{G}
@@ -1783,89 +1253,26 @@ zameckGuildmageSpec s registry = Spec.describe s "Zameck Guildmage (CR 614.3)" $
       _ -> Spec.assertFailure s "bob's Piker did not reach the battlefield"
 
 -- CR 702.38: amplify, on Feral Throwback ({4}{G}{G} 3/3 Beast, "Amplify 2" and
--- provoke). A minted CR 614.1c row whose count is the answer to a question asked
--- as the permanent enters -- devour's shape one zone over, and unlike devour the
--- choice spends nothing (CR 701.20b).
---
--- ONE BOARD FOR EVERY CASE, differing in nothing but which cards the reveal
--- names. What the assertions tell apart is how many counters the permanent
--- entered with.
---
--- Distinct numbers everywhere: three Beasts offered, two revealed, a multiplier
--- of two and four counters on a printed 3/3, so a reading that dropped the
--- multiplier (2), counted the offer rather than the answer (6) or took the Ogre
--- Sentry as a candidate (8) produces a different board from rule 702.38a's.
-amplifySpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-amplifySpec s registry =
-  let throwbackIn = newestNamed (CardName.MkCardName $ Text.pack "Feral Throwback")
-      -- Which objects a CR 701.20a reveal has shown, off the event log.
-      revealedIn gs =
-        Maybe.mapMaybe
-          ( \event -> case event of
-              GameEvent.Revealed (Revealed.MkRevealed _ oid _ _) -> Just oid
-              _ -> Nothing
-          )
-          (S.eventsOf gs)
-   in Spec.describe s "Amplify (CR 702.38)" $ do
-        Spec.it s "CR 702.38a two Beast cards revealed are four +1/+1 counters" $ do
-          forest <- S.printingOf s registry "Forest"
-          throwback <- S.printingOf s registry "Feral Throwback"
-          baloth <- S.printingOf s registry "Durkwood Baloth"
-          thragtusk <- S.printingOf s registry "Thragtusk"
-          pack <- S.printingOf s registry "Gnarlid Pack"
-          sentry <- S.printingOf s registry "Ogre Sentry"
-          let (gs, held, beasts) = amplifyBoard forest throwback [baloth, thragtusk, pack] sentry
-              after = castAndResolve (revealing (take 2 beasts)) gs held
-          case throwbackIn after of
-            Nothing -> Spec.assertFailure s "Feral Throwback did not reach the battlefield"
-            Just oid -> do
-              Spec.assertEqWith s "four +1/+1 counters" (countersOn CounterKind.PlusOnePlusOne oid after) 4
-              -- Printed 3/3, so the counters show in the projection (CR 613.4c,
-              -- layer 7c).
-              Spec.assertEqWith s "power" (Projection.powerOf oid after) (Just 7)
-              -- CR 701.20b: revealing changes no zone, so both cards are still in
-              -- the hand they were shown from. This is what separates amplify
-              -- from devour, whose choice is paid for.
-              Spec.assertBool s (all (`List.elem` Game.zoneMembers Zone.Hand S.alice after) (take 2 beasts)) "and both revealed cards are still in alice's hand"
-              -- CR 701.20a: through `reveal`, the funnel that files the event, so
-              -- a card watching for a reveal sees these two.
-              Spec.assertEqWith s "and both were shown" (List.sort (revealedIn after)) (List.sort (take 2 beasts))
-        -- THE PAIR THAT MAKES IT "SHARE A CREATURE TYPE WITH IT". The board
-        -- above, revealing everything the engine offered instead of two named
-        -- cards: three Beasts are six counters, and the Ogre Sentry in the same
-        -- hand would have been two more.
-        Spec.it s "CR 702.38a the Ogre Sentry in the same hand is not offered" $ do
-          forest <- S.printingOf s registry "Forest"
-          throwback <- S.printingOf s registry "Feral Throwback"
-          baloth <- S.printingOf s registry "Durkwood Baloth"
-          thragtusk <- S.printingOf s registry "Thragtusk"
-          pack <- S.printingOf s registry "Gnarlid Pack"
-          sentry <- S.printingOf s registry "Ogre Sentry"
-          let (gs, held, _) = amplifyBoard forest throwback [baloth, thragtusk, pack] sentry
-              after = castAndResolve revealingEverything gs held
-          case throwbackIn after of
-            Nothing -> Spec.assertFailure s "Feral Throwback did not reach the battlefield"
-            Just oid -> Spec.assertEqWith s "six +1/+1 counters, not eight" (countersOn CounterKind.PlusOnePlusOne oid after) 6
-        -- CR 702.38b: "if a creature has multiple instances of amplify, each one
-        -- works separately." Asserted at the mint rather than at gameplay level,
-        -- because nothing in the pool prints or grants a second instance -- the
-        -- footing the bloodthirst group's rule 702.54c case states.
-        Spec.it s "CR 702.38b each instance is its own row" $
-          Spec.assertEqWith
-            s
-            "amplify 2 held twice mints two rows"
-            (Keyword.Engine.mintedReplacementsFor (Keyword.Amplify 2) 2)
-            (replicate 2 (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.Amplify 2))))
+-- provoke). Its gameplay cases are scenarios under data/scenarios/entry-replacement.
+amplifySpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
+amplifySpec s _ = Spec.describe s "Amplify (CR 702.38)" $ do
+  -- CR 702.38b: "if a creature has multiple instances of amplify, each one
+  -- works separately." Asserted at the mint rather than at gameplay level,
+  -- because nothing in the pool prints or grants a second instance -- the
+  -- footing the bloodthirst group's rule 702.54c case states.
+  Spec.it s "CR 702.38b each instance is its own row" $
+    Spec.assertEqWith
+      s
+      "amplify 2 held twice mints two rows"
+      (Keyword.Engine.mintedReplacementsFor (Keyword.Amplify 2) 2)
+      (replicate 2 (ReplacementEffect.EntryR (EntryR.MkEntryR Filter.Type.IsSource (EntryRewrite.Amplify 2))))
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
   riotSpec s registry
-  unleashSpec s registry
   bloodthirstSpec s registry
   amplifySpec s registry
   sunburstSpec s registry
-  brineElementalSpec s registry
-  coldsteelHeartSpec s registry
   stuffyDollSpec s registry
   vorinclexSpec s registry
   damageCountersSpec s registry

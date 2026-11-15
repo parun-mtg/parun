@@ -1,0 +1,247 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "a1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "a2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "a3",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "alice-piker",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Savor the Moment",
+            "label": "savor"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "b1",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b2",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b3",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b4",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b5",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b6",
+            "ready": true
+          },
+          {
+            "card": "Island",
+            "label": "b7",
+            "ready": true
+          },
+          {
+            "card": "Brine Elemental",
+            "faceDown": "Morphed",
+            "label": "brine",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "bob-piker",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "carol-piker",
+            "ready": true,
+            "tapped": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 616.1 two skips alike in effect but not in lifetime raise a choice",
+  "note": "Three seats: at two, each opponent and each player name the same set. bob holds Brine Elemental face down (CR 702.37) and turns it face up during alice's turn while her Savor the Moment is on the stack. Each player's tapped Goblin Piker is the observable: CR 502.3 untaps the active player's permanents, so a skipped untap step leaves it tapped. Two rows apply to alice's extra-turn untap step, Brine's lasting until used and Savor's only for that turn: equal in effect, unequal in lifetime, so not interchangeable and CR 616.1's choice is alice's to make. A comparison of effect alone elides the prompt.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$a1",
+            "$a2",
+            "$a3"
+          ],
+          "object": "$savor"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Take": {
+          "action": "TurnFaceUp $brine",
+          "mana": [
+            "$b1",
+            "$b2",
+            "$b3",
+            "$b4",
+            "$b5",
+            "$b6",
+            "$b7"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "ChooseReplacement",
+            "offer": {
+              "entries": [
+                {
+                  "source": "departed Savor the Moment#2"
+                },
+                {
+                  "source": "$brine"
+                }
+              ],
+              "options": [
+                0,
+                1
+              ]
+            }
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseReplacement",
+          "with": 1
+        }
+      },
+      "player": "alice",
+      "step": "Untap",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Tapped": {
+          "object": "$alice-piker",
+          "tapped": true
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}
