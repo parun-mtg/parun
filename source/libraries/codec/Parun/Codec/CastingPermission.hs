@@ -18,17 +18,18 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.nullary "CastFromLibraryWhileSearching" CastingPermission.CastFromLibraryWhileSearching,
-      Arm.payload "CastFromGraveyard" graveyard (\(f, c, w) -> CastingPermission.CastFromGraveyard f c w) (\x -> case x of CastingPermission.CastFromGraveyard f c w -> Just (f, c, w); _ -> Nothing),
+      Arm.payload "CastFromGraveyard" graveyard (\(k, f, c, w) -> CastingPermission.CastFromGraveyard k f c w) (\x -> case x of CastingPermission.CastFromGraveyard k f c w -> Just (k, f, c, w); _ -> Nothing),
       Arm.nullary "PlayFromGraveyard" CastingPermission.PlayFromGraveyard,
       Arm.payload "CastAsThoughItHadFlash" flash (\(c, m, k, a) -> CastingPermission.CastAsThoughItHadFlash c m k a) (\x -> case x of CastingPermission.CastAsThoughItHadFlash c m k a -> Just (c, m, k, a); _ -> Nothing)
     ]
   where
     graveyard =
       Fields.object $
-        (,,)
-          <$> Fields.defaulted "using" Nothing (Common.maybe KeywordFamily.codec) (\(f, _, _) -> f)
-          <*> Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) (\(_, c, _) -> c)
-          <*> Fields.defaulted "entersWith" Nothing (Common.maybe WithCounters.codec) (\(_, _, w) -> w)
+        (,,,)
+          <$> Fields.defaulted "condition" Nothing (Common.maybe Condition.codec) (\(k, _, _, _) -> k)
+          <*> Fields.defaulted "using" Nothing (Common.maybe KeywordFamily.codec) (\(_, f, _, _) -> f)
+          <*> Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) (\(_, _, c, _) -> c)
+          <*> Fields.defaulted "entersWith" Nothing (Common.maybe WithCounters.codec) (\(_, _, _, w) -> w)
     flash =
       Fields.object $
         (,,,)

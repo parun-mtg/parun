@@ -2872,7 +2872,8 @@ mayPlayByMayhem pid oid gs = case Game.lookupObject oid gs of
 -- CR 601.3 / 305.1: may `pid` `verb` `oid` out of their own graveyard under a
 -- costless permission the card has there, stating no family, cost or counters:
 -- CastingPermission.PlayFromGraveyard (Kethis, the Hidden Hand's grant) for
--- either verb, a bare CastFromGraveyard (Skaab Ruinator) for Cast alone. Read
+-- either verb, a bare CastFromGraveyard (Skaab Ruinator) for Cast alone, while
+-- its condition holds (Gravecrawler, graveyardPermissionHolds). Read
 -- through the projection (CR 613.1f), so Yixlid Jailer's "lose all abilities"
 -- takes it away, and never through Cost.permissionsOf, whose bare
 -- CastFromGraveyard is a keyword's priced one. A per-CARD permission, as
@@ -2888,10 +2889,25 @@ mayPlayFromOwnGraveyard offBoard verb pid oid gs = case Game.lookupObject oid gs
   where
     admits permission = case permission of
       CastingPermission.PlayFromGraveyard -> True
-      CastingPermission.CastFromGraveyard Nothing [] Nothing -> verb == PermissionVerb.Cast
+      CastingPermission.CastFromGraveyard _ Nothing [] Nothing -> verb == PermissionVerb.Cast && graveyardPermissionHolds oid gs permission
       CastingPermission.CastFromGraveyard {} -> False
       CastingPermission.CastFromLibraryWhileSearching -> False
       CastingPermission.CastAsThoughItHadFlash {} -> False
+
+-- CR 601.3 / 109.5: does a graveyard permission's condition hold, asked of the
+-- card's owner, the "you" of a card no one controls? True for a permission
+-- stating none. Cost.permissionsOf and mayPlayFromOwnGraveyard ask it, so no
+-- gate, price or way sees a permission whose condition fails. The scenarios
+-- undead-sprinter-* and gravecrawler-* prove it.
+graveyardPermissionHolds :: ObjectId -> GameState -> CastingPermission.CastingPermission -> Bool
+graveyardPermissionHolds oid gs permission = case permission of
+  CastingPermission.CastFromGraveyard (Just condition) _ _ _ -> case Game.lookupObject oid gs of
+    Nothing -> False
+    Just obj -> Condition.holds (Projection.fullView gs) (Projection.sourceContext gs (Just (Object.owner obj)) oid) gs oid condition
+  CastingPermission.CastFromGraveyard Nothing _ _ _ -> True
+  CastingPermission.PlayFromGraveyard -> True
+  CastingPermission.CastFromLibraryWhileSearching -> True
+  CastingPermission.CastAsThoughItHadFlash {} -> True
 
 -- CR 702.170f: the (zone, owner) piles some PlotFrom grant opens to `pid`, for
 -- Parun.Engine.Plot to draw candidates from, playPermissionPiles' shape; which of

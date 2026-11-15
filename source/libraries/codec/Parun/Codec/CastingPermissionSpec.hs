@@ -29,26 +29,32 @@ spec s = Spec.describe s "Parun.Codec.CastingPermission" $ do
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastFromGraveyard Nothing [] Nothing)
+      (CastingPermission.CastFromGraveyard Nothing Nothing [] Nothing)
       " {\"type\":\"CastFromGraveyard\",\"value\":{}} "
   Spec.it s "CastFromGraveyard using a keyword" $
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastFromGraveyard (Just KeywordFamily.Blitz) [] Nothing)
+      (CastingPermission.CastFromGraveyard Nothing (Just KeywordFamily.Blitz) [] Nothing)
       " {\"type\":\"CastFromGraveyard\",\"value\":{\"using\":\"Blitz\"}} "
   Spec.it s "CastFromGraveyard paying an additional cost" $
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastFromGraveyard Nothing [CostComponent.PayLife (CostAmount.Fixed 2)] Nothing)
+      (CastingPermission.CastFromGraveyard Nothing Nothing [CostComponent.PayLife (CostAmount.Fixed 2)] Nothing)
       " {\"type\":\"CastFromGraveyard\",\"value\":{\"additionalCosts\":[{\"type\":\"PayLife\",\"value\":{\"type\":\"Fixed\",\"value\":2}}]}} "
   Spec.it s "CastFromGraveyard entering with counters" $
     Common.assertCodec
       s
       CastingPermission.codec
-      (CastingPermission.CastFromGraveyard Nothing [] (Just (WithCounters.MkWithCounters (Map.singleton CounterKind.Finality (Quantity.Literal 1)))))
+      (CastingPermission.CastFromGraveyard Nothing Nothing [] (Just (WithCounters.MkWithCounters (Map.singleton CounterKind.Finality (Quantity.Literal 1)))))
       " {\"type\":\"CastFromGraveyard\",\"value\":{\"entersWith\":[{\"count\":{\"type\":\"Literal\",\"value\":1},\"kind\":{\"type\":\"Finality\"}}]}} "
+  Spec.it s "CastFromGraveyard under a condition" $
+    Common.assertCodec
+      s
+      CastingPermission.codec
+      (CastingPermission.CastFromGraveyard (Just (Condition.Any [])) Nothing [] Nothing)
+      " {\"type\":\"CastFromGraveyard\",\"value\":{\"condition\":{\"type\":\"Any\",\"value\":[]}}} "
   Spec.it s "PlayFromGraveyard" $
     Common.assertCodec
       s
