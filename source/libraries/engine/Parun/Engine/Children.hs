@@ -3785,17 +3785,18 @@ data DamagePatternChildren f = MkDamagePatternChildren
     -- | The one source the damage is dealt by (CR 400.7).
     damageObject :: ObjectId.ObjectId -> f ObjectId.ObjectId,
     -- | The slot the recipient is bound to.
-    damageSlot :: SlotName.SlotName -> f SlotName.SlotName
+    damageSlot :: SlotName.SlotName -> f SlotName.SlotName,
+    -- | The player recipient's relation (CR 109.5, 608.2h), whole.
+    damageWhose :: ControllerRelation.ControllerRelation -> f ControllerRelation.ControllerRelation
   }
 
--- | A damage pattern's children. Its damage kind and the recipient's relation
--- to the controller are left as they are.
+-- | A damage pattern's children. Its damage kind is left as it is.
 damagePatternChildren :: (Applicative f) => DamagePatternChildren f -> DamagePattern.DamagePattern -> f DamagePattern.DamagePattern
 damagePatternChildren c (DamagePattern.MkDamagePattern whichKind whatSource whatRecipient whoRecipient whichRecipient whichSource boundRecipient) =
   DamagePattern.MkDamagePattern whichKind
     <$> damageFilter c whatSource
     <*> traverse (damageFilter c) whatRecipient
-    <*> pure whoRecipient
+    <*> traverse (damageWhose c) whoRecipient
     <*> traverse (damageRecipient c) whichRecipient
     <*> traverse (damageObject c) whichSource
     <*> traverse (damageSlot c) boundRecipient

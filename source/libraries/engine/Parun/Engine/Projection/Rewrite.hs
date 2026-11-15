@@ -333,7 +333,8 @@ rewriteDamagePattern pairs =
         { Children.damageFilter = Identity.Identity . Filter.rewrite pairs,
           Children.damageRecipient = pure,
           Children.damageObject = pure,
-          Children.damageSlot = pure
+          Children.damageSlot = pure,
+          Children.damageWhose = pure
         }
 
 -- CR 612.2 over one word whose family a card's text names rather than a

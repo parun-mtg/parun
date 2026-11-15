@@ -113,7 +113,9 @@
                     "relation": "Opponent"
                   }
                 },
-                "whoRecipient": "You"
+                "whoRecipient": {
+                  "type": "You"
+                }
               },
               "rewrite": {
                 "type": "PreventUpTo",

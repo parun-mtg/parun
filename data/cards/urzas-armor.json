@@ -15,7 +15,9 @@
             "type": "DamageR",
             "value": {
               "matching": {
-                "whoRecipient": "You"
+                "whoRecipient": {
+                  "type": "You"
+                }
               },
               "rewrite": {
                 "type": "PreventUpTo",

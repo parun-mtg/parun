@@ -46,7 +46,9 @@
                   }
                 },
                 "whichKind": "Noncombat",
-                "whoRecipient": "Opponent"
+                "whoRecipient": {
+                  "type": "Opponent"
+                }
               },
               "rewrite": {
                 "type": "Scale",

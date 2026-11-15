@@ -2,11 +2,11 @@
 
 module Parun.Codec.DamagePattern where
 
+import qualified Parun.Codec.ControllerRelation as ControllerRelation
 import qualified Parun.Codec.DamageKind as DamageKind
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.ObjectId as ObjectId
-import qualified Parun.Codec.PlayerRelation as PlayerRelation
 import qualified Parun.Codec.Recipient as Recipient
 import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Codec as Codec
@@ -31,8 +31,8 @@ defaultWhatSource = Filter.And []
 -- the same lint -- the source a shield watches is chosen (CR 609.7a) or targeted
 -- (CR 601.2c) when the shield is created.
 -- `whatRecipient` and `whoRecipient` beside them are the authored halves and
--- need no such lint: they DESCRIBE the recipient -- by characteristic, or by CR
--- 109.5's relation to the row's controller -- rather than naming one.
+-- need no such lint: they DESCRIBE the recipient -- by characteristic, or by a
+-- ControllerRelation -- rather than naming one.
 -- `boundRecipient` is authored too, and is the one way a card reaches
 -- `whichRecipient` at all: it names a SLOT (CR 601.2c), which Resolve bakes into
 -- the recipient that slot was filled with.
@@ -41,7 +41,7 @@ codec = Fields.object $ do
   whichKind <- Fields.defaulted "whichKind" Nothing (Common.maybe DamageKind.codec) DamagePattern.whichKind
   whatSource <- Fields.defaulted "whatSource" defaultWhatSource (Filter.codec Keyword.codec) DamagePattern.whatSource
   whatRecipient <- Fields.defaulted "whatRecipient" Nothing (Common.maybe (Filter.codec Keyword.codec)) DamagePattern.whatRecipient
-  whoRecipient <- Fields.defaulted "whoRecipient" Nothing (Common.maybe PlayerRelation.codec) DamagePattern.whoRecipient
+  whoRecipient <- Fields.defaulted "whoRecipient" Nothing (Common.maybe ControllerRelation.codec) DamagePattern.whoRecipient
   whichRecipient <- Fields.defaulted "whichRecipient" Nothing (Common.maybe Recipient.codec) DamagePattern.whichRecipient
   whichSource <- Fields.defaulted "whichSource" Nothing (Common.maybe ObjectId.codec) DamagePattern.whichSource
   boundRecipient <- Fields.defaulted "boundRecipient" Nothing (Common.maybe SlotName.codec) DamagePattern.boundRecipient

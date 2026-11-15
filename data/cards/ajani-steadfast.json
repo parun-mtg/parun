@@ -260,7 +260,9 @@
                                               }
                                             ]
                                           },
-                                          "whoRecipient": "You"
+                                          "whoRecipient": {
+                                            "type": "You"
+                                          }
                                         },
                                         "rewrite": {
                                           "type": "PreventAllBut",
