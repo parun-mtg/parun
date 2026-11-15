@@ -911,11 +911,11 @@ additionalMoveTriggers :: GameState -> PlayerId -> ObjectId -> EventGroup.EventG
 additionalMoveTriggers gs you bearer group looksBack zc
   | ZoneChange.to zc == Zone.Battlefield =
       let atIt = atEntry gs (ZoneChange.object zc)
-       in PlayerEffect.additionalMoveTriggers TriggeringMove.Entering you (ZoneChange.object zc) (bearer, atIt) atIt atIt
+       in PlayerEffect.additionalMoveTriggers TriggeringMove.Entering you [ZoneChange.object zc] (bearer, atIt) atIt atIt
   | Game.dies zc,
     Just before <- Map.lookup group (Snapshots.boardBeforeEvent (GameState.snapshots gs)),
     atBearer : _ <- filter (Maybe.isJust . Game.lookupObject bearer) ([before | looksBack] <> [gameAfter group gs]) =
-      PlayerEffect.additionalMoveTriggers TriggeringMove.Dying you (ZoneChange.departed zc) (bearer, atBearer) before before
+      PlayerEffect.additionalMoveTriggers TriggeringMove.Dying you [ZoneChange.departed zc] (bearer, atBearer) before before
   | otherwise = 0
 
 -- CR 603.2d: how many additional times `bearer`'s triggered ability triggers on
@@ -929,12 +929,26 @@ additionalMoveTriggers gs you bearer group looksBack zc
 -- no such board left the battlefield as it was: CR 701.6a's countering and CR
 -- 701.31's planeswalking move no permanent, so the after board answers.
 additionalTriggers :: GameState -> PlayerId -> ObjectId -> EventGroup.EventGroup -> Bool -> Natural
-additionalTriggers gs you bearer group looksBack =
+additionalTriggers gs you bearer group looksBack = maybe 0 (PlayerEffect.additionalTriggers you bearer) (bearerBoard gs bearer group looksBack)
+
+-- CR 603.2d / 508.3: how many additional times an ability of `you`'s that
+-- `causers` attacking caused `bearer` to trigger triggers (Windcrag Siege), one
+-- per effect admitting any of them (Parun.Engine.Event.Binding.attackCausers
+-- names them, so none for an ability no creature attacking caused). The
+-- bearer and the effects are read off `additionalTriggers`' board, the
+-- attackers off the board after the declaration.
+additionalAttackTriggers :: GameState -> PlayerId -> ObjectId -> EventGroup.EventGroup -> Bool -> Set.Set ObjectId -> Natural
+additionalAttackTriggers gs you bearer group looksBack causers = case bearerBoard gs bearer group looksBack of
+  Just board | not (Set.null causers) -> PlayerEffect.additionalMoveTriggers TriggeringMove.Attacking you (Set.toList causers) (bearer, board) board (gameAfter group gs)
+  _ -> 0
+
+-- The board `bearer`'s ability on the event of `group` reads, while the bearer
+-- is a permanent on it (`additionalTriggers`).
+bearerBoard :: GameState -> ObjectId -> EventGroup.EventGroup -> Bool -> Maybe GameState
+bearerBoard gs bearer group looksBack =
   let after = gameAfter group gs
       before = if looksBack then Maybe.maybeToList (Map.lookup group (Snapshots.boardBeforeEvent (GameState.snapshots gs))) else []
-   in case filter (Set.member bearer . GameState.battlefield) (before <> [after]) of
-        board : _ -> PlayerEffect.additionalTriggers you bearer board
-        [] -> 0
+   in Foldable.find (Set.member bearer . GameState.battlefield) (before <> [after])
 
 -- The game filed immediately after `entrant` entered the battlefield, or the
 -- live game for an entry none is filed for.
