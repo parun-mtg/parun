@@ -2438,7 +2438,7 @@ componentStatesHiddenQuality component = case component of
 -- DiscardThis's posture: Necromancer's Stockpile's "the discarded card".
 discardsBound :: Game () -> PlayerId -> [ObjectId] -> Game Payment.Payment
 discardsBound settle pid cards = do
-  arrived <- Event.simultaneously (fmap Foldable.fold (Monad.mapM (Event.discardReturning settle DiscardCause.Ordinary pid) cards))
+  arrived <- Event.simultaneously (fmap Foldable.fold (Monad.mapM (Event.discardReturning settle DiscardCause.Ordinary Nothing pid) cards))
   after <- State.get
   pure $ case filter (\a -> maybe False (not . Game.isHiddenZone . Object.zone) (Game.lookupObject a after)) (Foldable.toList arrived) of
     [] -> bindsNothing
@@ -7557,8 +7557,12 @@ payPayable perform moment paidFor slots pid oid component = case component of
   --
   -- Binds Binding.discardedCard off what ARRIVED, bindExiled's posture, and only
   -- where CR 400.7j lets the ability find it: in a PUBLIC zone.
+  --
+  -- CR 107.3e: the X `paidFor` announced rides on the event, which CR 702.29c's
+  -- trigger reads (Webstrike Elite's "mana value X").
   CostComponent.DiscardThis cause -> do
-    arrived <- Event.discardReturning (ManaAbilityPerformer.settle perform) cause pid oid
+    announcedX <- State.gets (\g -> paidFor >>= (`Game.lookupObject` g) >>= Binding.amountOf Binding.variableX . Object.bindings)
+    arrived <- Event.discardReturning (ManaAbilityPerformer.settle perform) cause announcedX pid oid
     gs <- State.get
     let findable = Seq.filter (\a -> maybe False (not . Game.isHiddenZone . Object.zone) (Game.lookupObject a gs)) arrived
     pure $ case Foldable.toList findable of

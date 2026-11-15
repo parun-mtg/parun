@@ -1914,15 +1914,15 @@ eventTriggersGiven scope standing events gs =
       -- about cycling specifically. An ordinary discard's card reaches the
       -- graveyard too and is offered by `inGraveyards` under CR 113.6k.
       cycledCard event = case event of
-        GameEvent.Discarded (Discarded.MkDiscarded _ oid DiscardCause.ToPayCyclingCost _ _) -> case Game.lookupObject oid gs of
+        GameEvent.Discarded (Discarded.MkDiscarded _ oid DiscardCause.ToPayCyclingCost _ _ _) -> case Game.lookupObject oid gs of
           Nothing -> Map.empty
           Just obj -> case Game.faceOf oid gs of
             Nothing -> Map.empty
             Just _ ->
               let pc = Projection.project oid gs
                in Map.singleton oid (Object.owner obj, Maybe.mapMaybe (functionsIn (PC.subtypes pc) (PC.delayedAbilities pc) Zone.Graveyard) (PC.triggeredAbilities pc))
-        GameEvent.Discarded (Discarded.MkDiscarded _ _ DiscardCause.Ordinary _ _) -> Map.empty
-        GameEvent.Discarded (Discarded.MkDiscarded _ _ DiscardCause.ByEffect _ _) -> Map.empty
+        GameEvent.Discarded (Discarded.MkDiscarded _ _ DiscardCause.Ordinary _ _ _) -> Map.empty
+        GameEvent.Discarded (Discarded.MkDiscarded _ _ DiscardCause.ByEffect _ _ _) -> Map.empty
         -- A draw names no object either. The card it puts in a hand may well bear
         -- an ability that triggers from there -- CR 702.94a's miracle -- but that
         -- one fires on the REVEAL rather than on the draw, and `revealedInHand`
@@ -2075,7 +2075,7 @@ eventTriggersGiven scope standing events gs =
       -- Gorger dying before the trigger is gathered still casts the Vampire"
       -- proves the grant case.
       exiledForMadness event = case event of
-        GameEvent.Discarded (Discarded.MkDiscarded _ oid _ (Just payload) _)
+        GameEvent.Discarded (Discarded.MkDiscarded _ oid _ (Just payload) _ _)
           | Just obj <- Game.lookupObject oid gs ->
               Map.singleton oid (Object.owner obj, [whole (Keyword.madnessCast (PC.manaCost (Projection.project oid gs)) payload)])
         _ -> Map.empty

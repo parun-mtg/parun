@@ -183,7 +183,7 @@ recruit settle pid = do
           filler = filter (\c -> List.notElem c valid) offered
       pure (take 1 (valid <> filler))
   cause <- State.gets Event.resolvingDiscardCause
-  moved <- fmap (concatMap Foldable.toList) (Monad.mapM (Event.discardReturning settle cause pid) chosen)
+  moved <- fmap (concatMap Foldable.toList) (Monad.mapM (Event.discardReturning settle cause Nothing pid) chosen)
   after <- State.get
   let nonland c = not (Set.member CardType.Land (Filter.cardTypes (Projection.viewOfObject c after)))
   -- CR 701.70a's second sentence: one token, and only where a nonland card was
