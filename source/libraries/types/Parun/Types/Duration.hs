@@ -26,8 +26,9 @@ data Duration
     -- be a PlayerId here, because a printed card does not know one.
     UntilYourNextTurn
   | -- | CR 611.2a: "until the beginning of your next upkeep" (Grinning Totem),
-    -- "until its controller's next untap step" (Orcish Farmer): ends as that step
-    -- of that player's turn next begins. Parun.Engine.Expiry.arm reads the seat.
+    -- "until its controller's next untap step" (Orcish Farmer), "until the next
+    -- end step" (Niko, Light of Hope): ends as that step of a named player's turn
+    -- next begins. Parun.Engine.Expiry.arm reads the seats.
     UntilNextStepOf NextStepOf.NextStepOf
   | -- | CR 611.2a: "until the end of your next turn" (Soulfire Eruption), which
     -- ends a whole turn later than the arm above: as that turn ENDS, in its

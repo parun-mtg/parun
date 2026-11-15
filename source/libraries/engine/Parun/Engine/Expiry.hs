@@ -89,6 +89,7 @@ import Parun.Types.Recipient (Recipient)
 import Parun.Types.SlotName (SlotName)
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StepOfControllerOf as StepOfControllerOf
+import qualified Parun.Types.StepOfSeats as StepOfSeats
 import qualified Parun.Types.StoredEffects as StoredEffects
 import Parun.Types.StoredKind (StoredKind)
 import qualified Parun.Types.StoredKind as StoredKind
@@ -131,7 +132,9 @@ arm resolving targets controller source duration gs = case duration of
   Duration.UntilYourNextTurn -> Just (Expiry.AtTurnOf controller)
   -- CR 611.2a: ends as the named step of that player's turn next begins. A
   -- duration armed during that very step outlives
-  -- it: the step has already begun, so only a later beginning ends it.
+  -- it: the step has already begun, so only a later beginning ends it. A
+  -- reference naming several seats ends at the first of their turns to reach
+  -- the step: "until the next end step" (Niko, Light of Hope) names every seat.
   --
   -- The controller of a bound object still in the game is NOT sampled: "its
   -- controller's next untap step" tracks the permanent and not its controller
@@ -143,7 +146,7 @@ arm resolving targets controller source duration gs = case duration of
       | Just oid <- Map.lookup slot (Binding.objectsIn targets),
         Maybe.isJust (Game.lookupObject oid gs) ->
           Just (Expiry.AtStepOfControllerOf (StepOfControllerOf.MkStepOfControllerOf (NextStepOf.step next) oid))
-    ref -> Expiry.AtStepOf . StepBegan.MkStepBegan (NextStepOf.step next) <$> seatOf reading targets controller gs ref
+    ref -> Expiry.AtStepOf . StepOfSeats.MkStepOfSeats (NextStepOf.step next) <$> seatsOf reading targets controller gs ref
   -- CR 611.2a: "until the end of your next turn". Two samples, both taken here
   -- and neither ever rewritten: the controller (CR 109.5's "you", as above) and
   -- the turn this duration began on. dropAtCleanup ends it at the first turn of
@@ -269,7 +272,7 @@ arm resolving targets controller source duration gs = case duration of
   where
     reading = Game.readingAcquisition resolving source gs
 
--- The ONE seat a Duration.UntilEndOfNextTurnOf, DuringNextTurnOf or UntilNextStepOf reference
+-- The ONE seat a Duration.UntilEndOfNextTurnOf or DuringNextTurnOf reference
 -- names, sampled as the window begins. One stored row names one turn, so a
 -- reference naming several seats arms nothing; no printing states such a window
 -- (Scryfall o:"each opponent's next turn", o:"opponents' next turns",
@@ -287,10 +290,18 @@ arm resolving targets controller source duration gs = case duration of
 -- and the one fold that states such a window substitutes the member as Specific
 -- before arming (perSeat).
 seatOf :: (ObjectId -> Acquisition.Acquisition) -> Map.Map SlotName (Set.Set Recipient) -> PlayerId -> GameState -> PlayerRef.PlayerRef -> Maybe PlayerId
-seatOf acquisition targets controller gs ref =
+seatOf acquisition targets controller gs ref = case fmap Set.toList (seatsOf acquisition targets controller gs ref) of
+  Just [pid] -> Just pid
+  _ -> Nothing
+
+-- Every seat a reference names, sampled as the window begins: seatOf's reading
+-- without its cut to one. Nothing where it names nobody, CR 611.2b's "the
+-- duration never started".
+seatsOf :: (ObjectId -> Acquisition.Acquisition) -> Map.Map SlotName (Set.Set Recipient) -> PlayerId -> GameState -> PlayerRef.PlayerRef -> Maybe (Set.Set PlayerId)
+seatsOf acquisition targets controller gs ref =
   let given = Players.resolution (`Projection.controllerWithLastKnown` gs) (`Game.ownerWithLastKnown` gs) acquisition targets (Just controller) controller gs
    in case Players.named given {Players.reaches = const True} gs ref of
-        Just [pid] -> Just pid
+        Just pids@(_ : _) -> Just (Set.fromList pids)
         _ -> Nothing
 
 -- CR 611.2a: "each opponent can't cast instant or sorcery spells during THAT
@@ -451,8 +462,11 @@ endsAt gs moment source expiry = case expiry of
     moment == Settle && not (Condition.holds (Projection.fullView gs) (Projection.sourceContext gs (Just you) source) gs source cond)
   Expiry.AtTurnOf p -> moment == TurnOf p
   -- CR 800.4m's "a specific point in that turn": a departed player's step
-  -- never begins, so the duration ends where that turn would have.
-  Expiry.AtStepOf began -> moment == StepOf began || departedTurnOf (StepBegan.player began)
+  -- never begins, so the duration ends where that turn would have, unless
+  -- another named seat's step still can.
+  Expiry.AtStepOf (StepOfSeats.MkStepOfSeats step seats) ->
+    any (\pid -> moment == StepOf (StepBegan.MkStepBegan step pid)) seats
+      || (any departedTurnOf seats && not (any (`elem` Game.stillPlaying gs) seats))
   -- Read live, so the step of the object's controller then. A phased-out
   -- permanent is not under its controller's control (CR 702.26d), so its step
   -- waits, windowReached's guard. Dropped as hygiene once its object is gone,
