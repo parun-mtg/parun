@@ -297,11 +297,11 @@ activateAbilityWith refused runSubgame pid srcId ability = Event.announcing $ do
       -- is not offered beside one. X is unannounced here, so a "choose up to X"
       -- is read with no ceiling, as the modes themselves were above.
       let admitsModes cost = Modal.selectionSatisfiedBy legal (settledGiven Map.empty (const (Natural.length legal)) cost) chosenModes
-          offeredCosts = filter (\cost -> admitsModes cost && Activatable.payableCostAt aimableUnannounced floorX stamp (ActivatedAbility.name ability) spendable pid srcId gs cost) (Activatable.costsFor (PlayerEffect.applying pid gs) pid ability gs)
+          offeredCosts = filter (\cost -> admitsModes cost && Activatable.payableCostAt aimableUnannounced floorX stamp (ActivatedAbility.name ability) spendable pid srcId gs cost) (Activatable.costsFor (PlayerEffect.applying pid gs) pid srcId ability gs)
       printedCost <- case offeredCosts of
         _ : _ : _ -> CandidateCost.cost <$> Game.choose (Prompt.ChooseCost decider pid abilId (fmap Cost.untagged offeredCosts) Seq.empty)
         [only] -> pure only
-        [] -> pure (Maybe.fromMaybe (ActivatedAbility.cost ability) (Maybe.listToMaybe (Cost.withChoices (ActivatedAbility.costChoices ability) (ActivatedAbility.cost ability))))
+        [] -> pure (Cost.withManaCostsOf srcId gs (Maybe.fromMaybe (ActivatedAbility.cost ability) (Maybe.listToMaybe (Cost.withChoices (ActivatedAbility.costChoices ability) (ActivatedAbility.cost ability)))))
       -- CR 601.2b: a choice that defines X is made as X would be announced
       -- rather than as the ability resolves (Caller of the Untamed's ruling of
       -- 2016-08-23), and bound below as Binding.definingCard. One candidate is

@@ -15,6 +15,7 @@ import qualified Parun.Types.ExileMaterials as ExileMaterials
 import qualified Parun.Types.ExilePermanents as ExilePermanents
 import qualified Parun.Types.Filter as Filter
 import qualified Parun.Types.Gift as Gift
+import qualified Parun.Types.Hop as Hop
 import qualified Parun.Types.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Types.ReturnPermanents as ReturnPermanents
 import qualified Parun.Types.Sacrifice as Sacrifice
@@ -284,4 +285,6 @@ data CostComponent keyword
     TapInsteadOfMana (Filter.Filter keyword)
   | -- | CR 101.1 / Katara, Water Tribe's Hope, Light Up the Night: the X announced for this cost can't be less than this; a limit and not a payment.
     VariableAtLeast Natural.Natural
+  | -- | CR 118.6 / Merseine: pay the mana cost of the object the cost is on, or of its host, folded into the mana part by Parun.Engine.Cost.withManaCostsOf.
+    PayManaCostOf Hop.Hop
   deriving (Eq, Ord, Show)

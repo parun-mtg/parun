@@ -14,6 +14,7 @@ import qualified Parun.Codec.ExileMaterials as ExileMaterials
 import qualified Parun.Codec.ExilePermanents as ExilePermanents
 import qualified Parun.Codec.Filter as Filter
 import qualified Parun.Codec.Gift as Gift
+import qualified Parun.Codec.Hop as Hop
 import qualified Parun.Codec.MoveCardsFromGraveyard as MoveCardsFromGraveyard
 import qualified Parun.Codec.ReturnPermanents as ReturnPermanents
 import qualified Parun.Codec.Sacrifice as Sacrifice
@@ -93,7 +94,8 @@ codec keywordCodec =
       Arm.payload "Waterbend" CostAmount.codec CostComponent.Waterbend (\x -> case x of CostComponent.Waterbend y -> Just y; _ -> Nothing),
       Arm.payload "WaterbendInstead" Common.natural CostComponent.WaterbendInstead (\x -> case x of CostComponent.WaterbendInstead y -> Just y; _ -> Nothing),
       Arm.payload "TapInsteadOfMana" (Filter.codec keywordCodec) CostComponent.TapInsteadOfMana (\x -> case x of CostComponent.TapInsteadOfMana y -> Just y; _ -> Nothing),
-      Arm.payload "VariableAtLeast" Common.natural CostComponent.VariableAtLeast (\x -> case x of CostComponent.VariableAtLeast y -> Just y; _ -> Nothing)
+      Arm.payload "VariableAtLeast" Common.natural CostComponent.VariableAtLeast (\x -> case x of CostComponent.VariableAtLeast y -> Just y; _ -> Nothing),
+      Arm.payload "PayManaCostOf" Hop.codec CostComponent.PayManaCostOf (\x -> case x of CostComponent.PayManaCostOf y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: CostComponent.CostComponent keyword -> String
@@ -143,3 +145,4 @@ tagOf x = case x of
   CostComponent.WaterbendInstead {} -> "WaterbendInstead"
   CostComponent.TapInsteadOfMana {} -> "TapInsteadOfMana"
   CostComponent.VariableAtLeast {} -> "VariableAtLeast"
+  CostComponent.PayManaCostOf {} -> "PayManaCostOf"

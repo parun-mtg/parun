@@ -3209,6 +3209,7 @@ costComponentFilters component = case component of
   -- Heirloom Epic's "an untapped creature you control".
   CostComponent.TapInsteadOfMana f -> [f]
   CostComponent.VariableAtLeast _ -> []
+  CostComponent.PayManaCostOf _ -> []
 
 -- The Filter narrowing a target slot's CR 115 pool -- "target creature with
 -- flying" -- and CR 303.4a's enchant slot, which is a TargetSlot too.
