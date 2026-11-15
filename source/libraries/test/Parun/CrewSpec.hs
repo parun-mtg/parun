@@ -33,8 +33,8 @@
 --
 -- CR 702.122e's RIDER has a fixture of its own again, Mighty Servant of Leuk-o:
 -- the rider is an intervening "if" that counts the creatures which paid that
--- activation's cost, and neither Vehicle above prints one, so crewedByRiderSpec
--- below adds a third.
+-- activation's cost, and neither Vehicle above prints one, so data/scenarios/crew
+-- adds a third.
 --
 -- CR 702.122b has its own fixture too, Gearshift Ace: rule 702.122b is asked of
 -- the CREWER, which neither Vehicle above can be, so data/scenarios/crew adds a
@@ -58,7 +58,6 @@ import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Game as Game
-import qualified Parun.Engine.Mint as Mint
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
@@ -77,7 +76,6 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.TapState as TapState
-import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
 import qualified Parun.Types.Zone as Zone
 
@@ -140,7 +138,6 @@ spec s registry = Spec.describe s "Crew" $ do
   carriedPowerSpec s registry
   crewCostSpec s registry
   crewedVehicleSpec s registry
-  crewedByRiderSpec s registry
   cantCrewSpec s registry
 
 -- CR 208.3 and CR 301.7a: the printed numbers are on the card and are not the
@@ -256,89 +253,6 @@ crewedVehicleSpec s registry = Spec.describe s "CrewedVehicle" $ do
       "CR 208.3 takes the printed numbers back with it"
       (Projection.powerOf vehicleId afterCleanup, Projection.toughnessOf vehicleId afterCleanup)
       (Nothing, Nothing)
-
--- alice's board for CR 702.122e and CR 702.122b: one permanent per printing, the
--- first being the card that READS the crewing -- Mobilizer Mech for rule 702.122e
--- and Gearshift Ace for rule 702.122b -- then one per printing in `vehicles` and
--- one per printing in `crewers`, all Settled and untapped, with
--- alice holding priority in her precombat main phase. Three seats, for the reason
--- the module header gives.
-crewReaderBoard :: Printing.Printing -> [Printing.Printing] -> [Printing.Printing] -> (ObjectId.ObjectId, [ObjectId.ObjectId], [ObjectId.ObjectId], GameState.GameState)
-crewReaderBoard reader vehicles crewers =
-  let (readerId, gs0) = S.addPermanent reader S.alice S.threePlayerGame
-      add (ids, g) p = let (oid, g1) = S.addPermanent p S.alice g in (ids <> [oid], g1)
-      (vehicleIds, gs1) = List.foldl' add ([], gs0) vehicles
-      (crewIds, gs2) = List.foldl' add ([], gs1) crewers
-   in ( readerId,
-        vehicleIds,
-        crewIds,
-        gs2
-          { GameState.turn =
-              (GameState.turn gs2)
-                { TurnRegisters.priority = Just S.alice
-                }
-          }
-      )
-
--- Crew `vehicleId`, then let CR 603.3 gather what that resolution triggered onto
--- the stack (Engine.settleForPriority) and resolve it. Both states are returned:
--- the one with the trigger waiting, and the one after it resolved.
-crewAndSettle :: (forall r. Prompt.Prompt r -> r) -> ObjectId.ObjectId -> GameState.GameState -> (GameState.GameState, GameState.GameState)
-crewAndSettle answer vehicleId gs =
-  let crewed = crewWith answer vehicleId gs
-      onStack = S.runPure answer crewed Engine.settleForPriority
-   in (onStack, S.runPure answer onStack Stack.resolveTop)
-
--- CR 702.122e's rider: an intervening "if" that refers to the crewing creatures
--- means only the ones that paid the cost of the activation that caused the
--- trigger. Mighty Servant of Leuk-o is the fixture -- {3} Artifact -- Vehicle
--- 6/6, crew 4, "whenever this Vehicle becomes crewed for the FIRST TIME EACH
--- TURN, if it was crewed by EXACTLY TWO creatures, it gains 'whenever this
--- creature deals combat damage to a player, draw two cards' until end of turn".
---
--- Crew 4 is what makes the pair of boards differ in ONE thing. Blind-Spot Giant
--- is 4/3, so it pays the cost alone; adding Hill Giant's 3 pays the same cost
--- with two creatures. So the positive and negative boards are the same board,
--- the same Vehicle and the same cost, tapping one creature or two.
---
--- The arithmetic is non-degenerate for the module header's reason: the rider's
--- threshold is 2 (a COUNT), the cost's is 4 (a total POWER), and the two boards
--- total 4 and 7. No single number reaches the answer twice, so a condition that
--- had counted power or summed the count would miss on both boards.
---
--- Four crewers, two of each printing, so the third case can crew twice in one
--- turn with a fresh pair each time and never reuse a tapped creature.
-crewedByRiderSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-crewedByRiderSpec s registry = Spec.describe s "CrewedByRider" $ do
-  Spec.it s "CR 702.122e crewed by exactly two creatures grants the ability" $ do
-    servant <- S.printingOf s registry "Mighty Servant of Leuk-o"
-    hillGiant <- S.printingOf s registry "Hill Giant"
-    blindSpot <- S.printingOf s registry "Blind-Spot Giant"
-    let (servantId, _, crewIds, gs) = crewReaderBoard servant [] [hillGiant, blindSpot]
-    case crewIds of
-      [giantId, blindId] -> do
-        let (onStack, after) = crewAndSettle (crewingWith [giantId, blindId]) servantId gs
-        Spec.assertBool s (drawsOnCombatDamage servantId after) "the Vehicle gained the combat-damage trigger"
-        Spec.assertBool s (not (drawsOnCombatDamage servantId onStack)) "and had not gained it while the trigger waited"
-        Spec.assertBool s (isCreature servantId after) "with the crewing itself having animated it"
-      _ -> Spec.assertFailure s "fixture should have two crewers"
-
--- Does this permanent carry the triggered ability Mighty Servant of Leuk-o's
--- rider grants -- "whenever this creature deals combat damage to a player, draw
--- two cards"? Read off the PROJECTION, hasFirstStrike's shape one ability kind
--- over, so a grant that never reached layer 6 answers False.
-drawsOnCombatDamage :: ObjectId.ObjectId -> GameState.GameState -> Bool
-drawsOnCombatDamage oid gs =
-  any
-    ((== Mint.dealsCombatDamageToAPlayer) . TriggeredAbility.condition)
-    (Projection.triggeredAbilitiesOf oid gs)
-
--- Taps `tappers` to pay CR 702.122a's cost and answers nothing else: Gearshift
--- Ace's trigger targets nothing, so crewingAt's target answers would go unasked.
-crewingWith :: [ObjectId.ObjectId] -> Prompt.Prompt r -> r
-crewingWith tappers p = case p of
-  Prompt.ChooseTapsForTotalPower {} -> Set.fromList tappers
-  _ -> S.identityAnswer p
 
 -- CR 702.122d: "can't crew Vehicles" -- an effect that forbids TAPPING a
 -- creature to pay a crew cost, carried by Parun.Types.KeywordCostRestriction and

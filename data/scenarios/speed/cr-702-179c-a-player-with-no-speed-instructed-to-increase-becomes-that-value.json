@@ -1,0 +1,225 @@
+{
+  "description": "CR 702.179c a player with no speed instructed to increase becomes that value",
+  "note": "No permanent with start your engines!, so CR 704.5aa never acts and nobody has speed for CR 702.179d's ability to exist on. Synthetic Speed Boost makes both players' speed 2, the card's value and nothing else. Each then casts Samut, the Driving Force, whose start your engines! would start a speedless player at 1; each one's Grizzly Bears reads 2 plus 2.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "am"
+          },
+          {
+            "card": "Forest",
+            "label": "af"
+          },
+          {
+            "card": "Plains",
+            "label": "ap"
+          },
+          {
+            "card": "Wastes",
+            "label": "aw1"
+          },
+          {
+            "card": "Wastes",
+            "label": "aw2"
+          },
+          {
+            "card": "Wastes",
+            "label": "aw3"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Synthetic Speed Boost",
+            "label": "boost"
+          },
+          {
+            "card": "Samut, the Driving Force",
+            "label": "samut"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "bm"
+          },
+          {
+            "card": "Forest",
+            "label": "bf"
+          },
+          {
+            "card": "Plains",
+            "label": "bp"
+          },
+          {
+            "card": "Wastes",
+            "label": "bw1"
+          },
+          {
+            "card": "Wastes",
+            "label": "bw2"
+          },
+          {
+            "card": "Wastes",
+            "label": "bw3"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bbears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Samut, the Driving Force",
+            "label": "bsamut"
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$boost",
+          "mana": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$samut",
+          "mana": [
+            "$am",
+            "$af",
+            "$ap",
+            "$aw1",
+            "$aw2",
+            "$aw3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$bears",
+          "power": 4,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": []
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Cast": {
+          "object": "$bsamut",
+          "mana": [
+            "$bm",
+            "$bf",
+            "$bp",
+            "$bw1",
+            "$bw2",
+            "$bw3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "PowerToughness": {
+          "object": "$bbears",
+          "power": 4,
+          "toughness": 2
+        }
+      }
+    }
+  ]
+}

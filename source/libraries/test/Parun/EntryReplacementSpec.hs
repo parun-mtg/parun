@@ -596,8 +596,8 @@ skipAnswer wantBrine brine p = case p of
 -- same set, and carol is what shows the trigger reached bob's opponents rather
 -- than everybody.
 --
--- The Pikers are the observable, for the reason Parun.TurnSpec's savorBoard has
--- one: CR 502.3 untaps the ACTIVE player's permanents, so a turn whose untap step
+-- The Pikers are the observable, for the reason data/scenarios/turn's Savor the
+-- Moment files have one: CR 502.3 untaps the ACTIVE player's permanents, so a turn whose untap step
 -- happened leaves its player's Piker untapped and a turn whose untap step was
 -- skipped leaves it tapped -- and nothing else in these cases taps or untaps
 -- either. Lands go in through S.addPermanent too, which puts any printing on the

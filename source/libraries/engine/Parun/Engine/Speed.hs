@@ -68,8 +68,8 @@ import qualified Parun.Types.TurnScope as TurnScope
 -- effect may push speed past 4 and that a player at 4 OR MORE has max speed.
 -- That is why every "Max speed --" card in data/cards/ writes CR 702.178a's
 -- gate as AtLeast 4 rather than the rule's literal Exactly 4, proven by
--- Parun.SpeedSpec's "past 4 the Raceway keeps its max speed ability". If a
--- future CR clarifies the other way, the edit is those gates and that case.
+-- the scenario speed/cr-702-178a-past-4-the-raceway-keeps-its-max-speed-ability.json.
+-- If a future CR clarifies the other way, the edit is those gates and that case.
 -- docs/decisions.md, "Whether speed can pass 4".
 -- belowMaxSpeed below is NOT this question: CR 702.179d states its own "less
 -- than 4" and caps only its own climb.

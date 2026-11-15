@@ -35,7 +35,7 @@ import qualified Parun.Engine.Resolve.Effect as Resolve
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Extra.Int as Int
-import Parun.PreventionSpec (aimObject, answersFor, castAndResolve, castOrPassAnswer, clachanBoard, copyOf, counterBoard, countersOn, leylineShape, lostLife, namedOut, newestNamed, payLifeOnEntryAnswer, raceAnswer, revealAsks, revealOnEntryAnswer, seaGateBoard, theAbility, warriorOut, wasAskedForEntryOption, wasAskedToReplace)
+import Parun.PreventionSpec (aimObject, answersFor, castAndResolve, castOrPassAnswer, clachanBoard, counterBoard, countersOn, leylineShape, lostLife, namedOut, newestNamed, payLifeOnEntryAnswer, raceAnswer, revealAsks, revealOnEntryAnswer, seaGateBoard, theAbility, warriorOut, wasAskedForEntryOption, wasAskedToReplace)
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
@@ -542,19 +542,6 @@ spec s registry = Spec.describe s "Parun.Engine.Replacement" $ do
           (namedOut "Benalish Hero" (S.runPure castOrPassAnswer played Engine.priorityLoop))
           0
       other -> Spec.assertFailure s ("expected one permanent, got " <> show (length other))
-  Spec.it s "CR 614.12a the copy choice is locked in BEFORE the enters event exists" $ do
-    island <- S.printingOf s registry "Island"
-    pikerPrinting <- S.printingOf s registry "Goblin Piker"
-    clonePrinting <- S.printingOf s registry "Clone"
-    let base = S.landsInPlay island 4
-        (piker, withPiker) = S.addPermanent pikerPrinting S.alice base
-        (gs, cloneId) = S.handOne clonePrinting withPiker
-        -- No settle: the choice must already be made when resolveTop returns.
-        resolved = S.runPure (copyOf piker) gs (S.cast S.alice cloneId >> Stack.resolveTop)
-        named = filter (\oid -> fmap Face.name (Game.faceOf oid resolved) == Just (CardName.MkCardName $ Text.pack "Clone")) (Set.toList (GameState.battlefield resolved))
-    case named of
-      [] -> Spec.assertFailure s "Clone did not reach the battlefield"
-      clone : _ -> Spec.assertEqWith s "already a 2/1, with no settle run" (Projection.powerOf clone resolved) (Just 2)
   -- CR 208.2b's own elision, at the ChoiceOf boundary: such an ability
   -- "lists two or more specific power and toughness values", so a
   -- single-option as-enters choice is not a 208.2b choice at all and

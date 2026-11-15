@@ -167,8 +167,8 @@ data PlayerEffect
     -- for a narrowed PlayerScope, which is what makes
     -- Parun.Engine.PlayerEffect.unpreventable's board-wide fold exact.
     -- Whippoorwill's "that creature" aims the pattern at the recipient its own
-    -- resolution chose, which Parun.PreventionSpec's Whippoorwill case proves is
-    -- narrower than the board.
+    -- resolution chose, which data/scenarios/prevention's CR 615.12 Whippoorwill
+    -- scenario proves is narrower than the board.
     DamageCantBePrevented DamagePattern.DamagePattern
   | -- | CR 614.17 / 613.11 / Lava Burst: damage matching the pattern can't be dealt
     -- instead to another permanent or player -- the redirection twin of the arm

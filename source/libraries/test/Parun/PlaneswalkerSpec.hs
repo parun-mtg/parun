@@ -189,58 +189,11 @@ alicesNextTurn gs =
               }
         }
 
--- Jace on the battlefield with his three CR 306.5b counters, an untapped Mountain
--- beside him for the {R}, and one burn spell in alice's hand. The three Islands
--- jaceOnBattlefield paid with are tapped, so the Mountain is the only mana left
--- and the burn spell is the only castable thing.
---
--- The planeswalker alice burns is her own. CR 115.4 admits "planeswalkers" with
--- no controller clause, and nothing on the damage path reads whose it is, so
--- aiming across the table would prove the same thing at the cost of a second
--- board.
-burnAtJace ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-burnAtJace island mountain jace burn =
-  let (jaceId, board) = jaceOnBattlefield island jace
-      (_, withMountain) = S.addPermanent mountain S.alice board
-      (burnId, gs) = S.addHandCard burn S.alice withMountain
-   in (jaceId, burnId, gs)
-
 -- How many cards of a given name are in alice's graveyard.
 graveyardCount :: String -> GameState.GameState -> Int
 graveyardCount name gs =
   let named oid = fmap Face.name (Game.faceOf oid gs) == Just (CardName.MkCardName $ Text.pack name)
    in length (filter named (Game.zoneMembers Zone.Graveyard S.alice gs))
-
--- Fill every target slot with the candidate that NAMES `oid`, whatever tag the
--- pool produced for it -- so the fixture asks for the planeswalker without
--- asserting how CR 115.4's pool tags one.
---
--- Falls back to the set's minimum, which keeps the interpreter total: a board
--- where the pool never offers `oid` then burns something else and fails on the
--- loyalty assertions, rather than on a partial match.
-aimedAt :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-aimedAt oid p = case p of
-  Prompt.ChooseTargets _ _ _ sets ->
-    let naming (n, candidates) =
-          Set.fromList
-            . take (Natural.toIntSaturating n)
-            $ filter (\r -> Recipient.objectOf r == Just oid) (Set.toList candidates) <> Set.toList candidates
-     in fmap naming sets
-  _ -> S.identityAnswer p
-
--- Cast the burn spell at the planeswalker and resolve it. NOT settled: CR 120.5
--- says damage does not destroy, so the pre-SBA state is where CR 306.8's counter
--- removal is observable on its own.
-burnResolved :: ObjectId.ObjectId -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-burnResolved jaceId burnId gs =
-  S.runPure (aimedAt jaceId) gs $ do
-    S.cast S.alice burnId
-    Stack.resolveTop
 
 -- Nissa, Steward of Elements' abilities in printed order: +2, 0, -6. Indexed for
 -- the reason Jace's are.
@@ -295,8 +248,7 @@ useNissaAbility i p oid gs = case abilityAt i p of
   [] -> gs
 
 -- Fill every target slot with the candidate that names this PLAYER, filtering the
--- set the engine offered rather than building a Recipient by hand -- aimedAt's
--- posture one recipient shape over.
+-- set the engine offered rather than building a Recipient by hand.
 --
 -- Chandra's trigger says "target opponent or planeswalker", and SHE is a legal
 -- planeswalker for it: an answerer that took the head of the offered set could put
@@ -400,24 +352,6 @@ spec s registry = Spec.describe s "Parun.Engine.Planeswalker" $ do
     Spec.assertEqWith s "six plus four, not six plus two" (S.counterOf CounterKind.Loyalty jaceId after) 10
     Spec.assertEqWith s "and the row was live on the way in: three doubled to six" (S.counterOf CounterKind.Loyalty jaceId board) 6
 
-  Spec.it s "CR 306.8 Lightning Bolt's 3 damage removes all three loyalty counters, and CR 704.5i buries Jace" $ do
-    island <- S.printingOf s registry "Island"
-    mountain <- S.printingOf s registry "Mountain"
-    jace <- S.printingOf s registry "Jace Beleren"
-    lightningBolt <- S.printingOf s registry "Lightning Bolt"
-    let (jaceId, boltId, gs) = burnAtJace island mountain jace lightningBolt
-        resolved = burnResolved jaceId boltId gs
-        after = S.settleSba resolved
-    Spec.assertEqWith s "CR 306.8: three loyalty counters removed" (S.counterOf CounterKind.Loyalty jaceId resolved) 0
-    -- CR 120.3c is the whole result: a planeswalker is not a creature, so CR
-    -- 120.3e's marked damage is not among the results damage to it has.
-    Spec.assertEqWith s "CR 120.3e does not apply, so nothing is marked on it" (S.damageOf jaceId resolved) (Just 0)
-    Spec.assertBool s (Set.member jaceId (GameState.battlefield resolved)) "CR 120.5: the damage did not itself destroy it"
-    Spec.assertBool s (not (Set.member jaceId (GameState.battlefield after))) "CR 704.5i: loyalty 0, so off the battlefield"
-    -- By NAME, not by id: CR 400.7 mints a new object as the card moves, so
-    -- jaceId names nothing once the SBA has buried it.
-    Spec.assertEqWith s "CR 704.5i: in its owner's graveyard" (graveyardCount "Jace Beleren" after) 1
-
 -- CR 122's counter REMOVAL as an event a trigger can see, through the two
 -- removals a planeswalker performs: CR 606.4's loyalty cost (Parun.Engine.Cost,
 -- routed through Parun.Engine.Event.removeCounters) and CR 120.3c / 306.8's damage
@@ -514,21 +448,6 @@ combinedLoyaltyCostSpec s registry = Spec.describe s "CombinedLoyaltyCost" $ do
       s
       (all (`elem` Action.legalActions S.alice atNine) (activation jaceId plusTwo jace))
       "while the +2 is offered on the very same board"
-
-  -- The PAYMENT and not just the gate. 9 - 10 + 1 is 0, so CR 704.5i buries Jace;
-  -- a fix that combined for the gate while paying the components one at a time
-  -- would leave the removal unpayable and the activation rejected outright.
-  Spec.it s "CR 606.5 / 704.5i paying the combined -9 spends all nine counters and buries Jace" $ do
-    island <- S.printingOf s registry "Island"
-    jace <- S.printingOf s registry "Jace Beleren"
-    carth <- S.printingOf s registry "Carth the Lion"
-    let (jaceId, board) = jaceOnBattlefield island jace
-        atNine = S.addCounter CounterKind.Loyalty 6 jaceId board
-        withCarth = snd (S.addPermanent carth S.alice atNine)
-        after = useAbility minusTen jace jaceId withCarth
-    Spec.assertEqWith s "nine counters spent, not ten and not nine less one added back" (S.counterOf CounterKind.Loyalty jaceId after) 0
-    Spec.assertBool s (Set.member jaceId (GameState.battlefield after)) "CR 120.5: still there before the state-based action"
-    Spec.assertBool s (not (Set.member jaceId (GameState.battlefield (S.settleSba after)))) "CR 704.5i: loyalty 0, so buried"
 
 -- CR 306.5a's printed loyalty is a number on every planeswalker but one. Nissa,
 -- Steward of Elements prints CR 107.3's X there, and CR 107.3m says what it is

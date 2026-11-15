@@ -146,17 +146,17 @@ out: grep for them.
 
 ### `CardTriggerSpec`
 
-- CR 109.5 you control: an opponent's 2/1 entering gives alice nothing | `check:helper-experienceOf`
-- CR 508.3d a declare attackers step with no attackers adds nothing | `check:helper-bobsTurn` `check:helper-sentAt`
-- CR 508.3d a declare attackers step with no attackers is not attacking | `check:helper-answering` `check:helper-sentAt`
-- CR 508.3e a Seifer the defending player controls is silent | `check:other-Goad.goadedBy`
-- CR 508.3e attacking a planeswalker that player controls leaves it silent | `check:other-Goad.goadedBy`
-- CR 603.4 raid: an attack aimed at a planeswalker by a creature that then died still discards | `check:combat`
-- CR 603.4 the clause fails when the declaration went at a third player | `check:events`
-- CR 603.7 Ray of Command whole card: the borrowed creature is TAPPED when control reverts at cleanup, and Act of Treason's is not | `check:delayed-triggers`
-- CR 702.170a plotting another card does not fire an exiled Aloe Alchemist | `check:events`
-- CR 726.2/109.5 a crown stolen by carol does not fire alice's trigger | `check:creature-count` `check:events` `check:helper-combatDamageTo` `check:helper-targetsPlayer` `check:other-S.soleFaceName`
-- CR 726.3 a player who is ALREADY the monarch does not become the monarch, so the Lich's edict stays silent | `check:creature-count` `check:events` `check:helper-targetsPlayer`
+- ~~CR 109.5 you control: an opponent's 2/1 entering gives alice nothing | `check:helper-experienceOf`~~
+- ~~CR 508.3d a declare attackers step with no attackers adds nothing | `check:helper-bobsTurn` `check:helper-sentAt`~~
+- ~~CR 508.3d a declare attackers step with no attackers is not attacking | `check:helper-answering` `check:helper-sentAt`~~
+- ~~CR 508.3e a Seifer the defending player controls is silent | `check:other-Goad.goadedBy`~~
+- ~~CR 508.3e attacking a planeswalker that player controls leaves it silent | `check:other-Goad.goadedBy`~~
+- ~~CR 603.4 raid: an attack aimed at a planeswalker by a creature that then died still discards | `check:combat`~~
+- ~~CR 603.4 the clause fails when the declaration went at a third player | `check:events`~~
+- ~~CR 603.7 Ray of Command whole card: the borrowed creature is TAPPED when control reverts at cleanup, and Act of Treason's is not | `check:delayed-triggers`~~
+- ~~CR 702.170a plotting another card does not fire an exiled Aloe Alchemist | `check:events`~~
+- ~~CR 726.2/109.5 a crown stolen by carol does not fire alice's trigger | `check:creature-count` `check:events` `check:helper-combatDamageTo` `check:helper-targetsPlayer` `check:other-S.soleFaceName`~~
+- ~~CR 726.3 a player who is ALREADY the monarch does not become the monarch, so the Lich's edict stays silent | `check:creature-count` `check:events` `check:helper-targetsPlayer`~~
 
 ### `CastPermissionSpec`
 
@@ -229,7 +229,7 @@ out: grep for them.
 - CR 702.34a the flashback cost exiles the card; the permission's printed cost does not | `board:player-effect`
 - CR 702.34a the granted cost, not the printed one, is what a graveyard cast pays | `board:continuous-effect`
 - CR 702.34a/113.6f the grant creates the cast-from-graveyard permission, not just a price | `check:other-Cost.costsFor` `board:second-board`
-- CR 702.35a declining the cast puts the exiled card into its owner's graveyard
+- ~~CR 702.35a declining the cast puts the exiled card into its owner's graveyard~~
 - CR 702.48a / 118.9d a Patron cast free by cascade is still offered the Goblin sacrifice | `move:ChooseCost-offered-cast`
 - CR 707.10 a Double Major copy of a dashed Scout attacks and is returned
 - CR 707.2 / 400.7 a Clone of a dashed Scout and the Scout flickered neither have haste nor return | `board:delayed-trigger` `board:object-castusing`
@@ -267,7 +267,7 @@ out: grep for them.
 
 ### `CombatCostSpec`
 
-- CR 506.8b the window opens at the declaration and runs to the end of the combat phase | `check:other-Turn.afterBlockersDeclared`
+- ~~CR 506.8b the window opens at the declaration and runs to the end of the combat phase | `check:other-Turn.afterBlockersDeclared`~~
 - CR 508.1d / 611.2a / 611.2c whole cards: bob's creatures attack alice on his next turn, and only then | `board:attackrequirements`
 - CR 508.1d an illegal declaration is rewound and asked again, not replaced by the ceiling's | `check:other-Combat.legalAttackDeclaration`
 - CR 508.1j partial payments are not allowed: two Dragons and one land sacrifice nothing | `check:combat` `check:helper-allUntapped` `check:helper-stillThere`
@@ -445,7 +445,7 @@ out: grep for them.
 ### `CrewSpec`
 
 - CR 514.2 the Vehicle stops being a creature at cleanup | `check:power-toughness-none`
-- CR 702.122e crewed by exactly two creatures grants the ability | `check:abilities`
+- ~~CR 702.122e crewed by exactly two creatures grants the ability | `check:abilities`~~
 
 ### `DamageReplacementSpec`
 
@@ -696,11 +696,11 @@ out: grep for them.
 
 ### `InvestigateSpec`
 
-- CR 609.3 an empty hand reveals nothing and casts nothing | `check:helper-board` `check:helper-bobsHand` `check:helper-revealed` `check:helper-rolling`
-- CR 701.20a a random reveal shows the card randomness named, not the first in hand | `check:events`
-- CR 701.20a and the middle card, which no fixed reading of the hand reaches | `check:events`
-- CR 701.20a the same board with a different roll reveals a different card | `check:events`
-- CR 701.60a a spell ends the designation, and CR 701.60c's menace and can't-block end with it | `board:object-designations`
+- ~~CR 609.3 an empty hand reveals nothing and casts nothing | `check:helper-board` `check:helper-bobsHand` `check:helper-revealed` `check:helper-rolling`~~
+- ~~CR 701.20a a random reveal shows the card randomness named, not the first in hand | `check:events`~~
+- ~~CR 701.20a and the middle card, which no fixed reading of the hand reaches | `check:events`~~
+- ~~CR 701.20a the same board with a different roll reveals a different card | `check:events`~~
+- ~~CR 701.60a a spell ends the designation, and CR 701.60c's menace and can't-block end with it | `board:object-designations`~~
 
 ### `KeywordTriggerSpec`
 
@@ -783,21 +783,21 @@ out: grep for them.
 - CR 106.6 the mana pays an equip cost and casts no spell | `check:other-Object.manaSpent`
 - CR 603.2b on the controller's own upkeep the same trigger pays the controller | `check:helper-poolOf` `check:helper-retainedGreen`
 - CR 605.1b the enters trigger resolves off the stack and adds {R}{G} | `check:helper-plainGreen` `check:helper-plainRed` `check:helper-poolUnits`
-- CR 725.1d ending the turn during combat takes the retained mana before cleanup
+- ~~CR 725.1d ending the turn during combat takes the retained mana before cleanup~~
 
 ### `ManaSpec`
 
-- CR 106.12a a basic land tapped for the CHOSEN colour adds the Gauntlet's additional mana | `board:object-chosencolor`
-- CR 106.13 the pool crosses whole, and its production tags with it
-- CR 106.13 the targeted player loses life for the mana Drain Power takes
-- CR 302.6 a stolen Llanowar Elves is not a mana source for the thief | `check:other-Cost.manaActivations` `check:other-Mana.manaSources` `check:other-Projection.controls`
-- CR 500.5/613.4c whole card: the green Omnath keeps is the green that keeps it big | `check:helper-poolSize`
-- CR 605.1b a land's ability adding the chosen colour with no tap adds Caged Sun's additional mana | `board:object-chosencolor`
-- CR 605.3a a mana ability whose cost holds mana may be activated inside the window | `move:nested-cost-order` `check:prompt-payload`
-- CR 605.3a the order the batch is activated in is the targeted player's | `check:mana-pool`
-- CR 605.5a mana a land's ability adds as it RESOLVES fires Caged Sun, whose trigger then uses the stack | `board:object-chosencolor`
-- CR 607.2d a Coldsteel Heart placed with no colour chosen produces nothing | `check:helper-tappedFor` `check:other-Cost.manaActivations` `check:other-Mana.canPay` `check:other-Mana.manaTypesOf` `check:other-Object.chosenColor`
-- CR 607.2d a Coldsteel Heart that chose blue offers blue and nothing else | `board:object-chosencolor`
+- ~~CR 106.12a a basic land tapped for the CHOSEN colour adds the Gauntlet's additional mana | `board:object-chosencolor`~~
+- ~~CR 106.13 the pool crosses whole, and its production tags with it~~
+- ~~CR 106.13 the targeted player loses life for the mana Drain Power takes~~
+- ~~CR 302.6 a stolen Llanowar Elves is not a mana source for the thief | `check:other-Cost.manaActivations` `check:other-Mana.manaSources` `check:other-Projection.controls`~~
+- ~~CR 500.5/613.4c whole card: the green Omnath keeps is the green that keeps it big | `check:helper-poolSize`~~
+- ~~CR 605.1b a land's ability adding the chosen colour with no tap adds Caged Sun's additional mana | `board:object-chosencolor`~~
+- ~~CR 605.3a a mana ability whose cost holds mana may be activated inside the window | `move:nested-cost-order` `check:prompt-payload`~~
+- ~~CR 605.3a the order the batch is activated in is the targeted player's | `check:mana-pool`~~
+- ~~CR 605.5a mana a land's ability adds as it RESOLVES fires Caged Sun, whose trigger then uses the stack | `board:object-chosencolor`~~
+- ~~CR 607.2d a Coldsteel Heart placed with no colour chosen produces nothing | `check:helper-tappedFor` `check:other-Cost.manaActivations` `check:other-Mana.canPay` `check:other-Mana.manaTypesOf` `check:other-Object.chosenColor`~~
+- ~~CR 607.2d a Coldsteel Heart that chose blue offers blue and nothing else | `board:object-chosencolor`~~
 
 ### `ManaSymbolSpec`
 
@@ -806,11 +806,11 @@ out: grep for them.
 
 ### `MassEffectSpec`
 
-- CR 608.2d Carth the Lion's reveal is not offered without a planeswalker among them | `check:helper-namesIn` `check:helper-revealed`
-- CR 608.2d the second choice is made among the cards the first left | `check:prompt-candidates`
-- CR 608.2d two cards are taken from among the seven, both of them chosen | `check:prompt-candidates`
-- CR 701.17c the return chooses among the milled cards, not among the graveyard | `check:prompt-candidates`
-- CR 701.20e the choice ranges over the matching revealed cards, not over all five | `check:prompt-candidates`
+- ~~CR 608.2d Carth the Lion's reveal is not offered without a planeswalker among them | `check:helper-namesIn` `check:helper-revealed`~~
+- ~~CR 608.2d the second choice is made among the cards the first left | `check:prompt-candidates`~~
+- ~~CR 608.2d two cards are taken from among the seven, both of them chosen | `check:prompt-candidates`~~
+- ~~CR 701.17c the return chooses among the milled cards, not among the graveyard | `check:prompt-candidates`~~
+- ~~CR 701.20e the choice ranges over the matching revealed cards, not over all five | `check:prompt-candidates`~~
 
 ### `MeldSpec`
 
@@ -820,7 +820,7 @@ out: grep for them.
 - CR 612.7 / 701.42c a Spy Kit host is a Hanweir Garrison the game never saw, and both it and the land stay exiled
 - CR 701.42a a one-or-more-cards-leave-exile trigger counts both melded cards | `check:events` `check:other-Binding.eventAmount` `check:other-Binding.toAmount` `check:other-Event.eventBindings` `check:other-LoggedEvent.event` `check:other-Moved.change` `check:other-Moved.departures` `check:other-ZoneChange.from` `check:other-ZoneChange.object` `check:other-ZoneChange.to`
 - CR 701.42a the melding ability exiles the pair and puts one permanent onto the battlefield | `check:helper-componentPrintings` `check:helper-townshipName` `check:other-Game.printingOf` `check:other-Object.owner` `check:other-Object.source` `check:other-Printing.card`
-- CR 701.42b/701.42c a token counterpart melds nothing, and the land stays exiled
+- ~~CR 701.42b/701.42c a token counterpart melds nothing, and the land stays exiled~~
 - CR 713.8a the owner arranges the two cards her melded permanent becomes on top of her library | `board:source-ofmeld`
 - CR 713.8c a perpetual grant on a melded permanent follows both cards it becomes | `board:source-ofmeld`
 - CR 713.8e a melded permanent's death is two cards put into a graveyard and one object that moved | `board:source-ofmeld`
@@ -839,9 +839,9 @@ out: grep for them.
 
 ### `ModalSpec`
 
-- CR 608.2b the damage mode fizzles when its only target leaves before resolution | `check:events`
-- casting the damage mode binds the 'damaged' slot, never 'wall' | `check:bindings`
-- no legal mode removes the trigger from the stack (CR 603.3c) | `check:helper-nothing`
+- ~~CR 608.2b the damage mode fizzles when its only target leaves before resolution | `check:events`~~
+- ~~casting the damage mode binds the 'damaged' slot, never 'wall' | `check:bindings`~~
+- ~~no legal mode removes the trigger from the stack (CR 603.3c) | `check:helper-nothing`~~
 
 ### `MoveCounterSpec`
 
@@ -918,13 +918,13 @@ out: grep for them.
 
 ### `PlaneswalkerCombatSpec`
 
-- CR 506.4e whole card: a creature attacking the planeswalker is attacking a battle bob protects, so his Snare exiles it | `board:continuous-effect`
-- CR 506.4e whole cards: attacked as a battle, it stops being one and is still a planeswalker that's being attacked | `board:continuous-effect`
-- CR 506.4e whole cards: attacked as a planeswalker, it stops being one and is still a battle that's being attacked | `board:continuous-effect`
-- CR 508.3a the tokens are attacking, and the attack trigger fired only for the Garrison | `check:events`
-- CR 508.4 whole card: Hanweir Garrison's two Humans enter tapped and attacking | `check:sickness`
-- CR 702.19c an unblocked 7/7 pays Jace's 3 loyalty and sends the other 4 at bob | `check:helper-assignmentLog`
-- CR 702.19c the whole 7 may stay on Jace instead | `check:helper-assignmentLog`
+- ~~CR 506.4e whole card: a creature attacking the planeswalker is attacking a battle bob protects, so his Snare exiles it | `board:continuous-effect`~~
+- ~~CR 506.4e whole cards: attacked as a battle, it stops being one and is still a planeswalker that's being attacked | `board:continuous-effect`~~
+- ~~CR 506.4e whole cards: attacked as a planeswalker, it stops being one and is still a battle that's being attacked | `board:continuous-effect`~~
+- ~~CR 508.3a the tokens are attacking, and the attack trigger fired only for the Garrison | `check:events`~~
+- ~~CR 508.4 whole card: Hanweir Garrison's two Humans enter tapped and attacking | `check:sickness`~~
+- ~~CR 702.19c an unblocked 7/7 pays Jace's 3 loyalty and sends the other 4 at bob | `check:helper-assignmentLog`~~
+- ~~CR 702.19c the whole 7 may stay on Jace instead | `check:helper-assignmentLog`~~
 
 ### `PlaneswalkerSpec`
 
@@ -932,10 +932,10 @@ out: grep for them.
 - CR 111.6 a TOKEN put into exile is not a card, so the intervening if fails | `check:events`
 - CR 111.6 a card put into exile from the battlefield satisfies the token's intervening if | `check:events`
 - CR 205.1b the -6 untaps two lands and makes them 5/5 Elemental creature lands with flying and haste | `check:tapped-count`
-- CR 306.8 Lightning Bolt's 3 damage removes all three loyalty counters, and CR 704.5i buries Jace
+- ~~CR 306.8 Lightning Bolt's 3 damage removes all three loyalty counters, and CR 704.5i buries Jace~~
 - CR 603.4 a card put into exile from a hand satisfies the token's intervening if | `check:events`
 - CR 603.4 with nothing exiled this turn the token's ability never triggers | `check:events`
-- CR 606.5 / 704.5i paying the combined -9 spends all nine counters and buries Jace
+- ~~CR 606.5 / 704.5i paying the combined -9 spends all nine counters and buries Jace~~
 - CR 606.5 Carth's added +1 makes Jace's -10 activatable at 9 loyalty | `check:helper-activation`
 - CR 606.6 without Carth the same Jace at 9 loyalty is not offered its -10 | `check:helper-activation`
 
@@ -974,21 +974,21 @@ out: grep for them.
 
 ### `PreventionSpec`
 
-- CR 400.7c the shield follows the chosen permanent spell onto the battlefield | `check:prompt-offers`
-- CR 603.7 the creature the resolution named is exiled when it dies, and no other is | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`
-- CR 603.7b the entry is gone by the next turn, so the same death exiles nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`
-- CR 609.7a a slot the installing resolution bound but the row never names is not offered
-- CR 609.7a a source only a waiting ability still refers to is offered, and shields the damage it deals
-- CR 609.7a a source only a waiting delayed trigger still refers to is offered | `board:delayed-trigger` `board:entered-with` `board:graveyard`
-- CR 609.7a a source only a waiting row's captured slot still names is offered
-- CR 609.7a a source only a waiting shield's baked field still names is offered
-- CR 609.7a an activated ability a waiting delayed trigger still names is not offered as a source | `board:delayed-trigger`
-- CR 609.7a an object bound by an unrelated clause of the row's own resolution is not offered | `check:prompt-payload`
-- CR 611.2c the shield covers whatever matches its description when the damage would happen | `board:combat` `board:replacement`
-- CR 614.1b Eon Hub replaces the upkeep step with nothing | `check:helper-began` `check:other-TurnRegisters.remaining`
-- CR 615.7 a shield naming NO source watches every source, and asks nothing | `check:helper-answersFor` `check:helper-chosenSourcesIn` `check:other-Stack.resolveTop`
-- CR 615.7 a shield that covers the whole batch asks nothing | `check:helper-amounts` `check:helper-answersFor` `check:helper-wasAskedToAllocateDamage` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`
-- CR 700.4 the same creature exiled from the battlefield instead fires nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`
+- ~~CR 400.7c the shield follows the chosen permanent spell onto the battlefield | `check:prompt-offers`~~
+- ~~CR 603.7 the creature the resolution named is exiled when it dies, and no other is | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`~~
+- ~~CR 603.7b the entry is gone by the next turn, so the same death exiles nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`~~
+- ~~CR 609.7a a slot the installing resolution bound but the row never names is not offered~~
+- ~~CR 609.7a a source only a waiting ability still refers to is offered, and shields the damage it deals~~
+- ~~CR 609.7a a source only a waiting delayed trigger still refers to is offered | `board:delayed-trigger` `board:entered-with` `board:graveyard`~~
+- ~~CR 609.7a a source only a waiting row's captured slot still names is offered~~
+- ~~CR 609.7a a source only a waiting shield's baked field still names is offered~~
+- ~~CR 609.7a an activated ability a waiting delayed trigger still names is not offered as a source | `board:delayed-trigger`~~
+- ~~CR 609.7a an object bound by an unrelated clause of the row's own resolution is not offered | `check:prompt-payload`~~
+- ~~CR 611.2c the shield covers whatever matches its description when the damage would happen | `board:combat` `board:replacement`~~
+- ~~CR 614.1b Eon Hub replaces the upkeep step with nothing | `check:helper-began` `check:other-TurnRegisters.remaining`~~
+- ~~CR 615.7 a shield naming NO source watches every source, and asks nothing | `check:helper-answersFor` `check:helper-chosenSourcesIn` `check:other-Stack.resolveTop`~~
+- ~~CR 615.7 a shield that covers the whole batch asks nothing | `check:helper-amounts` `check:helper-answersFor` `check:helper-wasAskedToAllocateDamage` `check:other-Damage.applyDamage` `check:other-StoredEffects.replacements`~~
+- ~~CR 700.4 the same creature exiled from the battlefield instead fires nothing | `board:delayed-trigger` `board:player-effect` `board:objectprohibitions`~~
 
 ### `ProjectionSpec`
 
@@ -1013,7 +1013,7 @@ out: grep for them.
 ### `ReplacementSpec`
 
 - CR 119.4 at 2 life the payment is ILLEGAL, so it enters tapped with no life paid | `check:helper-lostLife` `check:helper-warriorOut` `check:other-Engine.priorityLoop`
-- CR 614.12a the copy choice is locked in BEFORE the enters event exists
+- ~~CR 614.12a the copy choice is locked in BEFORE the enters event exists~~
 - CR 614.15 with two artifacts metalcraft is off, so the Blast deals its printed 2 | `check:other-StoredEffects.replacements`
 - CR 614.1c DECLINING with a Kithkin card in hand still enters tapped | `check:helper-revealsOf`
 - CR 614.1c Rustic Clachan REVEALING a Kithkin card enters untapped | `check:events` `check:helper-revealsOf`
@@ -1054,7 +1054,7 @@ out: grep for them.
 
 - CR 701.54 Birthday Escape draws, mints the emblem, and designates the creature its controller chose | `check:helper-temptationsOf`
 - CR 701.54d a player with no creatures is still tempted | `check:helper-temptationsOf` `check:events`
-- CR 701.54e a stolen Ring-bearer is not legendary while its mark survives
+- ~~CR 701.54e a stolen Ring-bearer is not legendary while its mark survives~~
 
 ### `RoomSpec`
 
@@ -1067,14 +1067,14 @@ out: grep for them.
 
 - CR 728.1 / 103.7 a restarted Planechase game sets a new starting plane | `check:other-Planechase.deckOf`
 - CR 728.2 / 103.3a a restart puts a face-up scheme back into the shuffled scheme deck | `check:other-Archenemy.deckOf` `check:events`
-- CR 730.2a the planar deck plays the subgame and comes back | `check:other-Planechase.deckOf` `check:events`
-- CR 730.2a the scheme deck plays the subgame and comes back | `check:other-Archenemy.deckOf` `check:events`
+- ~~CR 730.2a the planar deck plays the subgame and comes back | `check:other-Planechase.deckOf` `check:events`~~
+- ~~CR 730.2a the scheme deck plays the subgame and comes back | `check:other-Archenemy.deckOf` `check:events`~~
 - CR 730.5/713.8 a subgame ending with a melded permanent returns both of its cards to the main-game library | `check:helper-componentsOn` `check:helper-sourcesOf` `check:other-Game.componentsOf` `check:other-GameState.objects` `check:other-GameState.nextObjectId`
 - CR 903.6/903.9c a restarted Commander game puts the melded commander's own card into the command zone and its partner into the deck | `board:source-ofmeld`
 
 ### `ShieldCounterSpec`
 
-- CR 122.1c a rule's destruction is not replaced, though a counter is still there
+- ~~CR 122.1c a rule's destruction is not replaced, though a counter is still there~~
 - CR 701.19c / 704.5g the prohibited creature's shield does not save it from lethal damage | `check:replacement-rows`
 
 ### `SpecialActionSpec`
@@ -1095,21 +1095,21 @@ out: grep for them.
 
 ### `SpeedSpec`
 
-- CR 119.2 damage to an opponent raises your speed too | `check:helper-speedOf` `check:helper-subtract`
+- ~~CR 119.2 damage to an opponent raises your speed too | `check:helper-speedOf` `check:helper-subtract`~~
 - CR 305.7 a Blood Moon'd Raceway starts nobody's engines | `check:helper-speedOf`
 - CR 604.1 the grant is re-asked, not latched | `check:abilities`
-- CR 702.178a past 4 the Raceway keeps its max speed ability | `board:player-speed`
-- CR 702.178b whole card: activating it exiles the Surveyor and draws | `board:player-speed`
-- CR 702.179c a card's own text raises the speed a player already has | `check:speed` `check:inherent-triggers-spent`
-- CR 702.179c a player with no speed instructed to increase becomes that value | `check:speed`
-- CR 702.179d a life loss on somebody else's turn raises nothing | `board:player-speed`
-- CR 702.179d a new turn restores the once-each-turn allowance | `board:player-speed`
-- CR 702.179d an opponent losing life on your turn raises your speed | `check:helper-speedOf` `check:helper-subtract`
-- CR 702.179d speed stops at 4 | `board:player-speed`
-- CR 702.179d the increase happens only once each turn | `board:player-speed`
-- CR 702.179d your own life loss raises nothing | `check:helper-speedOf` `check:helper-subtract`
+- ~~CR 702.178a past 4 the Raceway keeps its max speed ability | `board:player-speed`~~
+- ~~CR 702.178b whole card: activating it exiles the Surveyor and draws | `board:player-speed`~~
+- ~~CR 702.179c a card's own text raises the speed a player already has | `check:speed` `check:inherent-triggers-spent`~~
+- ~~CR 702.179c a player with no speed instructed to increase becomes that value | `check:speed`~~
+- ~~CR 702.179d a life loss on somebody else's turn raises nothing | `board:player-speed`~~
+- ~~CR 702.179d a new turn restores the once-each-turn allowance | `board:player-speed`~~
+- ~~CR 702.179d an opponent losing life on your turn raises your speed | `check:helper-speedOf` `check:helper-subtract`~~
+- ~~CR 702.179d speed stops at 4 | `board:player-speed`~~
+- ~~CR 702.179d the increase happens only once each turn | `board:player-speed`~~
+- ~~CR 702.179d your own life loss raises nothing | `check:helper-speedOf` `check:helper-subtract`~~
 - CR 704.5aa a player controlling Muraganda Raceway with no speed gets speed 1 | `check:helper-speedOf`
-- CR 704.5aa does not fire again once speed exists | `check:speed`
+- ~~CR 704.5aa does not fire again once speed exists | `check:speed`~~
 
 ### `TargetSpec`
 
@@ -1140,37 +1140,37 @@ out: grep for them.
 
 ### `TransformSpec`
 
-- CR 613.7g transforming restamps the permanent past a removal that had wiped its grant | `board:object-designations`
-- CR 700.4 the same ability's other limb fires when it dies | `move:other-applyEffect`
-- CR 701.27a transforming twice returns the permanent to its front face | `check:helper-faceReadings`
-- CR 701.27g a delayed transform is measured from when the ability was created | `board:delayed-trigger` `board:object-turnedoverat` `board:replacement`
-- CR 701.27g a turn that was ignored triggers nothing | `board:hypothetical`
-- CR 701.27h a permanent with its back face up is a transformed permanent | `board:daytime`
-- CR 701.27h a permanent with its front face up is not one | `check:helper-faceNameOf` `check:other-GameState.daytime`
-- CR 701.27h not one even if it had its back face up previously | `board:daytime`
-- CR 702.161a the front face, which has no living metal, is a creature on either turn | `check:helper-faceNameOf`
-- CR 701.27j/701.27f the same trigger's enters limb fires on a Piper cast at night
+- ~~CR 613.7g transforming restamps the permanent past a removal that had wiped its grant | `board:object-designations`~~
+- ~~CR 700.4 the same ability's other limb fires when it dies | `move:other-applyEffect`~~
+- ~~CR 701.27a transforming twice returns the permanent to its front face | `check:helper-faceReadings`~~
+- ~~CR 701.27g a delayed transform is measured from when the ability was created | `board:delayed-trigger` `board:object-turnedoverat` `board:replacement`~~
+- ~~CR 701.27g a turn that was ignored triggers nothing | `board:hypothetical`~~
+- ~~CR 701.27h a permanent with its back face up is a transformed permanent | `board:daytime`~~
+- ~~CR 701.27h a permanent with its front face up is not one | `check:helper-faceNameOf` `check:other-GameState.daytime`~~
+- ~~CR 701.27h not one even if it had its back face up previously | `board:daytime`~~
+- ~~CR 702.161a the front face, which has no living metal, is a creature on either turn | `check:helper-faceNameOf`~~
+- ~~CR 701.27j/701.27f the same trigger's enters limb fires on a Piper cast at night~~
 
 ### `TurnSpec`
 
-- CR 500.5a an until-end-of-combat effect expires though the end of combat step never ran | `check:other-StoredEffects.continuousEffects`
-- CR 500.7 damage can't be prevented during the Gambit's own extra turn, and on no other | `check:player-effects`
-- CR 500.7 several extra turns from one effect are added in APNAP order | `check:extra-turns`
-- CR 500.7 the skip stays on Savor's own extra turn, not on a later-created one | `board:extraturns` `board:extraturnunderway` `board:turnanchor`
-- CR 500.8 Aurelia's added combat phase goes AFTER this one, not inside it | `check:other-TurnRegisters.remaining` `check:other-Turn.expandExtraPhase`
-- CR 508.8 a creature put onto the battlefield attacking keeps the two steps | `check:combat` `check:other-Combat.skipEmptyCombat` `check:other-TurnRegisters.remaining`
-- CR 511.3 combat is emptied though the end of combat step never ran | `check:other-Turn.afterBlockersDeclared`
-- CR 511.3 the control end of combat step runs, and the phase's end sweeps anyway | `check:other-Turn.afterBlockersDeclared`
-- CR 603.7a uncleaved, alice loses at the end step of the unpreventable extra turn
-- CR 614.10a the end of combat step never begins, and the phase ends anyway | `check:helper-began` `check:other-TurnRegisters.remaining`
-- CR 725.1d ending the turn during combat expires that phase's effects
-- CR 725.1d ending the turn skips straight to the cleanup step
-- CR 725.1f no player gets priority once the turn has ended | `check:prompt-count`
-- CR 725.2d ending the combat phase skips straight to the next phase
-- CR 725.2f no player gets priority once the combat phase has ended | `check:prompt-count`
-- CR 725.2g ending the combat phase outside one does nothing | `board:combat` `board:continuous-effect`
-- advance on an empty schedule hands off the turn | `check:other-TurnRegisters.remaining` `check:other-TurnRegisters.turnNumber` `check:other-Turn.firstPhase` `check:other-Turn.laterPhases`
-- advance pops the schedule head into the current phase | `check:other-TurnRegisters.remaining`
+- ~~CR 500.5a an until-end-of-combat effect expires though the end of combat step never ran | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 500.7 damage can't be prevented during the Gambit's own extra turn, and on no other | `check:player-effects`~~
+- ~~CR 500.7 several extra turns from one effect are added in APNAP order | `check:extra-turns`~~
+- ~~CR 500.7 the skip stays on Savor's own extra turn, not on a later-created one | `board:extraturns` `board:extraturnunderway` `board:turnanchor`~~
+- ~~CR 500.8 Aurelia's added combat phase goes AFTER this one, not inside it | `check:other-TurnRegisters.remaining` `check:other-Turn.expandExtraPhase`~~
+- ~~CR 508.8 a creature put onto the battlefield attacking keeps the two steps | `check:combat` `check:other-Combat.skipEmptyCombat` `check:other-TurnRegisters.remaining`~~
+- ~~CR 511.3 combat is emptied though the end of combat step never ran | `check:other-Turn.afterBlockersDeclared`~~
+- ~~CR 511.3 the control end of combat step runs, and the phase's end sweeps anyway | `check:other-Turn.afterBlockersDeclared`~~
+- ~~CR 603.7a uncleaved, alice loses at the end step of the unpreventable extra turn~~
+- ~~CR 614.10a the end of combat step never begins, and the phase ends anyway | `check:helper-began` `check:other-TurnRegisters.remaining`~~
+- ~~CR 725.1d ending the turn during combat expires that phase's effects~~
+- ~~CR 725.1d ending the turn skips straight to the cleanup step~~
+- ~~CR 725.1f no player gets priority once the turn has ended | `check:prompt-count`~~
+- ~~CR 725.2d ending the combat phase skips straight to the next phase~~
+- ~~CR 725.2f no player gets priority once the combat phase has ended | `check:prompt-count`~~
+- ~~CR 725.2g ending the combat phase outside one does nothing | `board:combat` `board:continuous-effect`~~
+- ~~advance on an empty schedule hands off the turn | `check:other-TurnRegisters.remaining` `check:other-TurnRegisters.turnNumber` `check:other-Turn.firstPhase` `check:other-Turn.laterPhases`~~
+- ~~advance pops the schedule head into the current phase | `check:other-TurnRegisters.remaining`~~
 
 ### `UntapRestrictionSpec`
 
@@ -1180,7 +1180,7 @@ out: grep for them.
 
 ### `VariableEffectSpec`
 
-- CR 115.6 Rat Out aimed at a creature shrinks it and still makes the Rat
+- ~~CR 115.6 Rat Out aimed at a creature shrinks it and still makes the Rat~~
 - CR 601.2c X=1 announcing three targets destroys only one | `move:out-of-range-answer`
 - CR 603.2c two counters on one creature at once is one trigger | `check:events`
 - CR 608.2c two clauses of one resolution are two trigger events | `check:helper-minusCountersOn` `check:helper-placementGroups`
@@ -1194,9 +1194,9 @@ out: grep for them.
 
 ### `VoteSpec`
 
-- CR 701.38a the permanent with the most votes is exiled and the rest are not | `check:prompt-offers` `check:helper-askedPlayers`
-- CR 701.38b a clause gated on a word's tally happens and the clause gated on the other does not | `check:prompt-offers` `check:helper-askedPlayers`
-- CR 701.38d an additional vote is a second ballot for that seat, taken before the next seat votes | `check:helper-askedPlayers`
+- ~~CR 701.38a the permanent with the most votes is exiled and the rest are not | `check:prompt-offers` `check:helper-askedPlayers`~~
+- ~~CR 701.38b a clause gated on a word's tally happens and the clause gated on the other does not | `check:prompt-offers` `check:helper-askedPlayers`~~
+- ~~CR 701.38d an additional vote is a second ballot for that seat, taken before the next seat votes | `check:helper-askedPlayers`~~
 
 ### `ZoneChangeSpec`
 
@@ -1212,7 +1212,7 @@ out: grep for them.
 - CR 113.6m the upkeep half does not trigger from the battlefield | `check:helper-beginUpkeep` `check:helper-gathered` `check:other-PendingTrigger.source`
 - CR 400.7e a bounce to a HIDDEN zone binds no became slot, though the source slot is still stamped | `check:other-Binding.became` `check:other-Binding.triggerSource`
 - CR 400.7e a death to a PUBLIC zone does bind became, for the same condition | `check:other-Binding.became` `check:other-Binding.triggerSource`
-- CR 603.10 a permanent that arrived after a death and left again does not witness it | `check:events`
+- ~~CR 603.10 a permanent that arrived after a death and left again does not witness it | `check:events`~~
 - CR 603.10a a Meren who died earlier in the batch sees neither token buried later in it | `check:events`
 - CR 603.6a whole card: casting Thragtusk gains 5 life, and its leaves trigger stays silent on the way in | `check:helper-beastsOf`
 - CR 608.2c two clauses of one resolution are two trigger events | `check:events`

@@ -5,21 +5,22 @@
       {
         "battlefield": [
           {
-            "card": "Forest",
-            "label": "forest"
-          },
-          {
-            "card": "Swamp",
-            "label": "swamp"
-          },
-          {
             "card": "Kill-Suit Cultist",
             "label": "cultist",
             "ready": true
           },
           {
             "card": "Goblin Piker",
-            "label": "piker"
+            "label": "piker",
+            "ready": true
+          },
+          {
+            "card": "Swamp",
+            "label": "swamp"
+          },
+          {
+            "card": "Forest",
+            "label": "forest"
           }
         ],
         "hand": [
@@ -34,7 +35,8 @@
         "battlefield": [
           {
             "card": "Wall of Stone",
-            "label": "wall"
+            "label": "wall",
+            "ready": true
           }
         ],
         "name": "bob"
@@ -43,7 +45,7 @@
     "step": "PrecombatMain"
   },
   "description": "CR 701.14a the fight's replacement runs before its own resolution ends",
-  "note": "alice's Kill-Suit Cultist sacrifices itself to replace the next damage to bob's Wall of Stone with destroying it, and her Prey Upon then has her Goblin Piker fight the Wall. The fight's 2 is an ordinary damage event, so the destroy runs in its place inside the resolution: the Wall is in the graveyard, where a 0/8 dealt 2 would have stayed on the battlefield.",
+  "note": "Kill-Suit Cultist shields bob's 0/8 Wall of Stone, then Prey Upon has alice's 2/1 Goblin Piker fight it. The 2 a 0/8 survives (CR 704.5g) is replaced by a destroy, so the Wall is in the graveyard at the first priority after Prey Upon resolves; a destroy left unrun, or the 2 dealt, would leave it on the battlefield (the Phage scenario's Wall survives a fight).",
   "timeline": [
     {
       "do": {
@@ -70,9 +72,11 @@
     },
     {
       "check": {
-        "View": {
-          "is": [],
-          "of": "Stack"
+        "Count": {
+          "card": "Kill-Suit Cultist",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
         }
       },
       "player": "alice",
@@ -81,11 +85,9 @@
     },
     {
       "check": {
-        "Count": {
-          "card": "Wall of Stone",
-          "count": 1,
-          "player": "bob",
-          "zone": "Battlefield"
+        "Damage": {
+          "damage": 0,
+          "object": "$wall"
         }
       },
       "player": "alice",
@@ -99,6 +101,19 @@
             "$forest"
           ],
           "object": "$prey"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Prey Upon"
+          ],
+          "of": "Stack"
         }
       },
       "player": "alice",

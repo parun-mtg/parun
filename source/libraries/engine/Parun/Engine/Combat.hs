@@ -418,8 +418,7 @@ stillAttackedBattle oid gs =
 -- controls it. That conjunct is a regression fence: CR 310.9a and CR 310.11 keep
 -- a battle with no battle types protected by its controller.
 --
--- Parun.PlaneswalkerCombatSpec's PlaneswalkerBattleInCombat and
--- data/scenarios/planeswalker-combat's "cr-506-4e-whole-cards" scenarios prove
+-- data/scenarios/planeswalker-combat's "cr-506-4e-whole-card" scenarios prove
 -- the disjuncts.
 targetStillAttacked :: AttackTarget.AttackTarget -> GameState -> Bool
 targetStillAttacked target gs = case target of

@@ -1043,8 +1043,9 @@ turnsOver pcs resolving frozen oid =
 -- ordinary ability is measured from when it was put onto the stack, which is its
 -- own CR 613.7d timestamp. A DELAYED triggered ability is measured from when it
 -- was CREATED, which is earlier and can sit on the far side of a turn-over its
--- placement stamp is on the near side of -- Parun.TransformSpec's Aang pair is
--- the board that tells the two apart. Every stamp comes from
+-- placement stamp is on the near side of -- the scenario pair
+-- transform/cr-701-27g-a-delayed-transform-is-measured-from-when-the-ability-was-created
+-- is the board that tells the two apart. Every stamp comes from
 -- Bookkeeping.nextTimestamp, so one `>` decides it and equality cannot arise.
 alreadyTurnedFor :: ObjectId -> ObjectId -> GameState -> Bool
 alreadyTurnedFor resolving victim gs =
@@ -1894,18 +1895,19 @@ damageSourceCandidates context gs filter_ =
 -- rather than over a whole resolution's bindings: its source, the SLOTS its own
 -- pattern and rewrite name -- which is all its captured map now holds, since
 -- installDamageRow and the Effect.Replace resolution arm restrict what they
--- capture to replacementRowSlots, and Parun.ReplacementSpec's Synthetic Parting
--- Ward and Galvanic Blast cases read that narrowing -- and the ids a resolution
--- BAKED into it, which no Filter and no slot map holds (referentsOfReplacement).
+-- capture to replacementRowSlots, and data/scenarios/prevention's Synthetic
+-- Parting Ward and Galvanic Blast scenarios read that narrowing -- and the ids
+-- a resolution BAKED into it, which no Filter and no slot map holds
+-- (referentsOfReplacement).
 --
 -- Every carrier is proven in the OFFERING direction, each by one
--- Parun.ReplacementSpec case: the STACK's by "a source only a waiting ability
--- still refers to is offered" (Ghitu Fire-Eater under Auriok Replica), the ROW's
--- baked ids by the Healing Grace case beside it, the row's captured SLOTS by
--- Synthetic Communal Bulwark's under Healing Grace, and the DELAYED TRIGGER's
--- bindings by Come Back Wrong's under Auriok Replica. A spend trigger's source is
--- a fence: Pyromancer's Goggles deals no damage, and leaving while its mana
--- floats is the only way it is not already a candidate.
+-- data/scenarios/prevention scenario: the STACK's by "a source only a waiting
+-- ability still refers to is offered" (Ghitu Fire-Eater under Auriok Replica),
+-- the ROW's baked ids by the Healing Grace one beside it, the row's captured
+-- SLOTS by Synthetic Communal Bulwark's under Healing Grace, and the DELAYED
+-- TRIGGER's bindings by Come Back Wrong's under Auriok Replica. A spend
+-- trigger's source is a fence: Pyromancer's Goggles deals no damage, and leaving
+-- while its mana floats is the only way it is not already a candidate.
 --
 -- The two binding-reading carriers -- the stack's and the delayed trigger's -- also
 -- share one EXCLUSION, stated once at referentsOfBindings below rather than at each

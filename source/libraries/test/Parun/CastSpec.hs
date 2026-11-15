@@ -4662,38 +4662,11 @@ mayhemBoards mountain piker bolt reunion =
       undiscardedBoard = play (snd (S.addHandCard mountain S.alice (snd (S.addHandCard mountain S.alice (snd (S.addGraveyardCard bolt S.alice stocked))))))
    in (discardedBoard, undiscardedBoard)
 
--- CR 702.35a's two abilities, on Arrogant Wurm {3}{G}{G} Creature -- Wurm, 4/4,
--- "Trample" plus madness {2}{G}.
---
--- The discard is performed by a CARD rather than stamped onto the board, mayhem's
--- fixture above: alice casts Cathartic Reunion {1}{R} Sorcery, "As an additional
--- cost to cast this spell, discard two cards. Draw three cards", and the Wurm is
--- one of the two cards it takes.
---
--- BOTH CASES BELOW SHARE ONE BOARD and one cast, and differ in exactly one thing
--- -- how Prompt.OfferedCast is answered, which is rule 702.35a's one decision.
--- The madness cost {2}{G} is cheaper than the printed {3}{G}{G} and paid in a
--- colour the Reunion does not use, so a Wurm on the battlefield here cannot be
--- one cast for its printed cost.
+-- CR 702.35a's two abilities, where a card holds madness from more than its own
+-- printing: Falkenrath Gorger's grant, and a printed madness beside it. The
+-- Arrogant Wurm cases are scenarios under data/scenarios/cast.
 madnessSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 madnessSpec s registry = Spec.describe s "Madness" $ do
-  -- Rule 702.35a's last sentence, the same board with the offer declined. The
-  -- exiled card is not left in exile, which is what a trigger offering the cast
-  -- and nothing else would do.
-  Spec.it s "CR 702.35a declining the cast puts the exiled card into its owner's graveyard" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    forest <- S.printingOf s registry "Forest"
-    wurm <- S.printingOf s registry "Arrogant Wurm"
-    reunion <- S.printingOf s registry "Cathartic Reunion"
-    let discarded = madnessBoard mountain forest wurm reunion
-        placed = S.runPure S.identityAnswer discarded (Engine.placePendingTriggers [])
-        -- S.identityAnswer declines every optional decision, so this resolution
-        -- takes rule 702.35a's "if that player doesn't" leg.
-        declined = S.runPure S.identityAnswer placed Stack.resolveTop
-    Spec.assertBool s (elem (S.printingName wurm) (namesIn Zone.Exile discarded)) "the discard put the Wurm in exile, which is what this leg is about"
-    Spec.assertBool s (elem (S.printingName wurm) (namesIn Zone.Graveyard declined)) "the Wurm is in its owner's graveyard"
-    Spec.assertBool s (notElem (S.printingName wurm) (namesIn Zone.Exile declined)) "and no longer in exile"
-    Spec.assertEqWith s "and no Wurm was cast" (S.countOnBattlefieldByName (S.printingName wurm) S.alice declined) 0
   -- CR 613.1f / 702.35a: Falkenrath Gorger GRANTS madness to a Vampire card in
   -- hand, "the madness cost is equal to its mana cost". Two boards differing only
   -- in whether the Gorger is on the battlefield; the same script runs both.
@@ -4809,7 +4782,7 @@ bloodmadAnswer want p = case p of
   _ -> madnessAnswer p
 
 -- Takes rule 702.35a's offered cast and answers everything else as S.identityAnswer
--- does, which is what the declining case reuses unchanged.
+-- does.
 madnessAnswer :: Prompt.Prompt r -> r
 madnessAnswer p = case p of
   Prompt.OfferedCast {} -> OptionalDecision.Exercises
@@ -4819,33 +4792,6 @@ madnessAnswer p = case p of
 -- where rather than how many objects are.
 namesIn :: Zone.Zone -> GameState.GameState -> [CardName.CardName]
 namesIn zone gs = fmap (\oid -> S.soleFaceName oid gs) (Game.zoneMembers zone S.alice gs)
-
--- alice, on her turn, with two Mountains and three Forests untapped, Cathartic
--- Reunion cast off two of them and its additional cost already paid out of a hand
--- holding exactly the Wurm and one Mountain -- so which two cards the discard
--- takes is settled by the board rather than by an answerer.
---
--- FIVE lands, which is what makes the madness cost discriminating: the Reunion
--- takes two of them whichever two it takes, and the three left over pay {2}{G}
--- but never the printed {3}{G}{G}. A Wurm on the battlefield here was therefore
--- cast for rule 702.35a's cost and not for its own.
---
--- Four library cards, three for the Reunion's draw and one to spare: CR 104.3c
--- takes a player who draws from an empty library out before any assertion runs.
-madnessBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> GameState.GameState
-madnessBoard mountain forest wurm reunion =
-  let (reunionId, ready) = madnessStock mountain forest wurm reunion
-   in S.runPure S.identityAnswer ready (S.cast S.alice reunionId)
-
--- The same board one step earlier, with the Reunion still in hand: the CR 616.1
--- case below has to put Rest in Peace onto the battlefield BEFORE the cast, since
--- the discard is paid as an additional cost of casting.
-madnessStock :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, GameState.GameState)
-madnessStock mountain forest wurm reunion =
-  let base = aliceOnTurn (S.landsFor forest S.alice 3 (S.landsInPlay mountain 2))
-      stocked = List.foldl' (\g _ -> snd (S.addLibraryCard mountain S.alice g)) base [1 :: Int .. 4]
-      handed = snd (S.addHandCard mountain S.alice (snd (S.addHandCard wurm S.alice stocked)))
-   in S.addHandCard reunion S.alice handed
 
 -- Run whole steps until the board reaches `stop`, or the game ends. Bounded so a
 -- bug cannot loop forever; Parun.SpecialActionSpec's runUntil is the same shape.

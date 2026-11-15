@@ -126,9 +126,9 @@ shieldCounterSpec s registry = Spec.describe s "Shield counters (CR 122.1c)" $ d
   -- gameplay because that is the only way to hold everything else equal: reaching CR
   -- 704.5g against a SHIELDED permanent needs marked damage equal to its toughness,
   -- and the prevention half stops damage being marked for as long as a counter is
-  -- there, so the gameplay route has to break the prevention half first. The
-  -- Spider-Punk case below is that route, and it proves the same gate a second time
-  -- at gameplay level.
+  -- there, so the gameplay route has to break the prevention half first.
+  -- data/scenarios/shield-counter/cr-122-1c-a-rule-s-destruction-is-not-replaced-though-a-counter-is-still.json
+  -- is that route, proving the same gate a second time at gameplay level.
   Spec.it s "CR 122.1c the counter does not save the bird from a rule's destruction" $ do
     (bird, entered) <- board [] Nothing
     case bird of
@@ -281,24 +281,6 @@ shieldCounterSpec s registry = Spec.describe s "Shield counters (CR 122.1c)" $ d
     Spec.assertEqWith s "the whole 3 is still marked" (S.damageOf guard_ once) (Just 3)
     Spec.assertEqWith s "one counter came off, not both" (shields guard_ once) 1
     Spec.assertBool s (Set.member guard_ (GameState.battlefield destroyed)) "and the survivor still replaces a destruction"
-  -- The pool's GAMEPLAY route to CR 122.1c's "as the result of an EFFECT", which
-  -- the case above's counter arithmetic is what makes reachable: three counters
-  -- and two unpreventable Bolts leave 6 marked on a 1/4 with a counter still on
-  -- it, so CR 704.5g's state-based action destroys a SHIELDED permanent -- and a
-  -- rule's destruction is not one the pair may replace. Reaching this any other
-  -- way is impossible while a counter is there, since the prevention half stops
-  -- the damage being marked; the door-pair case above proves the same gate
-  -- without gameplay.
-  --
-  -- No settle between the two Bolts, or CR 704.5g would run on the first one's 3.
-  Spec.it s "CR 122.1c a rule's destruction is not replaced, though a counter is still there" $ do
-    bolt <- S.printingOf s registry "Lightning Bolt"
-    (guard_, punked) <- guardBoard True 3
-    let bolted = castAt guard_ bolt (castAt guard_ bolt punked)
-        twice = S.settleSba bolted
-    Spec.assertEqWith s "setup: one counter per Bolt came off, leaving one" (shields guard_ bolted) 1
-    Spec.assertEqWith s "setup: and 6 is marked on the 1/4, which CR 704.5g calls lethal" (S.damageOf guard_ bolted) (Just 6)
-    Spec.assertBool s (not (Set.member guard_ (GameState.battlefield twice))) "and CR 704.5g destroyed it anyway"
   -- CR 101.4c over CR 615.12: once an inert application spends a counter, an
   -- UNPREVENTABLE event competes for that counter exactly as a preventable one
   -- does, so the one counter facing one of each is contested and its controller
