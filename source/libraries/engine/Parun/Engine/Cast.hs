@@ -3522,6 +3522,7 @@ isCastAnnouncementCondition condition = case condition of
   Condition.Type.Any conditions -> all isCastAnnouncementCondition conditions
   Condition.Type.All conditions -> all isCastAnnouncementCondition conditions
   Condition.Type.During _ -> False
+  Condition.Type.IsPrime measured -> isCastAnnouncementQuantity measured
 
 -- CR 702.33g/702.113b: does a clause's printed "if" hold ALREADY, at CR
 -- 601.2c's step -- the same question Resolve.gateHolds asks a clause when it is
@@ -3572,6 +3573,7 @@ holdsForCandidate castFor paid condition = case condition of
     _ -> False
   Condition.Type.Any conditions -> any (holdsForCandidate castFor paid) conditions
   Condition.Type.All conditions -> all (holdsForCandidate castFor paid) conditions
+  Condition.Type.IsPrime measured -> maybe False Condition.prime (candidateQuantity castFor paid measured)
   -- Unreachable past isCastAnnouncementCondition; False is the Compares arm's
   -- answer for what it cannot read.
   Condition.Type.During _ -> False

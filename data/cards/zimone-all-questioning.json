@@ -1,0 +1,251 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Green"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Zimone, All-Questioning",
+      "oracleText": "At the beginning of your end step, if a land entered the battlefield under your control this turn and you control a prime number of lands, create Primo, the Indivisible, a legendary 0/0 green and blue Fractal creature token, then put that many +1/+1 counters on it. (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, and 31 are prime numbers.)",
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "StepBegins",
+            "value": {
+              "phase": {
+                "type": "Ending",
+                "value": "EndStep"
+              },
+              "scope": {
+                "type": "PlayersTurn",
+                "value": {
+                  "type": "Relative",
+                  "value": "You"
+                }
+              }
+            }
+          },
+          "intervening": {
+            "type": "All",
+            "value": [
+              {
+                "type": "Compares",
+                "value": {
+                  "comparison": "AtLeast",
+                  "measured": {
+                    "type": "Count",
+                    "value": {
+                      "aggregation": {
+                        "type": "Members"
+                      },
+                      "filter": {
+                        "type": "And",
+                        "value": [
+                          {
+                            "type": "HasCardType",
+                            "value": "Land"
+                          },
+                          {
+                            "type": "HeldBy",
+                            "value": {
+                              "holder": "Controller",
+                              "relation": "You"
+                            }
+                          }
+                        ]
+                      },
+                      "scope": {
+                        "type": "InHistory",
+                        "value": {
+                          "type": "CardArrivedIn",
+                          "value": {
+                            "to": "Battlefield"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "threshold": {
+                    "type": "Literal",
+                    "value": 1
+                  }
+                }
+              },
+              {
+                "type": "IsPrime",
+                "value": {
+                  "type": "Count",
+                  "value": {
+                    "aggregation": {
+                      "type": "Members"
+                    },
+                    "filter": {
+                      "type": "And",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Land"
+                        },
+                        {
+                          "type": "HeldBy",
+                          "value": {
+                            "holder": "Controller",
+                            "relation": "You"
+                          }
+                        }
+                      ]
+                    },
+                    "scope": {
+                      "type": "InZone",
+                      "value": {
+                        "player": {
+                          "type": "Relative",
+                          "value": "AnyPlayer"
+                        },
+                        "zone": "Battlefield"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "Create",
+                        "value": {
+                          "card": {
+                            "faces": [
+                              {
+                                "colorIndicator": [
+                                  "Blue",
+                                  "Green"
+                                ],
+                                "name": "Primo, the Indivisible",
+                                "power": {
+                                  "type": "Literal",
+                                  "value": 0
+                                },
+                                "toughness": {
+                                  "type": "Literal",
+                                  "value": 0
+                                },
+                                "typeLine": {
+                                  "subtypes": [
+                                    "Fractal"
+                                  ],
+                                  "supertypes": [
+                                    "Legendary"
+                                  ],
+                                  "types": [
+                                    "Creature"
+                                  ]
+                                }
+                              }
+                            ]
+                          },
+                          "quantity": {
+                            "type": "Literal",
+                            "value": 1
+                          },
+                          "slot": "token"
+                        }
+                      },
+                      {
+                        "type": "PutCounters",
+                        "value": {
+                          "kind": {
+                            "type": "PlusOnePlusOne"
+                          },
+                          "quantity": {
+                            "type": "Count",
+                            "value": {
+                              "aggregation": {
+                                "type": "Members"
+                              },
+                              "filter": {
+                                "type": "And",
+                                "value": [
+                                  {
+                                    "type": "HasCardType",
+                                    "value": "Land"
+                                  },
+                                  {
+                                    "type": "HeldBy",
+                                    "value": {
+                                      "holder": "Controller",
+                                      "relation": "You"
+                                    }
+                                  }
+                                ]
+                              },
+                              "scope": {
+                                "type": "InZone",
+                                "value": {
+                                  "player": {
+                                    "type": "Relative",
+                                    "value": "AnyPlayer"
+                                  },
+                                  "zone": "Battlefield"
+                                }
+                              }
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "token"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Human",
+          "Wizard"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

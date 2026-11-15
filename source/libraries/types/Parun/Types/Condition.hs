@@ -2,6 +2,7 @@ module Parun.Types.Condition where
 
 import qualified Parun.Types.Compares as Compares
 import qualified Parun.Types.DuringPhase as DuringPhase
+import qualified Parun.Types.Quantity as Quantity
 
 -- | A predicate over game STATE rather than over an event, with one vocabulary
 -- and several customers: a state trigger's condition (CR 603.8, checked at every
@@ -20,8 +21,8 @@ import qualified Parun.Types.DuringPhase as DuringPhase
 -- and CR 611.2b and CR 611.3a keep them apart: the duration ENDS a stored
 -- effect once, while the clause gates one that is re-derived every read.
 --
--- ONE comparison, one step-or-phase window, and a disjunction and a
--- conjunction of them, and no other escape hatch. CR 611.2b's "for as long as
+-- ONE comparison, one primality test, one step-or-phase window, and a
+-- disjunction and a conjunction of them, and no other escape hatch. CR 611.2b's "for as long as
 -- you control this creature" is a source-restricted count of one
 -- (Filter.IsSource), not a special arm.
 --
@@ -60,4 +61,7 @@ data Condition
   | -- | True while the turn is inside this phase or step of the turns its scope
     -- names, "your" being the reader's perspective (CR 500.1, CR 109.5).
     During DuringPhase.DuringPhase
+  | -- | True when the quantity is a prime number, as the reminder text of
+    -- Zimone, All-Questioning lists them; no rule defines primality.
+    IsPrime Quantity.Quantity
   deriving (Eq, Ord, Show)

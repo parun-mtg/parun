@@ -2,6 +2,7 @@ module Parun.Codec.Condition where
 
 import qualified Parun.Codec.Compares as Compares
 import qualified Parun.Codec.DuringPhase as DuringPhase
+import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
 import qualified Parun.JsonCodec.Common as Common
@@ -26,7 +27,8 @@ codec =
     [ Arm.payload "Compares" Compares.codec Condition.Compares (\x -> case x of Condition.Compares y -> Just y; _ -> Nothing),
       Arm.payload "Any" (Common.list codec) Condition.Any (\x -> case x of Condition.Any y -> Just y; _ -> Nothing),
       Arm.payload "All" (Common.list codec) Condition.All (\x -> case x of Condition.All y -> Just y; _ -> Nothing),
-      Arm.payload "During" DuringPhase.codec Condition.During (\x -> case x of Condition.During y -> Just y; _ -> Nothing)
+      Arm.payload "During" DuringPhase.codec Condition.During (\x -> case x of Condition.During y -> Just y; _ -> Nothing),
+      Arm.payload "IsPrime" Quantity.codec Condition.IsPrime (\x -> case x of Condition.IsPrime y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: Condition.Condition -> String
@@ -35,3 +37,4 @@ tagOf x = case x of
   Condition.Any {} -> "Any"
   Condition.All {} -> "All"
   Condition.During {} -> "During"
+  Condition.IsPrime {} -> "IsPrime"

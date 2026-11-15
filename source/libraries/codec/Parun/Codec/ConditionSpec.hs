@@ -62,6 +62,13 @@ spec s = Spec.describe s "Parun.Codec.Condition" $ do
       Condition.codec
       (Condition.During (DuringPhase.MkDuringPhase (PhaseSelector.Step (Phase.Ending EndingStep.EndStep)) (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You))))
       " {\"type\":\"During\",\"value\":{\"window\":{\"type\":\"Step\",\"value\":{\"type\":\"Ending\",\"value\":\"EndStep\"}},\"scope\":{\"type\":\"PlayersTurn\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}}}} "
+  -- Zimone, All-Questioning's "a prime number of".
+  Spec.it s "IsPrime" $
+    Common.assertCodec
+      s
+      Condition.codec
+      (Condition.IsPrime (Quantity.Literal 7))
+      " {\"type\":\"IsPrime\",\"value\":{\"type\":\"Literal\",\"value\":7}} "
   -- The old untagged shapes are not conditions any more. A comparison's keys
   -- alone decoding would mean a card file written before #1304 kept working
   -- while writing something the schema does not describe.

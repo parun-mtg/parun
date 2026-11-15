@@ -81,6 +81,12 @@ holds viewOf context gs oid condition =
             (Turn.perspectiveFree scope && any (Turn.inWindow window . snd) (Turn.runningTurns gs))
             (Turn.duringRunningTurn (Count.scopePlayers viewOf context gs) gs (Just window) scope)
             (Filter.perspective context)
+        -- An unanswerable quantity is False, as for one comparison.
+        Condition.Type.IsPrime measured -> maybe False prime (evaluate measured)
+
+-- Is the number prime? Trial division: a game's numbers are small.
+prime :: Integer -> Bool
+prime n = n >= 2 && all (\d -> n `mod` d /= 0) (takeWhile (\d -> d * d <= n) [2 ..])
 
 -- CR 107.3m: the amounts a triggered ability's condition may read off the spell
 -- that became its source. Seeded into Filter.Context's boundAmounts by CR 603.4's
@@ -136,6 +142,8 @@ bakeBound targets condition = case condition of
   Condition.Type.Any conditions -> Condition.Type.Any (fmap (bakeBound targets) conditions)
   Condition.Type.All conditions -> Condition.Type.All (fmap (bakeBound targets) conditions)
   Condition.Type.During _ -> condition
+  Condition.Type.IsPrime measured ->
+    Condition.Type.IsPrime (Quantity.bakeBound (Binding.playersIn targets) (Binding.objectsIn targets) measured)
 
 -- The condition read for ONE affected player: every PlayerRef.Candidate inside
 -- it substituted by that seat (Quantity.forCandidate). Angelic Arbiter's "each
@@ -152,3 +160,4 @@ forCandidate pid condition = case condition of
   Condition.Type.Any conditions -> Condition.Type.Any (fmap (forCandidate pid) conditions)
   Condition.Type.All conditions -> Condition.Type.All (fmap (forCandidate pid) conditions)
   Condition.Type.During _ -> condition
+  Condition.Type.IsPrime measured -> Condition.Type.IsPrime (Quantity.forCandidate pid measured)

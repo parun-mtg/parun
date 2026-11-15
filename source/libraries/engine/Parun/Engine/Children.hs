@@ -2623,6 +2623,7 @@ conditionChildren c condition = case condition of
   Condition.Any conditions -> Condition.Any <$> traverse (conditionNested c) conditions
   Condition.All conditions -> Condition.All <$> traverse (conditionNested c) conditions
   Condition.During (DuringPhase.MkDuringPhase window turns) -> fmap Condition.During (DuringPhase.MkDuringPhase window <$> conditionTurn c turns)
+  Condition.IsPrime measured -> Condition.IsPrime <$> conditionQuantity c measured
 
 -- | One visitor per kind of child a duration (CR 611.2) holds.
 data DurationChildren f = MkDurationChildren
