@@ -250,14 +250,33 @@ unridden c = c {Clause.ifTaken = Nothing, Clause.condition = Nothing, Clause.orE
 -- 601.2c): a slot named twice, or never, means the text is not the mode's.
 -- A spell's sentences are separated as the context's breaks allow.
 mode :: Target.Context -> Mode.Mode Card.Card Continuous.Ability -> [Text.Text]
-mode context m = do
-  let inner = context {Target.slots = Mode.targetSlots m}
-  rendered <- steps inner (zip (fmap ClauseIndex.MkClauseIndex [0 ..]) (Foldable.toList (Mode.clauses m)))
-  let named = List.sort (concatMap snd rendered)
-  Monad.guard (named == Map.keys (Mode.targetSlots m))
-  case fmap fst rendered of
-    [] -> [Text.empty]
-    first : rest -> Monad.foldM (followedBy context) first rest
+mode context m = named' <> chosen
+  where
+    inner = context {Target.slots = Mode.targetSlots m}
+    clauses' = zip (fmap ClauseIndex.MkClauseIndex [0 ..]) (Foldable.toList (Mode.clauses m))
+    named' = do
+      rendered <- steps inner clauses'
+      Monad.guard (List.sort (concatMap snd rendered) == Map.keys (Mode.targetSlots m))
+      case fmap fst rendered of
+        [] -> [Text.empty]
+        first : rest -> Monad.foldM (followedBy context) first rest
+    -- A mode's one player target that its first instruction, unconditioned,
+    -- does not read is announced first, and "the chosen player" after (Haunt
+    -- the Network's "Choose target opponent. Create two ... Then the chosen
+    -- player loses X life"). Free: so announced, or named where an
+    -- instruction reads it.
+    chosen = do
+      [(s, slot)] <- [Map.toList (Mode.targetSlots m)]
+      (_, c) : _ <- [clauses']
+      e Seq.:<| _ <- [Clause.effects c]
+      Monad.guard (TargetSlot.pool slot == Pool.Players && c == unridden c && notElem s (concatMap snd (clause inner c {Clause.effects = Seq.singleton e})))
+      announced <- Target.target inner s
+      rendered <- steps inner {Target.bound = Map.insert s (Text.pack "the chosen player") (Target.bound inner)} clauses'
+      Monad.guard (all (null . snd) rendered && any (Text.isInfixOf (Text.pack "the chosen player") . fst) rendered)
+      first : rest <- [fmap fst rendered]
+      body <- Monad.foldM (followedBy context) first rest
+      separator <- Target.breaks context
+      [Prose.sentence (Text.pack "choose " <> Target.wording announced) <> separator <> body]
 
 -- | A mode's clauses as the steps its text takes, each with the slots it
 -- names. A clause hanging off the one before it reads with it (CR 608.2c):
