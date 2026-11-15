@@ -1416,11 +1416,12 @@ silencesDeath :: PlayerId -> ObjectId -> GameState -> GameState -> Bool
 silencesDeath pid dying effects before = elem EntryTriggering.NoTrigger (moveTriggerings TriggeringMove.Dying pid dying effects before)
 
 -- CR 603.2d: how many additional times each of `pid`'s abilities that
--- `entrant` entering causes to trigger triggers, one per effect (Yarok, the
--- Desecrated's ruling on two Yaroks). Parun.Engine.Event.Trigger.eventTriggers
+-- `subject` making `move` causes to trigger triggers, one per effect in
+-- `effects` (Yarok, the Desecrated's and Teysa Karlov's rulings on two), with
+-- `subject` read off `board`. Parun.Engine.Event.Match.additionalMoveTriggers
 -- is the reader.
-additionalEntryTriggers :: PlayerId -> ObjectId -> GameState -> Natural
-additionalEntryTriggers pid entrant gs = List.genericLength (filter (== EntryTriggering.AnAdditionalTime) (entryTriggerings pid entrant gs))
+additionalMoveTriggers :: TriggeringMove.TriggeringMove -> PlayerId -> ObjectId -> GameState -> GameState -> Natural
+additionalMoveTriggers move pid subject effects board = List.genericLength (filter (== EntryTriggering.AnAdditionalTime) (moveTriggerings move pid subject effects board))
 
 -- CR 603.2d: how many additional times `bearer`'s triggered abilities that
 -- `pid` controls trigger, one per effect (Roaming Throne's ruling on two
