@@ -76,7 +76,8 @@ permanentInstructions =
             { PutCounters.kind = CounterKind.PlusOnePlusOne,
               PutCounters.quantity = Quantity.Literal 1,
               PutCounters.ref = ref,
-              PutCounters.totalAtMost = Nothing
+              PutCounters.totalAtMost = Nothing,
+              PutCounters.slot = Nothing
             }
         : fmap becomes borgArtifactCreature
 

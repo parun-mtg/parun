@@ -1,0 +1,106 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Call the Spirit Dragons"
+          },
+          {
+            "card": "Hardened Scales"
+          },
+          {
+            "card": "Adult Gold Dragon",
+            "label": "gold"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "EndStep",
+    "turn": 1
+  },
+  "description": "Call the Spirit Dragons puts both of a two-color Dragon's counters on it in one placement",
+  "final": [
+    {
+      "Counters": {
+        "count": 3,
+        "kind": {
+          "type": "PlusOnePlusOne"
+        },
+        "object": "$gold"
+      }
+    },
+    {
+      "View": {
+        "is": null,
+        "of": "Result"
+      }
+    }
+  ],
+  "note": "Adult Gold Dragon is alice's only Dragon, so it is chosen for white and for red. Hardened Scales adds one to a placement: one placement of two gives 3 counters, two placements of one would give 4.",
+  "timeline": [
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

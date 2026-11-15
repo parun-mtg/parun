@@ -2360,3 +2360,22 @@ Entries are ordered by the first rule each cites.
   `zenos-yae-galvus-remembers-only-the-creature-it-chose-last` and
   `zenos-yae-galvus-forgets-its-choice-when-a-later-resolution-chooses-nothing`.
 - **Issue**: #7694.
+
+## A Dragon chosen for two colours gets its counters in one placement
+
+- **Question**: Call the Spirit Dragons puts a +1/+1 counter on a Dragon of
+  each colour, and a two-colour Dragon may be chosen for both (its rulings).
+  Is that one placement of two counters or two of one? Under Hardened Scales
+  it ends with 3 or 4.
+- **Rules**: CR 608.2e, 608.2f, 616.1; the card's rulings of 2025-04-04; CR of
+  2026-11-06. CR 608.2f processes the instruction simultaneously but does not
+  say how two parts naming one object combine.
+- **Decision**: One placement of the sum, "Whether infect and toxic from one
+  source give poison once"'s reading: the chosen Dragons are swept once, each
+  gets the number of colours it was chosen for, in one event group.
+- **Rejected**: A placement per colour, which lets one CR 616.1 replacement
+  apply twice to one object's counters from one instruction.
+- **Site**: `data/cards/call-the-spirit-dragons.json`'s summed quantity, proved
+  by the scenario
+  `call-the-spirit-dragons-puts-a-two-color-dragons-counters-in-one-placement`.
+- **Issue**: #7697.

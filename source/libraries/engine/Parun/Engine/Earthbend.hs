@@ -93,7 +93,8 @@ instructions earthbend =
             { PutCounters.kind = CounterKind.PlusOnePlusOne,
               PutCounters.quantity = Earthbend.quantity earthbend,
               PutCounters.ref = ref,
-              PutCounters.totalAtMost = Nothing
+              PutCounters.totalAtMost = Nothing,
+              PutCounters.slot = Nothing
             }
       ]
 

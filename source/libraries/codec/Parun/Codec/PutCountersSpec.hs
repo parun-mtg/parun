@@ -22,7 +22,8 @@ spec s = Spec.describe s "Parun.Codec.PutCounters" $ do
           { PutCounters.kind = CounterKind.PlusOnePlusOne,
             PutCounters.quantity = Quantity.Literal 1,
             PutCounters.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
-            PutCounters.totalAtMost = Nothing
+            PutCounters.totalAtMost = Nothing,
+            PutCounters.slot = Nothing
           }
       )
       " {\"kind\":{\"type\":\"PlusOnePlusOne\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
@@ -34,8 +35,22 @@ spec s = Spec.describe s "Parun.Codec.PutCounters" $ do
           { PutCounters.kind = CounterKind.PlusOnePlusOne,
             PutCounters.quantity = Quantity.Literal 1,
             PutCounters.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
-            PutCounters.totalAtMost = Just 7
+            PutCounters.totalAtMost = Just 7,
+            PutCounters.slot = Nothing
           }
       )
       " {\"kind\":{\"type\":\"PlusOnePlusOne\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"totalAtMost\":7} "
+  Spec.it s "MkPutCounters, the placed permanents bound" $
+    Common.assertCodec
+      s
+      PutCounters.codec
+      ( PutCounters.MkPutCounters
+          { PutCounters.kind = CounterKind.PlusOnePlusOne,
+            PutCounters.quantity = Quantity.Literal 1,
+            PutCounters.ref = ObjectRef.InSlot (SlotName.MkSlotName (Text.pack "target")),
+            PutCounters.totalAtMost = Nothing,
+            PutCounters.slot = Just (SlotName.MkSlotName (Text.pack "placed"))
+          }
+      )
+      " {\"kind\":{\"type\":\"PlusOnePlusOne\"},\"quantity\":{\"type\":\"Literal\",\"value\":1},\"ref\":{\"type\":\"InSlot\",\"value\":\"target\"},\"slot\":\"placed\"} "
   Spec.it s "has a schema" $ Common.assertHasSchema s PutCounters.codec

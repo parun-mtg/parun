@@ -5,6 +5,7 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ObjectRef as ObjectRef
 import qualified Parun.Types.Quantity as Quantity
+import qualified Parun.Types.SlotName as SlotName
 
 -- | The payload of Parun.Types.Effect's PutCounters arm (#1305). The
 -- `quantity` is read per permanent, so a division's part (Quantity.Share) is
@@ -29,10 +30,19 @@ import qualified Parun.Types.Quantity as Quantity
 -- placement after CR 616.1's loop, so a Doubling Season can't carry it past the
 -- limit (CR 101.2, CR 609.3). The scenario clockwork-beast-stops-at-seven-under-doubling-season
 -- proves it.
+--
+-- `slot` is where the permanents this instruction ACTUALLY put a counter on are
+-- bound as a group, for a later effect of the same resolution to count or name
+-- -- Call the Spirit Dragons' "if you put +1/+1 counters on five Dragons this
+-- way". Destroy's field, for Destroy's reason: it is the funnel's answer, so a
+-- placement CR 614 replaced down to none (Vorinclex, Monstrous Raider) or CR
+-- 101.2 forbade (Solemnity) does not count. Nothing is bound when nothing was
+-- placed; absent for a placement that is never looked back at.
 data PutCounters = MkPutCounters
   { kind :: CounterKind.CounterKind Keyword.Keyword,
     quantity :: Quantity.Quantity,
     ref :: ObjectRef.ObjectRef,
-    totalAtMost :: Maybe Natural.Natural
+    totalAtMost :: Maybe Natural.Natural,
+    slot :: Maybe SlotName.SlotName
   }
   deriving (Eq, Ord, Show)
