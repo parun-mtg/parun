@@ -8098,8 +8098,9 @@ payPayable perform moment paidFor slots pid oid component = case component of
   --
   -- BINDS the exiled cards under Binding.collectedEvidence, which is what CR
   -- 701.59c's linked "if evidence was collected" is read off, through
-  -- Quantity.WasBound -- Behold's route above. Parun.CostSpec's Vitu-Ghazi
-  -- Inspector group is the proof.
+  -- Quantity.WasBound -- Behold's route above. The scenario
+  -- cr-701-59c-vitu-ghazi-inspector-s-enters-ability-reads-the-evidence-its-spell-collected
+  -- is the proof.
   CostComponent.CollectEvidence n -> do
     exiled <- exileTotalling perform slots pid oid (evidenceExile n)
     case exiled of

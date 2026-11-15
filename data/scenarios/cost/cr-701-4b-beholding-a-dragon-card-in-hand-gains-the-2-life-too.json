@@ -1,0 +1,111 @@
+{
+  "description": "CR 701.4b beholding a Dragon card in hand gains the 2 life too",
+  "note": "alice attacks with her own Hill Giant and aims the Exhale at it, the only attacking or blocking creature; two Plains are exactly {1}{W}. One Dragon is in reach, so only CR 601.2b's choice of option is asked: candidate 0 beholds, candidate 1 is the empty cost. The beheld card is in a hidden zone (CR 400.2), so only the payment's own record can answer \"if a Dragon was beheld\"; bob is shown it (CR 701.20a).",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "plains",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "plains-2",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Hoarding Dragon",
+            "label": "dragon"
+          },
+          {
+            "card": "Osseous Exhale",
+            "label": "exhale"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$giant"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseCost",
+          "with": 0
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Cast": {
+          "object": "$exhale",
+          "mana": [
+            "$plains",
+            "$plains-2"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "Life": {
+          "player": "alice",
+          "life": 22
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Witnessed",
+          "player": "bob",
+          "is": [
+            "Hoarding Dragon"
+          ]
+        }
+      }
+    }
+  ]
+}

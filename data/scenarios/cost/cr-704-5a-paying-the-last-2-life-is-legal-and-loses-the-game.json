@@ -1,0 +1,72 @@
+{
+  "description": "CR 704.5a paying the last 2 life is legal and loses the game",
+  "note": "Paying life is a real life-total change, and a cost may legally kill its payer: Greed's 2 life is payable at exactly 2, and the state-based action then ends the game. Three cards in the library keep the draw from being a CR 121.4 loss of its own.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "life": 2,
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "swamp",
+            "ready": true
+          },
+          {
+            "card": "Greed",
+            "label": "greed",
+            "ready": true
+          }
+        ],
+        "library": [
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Goblin Piker"
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$greed",
+          "ability": 0,
+          "mana": [
+            "$swamp"
+          ]
+        }
+      }
+    }
+  ],
+  "final": [
+    {
+      "Life": {
+        "player": "alice",
+        "life": 0
+      }
+    },
+    {
+      "View": {
+        "of": "Result",
+        "is": {
+          "won": "bob"
+        }
+      }
+    }
+  ]
+}
