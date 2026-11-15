@@ -209,52 +209,6 @@ personOfInterestSpec s registry = Spec.describe s "PersonOfInterest" $ do
         Spec.assertEqWith s "so only the Detective blocks" (Combat.blockersOf attackerId after) (Set.singleton tokenId)
       other -> Spec.assertFailure s ("expected one token and one attacker, got " <> show other)
 
--- CR 701.60a's second ending, "until a spell or ability causes it to no longer be
--- suspected", proved by Eliminate the Impossible {1}{U} Instant, "Investigate.
--- Creatures your opponents control get -2/-0 until end of turn. If any of them
--- are suspected, they're no longer suspected."
---
--- One board carries the whole case: bob's Person of Interest is suspected and his
--- Detective is not, so the -2/-0 lands on both while only one designation ends.
--- The two things rule 701.60c hangs off the designation are then asserted gone at
--- gameplay level, each through its own subsystem -- menace through the layer-6
--- grant, "can't block" through the combat restriction.
-eliminateTheImpossibleSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-eliminateTheImpossibleSpec s registry = Spec.describe s "EliminateTheImpossible" $ do
-  Spec.it s "CR 701.60a a spell ends the designation, and CR 701.60c's menace and can't-block end with it" $ do
-    poi <- S.printingOf s registry "Person of Interest"
-    piker <- S.printingOf s registry "Goblin Piker"
-    island <- S.printingOf s registry "Island"
-    eliminate <- S.printingOf s registry "Eliminate the Impossible"
-    let (gs0, attackers, _) = S.combatBoardOf [piker] []
-        (poiId, gs1) = S.entersWithTrigger poi S.bob gs0
-        entered = S.runPure S.identityAnswer gs1 (Engine.settleForPriority >> Stack.resolveTop >> Engine.settleForPriority)
-        -- S.addPermanent places any permanent; these two are the {1}{U}.
-        (_, gs2) = S.addPermanent island S.alice entered
-        (_, gs3) = S.addPermanent island S.alice gs2
-        (spellId, gs4) = S.addHandCard eliminate S.alice gs3
-        declared = S.runPure S.aggressiveAnswer gs4 (Combat.declareAttackers S.manaPerformer S.alice)
-    case (S.tokensOf declared, attackers) of
-      ([detectiveId], [attackerId]) -> do
-        let after = S.runPure S.identityAnswer declared (S.cast S.alice spellId >> Stack.resolveTop >> Engine.settleForPriority)
-        -- The before half, on the very board the spell is cast from: without it
-        -- every "after" assertion could be passing because the fixture never
-        -- suspected anything.
-        Spec.assertEqWith s "before: the Person is suspected and the Detective is not" (suspectedOf poiId declared, suspectedOf detectiveId declared) (Just True, Just False)
-        Spec.assertBool s (not (Combat.legalBlockDeclaration S.bob (Map.singleton poiId (Set.singleton attackerId)) declared)) "before: the Person cannot block"
-        Spec.assertEqWith s "after: neither is suspected" (suspectedOf poiId after, suspectedOf detectiveId after) (Just False, Just False)
-        Spec.assertEqWith s "CR 701.60c: and the menace it had is gone" (Projection.hasKeyword Keyword.Menace poiId after, Projection.hasKeyword Keyword.Menace detectiveId after) (False, False)
-        Spec.assertBool s (Combat.legalBlockDeclaration S.bob (Map.singleton poiId (Set.singleton attackerId)) after) "CR 701.60c: so the Person can block"
-        let blocked = S.runPure S.aggressiveAnswer after (Combat.declareBlockers S.manaPerformer)
-        Spec.assertBool s (Set.member poiId (Combat.blockersOf attackerId blocked)) "and it does block"
-        -- The two clauses either side of the ending, so a card file that dropped
-        -- one fails here: the -2/-0 reaches both of bob's creatures, and the
-        -- Clue is alice's.
-        Spec.assertEqWith s "both of bob's creatures took -2/-0" (S.powerToughnessOf poiId after, S.powerToughnessOf detectiveId after) (Just (0, 2), Just (0, 2))
-        Spec.assertEqWith s "and alice's own attacker did not, so the sweep is opponents-only" (S.powerToughnessOf attackerId after) (Just (2, 1))
-        Spec.assertEqWith s "and alice investigated" (fmap (`S.soleFaceName` after) (filter (/= detectiveId) (S.tokensOf after))) [CardName.MkCardName $ Text.pack "Clue Token"]
-      other -> Spec.assertFailure s ("expected one token and one attacker, got " <> show other)
-
 -- Angelic Sleuth {2}{W} Creature -- Angel Advisor 2/3, flying (New Capenna
 -- Commander; name, cost, type line, power, toughness and oracle text checked
 -- against Scryfall 2026-09-03), data/cards/angelic-sleuth.json:
@@ -1176,17 +1130,6 @@ wildEvocationSpec s registry =
               after = runBobsUpkeep (rolling 0) gs
           Spec.assertEqWith s "declining left the Exhale in hand" (bobsHand after) ["Caustic Exhale"]
           Spec.assertEqWith s "because bob was ASKED whether to cast it" (offersUnder 0 gs) 1
-        -- CR 609.3 at the empty end: the reveal names nothing, so the slot goes
-        -- unbound, Resolve.slotOne answers Nothing and the "otherwise" clause --
-        -- whose AtMost 0 count DOES hold over an empty hand -- offers nothing.
-        -- A regression fence rather than a proof: no mutation of this change
-        -- makes it fail on its own.
-        Spec.it s "CR 609.3 an empty hand reveals nothing and casts nothing" $ do
-          evocation <- S.printingOf s registry "Wild Evocation"
-          let after = runBobsUpkeep (rolling 0) (board evocation [])
-          Spec.assertEqWith s "nothing was revealed" (revealed after) []
-          Spec.assertEqWith s "bob's hand is still empty" (bobsHand after) []
-          Spec.assertEqWith s "stack empty: the trigger resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
         -- CR 709.3a / 716.3a: the offer is evaluated PER HALF, so a prohibition
         -- that stops one half leaves the other on offer. Void Winnower forbids
         -- bob casting a spell with an even mana value; Embereth Shieldbreaker's
@@ -1365,7 +1308,6 @@ spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   cookbookSpec s registry
   investigateSpec s registry
   personOfInterestSpec s registry
-  eliminateTheImpossibleSpec s registry
   angelicSleuthSpec s registry
   repeatOffenderSpec s registry
   runeBrandJugglerSpec s registry

@@ -496,8 +496,9 @@ changeText resolving source controller legal (ChangeText.MkChangeText families f
 -- well as on Cost's road, one event per recipient, carrying
 -- ManaAddedCause.Resolution so that CR 605.5a can tell the two apart
 -- (Parun.Engine.ManaAbility.firedFromManaAbility). A trigger watching it is
--- therefore an ORDINARY triggered ability and uses the stack, which is what
--- Parun.ManaSpec's "Caged Sun" group proves off Crumbling Vestige.
+-- therefore an ORDINARY triggered ability and uses the stack, which
+-- data/scenarios/mana's CR 605.5a Caged Sun scenario proves off Crumbling
+-- Vestige.
 --
 -- CR 605.4a's inline road reaches this arm too, and its addition is a
 -- Resolution like any other: CR 605.5a's question is whether an ACTIVATED
@@ -656,9 +657,9 @@ addMana resolving source controller legal (ManaAddition.MkManaAddition ref produ
 -- are activated, and CR 609.3's "as much as possible" makes an order that
 -- leaves one permanent's ability unpayable a legal outcome rather than a
 -- licence to reorder around it. Observable wherever one land's mana pays for
--- another's ability -- Mystic Gate after a Plains, which Parun.ManaSpec's
+-- another's ability -- Mystic Gate after a Plains, which data/scenarios/mana's
 -- "CR 605.3a the order the batch is activated in is the targeted player's"
--- case proves.
+-- scenario proves.
 --
 -- Asked at two or more, ON THE COUNT ALONE, as Prompt.OrderTimestamps' caller
 -- is: whether two orders are distinguishable turns on choices this actor has

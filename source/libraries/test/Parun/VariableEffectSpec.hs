@@ -1474,31 +1474,6 @@ tappedIn gs oid = fmap Object.tapped (Game.lookupObject oid gs) == Just TapState
 stunCountersOn :: GameState.GameState -> ObjectId.ObjectId -> Maybe Natural
 stunCountersOn gs oid = fmap (Map.findWithDefault 0 CounterKind.Stun . Object.counters) (Game.lookupObject oid gs)
 
--- CR 115.6's "up to one target", read at resolution.
---
--- Rat Out {B} Instant (data/cards/rat-out.json): "Up to one target creature gets
--- -1/-1 until end of turn. You create a 1/1 black Rat creature token with 'This
--- token can't block.'" The Rat is what makes the zero-target case OBSERVABLE: a
--- spell that fizzled under CR 608.2b would make no token, and the card's own
--- graveyard trip is the same either way.
---
--- Explosive Entry {1}{R} Sorcery (data/cards/explosive-entry.json): "Destroy up
--- to one target artifact. Put a +1/+1 counter on up to one target creature." Two
--- independently optional slots, so one can be taken while the other is declined.
-upToOneTargetSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-upToOneTargetSpec s registry = Spec.describe s "UpToOneTarget" $ do
-  Spec.it s "CR 115.6 Rat Out aimed at a creature shrinks it and still makes the Rat" $ do
-    swamp <- S.printingOf s registry "Swamp"
-    piker <- S.printingOf s registry "Goblin Piker"
-    ratOut <- S.printingOf s registry "Rat Out"
-    let (victim, board) = S.addPermanent piker S.bob (S.landsInPlay swamp 1)
-        (gs, spellId) = S.handOne ratOut board
-        cast = snd (Engine.runGamePure S.identityAnswer gs (S.cast S.alice spellId))
-        after = snd (Engine.runGamePure S.identityAnswer cast Stack.resolveTop)
-    Spec.assertEqWith s "power 1" (Projection.powerOf victim after) (Just 1)
-    Spec.assertEqWith s "toughness 0" (Projection.toughnessOf victim after) (Just 0)
-    Spec.assertEqWith s "one Rat" (length (S.tokensOf after)) 1
-
 -- CR 608.2f's per-object BODY, and the per-iteration binding that makes it more
 -- than a repeated opcode.
 --
@@ -1685,7 +1660,6 @@ aimingAtEveryPlayer n p =
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
-  upToOneTargetSpec s registry
   multiTargetSpec s registry
   supportSpec s registry
   upToXSpec s registry

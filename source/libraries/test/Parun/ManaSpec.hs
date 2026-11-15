@@ -574,20 +574,6 @@ manaSpec s registry = Spec.describe s "Mana" $ do
         sick = g0 {GameState.objects = Map.adjust (\o -> o {Object.sickness = Sickness.Sick}) elfId (GameState.objects g0)}
     Spec.assertBool s (notElem elfId (Mana.manaSources Cost.manaActivations S.alice sick)) "sick elf excluded"
 
-  -- CR 302.6's other half, and the same trap #198 sprang on attacking: bob's
-  -- Elves settled under BOB, so the settle it carries says nothing about
-  -- alice. Stealing it does not hand her a mana source this turn.
-  Spec.it s "CR 302.6 a stolen Llanowar Elves is not a mana source for the thief" $ do
-    llanowarElves <- S.printingOf s registry "Llanowar Elves"
-    controlMagic <- S.printingOf s registry "Control Magic"
-    let (elfId, g0) = S.addPermanent llanowarElves S.bob (Setup.emptyGame S.bothPlayers)
-        settled = S.runPure S.identityAnswer g0 (Engine.settleAll S.bob)
-        (aura, withAura) = S.addPermanent controlMagic S.alice settled
-        stolen = S.attach aura elfId withAura
-    Spec.assertBool s (elem elfId (Mana.manaSources Cost.manaActivations S.bob settled)) "bob could tap it"
-    Spec.assertBool s (elem elfId (Projection.controls S.alice stolen)) "alice controls it now"
-    Spec.assertBool s (notElem elfId (Mana.manaSources Cost.manaActivations S.alice stolen)) "but it is sick for her, so it is not her mana source"
-
   -- CR 702.10c is the exemption that makes the steal above pay off when the
   -- thief also grants haste: "If a creature has haste, its controller can
   -- activate its activated abilities whose cost includes the tap symbol or
@@ -782,15 +768,6 @@ castFrom answer board spell =
 tappedFor :: (forall r. Prompt.Prompt r -> r) -> ObjectId.ObjectId -> GameState.GameState -> [ManaType.ManaType]
 tappedFor answer oid gs = case Game.poolOf S.alice (S.runPure answer gs (S.tapForMana oid)) of
   Mana.Type.MkMana units -> fmap ManaUnit.manaType units
-
--- A fixture write that untaps one permanent, so a card that entered tapped can
--- be asked what it produces once CR 107.5 no longer refuses its cost. Not the
--- untap step: the turn structure is not what is under test here.
-untapObject :: ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-untapObject oid gs =
-  gs
-    { GameState.objects = Map.adjust (\o -> o {Object.tapped = TapState.Untapped}) oid (GameState.objects gs)
-    }
 
 anyColorSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 anyColorSpec s registry = Spec.describe s "Mana of any color" $ do
@@ -1027,25 +1004,6 @@ omnathSpec s registry = Spec.describe s "Omnath, Locus of Mana" $ do
         ended = Mana.emptiedManaPools Map.empty floated
     Spec.assertEqWith s "alice keeps hers" (poolSize S.alice ended) 1
     Spec.assertEqWith s "bob loses his" (poolSize S.bob ended) 0
-
-  -- The gameplay-level proof (design.md section 4) that the two halves of the
-  -- card are one card, end to end through Engine.runStep: the green mana Omnath
-  -- keeps across CR 500.5's turn-based action is the same mana Omnath's own
-  -- layer-7c pump is still counting on the other side of the boundary, while the
-  -- blue that emptied stops counting for the payment that follows.
-  Spec.it s "CR 500.5/613.4c whole card: the green Omnath keeps is the green that keeps it big" $ do
-    forest <- S.printingOf s registry "Forest"
-    island <- S.printingOf s registry "Island"
-    omnath <- S.printingOf s registry "Omnath, Locus of Mana"
-    let (omnathId, g1) = S.addPermanent omnath S.alice (Setup.emptyGame S.bothPlayers)
-        (forestId, g2) = S.addPermanent forest S.alice g1
-        (islandId, g3) = S.addPermanent island S.alice g2
-        floated = S.runPure S.identityAnswer (S.runPure S.identityAnswer g3 (S.tapForMana forestId)) (S.tapForMana islandId)
-        afterStep = S.runPure S.identityAnswer floated Engine.runStep
-    Spec.assertEqWith s "before: two floating, and only the green pumps" (Projection.powerOf omnathId floated) (Just 2)
-    Spec.assertEqWith s "the blue is gone" (poolSize S.alice afterStep) 1
-    Spec.assertEqWith s "the green survived the step boundary" (Projection.powerOf omnathId afterStep) (Just 2)
-    Spec.assertEqWith s "and the toughness with it" (Projection.toughnessOf omnathId afterStep) (Just 2)
 
   -- CR 605.3a's permission to activate a mana ability while casting is not
   -- rationed by what the cost needs, so a player may tap past it. Omnath is why
@@ -1632,61 +1590,6 @@ wellspringSpec s registry = Spec.describe s "SyntheticPrismaticWellspring" $ do
       "{R} and {G}, from one activation"
       (tappedFor S.identityAnswer wellspringId gs)
       [ManaType.Colored Color.Red, ManaType.Colored Color.Green]
-
--- alice casts a Coldsteel Heart off two Mountains and resolves it, naming
--- `wanted` at CR 614.1c's colour choice. Returns the board and the permanent
--- that entered.
---
--- Never white in a caller below: white is Replay.defaultAnswer's fallback, so an
--- assertion against it would pass on a game that never asked.
-resolvedColdsteel :: Color.Color -> Printing.Printing -> Printing.Printing -> (GameState.GameState, Maybe ObjectId.ObjectId)
-resolvedColdsteel wanted mountain coldsteel =
-  let board = S.landsInPlay mountain 2
-      (withCard, oid) = S.handOne coldsteel board
-      answer :: Prompt.Prompt r -> r
-      answer p = case p of
-        Prompt.ChooseColor {} -> wanted
-        _ -> S.identityAnswer p
-      after = S.runPure answer (S.runPure answer withCard (S.cast S.alice oid)) Stack.resolveTop
-      entered = case Set.toList (Set.difference (GameState.battlefield after) (GameState.battlefield board)) of
-        o : _ -> Just o
-        [] -> Nothing
-   in (after, entered)
-
--- CR 607.2d: "If an object has an ability printed on it that causes a player to
--- 'choose a [value]' and an ability printed on it that refers to 'the chosen
--- [value]' . . . those abilities are linked." Coldsteel Heart ({2} Snow
--- Artifact, "As this artifact enters, choose a color." / "{T}: Add one mana of
--- the chosen color.") is the pool's producer, and ManaProduction.Chosen is how
--- the second ability reads what the first wrote.
-chosenColorSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-chosenColorSpec s registry = Spec.describe s "Mana of the chosen color (CR 607.2d)" $ do
-  -- ONE option and not five, which is what separates Chosen from AnyColor: the
-  -- colour is already settled, so nothing is asked when the ability is used.
-  Spec.it s "CR 607.2d a Coldsteel Heart that chose blue offers blue and nothing else" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    coldsteel <- S.printingOf s registry "Coldsteel Heart"
-    case resolvedColdsteel Color.Blue mountain coldsteel of
-      (after, Just oid) -> do
-        Spec.assertEqWith s "exactly the chosen colour" (Mana.manaTypesOf oid after) [ManaType.Colored Color.Blue]
-        -- CR 107.5: the Heart entered tapped, so its {T} cannot be paid and the
-        -- ability adds nothing at all -- the proof that Cost.tapForMana asks CR
-        -- 118.3 before paying. Untapped, the same board shows WHICH mana it adds.
-        Spec.assertEqWith s "tapped, it adds nothing" (tappedFor S.identityAnswer oid after) []
-        Spec.assertEqWith s "untapped, that is what reaches the pool" (tappedFor S.identityAnswer oid (untapObject oid after)) [ManaType.Colored Color.Blue]
-      _ -> Spec.assertFailure s "the Coldsteel Heart did not reach the battlefield"
-
-  -- No colour chosen yields NO mana rather than a fallback colour (CR 106.5). A
-  -- fixture write puts a Coldsteel Heart in that state here; in play, a
-  -- permanent becoming a copy of one without entering (Mirrorweave, CR 707.2)
-  -- has made no choice. The point is that the engine invents nothing.
-  Spec.it s "CR 607.2d a Coldsteel Heart placed with no colour chosen produces nothing" $ do
-    coldsteel <- S.printingOf s registry "Coldsteel Heart"
-    let (oid, gs) = S.addPermanent coldsteel S.alice (Setup.emptyGame S.bothPlayers)
-    Spec.assertEqWith s "chosenColors is unset" (fmap Object.chosenColors (Game.lookupObject oid gs)) (Just Map.empty)
-    Spec.assertEqWith s "so it offers no mana" (Mana.manaTypesOf oid gs) []
-    Spec.assertEqWith s "and tapping it adds none" (tappedFor S.identityAnswer oid gs) []
-    Spec.assertBool s (not (Mana.canPay Cost.manaActivations S.alice (ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Blue)]) gs)) "and it pays for nothing"
 
 -- CR 207.5: Cryptic Spires' "{T}: Add one mana of either of the circled
 -- colors" reads the colours circled on its own copy as its deck was built
@@ -3907,173 +3810,6 @@ autumnWillowBoard s registry = do
        in pure (aliceArbor, aliceForest, bobArbor, withWillow)
     _ -> Spec.assertFailure s "fixture should give alice exactly one Forest" >> pure (S.noSource, S.noSource, S.noSource, S.landsInPlay forest 1)
 
--- CR 106.12a's SECOND half, "or is tapped for mana of a specified type", which
--- the two groups above leave untouched: Gauntlet of Power ({5} Artifact, "As
--- this artifact enters, choose a color." / "Whenever a basic land is tapped for
--- mana of the chosen color, its controller adds an additional one mana of that
--- color."). Its narrowing is CR 607.2d's link, so the colour is the one its own
--- entry chose.
---
--- FOUR permanents can be tapped for mana on the one board, and each is the
--- others' control: alice's Forest is a basic land producing the chosen colour,
--- her Mountain is a basic land producing another, her Dryad Arbor produces the
--- chosen colour but carries no Basic supertype, and bob's Forest is the first
--- again under another seat. A board of only the first could tell the mana
--- specification from the Filter from the PlayerRelation not at all.
---
--- The printed "Creatures of the chosen color get +1/+1" is the card's other
--- reader of the same choice, and Parun.ColorSpec's "CR 607.2d two Gauntlets of
--- Power each pump the creatures of their OWN chosen colour" is what proves it.
-gauntletOfPowerSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-gauntletOfPowerSpec s registry = Spec.describe s "Gauntlet of Power" $ do
-  Spec.it s "CR 106.12a a basic land tapped for the CHOSEN colour adds the Gauntlet's additional mana" $ do
-    (aliceForest, aliceMountain, aliceArbor, bobForest, board) <- gauntletBoard s registry
-    let forest = S.runPure S.identityAnswer board (S.tapForMana aliceForest)
-        -- The same board differing in exactly one thing: the mana the tap
-        -- produced. A Mountain is as basic a land as the Forest.
-        mountain = S.runPure S.identityAnswer board (S.tapForMana aliceMountain)
-        -- And in exactly one other: the Basic supertype. A Dryad Arbor is a land
-        -- producing the same {G} (CR 305.6) with no supertype at all.
-        arbor = S.runPure S.identityAnswer board (S.tapForMana aliceArbor)
-        -- And in exactly one other again: whose land it was.
-        theirs = S.runPure S.identityAnswer board (S.tapForMana bobForest)
-        -- CR 605.4a from the other side, the Wild Growth group's reason.
-        settled = resolveDown (S.runPure S.identityAnswer forest Engine.settleForPriority)
-    Spec.assertEqWith s "CR 106.12a alice's pool holds the Forest's {G} and the Gauntlet's additional one" (poolTypes S.alice forest) [ManaType.Colored Color.Green, ManaType.Colored Color.Green]
-    Spec.assertEqWith s "the specification: her Mountain produced red and not the chosen colour, so its {R} stands alone" (poolTypes S.alice mountain) [ManaType.Colored Color.Red]
-    Spec.assertEqWith s "the Filter: her Dryad Arbor produced the chosen colour but is no BASIC land, so its {G} stands alone" (poolTypes S.alice arbor) [ManaType.Colored Color.Green]
-    -- CR 106.4: "its controller", read through PlayerRef.HolderOfBound Controller off
-    -- the tapped land, is bob -- not alice, who controls the Gauntlet.
-    Spec.assertEqWith s "the PlayerRelation: bob's basic Forest fires it too, and the additional mana is HIS" (poolTypes S.bob theirs) [ManaType.Colored Color.Green, ManaType.Colored Color.Green]
-    Spec.assertEqWith s "and alice, whose Gauntlet watched it, is given none of it" (poolTypes S.alice theirs) []
-    Spec.assertEqWith s "CR 605.4a and the triggered mana ability never reached the stack" (length (TurnRegisters.stack (GameState.turn forest))) 0
-    Spec.assertEqWith s "CR 605.4a and settling for priority does not place a second copy of it to resolve" (poolTypes S.alice settled) [ManaType.Colored Color.Green, ManaType.Colored Color.Green]
-
--- alice CASTS a Gauntlet of Power off five Plains and names green at CR 614.1c's
--- choice, and the four permanents that will be tapped are added afterwards --
--- otherwise the {5} could pay itself with the Forest or the Mountain the
--- assertions rest on. Returns alice's Forest, her Mountain, her Dryad Arbor,
--- bob's Forest and the board.
---
--- Cast rather than placed, so the chosen colour is a player's answer travelling
--- CR 614.1c's entry rewrite rather than a fixture write: the case asserts the
--- Gauntlet reached the battlefield before it reads a pool.
-gauntletBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-gauntletBoard s registry = do
-  plains <- S.printingOf s registry "Plains"
-  forest <- S.printingOf s registry "Forest"
-  mountain <- S.printingOf s registry "Mountain"
-  arbor <- S.printingOf s registry "Dryad Arbor"
-  gauntlet <- S.printingOf s registry "Gauntlet of Power"
-  let (withCard, cardId) = S.handOne gauntlet (S.landsInPlay plains 5)
-      answer :: Prompt.Prompt r -> r
-      answer p = case p of
-        Prompt.ChooseColor {} -> Color.Green
-        _ -> S.identityAnswer p
-      resolved = S.runPure answer (S.runPure answer withCard (S.cast S.alice cardId)) Stack.resolveTop
-      (aliceForest, withForest) = S.addPermanent forest S.alice resolved
-      (aliceMountain, withMountain) = S.addPermanent mountain S.alice withForest
-      (aliceArbor, withArbor) = S.addPermanent arbor S.alice withMountain
-      (bobForest, withBob) = S.addPermanent forest S.bob withArbor
-  Spec.assertEqWith s "the fixture: the Gauntlet resolved onto the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Gauntlet of Power") S.alice withBob) 1
-  pure (aliceForest, aliceMountain, aliceArbor, bobForest, withBob)
-
--- CR 605.1b's "mana being added to a player's mana pool", the trigger source the
--- three groups above leave untouched: Caged Sun ({6} Artifact, "As this
--- artifact enters, choose a color." / "Creatures you control of the chosen
--- color get +1/+1." / "Whenever a land's ability causes you to add one or more
--- mana of the chosen color, add an additional one mana of that color.").
---
--- The land is a TAPPED Blood Pet ("Sacrifice this creature: Add {B}.") made a
--- Forest land by Ashaya, Soul of the Wild: its ability adds mana with no {T} in
--- the cost, so CR 106.12a's "tapped for mana" is false of it and only the
--- mana-added event can fire Caged Sun. The same board without Ashaya is the
--- Filter's control -- a creature's ability, not a land's -- and bob's Swamp is
--- the relation's: mana HE adds is not mana alice adds.
---
--- The second case is CR 605.5a's half, off a Crumbling Vestige whose ability
--- adds its mana as it RESOLVES rather than as a mana ability.
-cagedSunSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-cagedSunSpec s registry = Spec.describe s "Caged Sun" $ do
-  Spec.it s "CR 605.1b a land's ability adding the chosen colour with no tap adds Caged Sun's additional mana" $ do
-    (pet, bobSwamp, board, withAshaya) <- cagedSunBoard s registry
-    let sacrificed = S.runPure S.identityAnswer withAshaya (S.tapForMana pet)
-        -- The same board differing in exactly one thing: no Ashaya, so the Pet
-        -- is no land.
-        creature = S.runPure S.identityAnswer board (S.tapForMana pet)
-        -- And in exactly one other: whose pool the mana went to.
-        theirs = S.runPure S.identityAnswer withAshaya (S.tapForMana bobSwamp)
-    Spec.assertEqWith s "CR 605.1b the Ashaya'd Pet is a land, so alice's pool holds its {B} and Caged Sun's additional one" (poolTypes S.alice sacrificed) [ManaType.Colored Color.Black, ManaType.Colored Color.Black]
-    Spec.assertEqWith s "the Filter: without Ashaya the Pet is no land, so its {B} stands alone" (poolTypes S.alice creature) [ManaType.Colored Color.Black]
-    Spec.assertEqWith s "the PlayerRelation: bob's Swamp added the {B} to HIS pool, so Caged Sun gives alice nothing" (poolTypes S.alice theirs) []
-    Spec.assertEqWith s "and the Pet really was sacrificed for it" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Blood Pet") S.alice sacrificed) 0
-  -- CR 605.5a's half of the same rule: a Crumbling Vestige ("This land enters
-  -- tapped." / "When this land enters, add one mana of any color." / "{T}: Add
-  -- {C}.") whose ETB trigger resolves off the stack adds mana too, and Caged
-  -- Sun's trigger then is NOT a mana ability -- "triggers from an event other
-  -- than activating a mana ability" -- so it uses the stack.
-  Spec.it s "CR 605.5a mana a land's ability adds as it RESOLVES fires Caged Sun, whose trigger then uses the stack" $ do
-    (_, _, board, _) <- cagedSunBoard s registry
-    vestige <- S.printingOf s registry "Crumbling Vestige"
-    let entered = enterVestige vestige board
-        -- The Vestige's own ETB trigger, placed and resolved: it is the ability
-        -- that adds the mana, and the colour it adds is a player's answer.
-        afterEntry = S.runPure (colourAnswer Color.Black) (S.runPure (colourAnswer Color.Black) entered Engine.settleForPriority) Stack.resolveTop
-        -- Caged Sun's trigger, gathered off that addition and placed like any
-        -- other: CR 605.4a's inline road would have left the stack empty here.
-        waiting = S.runPure S.identityAnswer afterEntry Engine.settleForPriority
-        settled = resolveDown waiting
-        -- The same board differing in exactly one thing: the colour the Vestige
-        -- added, which is not the one Caged Sun named.
-        other = resolveDown (S.runPure (colourAnswer Color.Green) (S.runPure (colourAnswer Color.Green) (S.runPure (colourAnswer Color.Green) entered Engine.settleForPriority) Stack.resolveTop) Engine.settleForPriority)
-    Spec.assertEqWith s "CR 605.1b alice's pool holds the Vestige's black and Caged Sun's additional one" (poolTypes S.alice settled) [ManaType.Colored Color.Black, ManaType.Colored Color.Black]
-    Spec.assertEqWith s "CR 605.5a Caged Sun's trigger went ON the stack, the resolving ability being no mana ability" (length (TurnRegisters.stack (GameState.turn waiting))) 1
-    Spec.assertEqWith s "the specification: a Vestige adding green, not the chosen colour, leaves its one mana alone" (poolTypes S.alice other) [ManaType.Colored Color.Green]
-    Spec.assertEqWith s "the fixture: the Vestige is on the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Crumbling Vestige") S.alice settled) 1
-
--- alice CASTS a Caged Sun off six Plains and names black, the Gauntlet of Power
--- group's reason; then a TAPPED Blood Pet of hers and a Swamp of bob's are
--- added. Returns the Pet, bob's Swamp, the board, and the board with alice's
--- Ashaya, Soul of the Wild added last.
-cagedSunBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState, GameState.GameState)
-cagedSunBoard s registry = do
-  plains <- S.printingOf s registry "Plains"
-  swamp <- S.printingOf s registry "Swamp"
-  bloodPet <- S.printingOf s registry "Blood Pet"
-  ashaya <- S.printingOf s registry "Ashaya, Soul of the Wild"
-  cagedSun <- S.printingOf s registry "Caged Sun"
-  let (withCard, cardId) = S.handOne cagedSun (S.landsInPlay plains 6)
-      answer :: Prompt.Prompt r -> r
-      answer p = case p of
-        Prompt.ChooseColor {} -> Color.Black
-        _ -> S.identityAnswer p
-      resolved = S.runPure answer (S.runPure answer withCard (S.cast S.alice cardId)) Stack.resolveTop
-      (pet, withPet) = S.addPermanent bloodPet S.alice resolved
-      (bobSwamp, board) = S.addPermanent swamp S.bob (S.tapObject pet withPet)
-      withAshaya = snd (S.addPermanent ashaya S.alice board)
-  Spec.assertEqWith s "the fixture: Caged Sun resolved onto the battlefield" (S.countOnBattlefieldByName (CardName.MkCardName $ Text.pack "Caged Sun") S.alice board) 1
-  Spec.assertEqWith s "the fixture: the Pet is tapped, so no {T} can be what fires Caged Sun" (fmap Object.tapped (Game.lookupObject pet board)) (Just TapState.Tapped)
-  pure (pet, bobSwamp, board, withAshaya)
-
--- A Crumbling Vestige of alice's, with CR 603.6a's event beside it so its ETB
--- trigger is pending, then tapped by a fixture write standing in for the
--- printed "This land enters tapped" -- S.entersWithTrigger applies no entry
--- replacement. Tapped for the Blood Pet's reason: with no {T} ever paid, CR
--- 106.12a's "tapped for mana" cannot be what fires Caged Sun, and the
--- mana-added event is the only road left.
-enterVestige :: Printing.Printing -> GameState.GameState -> GameState.GameState
-enterVestige printing gs =
-  let (oid, withLand) = S.entersWithTrigger printing S.alice gs
-   in S.tapObject oid withLand
-
--- CR 105.4's answer for "one mana of any color", pinned to one colour so the
--- pair of boards below differ in exactly it.
-colourAnswer :: Color.Color -> Prompt.Prompt r -> r
-colourAnswer colour p = case p of
-  Prompt.ChooseManaType _ _ _ offered ->
-    Maybe.fromMaybe (NonEmpty.head offered) (List.find (== ManaType.Colored colour) (NonEmpty.toList offered))
-  _ -> S.identityAnswer p
-
 -- Resolve the whole stack down, so a board that placed a triggered mana ability
 -- CR 605.4a forbids the stack reads differently from one that placed nothing: a
 -- reading taken with the trigger still waiting could not tell them apart at
@@ -4110,136 +3846,6 @@ sicken oid gs =
     { GameState.objects = Map.adjust (\o -> o {Object.sickness = Sickness.Sick}) oid (GameState.objects gs)
     }
 
--- CR 106.13's card. Drain Power is the only printing that moves mana from one
--- player's pool to another, and rule 106.13 says so in as many words, so this
--- group is the whole of what exercises Effect.MoveMana with a recipient and
--- Effect.ActivateManaAbilities.
---
--- THREE SEATS, so "that player" and "you" cannot collapse and a third pool is
--- there to prove the transfer takes only the one the spell named.
-drainPowerSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-drainPowerSpec s registry = Spec.describe s "Drain Power" $ do
-  -- The whole sentence at once: bob activates a mana ability of each of his
-  -- three lands -- choosing Bayou's colour himself -- and then loses that mana
-  -- to alice, units and all.
-  Spec.it s "CR 106.13 the pool crosses whole, and its production tags with it" $ do
-    drainPower <- S.printingOf s registry "Drain Power"
-    island <- S.printingOf s registry "Island"
-    bayou <- S.printingOf s registry "Bayou"
-    snowCoveredMountain <- S.printingOf s registry "Snow-Covered Mountain"
-    forest <- S.printingOf s registry "Forest"
-    let (gs, spellId) = drainPowerBoard drainPower island bayou snowCoveredMountain forest
-        ((_, cast), askedCasting) = State.runState (Engine.runGame (aimedAt S.bob Color.Black) gs (S.cast S.alice spellId)) []
-        ((_, after), asked) = State.runState (Engine.runGame (aimedAt S.bob Color.Black) cast Stack.resolveTop) []
-        ((_, green), _) = State.runState (Engine.runGame (aimedAt S.bob Color.Green) cast Stack.resolveTop) []
-    -- The fixture, asserted rather than assumed: a cast that cannot be paid for
-    -- fails silently, and every assertion below would then be about a board
-    -- where nothing happened.
-    Spec.assertEqWith s "the spell left alice's hand" (S.handSize S.alice cast) 0
-    Spec.assertEqWith s "alice spent her {U}{U} paying for it" (poolTypes S.alice cast) []
-    Spec.assertEqWith s "and nothing was asked of anyone but alice as she cast it" (filter (/= S.alice) askedCasting) []
-    -- CR 605.3 and CR 106.13 together: bob's three lands produced, and every
-    -- unit reached alice with the type bob's own answer settled.
-    Spec.assertEqWith s "CR 106.13 alice holds what bob's lands made" (poolTypes S.alice after) [ManaType.Colored Color.Black, ManaType.Colored Color.Red, ManaType.Colored Color.Green]
-    -- The discriminating half of that: the SAME board with the other answer to
-    -- Bayou's prompt puts the other colour in alice's pool, so the colour is the
-    -- answer's and not the engine's.
-    Spec.assertEqWith s "CR 105.4 the other answer to Bayou sends green instead" (poolTypes S.alice green) [ManaType.Colored Color.Green, ManaType.Colored Color.Red, ManaType.Colored Color.Green]
-    -- CR 106.13's second sentence, which is why whole ManaUnits cross: a
-    -- transfer that re-added plain mana of the same types would leave alice
-    -- holding red mana no snow permanent produced, and CR 107.4h's {S} reads
-    -- exactly this.
-    Spec.assertEqWith s "CR 106.13 the snow mana keeps its production tag" (fmap ManaUnit.tags (poolUnitsOf S.alice after)) [Set.empty, Set.singleton ProductionTag.Snow, Set.empty]
-    Spec.assertEqWith s "CR 106.13 bob loses all of it" (poolTypes S.bob after) []
-    Spec.assertEqWith s "and carol, whom the spell did not name, keeps hers" (poolTypes S.carol after) [ManaType.Colored Color.White]
-    -- CR 602.2: WHICH mana ability of Bayou is bob's choice -- only an object's
-    -- controller activates its activated ability -- so the one yield prompt
-    -- the resolution raises is his. Bayou is the only one of the three lands that
-    -- offers two, which is why the list is one long. (The resolution also asks
-    -- bob CR 605.3a's ordering, which `aimedAt` does not record; the group below
-    -- is where that is the subject.)
-    Spec.assertEqWith s "CR 602.2 the choice of ability is the targeted player's" asked [S.bob]
-  -- CR 106.13 names the move a LOSS ("causes one player to lose unspent mana"),
-  -- and so does Drain Power's Oracle text, which is the word Yurlok of Scorch
-  -- Thrash's middle line reads. A PAIR of boards differing only in carol's
-  -- Yurlok: bob, who does not control it, is the one charged, and carol's own
-  -- untouched {W} costs her nothing, so the charge is for what crossed.
-  Spec.it s "CR 106.13 the targeted player loses life for the mana Drain Power takes" $ do
-    drainPower <- S.printingOf s registry "Drain Power"
-    island <- S.printingOf s registry "Island"
-    bayou <- S.printingOf s registry "Bayou"
-    snowCoveredMountain <- S.printingOf s registry "Snow-Covered Mountain"
-    forest <- S.printingOf s registry "Forest"
-    yurlok <- S.printingOf s registry "Yurlok of Scorch Thrash"
-    let (gs, spellId) = drainPowerBoard drainPower island bayou snowCoveredMountain forest
-        (_, withYurlok) = S.addPermanent yurlok S.carol gs
-        resolved board =
-          let ((_, cast), _) = State.runState (Engine.runGame (aimedAt S.bob Color.Black) board (S.cast S.alice spellId)) []
-              ((_, after), _) = State.runState (Engine.runGame (aimedAt S.bob Color.Black) cast Stack.resolveTop) []
-           in after
-        charged = resolved withYurlok
-        uncharged = resolved gs
-        lives board = fmap (\pid -> S.lifeOf pid board) [S.alice, S.bob, S.carol]
-    Spec.assertEqWith s "the fixture: the three crossed to alice" (poolTypes S.alice charged) [ManaType.Colored Color.Black, ManaType.Colored Color.Red, ManaType.Colored Color.Green]
-    Spec.assertEqWith s "CR 119.3 bob pays 3 life for the three he lost, and nobody else pays" (lives charged) [Just 20, Just 17, Just 20]
-    Spec.assertEqWith s "CR 103.4 and with no Yurlok the same move costs nobody anything" (lives uncharged) [Just 20, Just 20, Just 20]
-  -- CR 605.3a: WHICH ORDER bob activates his two lands in is his, and it is
-  -- observable -- Mystic Gate's "{W/U}, {T}: Add {W}{W}, {W}{U}, or {U}{U}" is
-  -- paid for out of the mana the Plains put in his pool, which is there only if
-  -- the Plains went first.
-  --
-  -- The Gate is added FIRST, so it holds the LOWER object id and the engine's
-  -- own sweep (battlefieldMatching, APNAP then ascending) is the order that
-  -- loses the {W}{W}.
-  --
-  -- The two runs differ in ONE answer, the ordering: `activatingInOrder` shuts
-  -- CR 605.3a's payment window in both, so the Gate is paid for out of what the
-  -- SWEEP already put in bob's pool or not at all. A bob who opens that window
-  -- instead reaches {W}{W} from either order -- what the engine may not do is
-  -- pick the order for him.
-  Spec.it s "CR 605.3a the order the batch is activated in is the targeted player's" $ do
-    drainPower <- S.printingOf s registry "Drain Power"
-    island <- S.printingOf s registry "Island"
-    mysticGate <- S.printingOf s registry "Mystic Gate"
-    plains <- S.printingOf s registry "Plains"
-    let (gs, spellId) = S.handOne drainPower (S.landsFor island S.alice 2 (S.landsFor plains S.bob 1 (S.landsFor mysticGate S.bob 1 S.threePlayerGame)))
-        ((_, cast), _) = State.runState (Engine.runGame (activatingInOrder [1, 0]) gs (S.cast S.alice spellId)) []
-        ((_, after), asked) = State.runState (Engine.runGame (activatingInOrder [1, 0]) cast Stack.resolveTop) []
-        -- The SAME board with the other answer, which is the engine's own sweep
-        -- order: one different answer is the only difference between the two.
-        ((_, gateFirst), _) = State.runState (Engine.runGame (activatingInOrder [0, 1]) cast Stack.resolveTop) []
-    -- The fixture, asserted rather than assumed (the group above's reason).
-    Spec.assertEqWith s "the spell left alice's hand" (S.handSize S.alice cast) 0
-    Spec.assertEqWith s "alice spent her {U}{U} paying for it" (poolTypes S.alice cast) []
-    -- CR 605.3a and CR 106.13 together: the Plains paid for the Gate, so what
-    -- crosses to alice is the Gate's {W}{W} and nothing else.
-    Spec.assertEqWith s "CR 605.3a bob's order pays for the Gate with the Plains" (poolTypes S.alice after) [ManaType.Colored Color.White, ManaType.Colored Color.White]
-    -- The discriminating half: the SAME board and the same answer to every other
-    -- prompt, with the Gate taken first. Its {W/U} is unpayable out of an empty
-    -- pool, and CR 601.2h (reached by CR 602.2b) allows no partial payment, so
-    -- CR 609.3 leaves the Gate doing nothing and only the Plains' {W} crosses.
-    Spec.assertEqWith s "CR 609.3 the Gate taken first adds nothing" (poolTypes S.alice gateFirst) [ManaType.Colored Color.White]
-    -- CR 602.2: the order is the ACTIVATING player's, bob's, not the resolving
-    -- controller's.
-    Spec.assertEqWith s "CR 602.2 the ordering is asked of the targeted player" asked [S.bob]
-
--- alice holds Drain Power and two Islands to pay for it; bob controls the three
--- lands the spell will make him tap -- a Bayou (two mana abilities, so its colour
--- is a real choice), a Snow-Covered Mountain (a production tag alice cannot make
--- herself) and a Forest; carol holds a floating {W} nothing should touch.
---
--- The lands are added in that order, so bob's pool comes out in it: Bayou's
--- answer, then the snow red, then the green.
-drainPowerBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> (GameState.GameState, ObjectId.ObjectId)
-drainPowerBoard drainPower island bayou snowCoveredMountain forest =
-  S.handOne
-    drainPower
-    ( Mana.addMana
-        S.carol
-        [unitOf (ManaType.Colored Color.White)]
-        (S.landsFor island S.alice 2 (S.landsFor forest S.bob 1 (S.landsFor snowCoveredMountain S.bob 1 (S.landsFor bayou S.bob 1 S.threePlayerGame))))
-    )
-
 -- One ordinary unit of a type, for a pool a fixture floats mana into directly.
 unitOf :: ManaType.ManaType -> ManaUnit.ManaUnit
 unitOf manaType =
@@ -4254,51 +3860,6 @@ unitOf manaType =
       ManaUnit.sourceLastExiled = Nothing,
       ManaUnit.producer = Nothing
     }
-
--- Targets `victim`, takes `color` wherever a mana yield offers it, and records
--- the PLAYER each yield prompt was asked of.
---
--- Stateful rather than pure because the identity of the player asked is the
--- subject: a pure answerer could report which colour came back but never who
--- chose it.
-aimedAt :: PlayerId.PlayerId -> Color.Color -> Prompt.Prompt r -> State.State [PlayerId.PlayerId] r
-aimedAt victim color p = case p of
-  Prompt.ChooseManaYield decider _ _ _ -> do
-    State.modify' (<> [Decider.unwrap decider])
-    pure (prefersColor color p)
-  Prompt.ChooseTargets _ _ _ offered -> pure (S.preferring (== Recipient.ToPlayer victim) offered)
-  _ -> pure (S.identityAnswer p)
-
--- Targets bob, hands `answer` to the one CR 605.3a ordering prompt the
--- resolution raises, takes the {W}{W} yield wherever the Gate offers it, opens
--- NO mana ability of its own to pay with, and records the player the ordering
--- was asked of.
---
--- The declined window is PINNED here rather than left to S.identityAnswer, which
--- would tap the first source offered: CR 605.3a's payment window is a second way
--- to reach the Plains' {W}, and a bob who uses it needs no ordering at all. What
--- is under test is the order the SWEEP takes, so the window is shut in both
--- runs and the ordering answer is the only difference between them. BOB's
--- windows only -- alice still opens hers to pay for the spell itself.
---
--- Stateful rather than pure because WHOSE the order is is half the subject; a
--- pure answerer could pick the permutation but never report who was asked.
-activatingInOrder :: [Natural] -> Prompt.Prompt r -> State.State [PlayerId.PlayerId] r
-activatingInOrder answer p = case p of
-  Prompt.OrderManaActivations decider _ _ -> do
-    State.modify' (<> [Decider.unwrap decider])
-    pure answer
-  Prompt.ChooseManaYield _ _ _ candidates -> pure (optionOfTypes [ManaType.Colored Color.White, ManaType.Colored Color.White] candidates)
-  Prompt.ChooseManaSource decider _ _ _ | Decider.unwrap decider == S.bob -> pure Nothing
-  Prompt.ChooseExtraManaSource decider _ _ | Decider.unwrap decider == S.bob -> pure Nothing
-  Prompt.ChooseTargets _ _ _ offered -> pure (S.preferring (== Recipient.ToPlayer S.bob) offered)
-  _ -> pure (S.identityAnswer p)
-
--- The units of any player's pool -- poolUnits' twin for the two pools a CR
--- 106.13 transfer has.
-poolUnitsOf :: PlayerId.PlayerId -> GameState.GameState -> [ManaUnit.ManaUnit]
-poolUnitsOf pid gs = case Game.poolOf pid gs of
-  Mana.Type.MkMana units -> units
 
 -- CR 605.1b's FIRST alternative, the trigger source the four groups above leave
 -- untouched: Tyvar the Bellicose ({2}{B}{G} Legendary Creature -- Elf Warrior,
@@ -4450,7 +4011,6 @@ spec s registry = Spec.describe s "Parun.Engine.Mana" $ do
   manaSpec s registry
   anyColorSpec s registry
   rhysticCaveSpec s registry
-  chosenColorSpec s registry
   circledSpec s registry
   solRingSpec s registry
   ancientTombSpec s registry
@@ -4490,10 +4050,7 @@ spec s registry = Spec.describe s "Parun.Engine.Mana" $ do
   wildGrowthSpec s registry
   manaFlareSpec s registry
   autumnWillowSpec s registry
-  gauntletOfPowerSpec s registry
-  cagedSunSpec s registry
   tyvarSpec s registry
-  drainPowerSpec s registry
   yurlokSpec s registry
   almsEngineSpec s registry
   confluenceObeliskSpec s registry

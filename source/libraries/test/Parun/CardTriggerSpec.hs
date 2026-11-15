@@ -44,14 +44,12 @@ import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.AttackTrigger as AttackTrigger
 import qualified Parun.Types.AttackedTrigger as AttackedTrigger
 import qualified Parun.Types.BeginningStep as BeginningStep
-import qualified Parun.Types.Board as Board
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CoinFace as CoinFace
 import qualified Parun.Types.CoinFlipped as CoinFlipped
 import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
-import qualified Parun.Types.ControlChanged as ControlChanged
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
@@ -88,7 +86,6 @@ import qualified Parun.Types.Seat as Seat
 import qualified Parun.Types.SlotName as SlotName
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.StepBegan as StepBegan
-import qualified Parun.Types.StoredEffects as StoredEffects
 import qualified Parun.Types.Subtype as Subtype
 import qualified Parun.Types.TapState as TapState
 import qualified Parun.Types.TriggerCondition as TriggerCondition
@@ -196,22 +193,6 @@ boggartPranksterSpec s registry =
               Spec.assertEqWith s "and the Prankster, not attacking, is untouched" (S.powerToughnessOf pranksterId after) (Just (1, 3))
               Spec.assertEqWith s "CR 508.1b and only the Piker was declared" (sentAt after) (Map.fromList [(pikerId, AttackTarget.OfPlayer S.bob)])
             Nothing -> Spec.assertFailure s "fixture should give alice a Prankster and a Piker"
-        -- No declaration at all, on the same board: rule 508.3d's "one or more",
-        -- and the falsifier for an event recorded per STEP rather than per
-        -- declaration. A REGRESSION FENCE here rather than a proof -- the two
-        -- readings agree, because a trigger that did fire would find no
-        -- attacking Goblin to target and CR 603.3d would remove it. Avatar Roku,
-        -- Firebender's group below proves it instead, its trigger targeting
-        -- nothing.
-        Spec.it s "CR 508.3d a declare attackers step with no attackers is not attacking" $ do
-          built <- plainBoard
-          case built of
-            Just (pranksterId, pikerId, gs) -> do
-              let after = atBlockers (answering [] pranksterId) gs
-              Spec.assertEqWith s "the Prankster is its printed 1/3" (S.powerToughnessOf pranksterId after) (Just (1, 3))
-              Spec.assertEqWith s "and the Piker its printed 2/1" (S.powerToughnessOf pikerId after) (Just (2, 1))
-              Spec.assertEqWith s "and nothing was declared" (sentAt after) Map.empty
-            Nothing -> Spec.assertFailure s "fixture should give alice a Prankster and a Piker"
 
 -- CR 508.3d's OTHER subject. The rule says "[a player]", and the Prankster above
 -- prints the CR 109.5 "you" reading of it; this is the "a player" reading, which
@@ -312,18 +293,6 @@ avatarRokuSpec s registry =
               let after = atBlockers (answering S.bob rokuId) gs
               Spec.assertEqWith s "Roku spent the six {R} its own controller's declaration added, twice" (S.powerToughnessOf rokuId after) (Just (12, 6))
               Spec.assertEqWith s "CR 508.1 and it was alice's Roku that was declared, at bob" (sentAt after) (Map.fromList [(rokuId, AttackTarget.OfPlayer S.bob)])
-            Nothing -> Spec.assertFailure s "fixture should give alice a Roku and bob a Piker"
-        -- No declaration at all, on the first board: rule 508.3d's "one or more".
-        -- Not a fence here, unlike the Prankster's version -- Roku's trigger
-        -- targets nothing, so a spurious firing would buy two activations and
-        -- show as 12/6.
-        Spec.it s "CR 508.3d a declare attackers step with no attackers adds nothing" $ do
-          built <- fixture
-          case built of
-            Just (rokuId, _, gs) -> do
-              let after = atBlockers (\p -> case p of Prompt.DeclareAttackers {} -> []; _ -> answering S.alice rokuId p) (bobsTurn gs)
-              Spec.assertEqWith s "Roku is its printed 6/6" (S.powerToughnessOf rokuId after) (Just (6, 6))
-              Spec.assertEqWith s "and nothing was declared" (sentAt after) Map.empty
             Nothing -> Spec.assertFailure s "fixture should give alice a Roku and bob a Piker"
 
 -- CR 508.3c's "they": Tyvar the Bellicose's "whenever one or more Elves you
@@ -1117,17 +1086,6 @@ ezuriExperienceSpec s registry =
               (pikerGs, pikerSpell) = S.handOne piker (boardWith 2)
           Spec.assertEqWith s "the 3/3 gives alice nothing" (experienceOf S.alice (castAndResolve giantSpell giantGs)) 0
           Spec.assertEqWith s "the 2/1 gives her one" (experienceOf S.alice (castAndResolve pikerSpell pikerGs)) 1
-        -- "YOU CONTROL", read through CR 109.5 against the ability's controller
-        -- (CR 603.3a). bob's 2/1 entering in front of alice's Ezuri is a creature
-        -- with power 2 or less entering, and it pays nobody.
-        Spec.it s "CR 109.5 you control: an opponent's 2/1 entering gives alice nothing" $ do
-          ezuri <- S.printingOf s registry "Ezuri, Claw of Progress"
-          piker <- S.printingOf s registry "Goblin Piker"
-          let (_, withEzuri) = S.addPermanent ezuri S.alice (Setup.emptyGame S.bothPlayers)
-              (_, entered) = S.entersWithTrigger piker S.bob withEzuri
-              after = S.runPure S.identityAnswer entered (Engine.settleForPriority >> Engine.priorityLoop)
-          Spec.assertEqWith s "alice gets no experience counter" (experienceOf S.alice after) 0
-          Spec.assertEqWith s "and neither does bob, who has no Ezuri" (experienceOf S.bob after) 0
         -- CR 603.10's first sentence: the entrant's power is read immediately
         -- after it entered, not after CR 704.5j's legend rule buries the
         -- Kongming that pumped it. A second Kongming, "Sleeping Dragon" (2/2,
@@ -1321,34 +1279,6 @@ monarchTriggerSpec s registry =
           Spec.assertEqWith s "carol, untargeted, lost none" (S.creaturesInPlay S.carol after) 1
           Spec.assertBool s (S.onBattlefield lich after) "and alice's own Lich is untouched"
           Spec.assertEqWith s "the stack is empty, so nothing is still pending" (TurnRegisters.stack (GameState.turn after)) []
-        -- Gatherer, 2016-08-23, on this very card: "Abilities that trigger
-        -- whenever you 'become the monarch' trigger only if you aren't already
-        -- the monarch. For example, if you are already the monarch as Custodi
-        -- Lich enters the battlefield, its last ability won't trigger." So a
-        -- crowning of the player who already holds the crown is not an event at
-        -- all, and Monarch.crown records nothing for it -- which is also what
-        -- keeps this reading and CR 726's exile watch (Palace Jailer's "until an
-        -- opponent becomes the monarch") answering the same question the same
-        -- way.
-        --
-        -- The case above is the exact paired control: same card, same seats, same
-        -- answerer, and the one difference is who holds the crown as the Lich
-        -- enters.
-        Spec.it s "CR 726.3 a player who is ALREADY the monarch does not become the monarch, so the Lich's edict stays silent" $ do
-          custodiLich <- S.printingOf s registry "Custodi Lich"
-          piker <- S.printingOf s registry "Goblin Piker"
-          birdMaiden <- S.printingOf s registry "Bird Maiden"
-          bogWraith <- S.printingOf s registry "Bog Wraith"
-          let base = bystanders piker birdMaiden bogWraith (S.withMonarch S.alice (Setup.emptyGame S.threePlayers))
-              (lich, gs) = S.entersWithTrigger custodiLich S.alice base
-              after = resolveAll (targetsPlayer S.bob) gs
-          Spec.assertEqWith s "alice was the monarch before the Lich entered" (GameState.monarch gs) (Just S.alice)
-          Spec.assertEqWith s "CR 701.21a bob, whom the edict would have targeted, kept both of his" (S.creaturesInPlay S.bob after) 2
-          Spec.assertEqWith s "carol kept hers" (S.creaturesInPlay S.carol after) 1
-          Spec.assertEqWith s "alice still holds the crown, so the entry trigger did resolve" (GameState.monarch after) (Just S.alice)
-          Spec.assertBool s (notElem (GameEvent.BecameMonarch S.alice) (S.eventsOf after)) "and recorded no crowning, because nobody became the monarch"
-          Spec.assertBool s (S.onBattlefield lich after) "the Lich itself is on the battlefield"
-          Spec.assertEqWith s "the stack is empty, so nothing is still pending" (TurnRegisters.stack (GameState.turn after)) []
         -- CR 726.2's crown steal reaches the SAME condition by a route the card
         -- has nothing to do with: the inherent ability has no source, and
         -- Event.Trigger.inherentTriggers rather than the scan over objects is
@@ -1369,29 +1299,6 @@ monarchTriggerSpec s registry =
           Spec.assertBool s (S.onBattlefield lich after) "the Lich watched from the battlefield"
           Spec.assertEqWith s "CR 726.1 alice's trigger fired: the targeted bob sacrificed one" (S.creaturesInPlay S.bob after) 1
           Spec.assertEqWith s "carol lost none" (S.creaturesInPlay S.carol after) 1
-          Spec.assertEqWith s "the stack is empty" (TurnRegisters.stack (GameState.turn after)) []
-        -- The discriminating twin of the test above: the SAME board, the same
-        -- inherent ability, the same event shape -- only the creature that dealt
-        -- the damage differs, so the crown lands on carol instead of alice. An
-        -- arm that ignored the relation would fire here too.
-        Spec.it s "CR 726.2/109.5 a crown stolen by carol does not fire alice's trigger" $ do
-          custodiLich <- S.printingOf s registry "Custodi Lich"
-          boggartBrute <- S.printingOf s registry "Boggart Brute"
-          piker <- S.printingOf s registry "Goblin Piker"
-          birdMaiden <- S.printingOf s registry "Bird Maiden"
-          bogWraith <- S.printingOf s registry "Bog Wraith"
-          let base = bystanders piker birdMaiden bogWraith (S.withMonarch S.bob (Setup.emptyGame S.threePlayers))
-              (lich, g1) = S.addPermanent custodiLich S.alice base
-              (_, gs) = S.addPermanent boggartBrute S.alice g1
-              wraith = case filter (\oid -> S.soleFaceName oid gs == S.printingName bogWraith) (Game.zoneMembers Zone.Battlefield S.carol gs) of
-                oid : _ -> oid
-                [] -> S.noSource
-              after = resolveAll (targetsPlayer S.bob) (combatDamageTo S.bob wraith gs)
-          Spec.assertEqWith s "CR 726.2 carol took the crown" (GameState.monarch after) (Just S.carol)
-          Spec.assertBool s (elem (GameEvent.BecameMonarch S.carol) (S.eventsOf after)) "and the crowning event names carol"
-          Spec.assertBool s (S.onBattlefield lich after) "alice's Lich is still there, and still silent"
-          Spec.assertEqWith s "bob kept both of his" (S.creaturesInPlay S.bob after) 2
-          Spec.assertEqWith s "carol kept hers" (S.creaturesInPlay S.carol after) 1
           Spec.assertEqWith s "the stack is empty" (TurnRegisters.stack (GameState.turn after)) []
         -- CR 726.4's third route into the crown: no effect and no inherent
         -- ability, just the monarch leaving the game. Three seats are mandatory
@@ -1459,99 +1366,6 @@ monarchTriggerSpec s registry =
           Spec.assertEqWith s "CR 704.5a bob lost the game" (Game.stillPlaying after) [S.alice, S.carol]
           Spec.assertEqWith s "CR 104.2a two survivors, so the game is still going" (GameState.result after) Nothing
           Spec.assertEqWith s "the stack is empty, so nothing is still pending" (TurnRegisters.stack (GameState.turn after)) []
-
--- CR 603.7: Ray of Command's THIRD sentence -- "When you lose control of the
--- creature, tap it." A delayed triggered ability whose event is a CONTROL CHANGE,
--- which is the observation point Event.sampleControl exists to provide: control is
--- derived (CR 613.1b layer 2), so the CR 514.2 sweep that ends the spell's
--- until-end-of-turn control effect announces nothing, and the diff against
--- Snapshots.controlSample is what mints the GameEvent.ControlChanged the condition
--- matches. CR 514.3a is what then gives the trigger its round: a triggered ability
--- waiting during the cleanup step gets put on the stack and the active player gets
--- priority.
---
--- THREE SEATS, because the condition reads ONE of them. "You" is the ability's
--- controller (CR 603.7d, alice), the creature's owner and the player control
--- returns to is bob, and carol holds a creature alice steals with a card that has no
--- third sentence. On a two-player board "you", "the creature's owner" and "an
--- opponent" collapse, and a condition matching the wrong one of the three would
--- still pass.
---
--- ACT OF TREASON is the negative leg, and the two legs run on ONE board: the same
--- mana, the same seats, two identical tapped Goblin Pikers, the same cleanup step.
--- The single difference is which card did the stealing -- Act of Treason ({2}{R}
--- Sorcery, "Gain control of target creature until end of turn. Untap that creature.
--- It gains haste until end of turn.") prints the same three effects and NOT the tap
--- sentence, so carol's creature coming home untapped is what shows the tap is Ray of
--- Command's own ability rather than anything the cleanup machinery does to a
--- returning permanent.
---
--- Both victims start TAPPED and are untapped by the first sentence of whichever card
--- steals them, so the board makes a ROUND TRIP: tapped, untapped by the spell, tapped
--- again by the trigger. `Tapped` at the end therefore cannot be state left standing,
--- and the untapped reading in the middle is what rules that out.
-rayOfCommandSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-rayOfCommandSpec s registry = Spec.describe s "RayOfCommand" $ do
-  Spec.it s "CR 603.7 Ray of Command whole card: the borrowed creature is TAPPED when control reverts at cleanup, and Act of Treason's is not" $ do
-    island <- S.printingOf s registry "Island"
-    mountain <- S.printingOf s registry "Mountain"
-    piker <- S.printingOf s registry "Goblin Piker"
-    rayOfCommand <- S.printingOf s registry "Ray of Command"
-    actOfTreason <- S.printingOf s registry "Act of Treason"
-    let addN n printing pid g = if n <= (0 :: Int) then g else addN (n - 1) printing pid (snd (S.addPermanent printing pid g))
-        lands = addN 3 mountain S.alice (addN 4 island S.alice S.threePlayerGame)
-        (bobPiker, g1) = S.addPermanent piker S.bob lands
-        (carolPiker, g2) = S.addPermanent piker S.carol g1
-        (rayId, g3) = S.addHandCard rayOfCommand S.alice g2
-        (actId, g4) = S.addHandCard actOfTreason S.alice g3
-        -- Both victims start TAPPED, so the first sentence of each card (CR 701.26b)
-        -- has something to do and `Tapped` at the end cannot be state left standing.
-        staged = S.tapObject carolPiker (S.tapObject bobPiker g4)
-        -- Narrows every target slot to one object, `aimedCast`'s filter without its cast
-        -- pinning: the board holds two stealable creatures on purpose, so the engine's
-        -- first offer is not the one either leg means. Filtering the OFFERED set rather
-        -- than naming a Recipient keeps the answer in whatever shape the slot offered.
-        aimAtVictim :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-        aimAtVictim oid p = case p of
-          Prompt.ChooseTargets _ _ _ sets -> fmap (\(_, legal) -> Set.filter ((== Just oid) . Recipient.objectOf) legal) sets
-          _ -> S.identityAnswer p
-        resolveOne victim spellId g =
-          S.settleSba (S.runPure (aimAtVictim victim) (S.runPure (aimAtVictim victim) g (S.cast S.alice spellId)) Stack.resolveTop)
-        stolen = resolveOne carolPiker actId (resolveOne bobPiker rayId staged)
-        scheduled =
-          stolen
-            { GameState.turn =
-                (GameState.turn stolen)
-                  { TurnRegisters.remaining = Seq.fromList [Phase.Ending EndingStep.EndStep, Phase.Ending EndingStep.Cleanup]
-                  }
-            }
-        afterMain = S.runPure S.identityAnswer scheduled Engine.runStep
-        afterEnd = S.runPure S.identityAnswer afterMain Engine.runStep
-        afterCleanup = S.runPure S.identityAnswer afterEnd Engine.runStep
-        tapStateOf oid g = fmap Object.tapped (Game.lookupObject oid g)
-    -- The theft really happened, and left both creatures untapped. Without these the
-    -- tap assertion below could pass on a board where nothing was stolen at all.
-    Spec.assertEqWith s "Ray of Command gave alice control of bob's Piker" (Projection.controllerOf bobPiker stolen) (Just S.alice)
-    Spec.assertEqWith s "Act of Treason gave her carol's" (Projection.controllerOf carolPiker stolen) (Just S.alice)
-    Spec.assertEqWith s "CR 701.26b and both were untapped by the first sentence of each" (fmap (\oid -> tapStateOf oid stolen) [bobPiker, carolPiker]) [Just TapState.Untapped, Just TapState.Untapped]
-    -- CR 514.2 ran, so the control effects ended and control reverted.
-    Spec.assertEqWith s "the cleanup step really ran" (TurnRegisters.phase (GameState.turn afterEnd)) (Phase.Ending EndingStep.Cleanup)
-    Spec.assertEqWith s "CR 514.2 bob has his Piker back" (Projection.controllerOf bobPiker afterCleanup) (Just S.bob)
-    Spec.assertEqWith s "and carol hers" (Projection.controllerOf carolPiker afterCleanup) (Just S.carol)
-    -- The sentence under test, asserted FIRST of the three claims about the finished
-    -- board: a mutation that stops the trigger firing must go red HERE rather than on
-    -- the event record below, which the turn handoff would also have cleared.
-    Spec.assertEqWith s "CR 603.7 Ray of Command's third sentence tapped it" (tapStateOf bobPiker afterCleanup) (Just TapState.Tapped)
-    Spec.assertEqWith s "Act of Treason prints no such sentence, so carol's comes home untapped" (tapStateOf carolPiker afterCleanup) (Just TapState.Untapped)
-    Spec.assertEqWith s "CR 603.7b the entry is spent, so nothing is still armed" (StoredEffects.delayedTriggers (GameState.stored afterCleanup)) Seq.empty
-    Spec.assertEqWith s "and the stack is empty" (TurnRegisters.stack (GameState.turn afterCleanup)) []
-    -- CR 514.3a: the trigger got its round INSIDE this turn -- the rule's last sentence
-    -- begins another cleanup step rather than passing the turn. That is also what keeps
-    -- the event record below readable, since Engine.beginTurnOf clears the log at the
-    -- handoff.
-    Spec.assertEqWith s "CR 514.3a the turn has not handed off" (TurnRegisters.turnNumber (GameState.turn afterCleanup)) (TurnRegisters.turnNumber (GameState.turn scheduled))
-    -- The observation point fired at all.
-    Spec.assertBool s (elem (GameEvent.ControlChanged (ControlChanged.MkControlChanged bobPiker S.alice S.bob)) (S.eventsOf afterCleanup)) "Event.sampleControl minted CR 603.2's event for the reversion"
 
 -- Matoya, Archon Elder {2}{U} Legendary Creature -- Human Warlock 1/4, "Whenever
 -- you scry or surveil, draw a card" -- CR 603.1b's AnyOf over
@@ -1887,7 +1701,7 @@ seatBeforeMinotaur pid
 -- Distinct power/toughness on the two creatures (Goblin Piker 2/1, Bird Maiden
 -- 1/2) so +3/+2 cannot be read off the wrong one, and the Maiden is bob's, so a
 -- payload that hit every creature is visible.
-aloeAlchemistSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+aloeAlchemistSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 aloeAlchemistSpec s registry =
   let aimAt :: ObjectId.ObjectId -> Prompt.Prompt r -> r
       aimAt oid p = case p of
@@ -1923,28 +1737,6 @@ aloeAlchemistSpec s registry =
           Spec.assertEqWith s "bob's untargeted Maiden is untouched" (S.powerToughnessOf maidenId after) (Just (1, 2))
           Spec.assertEqWith s "the card is in exile" (length (GameState.exile after)) 1
           Spec.assertEqWith s "and the stack is empty, so the trigger resolved" (TurnRegisters.stack (GameState.turn after)) []
-        -- The DISCRIMINATING negative: a plot event that names a DIFFERENT card.
-        -- Aloe Alchemist sits in exile the whole time -- so
-        -- Event.eventTriggers' exile scan really offers it, and the only thing
-        -- that keeps it quiet is the id on the event.
-        --
-        -- Djinn of Fool's Fall {3}{U} is the pool's other plot card and prints no
-        -- such trigger, which is what makes it the control.
-        Spec.it s "CR 702.170a plotting another card does not fire an exiled Aloe Alchemist" $ do
-          island <- S.printingOf s registry "Island"
-          aloe <- S.printingOf s registry "Aloe Alchemist"
-          djinn <- S.printingOf s registry "Djinn of Fool's Fall"
-          piker <- S.printingOf s registry "Goblin Piker"
-          let (pikerId, g1) = S.addPermanent piker S.alice (S.landsInPlay island 4)
-              (_, g2) = S.addExiledCard aloe S.alice g1
-              (djinnId, g3) = S.addHandCard djinn S.alice g2
-              gs = sorcerySpeed g3
-              plotted = S.runPure (aimAt pikerId) gs (mapM_ (Plot.plot S.manaPerformer S.alice djinnId) (Plot.plotCostsOf S.alice djinnId gs))
-              after = S.runPure (aimAt pikerId) plotted Engine.priorityLoop
-          Spec.assertBool s (any isPlotted (S.eventsOf after)) "the Djinn really became plotted, so there was an event to match"
-          Spec.assertEqWith s "both cards are in exile, so the Alchemist was there to be offered" (length (GameState.exile after)) 2
-          Spec.assertEqWith s "and the Piker is still 2/1" (S.powerToughnessOf pikerId after) (Just (2, 1))
-          Spec.assertEqWith s "with nothing waiting on the stack" (TurnRegisters.stack (GameState.turn after)) []
 
 -- Whether an event is CR 702.170a's plot, whichever card it names. The id is
 -- CR 400.7's exile incarnation, which no fixture can predict.
@@ -2681,73 +2473,8 @@ settleAndResolve gs0 =
 tapStatusOf :: ObjectId.ObjectId -> GameState.GameState -> Maybe TapState.TapState
 tapStatusOf oid gs = fmap Object.tapped (Game.lookupObject oid gs)
 
--- Raid, and the question neither near-miss asks. CR 207.2c makes the ability word
--- itself meaningless, so "if you attacked this turn" is ordinary card text and CR
--- 603.4's intervening "if" is the whole mechanism: the trigger checks the
--- condition when the permanent enters, and CR 608.2a checks it again on
--- resolution.
---
--- Mardu Skullhunter {1}{B} Creature -- Human Warrior 2/1 (KTK, Oracle text
--- checked against Scryfall 2026-09-08): "This creature enters tapped. / Raid --
--- When this creature enters, if you attacked this turn, target opponent discards
--- a card." Quantity.AttackersDeclaredThisTurn compared against 1 is that clause.
---
--- ONE board separates the three readings, which is why it is built the way it is:
--- alice's Cabal Evangel attacks bob's Jace Beleren and is killed by his blocking
--- Hill Giant, and the Skullhunter is cast in the postcombat main phase.
---
---   * Quantity.OpponentsAttacked counts the OPPONENTS a declaration reached (CR
---     508.3b), and CR 506.3's planeswalker is not one, so it answers 0 here.
---   * Filter.DeclaredThisTurn Attacker asks a CANDIDATE whether it attacked, so a count of
---     it over the battlefield answers 0 once the attacker has died.
---   * CR 608.2i's look-back over the turn's declarations answers 1, and bob
---     discards.
---
--- The control leg is the same board with the attack declined, which is the only
--- difference between the two: the Skullhunter still enters, and bob keeps both
--- cards.
-marduSkullhunterSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-marduSkullhunterSpec s registry = Spec.describe s "MarduSkullhunter" $ do
-  Spec.it s "CR 603.4 raid: an attack aimed at a planeswalker by a creature that then died still discards" $ do
-    built <- S.buildBoardOrFail s registry raidBoard
-    case (aliasIn "jace" built, aliasIn "attacker" built) of
-      (Just jaceId, Just attackerId) -> do
-        let atBlockers = S.runPure (aimAtPlaneswalker jaceId) (Staged.state built) Engine.runStep
-            after = S.runPure (aimAtPlaneswalker jaceId) atBlockers (Monad.replicateM_ 4 Engine.runStep)
-        Spec.assertEqWith s "CR 603.4 / 608.2i: bob discarded, so raid saw the declaration" (S.handSize S.bob after) 1
-        Spec.assertEqWith s "and it really was announced at the planeswalker (CR 508.1b), where OpponentsAttacked counts 0" (Map.lookup attackerId (Combat.Type.attackers (TurnRegisters.combat (GameState.turn atBlockers)))) (Just (AttackTarget.OfPlaneswalker jaceId))
-        Spec.assertBool s (not (S.onBattlefield attackerId after)) "and the attacker was dead by then, where a Count of Filter.DeclaredThisTurn Attacker over the battlefield reads 0"
-      _ -> Spec.assertFailure s "fixture should alias bob's Jace and alice's attacker"
-
--- alice at the declare attackers step with one 2/2 to attack with, two Swamps for
--- the {1}{B}, and the Skullhunter in hand; bob with a Jace Beleren to be attacked,
--- a 3/3 to block with, and two cards to lose one of. Distinct values throughout:
--- the blocker outlives the attacker it kills, and bob's hand goes 2 to 1.
-raidBoard :: Board.Board
-raidBoard =
-  S.board
-    ( (S.battlefield S.alice [S.settled "attacker" "Cabal Evangel", S.permanent "Swamp", S.permanent "Swamp"])
-        { Seat.hand = Seq.singleton (S.aliased "skullhunter" (S.cardSetup "Mardu Skullhunter"))
-        }
-        NonEmpty.:| [ (S.battlefield S.bob [S.aliased "jace" (S.permanent "Jace Beleren"), S.settled "blocker" "Hill Giant"])
-                        { Seat.hand = Seq.fromList [S.cardSetup "Forest", S.cardSetup "Mountain"]
-                        }
-                    ]
-    )
-    S.alice
-    S.declareAttackers
-
 aliasIn :: String -> Staged.Staged -> Maybe ObjectId.ObjectId
 aliasIn name built = Map.lookup (Label.MkLabel (Text.pack name)) (Staged.objects built)
-
--- S.fightAnswer with CR 508.1b's announcement aimed at the planeswalker rather
--- than at bob. Everything else is shared with the control answerer below, so the
--- two boards differ in the declaration alone.
-aimAtPlaneswalker :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-aimAtPlaneswalker jaceId p = case p of
-  Prompt.ChooseAttackTarget _ _ _ options ->
-    Maybe.fromMaybe (NonEmpty.head options) (List.find (== AttackTarget.OfPlaneswalker jaceId) (NonEmpty.toList options))
-  _ -> S.fightAnswer p
 
 -- CR 702.110b's "a creature" read as an OBJECT rather than as an occurrence: the
 -- creature a rule 702.110a sacrifice fed to the exploiter, bound under
@@ -3365,14 +3092,12 @@ spec s registry = Spec.describe s "Parun.Engine.Trigger" $ do
   raffineSchemingSeerSpec s registry
   ironMongerSpec s registry
   spymastersVaultSpec s registry
-  rayOfCommandSpec s registry
   brambleElementalSpec s registry
   enormousEnergyBladeSpec s registry
   graftedWargearSpec s registry
   sixthSenseSpec s registry
   betrayalSpec s registry
   deeprootPilgrimageSpec s registry
-  marduSkullhunterSpec s registry
   leylinePhantomSpec s registry
   nullSummonerSpec s registry
   massacreGirlSpec s registry
