@@ -3,8 +3,7 @@
 
 -- Covers Parun.Engine.Resolve's Effect.RemoveCountersAmong arm -- CR 608.2d's
 -- removal of counters from among several permanents, the resolving controller
--- dividing them -- through one producer per Parun.Types.RemovalCount arm, and
--- Eventide's Shadow for counters of any kind.
+-- dividing them -- through one producer per Parun.Types.RemovalCount arm.
 module Parun.RemoveCounterSpec where
 
 import qualified Control.Monad.Trans.State.Strict as State
@@ -13,7 +12,6 @@ import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Numeric.Natural (Natural)
 import qualified Parun.Engine.Engine as Engine
-import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
@@ -23,7 +21,6 @@ import qualified Parun.Support as S
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterName as CounterName
-import qualified Parun.Types.CounterSpread as CounterSpread
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.ObjectId as ObjectId
@@ -32,13 +29,11 @@ import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.TurnRegisters as TurnRegisters
-import qualified Parun.Types.Zone as Zone
 
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   lizrogSpec s registry
   overseerSpec s registry
-  eventidesShadowSpec s registry
 
 -- One CR 608.2d division prompt as the answerer below records it: which of the
 -- three, its count, and its offer.
@@ -208,76 +203,3 @@ overseerBoard s registry onOverseer onForest = do
               }
         }
     )
-
--- Eventide's Shadow {4}{B} Sorcery (Oracle text checked against Scryfall
--- 2026-09-27): "Remove any number of counters from among permanents on the
--- battlefield. You draw cards and lose life equal to the number of counters
--- removed this way."
---
--- WhichCounters.OfAnyKind as an effect: the division is by kind as well as by
--- permanent (CR 122.1), and the tally both later instructions read.
---
--- THE BOARD: alice holds the Shadow over five Swamps and controls a Goblin Piker
--- carrying a +1/+1 and a vigilance counter; bob's Hill Giant carries two +1/+1
--- counters and a stun counter. alice's library holds five cards.
-eventidesShadowSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-eventidesShadowSpec s registry =
-  let run answer board shadowId = State.runState (fmap snd (Engine.runGame (recordingMixed answer) board (S.cast S.alice shadowId >> Stack.resolveTop))) []
-   in Spec.describe s "Eventide's Shadow" $ do
-        -- The gameplay assertions first, the prompt record a proxy after them.
-        Spec.it s "CR 122.1 / 608.2d alice removes counters of several kinds from among every permanent, then draws and loses that many" $ do
-          (shadowId, pikerId, giantId, board) <- shadowBoard s registry
-          let answer = Map.fromList [(pikerId, Map.singleton vigilance 1), (giantId, Map.fromList [(CounterKind.Stun, 1), (plusOne, 1)])]
-              (after, asked) = run answer board shadowId
-          Spec.assertEqWith s "CR 122.1 the Piker's vigilance counter came off" (S.counterOf vigilance pikerId after) 0
-          Spec.assertEqWith s "and its +1/+1 counter stayed" (S.counterOf plusOne pikerId after) 1
-          Spec.assertEqWith s "the Giant's stun counter came off" (S.counterOf CounterKind.Stun giantId after) 0
-          Spec.assertEqWith s "and one of its two +1/+1 counters" (S.counterOf plusOne giantId after) 1
-          Spec.assertEqWith s "CR 121.1 alice drew the three removed" (length (Game.zoneMembers Zone.Hand S.alice after)) 3
-          Spec.assertEqWith s "CR 119.3 and lost three life" (S.lifeOf S.alice after) (Just 17)
-          Spec.assertEqWith s "alice was asked once, from zero, over every permanent by kind" asked [(CounterSpread.FromAmongAtLeast, 0, Map.fromList [(pikerId, Map.fromList [(plusOne, 1), (vigilance, 1)]), (giantId, Map.fromList [(plusOne, 2), (CounterKind.Stun, 1)])])]
-
-vigilance :: CounterKind.CounterKind Keyword.Keyword
-vigilance = CounterKind.Keyword Keyword.Vigilance
-
--- The board eventidesShadowSpec's cases share, described above it.
-shadowBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (ObjectId.ObjectId, ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-shadowBoard s registry = do
-  shadow <- S.printingOf s registry "Eventide's Shadow"
-  piker <- S.printingOf s registry "Goblin Piker"
-  giant <- S.printingOf s registry "Hill Giant"
-  swamp <- S.printingOf s registry "Swamp"
-  let lands = S.landsFor swamp S.alice 5 (Setup.emptyGame S.bothPlayers)
-      (shadowId, withShadow) = S.addHandCard shadow S.alice lands
-      (pikerId, withPiker) = S.addPermanent piker S.alice withShadow
-      (giantId, withGiant) = S.addPermanent giant S.bob withPiker
-      stocked = foldr (\_ g -> snd (S.addLibraryCard swamp S.alice g)) withGiant [1 .. (5 :: Int)]
-      counted =
-        S.addCounter plusOne 1 pikerId
-          . S.addCounter vigilance 1 pikerId
-          . S.addCounter plusOne 2 giantId
-          . S.addCounter CounterKind.Stun 1 giantId
-          $ stocked
-  pure
-    ( shadowId,
-      pikerId,
-      giantId,
-      counted
-        { GameState.turn =
-            (GameState.turn counted)
-              { TurnRegisters.phase = Phase.PrecombatMain,
-                TurnRegisters.activePlayer = S.alice,
-                TurnRegisters.priority = Just S.alice
-              }
-        }
-    )
-
--- Answers Prompt.ChooseMixedCounterRemoval with the division given, recording
--- each prompt's spread, count and offer, and everything else identically.
--- PINNED, `recording`'s posture.
-recordingMixed :: Map.Map ObjectId.ObjectId (Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural) -> Prompt.Prompt r -> State.State [(CounterSpread.CounterSpread, Natural, Map.Map ObjectId.ObjectId (Map.Map (CounterKind.CounterKind Keyword.Keyword) Natural))] r
-recordingMixed answer p = case p of
-  Prompt.ChooseMixedCounterRemoval _ _ _ spread owed offered -> do
-    State.modify' (<> [(spread, owed, offered)])
-    pure answer
-  _ -> pure (S.identityAnswer p)

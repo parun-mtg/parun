@@ -198,9 +198,9 @@ out: grep for them.
 
 ### `CastRestrictionSpec`
 
-- CR 305.1 alice may play a land out of bob's hand | `board:player-effect`
-- CR 601.3 alice casts the Bolt she picked out of the Shell's pile | `board:exile-linked` `check:tapped-count`
-- CR 601.3 the same pile casts the Doom Blade when she picks that instead | `board:exile-linked` `check:tapped-count`
+- ~~CR 305.1 alice may play a land out of bob's hand~~
+- ~~CR 601.3 alice casts the Bolt she picked out of the Shell's pile~~
+- ~~CR 601.3 the same pile casts the Doom Blade when she picks that instead~~
 
 ### `CastSpec`
 
@@ -248,11 +248,11 @@ out: grep for them.
 
 ### `CodecIntegrationSpec`
 
-- a cast on an earlier turn round trips | `check:other-Game.castsThisGame` `check:codec-round-trip`
+- ~~a cast on an earlier turn round trips~~
 
 ### `CoinSpec`
 
-- CR 705.2 only the flipping player calls, and calls before the coin comes up
+- ~~CR 705.2 only the flipping player calls, and calls before the coin comes up~~
 
 ### `ColorSpec`
 
@@ -516,7 +516,7 @@ out: grep for them.
 
 ### `DetainSpec`
 
-- CR 508.1c the detained creature does not end up among the attackers | `board:combat` `board:object-detaineduntil`
+- ~~CR 508.1c the detained creature does not end up among the attackers~~
 
 ### `DiceSpec`
 
@@ -543,7 +543,7 @@ out: grep for them.
 
 ### `EarthbendSpec`
 
-- CR 702.10b the earthbent land can attack the turn it was animated | `check:other-Combat.legalAttackDeclarationAs`
+- ~~CR 702.10b the earthbent land can attack the turn it was animated~~
 
 ### `EmperorSpec`
 
@@ -566,8 +566,8 @@ out: grep for them.
 
 ### `EventSpec`
 
-- CR 101.4b Fleshbag Marauder's later victim knows the earlier victim's pick | `check:prompt-payload`
-- CR 800.4b no token is created under the control of a player who has left the game | `check:other-Game.objectCount`
+- ~~CR 101.4b Fleshbag Marauder's later victim knows the earlier victim's pick~~
+- ~~CR 800.4b no token is created under the control of a player who has left the game~~
 
 ### `EventTriggerSpec`
 
@@ -682,11 +682,11 @@ out: grep for them.
 
 ### `GoadSpec`
 
-- CR 701.15b whole cards: the goaded creature is sent at carol, not at carol's Jace | `board:combat` `board:object-goadedby`
+- ~~CR 701.15b whole cards: the goaded creature is sent at carol, not at carol's Jace~~
 
 ### `HarnessSpec`
 
-- CR 702.186b the infinity ability exists only once CR 701.64a has harnessed the Stone | `board:object-designations`
+- ~~CR 702.186b the infinity ability exists only once CR 701.64a has harnessed the Stone~~
 
 ### `InitiativeSpec`
 
@@ -714,7 +714,7 @@ out: grep for them.
 
 ### `LearnSpec`
 
-- ~~CR 118.12 Library of Leng does not reach learn's discard | `board:outside-the-game`~~
+- ~~CR 118.12 Library of Leng does not reach learn's discard~~
 - ~~CR 701.48a a learner may decline both branches | `board:outside-the-game`~~
 - ~~CR 701.48a the first branch discards a card and then draws one | `board:outside-the-game`~~
 - ~~CR 701.48a the second branch takes the Lesson from outside the game, and leaves the non-Lesson there | `board:outside-the-game`~~
@@ -761,7 +761,7 @@ out: grep for them.
 
 ### `LifeReplacementSpec`
 
-- CR 121.4 with no row the same empty library records the failed draw | `check:other-GameState.drewFromEmpty`
+- ~~CR 121.4 with no row the same empty library records the failed draw~~
 
 ### `LifeTriggerSpec`
 
@@ -799,8 +799,8 @@ out: grep for them.
 
 ### `ManaSymbolSpec`
 
-- CR 107.4e each symbol picks its own route: {R}{R}{2} and {R}{4} | `check:other-Mana.canPay`
-- CR 107.4h whole card: Berg Strider's victim does not untap when snow mana paid for it, and does when it did not | `board:object-doesnotuntapfor`
+- ~~CR 107.4e each symbol picks its own route: {R}{R}{2} and {R}{4}~~
+- ~~CR 107.4h whole card: Berg Strider's victim does not untap when snow mana paid for it, and does when it did not~~
 
 ### `MassEffectSpec`
 
@@ -833,7 +833,7 @@ out: grep for them.
 
 ### `ModalDoubleFacedSpec`
 
-- CR 712.9 playing the land face puts THAT face onto the battlefield | `check:abilities` `check:other-GameState.landsPlayed`
+- ~~CR 712.9 playing the land face puts THAT face onto the battlefield~~
 
 ### `ModalSpec`
 
@@ -847,7 +847,7 @@ out: grep for them.
 
 ### `MulliganSpec`
 
-- CR 800.1: a game that BEGAN with three players keeps its free mulligan after a departure | `check:other-Mulligan.freeMulligans`
+- ~~CR 800.1: a game that BEGAN with three players keeps its free mulligan after a departure~~
 
 ### `MutateSpec`
 
@@ -910,9 +910,9 @@ out: grep for them.
 
 ### `PlanechaseSpec`
 
-- CR 311.5 a departing active player's plane is replaced from the next seat's planar deck | `board:objects-ids`
-- CR 901.10a a plane leaving the game ends a pending planeswalking ability | `board:objects-ids`
-- CR 901.6 the chaos ability's you is the planar controller | `move:roll-planar-die`
+- ~~CR 311.5 a departing active player's plane is replaced from the next seat's planar deck~~
+- ~~CR 901.10a a plane leaving the game ends a pending planeswalking ability~~
+- ~~CR 901.6 the chaos ability's you is the planar controller~~
 
 ### `PlaneswalkerCombatSpec`
 
@@ -963,12 +963,12 @@ out: grep for them.
 
 ### `PopulateSpec`
 
-- CR 701.36a the creature token is copied, and neither the nontoken beside it nor the opponent's token is | `check:tokens`
+- ~~CR 701.36a the creature token is copied, and neither the nontoken beside it nor the opponent's token is~~
 
 ### `PowerToughnessSpec`
 
-- CR 119.3/608.2i two gains in one turn add up: +2/+2 then +4/+4 | `board:events`
-- CR 613.1d a Convincing Mirage'd Forest stops being one, and the pump stops with it | `board:hypothetical`
+- ~~CR 119.3/608.2i two gains in one turn add up: +2/+2 then +4/+4~~
+- ~~CR 613.1d a Convincing Mirage'd Forest stops being one, and the pump stops with it~~
 
 ### `PreventionSpec`
 
@@ -1002,11 +1002,11 @@ out: grep for them.
 ### `PrototypeSpec`
 
 - ~~CR 719.3b cast prototyped the Assembler is a white 2/2 with mana value 2; cast normally a colourless 4/5 with mana value 5 | `check:mana-value`~~
-- CR 719.5 the prototyped permanent keeps vigilance and its activated ability | `board:object-castusing` `board:object-prototyped`
+- ~~CR 719.5 the prototyped permanent keeps vigilance and its activated ability~~
 
 ### `RemoveCounterSpec`
 
-- CR 122.1 / 608.2d alice removes counters of several kinds from among every permanent, then draws and loses that many | `check:prompt-payload`
+- ~~CR 122.1 / 608.2d alice removes counters of several kinds from among every permanent, then draws and loses that many~~
 
 ### `ReplacementSpec`
 
@@ -1041,12 +1041,12 @@ out: grep for them.
 
 ### `RestampSpec`
 
-- CR 614.12 / 608.2f a card one conjure loop made later enters beside the earlier ones, not after them | `move:ReferenceCards`
+- ~~CR 614.12 / 608.2f a card one conjure loop made later enters beside the earlier ones, not after them~~
 
 ### `ReversalSpec`
 
-- CR 734.1 a window that wrote nothing undoes the announcement | `check:other-Reversal.withoutAnnouncement` `check:events` `check:other-GameState.nextEventGroup` `check:other-GameState.lastChoice`
-- CR 734.1 an announcement that wrote nothing keeps the window whole | `check:other-Reversal.withoutAnnouncement`
+- ~~CR 734.1 a window that wrote nothing undoes the announcement~~
+- ~~CR 734.1 an announcement that wrote nothing keeps the window whole~~
 
 ### `RingSpec`
 
@@ -1172,9 +1172,9 @@ out: grep for them.
 
 ### `UntapRestrictionSpec`
 
-- CR 502.3 a control change between the steps: the new controller's untap step is the second one skipped | `board:object-doesnotuntapfor` `board:replacement`
-- CR 502.3/611.2a whole card: Telekinesis' target stays tapped through its controller's next two untap steps and untaps at the third | `board:object-doesnotuntapfor` `board:replacement`
-- CR 611.2a Elvish Hunter's one step on top of Telekinesis' two still ends at the second step | `board:object-doesnotuntapfor` `board:replacement`
+- ~~CR 502.3 a control change between the steps: the new controller's untap step is the second one skipped~~
+- ~~CR 502.3/611.2a whole card: Telekinesis' target stays tapped through its controller's next two untap steps and untaps at the third~~
+- ~~CR 611.2a Elvish Hunter's one step on top of Telekinesis' two still ends at the second step~~
 
 ### `VariableEffectSpec`
 

@@ -34,7 +34,6 @@ import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.Phase as Phase
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.Printing as Printing
-import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Sickness as Sickness
@@ -105,38 +104,6 @@ spec s registry = Spec.describe s "Parun.Engine.Event" $ do
     case S.zoneChangesOf after of
       zc : _ -> Spec.assertEqWith s "event says exile" (ZoneChange.to zc) Zone.Exile
       [] -> Spec.assertFailure s "expected an emitted zone change"
-
-  -- CR 101.4b: Fleshbag Marauder's "each player sacrifices a creature of their
-  -- choice", on a pair of boards differing only in alice's pick. bob sacrifices
-  -- his Piker when his prompt says alice sacrificed hers, and his Hill Giant
-  -- otherwise, so what he loses is what he was told.
-  Spec.it s "CR 101.4b Fleshbag Marauder's later victim knows the earlier victim's pick" $ do
-    swamp <- S.printingOf s registry "Swamp"
-    piker <- S.printingOf s registry "Goblin Piker"
-    giant <- S.printingOf s registry "Hill Giant"
-    fleshbag <- S.printingOf s registry "Fleshbag Marauder"
-    let (alicePiker, g0) = S.addPermanent piker S.alice (S.landsFor swamp S.alice 3 (Setup.emptyGame S.threePlayers))
-        (bobPiker, g1) = S.addPermanent piker S.bob g0
-        (bobGiant, g2) = S.addPermanent giant S.bob g1
-        (g3, fleshbagId) = S.handOne fleshbag g2
-        answer :: (ObjectId.ObjectId -> Bool) -> Prompt.Prompt r -> r
-        answer hers p = case p of
-          Prompt.ChooseSacrifices _ pid _ candidates _ earlier
-            | pid == S.alice -> Set.fromList (take 1 (filter hers candidates))
-            | pid == S.bob ->
-                if any (\(who, picked) -> who == S.alice && Set.member alicePiker picked) earlier
-                  then Set.singleton bobPiker
-                  else Set.singleton bobGiant
-          _ -> S.identityAnswer p
-        run hers =
-          let cast = snd (Engine.runGamePure (answer hers) g3 (S.cast S.alice fleshbagId))
-           in snd (Engine.runGamePure (answer hers) cast Engine.priorityLoop)
-        piked = run (== alicePiker)
-        kept = run (/= alicePiker)
-    Spec.assertEqWith s "CR 101.4b told alice sacrificed her Piker, bob sacrificed his" (Game.zoneMembers Zone.Battlefield S.bob piked) [bobGiant]
-    Spec.assertEqWith s "CR 101.4b told alice kept her Piker, bob sacrificed his Hill Giant" (Game.zoneMembers Zone.Battlefield S.bob kept) [bobPiker]
-    Spec.assertBool s (notElem alicePiker (Game.zoneMembers Zone.Battlefield S.alice piked)) "alice's Piker went, where she chose it"
-    Spec.assertBool s (elem alicePiker (Game.zoneMembers Zone.Battlefield S.alice kept)) "and stayed, where she chose the Marauder"
 
   Spec.it s "without Rest in Peace, a creature goes to the graveyard" $ do
     piker <- S.printingOf s registry "Goblin Piker"

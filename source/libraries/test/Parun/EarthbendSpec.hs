@@ -20,11 +20,9 @@
 -- board on which every land was animated. Every characteristic case is asked of
 -- both, on the one board.
 --
--- BOTH FORESTS ARE Sickness.Sick, which is not tidiness: S.landsInPlay settles
--- what it places, and CR 302.6 is unobservable on a settled permanent, so the
--- attack case would prove the fixture rather than rule 701.66a's haste. A Goblin
--- Piker, equally sick, is the paired control there -- same board, same clock, no
--- haste.
+-- BOTH FORESTS ARE Sickness.Sick, as lands played this turn are: S.landsInPlay
+-- settles what it places. The haste case, where CR 302.6 is live, is
+-- data/scenarios/earthbend/cr-702-10b-the-earthbent-land-can-attack-the-turn-it-was-animated.json.
 --
 -- The counts DIFFER between the two producers -- four for the Lesson, two for
 -- Aang -- and neither equals a power, a toughness or a land count on its board,
@@ -33,10 +31,8 @@ module Parun.EarthbendSpec where
 
 import qualified Data.List as List
 import qualified Data.Map.Strict as Map
-import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import qualified Parun.Engine.Combat as Combat
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
@@ -46,13 +42,10 @@ import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
-import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
-import qualified Parun.Types.Combat as Combat.Type
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CounterKind as CounterKind
-import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.Keyword as Keyword
@@ -111,13 +104,6 @@ castAt victim spell gs =
   let cast = S.runPure (aimedAt victim) gs (S.cast S.alice spell)
    in S.runPure (aimedAt victim) cast Stack.resolveTop
 
--- The Lesson cast at `target` and resolved: everything rule 701.66a's first two
--- sentences do has happened, and its third has been created.
-earthbent :: Printing.Printing -> Printing.Printing -> (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-earthbent forest lesson =
-  let (target, twin, spell, _, gs) = lessonBoard forest lesson [] []
-   in (target, twin, castAt target spell gs)
-
 -- The delayed ability placed and resolved without anything having killed
 -- anything: what a zone change the condition does not admit leaves behind.
 settled :: GameState.GameState -> GameState.GameState
@@ -134,57 +120,10 @@ arrivals before after =
         )
     )
 
--- alice mid-declaration against bob. Stated rather than run, DetainSpec's and
--- GoadSpec's posture: CR 507.1's choice is a turn-based action this fixture does
--- not need.
-attacking :: GameState.GameState -> GameState.GameState
-attacking gs =
-  gs
-    { GameState.turn =
-        (GameState.turn gs)
-          { TurnRegisters.activePlayer = S.alice,
-            TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
-            TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
-            TurnRegisters.remaining =
-              Seq.fromList
-                [ Phase.Combat CombatStep.DeclareBlockers,
-                  Phase.Combat CombatStep.CombatDamage,
-                  Phase.Combat CombatStep.EndOfCombat,
-                  Phase.PostcombatMain,
-                  Phase.Ending EndingStep.EndStep,
-                  Phase.Ending EndingStep.Cleanup
-                ]
-          }
-    }
-
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Earthbend" $ do
-  animationSpec s registry
   returnSpec s registry
   producerSpec s registry
-
--- CR 701.66a's first two sentences.
-animationSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-animationSpec s registry = Spec.describe s "Animation" $ do
-  -- CR 302.6 read against CR 702.10b: the land was played this turn, so haste is
-  -- the only thing that lets it attack. The Piker is the control -- equally sick,
-  -- equally alice's, and without haste.
-  Spec.it s "CR 702.10b the earthbent land can attack the turn it was animated" $ do
-    forest <- S.printingOf s registry "Forest"
-    lesson <- S.printingOf s registry "Earthbending Lesson"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (target, _, after) = earthbent forest lesson
-        (pikerId, withPiker) = S.addPermanent piker S.alice after
-        gs = attacking (sicken pikerId withPiker)
-    Spec.assertBool
-      s
-      (Combat.legalAttackDeclarationAs S.alice [(target, AttackTarget.OfPlayer S.bob)] gs)
-      "CR 701.66a the earthbent land attacks the turn it was animated"
-    -- CR 302.6 is live on this very board, so the assertion above is haste.
-    Spec.assertBool
-      s
-      (not (Combat.legalAttackDeclarationAs S.alice [(pikerId, AttackTarget.OfPlayer S.bob)] gs))
-      "CR 302.6 a sick creature without haste on the same board cannot"
 
 -- CR 701.66a's third sentence, and CR 603.7's delayed ability behind it.
 returnSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()

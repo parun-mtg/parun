@@ -18,11 +18,11 @@
         ],
         "hand": [
           {
-            "card": "Hill Giant"
-          },
-          {
             "card": "Cram Session",
             "label": "cram"
+          },
+          {
+            "card": "Hill Giant"
           }
         ],
         "library": [
@@ -30,26 +30,21 @@
             "card": "Plains"
           }
         ],
-        "name": "alice",
-        "outsideTheGame": [
-          {
-            "key": "Airbending Lesson",
-            "value": 1
-          },
-          {
-            "key": "Sign in Blood",
-            "value": 1
-          }
-        ]
+        "name": "alice"
       },
       {
+        "library": [
+          {
+            "card": "Forest"
+          }
+        ],
         "name": "bob"
       }
     ],
     "step": "PrecombatMain"
   },
   "description": "CR 118.12 Library of Leng does not reach learn's discard",
-  "note": "The first branch's board with Library of Leng under alice. Learn's discard is a cost paid on resolution, and Leng reaches only a discard an effect causes, so she is never offered the redirect and the Hill Giant reaches her graveyard.",
+  "note": "Learn's discard is a cost paid on resolution (CR 118.12, 701.48a), and Library of Leng's ruling says costs aren't effects, so its 'if an effect causes you to discard' never applies: no redirect is offered, the Hill Giant reaches alice's graveyard and she draws the Plains. Treating the discard as an effect's would raise Leng's prompt, which nothing here answers, and put the Giant on her library.",
   "timeline": [
     {
       "do": {
@@ -84,6 +79,32 @@
     },
     {
       "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 1,
+          "player": "alice",
+          "zone": "Graveyard"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Hill Giant",
+          "count": 0,
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
         "View": {
           "is": [
             "Plains"
@@ -99,14 +120,9 @@
     },
     {
       "check": {
-        "View": {
-          "is": [
-            "Hill Giant",
-            "Cram Session"
-          ],
-          "of": "Zone",
-          "player": "alice",
-          "zone": "Graveyard"
+        "Life": {
+          "life": 24,
+          "player": "alice"
         }
       },
       "player": "alice",

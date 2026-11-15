@@ -1,0 +1,163 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "alice",
+        "sideDecks": [
+          {
+            "key": "Planar",
+            "value": [
+              {
+                "card": "Tazeem",
+                "label": "atazeem"
+              },
+              {
+                "card": "Academy at Tolaria West",
+                "label": "aacademy"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "command": [
+          {
+            "card": "Academy at Tolaria West",
+            "label": "bacademy"
+          }
+        ],
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Forest"
+          },
+          {
+            "card": "Forest"
+          }
+        ],
+        "name": "carol",
+        "sideDecks": [
+          {
+            "key": "Planar",
+            "value": [
+              {
+                "card": "Tazeem",
+                "label": "ctazeem"
+              },
+              {
+                "card": "Academy at Tolaria West",
+                "label": "cacademy"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 311.5 a departing active player's plane is replaced from the next seat's planar deck",
+  "note": "bob, the active player, concedes in his main phase while his Academy is the face-up plane. It leaves the game with him (CR 901.10, 800.4p), and carol -- the next seat in turn order, not alice, the first seat -- becomes planar controller (CR 311.5) and turns up the top of her own planar deck at once. alice's planar deck is untouched. A planar deck is face down, so its cards are seen by nobody: alice's two and carol's Academy are still there.",
+  "timeline": [
+    {
+      "do": "Concede",
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "$ctazeem"
+          ],
+          "of": "Zone",
+          "player": "carol",
+          "zone": "Command"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": "carol",
+          "object": "$ctazeem",
+          "of": "Controller"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Command"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "object": "$atazeem",
+          "of": "Seers"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "object": "$aacademy",
+          "of": "Seers"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "object": "$cacademy",
+          "of": "Seers"
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
