@@ -22,8 +22,7 @@
     ]
   },
   "timeline": [
-    {"turn": 1, "step": "Upkeep", "player": "alice", "do": {"Cast": {"object": "$exhale", "targets": ["$bears"]}}},
-    {"turn": 1, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "do": {"Cast": {"object": "$exhale"}}},
     {"turn": 1, "step": "Upkeep", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "Upkeep", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
     {"turn": 1, "step": "Upkeep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Shivan Dragon", "count": 1}}}

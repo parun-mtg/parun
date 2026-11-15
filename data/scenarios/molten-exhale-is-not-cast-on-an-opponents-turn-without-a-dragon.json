@@ -21,7 +21,7 @@
     ]
   },
   "timeline": [
-    {"turn": 1, "step": "Upkeep", "player": "alice", "refuse": {"Cast": {"object": "$exhale", "targets": ["$bears"]}}},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "refuse": {"Cast": {"object": "$exhale"}}},
     {"turn": 1, "step": "Upkeep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Molten Exhale", "count": 1}}}
   ]
 }
