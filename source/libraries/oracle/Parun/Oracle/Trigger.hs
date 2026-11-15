@@ -461,9 +461,9 @@ abilityWord words' = [Text.empty] <> [Text.pack "Hellbent \8212 " | words' == Te
 
 -- | The ability word (CR 207.2c) Oracle text may print before an ability
 -- this event opens. Free for alliance: printed (Raphael, Tough Turtle) or not
--- (Corpse Knight).
+-- (Corpse Knight); survival heads a second main phase's (Shrewd Storyteller).
 openingWord :: Text.Text -> [Text.Text]
-openingWord opens = [Text.pack "Alliance \8212 " | opens == Text.pack "Whenever another creature you control enters"]
+openingWord opens = [Text.pack "Alliance \8212 " | opens == Text.pack "Whenever another creature you control enters"] <> [Text.pack "Survival \8212 " | opens == Text.pack "At the beginning of your second main phase"]
 
 -- | Whether the condition is the source's own status ("this creature is
 -- attacking"), as 'counted' reads it, after which the source is "it".

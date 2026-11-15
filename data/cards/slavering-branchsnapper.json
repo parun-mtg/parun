@@ -44,6 +44,7 @@
         }
       ],
       "name": "Slavering Branchsnapper",
+      "oracleText": "Trample\nForestcycling {2} ({2}, Discard this card: Search your library for a Forest card, reveal it, put it into your hand, then shuffle.)",
       "power": {
         "type": "Literal",
         "value": 7
