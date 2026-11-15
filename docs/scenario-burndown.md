@@ -918,13 +918,13 @@ out: grep for them.
 
 ### `PlaneswalkerCombatSpec`
 
-- CR 506.4e whole card: a creature attacking the planeswalker is attacking a battle bob protects, so his Snare exiles it | `board:continuous-effect`
-- CR 506.4e whole cards: attacked as a battle, it stops being one and is still a planeswalker that's being attacked | `board:continuous-effect`
-- CR 506.4e whole cards: attacked as a planeswalker, it stops being one and is still a battle that's being attacked | `board:continuous-effect`
-- CR 508.3a the tokens are attacking, and the attack trigger fired only for the Garrison | `check:events`
-- CR 508.4 whole card: Hanweir Garrison's two Humans enter tapped and attacking | `check:sickness`
-- CR 702.19c an unblocked 7/7 pays Jace's 3 loyalty and sends the other 4 at bob | `check:helper-assignmentLog`
-- CR 702.19c the whole 7 may stay on Jace instead | `check:helper-assignmentLog`
+- ~~CR 506.4e whole card: a creature attacking the planeswalker is attacking a battle bob protects, so his Snare exiles it | `board:continuous-effect`~~
+- ~~CR 506.4e whole cards: attacked as a battle, it stops being one and is still a planeswalker that's being attacked | `board:continuous-effect`~~
+- ~~CR 506.4e whole cards: attacked as a planeswalker, it stops being one and is still a battle that's being attacked | `board:continuous-effect`~~
+- ~~CR 508.3a the tokens are attacking, and the attack trigger fired only for the Garrison | `check:events`~~
+- ~~CR 508.4 whole card: Hanweir Garrison's two Humans enter tapped and attacking | `check:sickness`~~
+- ~~CR 702.19c an unblocked 7/7 pays Jace's 3 loyalty and sends the other 4 at bob | `check:helper-assignmentLog`~~
+- ~~CR 702.19c the whole 7 may stay on Jace instead | `check:helper-assignmentLog`~~
 
 ### `PlaneswalkerSpec`
 
@@ -1095,21 +1095,21 @@ out: grep for them.
 
 ### `SpeedSpec`
 
-- CR 119.2 damage to an opponent raises your speed too | `check:helper-speedOf` `check:helper-subtract`
+- ~~CR 119.2 damage to an opponent raises your speed too | `check:helper-speedOf` `check:helper-subtract`~~
 - CR 305.7 a Blood Moon'd Raceway starts nobody's engines | `check:helper-speedOf`
 - CR 604.1 the grant is re-asked, not latched | `check:abilities`
-- CR 702.178a past 4 the Raceway keeps its max speed ability | `board:player-speed`
-- CR 702.178b whole card: activating it exiles the Surveyor and draws | `board:player-speed`
-- CR 702.179c a card's own text raises the speed a player already has | `check:speed` `check:inherent-triggers-spent`
-- CR 702.179c a player with no speed instructed to increase becomes that value | `check:speed`
-- CR 702.179d a life loss on somebody else's turn raises nothing | `board:player-speed`
-- CR 702.179d a new turn restores the once-each-turn allowance | `board:player-speed`
-- CR 702.179d an opponent losing life on your turn raises your speed | `check:helper-speedOf` `check:helper-subtract`
-- CR 702.179d speed stops at 4 | `board:player-speed`
-- CR 702.179d the increase happens only once each turn | `board:player-speed`
-- CR 702.179d your own life loss raises nothing | `check:helper-speedOf` `check:helper-subtract`
+- ~~CR 702.178a past 4 the Raceway keeps its max speed ability | `board:player-speed`~~
+- ~~CR 702.178b whole card: activating it exiles the Surveyor and draws | `board:player-speed`~~
+- ~~CR 702.179c a card's own text raises the speed a player already has | `check:speed` `check:inherent-triggers-spent`~~
+- ~~CR 702.179c a player with no speed instructed to increase becomes that value | `check:speed`~~
+- ~~CR 702.179d a life loss on somebody else's turn raises nothing | `board:player-speed`~~
+- ~~CR 702.179d a new turn restores the once-each-turn allowance | `board:player-speed`~~
+- ~~CR 702.179d an opponent losing life on your turn raises your speed | `check:helper-speedOf` `check:helper-subtract`~~
+- ~~CR 702.179d speed stops at 4 | `board:player-speed`~~
+- ~~CR 702.179d the increase happens only once each turn | `board:player-speed`~~
+- ~~CR 702.179d your own life loss raises nothing | `check:helper-speedOf` `check:helper-subtract`~~
 - CR 704.5aa a player controlling Muraganda Raceway with no speed gets speed 1 | `check:helper-speedOf`
-- CR 704.5aa does not fire again once speed exists | `check:speed`
+- ~~CR 704.5aa does not fire again once speed exists | `check:speed`~~
 
 ### `TargetSpec`
 
@@ -1140,15 +1140,15 @@ out: grep for them.
 
 ### `TransformSpec`
 
-- CR 613.7g transforming restamps the permanent past a removal that had wiped its grant | `board:object-designations`
-- CR 700.4 the same ability's other limb fires when it dies | `move:other-applyEffect`
-- CR 701.27a transforming twice returns the permanent to its front face | `check:helper-faceReadings`
-- CR 701.27g a delayed transform is measured from when the ability was created | `board:delayed-trigger` `board:object-turnedoverat` `board:replacement`
-- CR 701.27g a turn that was ignored triggers nothing | `board:hypothetical`
-- CR 701.27h a permanent with its back face up is a transformed permanent | `board:daytime`
-- CR 701.27h a permanent with its front face up is not one | `check:helper-faceNameOf` `check:other-GameState.daytime`
-- CR 701.27h not one even if it had its back face up previously | `board:daytime`
-- CR 702.161a the front face, which has no living metal, is a creature on either turn | `check:helper-faceNameOf`
+- ~~CR 613.7g transforming restamps the permanent past a removal that had wiped its grant | `board:object-designations`~~
+- ~~CR 700.4 the same ability's other limb fires when it dies | `move:other-applyEffect`~~
+- ~~CR 701.27a transforming twice returns the permanent to its front face | `check:helper-faceReadings`~~
+- ~~CR 701.27g a delayed transform is measured from when the ability was created | `board:delayed-trigger` `board:object-turnedoverat` `board:replacement`~~
+- ~~CR 701.27g a turn that was ignored triggers nothing | `board:hypothetical`~~
+- ~~CR 701.27h a permanent with its back face up is a transformed permanent | `board:daytime`~~
+- ~~CR 701.27h a permanent with its front face up is not one | `check:helper-faceNameOf` `check:other-GameState.daytime`~~
+- ~~CR 701.27h not one even if it had its back face up previously | `board:daytime`~~
+- ~~CR 702.161a the front face, which has no living metal, is a creature on either turn | `check:helper-faceNameOf`~~
 - ~~CR 701.27j/701.27f the same trigger's enters limb fires on a Piper cast at night~~
 
 ### `TurnSpec`
@@ -1194,9 +1194,9 @@ out: grep for them.
 
 ### `VoteSpec`
 
-- CR 701.38a the permanent with the most votes is exiled and the rest are not | `check:prompt-offers` `check:helper-askedPlayers`
-- CR 701.38b a clause gated on a word's tally happens and the clause gated on the other does not | `check:prompt-offers` `check:helper-askedPlayers`
-- CR 701.38d an additional vote is a second ballot for that seat, taken before the next seat votes | `check:helper-askedPlayers`
+- ~~CR 701.38a the permanent with the most votes is exiled and the rest are not | `check:prompt-offers` `check:helper-askedPlayers`~~
+- ~~CR 701.38b a clause gated on a word's tally happens and the clause gated on the other does not | `check:prompt-offers` `check:helper-askedPlayers`~~
+- ~~CR 701.38d an additional vote is a second ballot for that seat, taken before the next seat votes | `check:helper-askedPlayers`~~
 
 ### `ZoneChangeSpec`
 

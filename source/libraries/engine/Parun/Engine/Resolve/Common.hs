@@ -1043,8 +1043,9 @@ turnsOver pcs resolving frozen oid =
 -- ordinary ability is measured from when it was put onto the stack, which is its
 -- own CR 613.7d timestamp. A DELAYED triggered ability is measured from when it
 -- was CREATED, which is earlier and can sit on the far side of a turn-over its
--- placement stamp is on the near side of -- Parun.TransformSpec's Aang pair is
--- the board that tells the two apart. Every stamp comes from
+-- placement stamp is on the near side of -- the scenario pair
+-- transform/cr-701-27g-a-delayed-transform-is-measured-from-when-the-ability-was-created
+-- is the board that tells the two apart. Every stamp comes from
 -- Bookkeeping.nextTimestamp, so one `>` decides it and equality cannot arise.
 alreadyTurnedFor :: ObjectId -> ObjectId -> GameState -> Bool
 alreadyTurnedFor resolving victim gs =

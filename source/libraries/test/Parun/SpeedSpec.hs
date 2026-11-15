@@ -25,12 +25,9 @@
 -- rule 702.179d admits one increase a turn, so a board at 4 is four turns of
 -- setup that would prove nothing the increase cases have not already proved.
 --
--- cardIncreaseSpec is the other group whose subject is not Muraganda Raceway. It
--- proves that a CARD's printed instruction reaches the same opcode rule 702.179d's
--- ability does, through Synthetic Speed Boost -- the Raceway appears there only to
--- give one player a speed to raise. cardDecreaseSpec is the same claim in the
--- other direction, through Spikeshell Harrier, and its own header carries what is
--- particular to it.
+-- cardDecreaseSpec is the group whose subject is not Muraganda Raceway. It
+-- proves that a CARD's printed instruction reaches the speed opcode, through
+-- Spikeshell Harrier, and its own header carries what is particular to it.
 module Parun.SpeedSpec where
 
 import qualified Data.Map.Strict as Map
@@ -39,7 +36,6 @@ import qualified Data.Set as Set
 import qualified Numeric.Natural as Natural
 import qualified Parun.Engine.Action as Action
 import qualified Parun.Engine.Activatable as Activatable
-import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
@@ -76,23 +72,6 @@ import qualified Parun.Types.Zone as Zone
 speedOf :: PlayerId.PlayerId -> GameState.GameState -> Maybe (Maybe Natural.Natural)
 speedOf pid gs = fmap Player.speed (Map.lookup pid (GameState.players gs))
 
--- Alice's board: two Swamps and one Muraganda Raceway, with Sign in Blood in her
--- hand. S.handOne sets the precombat main phase and makes Alice the active
--- player, which is what CR 702.179d's "during your turn" needs.
---
--- BOTH libraries are stocked, and Alice's is not an afterthought: Sign in Blood
--- aims its draw and its life loss at the same player, so a case that aims it at
--- Alice decks her -- and CR 704.5b would then lose her the game before the speed
--- trigger was ever gathered, passing that case for a reason that has nothing to
--- do with rule 702.179.
-raceBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> (GameState.GameState, ObjectId.ObjectId, ObjectId.ObjectId)
-raceBoard raceway swamp signInBlood filler =
-  let base = S.landsInPlay swamp 2
-      (racewayId, withRaceway) = S.addPermanent raceway S.alice base
-      stock pid g = foldr (\_ g2 -> snd (S.addLibraryCard filler pid g2)) g [1 .. (4 :: Int)]
-      (gs, spellId) = S.handOne signInBlood (stock S.alice (stock S.bob withRaceway))
-   in (gs, racewayId, spellId)
-
 -- Aim every target slot at Bob, so Sign in Blood's shared slot makes BOB the
 -- player who loses life. Alice is the caster, so this is an OPPONENT losing life
 -- -- CR 702.179d's event, and the whole point of the card being aimed rather than
@@ -100,13 +79,6 @@ raceBoard raceway swamp signInBlood filler =
 atBob :: Prompt.Prompt r -> r
 atBob p = case p of
   Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToPlayer S.bob))) sets
-  _ -> S.identityAnswer p
-
--- Aim at Alice instead: the same card, the same life loss, but the loser is the
--- caster rather than an opponent.
-atAlice :: Prompt.Prompt r -> r
-atAlice p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToPlayer S.alice))) sets
   _ -> S.identityAnswer p
 
 -- Cast the spell, resolve it, and settle -- which runs the state-based actions
@@ -118,17 +90,6 @@ castResolveSettle answer pid spellId gs =
   let cast = S.runPure answer gs (S.cast pid spellId)
       resolved = S.runPure answer cast (Stack.resolveTop >> Engine.settleForPriority)
    in S.runPure answer resolved (Stack.resolveTop >> Engine.settleForPriority)
-
--- castResolveSettle's shorter sibling: cast, resolve, settle, and stop. The second
--- resolveTop above is there for the inherent trigger rule 702.179d puts on the
--- stack, and cardIncreaseSpec's boards make sure nothing triggers at all -- so
--- there is nothing for it to resolve, and reaching for an empty stack would be the
--- test doing something its own premise denies. No prompts either: the spell is
--- non-modal, untargeted and mandatory.
-castOnce :: PlayerId.PlayerId -> ObjectId.ObjectId -> GameState.GameState -> GameState.GameState
-castOnce pid spellId gs =
-  let cast = S.runPure S.identityAnswer gs (S.cast pid spellId)
-   in S.runPure S.identityAnswer cast (Stack.resolveTop >> Engine.settleForPriority)
 
 -- How many mana ended up in Alice's pool after tapping this source, with every
 -- prompt answered by `answer`.
@@ -202,7 +163,6 @@ spec s registry = Spec.describe s "Parun.Engine.Speed" $ do
   maxSpeedSpec s registry
   maxSpeedZoneSpec s registry
   increaseSpec s registry
-  cardIncreaseSpec s registry
   cardDecreaseSpec s registry
 
 -- CR 702.178b: "if an ability granted by a max speed ability states which zones
@@ -238,7 +198,8 @@ maxSpeedZoneSpec s registry = Spec.describe s "MaxSpeedZone" $ do
   -- Surveyor's own gate, not the Raceway's, since each card carries its own copy
   -- of CR 702.178a's comparison and only its own case can catch it drifting back
   -- to Exactly. atSpeed rather than an effect, this group's posture throughout;
-  -- maxSpeedSpec drives the same ruling through Synthetic Speed Boost.
+  -- speed/cr-702-178a-past-4-the-raceway-keeps-its-max-speed-ability.json
+  -- drives the same ruling through Synthetic Speed Boost.
   Spec.it s "CR 702.178a past max speed the Surveyor's ability is still offered" $ do
     surveyor <- S.printingOf s registry "Loxodon Surveyor"
     swamp <- S.printingOf s registry "Swamp"
@@ -259,22 +220,6 @@ maxSpeedZoneSpec s registry = Spec.describe s "MaxSpeedZone" $ do
     Spec.assertEqWith s "but it offers no ability" (Activatable.abilitiesFor gyId gs) []
     Spec.assertEqWith s "nor has one there" (Projection.abilitiesOf gyId gs) []
     Spec.assertBool s (not (any (isActivateOf gyId) (Action.legalActions S.alice gs))) "and no activation is offered"
-  -- End to end through the real engine: the activation is announced, the {3} is
-  -- paid off the three Swamps, CR 406.2's exile pays the rest of the cost, and the
-  -- ability resolves into a drawn card. The falsifier for a gate that offered the
-  -- action and could not carry it out.
-  Spec.it s "CR 702.178b whole card: activating it exiles the Surveyor and draws" $ do
-    surveyor <- S.printingOf s registry "Loxodon Surveyor"
-    swamp <- S.printingOf s registry "Swamp"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (gyId, gs) = surveyorBoard surveyor swamp piker 4
-    case Activatable.abilitiesFor gyId gs of
-      [ability] -> do
-        let after = S.runPure S.identityAnswer gs (Activate.activateAbility S.alice gyId ability >> Stack.resolveTop)
-        Spec.assertEqWith s "the graveyard is empty" (Game.zoneMembers Zone.Graveyard S.alice after) []
-        Spec.assertEqWith s "the card is in exile (CR 406.2)" (length (Game.zoneMembers Zone.Exile S.alice after)) 1
-        Spec.assertEqWith s "alice drew a card" (S.handSize S.alice after) (S.handSize S.alice gs + 1)
-      abilities -> Spec.assertEqWith s "exactly one ability to activate" (length abilities) 1
   -- CR 113.6m's "functions ONLY in that zone", from the other side: the very same
   -- printing on the BATTLEFIELD at max speed offers nothing. The projection still
   -- hands the ability out -- CR 702.178a's condition is true, and the card's
@@ -317,17 +262,6 @@ startYourEnginesSpec s registry = Spec.describe s "StartYourEngines" $ do
     -- Bob controls no such permanent, so CR 704.5aa passes him by. The falsifier
     -- for an implementation that gave everybody speed.
     Spec.assertEqWith s "bob, who controls none, still has no speed" (speedOf S.bob after) (Just Nothing)
-  -- CR 704.5aa fires only for a player who has NO speed, which is what makes it
-  -- terminate: the settle loop re-checks until nothing acts (CR 704.3), and a
-  -- clause that set speed to 1 unconditionally would never stop acting.
-  Spec.it s "CR 704.5aa does not fire again once speed exists" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    swamp <- S.printingOf s registry "Swamp"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (gs, _, spellId) = raceBoard raceway swamp signInBlood piker
-        raised = castResolveSettle atBob S.alice spellId gs
-    Spec.assertEqWith s "speed rose to 2 and the check did not drag it back" (speedOf S.alice raised) (Just (Just 2))
   -- CR 305.7 / 702.179a: the keyword is read off the PROJECTION, so an effect
   -- that takes the permanent's rules text away takes its engines with it. Blood
   -- Moon and not Humility, because CR 613.1f's strip is aimed at creatures and
@@ -375,32 +309,6 @@ maxSpeedSpec s registry = Spec.describe s "MaxSpeed" $ do
         gs = atSpeed 4 S.alice (S.settleSba board)
     Spec.assertEqWith s "two activated abilities" (length (Projection.abilitiesOf racewayId gs)) 2
     Spec.assertEqWith s "and the granted one makes two mana" (pooledBy biggestYield racewayId gs) 2
-  -- A PROJECT DECISION and not a rule. CR 702.179e says "a player has max speed
-  -- if their speed is 4" and CR 702.178a compares against "is 4"; no subrule caps
-  -- speed and none permits exceeding the cap, so the CR settles neither
-  -- direction. Parun rules that speed may go past 4 and that 4 OR MORE is max
-  -- speed -- Parun.Engine.Speed.maxSpeed's comment carries the ruling -- and this
-  -- case is what records it, so a later CR clarification is this assertion plus
-  -- the AtLeast gate in every "Max speed --" card.
-  --
-  -- Gameplay level throughout, and through the CARD rather than through atSpeed:
-  -- Alice is put at 3 and Synthetic Speed Boost's "each player's speed increases
-  -- by 2" resolves, so the 5 is the effect's arithmetic and no other rule's --
-  -- rule 702.179d's climb is +1 and could not reach it, and nobody loses life
-  -- here for it to fire on. The mana yield comes before the ability count so the
-  -- behaviour, not the count that proxies it, is what a wrong gate reddens.
-  Spec.it s "CR 702.178a past 4 the Raceway keeps its max speed ability" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    boost <- S.printingOf s registry "Synthetic Speed Boost"
-    let (racewayId, board) = S.addPermanent raceway S.alice (Setup.emptyGame S.bothPlayers)
-        (withSpell, spellId) = S.handOne boost board
-        gs = atSpeed 3 S.alice (S.settleSba withSpell)
-        after = castOnce S.alice spellId gs
-    Spec.assertEqWith s "alice is at 3 before the spell" (speedOf S.alice gs) (Just (Just 3))
-    Spec.assertEqWith s "no inherent trigger was spent (CR 702.179d)" (inherentTriggersSpent after) []
-    Spec.assertEqWith s "the effect pushed her past 4, uncapped" (speedOf S.alice after) (Just (Just 5))
-    Spec.assertEqWith s "and the max speed ability still makes two mana at 5" (pooledBy biggestYield racewayId after) 2
-    Spec.assertEqWith s "two activated abilities at 5" (length (Projection.abilitiesOf racewayId after)) 2
   -- Burnout Bashtronaut's "Max speed — This creature has double strike": a
   -- keyword the max speed ability grants its own object, asked at 4 and at 3.
   Spec.it s "CR 702.178a at max speed Burnout Bashtronaut has double strike, one short it does not" $ do
@@ -437,47 +345,6 @@ maxSpeedSpec s registry = Spec.describe s "MaxSpeed" $ do
 
 increaseSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 increaseSpec s registry = Spec.describe s "Increase" $ do
-  -- CR 702.179d, the whole ability: an opponent lost life on Alice's turn, so her
-  -- speed goes up by 1. Sign in Blood is cast and resolved through the stack, and
-  -- the inherent trigger it wakes resolves off the stack in turn.
-  Spec.it s "CR 702.179d an opponent losing life on your turn raises your speed" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    swamp <- S.printingOf s registry "Swamp"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (gs, _, spellId) = raceBoard raceway swamp signInBlood piker
-        after = castResolveSettle atBob S.alice spellId gs
-    Spec.assertEqWith s "bob lost two life" (S.lifeOf S.bob after) (fmap (subtract 2) (S.lifeOf S.bob gs))
-    Spec.assertEqWith s "so alice's speed rose from 1 to 2" (speedOf S.alice after) (Just (Just 2))
-  -- CR 119.2: damage dealt to a player CAUSES that player to lose life, so a
-  -- Lightning Bolt to the face is the same event as Sign in Blood's clause as far
-  -- as CR 702.179d is concerned. The falsifier for recording life loss only where
-  -- an effect said "lose life" -- which is how most speed actually rises in play.
-  Spec.it s "CR 119.2 damage to an opponent raises your speed too" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    mountain <- S.printingOf s registry "Mountain"
-    lightningBolt <- S.printingOf s registry "Lightning Bolt"
-    let base = S.landsInPlay mountain 1
-        (_, withRaceway) = S.addPermanent raceway S.alice base
-        (gs, spellId) = S.handOne lightningBolt withRaceway
-        after = castResolveSettle atBob S.alice spellId gs
-    Spec.assertEqWith s "bob took three" (S.lifeOf S.bob after) (fmap (subtract 3) (S.lifeOf S.bob gs))
-    Spec.assertEqWith s "and alice's speed rose from 1 to 2" (speedOf S.alice after) (Just (Just 2))
-  -- CR 702.179d's "one or more OPPONENTS": the caster losing life herself is not
-  -- the event. The falsifier for a matcher that fired on any life loss at all.
-  Spec.it s "CR 702.179d your own life loss raises nothing" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    swamp <- S.printingOf s registry "Swamp"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (gs, _, spellId) = raceBoard raceway swamp signInBlood piker
-        after = castResolveSettle atAlice S.alice spellId gs
-    Spec.assertEqWith s "alice lost two life" (S.lifeOf S.alice after) (fmap (subtract 2) (S.lifeOf S.alice gs))
-    -- She is still in the game, which is what makes the assertion below say
-    -- something: a decked Alice (CR 704.5b) would stop being an opponent of
-    -- herself and pass this case for the wrong reason.
-    Spec.assertEqWith s "and she is still playing" (GameState.result after) Nothing
-    Spec.assertEqWith s "and her speed stayed at 1" (speedOf S.alice after) (Just (Just 1))
   -- CR 603.2: the ability triggers as the loss happens, when Bob is still an
   -- opponent in the game; CR 704.5a's departure before the CR 117.5 gather does
   -- not take it back. Three seats, so the game goes on without him.
@@ -494,22 +361,6 @@ increaseSpec s registry = Spec.describe s "Increase" $ do
     Spec.assertBool s (S.bob `notElem` Game.stillPlaying after) "bob left the game"
     Spec.assertEqWith s "and the game goes on" (GameState.result after) Nothing
     Spec.assertEqWith s "alice's speed rose from 1 to 2" (speedOf S.alice after) (Just (Just 2))
-  -- CR 702.179d's "this ability triggers only once each turn". Two separate
-  -- castings, two separate life losses, one increase.
-  Spec.it s "CR 702.179d the increase happens only once each turn" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    swamp <- S.printingOf s registry "Swamp"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (gs0, _, firstSpell) = raceBoard raceway swamp signInBlood piker
-        once = castResolveSettle atBob S.alice firstSpell gs0
-        -- Two more untapped Swamps: the first casting tapped hers, and this case
-        -- is about the trigger limit rather than about mana.
-        refuelled = foldr (\_ g -> snd (S.addPermanent swamp S.alice g)) once [1 .. (2 :: Int)]
-        (secondSpell, withAnother) = S.addHandCard signInBlood S.alice refuelled
-        twice = castResolveSettle atBob S.alice secondSpell withAnother
-    Spec.assertEqWith s "bob lost four life over the two castings" (S.lifeOf S.bob twice) (fmap (subtract 4) (S.lifeOf S.bob gs0))
-    Spec.assertEqWith s "but alice's speed rose only once" (speedOf S.alice twice) (Just (Just 2))
   -- The same rider on an ability GAINED after the turn's first matching event.
   -- Bob loses life to a Lightning Bolt while alice has no speed, so CR 702.179d's
   -- ability does not exist yet; she then plays Muraganda Raceway, CR 702.179a
@@ -548,118 +399,6 @@ increaseSpec s registry = Spec.describe s "Increase" $ do
     Spec.assertEqWith s "CR 702.179d alice's speed rose once" (speedOf S.alice after) (Just (Just 2))
     Spec.assertEqWith s "one sourceless trigger was spent" (inherentTriggersSpent after) [S.alice]
     Spec.assertEqWith s "the gather fired once per group, not once per loss" (fmap PendingTrigger.controller (Trigger.inherentTriggers (fmap (\(pid, ability) -> (TriggerSource.Sourceless, pid, ability)) (Speed.abilities logged)) (Event.unscannedGrouped logged) logged)) [S.alice, S.alice]
-  -- CR 702.179d's intervening "if your speed is less than 4", at CR 603.4's
-  -- gather-time check: a player already at max speed does not trigger, so speed
-  -- stops at 4 rather than climbing past it. CR 702.179e is why 4 is the number.
-  Spec.it s "CR 702.179d speed stops at 4" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    swamp <- S.printingOf s registry "Swamp"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (gs0, _, spellId) = raceBoard raceway swamp signInBlood piker
-        gs = atSpeed 4 S.alice gs0
-        after = castResolveSettle atBob S.alice spellId gs
-    Spec.assertEqWith s "bob still lost the life" (S.lifeOf S.bob after) (fmap (subtract 2) (S.lifeOf S.bob gs))
-    Spec.assertEqWith s "and alice is still at 4, not 5" (speedOf S.alice after) (Just (Just 4))
-  -- CR 702.179d's "during YOUR turn": the same life loss on the opponent's own
-  -- turn raises nobody's speed. Bob is the active player and casts it at himself,
-  -- so Alice -- who has the speed -- is not the active player and her ability
-  -- never fires.
-  Spec.it s "CR 702.179d a life loss on somebody else's turn raises nothing" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    swamp <- S.printingOf s registry "Swamp"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (gs0, _, _) = raceBoard raceway swamp signInBlood piker
-        -- Bob's own two Swamps and his own copy, and the turn handed to him.
-        withBobsLands = foldr (\_ g -> snd (S.addPermanent swamp S.bob g)) gs0 [1 .. (2 :: Int)]
-        (bobSpell, withBobsSpell) = S.addHandCard signInBlood S.bob withBobsLands
-        started = S.settleSba withBobsSpell
-        bobsTurn =
-          started
-            { GameState.turn =
-                (GameState.turn started)
-                  { TurnRegisters.activePlayer = S.bob,
-                    TurnRegisters.priority = Just S.bob
-                  }
-            }
-        after = castResolveSettle atBob S.bob bobSpell bobsTurn
-    Spec.assertEqWith s "bob lost two life on his own turn" (S.lifeOf S.bob after) (fmap (subtract 2) (S.lifeOf S.bob bobsTurn))
-    Spec.assertEqWith s "and alice's speed did not move" (speedOf S.alice after) (Just (Just 1))
-  -- CR 702.179d's per-turn limit is per TURN, not per game: the handoff clears
-  -- it, so the same board raises speed again next turn. Nothing else in the
-  -- engine resets it.
-  Spec.it s "CR 702.179d a new turn restores the once-each-turn allowance" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    swamp <- S.printingOf s registry "Swamp"
-    signInBlood <- S.printingOf s registry "Sign in Blood"
-    piker <- S.printingOf s registry "Goblin Piker"
-    let (gs0, _, firstSpell) = raceBoard raceway swamp signInBlood piker
-        once = castResolveSettle atBob S.alice firstSpell gs0
-        -- The turn handoff, which is the only thing under test here. Two more
-        -- untapped Swamps rather than an untap step, so nothing but
-        -- Engine.beginTurnOf stands between the two castings.
-        nextTurn = foldr (\_ g -> snd (S.addPermanent swamp S.alice g)) (Engine.beginTurnOf S.alice once) [1 .. (2 :: Int)]
-        (secondSpell, withAnother) = S.addHandCard signInBlood S.alice nextTurn
-        twice = castResolveSettle atBob S.alice secondSpell withAnother
-    Spec.assertEqWith s "one increase on the first turn" (speedOf S.alice once) (Just (Just 2))
-    Spec.assertEqWith s "and another on the second" (speedOf S.alice twice) (Just (Just 3))
-
--- CR 702.179c read off a CARD rather than off rule 702.179d: "if a player has no
--- speed and they are instructed to increase their speed by a certain value, their
--- speed becomes that value". The instruction the rule anticipates has to come from
--- somewhere, and rule 702.179d is not it -- that ability only exists for a player
--- who already has 1 or more speed, so its own increase can never reach the branch.
---
--- The proving card is a LABELED SYNTHETIC: "Synthetic Speed Boost", a {0} sorcery
--- reading "Each player's speed increases by 2". No printing raises a speed by its
--- own text -- a Scryfall sweep of every card whose oracle text contains "speed"
--- turns up exactly one that changes a speed at all, Spikeshell Harrier, and it
--- REDUCES one (cardDecreaseSpec below). Nothing in rule 702.179 forbids the card
--- written here:
--- 702.179c names "a certain value" and no player in particular.
---
--- Every number here is chosen to be unreachable any other way. The increase is 2,
--- so no reading of rule 702.179's own machinery -- CR 704.5aa's "becomes 1", CR
--- 702.179d's "+1" -- produces it; and the effect names EACH PLAYER, so bob, who
--- controls nothing at all, is moved by the card or by nothing.
---
--- Every board here stays below 4, so nothing in this group depends on parun's
--- ruling about speeds past CR 702.179e's max speed; maxSpeedSpec's "past 4 the
--- Raceway keeps its max speed ability" is where that is settled.
-cardIncreaseSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-cardIncreaseSpec s registry = Spec.describe s "CardIncrease" $ do
-  -- CR 702.179c's FIRST reading: a player who already has speed and is instructed
-  -- to increase it by a value goes up by that value. Alice is at 1 from CR 704.5aa
-  -- before the spell is cast, so 3 is arithmetic no other rule performs.
-  Spec.it s "CR 702.179c a card's own text raises the speed a player already has" $ do
-    raceway <- S.printingOf s registry "Muraganda Raceway"
-    boost <- S.printingOf s registry "Synthetic Speed Boost"
-    let (_, board) = S.addPermanent raceway S.alice (Setup.emptyGame S.bothPlayers)
-        (withSpell, spellId) = S.handOne boost board
-        gs = S.settleSba withSpell
-        after = castOnce S.alice spellId gs
-    Spec.assertEqWith s "alice starts at 1 (CR 704.5aa)" (speedOf S.alice gs) (Just (Just 1))
-    Spec.assertEqWith s "and bob, controlling nothing, has none (CR 702.179b)" (speedOf S.bob gs) (Just Nothing)
-    -- The control that isolates the card. Rule 702.179d's ability fires on an
-    -- opponent losing life, and nothing here loses any -- so the set of players
-    -- whose inherent trigger was spent this turn is empty, and the increases below
-    -- have no other author.
-    Spec.assertEqWith s "no inherent trigger was spent (CR 702.179d)" (inherentTriggersSpent after) []
-    Spec.assertEqWith s "alice's 1 became 3" (speedOf S.alice after) (Just (Just 3))
-    Spec.assertEqWith s "and bob's none became 2, CR 702.179c's other reading" (speedOf S.bob after) (Just (Just 2))
-  -- CR 702.179c's SECOND reading on its own, with rule 702.179's own machinery
-  -- entirely absent: no permanent with start your engines!, so CR 704.5aa never
-  -- acts, and nobody has speed for CR 702.179d's ability to exist on. The speed
-  -- both players end at is the card's value and nothing else.
-  Spec.it s "CR 702.179c a player with no speed instructed to increase becomes that value" $ do
-    boost <- S.printingOf s registry "Synthetic Speed Boost"
-    let (gs, spellId) = S.handOne boost (Setup.emptyGame S.bothPlayers)
-        after = castOnce S.alice spellId gs
-    Spec.assertEqWith s "neither player has speed to begin with (CR 702.179b)" (speedOf S.alice gs) (Just Nothing)
-    Spec.assertEqWith s "nor bob" (speedOf S.bob gs) (Just Nothing)
-    Spec.assertEqWith s "alice's speed BECAME 2 rather than rising to 1 from a stand-in 0" (speedOf S.alice after) (Just (Just 2))
-    Spec.assertEqWith s "and bob's did too, the effect naming every player" (speedOf S.bob after) (Just (Just 2))
 
 -- CR 702.179 in the one direction rule 702.179 never legislates: a REDUCTION.
 -- CR 702.179c covers being "instructed to increase", CR 702.179b makes speed

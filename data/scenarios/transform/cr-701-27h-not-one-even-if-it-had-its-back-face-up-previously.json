@@ -1,0 +1,225 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tovolar, Dire Overlord",
+            "label": "tovolar"
+          },
+          {
+            "card": "Russet Wolves",
+            "label": "w1"
+          },
+          {
+            "card": "Russet Wolves",
+            "label": "w2"
+          },
+          {
+            "card": "Mutagen Connoisseur",
+            "label": "connoisseur"
+          },
+          {
+            "card": "Thraben Gargoyle",
+            "label": "gargoyle"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Giant Growth",
+            "label": "g1"
+          },
+          {
+            "card": "Giant Growth",
+            "label": "g2"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 701.27h not one even if it had its back face up previously",
+  "note": "CR 701.27h's \"even if it had its back face up previously\": Tovolar goes day, night, day, so at the last read he is front face up having turned over twice, and the Connoisseur counts none; a reading off whether the permanent ever turned over would count him. The night checks are the precondition that he was back face up. alice casts two Giant Growths on her turn, so bob's untap step makes it day again (CR 502.2). Mutagen Connoisseur's power counts the transformed permanents alice controls, so its power is the tally. Tovolar is the double-faced permanent that turns, through day and night alone (CR 702.145c/f); Thraben Gargoyle is a second double-faced permanent that never turns, so reading \"transformed permanent\" as \"double-faced permanent\" counts 2. The Wolves are single-faced and count under no reading. Day comes from Tovolar at the first settle (CR 702.145d) on bob's turn; bob casts nothing, so alice's untap step makes it night (CR 502.2).",
+  "timeline": [
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$connoisseur",
+          "power": 1,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": "Night",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Tovolar, the Midnight Scourge"
+          ],
+          "object": "$tovolar"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Thraben Gargoyle"
+          ],
+          "object": "$gargoyle"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f1",
+            null
+          ],
+          "object": "$g1",
+          "targets": [
+            "$w1"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f2"
+          ],
+          "object": "$g2",
+          "targets": [
+            "$w2"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "Attack": []
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 2
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$connoisseur",
+          "power": 0,
+          "toughness": 5
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": "Day",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Tovolar, Dire Overlord"
+          ],
+          "object": "$tovolar"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Thraben Gargoyle"
+          ],
+          "object": "$gargoyle"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    }
+  ]
+}
