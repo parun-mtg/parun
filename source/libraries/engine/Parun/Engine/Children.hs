@@ -1642,6 +1642,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.LosesControl subject -> case subject of
     LostPermanent.Self -> pure condition
     LostPermanent.Bound slot_ -> fmap (TriggerCondition.LosesControl . LostPermanent.Bound) (triggerSlot c slot_)
+    LostPermanent.Matching acts -> fmap (TriggerCondition.LosesControl . LostPermanent.Matching) (playerActsOnChildren c acts)
   TriggerCondition.RoomEntered _ -> pure condition
   TriggerCondition.PlayerLosesGame _ -> pure condition
   TriggerCondition.PlayerPlaysLand (PlaysLand.MkPlaysLand who from filter_) -> fmap (TriggerCondition.PlayerPlaysLand . PlaysLand.MkPlaysLand who from) (triggerFilter c filter_)

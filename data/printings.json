@@ -15730,7 +15730,11 @@
       "302": {"card":"Swamp"},
       "574": {"card":"Swamp"},
       "328": {"card":"Ultima"},
-      "38": {"card":"Ultima"}
+      "38": {"card":"Ultima"},
+      "251": {"card":"Zidane, Tantalus Thief"},
+      "405": {"card":"Zidane, Tantalus Thief"},
+      "518": {"card":"Zidane, Tantalus Thief"},
+      "550": {"card":"Zidane, Tantalus Thief"}
     },
     "FNM": {
       "8": {"card":"Giant Growth"},
@@ -31981,7 +31985,8 @@
       "2022-2": {"card":"Wild Growth"},
       "2026-2": {"card":"Wild Growth"},
       "2025-3": {"card":"Wrath of God"},
-      "2026-11": {"card":"Zetalpa, Primal Dawn"}
+      "2026-11": {"card":"Zetalpa, Primal Dawn"},
+      "2025-26": {"card":"Zidane, Tantalus Thief"}
     },
     "PMH2": {
       "186s": {"card":"Asmoranomardicadaistinaculdacar"},

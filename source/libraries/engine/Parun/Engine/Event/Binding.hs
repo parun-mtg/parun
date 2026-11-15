@@ -1819,10 +1819,11 @@ eventBindingSlots cond = case cond of
   --
   -- Unconditional: GameEvent.BecameMonarch carries a PlayerId outright.
   TriggerCondition.PlayerBecomesMonarch _ -> Set.singleton Binding.triggerPlayer
-  -- Empty by decision under either subject: the permanent the event names is the
+  -- Empty by decision under every subject: the permanent the event names is the
   -- bearer, which the ability already names, or the one the condition's own SLOT
   -- already names, and Ray of Command's "tap it" reads that slot rather than
-  -- anything the event bound. A slot for the player who GAINED control is what a
+  -- anything the event bound. A Matching subject's permanent is one Zidane,
+  -- Tantalus Thief's effect never names. A slot for the player who GAINED control is what a
   -- card printing "that player" would earn; nothing prints one.
   TriggerCondition.LosesControl _ -> Set.empty
   -- Empty NECESSARILY rather than by choice: this condition admits no event, so

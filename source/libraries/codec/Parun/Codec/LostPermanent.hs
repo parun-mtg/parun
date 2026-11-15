@@ -1,5 +1,6 @@
 module Parun.Codec.LostPermanent where
 
+import qualified Parun.Codec.PlayerActsOn as PlayerActsOn
 import qualified Parun.Codec.SlotName as SlotName
 import qualified Parun.JsonCodec.Arm as Arm
 import qualified Parun.JsonCodec.Codec as Codec
@@ -10,10 +11,12 @@ codec =
   Arm.tagged
     tagOf
     [ Arm.nullary "Self" LostPermanent.Self,
-      Arm.payload "Bound" SlotName.codec LostPermanent.Bound (\x -> case x of LostPermanent.Bound y -> Just y; _ -> Nothing)
+      Arm.payload "Bound" SlotName.codec LostPermanent.Bound (\x -> case x of LostPermanent.Bound y -> Just y; _ -> Nothing),
+      Arm.payload "Matching" PlayerActsOn.codec LostPermanent.Matching (\x -> case x of LostPermanent.Matching y -> Just y; _ -> Nothing)
     ]
 
 tagOf :: LostPermanent.LostPermanent -> String
 tagOf x = case x of
   LostPermanent.Self {} -> "Self"
   LostPermanent.Bound {} -> "Bound"
+  LostPermanent.Matching {} -> "Matching"
