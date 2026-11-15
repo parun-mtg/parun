@@ -448,6 +448,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.DeclaredAttackerThisCombat
       " {\"type\":\"DeclaredAttackerThisCombat\"} "
+  Spec.it s "HadToAttackThisCombat" $
+    Common.assertCodec
+      s
+      codec
+      Filter.HadToAttackThisCombat
+      " {\"type\":\"HadToAttackThisCombat\"} "
   Spec.it s "DeclaredAttackedThisCombat" $
     Common.assertCodec
       s

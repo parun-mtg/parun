@@ -621,6 +621,7 @@ filterChildren children predicate = case predicate of
   Filter.HasBlockStatus _ -> pure predicate
   Filter.DeclaredAttackerThisCombat -> pure predicate
   Filter.DeclaredBlockerThisCombat -> pure predicate
+  Filter.HadToAttackThisCombat -> pure predicate
   Filter.DeclaredThisTurn _ -> pure predicate
   Filter.CouldAttackThisTurn -> pure predicate
   Filter.LeftLibraryThisTurn _ -> pure predicate

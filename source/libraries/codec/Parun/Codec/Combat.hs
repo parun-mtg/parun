@@ -41,6 +41,7 @@ codec = Fields.object $ do
   declaredAttackedThisStep <- Fields.defaulted "declaredAttackedThisStep" Set.empty (Common.set AttackTarget.codec) Combat.declaredAttackedThisStep
   declaredAttackers <- Fields.defaulted "declaredAttackers" Set.empty (Common.set ObjectId.codec) Combat.declaredAttackers
   declaredBlockers <- Fields.defaulted "declaredBlockers" Set.empty (Common.set ObjectId.codec) Combat.declaredBlockers
+  hadToAttack <- Fields.defaulted "hadToAttack" Set.empty (Common.set ObjectId.codec) Combat.hadToAttack
   blockersDeclared <- Fields.defaulted "blockersDeclared" False Common.boolean Combat.blockersDeclared
   attackingNothing <- Fields.defaulted "attackingNothing" Set.empty (Common.set ObjectId.codec) Combat.attackingNothing
   blockingNothing <- Fields.defaulted "blockingNothing" Set.empty (Common.set ObjectId.codec) Combat.blockingNothing
@@ -65,6 +66,7 @@ codec = Fields.object $ do
         Combat.declaredAttackedThisStep = declaredAttackedThisStep,
         Combat.declaredAttackers = declaredAttackers,
         Combat.declaredBlockers = declaredBlockers,
+        Combat.hadToAttack = hadToAttack,
         Combat.blockersDeclared = blockersDeclared,
         Combat.attackingNothing = attackingNothing,
         Combat.blockingNothing = blockingNothing,

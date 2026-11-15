@@ -4476,6 +4476,7 @@ filterReads f = case f of
   -- Modification writes TurnRegisters.combat.
   Filter.Type.DeclaredAttackerThisCombat -> Set.empty
   Filter.Type.DeclaredBlockerThisCombat -> Set.empty
+  Filter.Type.HadToAttackThisCombat -> Set.empty
   Filter.Type.LeftLibraryThisTurn _ -> Set.empty
   -- CR 702.122d reads nothing a layer writes, IsAttacking's reason one rule
   -- over: the prohibition is gathered outside the layer system (CR 613.11) and
@@ -4803,6 +4804,7 @@ filterReadsPeers f = case f of
   Filter.Type.CouldAttackThisTurn -> False
   Filter.Type.DeclaredAttackerThisCombat -> False
   Filter.Type.DeclaredBlockerThisCombat -> False
+  Filter.Type.HadToAttackThisCombat -> False
   Filter.Type.LeftLibraryThisTurn _ -> False
   -- CR 702.122d reads the CONTEXT's gathered set rather than any field of a
   -- peer's view, so no second projection can change its answer.

@@ -99,6 +99,7 @@ emptyCombat =
       Combat.declaredAttackedBy = Map.empty,
       Combat.declaredAttackedThisStep = Set.empty,
       Combat.declaredAttackers = Set.empty,
+      Combat.hadToAttack = Set.empty,
       Combat.declaredBlockers = Set.empty,
       Combat.blockersDeclared = False,
       Combat.attackingNothing = Set.empty,
@@ -2825,7 +2826,16 @@ attemptAttackDeclaration perform pid asked forced rejected = do
                 (GameState.turn g)
                   { TurnRegisters.combat =
                       (TurnRegisters.combat (GameState.turn g))
-                        { Combat.declaredAttackers = Set.union (Set.fromList attacking) (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn g)))
+                        { Combat.declaredAttackers = Set.union (Set.fromList attacking) (Combat.declaredAttackers (TurnRegisters.combat (GameState.turn g))),
+                          -- CR 506.7: every candidate a per-creature requirement
+                          -- named as this declaration was judged, attacking or
+                          -- not. The pairs and never the groups, a requirement on
+                          -- the player (Trove of Temptation) requiring no creature.
+                          --
+                          -- Not implemented: a requirement naming a defender this
+                          -- creature cannot attack mints no pair, so does not
+                          -- record it (#7675).
+                          Combat.hadToAttack = Set.union (Set.map fst (Map.keysSet (Requirement.pairs (fst bound)))) (Combat.hadToAttack (TurnRegisters.combat (GameState.turn g)))
                         }
                   }
             }

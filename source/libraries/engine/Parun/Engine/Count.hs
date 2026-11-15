@@ -1241,6 +1241,9 @@ lastKnownView peers oid gs lastKnown =
           Filter.declaredAttackerThisCombat = declaredAttackerThisCombat oid gs,
           Filter.declaredAttackedThisCombat = declaredAttackedThisCombat oid gs,
           Filter.declaredBlockerThisCombat = declaredBlockerThisCombat oid gs,
+          -- CR 506.7: what was required of it as attackers were declared, which
+          -- leaving the battlefield since cannot undo.
+          Filter.hadToAttackThisCombat = hadToAttackThisCombat oid gs,
           Filter.leftLibraryThisTurn = leftLibraryThisTurn oid gs,
           Filter.dealtDamageThisTurn = dealtDamageThisTurn oid gs,
           -- CR 119.3: only a player loses life.
@@ -1307,6 +1310,10 @@ declaredAttackedThisCombat oid gs =
 -- CR 509.1a: declaredAttackerThisCombat's record, for the blockers.
 declaredBlockerThisCombat :: ObjectId -> GameState -> Bool
 declaredBlockerThisCombat oid gs = Set.member oid (Combat.declaredBlockers (TurnRegisters.combat (GameState.turn gs)))
+
+-- CR 506.7: the same record's requirement half.
+hadToAttackThisCombat :: ObjectId -> GameState -> Bool
+hadToAttackThisCombat oid gs = Set.member oid (Combat.hadToAttack (TurnRegisters.combat (GameState.turn gs)))
 
 -- CR 121.1, 701.17a, 608.2i: how this object left a library this turn. Only
 -- a mill appends the event, so a surveil's or an explore's bin stays
@@ -1611,6 +1618,7 @@ viewOfSnapshot deploy mController mOwner isToken counters zone home lapsed snaps
       -- posture.
       Filter.declaredAttackerThisCombat = False,
       Filter.declaredBlockerThisCombat = False,
+      Filter.hadToAttackThisCombat = False,
       -- CR 701.17a mills a CARD, and this view describes a snapshot rather than
       -- an object -- there is no id here for the turn's mills to have named.
       Filter.leftLibraryThisTurn = Set.empty,
