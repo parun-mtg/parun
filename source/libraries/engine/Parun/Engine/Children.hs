@@ -2189,7 +2189,7 @@ playerEffectChildren c effect = case effect of
     fmap PlayerEffect.AlternativeActivationCost (AlternativeActivationCost.MkAlternativeActivationCost <$> playerDesignator c grantedBy <*> traverse (onlyFirstChildren c HistoryRead.Activations) onlyFirst <*> pure cost)
   PlayerEffect.PlayAdditionalLands _ -> pure effect
   PlayerEffect.NoMaximumHandSize -> pure effect
-  PlayerEffect.SetMaximumHandSize _ -> pure effect
+  PlayerEffect.SetMaximumHandSize limit -> PlayerEffect.SetMaximumHandSize <$> playerQuantity c limit
   PlayerEffect.IncreaseMaximumHandSize _ -> pure effect
   PlayerEffect.IncreaseDevotion _ -> pure effect
   PlayerEffect.ReduceMaximumHandSize _ -> pure effect

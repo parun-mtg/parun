@@ -29,6 +29,7 @@ import qualified Parun.Codec.ModifiedRoll as ModifiedRoll
 import qualified Parun.Codec.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Codec.PlayerScope as PlayerScope
 import qualified Parun.Codec.PlotFromZone as PlotFromZone
+import qualified Parun.Codec.Quantity as Quantity
 import qualified Parun.Codec.Shows as Shows
 import qualified Parun.Codec.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Codec.StateBasedAction as StateBasedAction
@@ -106,7 +107,7 @@ codec =
           Arm.payload "AlternativeActivationCost" AlternativeActivationCost.codec PlayerEffect.AlternativeActivationCost (\x -> case x of PlayerEffect.AlternativeActivationCost y -> Just y; _ -> Nothing),
           Arm.payload "PlayAdditionalLands" LandAllowance.codec PlayerEffect.PlayAdditionalLands (\x -> case x of PlayerEffect.PlayAdditionalLands y -> Just y; _ -> Nothing),
           Arm.nullary "NoMaximumHandSize" PlayerEffect.NoMaximumHandSize,
-          Arm.payload "SetMaximumHandSize" Common.natural PlayerEffect.SetMaximumHandSize (\x -> case x of PlayerEffect.SetMaximumHandSize y -> Just y; _ -> Nothing),
+          Arm.payload "SetMaximumHandSize" Quantity.codec PlayerEffect.SetMaximumHandSize (\x -> case x of PlayerEffect.SetMaximumHandSize y -> Just y; _ -> Nothing),
           Arm.payload "IncreaseMaximumHandSize" Common.natural PlayerEffect.IncreaseMaximumHandSize (\x -> case x of PlayerEffect.IncreaseMaximumHandSize y -> Just y; _ -> Nothing),
           Arm.payload "ReduceMaximumHandSize" Common.natural PlayerEffect.ReduceMaximumHandSize (\x -> case x of PlayerEffect.ReduceMaximumHandSize y -> Just y; _ -> Nothing),
           Arm.payload "IncreaseDevotion" Common.natural PlayerEffect.IncreaseDevotion (\x -> case x of PlayerEffect.IncreaseDevotion y -> Just y; _ -> Nothing),

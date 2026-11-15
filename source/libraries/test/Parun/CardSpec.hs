@@ -4027,10 +4027,11 @@ playerEffectFilters playerEffect = case playerEffect of
   -- how many lands, never which spells.
   PlayerEffect.PlayAdditionalLands _ -> []
   PlayerEffect.NoMaximumHandSize -> []
-  -- CR 402.2's three number-carrying arms carry a bare count of cards for the
-  -- same reason: each names how many cards a hand may hold, or by how much that
-  -- number moves, never which spells.
-  PlayerEffect.SetMaximumHandSize _ -> []
+  -- CR 402.2's set reads a Quantity, whose Filters (Winter, Misanthropic
+  -- Guide's cards in your graveyard) take the row's Context, as a `perEach`'s
+  -- do. The other two number-carrying arms carry a bare count of cards: each
+  -- names by how much that number moves, never which spells.
+  PlayerEffect.SetMaximumHandSize limit -> fmap snd (quantityFilters limit)
   PlayerEffect.IncreaseMaximumHandSize _ -> []
   PlayerEffect.IncreaseDevotion _ -> []
   PlayerEffect.ReduceMaximumHandSize _ -> []

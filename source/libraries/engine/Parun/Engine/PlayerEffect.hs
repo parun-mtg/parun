@@ -3959,12 +3959,25 @@ defaultMaximumHandSize = 7
 -- CR 107.1b is the reduction's floor: the calculation determining a maximum hand
 -- size cannot yield a negative number, and no exception in that rule is a hand
 -- size. Written as a comparison rather than as Natural subtraction, which would
--- throw rather than floor.
+-- throw rather than floor. A set's quantity takes the same floor, and reads 0
+-- where it cannot be determined, perEachCount's posture.
+--
+-- A set's quantity is read live against the row's source, with the row's
+-- controller as CR 109.5's "you" (CR 611.3a): Winter, Misanthropic Guide's
+-- count of card types in ITS controller's graveyard, which
+-- data/scenarios/winter-misanthropic-guide-*.json prove. Every row carries a
+-- source object (printedRows, storedSource), so reading 0 without one is a
+-- fence. A stored row is read live too, where CR 608.2h would fix the number as
+-- it began: Scryfall o:"maximum hand size is equal to", 2026-11-15, finds only
+-- static abilities (Midnight Oil, Winter).
 maximumHandSize :: PlayerId -> GameState -> Maybe Natural
 maximumHandSize pid gs =
-  let apply current effect = case effect of
+  let apply current (source, effect) = case effect of
         PlayerEffect.NoMaximumHandSize -> Nothing
-        PlayerEffect.SetMaximumHandSize limit -> Just limit
+        PlayerEffect.SetMaximumHandSize limit ->
+          let you = Maybe.fromMaybe (targetPerspective pid source gs) (RowSource.controller source)
+              valueAt oid = Quantity.evaluate (Projection.fullView gs) (contextFor (Just you) source gs) gs oid limit
+           in Just (maybe 0 Integer.toNaturalSaturating (RowSource.object source >>= valueAt))
         PlayerEffect.IncreaseMaximumHandSize extra -> fmap (extra +) current
         PlayerEffect.ReduceMaximumHandSize fewer -> fmap (\limit -> if fewer >= limit then 0 else limit - fewer) current
         PlayerEffect.IncreaseDevotion _ -> current
@@ -4020,7 +4033,7 @@ maximumHandSize pid gs =
         PlayerEffect.RevealsDraw _ -> current
         PlayerEffect.Precluded _ -> current
         PlayerEffect.Shows _ -> current
-   in List.foldl' (\current row -> apply current (snd row)) (Just (Vanguard.handSize defaultMaximumHandSize pid gs)) (applying pid gs)
+   in List.foldl' apply (Just (Vanguard.handSize defaultMaximumHandSize pid gs)) (applying pid gs)
 
 -- CR 500.5 / 106.4 / 613.11: which of the unspent mana in this player's pool do
 -- they keep as a step or phase ends (Upwelling, Omnath Locus of Mana)? The typed

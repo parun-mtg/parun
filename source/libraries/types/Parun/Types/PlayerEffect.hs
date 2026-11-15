@@ -30,6 +30,7 @@ import qualified Parun.Types.ModifiedRoll as ModifiedRoll
 import qualified Parun.Types.PlayerCounterKind as PlayerCounterKind
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlotFromZone as PlotFromZone
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.Shows as Shows
 import qualified Parun.Types.SpendManaAsThough as SpendManaAsThough
 import qualified Parun.Types.StateBasedAction as StateBasedAction
@@ -93,8 +94,9 @@ data PlayerEffect
     PlayAdditionalLands LandAllowance.LandAllowance
   | -- | CR 402.2 / Reliquary Tower: this player has no maximum hand size.
     NoMaximumHandSize
-  | -- | CR 402.2 / The Ten Rings: this player's maximum hand size IS this number.
-    SetMaximumHandSize Natural.Natural
+  | -- | CR 402.2 / 611.3a / The Ten Rings, Winter, Misanthropic Guide: this
+    -- player's maximum hand size IS this number, read against the source.
+    SetMaximumHandSize Quantity.Quantity
   | -- | CR 402.2 / 613.11 / Minamo Scrollkeeper: this player's maximum hand size
     -- is INCREASED by this number.
     IncreaseMaximumHandSize Natural.Natural

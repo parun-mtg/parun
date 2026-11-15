@@ -54,6 +54,7 @@ import qualified Parun.Types.PlayerRef as PlayerRef
 import qualified Parun.Types.PlayerRelation as PlayerRelation
 import qualified Parun.Types.PlayerScope as PlayerScope
 import qualified Parun.Types.PlotFromZone as PlotFromZone
+import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.RevealObligation as RevealObligation
 import qualified Parun.Types.RiderClause as RiderClause
 import qualified Parun.Types.RollModifier as RollModifier
@@ -129,16 +130,16 @@ spec s = Spec.describe s "Parun.Codec.PlayerEffect" $ do
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.SetMaximumHandSize 10)
-      " {\"type\":\"SetMaximumHandSize\",\"value\":10} "
+      (PlayerEffect.SetMaximumHandSize (Quantity.Literal 10))
+      " {\"type\":\"SetMaximumHandSize\",\"value\":{\"type\":\"Literal\",\"value\":10}} "
   -- CR 402.2 / Cursed Rack: the OTHER number, so a codec that dropped the payload
   -- would round-trip one of these and not both.
   Spec.it s "SetMaximumHandSize, Cursed Rack's four" $
     Common.assertCodec
       s
       PlayerEffect.codec
-      (PlayerEffect.SetMaximumHandSize 4)
-      " {\"type\":\"SetMaximumHandSize\",\"value\":4} "
+      (PlayerEffect.SetMaximumHandSize (Quantity.Literal 4))
+      " {\"type\":\"SetMaximumHandSize\",\"value\":{\"type\":\"Literal\",\"value\":4}} "
   -- CR 402.2 / 613.11 / Minamo Scrollkeeper. This is the shape
   -- data/cards/minamo-scrollkeeper.json carries.
   Spec.it s "IncreaseMaximumHandSize, Minamo Scrollkeeper's one" $

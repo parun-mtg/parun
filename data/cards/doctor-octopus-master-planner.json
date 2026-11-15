@@ -27,7 +27,10 @@
         {
           "effect": {
             "type": "SetMaximumHandSize",
-            "value": 8
+            "value": {
+              "type": "Literal",
+              "value": 8
+            }
           },
           "scope": {
             "type": "You"
