@@ -104,11 +104,13 @@ event context creature c = case c of
     -- Landfall is the ability word (CR 207.2c) Oracle text prints before
     -- this event and no other (Sporemound). Free for alliance: printed (EPF
     -- Point Squad) or not (Beast-Kin Ranger).
+    -- Free without one: "Whenever", or "When" for a source that removes
+    -- itself (Roiling Dragonstorm).
     opening' <- case one of
-      "a land you control" -> ["Landfall \8212 "]
-      "another creature you control" -> ["", "Alliance \8212 "]
-      _ -> [""]
-    [other (opening' <> "Whenever " <> subject <> " enters") [(becameSlot, word)]]
+      "a land you control" -> ["Landfall \8212 Whenever"]
+      "another creature you control" -> recurring <> ["Alliance \8212 Whenever"]
+      _ -> recurring
+    [other (opening' <> " " <> subject <> " enters") [(becameSlot, word)]]
   -- A disjunction with a kind described further names each kind in full and
   -- spells CR 700.4's event out, Oracle text having no land "die": "another
   -- creature you control or a land you control is put into a graveyard from
