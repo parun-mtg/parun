@@ -1,0 +1,45 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        }
+      ],
+      "name": "Keeper of the Lens",
+      "oracleText": "You may look at face-down creatures you don't control any time.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "Shows",
+            "value": {
+              "cards": "FaceDownCreatures",
+              "to": "Controller"
+            }
+          },
+          "scope": {
+            "type": "AnotherPlayer"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 1
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 2
+      },
+      "typeLine": {
+        "subtypes": [
+          "Golem"
+        ],
+        "types": [
+          "Artifact",
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
