@@ -31,9 +31,12 @@
                       "exceptions": [
                         {
                           "type": "SetColors",
-                          "value": [
-                            "Red"
-                          ]
+                          "value": {
+                            "colors": [
+                              "Red"
+                            ],
+                            "mode": "Replace"
+                          }
                         }
                       ],
                       "ref": {

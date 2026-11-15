@@ -24,6 +24,11 @@ codec abilityCodec =
           (,)
             <$> Fields.required "mode" ChangeMode.codec fst
             <*> Fields.required "cardTypes" (Common.set CardType.codec) snd
+      colors =
+        Fields.object $
+          (,)
+            <$> Fields.required "mode" ChangeMode.codec fst
+            <*> Fields.required "colors" (Common.set Color.codec) snd
    in Arm.tagged
         tagOf
         [ Arm.payload "SetPowerToughness" SetPowerToughness.codec CopyException.SetPowerToughness $ \x -> case x of
@@ -51,8 +56,8 @@ codec abilityCodec =
           Arm.payload "SetName" CardName.codec CopyException.SetName $ \x -> case x of
             CopyException.SetName y -> Just y
             _ -> Nothing,
-          Arm.payload "SetColors" (Common.set Color.codec) CopyException.SetColors $ \x -> case x of
-            CopyException.SetColors y -> Just y
+          Arm.payload "SetColors" colors (uncurry CopyException.SetColors) $ \x -> case x of
+            CopyException.SetColors mode y -> Just (mode, y)
             _ -> Nothing,
           Arm.nullary "NoManaCost" CopyException.NoManaCost,
           Arm.nullary "DontCopyColors" CopyException.DontCopyColors,
