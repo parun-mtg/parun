@@ -2,7 +2,7 @@
 {-# LANGUAGE RankNTypes #-}
 
 -- Parun.Engine.Resolve over the effects whose size or recipients a player picks:
--- amass, blight (CR 701.68), support, bolster, and the variable target counts --
+-- amass, blight (CR 701.68), and the variable target counts --
 -- plus the swept counter placement, which picks nothing but is read by blight's
 -- own CR 603.2c batch watchers and so is proved beside them.
 -- The machinery is Parun.ResolveSpec.
@@ -28,7 +28,6 @@ import qualified Parun.Engine.Stack as Stack
 import qualified Parun.Registry as Registry
 import qualified Parun.Spec as Spec
 import qualified Parun.Support as S
-import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CombatStep as CombatStep
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterName as CounterName
@@ -74,17 +73,6 @@ isPayResponse :: Response.Response -> Bool
 isPayResponse response = case response of
   Response.ChoseToPay _ -> True
   _ -> False
-
--- The names of the cards in one player's copy of a zone, in that zone's order.
--- Named rather than compared by id because CR 400.7 mints a new object on every
--- move, so an id taken before a zone change never matches the one after it.
-namesIn :: Zone.Zone -> PlayerId.PlayerId -> GameState.GameState -> [Maybe CardName.CardName]
-namesIn zone pid gs = fmap (\oid -> fmap S.nameOf (Game.cardOf oid gs)) (Game.zoneMembers zone pid gs)
-
--- Put k cards of a printing into pid's library, each on top of the last, for a
--- draw to find.
-stockLibrary :: Printing.Printing -> PlayerId.PlayerId -> Int -> GameState.GameState -> GameState.GameState
-stockLibrary printing pid k gs = List.foldl' (\g _ -> snd (S.addLibraryCard printing pid g)) gs [1 .. k]
 
 -- CR 601.2c's announcement, answered with a stated number for every variable
 -- slot -- where S.identityAnswer announces as many as the board allows.
@@ -206,7 +194,7 @@ resolveOne answer gs spellId =
 -- would have created already has them.
 --
 -- Three and one are distinct from each other and from their sum, so a counter
--- assertion cannot be satisfied by a coincidence: 3, 1, 4 and 6 each name exactly
+-- assertion cannot be satisfied by a coincidence: 3, 1 and 4 each name exactly
 -- one history of amasses.
 amassSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 amassSpec s registry = Spec.describe s "Amass" $ do
@@ -236,63 +224,6 @@ amassSpec s registry = Spec.describe s "Amass" $ do
         Spec.assertEqWith s "bob's Army kept the one counter he amassed" (plusCountersOn bobArmy after) (Just 1)
         Spec.assertEqWith s "and did not become a Zombie" (Projection.subtypesOf bobArmy after) (Set.fromList [Subtype.Orc, Subtype.Army])
       other -> Spec.assertFailure s ("expected exactly two tokens, got " <> show (length other))
-  Spec.it s "CR 701.47a amass counters the Army its controller chose" $ do
-    (bobArmy, aliceArmy, gs, advanceId) <- stolenArmyBoard s registry
-    let after = resolveOne (amassing aliceArmy) gs advanceId
-    Spec.assertEqWith s "her own Army, whom she named, took three more" (plusCountersOn aliceArmy after) (Just 6)
-    Spec.assertEqWith s "the borrowed Army took none" (plusCountersOn bobArmy after) (Just 1)
-    Spec.assertEqWith s "and no third token was created" (length (S.tokensOf after)) 2
-  -- The same board and the same spell, differing only in the answer: the engine
-  -- makes no choice, so the other Army is equally reachable -- and the subtype
-  -- follows the choice, which is what makes rule 701.47a's last instruction act on
-  -- the CHOSEN Army rather than on the amassing player's Armies at large.
-  Spec.it s "CR 701.47a the same board answered the other way counters the other Army" $ do
-    (bobArmy, aliceArmy, gs, advanceId) <- stolenArmyBoard s registry
-    let after = resolveOne (amassing bobArmy) gs advanceId
-    Spec.assertEqWith s "the borrowed Army, whom she named, took three" (plusCountersOn bobArmy after) (Just 4)
-    Spec.assertEqWith s "and became a Zombie as well as an Orc" (Projection.subtypesOf bobArmy after) (Set.fromList [Subtype.Orc, Subtype.Zombie, Subtype.Army])
-    Spec.assertEqWith s "her own Army took none" (plusCountersOn aliceArmy after) (Just 3)
-    Spec.assertEqWith s "and stayed a plain Zombie Army" (Projection.subtypesOf aliceArmy after) (Set.fromList [Subtype.Zombie, Subtype.Army])
-  -- CR 701.47c: "the amassed Army" is the creature the amasser CHOSE. The two
-  -- boards below are one board answered two ways, and the mill count is the whole
-  -- assertion: the Army she names is the one whose power the next clause reads.
-  --
-  -- Her own Army carries three counters and the borrowed one carries one, so after
-  -- this amass of three they stand at six and four -- distinct from each other, from
-  -- the amass's own 3, and from the untouched Army's power, so no reading but the
-  -- chosen Army's produces either number.
-  Spec.it s "CR 701.47c a later clause reads the amassed Army she named" $ do
-    (bobArmy, aliceArmy, gs, orcsId) <- surroundedBoard s registry
-    let after = resolveOne (amassingAtPlayer aliceArmy S.bob) gs orcsId
-    Spec.assertEqWith s "bob milled six, her own Army's power after its counters" (milledIslands after) 6
-    Spec.assertEqWith s "her own Army, whom she named, took three more" (plusCountersOn aliceArmy after) (Just 6)
-    Spec.assertEqWith s "the borrowed Army took none" (plusCountersOn bobArmy after) (Just 1)
-  -- The same board and the same spell, differing only in which Army she names --
-  -- so a mill of four can only have come from the OTHER Army's power.
-  Spec.it s "CR 701.47c the same board answered the other way mills the other Army's power" $ do
-    (bobArmy, aliceArmy, gs, orcsId) <- surroundedBoard s registry
-    let after = resolveOne (amassingAtPlayer bobArmy S.bob) gs orcsId
-    Spec.assertEqWith s "bob milled four, the borrowed Army's power after its counters" (milledIslands after) 4
-    Spec.assertEqWith s "the borrowed Army, whom she named, took three" (plusCountersOn bobArmy after) (Just 4)
-    Spec.assertEqWith s "her own Army took none" (plusCountersOn aliceArmy after) (Just 3)
-  -- Where the rules leave nothing to ask, do not ask. The two boards differ in how
-  -- many Armies their controller has, which is the whole of what makes rule
-  -- 701.47a's choice a choice.
-  Spec.it s "CR 701.47a a lone Army raises no prompt" $ do
-    (alone, aloneSpell, _) <- amassBoard s registry
-    (_, _, two, twoSpell) <- stolenArmyBoard s registry
-    let countingAnswer :: Prompt.Prompt r -> State.State Int r
-        countingAnswer p = case p of
-          Prompt.ChooseAmass {} -> do
-            State.modify (+ 1)
-            pure (S.identityAnswer p)
-          _ -> pure (S.identityAnswer p)
-        asks g spellId =
-          State.execState (Engine.runGame countingAnswer g (S.cast S.alice spellId >> Stack.resolveTop)) 0
-    -- The first amass on the first board has no Army at all until it makes one, and
-    -- one Army is the whole of the candidate set.
-    Spec.assertEqWith s "one Army: nothing to ask" (asks alone aloneSpell) 0
-    Spec.assertEqWith s "two Armies: one real decision" (asks two twoSpell) 1
 
 -- alice has six Islands and six Swamps untapped, Relentless Advance and Mordor
 -- Muster in hand, and a card left in her library for the Muster's draw (CR 104.3c).
@@ -332,71 +263,6 @@ opposedAmassBoard s registry = do
       (musterId, g3) = S.addHandCard muster S.bob g2
       g4 = snd (S.addLibraryCard island S.bob g3)
   pure (g4, advanceId, musterId)
-
--- Two Armies under one player's control, which is the only board on which rule
--- 701.47a's choice is a choice. bob amasses Orcs, alice amasses Zombies, and alice
--- then gains control of bob's Army (CR 613.1b's layer 2) -- so her second Relentless
--- Advance sees two Armies, one of each subtype. Returns bob's Army, alice's own, the
--- board and the spell still in her hand.
---
--- Ten Islands, since alice casts Relentless Advance twice: six leaves the second
--- unpayable, and an uncast spell is a board that proves nothing.
-stolenArmyBoard ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  m (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState, ObjectId.ObjectId)
-stolenArmyBoard s registry = do
-  island <- S.printingOf s registry "Island"
-  swamp <- S.printingOf s registry "Swamp"
-  advance <- S.printingOf s registry "Relentless Advance"
-  muster <- S.printingOf s registry "Mordor Muster"
-  let g1 = S.landsFor swamp S.bob 6 (S.landsInPlay island 10)
-      (g2, firstId) = S.handOne advance g1
-      (secondId, g3) = S.addHandCard advance S.alice g2
-      (musterId, g4) = S.addHandCard muster S.bob g3
-      g5 = snd (S.addLibraryCard island S.bob g4)
-      amassed = resolveOne S.identityAnswer (resolveFor S.bob S.identityAnswer g5 musterId) firstId
-  case S.tokensOf amassed of
-    [bobArmy, aliceArmy] -> pure (bobArmy, aliceArmy, S.giveControl bobArmy S.alice amassed, secondId)
-    other -> Spec.assertFailure s ("expected exactly two tokens, got " <> show (length other))
-
--- The Islands in bob's graveyard, which on surroundedBoard is exactly what the mill
--- put there: his library holds nothing else, and the Mordor Muster he cast is in
--- that graveyard too -- so counting the zone whole would count the sorcery.
-milledIslands :: GameState.GameState -> Int
-milledIslands gs = length (filter (== Just (CardName.MkCardName (Text.pack "Island"))) (namesIn Zone.Graveyard S.bob gs))
-
--- stolenArmyBoard's two Armies under one controller, with Surrounded by Orcs in
--- alice's hand instead of a second Relentless Advance, and bob's library stocked
--- deep enough that the mill below is bounded by the Army's power rather than by
--- CR 701.17b's "as many as possible".
---
--- Surrounded by Orcs {3}{U} Sorcery (data/cards/surrounded-by-orcs.json): "Amass
--- Orcs 3, then target player mills X cards, where X is the amassed Army's power."
--- (Name, cost, type line and oracle text checked against Scryfall 2026-09-13.)
---
--- Returns bob's Army, alice's own, the board and the Surrounded by Orcs in her hand.
-surroundedBoard ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  m (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState, ObjectId.ObjectId)
-surroundedBoard s registry = do
-  island <- S.printingOf s registry "Island"
-  swamp <- S.printingOf s registry "Swamp"
-  advance <- S.printingOf s registry "Relentless Advance"
-  muster <- S.printingOf s registry "Mordor Muster"
-  orcs <- S.printingOf s registry "Surrounded by Orcs"
-  let g1 = S.landsFor swamp S.bob 6 (S.landsInPlay island 10)
-      (g2, firstId) = S.handOne advance g1
-      (orcsId, g3) = S.addHandCard orcs S.alice g2
-      (musterId, g4) = S.addHandCard muster S.bob g3
-      g5 = stockLibrary island S.bob 12 g4
-      amassed = resolveOne S.identityAnswer (resolveFor S.bob S.identityAnswer g5 musterId) firstId
-  case S.tokensOf amassed of
-    [bobArmy, aliceArmy] -> pure (bobArmy, aliceArmy, S.giveControl bobArmy S.alice amassed, orcsId)
-    other -> Spec.assertFailure s ("expected exactly two tokens, got " <> show (length other))
 
 -- resolveOne for a seat other than alice's: bob casts and the spell resolves.
 resolveFor :: PlayerId.PlayerId -> (forall r. Prompt.Prompt r -> r) -> GameState.GameState -> ObjectId.ObjectId -> GameState.GameState
@@ -765,10 +631,11 @@ blightSimultaneitySpec s registry =
         -- one card the first batch drew and a per-seat reading gives four.
         --
         -- What this cannot separate is per-group from per-SCAN: the two batches are
-        -- two resolutions and so two CR 117.5 scans. sweptCountersSpec's "CR 608.2c
-        -- two clauses of one resolution are two trigger events" is what tells those
-        -- two readings apart on the counter side, its Synthetic Twofold Wilting
-        -- putting -1/-1 counters in two groups inside one scan.
+        -- two resolutions and so two CR 117.5 scans. The scenario "CR 608.2c two
+        -- clauses of one resolution are two trigger events" (data/scenarios/
+        -- variable-effect/) tells those two readings apart on the counter side, its
+        -- Synthetic Twofold Wilting putting -1/-1 counters in two groups inside one
+        -- scan.
         --
         -- S.entersWithTrigger REWRITES the log, so the group count below reads the
         -- second batch alone rather than both.
@@ -866,41 +733,6 @@ perCreatureCountersSpec s registry =
           Spec.assertEqWith s "the Tools took one charge counter" (S.counterOf charge toolsId after) 1
           Spec.assertEqWith s "bob's Wall took the counter" (fmap (\oid -> minusCountersOn oid after) walls) [Just 1]
           Spec.assertEqWith s "one placement, one group" (Set.size (placementGroups after)) 1
-        -- The other half of "ONE OR MORE counters ... on a creature": two counters
-        -- landing on ONE creature at once is one placement and so one trigger, where
-        -- a per-COUNTER reading would fire twice. Dawnhand Dissident's second
-        -- ability is the producer -- "{T}, Blight 2: Exile target card from a
-        -- graveyard" -- and rule 701.68a's blight 2 puts both counters on a single
-        -- creature in one go.
-        --
-        -- The blight is a COST (CR 601.2h), so the counters are on the board with
-        -- the exile still on the stack; resolveEverything below then lets the Tools'
-        -- trigger reach the stack and resolve.
-        Spec.it s "CR 603.2c two counters on one creature at once is one trigger" $ do
-          tools <- S.printingOf s registry "Wickersmith's Tools"
-          dissident <- S.printingOf s registry "Dawnhand Dissident"
-          wall <- S.printingOf s registry "Wall of Stone"
-          swamp <- S.printingOf s registry "Swamp"
-          let (toolsId, g1) = S.addPermanent tools S.alice (Setup.emptyGame S.bothPlayers)
-              (dissidentId, g2) = S.addPermanent dissident S.alice g1
-              (wallId, g3) = S.addPermanent wall S.alice g2
-              (_, g4) = S.addGraveyardCard swamp S.bob g3
-              board =
-                g4
-                  { GameState.turn =
-                      (GameState.turn g4)
-                        { TurnRegisters.priority = Just S.alice
-                        }
-                  }
-          activated <- case Projection.abilitiesOf dissidentId board of
-            _ : exile : _ -> do
-              Spec.assertBool s (Activatable.activatable S.alice dissidentId exile board) "the blight 2 ability is activatable"
-              pure (S.runPure (blighting wallId) board (Activate.activateAbility S.alice dissidentId exile))
-            _ -> Spec.assertFailure s "expected the Dissident to carry two activated abilities"
-          let after = resolveEverything activated
-          Spec.assertEqWith s "the Tools took ONE charge counter for the two counters that landed together" (S.counterOf charge toolsId after) 1
-          Spec.assertEqWith s "the Wall took both -1/-1 counters" (minusCountersOn wallId after) (Just 2)
-          Spec.assertEqWith s "in one placement, so one event group" (Set.size (placementGroups after)) 1
 
 -- CR 608.2f over the OTHER road a batch of counters is placed by: one written
 -- Effect.PutCounters instruction whose ObjectRef sweeps a set, where
@@ -916,7 +748,9 @@ perCreatureCountersSpec s registry =
 --
 --   * Synthetic Twofold Wilting {2}{B} Sorcery
 --     (data/cards/synthetic-twofold-wilting.json): "Put a -1/-1 counter on each
---     Goblin. Then put a -1/-1 counter on each Zombie." The control's card.
+--     Goblin. Then put a -1/-1 counter on each Zombie." The control's card, in
+--     the scenario "CR 608.2c two clauses of one resolution are two trigger
+--     events" (data/scenarios/variable-effect/).
 --
 -- (Soul Snuffers' name, cost, type line, P/T and oracle text checked against
 -- Scryfall.)
@@ -1000,41 +834,6 @@ sweptCountersSpec s registry =
           Spec.assertEqWith s "all five creatures took a -1/-1 counter" (fmap (\oid -> minusCountersOn oid after) (aliceWalls <> [bobWall, snuffersId])) [Just 1, Just 1, Just 1, Just 1, Just 1]
           Spec.assertEqWith s "and the five placements were one event group" (Set.size (placementGroups after)) 1
           Spec.assertEqWith s "alice held nothing before" (S.handSize S.alice board) 0
-        -- The control the case above needs, and the one thing it cannot say: a
-        -- bracket drawn around the whole RESOLUTION rather than around one
-        -- instruction's fold would pass it too. CR 608.2c makes each written
-        -- instruction its own action, so the Wilting's two clauses are two events
-        -- and alice draws TWO cards, where the resolution-wide bracket draws 1.
-        --
-        -- One creature per clause, which is the point -- the case above already
-        -- proves a sweep of several fires once, so this one only has to be two
-        -- sweeps -- and both sit inside ONE CR 117.5 scan, where two casts would
-        -- have been told apart by the scan boundary alone. It is the once-per-
-        -- permanent reading this board cannot see, two recipients giving 2 either
-        -- way; that is the case above's question and not this one's.
-        --
-        -- A Goblin Chariot is a 2/2 and Legions of Lim-Dul a 2/3, so both are still
-        -- standing when the counters are read, and neither carries the other's
-        -- subtype: one clause, one creature.
-        Spec.it s "CR 608.2c two clauses of one resolution are two trigger events" $ do
-          census <- S.printingOf s registry "Synthetic Wilting Census"
-          chariot <- S.printingOf s registry "Goblin Chariot"
-          legions <- S.printingOf s registry "Legions of Lim-Dûl"
-          wilting <- S.printingOf s registry "Synthetic Twofold Wilting"
-          swamp <- S.printingOf s registry "Swamp"
-          let stocked = foldr (\_ g -> snd (S.addLibraryCard swamp S.alice g)) (Setup.emptyGame S.bothPlayers) [1 .. 4 :: Int]
-              (_, withCensus) = S.addPermanent census S.alice stocked
-              (goblin, withGoblin) = S.addPermanent chariot S.alice withCensus
-              (zombie, withZombie) = S.addPermanent legions S.alice withGoblin
-              withLands = List.foldl' (\g _ -> snd (S.addPermanent swamp S.alice g)) withZombie [1 .. 3 :: Int]
-              (withSpell, spell) = S.handOne wilting withLands
-              afterCast = S.runPure S.identityAnswer withSpell (S.cast S.alice spell)
-              resolved = S.runPure S.identityAnswer afterCast Stack.resolveTop
-              after = resolveEverything resolved
-          Spec.assertEqWith s "alice drew one card for each clause" (S.handSize S.alice after) 2
-          Spec.assertEqWith s "the Goblin and the Zombie each took a counter" (fmap (\oid -> minusCountersOn oid after) [goblin, zombie]) [Just 1, Just 1]
-          Spec.assertEqWith s "in two event groups, both inside one scan" (Set.size (placementGroups resolved)) 2
-          Spec.assertEqWith s "her hand was empty once the Wilting was cast" (S.handSize S.alice resolved) 0
 
 -- CR 701.68 blight as a COST (CostComponent.Blight), which is the position most of
 -- the pool prints it in and the one CR 701.68b's "they can't choose to blight"
@@ -1193,126 +992,6 @@ paysBlighting :: ObjectId.ObjectId -> Prompt.Prompt r -> r
 paysBlighting oid p = case p of
   Prompt.ChooseBlight {} -> oid
   _ -> paysFor S.alice p
-
--- `amassing` with CR 601.2c's target pinned to a named PLAYER, for a card that
--- amasses and then aims its next clause. Both choices are pinned rather than
--- searched for a legal one: a searching answerer finds the engine's own again after
--- a mutation.
-amassingAtPlayer :: ObjectId.ObjectId -> PlayerId.PlayerId -> Prompt.Prompt r -> r
-amassingAtPlayer oid pid p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> S.preferring (== Recipient.ToPlayer pid) sets
-  _ -> amassing oid p
-
--- Answers Prompt.ChooseAmass with a named Army, deferring everything else to
--- S.identityAnswer. PINNED BY ID rather than picked by searching the candidates, so
--- a mutation to the candidate sweep cannot quietly repair the answer.
-amassing :: ObjectId.ObjectId -> Prompt.Prompt r -> r
-amassing oid p = case p of
-  Prompt.ChooseAmass {} -> oid
-  _ -> S.identityAnswer p
-
--- CR 701.41 support, which is card DATA and no opcode: "support N" is written out
--- as the counters it means, over a CR 601.2c slot of 0 to N.
---
--- N is a LITERAL range here. The Crowd Goes Wild's "Support X" is the same
--- slot counted 0 to the announced X, SlotCount.UpToAnnouncedX, which Pest
--- Infestation proves below.
---
--- Lead by Example {1}{G} Instant (data/cards/lead-by-example.json): "Support 2.",
--- and nothing else -- CR 701.41a's INSTANT reading, which has no "other" in it.
---
--- Joraga Auxiliary {1}{G}{W} 2/3 (data/cards/joraga-auxiliary.json):
--- "{4}{G}{W}: Support 2.", CR 701.41a's PERMANENT reading, whose "other" is a
--- Not IsSource on the slot.
---
--- Three readings of "up to two target creatures" a careless board cannot tell
--- apart -- two of three, one of three, and none -- so each case names a different
--- number of targets on the same board and the creature nobody named is asserted
--- untouched. Three candidates for a slot that takes two, because a prompt offered
--- exactly as many candidates as it needs is never asked.
-supportSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-supportSpec s registry = Spec.describe s "Support" $ do
-  -- CR 701.41a's "other", which only the PERMANENT reading has. The answerer names
-  -- the Auxiliary FIRST, so a slot that offered it would spend one of its two
-  -- targets on it and leave one of the Rats and the Piker at zero.
-  Spec.it s "CR 701.41a support on a permanent cannot choose that permanent" $ do
-    forest <- S.printingOf s registry "Forest"
-    plains <- S.printingOf s registry "Plains"
-    piker <- S.printingOf s registry "Goblin Piker"
-    rats <- S.printingOf s registry "Typhoid Rats"
-    wall <- S.printingOf s registry "Wall of Stone"
-    joraga <- S.printingOf s registry "Joraga Auxiliary"
-    let (_, g0) = S.addPermanent plains S.alice (S.landsInPlay forest 5)
-        (auxId, g1) = S.addPermanent joraga S.alice g0
-        (pikerId, g2) = S.addPermanent piker S.bob g1
-        (ratsId, g3) = S.addPermanent rats S.bob g2
-        (wallId, g4) = S.addPermanent wall S.bob g3
-        board =
-          g4
-            { GameState.turn =
-                (GameState.turn g4)
-                  { TurnRegisters.priority = Just S.alice
-                  }
-            }
-        answer :: Prompt.Prompt r -> r
-        answer = takingTargets 2 [auxId, pikerId, ratsId]
-    case Activatable.abilitiesFor auxId board of
-      [ability] -> do
-        let after = S.runPure answer board (Activate.activateAbility S.alice auxId ability >> Stack.resolveTop)
-        Spec.assertEqWith s "the Auxiliary itself, which support excludes, took none" (plusCountersOn auxId after) (Just 0)
-        Spec.assertEqWith s "the Piker took one" (plusCountersOn pikerId after) (Just 1)
-        Spec.assertEqWith s "and so did the Rats" (plusCountersOn ratsId after) (Just 1)
-        Spec.assertEqWith s "the Wall, whom nobody named, took none" (plusCountersOn wallId after) (Just 0)
-      abilities -> Spec.assertFailure s ("expected one ability, got " <> show (length abilities))
-
--- CR 601.2c with CR 601.2b: a slot counted 0 to the announced X.
---
--- Pest Infestation {X}{X}{G} Sorcery (data/cards/pest-infestation.json): "Destroy
--- up to X target artifacts and/or enchantments. Create twice X 1/1 black and
--- green Pest creature tokens with 'When this token dies, you gain 1 life.'" The
--- Pests are what make the zero-target case observable: a spell that fizzled
--- under CR 608.2b would make none.
---
--- bob holds three candidates, one more than the largest X cast below, so each
--- case names a different number of them and the ones nobody named are asserted
--- standing.
-upToXSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-upToXSpec s registry = Spec.describe s "UpToX" $ do
-  -- The ceiling: an announcement past X is clamped back to X.
-  Spec.it s "CR 601.2c X=1 announcing three targets destroys only one" $ do
-    (ringId, others, gs, spellId) <- infestationBoard s registry
-    let after = resolveOne (infesting 1 3 (ringId : others)) gs spellId
-    Spec.assertEqWith s "two of the three stand" (length (filter (`S.onBattlefield` after) (ringId : others))) 2
-    Spec.assertEqWith s "twice X Pests" (S.countOnBattlefieldByName pestName S.alice after) 2
-
--- alice holds Pest Infestation with five Forests, enough for {X}{X}{G} at X=2;
--- bob controls a Sol Ring, an Ornithopter and a Glorious Anthem, the filter's
--- two card types.
-infestationBoard ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  m (ObjectId.ObjectId, [ObjectId.ObjectId], GameState.GameState, ObjectId.ObjectId)
-infestationBoard s registry = do
-  forest <- S.printingOf s registry "Forest"
-  ring <- S.printingOf s registry "Sol Ring"
-  thopter <- S.printingOf s registry "Ornithopter"
-  anthem <- S.printingOf s registry "Glorious Anthem"
-  infestation <- S.printingOf s registry "Pest Infestation"
-  let (ringId, g1) = S.addPermanent ring S.bob (S.landsInPlay forest 5)
-      (thopterId, g2) = S.addPermanent thopter S.bob g1
-      (anthemId, g3) = S.addPermanent anthem S.bob g2
-      (gs, spellId) = S.handOne infestation g3
-  pure (ringId, [thopterId, anthemId], gs, spellId)
-
--- Announces X, then `n` targets aimed at `wanted` first.
-infesting :: Natural -> Natural -> [ObjectId.ObjectId] -> Prompt.Prompt r -> r
-infesting x n wanted p = case p of
-  Prompt.ChooseX {} -> x
-  _ -> takingTargets n wanted p
-
-pestName :: CardName.CardName
-pestName = CardName.MkCardName (Text.pack "Pest Token")
 
 -- CR 601.2c: a slot counted 0 to a number the BOARD supplies, on a triggered
 -- ability -- where CR 601.2b's own announcement is unavailable, a trigger being
@@ -1489,57 +1168,12 @@ stunCountersOn gs oid = fmap (Map.findWithDefault 0 CounterKind.Stun . Object.co
 -- unbounded count, and the permission carries the printed duration. How long
 -- that duration lasts is Parun.ExpirySpec's question, not this group's.
 --
--- The THREE-seat board tells apart every wrong reading of the loop:
---
---   * A BODY PER MEMBER, not one body. Three victims are named, so a loop that
---     ran the body once damages one seat and leaves two at twenty.
---   * A FRESH BINDING PER MEMBER, not one shared. The three cards exiled have
---     mana values 1, 2 and 4 -- pairwise distinct AND pairwise-sum distinct, so
---     no two readings land on one number -- and each victim's damage must be its
---     OWN card's. A loop that bound the first exiled card, or the last, for
---     every victim gives all three seats the same damage.
---   * A DEPLETING RESOURCE, which is the whole reason this shape needs an
---     opcode. Each iteration reads "the top card of your library" AFTER the
---     previous one exiled its own, so the three cards must be three DIFFERENT
---     cards, and the two under them must still be in the library in order (CR
---     401.2). A body re-reading the pre-loop board would exile one card three
---     times.
---   * APNAP (CR 608.2f's primary determination). alice is the active player and
---     the seating is [alice, bob, carol], so the top card goes to alice, the
---     next to bob and the third to carol -- reversing or permuting the order
---     permutes the three life totals, which are distinct.
---   * A PER-ITERATION GRANT. Every exiled card carries CR 601.3's play
---     permission, so the third body instruction ran for each member rather than
---     once for whichever card was bound last.
---
--- Ogre Sentry sits under bob so the target pool always holds one more candidate
--- than the announcement takes: the choice is a real choice rather than one
--- short-circuited by having exactly as many candidates as it needs, and a loop
--- that swept the battlefield instead of the slot would reach it.
---
--- The FOUR-SEAT case is CR 601.2c's "any number" proper: the card prints no
--- maximum, so four is announceable on a board that offers five candidates, and
--- nothing but the board bounds it. The ZERO case is the other end of that same
--- range.
+-- The per-victim loop itself (a body and a fresh top card per victim, in APNAP
+-- order, each card granted) is data/scenarios/variable-effect/'s CR 608.2f
+-- scenario; the cases below are the secondary determination's.
 soulfireEruptionSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 soulfireEruptionSpec s registry =
-  let -- alice casts off nine Mountains at `seats`, announcing `n` targets and
-      -- aiming them at the players; the priority loop resolves the spell, which
-      -- is what makes this gameplay-level rather than an applyEffect call.
-      -- alice's library holds `stock`, DEEPEST FIRST -- S.addLibraryCard puts
-      -- each card on top, so the last name given is the top card.
-      board n seats stock = do
-        mountain <- S.printingOf s registry "Mountain"
-        soulfireEruption <- S.printingOf s registry "Soulfire Eruption"
-        sentry <- S.printingOf s registry "Ogre Sentry"
-        stocked <- mapM (S.printingOf s registry) stock
-        let g1 = S.landsFor mountain S.alice 9 seats
-            g2 = List.foldl' (\g pr -> snd (S.addLibraryCard pr S.alice g)) g1 stocked
-            g3 = snd (S.addPermanent sentry S.bob g2)
-            (withSpell, spell) = S.handOne soulfireEruption g3
-            afterCast = S.runPure (aimingAtEveryPlayer n) withSpell (S.cast S.alice spell)
-        pure (S.runPure (aimingAtEveryPlayer n) afterCast Engine.priorityLoop)
-      -- The same spell off the same nine Mountains, but the victims are
+  let -- Soulfire Eruption off nine Mountains, and the victims are
       -- PERMANENTS: bob controls Wall of Stone (0/8) and Nessian Asp (4/5), carol
       -- controls Sandbar Crocodile (6/5), and `wanted` picks which two of the six
       -- candidates the announcement takes. alice's library is Benalish Hero (1)
@@ -1562,30 +1196,7 @@ soulfireEruptionSpec s registry =
             ((_, after), transcript) = Replay.record (soulfireOrdering (wanted wall asp crocodile) order) withSpell (S.cast S.alice spell >> Engine.priorityLoop)
         pure (S.damageOf wall after, S.damageOf asp after, S.damageOf crocodile after, transcript)
       orderAnswersIn = Maybe.mapMaybe (\r -> case r of Response.OrderedForEach o -> Just o; _ -> Nothing)
-      named = Just . CardName.MkCardName . Text.pack
-      exiledNames pid = List.sort . namesIn Zone.Exile pid
-      permissionsIn pid gs = fmap (not . null . Object.playPermissions) (Maybe.mapMaybe (\oid -> Game.lookupObject oid gs) (Game.zoneMembers Zone.Exile pid gs))
-      lives gs = (S.lifeOf S.alice gs, S.lifeOf S.bob gs, S.lifeOf S.carol gs)
    in Spec.describe s "SoulfireEruption" $ do
-        Spec.it s "CR 608.2f each victim takes the mana value of the card exiled FOR IT, in APNAP order" $ do
-          after <- board 3 S.threePlayerGame ["Sabretooth Tiger", "Bird Maiden", "Hill Giant", "Goblin Piker", "Benalish Hero"]
-          Spec.assertEqWith
-            s
-            "three DIFFERENT cards left the library, top first, and the two under them stayed in order"
-            (exiledNames S.alice after, namesIn Zone.Library S.alice after)
-            ( List.sort [named "Benalish Hero", named "Goblin Piker", named "Hill Giant"],
-              [named "Bird Maiden", named "Sabretooth Tiger"]
-            )
-          Spec.assertEqWith
-            s
-            "Benalish Hero (1) to alice, Goblin Piker (2) to bob, Hill Giant (4) to carol"
-            (lives after)
-            (Just 19, Just 18, Just 16)
-          Spec.assertEqWith
-            s
-            "all three exiled cards carry the play permission, so the grant ran once per iteration"
-            (permissionsIn S.alice after)
-            [True, True, True]
         -- CR 608.2f's SECONDARY sentence: two of the victims are objects ONE
         -- player controls, so their relative order is the resolving controller's
         -- -- alice's, though bob is the one who controls them, which is the whole
@@ -1641,28 +1252,9 @@ soulfireOrdering wanted order p = case p of
   Prompt.OrderForEach {} -> order
   _ -> S.identityAnswer p
 
--- CR 601.2c: announce `n` targets per slot and aim them at the PLAYERS, which on
--- these boards leaves bob's Ogre Sentry -- a legal candidate of the same
--- AnyTarget pool -- deliberately unchosen.
-aimingAtEveryPlayer :: Natural -> Prompt.Prompt r -> r
-aimingAtEveryPlayer n p =
-  let isPlayerRecipient r = case r of
-        Recipient.ToPlayer _ -> True
-        Recipient.ToCreature _ -> False
-        Recipient.ToPlaneswalker _ -> False
-        Recipient.ToBattle _ -> False
-        Recipient.ToObject _ -> False
-        Recipient.ToPile _ -> False
-   in case p of
-        Prompt.AnnounceTargets {} -> announcingCount n p
-        Prompt.ChooseTargets _ _ _ sets -> S.preferring isPlayerRecipient sets
-        _ -> S.identityAnswer p
-
 spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Parun.Engine.Resolve" $ do
   multiTargetSpec s registry
-  supportSpec s registry
-  upToXSpec s registry
   computedCountSpec s registry
   inheritedXSpec s registry
   amassSpec s registry

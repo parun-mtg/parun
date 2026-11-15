@@ -1,0 +1,210 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "forest1"
+          },
+          {
+            "card": "Forest",
+            "label": "forest2"
+          },
+          {
+            "card": "Forest",
+            "label": "forest3"
+          },
+          {
+            "card": "Forest",
+            "label": "forest4"
+          },
+          {
+            "card": "Forest",
+            "label": "forest5"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Pest Infestation",
+            "label": "infestation"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Sol Ring",
+            "label": "ring"
+          },
+          {
+            "card": "Ornithopter",
+            "label": "thopter"
+          },
+          {
+            "card": "Glorious Anthem",
+            "label": "anthem"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 601.2c X=1 announcing three targets destroys only one",
+  "note": "Pest Infestation's slot counts 0 to the announced X, so at X=1 an announcement of three is clamped back to one: the target prompt asks for one of bob's three candidates, and the spell destroys only that one and makes twice X Pests.",
+  "timeline": [
+    {
+      "do": {
+        "Answer": {
+          "prompt": "AnnounceTargets",
+          "with": [
+            [
+              "targets",
+              3
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "ChooseTargets",
+            "offer": {
+              "source": "Pest Infestation",
+              "slots": [
+                [
+                  "targets",
+                  [
+                    1,
+                    [
+                      [
+                        "Object",
+                        "$ring"
+                      ],
+                      [
+                        "Object",
+                        "$thopter"
+                      ],
+                      [
+                        "Object",
+                        "$anthem"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            }
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Answer": {
+          "prompt": "ChooseTargets",
+          "with": [
+            [
+              "targets",
+              [
+                [
+                  "Object",
+                  "$ring"
+                ]
+              ]
+            ]
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$forest1",
+            "$forest2",
+            "$forest3",
+            null
+          ],
+          "object": "$infestation",
+          "x": 1
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Sol Ring",
+          "count": 0,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Ornithopter",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Glorious Anthem",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Count": {
+          "card": "Pest Token",
+          "count": 2,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}

@@ -1,0 +1,235 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          },
+          {
+            "card": "Mountain",
+            "label": "m5"
+          },
+          {
+            "card": "Mountain",
+            "label": "m6"
+          },
+          {
+            "card": "Mountain",
+            "label": "m7"
+          },
+          {
+            "card": "Mountain",
+            "label": "m8"
+          },
+          {
+            "card": "Mountain",
+            "label": "m9"
+          },
+          {
+            "card": "Plains",
+            "label": "p1"
+          },
+          {
+            "card": "Mountain",
+            "label": "e1"
+          },
+          {
+            "card": "Mountain",
+            "label": "e2"
+          },
+          {
+            "card": "Mountain",
+            "label": "e3"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Soulfire Eruption",
+            "label": "eruption"
+          }
+        ],
+        "library": [
+          {
+            "card": "Benalish Hero"
+          },
+          {
+            "card": "Goblin Piker"
+          },
+          {
+            "card": "Hill Giant"
+          },
+          {
+            "card": "Bird Maiden"
+          },
+          {
+            "card": "Sabretooth Tiger"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Ogre Sentry",
+            "label": "sentry"
+          }
+        ],
+        "name": "bob"
+      },
+      {
+        "name": "carol"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 608.2f each victim takes the mana value of the card exiled FOR IT, in APNAP order",
+  "note": "Three victims in APNAP order (alice active), and alice's library top first holds mana values 1, 2, 4 -- pairwise distinct and sum-distinct -- so each seat's life names its own exiled card: one body and one fresh top card per victim. The two cards under them stay in order, bob's Ogre Sentry is an unchosen candidate, and each exiled card is offered to cast (CR 601.3), so the grant ran per iteration; the spare Plains and three Mountains pay for those offers.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4",
+            "$m5",
+            "$m6",
+            "$m7",
+            "$m8",
+            "$m9",
+            null
+          ],
+          "object": "$eruption",
+          "targets": [
+            "$alice",
+            "$bob",
+            "$carol"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Pass",
+            "Cast Benalish Hero",
+            "Cast Goblin Piker",
+            "Cast Hill Giant",
+            "ActivateManaAbility $p1",
+            "ActivateManaAbility $e1",
+            "ActivateManaAbility $e2",
+            "ActivateManaAbility $e3"
+          ],
+          "of": "Offered",
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 19,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 18,
+          "player": "bob"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 16,
+          "player": "carol"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Benalish Hero",
+            "Goblin Piker",
+            "Hill Giant"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Exile"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Bird Maiden",
+            "Sabretooth Tiger"
+          ],
+          "of": "Zone",
+          "player": "alice",
+          "zone": "Library"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Damage": {
+          "damage": 0,
+          "object": "$sentry"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
