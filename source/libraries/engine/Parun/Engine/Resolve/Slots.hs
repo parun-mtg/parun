@@ -582,8 +582,9 @@ objectRefSlots ref = joinTwo (joinSlots (fmap playerRefSlots (objectRefPlayerRef
   ObjectRef.EachAbility filter_ -> filterSlotsOf filter_
   ObjectRef.EachOnStack filter_ -> filterSlotsOf filter_
   -- The seat is objectRefPlayerRefs' half, joined at the head (Deflecting
-  -- Palm's HolderOfBound); the narrowing Filter is a read like a sweep's.
-  ObjectRef.Players (PlayersWho.MkPlayersWho _ who) -> foldMap filterSlotsOf who
+  -- Palm's HolderOfBound); the narrowing Filter and Condition are reads like a
+  -- sweep's.
+  ObjectRef.Players (PlayersWho.MkPlayersWho _ who whose) -> joinSlots (foldMap filterSlotsOf who : fmap quantitySlots (foldMap conditionQuantities whose))
   ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count _) -> quantitySlots count
   -- The arm above's count, and each match's weight: the SEAT is
   -- objectRefPlayerRefs' half. What a MATCH is is a Filter, whose reads are
@@ -673,8 +674,8 @@ objectRefQuantities ref = case ref of
   ObjectRef.EachSpell _ -> []
   ObjectRef.EachAbility _ -> []
   ObjectRef.EachOnStack _ -> []
-  -- A seat, never a count.
-  ObjectRef.Players _ -> []
+  -- The narrowing Condition's, both sides of each comparison.
+  ObjectRef.Players (PlayersWho.MkPlayersWho _ _ whose) -> foldMap conditionQuantities whose
   ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary _ count _) -> [count]
   -- The arm above's count, measured in MATCHES rather than in cards, and what
   -- each match weighs.
@@ -730,7 +731,7 @@ objectRefPlayerRefs ref = case ref of
   ObjectRef.EachAbility _ -> []
   ObjectRef.EachOnStack _ -> []
   -- The reference IS a seat, so it is its own whole answer here.
-  ObjectRef.Players (PlayersWho.MkPlayersWho player _) -> [player]
+  ObjectRef.Players (PlayersWho.MkPlayersWho player _ _) -> [player]
   ObjectRef.TopOfLibrary (TopOfLibrary.MkTopOfLibrary player _ _) -> [player]
   ObjectRef.TopOfLibraryUntil (TopOfLibraryUntil.MkTopOfLibraryUntil player _ _ _ _) -> [player]
   -- Whose graveyard, the two library walks' own read over CR 400.1's other

@@ -476,6 +476,7 @@ objectRefVisitors asking =
   Children.MkObjectRefChildren
     { Children.refFilter = Const.Const . filterNames asking,
       Children.refQuantity = Const.Const . quantityNames asking,
+      Children.refCondition = Const.Const . conditionNames asking,
       Children.refSlot = Const.Const . slotNames asking,
       Children.refPlayer = Const.Const . playerRefNames asking,
       Children.refZones = Const.Const . zoneScopeNames asking,

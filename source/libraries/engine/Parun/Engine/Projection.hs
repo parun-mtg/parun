@@ -999,7 +999,7 @@ bakeGranter :: ObjectId -> Modal.Modal Card.Type.Card (GrantedAbility.GrantedAbi
 bakeGranter granter = Identity.runIdentity . Children.modalChildren Children.modalLeaves {Children.modalEffect = Identity.Identity . effect, Children.modalCondition = Identity.Identity . condition}
   where
     effect = Identity.runIdentity . Children.effectChildren Children.effectLeaves {Children.onEffect = Identity.Identity . effect, Children.onObjectRef = Identity.Identity . ref, Children.onFilter = Identity.Identity . bake, Children.onQuantity = Identity.Identity . quantity}
-    ref = Identity.runIdentity . Children.objectRefChildren Children.objectRefLeaves {Children.refFilter = Identity.Identity . bake, Children.refNested = Identity.Identity . ref}
+    ref = Identity.runIdentity . Children.objectRefChildren Children.objectRefLeaves {Children.refFilter = Identity.Identity . bake, Children.refCondition = Identity.Identity . condition, Children.refNested = Identity.Identity . ref}
     condition = Identity.runIdentity . Children.conditionChildren Children.conditionLeaves {Children.conditionQuantity = Identity.Identity . quantity, Children.conditionNested = Identity.Identity . condition}
     quantity = Identity.runIdentity . Children.quantityChildren (Children.descendingQuantities (Identity.Identity . quantity)) {Children.nest = Identity.Identity . bake}
     bake = Filter.bakeBound Map.empty (Map.singleton Binding.grantingPermanent (Set.singleton granter)) Map.empty

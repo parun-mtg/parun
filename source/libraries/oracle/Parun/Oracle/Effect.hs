@@ -1313,8 +1313,8 @@ dealDamage context d
 each :: ObjectRef.ObjectRef -> Bool
 each ref = case ref of
   ObjectRef.EachMatching _ -> True
-  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing) -> True
-  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.Opponent) Nothing) -> True
+  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing) -> True
+  ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.Opponent) Nothing Nothing) -> True
   _ -> False
 
 -- | Damage parts sharing an amount: "2 damage to each creature and each

@@ -2880,7 +2880,7 @@ effectLintSpec s registry corpus = Spec.describe s "Lint" $ do
       [False, False, True, True]
     -- A copy's per-candidate ref may be an AllOf (Radiate); its own ref and a
     -- stated target may not.
-    let both = ObjectRef.AllOf (ObjectRef.EachMatching anyCard NonEmpty.:| [ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing)])
+    let both = ObjectRef.AllOf (ObjectRef.EachMatching anyCard NonEmpty.:| [ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing)])
         copies ref targets = Effect.CopyStackObject (CopyStackObject.MkCopyStackObject ref targets CopyStackObject.defaultQuantity CopyStackObject.defaultCopier [] Nothing)
         spell = ObjectRef.EachMatching anyCard
     Spec.assertEqWith

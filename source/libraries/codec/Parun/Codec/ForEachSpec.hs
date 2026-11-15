@@ -60,7 +60,7 @@ spec s = Spec.describe s "Parun.Codec.ForEach" $ do
       s
       codec
       ( ForEach.MkForEach
-          { ForEach.ref = ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing),
+          { ForEach.ref = ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing),
             ForEach.members = LoopMembers.Every,
             ForEach.slot = SlotName.MkSlotName (Text.pack "victim"),
             ForEach.body = Seq.empty,
@@ -79,7 +79,7 @@ spec s = Spec.describe s "Parun.Codec.ForEach" $ do
       s
       codec
       ( ForEach.MkForEach
-          { ForEach.ref = ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.Opponent) Nothing),
+          { ForEach.ref = ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.Opponent) Nothing Nothing),
             ForEach.members = LoopMembers.AnyNumber,
             ForEach.slot = SlotName.MkSlotName (Text.pack "opponent"),
             ForEach.body = Seq.singleton (Text.pack "mint"),
@@ -124,7 +124,7 @@ spec s = Spec.describe s "Parun.Codec.ForEach" $ do
       s
       codec
       ( ForEach.MkForEach
-          { ForEach.ref = ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing),
+          { ForEach.ref = ObjectRef.Players (PlayersWho.MkPlayersWho (PlayerRef.Relative PlayerRelation.AnyPlayer) Nothing Nothing),
             ForEach.members = LoopMembers.Every,
             ForEach.slot = SlotName.MkSlotName (Text.pack "chooser"),
             ForEach.body = Seq.singleton (Text.pack "choose"),
