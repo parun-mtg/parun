@@ -88,7 +88,6 @@ import qualified Parun.Types.Hybrid as Hybrid
 import qualified Parun.Types.HybridPayment as HybridPayment
 import qualified Parun.Types.HybridPhyrexian as HybridPhyrexian
 import qualified Parun.Types.Keyword as Keyword
-import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LifeLossCause as LifeLossCause
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import Parun.Types.Mana (Mana)
@@ -1375,7 +1374,7 @@ lastExiledWith reader acquisition oid gs = Game.lastExiled (Game.linkedPile Noth
 -- from an artifact.
 productionTagsGiven :: Map.Map ObjectId PC.ProjectedCharacteristics -> ObjectId -> GameState -> Set.Set ProductionTag.ProductionTag
 productionTagsGiven pcs oid gs =
-  let characteristics = maybe (Projection.projectGiven pcs oid gs) LastKnown.characteristics (Game.lastKnownOf oid gs)
+  let characteristics = Projection.projectWithLastKnown pcs oid gs
    in Set.unions
         [ if Set.member Supertype.Snow (PC.supertypes characteristics) then Set.singleton ProductionTag.Snow else Set.empty,
           -- Forsworn Paladin's "mana from a Treasure", read off the same source and by

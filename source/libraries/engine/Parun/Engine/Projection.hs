@@ -1752,10 +1752,13 @@ controllerWithLastKnown oid gs = Filter.controller =<< viewWithLastKnownAnywhere
 -- data/scenarios/trigger/cr-608-2h-the-watcher-reads-the-dead-saga-s-last-known-information.json
 -- and
 -- data/scenarios/trigger/cr-707-2-a-copy-of-the-saga-answers-with-the-copy-s-chapters.json.
-projectWithLastKnown :: ObjectId -> GameState -> ProjectedCharacteristics
-projectWithLastKnown oid gs = case Game.lastKnownOf oid gs of
+--
+-- `pcs` is a board the caller already projected (projectGiven); Map.empty
+-- projects afresh.
+projectWithLastKnown :: Map ObjectId ProjectedCharacteristics -> ObjectId -> GameState -> ProjectedCharacteristics
+projectWithLastKnown pcs oid gs = case Game.lastKnownOf oid gs of
   Just lk -> LastKnown.characteristics lk
-  Nothing -> project oid gs
+  Nothing -> projectGiven pcs oid gs
 
 -- CR 603.7 / 707.2: the text an Effect.ArmDelayedTrigger's or a
 -- Parun.Types.WhenSpent's NAME stands for on `source` -- its rules text as
@@ -1773,14 +1776,14 @@ projectWithLastKnown oid gs = case Game.lastKnownOf oid gs of
 -- component as well.
 declaredDelayedAbility :: ObjectId -> AbilityName.AbilityName -> GameState -> Maybe (TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
 declaredDelayedAbility source name gs =
-  Map.lookup name (PC.delayedAbilities (projectWithLastKnown source gs)) Applicative.<|> Game.declaredDelayedAbility source name gs
+  Map.lookup name (PC.delayedAbilities (projectWithLastKnown Map.empty source gs)) Applicative.<|> Game.declaredDelayedAbility source name gs
 
 -- CR 113.7a: the declarations an ability freezes as it is activated or
 -- triggers -- its source's projected ones (CR 707.2), with the source's last
 -- known text for a source already gone. data/scenarios/copy's Baboon Spirit
 -- and Mirrorweave scenario proves an activated ability's.
 delayedSnapshotOf :: ObjectId -> GameState -> Map.Map AbilityName.AbilityName (TriggeredAbility Card.Type.Card (GrantedAbility.GrantedAbility Card.Type.Card))
-delayedSnapshotOf source gs = PC.delayedAbilities (projectWithLastKnown source gs)
+delayedSnapshotOf source gs = PC.delayedAbilities (projectWithLastKnown Map.empty source gs)
 
 -- CR 603.7: the text an Effect.ArmDelayedTrigger stands for as `resolving`
 -- resolves -- the one it carries (Game.carriedDelayedAbility), else its name in

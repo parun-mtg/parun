@@ -2185,7 +2185,7 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
           TriggerSource.Sourceless -> False
           TriggerSource.OfObject srcId ->
             PlayerRelation.holds (Game.teams gs) relation you (AbilityTriggered.controller record)
-              && ( let pc = Projection.projectWithLastKnown srcId gs
+              && ( let pc = Projection.projectWithLastKnown Map.empty srcId gs
                     in Saga.tracksLore pc && Saga.chapterOf (AbilityTriggered.ability record) == Just (Saga.finalChapterOf pc)
                  )
      in case (watched, event) of

@@ -2948,7 +2948,7 @@ dividesMixedRemoval spread owed offered division =
 --
 -- Replaced by its toughness where a TapsCounting substitution names that
 -- keyword (Interface Ace), proved by the scenario
--- `interface-ace-crews-a-crew-3-vehicle-alone-where-a-bear-of-its-power-cannot`.
+-- `interface-ace-crews-and-saddles-using-its-toughness-untapping-once`.
 -- The offsets then go unread (docs/decisions.md, "Whether a crew power offset
 -- raises a toughness crewer").
 tapPower :: Maybe KeywordFamily.KeywordFamily -> ObjectId -> GameState -> Integer

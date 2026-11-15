@@ -1122,7 +1122,7 @@ turnFaceUpByEffect oid = do
 damageEvent :: GameState -> DamageKind.DamageKind -> ObjectId -> Recipient.Recipient -> Natural -> DamageEvent.DamageEvent
 damageEvent gs kind source target amount =
   let -- One projection for the keyword and creature-type riders.
-      characteristics = Projection.projectWithLastKnown source gs
+      characteristics = Projection.projectWithLastKnown Map.empty source gs
       -- CR 608.2h once for the two riders that ask it: rule 702.15b's payee and
       -- rule 702.76a's and rule 702.173a's "under your control".
       controller = Projection.controllerWithLastKnown source gs
