@@ -1,0 +1,28 @@
+{
+  "description": "CR 603.10a the same departure on bob's turn draws nothing",
+  "note": "\"During your turn\", one difference from the proving scenario: bob is the active player, and alice returns her own Reassembling Skeleton at instant speed. Kishla Skimmer does not trigger, so nothing reaches the stack and alice draws nothing off the same departure.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Kishla Skimmer", "label": "skimmer" },
+          { "card": "Swamp", "label": "swamp-1" },
+          { "card": "Swamp", "label": "swamp-2" }
+        ],
+        "graveyard": [{ "card": "Reassembling Skeleton", "label": "skeleton" }],
+        "library": [{ "card": "Forest" }]
+      },
+      { "name": "bob" }
+    ],
+    "active": "bob",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$skeleton", "ability": 0, "mana": ["$swamp-1", "$swamp-2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Reassembling Skeleton", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Hand", "card": "Forest", "count": 0 } } }
+  ]
+}

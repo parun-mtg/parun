@@ -3382,8 +3382,8 @@ payingAt pick victim p = case p of
 -- paid, a {3} paid and a {1} paid are three different tapped counts. Four
 -- Mountains pay both printed costs, so every leg is payable either way and what
 -- discriminates is what was PAID. The enduring story is written onto alice
--- directly: storied's own check is Parun.PlayerDesignationSpec's, and the pair
--- here differs in the designation alone.
+-- directly: storied's own check is data/scenarios/player-designation's, and
+-- the pair here differs in the designation alone.
 kiliTheResourcefulSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 kiliTheResourcefulSpec s registry = Spec.describe s "KiliTheResourceful" $ do
   let board storied = do

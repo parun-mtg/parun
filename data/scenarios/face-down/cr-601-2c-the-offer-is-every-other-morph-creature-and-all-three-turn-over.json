@@ -1,0 +1,306 @@
+{
+  "description": "CR 601.2c the offer is every OTHER morph creature, and all three turn over",
+  "note": "The slot's own half, read off the engine's offer rather than a set this file chose: 'creatures with morph abilities' keeps the Piker off, and 'other than this creature' keeps the Weaver off its own trigger, a face-up morph creature by the time the trigger goes on the stack (CR 708.7). Naming the Piker or the Weaver beside the three is refused, since the slot does not offer them; announcing all three turns all three over, and the Piker and the Weaver stay face up.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island-1",
+            "ready": true,
+            "tapped": false
+          },
+          {
+            "card": "Island",
+            "label": "island-2",
+            "ready": true,
+            "tapped": false
+          },
+          {
+            "card": "Island",
+            "label": "island-3",
+            "ready": true,
+            "tapped": false
+          },
+          {
+            "card": "Island",
+            "label": "island-4",
+            "ready": true,
+            "tapped": false
+          },
+          {
+            "card": "Island",
+            "label": "island-5",
+            "ready": true,
+            "tapped": false
+          },
+          {
+            "card": "Island",
+            "label": "island-6",
+            "ready": true,
+            "tapped": true
+          },
+          {
+            "card": "Island",
+            "label": "island-7",
+            "ready": true,
+            "tapped": true
+          },
+          {
+            "card": "Island",
+            "label": "island-8",
+            "ready": true,
+            "tapped": true
+          },
+          {
+            "card": "Weaver of Lies",
+            "label": "weaver",
+            "faceDown": "Morphed",
+            "ready": true
+          },
+          {
+            "card": "Ainok Tracker",
+            "label": "tracker",
+            "ready": true
+          },
+          {
+            "card": "Brine Elemental",
+            "label": "elemental",
+            "ready": true
+          },
+          {
+            "card": "Putrid Raptor",
+            "label": "raptor",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$weaver",
+          "names": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$tracker",
+          "names": [
+            "Ainok Tracker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$elemental",
+          "names": [
+            "Brine Elemental"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$raptor",
+          "names": [
+            "Putrid Raptor"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Take": {
+          "action": "TurnFaceUp $weaver",
+          "mana": [
+            "$island-1",
+            "$island-2",
+            "$island-3",
+            "$island-4",
+            "$island-5"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$tracker",
+            "$elemental",
+            "$raptor",
+            "$piker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "refuse": {
+        "ChooseTargets": {
+          "target": [
+            "$tracker",
+            "$elemental",
+            "$raptor",
+            "$weaver"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$tracker",
+            "$elemental",
+            "$raptor"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "OrderTimestamps": [
+          "$tracker",
+          "$elemental",
+          "$raptor"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$tracker",
+          "names": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$elemental",
+          "names": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$raptor",
+          "names": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$raptor",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 2,
+          "toughness": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$piker",
+          "names": [
+            "Goblin Piker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$weaver",
+          "names": [
+            "Weaver of Lies"
+          ]
+        }
+      }
+    }
+  ]
+}

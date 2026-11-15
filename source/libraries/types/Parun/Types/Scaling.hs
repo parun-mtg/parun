@@ -21,8 +21,8 @@ data Scaling
     -- Zero is reachable and means the placement is removed rather than resized --
     -- Vizier on a single -1\/-1 counter is exactly that -- so it shares Halve's
     -- caveat below, and the same guards answer both. Proved at gameplay level by
-    -- Parun.ZoneTriggerSpec's "Vizier of Remedies takes persist's counter to
-    -- zero", where the returned permanent carries no counter and so persists
+    -- data/scenarios/leaves-trigger's "Vizier of Remedies takes persist's
+    -- counter to zero", where the returned permanent carries no counter and so persists
     -- again.
     Subtract Natural.Natural
   | -- | CR 107.1a: Vorinclex, Monstrous Raider's "half that many . . . rounded

@@ -30,7 +30,7 @@ data View
     Daytime
   | -- | CR 310.9: a battle's protector.
     Protector
-  | -- | CR 701 / 702: the designations an object has.
+  | -- | CR 701 / 702: the designations an object or a player has.
     Designations
   | -- | CR 701.54a: whose Ring-bearer an object is, if anyone's.
     RingBearer

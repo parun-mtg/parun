@@ -1,0 +1,332 @@
+{
+  "description": "CR 601.2c / 708.2a Weaver of Lies turns both announced creatures face down at once",
+  "note": "One slot, several recipients: a one-target board cannot tell an arm that reads its slot as one object from one that reads the whole set. Three candidates for two announcements, so the choice is real: the Putrid Raptor is a morph creature the slot offers, and only the announcement keeps it face up. Goblin Piker has no morph ability. The Weaver is placed face down (Morphed), the three Islands its {3} cast spent tapped, and turned up for {4}{U}. Every P/T differs from CR 708.2a's 2/2. Brine Elemental's own trigger is a turned-face-up one, so nothing fires as it turns face down.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "island-1",
+            "ready": true,
+            "tapped": false
+          },
+          {
+            "card": "Island",
+            "label": "island-2",
+            "ready": true,
+            "tapped": false
+          },
+          {
+            "card": "Island",
+            "label": "island-3",
+            "ready": true,
+            "tapped": false
+          },
+          {
+            "card": "Island",
+            "label": "island-4",
+            "ready": true,
+            "tapped": false
+          },
+          {
+            "card": "Island",
+            "label": "island-5",
+            "ready": true,
+            "tapped": false
+          },
+          {
+            "card": "Island",
+            "label": "island-6",
+            "ready": true,
+            "tapped": true
+          },
+          {
+            "card": "Island",
+            "label": "island-7",
+            "ready": true,
+            "tapped": true
+          },
+          {
+            "card": "Island",
+            "label": "island-8",
+            "ready": true,
+            "tapped": true
+          },
+          {
+            "card": "Weaver of Lies",
+            "label": "weaver",
+            "faceDown": "Morphed",
+            "ready": true
+          },
+          {
+            "card": "Ainok Tracker",
+            "label": "tracker",
+            "ready": true
+          },
+          {
+            "card": "Brine Elemental",
+            "label": "elemental",
+            "ready": true
+          },
+          {
+            "card": "Putrid Raptor",
+            "label": "raptor",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$weaver",
+          "names": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$tracker",
+          "names": [
+            "Ainok Tracker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$elemental",
+          "names": [
+            "Brine Elemental"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$raptor",
+          "names": [
+            "Putrid Raptor"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "alice",
+          "is": [
+            "Pass",
+            "TurnFaceUp $weaver",
+            "ActivateManaAbility $island-1",
+            "ActivateManaAbility $island-2",
+            "ActivateManaAbility $island-3",
+            "ActivateManaAbility $island-4",
+            "ActivateManaAbility $island-5"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Take": {
+          "action": "TurnFaceUp $weaver",
+          "mana": [
+            "$island-1",
+            "$island-2",
+            "$island-3",
+            "$island-4",
+            "$island-5"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "ChooseTargets": {
+          "target": [
+            "$tracker",
+            "$elemental"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "OrderTimestamps": [
+          "$tracker",
+          "$elemental"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$tracker",
+          "names": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$elemental",
+          "names": []
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$tracker",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$elemental",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$raptor",
+          "power": 4,
+          "toughness": 4
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$raptor",
+          "names": [
+            "Putrid Raptor"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$piker",
+          "power": 2,
+          "toughness": 1
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$piker",
+          "names": [
+            "Goblin Piker"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$weaver",
+          "names": [
+            "Weaver of Lies"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$weaver",
+          "power": 4,
+          "toughness": 4
+        }
+      }
+    }
+  ]
+}

@@ -188,7 +188,8 @@ subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones sti
   priority, in the order asked, each as `[seat, kind]`, the seat `null` for a
   prompt nobody decides: what pins CR 101.4's order across players, which
   the timeline does not; a check at a prompt sees only those before it), and `Protector`,
-  `Designations`, `RingBearer` and `Supertypes` (of an `object`),
+  `RingBearer` and `Supertypes` (of an `object`), `Designations` (of an
+  `object`, or of a `player`: CR 702.131c's and CR 702.195b's marks),
   `CommanderDamage` (a `player`'s, as `[name, amount]` pairs), `OwnershipChanges`
   (each card whose owner changed, as `[card, starting owner, owner]`, a merged
   or melded permanent's cards each by name), `Seers`

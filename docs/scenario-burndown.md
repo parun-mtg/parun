@@ -615,20 +615,20 @@ out: grep for them.
 
 ### `FaceDownSpec`
 
-- CR 601.2c / 708.2a Weaver of Lies turns both announced creatures face down at once | `check:face-down`
-- CR 601.2c the offer is every OTHER morph creature, and all three turn over | `check:face-down` `check:prompt-offers`
-- CR 613.7f turning face down restamps the permanent after a removal that had wiped its grant | `board:object-designations`
-- CR 613.7f turning face up restamps the permanent after a removal that had wiped its grant | `board:object-designations`
-- CR 701.20b a face-down permanent revealed in place draws nothing | `check:events`
-- CR 701.40b the manifest procedure pays the mana cost, CR 702.37e the morph cost | `board:entered-with`
-- CR 701.40d a manifested disguise card is offered both procedures, at two prices | `board:entered-with`
-- CR 701.40g a manifested SORCERY stays face down, and still deals a 2/2's damage | `board:entered-with`
-- CR 701.40g a turn-face-up trigger does not fire for a manifested sorcery | `board:entered-with`
-- CR 702.37b the manifest procedure pays no megamorph cost, so no counter lands | `board:entered-with`
-- CR 708 a manifested CREATURE turns face up, and deals its printed damage | `board:entered-with`
-- CR 708.2a Yedora returns the dead creature as the Forest land it listed | `check:creature-count` `check:face-down` `check:mana-types`
-- CR 708.3 / 708.7 entering face down and turning face up draw nothing
-- CR 708.7 Pine Walker does not untap a creature cast face up
+- ~~CR 601.2c / 708.2a Weaver of Lies turns both announced creatures face down at once | `check:face-down`~~
+- ~~CR 601.2c the offer is every OTHER morph creature, and all three turn over | `check:face-down` `check:prompt-offers`~~
+- ~~CR 613.7f turning face down restamps the permanent after a removal that had wiped its grant | `board:object-designations`~~
+- ~~CR 613.7f turning face up restamps the permanent after a removal that had wiped its grant | `board:object-designations`~~
+- ~~CR 701.20b a face-down permanent revealed in place draws nothing | `check:events`~~
+- ~~CR 701.40b the manifest procedure pays the mana cost, CR 702.37e the morph cost | `board:entered-with`~~
+- ~~CR 701.40d a manifested disguise card is offered both procedures, at two prices | `board:entered-with`~~
+- ~~CR 701.40g a manifested SORCERY stays face down, and still deals a 2/2's damage | `board:entered-with`~~
+- ~~CR 701.40g a turn-face-up trigger does not fire for a manifested sorcery | `board:entered-with`~~
+- ~~CR 702.37b the manifest procedure pays no megamorph cost, so no counter lands | `board:entered-with`~~
+- ~~CR 708 a manifested CREATURE turns face up, and deals its printed damage | `board:entered-with`~~
+- ~~CR 708.2a Yedora returns the dead creature as the Forest land it listed | `check:creature-count` `check:face-down` `check:mana-types`~~
+- ~~CR 708.3 / 708.7 entering face down and turning face up draw nothing~~
+- ~~CR 708.7 Pine Walker does not untap a creature cast face up~~
 
 ### `FlipSpec`
 
@@ -722,23 +722,23 @@ out: grep for them.
 
 ### `LeavesTriggerSpec`
 
-- CR 109.5 an opponent's spell naming ANOTHER player fires nothing | `check:helper-payResponses`
-- CR 113.6k the same ability does not fire from a graveyard | `board:exiledwith` `board:haunting`
-- CR 113.6m the same ability does not function from the battlefield | `board:entered-with` `board:graveyard`
-- CR 305.7 under Blood Moon the same entry triggers nothing | `check:other-Mana.manaTypesOf`
-- CR 400.3 a card leaving bob's graveyard on alice's turn draws nothing | `board:entered-with` `board:graveyard`
-- CR 603.10 a card that reaches a graveyard mid-batch is no witness to an earlier event | `check:other-Game.faceOf`
-- CR 603.10a a card leaving alice's graveyard on her own turn draws her a card | `board:entered-with` `board:graveyard`
-- CR 603.10a the same departure on bob's turn draws nothing | `board:entered-with` `board:graveyard`
-- CR 603.6a two tokens enter together and each trigger names its own | `check:events` `check:other-DamageEvent.amount`
-- CR 603.6a whole card: a Goblin Piker enters and Aether Flash's 2 damage kills it (CR 704.5g) | `check:events` `check:other-DamageEvent.amount`
-- CR 608.2a the intervening if is checked AGAIN as the ability resolves | `board:last-known`
-- CR 608.2h a second Aether Flash resolves with the entrant already dead, and deals nothing | `check:events`
-- CR 614.1 Vizier of Remedies takes persist's counter to zero, so the Goblin returns bare and persists again | `check:helper-countersOn` `check:helper-inGraveyard` `check:helper-named`
-- CR 702.55b/702.55c the haunted creature dying fires the card's rider | `board:haunting`
-- Professor Hojo sacrificed to the cost still triggers | `board:object-designations`
-- Professor Hojo sees a target its own cost sacrificed | `board:object-designations`
-- a card moved from a library into a library is not put into one | `check:other-Event.changeZone`
+- ~~CR 109.5 an opponent's spell naming ANOTHER player fires nothing | `check:helper-payResponses`~~
+- ~~CR 113.6k the same ability does not fire from a graveyard | `board:exiledwith` `board:haunting`~~
+- ~~CR 113.6m the same ability does not function from the battlefield | `board:entered-with` `board:graveyard`~~
+- ~~CR 305.7 under Blood Moon the same entry triggers nothing | `check:other-Mana.manaTypesOf`~~
+- ~~CR 400.3 a card leaving bob's graveyard on alice's turn draws nothing | `board:entered-with` `board:graveyard`~~
+- ~~CR 603.10 a card that reaches a graveyard mid-batch is no witness to an earlier event | `check:other-Game.faceOf`~~
+- ~~CR 603.10a a card leaving alice's graveyard on her own turn draws her a card | `board:entered-with` `board:graveyard`~~
+- ~~CR 603.10a the same departure on bob's turn draws nothing | `board:entered-with` `board:graveyard`~~
+- ~~CR 603.6a two tokens enter together and each trigger names its own | `check:events` `check:other-DamageEvent.amount`~~
+- ~~CR 603.6a whole card: a Goblin Piker enters and Aether Flash's 2 damage kills it (CR 704.5g) | `check:events` `check:other-DamageEvent.amount`~~
+- ~~CR 608.2a the intervening if is checked AGAIN as the ability resolves | `board:last-known`~~
+- ~~CR 608.2h a second Aether Flash resolves with the entrant already dead, and deals nothing | `check:events`~~
+- ~~CR 614.1 Vizier of Remedies takes persist's counter to zero, so the Goblin returns bare and persists again | `check:helper-countersOn` `check:helper-inGraveyard` `check:helper-named`~~
+- ~~CR 702.55b/702.55c the haunted creature dying fires the card's rider | `board:haunting`~~
+- ~~Professor Hojo sacrificed to the cost still triggers | `board:object-designations`~~
+- ~~Professor Hojo sees a target its own cost sacrificed | `board:object-designations`~~
+- ~~a card moved from a library into a library is not put into one | `check:other-Event.changeZone`~~
 
 ### `LibraryOrderSpec`
 
@@ -876,7 +876,7 @@ out: grep for them.
 ### `OutsideTheGameSpec`
 
 - CR 100.4a two copies of one printing are two cards: the second wish finds the second copy | `board:outside-the-game`
-- CR 103.2a a deck's sideboard is recorded on its player and minted into no zone | `check:helper-poolOf` `check:other-Game.printingOf` `check:other-GameState.objects`
+- ~~CR 103.2a a deck's sideboard is recorded on its player and minted into no zone | `check:helper-poolOf` `check:other-Game.printingOf` `check:other-GameState.objects`~~
 - CR 307.1 with a spell on the stack the cycle's instant is castable and its sorcery is not | `board:outside-the-game`
 - CR 315.3 a conspiracy outside the game cannot be brought in | `board:outside-the-game`
 - CR 400.11b the pool is spent: a second Burning Wish finds nothing | `board:outside-the-game`
@@ -891,7 +891,7 @@ out: grep for them.
 - CR 701.23j Invasion of Arcavios brings an instant in from outside the game, and a search that skipped her library shuffles nothing | `board:outside-the-game`
 - CR 701.23j a card taken from outside the game fills the count, sparing the graveyard's match | `board:outside-the-game`
 - CR 701.23j outside the game alone may find nothing | `board:outside-the-game`
-- CR 708.2/730.4 a manifested main-game sorcery is offered to a subgame's wish as a creature and not as a sorcery | `board:objects-ids` `board:outsideobjects`
+- ~~CR 708.2/730.4 a manifested main-game sorcery is offered to a subgame's wish as a creature and not as a sorcery | `board:objects-ids` `board:outsideobjects`~~
 - CR 730.4/730.4a/730.5 gameplay: Living Wish takes two main-game creatures out of a Shahrazad subgame, and the triggers wait for the main game | `move:another-game`
 - CR 730.5 gameplay: a wish that takes the resolving Shahrazad itself still finishes resolving with the winner it bound | `move:another-game`
 
@@ -940,11 +940,11 @@ out: grep for them.
 
 ### `PlayerDesignationSpec`
 
-- CR 702.131a Secrets of the Golden City blesses its controller and then draws three | `check:helper-marksOf`
-- CR 702.131b nine permanents grant nothing | `check:helper-flies` `check:helper-marksOf`
-- CR 702.131b ten permanents grant the city's blessing and Skymarcher Aspirant flies | `check:helper-flies` `check:helper-marksOf`
-- CR 702.195a an artifact, a Saga and a legend grant an enduring story | `check:helper-hasKeyword` `check:helper-marksOf`
-- CR 702.195a two qualifying permanents grant nothing | `check:helper-hasKeyword` `check:helper-marksOf`
+- ~~CR 702.131a Secrets of the Golden City blesses its controller and then draws three | `check:helper-marksOf`~~
+- ~~CR 702.131b nine permanents grant nothing | `check:helper-flies` `check:helper-marksOf`~~
+- ~~CR 702.131b ten permanents grant the city's blessing and Skymarcher Aspirant flies | `check:helper-flies` `check:helper-marksOf`~~
+- ~~CR 702.195a an artifact, a Saga and a legend grant an enduring story | `check:helper-hasKeyword` `check:helper-marksOf`~~
+- ~~CR 702.195a two qualifying permanents grant nothing | `check:helper-hasKeyword` `check:helper-marksOf`~~
 
 ### `PlayerEffectSpec`
 
@@ -1026,19 +1026,19 @@ out: grep for them.
 
 ### `ResolveSpec`
 
-- CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers | `check:prompt-payload`
-- CR 101.4b a later seat knows what the seats before it answered for that land | `check:prompt-payload`
-- CR 110.5b whole card: Nature's Lore puts the Forest it finds onto the battlefield UNTAPPED | `check:events`
-- CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives
-- CR 118.12a each land is its own offer, and any player's payment saves only that land | `check:prompt-payload`
-- CR 607.2a: killing the OTHER Dragon returns the OTHER card | `board:exile-linked`
-- CR 607.2a: the dead Dragon returns the card IT exiled, not the other Dragon's | `board:exile-linked`
-- CR 608.2b a Bolt whose only target died fizzles | `check:events`
-- CR 608.2h a modification that cannot be frozen is not stored at all | `check:other-StoredEffects.continuousEffects`
-- CR 608.2h/611.2d Rush of Blood's X is the power of the creature in its own target slot | `check:continuous-effects`
-- CR 701.23a/701.23e whole card: Hoarding Dragon exiles the artifact it finds, unrevealed | `check:events`
-- a departed player is not a legal target | `check:legal-targets` `check:other-TargetSlot.required`
-- an opponent's creature: that opponent loses the life | `check:creature-count`
+- ~~CR 101.4b Jungle Wayfinder's later seats know the earlier seats' answers | `check:prompt-payload`~~
+- ~~CR 101.4b a later seat knows what the seats before it answered for that land | `check:prompt-payload`~~
+- ~~CR 110.5b whole card: Nature's Lore puts the Forest it finds onto the battlefield UNTAPPED | `check:events`~~
+- ~~CR 118.12a Killing Wave asks each creature's controller, and a paid creature alone survives~~
+- ~~CR 118.12a each land is its own offer, and any player's payment saves only that land | `check:prompt-payload`~~
+- ~~CR 607.2a: killing the OTHER Dragon returns the OTHER card | `board:exile-linked`~~
+- ~~CR 607.2a: the dead Dragon returns the card IT exiled, not the other Dragon's | `board:exile-linked`~~
+- ~~CR 608.2b a Bolt whose only target died fizzles | `check:events`~~
+- ~~CR 608.2h a modification that cannot be frozen is not stored at all | `check:other-StoredEffects.continuousEffects`~~
+- ~~CR 608.2h/611.2d Rush of Blood's X is the power of the creature in its own target slot | `check:continuous-effects`~~
+- ~~CR 701.23a/701.23e whole card: Hoarding Dragon exiles the artifact it finds, unrevealed | `check:events`~~
+- ~~a departed player is not a legal target | `check:legal-targets` `check:other-TargetSlot.required`~~
+- ~~an opponent's creature: that opponent loses the life | `check:creature-count`~~
 
 ### `RestampSpec`
 
@@ -1129,13 +1129,13 @@ out: grep for them.
 
 ### `TeamSpec`
 
-- CR 502.2a the handoff records what the previous active team cast | `check:events` `check:other-Game.spellsCastLastTurn`
-- CR 702.179d each active teammate's speed rises once | `board:player-speed`
-- CR 805.2 a departed active player's teammate declares the attack | `board:player-status`
-- CR 805.5 a teammate who passed is asked again before the team passes | `check:prompt-order`
-- CR 805.5b a departed active player's teammate receives priority | `board:player-status`
-- CR 805.8 controlling a player controls their team | `check:player-control`
-- CR 805.8 one effect skips a team's step once
+- ~~CR 502.2a the handoff records what the previous active team cast | `check:events` `check:other-Game.spellsCastLastTurn`~~
+- ~~CR 702.179d each active teammate's speed rises once | `board:player-speed`~~
+- ~~CR 805.2 a departed active player's teammate declares the attack | `board:player-status`~~
+- ~~CR 805.5 a teammate who passed is asked again before the team passes | `check:prompt-order`~~
+- ~~CR 805.5b a departed active player's teammate receives priority | `board:player-status`~~
+- ~~CR 805.8 controlling a player controls their team | `check:player-control`~~
+- ~~CR 805.8 one effect skips a team's step once~~
 
 ### `TransformSpec`
 

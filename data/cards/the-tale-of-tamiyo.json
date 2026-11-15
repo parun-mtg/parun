@@ -1,0 +1,418 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 2
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "The Tale of Tamiyo",
+      "oracleText": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after IV.)\nI, II, III — Mill two cards. If two cards that share a card type were milled this way, draw a card and repeat this process.\nIV — Exile any number of target instant, sorcery, and/or Tamiyo planeswalker cards from your graveyard. Copy them. You may cast any number of the copies.",
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 1
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RepeatIf",
+                        "value": {
+                          "condition": {
+                            "type": "Compares",
+                            "value": {
+                              "comparison": "AtLeast",
+                              "measured": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "MostSharing",
+                                    "value": {
+                                      "type": "CardType"
+                                    }
+                                  },
+                                  "filter": {
+                                    "type": "IsBound",
+                                    "value": "milled"
+                                  },
+                                  "scope": {
+                                    "type": "OverBound",
+                                    "value": "milled"
+                                  }
+                                }
+                              },
+                              "threshold": {
+                                "type": "Literal",
+                                "value": 2
+                              }
+                            }
+                          },
+                          "ifHolds": [
+                            {
+                              "type": "Draw",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "You"
+                                },
+                                "quantity": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            }
+                          ],
+                          "process": [
+                            {
+                              "type": "Mill",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "You"
+                                },
+                                "quantity": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "slot": "milled"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 2
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RepeatIf",
+                        "value": {
+                          "condition": {
+                            "type": "Compares",
+                            "value": {
+                              "comparison": "AtLeast",
+                              "measured": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "MostSharing",
+                                    "value": {
+                                      "type": "CardType"
+                                    }
+                                  },
+                                  "filter": {
+                                    "type": "IsBound",
+                                    "value": "milled"
+                                  },
+                                  "scope": {
+                                    "type": "OverBound",
+                                    "value": "milled"
+                                  }
+                                }
+                              },
+                              "threshold": {
+                                "type": "Literal",
+                                "value": 2
+                              }
+                            }
+                          },
+                          "ifHolds": [
+                            {
+                              "type": "Draw",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "You"
+                                },
+                                "quantity": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            }
+                          ],
+                          "process": [
+                            {
+                              "type": "Mill",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "You"
+                                },
+                                "quantity": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "slot": "milled"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 3
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "RepeatIf",
+                        "value": {
+                          "condition": {
+                            "type": "Compares",
+                            "value": {
+                              "comparison": "AtLeast",
+                              "measured": {
+                                "type": "Count",
+                                "value": {
+                                  "aggregation": {
+                                    "type": "MostSharing",
+                                    "value": {
+                                      "type": "CardType"
+                                    }
+                                  },
+                                  "filter": {
+                                    "type": "IsBound",
+                                    "value": "milled"
+                                  },
+                                  "scope": {
+                                    "type": "OverBound",
+                                    "value": "milled"
+                                  }
+                                }
+                              },
+                              "threshold": {
+                                "type": "Literal",
+                                "value": 2
+                              }
+                            }
+                          },
+                          "ifHolds": [
+                            {
+                              "type": "Draw",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "You"
+                                },
+                                "quantity": {
+                                  "type": "Literal",
+                                  "value": 1
+                                }
+                              }
+                            }
+                          ],
+                          "process": [
+                            {
+                              "type": "Mill",
+                              "value": {
+                                "player": {
+                                  "type": "Relative",
+                                  "value": "You"
+                                },
+                                "quantity": {
+                                  "type": "Literal",
+                                  "value": 2
+                                },
+                                "slot": "milled"
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "condition": {
+            "type": "CountersChange",
+            "value": {
+              "kind": {
+                "type": "OfKind",
+                "value": {
+                  "type": "Lore"
+                }
+              },
+              "motion": {
+                "type": "Put",
+                "value": "AnyPlayer"
+              },
+              "threshold": 4
+            }
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "MoveToZone",
+                        "value": {
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "target"
+                          },
+                          "slot": "exiled",
+                          "zone": "Exile"
+                        }
+                      },
+                      {
+                        "type": "OfferCast",
+                        "value": {
+                          "copied": true,
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "exiled"
+                          },
+                          "repetition": {
+                            "type": "AnyNumber"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "count": {
+                      "type": "Printed",
+                      "value": {
+                        "least": 0
+                      }
+                    },
+                    "filter": {
+                      "type": "Or",
+                      "value": [
+                        {
+                          "type": "HasCardType",
+                          "value": "Instant"
+                        },
+                        {
+                          "type": "HasCardType",
+                          "value": "Sorcery"
+                        },
+                        {
+                          "type": "And",
+                          "value": [
+                            {
+                              "type": "HasCardType",
+                              "value": "Planeswalker"
+                            },
+                            {
+                              "type": "HasSubtype",
+                              "value": "Tamiyo"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "pool": {
+                      "type": "CardsInGraveyard",
+                      "value": {
+                        "type": "Scoped",
+                        "value": {
+                          "type": "You"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Saga"
+        ],
+        "supertypes": [
+          "Legendary"
+        ],
+        "types": [
+          "Enchantment"
+        ]
+      }
+    }
+  ]
+}

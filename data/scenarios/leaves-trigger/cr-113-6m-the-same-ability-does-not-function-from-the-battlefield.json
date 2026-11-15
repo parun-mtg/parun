@@ -1,0 +1,29 @@
+{
+  "description": "CR 113.6m the same ability does not function from the battlefield",
+  "note": "The \"only\" in \"functions only in that zone\": one difference from the graveyard scenario, the Prized Amalgam starts on the battlefield, untapped. Off the same Reassembling Skeleton entry nothing triggers, so nothing is armed for the end step, where the one Amalgam is still the untapped one that was already there.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          { "card": "Swamp", "label": "s1", "ready": true },
+          { "card": "Swamp", "label": "s2", "ready": true },
+          { "card": "Prized Amalgam", "label": "amalgam" }
+        ],
+        "graveyard": [{ "card": "Reassembling Skeleton", "label": "skeleton" }]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Activate": { "object": "$skeleton", "mana": ["$s1", "$s2"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Reassembling Skeleton", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "View": { "of": "Stack", "is": [] } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Battlefield", "card": "Prized Amalgam", "count": 1 } } },
+    { "turn": 1, "step": "EndStep", "player": "alice", "check": { "Tapped": { "object": "$amalgam", "tapped": false } } }
+  ]
+}

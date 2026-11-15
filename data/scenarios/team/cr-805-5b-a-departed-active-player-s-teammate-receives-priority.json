@@ -1,0 +1,94 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice",
+        "team": 1
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob",
+        "team": 2
+      },
+      {
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "carol",
+        "team": 2
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Swamp",
+            "label": "swamp",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Dark Ritual",
+            "label": "ritual"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "dave",
+        "team": 1
+      }
+    ],
+    "sharedTeamTurns": true,
+    "step": "Upkeep"
+  },
+  "description": "CR 805.5b a departed active player's teammate receives priority",
+  "note": "Under shared team turns the active TEAM receives priority (CR 805.5b, 800.4j), so with alice gone her teammate dave is asked first in her main phase, though bob holds the next seat after hers. Dave and alice are the team whose seats wrap the turn order. Alice concedes in her upkeep; dave casts a Dark Ritual the moment he is asked in the main phase, so bob's first priority there sees it only if dave was asked first. The control drops the option: bob, the next seat, is asked first and sees an empty stack.",
+  "timeline": [
+    {
+      "do": "Concede",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$swamp"
+          ],
+          "object": "$ritual"
+        }
+      },
+      "player": "dave",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Dark Ritual"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
