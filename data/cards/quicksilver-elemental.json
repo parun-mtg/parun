@@ -1,0 +1,148 @@
+{
+  "faces": [
+    {
+      "activatedAbilities": [
+        {
+          "cost": {
+            "mana": [
+              {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainCardAbilities",
+                            "value": {
+                              "cards": {
+                                "type": "IsBound",
+                                "value": "target"
+                              },
+                              "from": "OnTheBattlefield"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "self"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "targetSlots": {
+                  "target": {
+                    "pool": {
+                      "type": "Creatures"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 3
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "Blue"
+          }
+        }
+      ],
+      "name": "Quicksilver Elemental",
+      "oracleText": "{U}: This creature gains all activated abilities of target creature until end of turn. (If any of the abilities use that creature's name, use this creature's name instead.)\nYou may spend blue mana as though it were mana of any color to pay the activation costs of this creature's abilities.",
+      "playerAbilities": [
+        {
+          "effect": {
+            "type": "SpendManaAsThough",
+            "value": {
+              "asThough": [
+                {
+                  "type": "Colored",
+                  "value": "White"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Blue"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Black"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Red"
+                },
+                {
+                  "type": "Colored",
+                  "value": "Green"
+                }
+              ],
+              "only": false,
+              "scope": {
+                "type": "Activating",
+                "value": {
+                  "type": "IsSource"
+                }
+              },
+              "which": {
+                "type": "OfType",
+                "value": {
+                  "type": "Colored",
+                  "value": "Blue"
+                }
+              }
+            }
+          },
+          "scope": {
+            "type": "You"
+          }
+        }
+      ],
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 4
+      },
+      "typeLine": {
+        "subtypes": [
+          "Elemental"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}

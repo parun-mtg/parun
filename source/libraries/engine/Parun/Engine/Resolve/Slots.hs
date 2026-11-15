@@ -63,6 +63,7 @@ import qualified Parun.Types.BindPlayers as BindPlayers
 import qualified Parun.Types.Binding as Binding.Type
 import qualified Parun.Types.Blight as Blight.Type
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CastOffer as CastOffer
 import qualified Parun.Types.CastRepetition as CastRepetition
 import qualified Parun.Types.ChangeText as ChangeText
@@ -172,6 +173,7 @@ import qualified Parun.Types.JoinAttack as JoinAttack
 import qualified Parun.Types.Keyword as Keyword.Type
 import qualified Parun.Types.LastKnown as LastKnown
 import qualified Parun.Types.LaterPayment as LaterPayment
+import qualified Parun.Types.LentCards as LentCards
 import qualified Parun.Types.LibraryPlacement as LibraryPlacement
 import qualified Parun.Types.LifeExchange as LifeExchange
 import qualified Parun.Types.LifeGainR as LifeGainR
@@ -188,6 +190,7 @@ import qualified Parun.Types.Mill as Mill
 import qualified Parun.Types.MillTally as MillTally
 import qualified Parun.Types.Modal as Modal
 import qualified Parun.Types.Mode as Mode
+import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyTarget as ModifyTarget
 import qualified Parun.Types.MonarchTarget as MonarchTarget
 import qualified Parun.Types.MoveCounters as MoveCounters
@@ -1137,9 +1140,14 @@ slotsOf effect = joinTwo (joinTwo (joinSlots (fmap objectRefSlots (effectObjectR
   Effect.Fight (Fight.MkFight first second _ _) -> joinTwo (oneSlot first) (oneSlot second)
   -- The modification's own quantities read slots too, through
   -- Projection.quantitiesOf. The per-object name is subtracted: the arm itself
-  -- binds it while it freezes, and nowhere else.
+  -- binds it while it freezes, and nowhere else. A battlefield lend's Filter
+  -- is matched as the effect begins (Common.expandGrant), so its slots are
+  -- read here too: Quicksilver Elemental's "target creature".
   Effect.ModifyTarget (ModifyTarget.MkModifyTarget duration modification _ each) ->
-    joinTwo (maybe id Map.delete each (joinSlots (fmap quantitySlots (Projection.quantitiesOf modification)))) (durationSlots duration)
+    let lenders = case modification of
+          Modification.GainCardAbilities lend | CardAbilities.from lend == LentCards.OnTheBattlefield -> filterSlotsOf (CardAbilities.cards lend)
+          _ -> Map.empty
+     in joinTwo (joinTwo (maybe id Map.delete each (joinSlots (fmap quantitySlots (Projection.quantitiesOf modification)))) (durationSlots duration)) lenders
   Effect.ChangeText (ChangeText.MkChangeText _ _ slot duration) -> joinTwo (oneSlot slot) (durationSlots duration)
   -- The count is a read too: The Last Agni Kai's "add that much {R}" names
   -- the slot its fight bound.

@@ -2318,3 +2318,24 @@ Entries are ordered by the first rule each cites.
   and
   `cr-614-1-rain-of-gore-turns-the-gain-words-of-worship-substitutes-for-a-draw-step-draw-into-a-loss`.
 - **Issue**: #5810.
+
+## A resolving lend takes the lender's abilities as it resolves
+
+- **Question**: Quicksilver Elemental "gains all activated abilities of target
+  creature until end of turn". Are those the abilities the creature has as
+  the ability resolves, or whatever it has later in the turn, so that the
+  Elemental loses them when the creature leaves the battlefield?
+- **Rules**: CR 611.2a, 611.2c, 611.2d, 613.1f; CR of 2026-11-06. CR 611.2c
+  fixes only the affected set. The card's rulings (2004-10-04, 2004-12-01)
+  say nothing about the creature leaving.
+- **Decision**: As it resolves. The resolution expands the lend into one
+  grant per ability the target has then, kept until end of turn whatever
+  becomes of the target.
+- **Rejected**: A live lend from the target, which ties a resolved effect to
+  an object the effect no longer names. Concerted Effort's ruling keeps a
+  resolved keyword grant after its holder leaves, and the 2004-10-04 rulings
+  treat each activation as gaining its own copies.
+- **Site**: `Parun.Engine.Resolve.Common`'s `expandGrant`, proved by the
+  scenario
+  `quicksilver-elemental-keeps-a-gained-ability-after-the-creature-leaves`.
+- **Issue**: #7279.
