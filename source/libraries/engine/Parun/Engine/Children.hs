@@ -2047,7 +2047,7 @@ costComponentChildren c component = case component of
   CostComponent.PayLife amount -> CostComponent.PayLife <$> costAmountChildren c amount
   CostComponent.PayComputedLife _ -> pure component
   CostComponent.Sacrifice (Sacrifice.MkSacrifice n criterion) -> fmap CostComponent.Sacrifice (Sacrifice.MkSacrifice <$> objectCountChildren c n <*> costFilter c criterion)
-  CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower power criterion) -> fmap CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower power <$> costFilter c criterion)
+  CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower power criterion family) -> fmap CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower power <$> costFilter c criterion <*> pure family)
   CostComponent.TapPermanents (TapPermanents.MkTapPermanents n criterion sharing) -> fmap CostComponent.TapPermanents (TapPermanents.MkTapPermanents <$> costAmountChildren c n <*> costFilter c criterion <*> pure sharing)
   CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents n criterion) -> fmap CostComponent.ReturnPermanents (ReturnPermanents.MkReturnPermanents n <$> costFilter c criterion)
   CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n criterion) -> fmap CostComponent.ExilePermanents (ExilePermanents.MkExilePermanents n <$> costFilter c criterion)
@@ -3646,6 +3646,7 @@ modificationChildren c modification = case modification of
   Modification.AssignCombatDamage _ -> pure modification
   Modification.AssignCombatDamageAs {} -> pure modification
   Modification.GrantsStationToughness -> pure modification
+  Modification.TapsAsThoughPowerGreater {} -> pure modification
   Modification.LoyaltyIsToughness -> pure modification
   Modification.Intensify quantity -> Modification.Intensify <$> modificationQuantity c quantity
 

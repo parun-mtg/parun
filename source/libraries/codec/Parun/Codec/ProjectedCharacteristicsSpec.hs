@@ -34,6 +34,7 @@ import qualified Parun.Types.Face as Face.Type
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.ManaCost as ManaCost
 import qualified Parun.Types.ManaFilter as ManaFilter
@@ -119,6 +120,7 @@ testCharacteristics =
       PC.combatDamageAmount = Just CombatDamageAmount.EqualToToughness,
       PC.combatDamageOptions = Map.singleton CombatDamageOption.ToDefendingCreature CombatDamageObligation.Optional,
       PC.grantsStationToughness = True,
+      PC.tapPowerBonus = Map.singleton KeywordFamily.Saddle 2,
       PC.loyaltyIsToughness = True,
       -- Parun.Codec.FaceSpec's own values for the four cost fields.
       PC.additionalCosts = [CostComponent.TapThis],
@@ -191,6 +193,7 @@ testCharacteristicsJson =
     <> "\"combatDamageAmount\":\"EqualToToughness\","
     <> "\"combatDamageOptions\":[{\"key\":\"ToDefendingCreature\",\"value\":\"Optional\"}],"
     <> "\"grantsStationToughness\":true,"
+    <> "\"tapPowerBonus\":[{\"key\":\"Saddle\",\"value\":2}],"
     <> "\"loyaltyIsToughness\":true,"
     <> "\"additionalCosts\":[{\"type\":\"TapThis\"}],"
     <> "\"additionalCostChoices\":[[{\"components\":[{\"type\":\"TapThis\"}],\"mana\":[]},{\"mana\":[{\"type\":\"Generic\",\"value\":1}]}]],"
@@ -254,6 +257,7 @@ minimalCharacteristics =
       PC.combatDamageAmount = Nothing,
       PC.combatDamageOptions = Map.empty,
       PC.grantsStationToughness = False,
+      PC.tapPowerBonus = Map.empty,
       PC.loyaltyIsToughness = False,
       PC.additionalCosts = [],
       PC.additionalCostChoices = [],

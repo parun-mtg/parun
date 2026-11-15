@@ -68,6 +68,11 @@ codec abilityCodec =
             <*> Fields.required "among" (Filter.codec Keyword.codec) (\(_, _, f) -> f)
       -- Optional is the unmarked value, every printed "you may", so a card says
       -- nothing unless it means Outmaneuver's forced form.
+      tapsAsThough =
+        Fields.object $
+          (,)
+            <$> Fields.required "keywords" (Common.set KeywordFamily.codec) fst
+            <*> Fields.required "greaterBy" Common.natural snd
       combatDamageAs =
         Fields.object $
           (,)
@@ -125,6 +130,7 @@ codec abilityCodec =
           Arm.payload "AssignCombatDamage" CombatDamageAmount.codec Modification.AssignCombatDamage (\x -> case x of Modification.AssignCombatDamage y -> Just y; _ -> Nothing),
           Arm.payload "AssignCombatDamageAs" combatDamageAs (uncurry Modification.AssignCombatDamageAs) (\x -> case x of Modification.AssignCombatDamageAs o y -> Just (o, y); _ -> Nothing),
           Arm.nullary "GrantsStationToughness" Modification.GrantsStationToughness,
+          Arm.payload "TapsAsThoughPowerGreater" tapsAsThough (uncurry Modification.TapsAsThoughPowerGreater) (\x -> case x of Modification.TapsAsThoughPowerGreater k n -> Just (k, n); _ -> Nothing),
           Arm.payload "Intensify" Quantity.codec Modification.Intensify (\x -> case x of Modification.Intensify y -> Just y; _ -> Nothing),
           Arm.nullary "LoyaltyIsToughness" Modification.LoyaltyIsToughness
         ]
@@ -176,5 +182,6 @@ tagOf x = case x of
   Modification.AssignCombatDamage {} -> "AssignCombatDamage"
   Modification.AssignCombatDamageAs {} -> "AssignCombatDamageAs"
   Modification.GrantsStationToughness {} -> "GrantsStationToughness"
+  Modification.TapsAsThoughPowerGreater {} -> "TapsAsThoughPowerGreater"
   Modification.Intensify {} -> "Intensify"
   Modification.LoyaltyIsToughness {} -> "LoyaltyIsToughness"

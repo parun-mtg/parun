@@ -257,6 +257,9 @@ layer m = case m of
   -- in the layer system reads or writes PC.grantsStationToughness, so
   -- ordering against a P/T or type-changing modification never bites.
   Modification.GrantsStationToughness -> Layer.Ability
+  -- CR 613.11, AssignCombatDamage's layer: how a cost counts the creature, a
+  -- rules change and not a characteristic.
+  Modification.TapsAsThoughPowerGreater {} -> Layer.Rules
   -- No CR 613.1 layer: intensity is not a characteristic (CR 109.3), so it
   -- applies after every layer, with CR 613.11's rules-modifying effects.
   Modification.Intensify _ -> Layer.Rules
@@ -965,6 +968,11 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
         -- with no count and no source to prefer among several grants.
         Modification.GrantsStationToughness ->
           pc {PC.grantsStationToughness = True}
+        -- CR 613.11: an ACCUMULATION, unlike the marker above -- each grant is
+        -- its own "as though" and they add (docs/decisions.md, "Whether two
+        -- crew power offsets add").
+        Modification.TapsAsThoughPowerGreater keywords n ->
+          pc {PC.tapPowerBonus = Map.unionWith (+) (PC.tapPowerBonus pc) (Map.fromSet (const n) keywords)}
         -- Alchemy's "intensifies by N": an object with no starting intensity
         -- counts from 0.
         Modification.Intensify n ->
@@ -1090,6 +1098,7 @@ cardTypesAfter m types = case m of
   Modification.AssignCombatDamage _ -> types
   Modification.AssignCombatDamageAs {} -> types
   Modification.GrantsStationToughness -> types
+  Modification.TapsAsThoughPowerGreater {} -> types
   Modification.Intensify _ -> types
   Modification.LoyaltyIsToughness -> types
   Modification.LandSubtype {} -> types
@@ -2063,6 +2072,7 @@ freezeQuantities viewOf gs announcedOn source context m =
         -- No quantity to freeze: two bare markers.
         Modification.AssignCombatDamage _ -> Just m
         Modification.GrantsStationToughness -> Just m
+        Modification.TapsAsThoughPowerGreater {} -> Just m
         -- An enum payload, so no quantity either.
         Modification.AssignCombatDamageAs {} -> Just m
         Modification.Intensify n -> fmap Modification.Intensify (freeze n)
@@ -2121,6 +2131,7 @@ quantitiesOf m = case m of
   Modification.HasFullText _ -> []
   Modification.AssignCombatDamage _ -> []
   Modification.GrantsStationToughness -> []
+  Modification.TapsAsThoughPowerGreater {} -> []
   Modification.AssignCombatDamageAs {} -> []
   Modification.Intensify n -> [n]
   Modification.LoyaltyIsToughness -> []
@@ -2175,6 +2186,7 @@ referenceQuery m = case m of
   Modification.ExchangeTextBoxes -> Nothing
   Modification.AssignCombatDamage _ -> Nothing
   Modification.GrantsStationToughness -> Nothing
+  Modification.TapsAsThoughPowerGreater {} -> Nothing
   Modification.AssignCombatDamageAs {} -> Nothing
   Modification.Intensify _ -> Nothing
   Modification.LoyaltyIsToughness -> Nothing
@@ -2269,6 +2281,7 @@ setsLandSubtype m = case m of
   Modification.ChosenColor _ -> False
   -- An ability-shaping grant, not a type change.
   Modification.GrantsStationToughness -> False
+  Modification.TapsAsThoughPowerGreater {} -> False
   -- Not a characteristic at all.
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
@@ -3609,6 +3622,7 @@ removesAbilities m = case m of
   Modification.AssignCombatDamageAs {} -> False
   -- A grant, GainKeyword's answer above: not a removal.
   Modification.GrantsStationToughness -> False
+  Modification.TapsAsThoughPowerGreater {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
   Modification.ChangeWord {} -> False
@@ -5020,6 +5034,10 @@ modificationWrites m = case m of
   -- REGRESSION FENCE rather than a proved behaviour: no board in the pool
   -- makes another effect's affected set depend on it.
   Modification.GrantsStationToughness -> Set.singleton Keywords
+  -- Writes PC.tapPowerBonus, GrantsStationToughness' reasoning: no reader
+  -- inside the layer fold (Parun.Engine.Cost.tapPowerGiven reads it off the
+  -- finished projection), so a REGRESSION FENCE.
+  Modification.TapsAsThoughPowerGreater {} -> Set.singleton Keywords
   -- Writes PC.intensity, which no Aspect names: no Filter atom reads it.
   Modification.Intensify _ -> Set.empty
   Modification.LoyaltyIsToughness -> Set.singleton Keywords
@@ -5094,6 +5112,7 @@ modificationReads m = case m of
   Modification.AssignCombatDamage _ -> Set.empty
   Modification.AssignCombatDamageAs {} -> Set.empty
   Modification.GrantsStationToughness -> Set.empty
+  Modification.TapsAsThoughPowerGreater {} -> Set.empty
   Modification.Intensify n -> quantityReads n
   Modification.LoyaltyIsToughness -> Set.empty
   Modification.LandSubtype {} -> Set.empty
@@ -7118,6 +7137,7 @@ grantsKeywordWhere p m = case m of
   -- Neither marker hands out a Keyword, whatever the station one's name says.
   Modification.AssignCombatDamage _ -> False
   Modification.GrantsStationToughness -> False
+  Modification.TapsAsThoughPowerGreater {} -> False
   Modification.AssignCombatDamageAs {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
@@ -7204,6 +7224,7 @@ grantsMintingType m = case m of
   -- Neither marker writes a card type or subtype.
   Modification.AssignCombatDamage _ -> False
   Modification.GrantsStationToughness -> False
+  Modification.TapsAsThoughPowerGreater {} -> False
   Modification.AssignCombatDamageAs {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False
@@ -7301,6 +7322,7 @@ grantsAbilityWhere p m = case m of
   Modification.HasFullText ft -> any (\g -> p g || grantedStaticWrites (grantsAbilityWhere p) g) (FullText.alsoHas ft)
   Modification.AssignCombatDamage _ -> False
   Modification.GrantsStationToughness -> False
+  Modification.TapsAsThoughPowerGreater {} -> False
   Modification.AssignCombatDamageAs {} -> False
   Modification.Intensify _ -> False
   Modification.LoyaltyIsToughness -> False

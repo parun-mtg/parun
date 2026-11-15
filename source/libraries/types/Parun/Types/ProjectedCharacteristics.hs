@@ -28,6 +28,7 @@ import qualified Parun.Types.Face as Face
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.Keyword as Keyword
 import qualified Parun.Types.KeywordDesignator as KeywordDesignator
+import qualified Parun.Types.KeywordFamily as KeywordFamily
 import qualified Parun.Types.LentKeyword as LentKeyword
 import qualified Parun.Types.Loyalty as Loyalty
 import qualified Parun.Types.ManaCost as ManaCost
@@ -366,6 +367,11 @@ data ProjectedCharacteristics = MkProjectedCharacteristics
     -- permanent the ability's controller controls, so the fact is per-object
     -- here and folded to a per-player question at the one site that asks it.
     grantsStationToughness :: Bool,
+    -- | CR 613.11: how much greater than its power this creature counts toward
+    -- each keyword's tap-for-total-power cost
+    -- (Modification.TapsAsThoughPowerGreater), read by
+    -- Parun.Engine.Cost.tapPowerGiven. Summed across grants.
+    tapPowerBonus :: Map.Map KeywordFamily.KeywordFamily Natural.Natural,
     -- | Is this object's loyalty its toughness (Modification.LoyaltyIsToughness)?
     loyaltyIsToughness :: Bool,
     -- | CR 707.2 / 601.2b: the printed additional costs the copiable face

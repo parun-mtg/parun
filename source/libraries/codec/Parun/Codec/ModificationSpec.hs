@@ -430,6 +430,14 @@ spec s = Spec.describe s "Parun.Codec.Modification" $ do
       codec
       Modification.GrantsStationToughness
       " {\"type\":\"GrantsStationToughness\"} "
+  -- CR 702.122a / 702.171a: Deathless Pilot's "saddles Mounts and crews
+  -- Vehicles as though its power were 2 greater".
+  Spec.it s "TapsAsThoughPowerGreater" $
+    Common.assertCodec
+      s
+      codec
+      (Modification.TapsAsThoughPowerGreater (Set.fromList [KeywordFamily.Crew, KeywordFamily.Saddle]) 2)
+      " {\"type\":\"TapsAsThoughPowerGreater\",\"value\":{\"keywords\":[\"Crew\",\"Saddle\"],\"greaterBy\":2}} "
   -- Alchemy's "intensifies by 1" (Static Discharge).
   Spec.it s "Intensify" $
     Common.assertCodec

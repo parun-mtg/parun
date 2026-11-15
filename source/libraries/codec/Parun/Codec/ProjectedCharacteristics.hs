@@ -28,6 +28,7 @@ import qualified Parun.Codec.Face as Face
 import qualified Parun.Codec.GrantedAbility as GrantedAbility
 import qualified Parun.Codec.Keyword as Keyword
 import qualified Parun.Codec.KeywordDesignator as KeywordDesignator
+import qualified Parun.Codec.KeywordFamily as KeywordFamily
 import qualified Parun.Codec.LentKeyword as LentKeyword
 import qualified Parun.Codec.Loyalty as Loyalty
 import qualified Parun.Codec.ManaCost as ManaCost
@@ -95,6 +96,7 @@ codec = Fields.object $ do
   combatDamageAmount <- Fields.defaulted "combatDamageAmount" Nothing (Common.maybe CombatDamageAmount.codec) PC.combatDamageAmount
   combatDamageOptions <- Fields.defaulted "combatDamageOptions" Map.empty (Common.keyedList (Common.keyValue CombatDamageOption.codec CombatDamageObligation.codec)) PC.combatDamageOptions
   grantsStationToughness <- Fields.defaulted "grantsStationToughness" False Common.boolean PC.grantsStationToughness
+  tapPowerBonus <- Fields.defaulted "tapPowerBonus" Map.empty (Common.multiset KeywordFamily.codec) PC.tapPowerBonus
   loyaltyIsToughness <- Fields.defaulted "loyaltyIsToughness" False Common.boolean PC.loyaltyIsToughness
   additionalCosts <- Fields.defaulted "additionalCosts" [] (Common.list (CostComponent.codec Keyword.codec)) PC.additionalCosts
   additionalCostChoices <- Fields.defaulted "additionalCostChoices" [] (Common.list CostChoice.codec) PC.additionalCostChoices
@@ -155,6 +157,7 @@ codec = Fields.object $ do
         PC.combatDamageAmount = combatDamageAmount,
         PC.combatDamageOptions = combatDamageOptions,
         PC.grantsStationToughness = grantsStationToughness,
+        PC.tapPowerBonus = tapPowerBonus,
         PC.loyaltyIsToughness = loyaltyIsToughness,
         PC.additionalCosts = additionalCosts,
         PC.additionalCostChoices = additionalCostChoices,

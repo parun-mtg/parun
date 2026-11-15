@@ -2686,7 +2686,7 @@ crew n =
               { -- CR 118.5: rule 702.122a's cost has no mana part, which is
                 -- `Just` an empty one and not the Nothing that means unpayable.
                 Cost.mana = Just (ManaCost.MkManaCost []),
-                Cost.components = [CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion)]
+                Cost.components = [CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion (Just KeywordFamily.Crew))]
               },
           ActivatedAbility.modal =
             Mint.oneMode (Seq.fromList [becomes CardType.Artifact, becomes CardType.Creature]),
@@ -2743,7 +2743,7 @@ saddle n =
             Cost.MkCost
               { -- CR 118.5, crew's note above.
                 Cost.mana = Just (ManaCost.MkManaCost []),
-                Cost.components = [CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion)]
+                Cost.components = [CostComponent.TapForTotalPower (TapForTotalPower.MkTapForTotalPower n criterion (Just KeywordFamily.Saddle))]
               },
           ActivatedAbility.modal =
             Mint.oneMode (Seq.singleton (Effect.Designate (Designate.MkDesignate Designation.Saddled Binding.triggerSource Nothing))),
@@ -4058,6 +4058,7 @@ teamworkCost n =
                       Filter.HeldBy Holder.Controller PlayerRelation.You
                     ]
                 )
+                Nothing
             )
         ]
     }
