@@ -499,7 +499,7 @@ withOffering pid oid gs candidate =
 -- | CR 601.3c / 601.3d: the card's own permissions to be cast as though it had
 -- flash whose condition holds as the cast begins, with the caster as CR
 -- 109.5's "you". A free one widens the candidate's window in place; one naming
--- an additional cost offers the candidate once more with that cost added (CR
+-- an additional cost, mana or a behold, offers the candidate once more with that cost added (CR
 -- 601.2f) and the window carried, so it is paid only by a cast that uses the
 -- permission. Offered at sorcery timing too, since CR 702.8a's window is any
 -- time its caster could cast an instant, which CR 117.1a's "any time they have
@@ -521,17 +521,19 @@ withOffering pid oid gs candidate =
 withFlashPermission :: PlayerId -> ObjectId -> Face.Face Card.Type.Card -> GameState -> CandidateCost.CandidateCost -> [CandidateCost.CandidateCost]
 withFlashPermission pid oid face gs =
   let holds = ActivationRestriction.onlyIfHolds pid oid (Game.withoutBeingCast gs)
-      permitted = [(additional, arms) | CastingPermission.CastAsThoughItHadFlash condition additional arms <- permissionsOf oid face gs, all holds condition]
-      free = elem (Nothing, Nothing) permitted
+      permitted = [((additional, components), arms) | CastingPermission.CastAsThoughItHadFlash condition additional components arms <- permissionsOf oid face gs, all holds condition]
+      free = elem ((Nothing, []), Nothing) permitted
+      -- An absent mana part adds {0}, not CR 118.6's unpayable Nothing.
+      addition (additional, components) cost = plus cost Cost.MkCost {Cost.mana = Just (Maybe.fromMaybe (ManaCost.MkManaCost []) additional), Cost.components = components}
    in \candidate ->
         candidate {CandidateCost.instantSpeed = CandidateCost.instantSpeed candidate || free}
           : [ candidate
-                { CandidateCost.cost = maybe id (\mana cost -> plus cost Cost.MkCost {Cost.mana = Just mana, Cost.components = []}) additional (CandidateCost.cost candidate),
+                { CandidateCost.cost = addition additional (CandidateCost.cost candidate),
                   CandidateCost.instantSpeed = True,
                   CandidateCost.arms = arms
                 }
             | (additional, arms) <- permitted,
-              (additional, arms) /= (Nothing, Nothing)
+              (additional, arms) /= ((Nothing, []), Nothing)
             ]
 
 -- | candidateCostsFor, told whether CR 601.3's permission comes from the EFFECT

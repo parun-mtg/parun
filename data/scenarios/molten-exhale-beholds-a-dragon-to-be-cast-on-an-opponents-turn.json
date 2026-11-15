@@ -1,0 +1,31 @@
+{
+  "description": "CR 601.3c / 701.4a: Molten Exhale is cast in an opponent's upkeep by beholding the Dragon in its caster's hand, and deals 4 damage",
+  "note": "The Dragon is revealed, not paid away: it stays in hand. The paired board without a Dragon refuses the cast.",
+  "board": {
+    "active": "bob",
+    "step": "Upkeep",
+    "seats": [
+      {
+        "name": "alice",
+        "library": [{"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}],
+        "manaPool": "RR",
+        "hand": [
+          {"card": "Molten Exhale", "label": "exhale"},
+          {"card": "Shivan Dragon", "label": "dragon"}
+        ]
+      },
+      {
+        "name": "bob",
+        "library": [{"card": "Mountain"}, {"card": "Mountain"}, {"card": "Mountain"}],
+        "battlefield": [{"card": "Grizzly Bears", "label": "bears"}]
+      }
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "Upkeep", "player": "alice", "do": {"Cast": {"object": "$exhale", "targets": ["$bears"]}}},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Graveyard", "card": "Grizzly Bears", "count": 1}}},
+    {"turn": 1, "step": "Upkeep", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Hand", "card": "Shivan Dragon", "count": 1}}}
+  ]
+}

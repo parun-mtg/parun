@@ -43,9 +43,10 @@ data CastingPermission
     -- it for its printed or an alternative cost (CR 118.9) or playing it as a land.
     PlayFromGraveyard
   | -- | CR 601.3c / 601.3d: cast this card as though it had flash (CR 702.8a)
-    -- while the condition holds, paying the additional cost (CR 601.2f) only
-    -- when the permission is used. The name is the delayed ability (CR 603.7g,
+    -- while the condition holds, paying the additional cost (CR 601.2f), its
+    -- mana and its other components, only when the permission is used (Ghitu
+    -- Fire's {2}, Molten Exhale's behold). The name is the delayed ability (CR 603.7g,
     -- Face.delayedAbilities) a cast using the permission any time a sorcery
     -- couldn't have been cast (CR 307.5a) creates, Spider Climb's.
-    CastAsThoughItHadFlash (Maybe Condition.Condition) (Maybe ManaCost.ManaCost) (Maybe AbilityName.AbilityName)
+    CastAsThoughItHadFlash (Maybe Condition.Condition) (Maybe ManaCost.ManaCost) [CostComponent.CostComponent Keyword.Keyword] (Maybe AbilityName.AbilityName)
   deriving (Eq, Ord, Show)

@@ -696,7 +696,7 @@ spendArmedAbilities card =
 -- The delayed abilities a face's own casting permissions create as it is cast
 -- under them (CR 603.7g, Spider Climb).
 castArmedAbilities :: Face.Face Card.Type.Card -> Set.Set AbilityName.AbilityName
-castArmedAbilities card = Set.fromList [name | CastingPermission.CastAsThoughItHadFlash _ _ (Just name) <- Face.castingPermissions card]
+castArmedAbilities card = Set.fromList [name | CastingPermission.CastAsThoughItHadFlash _ _ _ (Just name) <- Face.castingPermissions card]
 
 -- The sixth half: the reserved slot Parun.Engine.Cast.armCastUnder binds the
 -- spell under, and Parun.Engine.Stack.armBecame the permanent it becomes.
