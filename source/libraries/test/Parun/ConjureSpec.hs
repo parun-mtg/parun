@@ -9,46 +9,33 @@
 --
 -- Gameplay-level throughout: the first two cases put a printed Emporium
 -- Thopterist on the battlefield and begin its controller's upkeep so the printed
--- trigger fires and resolves; the third declares a printed Toralf's Disciple as
--- an attacker; the fourth and fifth enter a printed Shellfish Scholar; the sixth
--- casts a noncreature spell under a printed Lam, Storm Crane Elder; the seventh
--- activates a printed Tome of the Infinite, whose card file writes a printed
--- SPELLBOOK rather than one card; the eighth casts a printed Follow the Tracks,
--- the same spellbook shape with the other question asked of it, and a case
--- beside it activates the seek one of its Gates prints; the ninth enters
--- a printed Foundry Groundbreaker, whose conjure STATES the status its arrivals
--- take; the next run of cases cast a printed Sinister Reflections, whose
--- conjure names an object already in the game rather than writing its card out;
--- the next two begin alice's second main phase under a printed Pearl Collector,
--- the one conjure in the corpus behind CR 603.4's intervening "if"; the next three
--- enter a printed Fear of Change, whose conjure picks from the Oracle card
--- reference an interpreter holds; the next three connect with a printed Smog
--- Smasher, whose conjure puts its duplicate into exile; the last three discard a
--- printed Calim, Djinn Emperor and enter a printed Mine Security, whose conjures
--- state how deep into a library the card lands.
+-- trigger fires and resolves; the next two conjure into a graveyard, the second
+-- under a printed Planar Void; the fifth enters a printed Foundry Groundbreaker,
+-- whose conjure STATES the status its arrivals take; the sixth attacks with a
+-- printed Kari Zev, Crew of Two; the next run of cases cast a printed Sinister
+-- Reflections, whose conjure names an object already in the game rather than
+-- writing its card out; the next four enter a printed Fear of Change, whose
+-- conjure picks from the Oracle card reference an interpreter holds; the next
+-- kills a printed Gyox, Brutal Carnivora's oiled creature; the last five discard
+-- a printed Calim, Djinn Emperor and enter a printed Mine Security, whose
+-- conjures state how deep into a library the card lands. Their scenario
+-- siblings are under data/scenarios/conjure/.
 --
--- The first four CAST what the conjure created, which is the point -- conjure
+-- The first two CAST what the conjure created, which is the point -- conjure
 -- creates a CARD and not CR 111.1's token, and a token in a hand, a library or a
 -- graveyard would be swept up by CR 111.7 before any cast. The BATTLEFIELD case
 -- proves the entry rather than the cardness: rule 111.7 sweeps up nothing there,
--- so no board of that shape tells a conjured card from a token. The fifth is the
--- graveyard arrival's SHAPE rather than its cardness, read off a printed Planar
--- Void that watches the graveyard.
+-- so no board of that shape tells a conjured card from a token. The fourth is
+-- the graveyard arrival's SHAPE rather than its cardness, read off the Void that
+-- watches the graveyard.
 --
--- The DUPLICATE cases are the other axis: the first of them reads the duplicates
--- once the originals are in the graveyard, which is what tells a card from CR
--- 707.1's token, and the second points the conjure at a Clone, which is where
--- the printed card under an object and its CR 707.2 copiable values disagree.
--- The third carries that duplicate through three zone changes (CR 400.7), and
--- the fourth prices it off its copiable mana cost. Three read its abilities off
--- the battlefield, in a graveyard and a hand (CR 113.6). The last three merge it
--- with a printed Cubwarden and split it back out (CR 731.3, CR 728.2).
+-- The DUPLICATE cases are the other axis: three read the abilities of a
+-- duplicate of a Clone off a graveyard and a hand (CR 113.6).
 module Parun.ConjureSpec where
 
 import qualified Control.Monad as Monad
 import qualified Control.Monad.Trans.Class as Trans
 import qualified Control.Monad.Trans.State.Strict as State
-import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Map.Strict as Map
@@ -60,16 +47,12 @@ import qualified Numeric.Natural
 import qualified Parun.Engine.Action as Action
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Cast as Cast
-import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
-import qualified Parun.Engine.FaceDown as FaceDown
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Projection as Projection
-import qualified Parun.Engine.Room as Room
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
-import qualified Parun.Engine.Turn as Turn
 import qualified Parun.Extra.Natural as Natural
 import qualified Parun.Interpreter as Interpreter
 import qualified Parun.Registry as Registry
@@ -78,41 +61,22 @@ import qualified Parun.Support as S
 import qualified Parun.Types.Action as Action
 import qualified Parun.Types.Asked as Asked
 import qualified Parun.Types.BeginningStep as BeginningStep
-import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card
 import qualified Parun.Types.CardName as CardName
-import qualified Parun.Types.Clause as Clause
-import qualified Parun.Types.Color as Color
-import qualified Parun.Types.CombatStep as CombatStep
-import qualified Parun.Types.Conjure as Conjure
-import qualified Parun.Types.ConjureCards as ConjureCards
-import qualified Parun.Types.Cost as Cost.Type
 import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.CounterName as CounterName
 import qualified Parun.Types.DiscardCause as DiscardCause
-import qualified Parun.Types.Effect as Effect
-import qualified Parun.Types.EndingStep as EndingStep
-import qualified Parun.Types.ExileLink as ExileLink
 import qualified Parun.Types.Face as Face
-import qualified Parun.Types.FaceDownReason as FaceDownReason
 import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.Game as Game.Type
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
-import qualified Parun.Types.History as History
 import qualified Parun.Types.Keyword as Keyword
-import qualified Parun.Types.ManaCost as ManaCost
-import qualified Parun.Types.ManaSymbol as ManaSymbol
-import qualified Parun.Types.ManaType as ManaType
-import qualified Parun.Types.Modal as Modal
-import qualified Parun.Types.Mode as Mode
-import qualified Parun.Types.MutateSide as MutateSide
 import qualified Parun.Types.Object as Object
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
 import qualified Parun.Types.PaymentDecision as PaymentDecision
 import qualified Parun.Types.Phase as Phase
-import qualified Parun.Types.Player as Player
 import qualified Parun.Types.Printing as Printing
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
@@ -120,9 +84,7 @@ import qualified Parun.Types.Regenerability as Regenerability
 import qualified Parun.Types.Staged as Staged
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.TapState as TapState
-import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
-import qualified Parun.Types.TurnUpProcedure as TurnUpProcedure
 import qualified Parun.Types.Zone as Zone
 
 -- Parun.CounterspellSpec's bitterblossomChain, which is the shape both cases
@@ -173,21 +135,6 @@ namesIn zone gs = fmap (\oid -> S.soleFaceName oid gs) (Game.zoneMembers zone S.
 
 namedIn :: CardName.CardName -> Zone.Zone -> GameState.GameState -> [ObjectId.ObjectId]
 namedIn name zone gs = filter (\oid -> S.soleFaceName oid gs == name) (Game.zoneMembers zone S.alice gs)
-
-ragavanName :: CardName.CardName
-ragavanName = CardName.MkCardName (Text.pack "Ragavan, Nimble Pilferer")
-
--- The cards a printing's triggered abilities conjure, written out in its file.
-conjuredBy :: Printing.Printing -> [Card.Card]
-conjuredBy printing =
-  [ card
-  | face <- NonEmpty.toList (Card.faces (Printing.card printing)),
-    ability <- Face.triggeredAbilities face,
-    mode <- Foldable.toList (Modal.modes (TriggeredAbility.modal ability)),
-    clause <- Foldable.toList (Mode.clauses mode),
-    Effect.Conjure conjure <- Foldable.toList (Clause.effects clause),
-    card <- ConjureCards.written (Conjure.cards conjure)
-  ]
 
 -- Whole steps until `phase` is current, bounded like Parun.Support's combatGame.
 runStepsUntil :: Phase.Phase -> Game.Type.Game ()
@@ -405,49 +352,7 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
       "the trigger's own sacrifice ran, so one of alice's two Islands is gone"
       (length islands)
       1
-  -- Follow the Tracks ({2}{G} Sorcery, "Conjure a card of your choice from
-  -- Follow the Tracks's spellbook onto the battlefield."), Oracle text verified
-  -- on Scryfall 2026-09-14. The Tome's case one group above with the other
-  -- question asked: the same printed spellbook shape, picked BY CHOICE.
-  --
-  -- The answerer pins the pick to Gate to Seatower, which the offered list's
-  -- head is not: Parun.Engine.Replay.defaultAnswer takes the head, so an engine
-  -- that picked for alice -- or asked for randomness here, whose default answer
-  -- is also the head -- lands on Gate of the Black Dragon instead.
-  -- Kari Zev, Crew of Two ({2}{R}{R} 3/3, menace, haste): "Whenever Kari Zev
-  -- attacks while you don't control a legendary Monkey, conjure a card named
-  -- Ragavan, Nimble Pilferer onto the battlefield tapped and attacking. At the
-  -- beginning of the next end step, if that card is on the battlefield, return
-  -- it to its owner's hand."
-  --
-  -- bob's Marchesa's Decree ("whenever a creature attacks you ..., that
-  -- creature's controller loses 1 life") is the CR 508.3a witness: Kari was
-  -- declared and costs alice 1, while a Ragavan put onto the battlefield
-  -- attacking (CR 508.4) was never declared and costs her nothing. The paired
-  -- board differs only in a Ragavan alice already controls, which is the
-  -- "while" failing, so no second Ragavan arrives and bob takes Kari's 3 alone.
-  Spec.it s "Kari Zev's Ragavan attacks without being declared and goes home at the next end step" $ do
-    kari <- S.printingOf s registry "Kari Zev, Crew of Two"
-    let ragavans = conjuredBy kari
-        setup = S.duel S.beginningOfCombat [S.settled "kari" "Kari Zev, Crew of Two"] [S.permanent "Marchesa's Decree"]
-        script = S.turn 1 [S.on S.declareAttackers S.alice (S.attack [S.aliasRef "kari"])]
-        throughEndStep = runStepsUntil (Phase.Ending EndingStep.Cleanup)
-    built <- S.buildBoardOrFail s registry setup
-    (_, after) <- S.runScriptOrFail s script built throughEndStep
-    (_, withMonkey) <- case ragavans of
-      [ragavan] -> S.runScriptOrFail s script built {Staged.state = snd (S.addPermanent (Printing.ofCard ragavan) S.alice (Staged.state built))} throughEndStep
-      _ -> pure ((), after)
-    Spec.assertEqWith
-      s
-      "CR 508.4 the conjured Ragavan dealt 2 beside Kari's 3 without costing alice a declared attacker's life, and none came while she controlled a legendary Monkey"
-      (S.lifeOf S.bob after, S.lifeOf S.alice after, S.lifeOf S.bob withMonkey)
-      (Just 15, Just 19, Just 17)
-    Spec.assertEqWith
-      s
-      "CR 603.7c the end step returned the bound card to alice's hand"
-      (length (namedIn ragavanName Zone.Hand after), length (namedIn ragavanName Zone.Battlefield after))
-      (1, 0)
-  -- The conjured Ragavan's own trigger: "Whenever Ragavan deals combat damage to
+  -- Kari Zev's conjured Ragavan's own trigger: "Whenever Ragavan deals combat damage to
   -- a player, create a Treasure token and exile the top card of that player's
   -- library. Until end of turn, you may cast that card." CR 601.3 / 305.9: the
   -- permission's verb is Cast, so a nonland card is castable (the Treasure pays
@@ -478,59 +383,6 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
       "CR 601.3 the exiled Lightning Bolt is castable and the exiled Mountain is not playable"
       (fmap (\oid -> castOffered oid lightningBolt boltGame) bolts, fmap (`playsLand` mountainGame) mountains)
       ([True], [False])
-  -- Gate to Seatower, the spellbook's Island Gate, Oracle text verified on
-  -- Scryfall 2026-09-25: "{3}{U}, {T}: Seek a nonland card. Activate only once."
-  -- Seek is Alchemy's: a card at random from your library matching the
-  -- description goes to your hand, with no search, no reveal and no shuffle.
-  --
-  -- alice's library holds three nonland cards among three Islands, and the pick
-  -- is pinned to Think Twice, which is neither the offer's head (the default
-  -- answer), nor the library's top or bottom card (a draw, or a walk from
-  -- either end), nor a land (an unfiltered pick). A shuffle is answered
-  -- reversed, so one would move every card left behind.
-  Spec.it s "Gate to Seatower's seek puts the nonland card randomness named into the hand, leaving the library's order" $ do
-    islandPrinting <- S.printingOf s registry "Island"
-    tracks <- S.printingOf s registry "Follow the Tracks"
-    stock <- Monad.mapM (S.printingOf s registry) ["Island", "Lightning Bolt", "Island", "Think Twice", "Ornithopter", "Island"]
-    gate <- case filter ((== gateToSeatower) . Face.name . NonEmpty.head . Card.faces) (spellConjures tracks) of
-      [card] -> pure (Printing.ofCard card)
-      _ -> Spec.assertFailure s "expected one Gate to Seatower in Follow the Tracks's spellbook"
-    let (gateId, board0) = S.addPermanent gate S.alice (S.landsInPlay islandPrinting 4)
-        stocked = List.foldl' (\gs printing -> snd (S.addLibraryCard printing S.alice gs)) board0 stock
-        board =
-          stocked
-            { GameState.turn =
-                (GameState.turn stocked)
-                  { TurnRegisters.phase = Phase.PrecombatMain,
-                    TurnRegisters.priority = Just S.alice
-                  }
-            }
-        before = Game.zoneMembers Zone.Library S.alice board
-        pinned = namedIn thinkTwice Zone.Library board
-        who = Maybe.fromMaybe gateId (Maybe.listToMaybe pinned)
-        logging :: Prompt.Prompt r -> State.State [[CardName.CardName]] r
-        logging p = case p of
-          Prompt.RandomObject offered -> do
-            State.modify' (fmap (`S.soleFaceName` board) (NonEmpty.toList offered) :)
-            pure (gateAnswer gateId who p)
-          _ -> pure (gateAnswer gateId who p)
-        (offers, final) = case State.runState (Engine.runGame logging board Engine.priorityLoop) [] of
-          ((_, gs), asked) -> (reverse asked, gs)
-    -- THE GAMEPLAY ASSERTION: the card randomness named is in alice's hand, and
-    -- every other card is still in her library in the order it was.
-    Spec.assertEqWith
-      s
-      "the sought Think Twice is in alice's hand, and her library is the rest in its old order"
-      (namesIn Zone.Hand final, Game.zoneMembers Zone.Library S.alice final)
-      ([thinkTwice], filter (`notElem` pinned) before)
-    -- Supporting, and LAST so they cannot absorb a mutation the assertion above
-    -- should catch: randomness was asked once, over the nonland cards alone, and
-    -- nothing was revealed.
-    Spec.assertEqWith
-      s
-      "asked once, offering the three nonland cards and no land, and revealing nothing"
-      (offers, [() | GameEvent.Revealed _ <- S.eventsOf final])
-      ([[lightningBolt, thinkTwice, ornithopter]], [])
   -- CR 707.2 / 113.6b: the abilities a card has off the battlefield are its
   -- copiable values' too. A Clone copying bob's Anger is duplicated and the
   -- duplicate discarded, so alice's graveyard holds a card printed Clone whose
@@ -607,312 +459,6 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
           "CR 702.35a the duplicate went to exile, not the graveyard: (in exile, in the graveyard)"
           (length (namedIn cloneName Zone.Exile discarded), length (namedIn cloneName Zone.Graveyard discarded))
           (1, 0)
-  -- CR 702.140e: a mutated permanent has every component's abilities, and the
-  -- Skaab's additional cost is one. Cubwarden mutates over alice's Headless
-  -- Skaab and Sinister Reflections duplicates the merged creature, so the
-  -- duplicate costs the Cubwarden's {3}{W} and still owes the Skaab's exile. The
-  -- pair differs only in a Goblin Piker in the graveyard.
-  Spec.it s "CR 702.140e a duplicate of a mutated Headless Skaab owes the Skaab's additional cost" $ do
-    (island, _, plains, piker, _, reflections, cubwarden) <- duplicatePrintings s registry
-    skaab <- S.printingOf s registry "Headless Skaab"
-    let (skaabId, board0) = S.addPermanent skaab S.alice (S.landsInPlay plains 4)
-        (withCubwarden, cubwardenSpell) = S.handOne cubwarden board0
-        merged = mergingOnto skaabId withCubwarden cubwardenSpell
-        (spell, board1) = S.addHandCard reflections S.alice (S.landsFor island S.alice 2 merged)
-        before = Game.zoneMembers Zone.Hand S.alice board1
-        resolved =
-          S.settleSba
-            ( S.runPure
-                (aimingAtAll [skaabId])
-                board1
-                  { GameState.turn =
-                      (GameState.turn board1)
-                        { TurnRegisters.phase = Phase.PrecombatMain
-                        }
-                  }
-                (S.cast S.alice spell >> Stack.resolveTop)
-            )
-    case filter (`notElem` before) (Game.zoneMembers Zone.Hand S.alice resolved) of
-      [duplicate] -> do
-        let bare = S.landsFor plains S.alice 4 resolved
-            (_, stocked) = S.addGraveyardCard piker S.alice bare
-        Spec.assertEqWith
-          s
-          "CR 702.140e castable only with a creature card to exile: (empty graveyard, a Piker in it)"
-          (S.castable S.alice duplicate bare, S.castable S.alice duplicate stocked)
-          (False, True)
-        Spec.assertEqWith s "setup: the merged permanent held the Cubwarden and the Skaab" (fmap (Seq.length . Game.componentsOf . Object.source) (Game.lookupObject skaabId merged)) (Just 2)
-      other -> Spec.assertFailure s ("expected one duplicate in hand, got " <> show (length other))
-  -- CR 716.3a: an Adventure is cast with its own characteristics alone, so a
-  -- duplicate of Flaxen Intruder ({G}) cast as Welcome Home still costs
-  -- {5}{G}{G}. One Forest pays the creature half and not the Adventure.
-  Spec.it s "CR 716.3a a duplicate of Flaxen Intruder cast as Welcome Home costs Welcome Home's cost" $ do
-    island <- S.printingOf s registry "Island"
-    forest <- S.printingOf s registry "Forest"
-    reflections <- S.printingOf s registry "Sinister Reflections"
-    intruder <- S.printingOf s registry "Flaxen Intruder"
-    let (intruderId, board0) = S.addPermanent intruder S.alice (S.landsInPlay island 2)
-        (spell, board1) = S.addHandCard reflections S.alice board0
-        before = Game.zoneMembers Zone.Hand S.alice board1
-        resolved =
-          S.settleSba
-            ( S.runPure
-                (aimingAtAll [intruderId])
-                board1
-                  { GameState.turn =
-                      (GameState.turn board1)
-                        { TurnRegisters.phase = Phase.PrecombatMain
-                        }
-                  }
-                (S.cast S.alice spell >> Stack.resolveTop)
-            )
-        paid = S.landsFor forest S.alice 1 resolved
-        castableAs name oid = Cast.castable S.alice oid (CardName.MkCardName (Text.pack name)) Facing.FaceUp paid
-    case filter (`notElem` before) (Game.zoneMembers Zone.Hand S.alice resolved) of
-      [duplicate] ->
-        Spec.assertEqWith
-          s
-          "CR 716.3a off one Forest: (as Flaxen Intruder, as Welcome Home)"
-          (castableAs "Flaxen Intruder" duplicate, castableAs "Welcome Home" duplicate)
-          (True, False)
-      other -> Spec.assertFailure s ("expected one duplicate in hand, got " <> show (length other))
-  -- CR 716.2b / 707.2: the Adventure half is a copiable value, so a duplicate of
-  -- a Clone copying Flaxen Intruder -- printed Clone beneath -- is castable as
-  -- Welcome Home ({5}{G}{G}), and resolves as it: three Bears, and the card
-  -- exiled by CR 716.3d. Seven Forests pay the Adventure; the printed Clone
-  -- offers no Welcome Home at all.
-  Spec.it s "CR 707.2/716.2b a duplicate of a Clone of Flaxen Intruder is cast as Welcome Home" $ do
-    island <- S.printingOf s registry "Island"
-    forest <- S.printingOf s registry "Forest"
-    clone <- S.printingOf s registry "Clone"
-    reflections <- S.printingOf s registry "Sinister Reflections"
-    intruder <- S.printingOf s registry "Flaxen Intruder"
-    let (intruderId, board0) =
-          S.addPermanent
-            intruder
-            S.alice
-            (S.landsInPlay island 2)
-              { GameState.turn =
-                  (GameState.turn (S.landsInPlay island 2))
-                    { TurnRegisters.phase = Phase.PrecombatMain
-                    }
-              }
-    case duplicateOfCopy clone reflections intruderId board0 of
-      Just (duplicate, conjured) -> do
-        let paid = S.landsFor forest S.alice 7 conjured
-            cast = S.runPure S.identityAnswer paid (Cast.castSpell S.manaPerformer S.alice duplicate welcomeHome Facing.FaceUp)
-            played = S.settleSba (S.runPure S.identityAnswer cast Stack.resolveTop)
-            bears = filter (\oid -> Projection.namesOf oid played == Set.singleton bearToken) (Game.zoneMembers Zone.Battlefield S.alice played)
-        Spec.assertEqWith
-          s
-          "CR 716.3a/716.3b/716.3d (Welcome Home offered as a cast, lands it taps, the spell's names, Bears, cards in exile)"
-          (castOffered duplicate welcomeHome paid, S.tappedCount S.alice cast - S.tappedCount S.alice paid, fmap (\oid -> Projection.namesOf oid cast) (TurnRegisters.stack (GameState.turn cast)), length bears, length (Game.zoneMembers Zone.Exile S.alice played))
-          (True, 7, [Set.singleton welcomeHome], 3, 1)
-      Nothing -> Spec.assertFailure s "expected one Clone and one duplicate"
-  -- CR 707.2 / 702.37c / 702.37e: morph is copiable, so a duplicate of a Clone
-  -- copying Ainok Tracker ({5}{R}, "Morph {4}{R}") -- printed Clone beneath --
-  -- is offered face down for {3} and turned face up for {4}{R}, becoming the
-  -- Tracker. The Mountains arrive after Sinister Reflections, so every land the
-  -- two steps tap is counted.
-  Spec.it s "CR 707.2/702.37e a duplicate of a Clone of Ainok Tracker is cast face down and turned up for its morph cost" $ do
-    island <- S.printingOf s registry "Island"
-    mountain <- S.printingOf s registry "Mountain"
-    clone <- S.printingOf s registry "Clone"
-    reflections <- S.printingOf s registry "Sinister Reflections"
-    tracker <- S.printingOf s registry "Ainok Tracker"
-    let (trackerId, board0) =
-          S.addPermanent
-            tracker
-            S.alice
-            (S.landsInPlay island 2)
-              { GameState.turn =
-                  (GameState.turn (S.landsInPlay island 2))
-                    { TurnRegisters.phase = Phase.PrecombatMain
-                    }
-              }
-        morphed = Facing.faceDown FaceDownReason.Morphed
-    case duplicateOfCopy clone reflections trackerId board0 of
-      Just (duplicate, conjured) -> do
-        let paid = S.landsFor mountain S.alice 8 conjured
-            offeredDown =
-              elem
-                (Action.Cast duplicate cloneName morphed)
-                ( Action.legalActions
-                    S.alice
-                    paid
-                      { GameState.turn =
-                          (GameState.turn paid)
-                            { TurnRegisters.priority = Just S.alice
-                            }
-                      }
-                )
-            cast = S.settleSba (S.runPure S.identityAnswer paid (Cast.castSpell S.manaPerformer S.alice duplicate cloneName morphed >> Stack.resolveTop))
-            arrived = Set.toList (Set.difference (GameState.battlefield cast) (GameState.battlefield paid))
-            turnable = FaceDown.turnableFaceUp S.alice cast
-            up = S.settleSba (S.runPure S.identityAnswer cast (Monad.mapM_ (FaceDown.turnFaceUp S.manaPerformer S.alice TurnUpProcedure.Morph) arrived))
-        Spec.assertEqWith
-          s
-          "CR 702.37c/702.37e (face-down cast offered, lands it taps, turn-up offered, lands that taps, names face up)"
-          (offeredDown, S.tappedCount S.alice cast - S.tappedCount S.alice paid, turnable, S.tappedCount S.alice up - S.tappedCount S.alice cast, fmap (\oid -> Projection.namesOf oid up) arrived)
-          (True, 3, fmap (\oid -> (oid, TurnUpProcedure.Morph)) arrived, 5, [Set.singleton ainokTracker])
-      Nothing -> Spec.assertFailure s "expected one Clone and one duplicate"
-  -- CR 709.5b / 707.2: a Room's halves are copiable values, so a Copy
-  -- Enchantment copying Spiked Corridor // Torture Pit, made a creature by
-  -- Opalescence and duplicated by Sinister Reflections, is a card in hand printed
-  -- Copy Enchantment that is cast as a door -- and enters with that door unlocked
-  -- (CR 709.5d). The copy's Torture Pit is unlocked first so Opalescence does not
-  -- make it a 0/0.
-  Spec.it s "CR 707.2/709.5b a duplicate of a copied Room is cast as a door" $ do
-    island <- S.printingOf s registry "Island"
-    mountain <- S.printingOf s registry "Mountain"
-    room <- S.printingOf s registry "Spiked Corridor"
-    copyEnchantment <- S.printingOf s registry "Copy Enchantment"
-    opalescence <- S.printingOf s registry "Opalescence"
-    reflections <- S.printingOf s registry "Sinister Reflections"
-    let board0 =
-          (S.landsInPlay mountain 8)
-            { GameState.turn =
-                (GameState.turn (S.landsInPlay mountain 8))
-                  { TurnRegisters.phase = Phase.PrecombatMain
-                  }
-            }
-        (roomId, board1) = S.addPermanent room S.alice board0
-        (_, staged) = S.spellOnStack copyEnchantment S.alice board1
-        entered = S.settleSba (copyingPiker roomId staged)
-    case Set.toList (Set.difference (GameState.battlefield entered) (GameState.battlefield board1)) of
-      [copyId] -> do
-        let unlocked = S.settleSba (S.runPure S.identityAnswer entered (Room.unlock S.manaPerformer S.alice copyId torturePit))
-            -- The Islands arrive after the unlock, so its {3} cannot spend the
-            -- {U} Sinister Reflections needs.
-            animated = S.landsFor island S.alice 2 (S.settleSba (snd (S.addPermanent opalescence S.alice unlocked)))
-        case duplicateOf reflections copyId animated of
-          Just (duplicate, conjured) -> do
-            let played = S.settleSba (S.runPure S.identityAnswer conjured (Cast.castSpell S.manaPerformer S.alice duplicate spikedCorridor Facing.FaceUp >> Stack.resolveTop))
-                arrived = Set.toList (Set.difference (GameState.battlefield played) (GameState.battlefield conjured))
-            Spec.assertEqWith
-              s
-              "CR 709.3/709.5d (the door offered as a cast, the names the duplicate enters showing)"
-              (castOffered duplicate spikedCorridor conjured, fmap (\oid -> Projection.namesOf oid played) arrived)
-              (True, [Set.singleton spikedCorridor])
-          Nothing -> Spec.assertFailure s "expected one duplicate in hand"
-      other -> Spec.assertFailure s ("expected one Copy Enchantment, got " <> show (length other))
-  -- CR 731.3 / 400.7: the duplicate, cast and resolved as the Piker, is the
-  -- permanent Cubwarden ({3}{W} 3/5 Cat, "Mutate {2}{W}{W}", lifelink) mutates
-  -- OVER, and the merged permanent is then destroyed. Its two components are put
-  -- into the graveyard as two new objects, and the duplicate's copiable values
-  -- are its own card's (CR 707.2), so the one printed Clone is the Piker again
-  -- there. Read beside the original Clone, which is a Clone in the graveyard.
-  Spec.it s "CR 731.3/707.2 a duplicate of a Clone split out of a merge is the Piker again" $ do
-    fixture <- duplicateFixture s registry
-    case mergedOntoDuplicate fixture of
-      Nothing -> Spec.assertFailure s "the duplicate did not resolve onto the battlefield"
-      Just (host, merged) -> do
-        let died = S.settleSba (S.runPure S.identityAnswer merged (Event.destroy (pure ()) Regenerability.Regenerable [host]))
-        Spec.assertEqWith
-          s
-          "CR 731.3 the duplicate component is a Goblin Piker in the graveyard, beside the original Clone"
-          (List.sort (fmap (\oid -> Set.toList (Projection.namesOf oid died)) (namedIn cloneName Zone.Graveyard died)))
-          (List.sort [[cloneName], [goblinPiker]])
-        -- The values are the duplicate's alone: the Cubwarden, the merged
-        -- permanent's other component, is its printed self.
-        Spec.assertEqWith
-          s
-          "CR 731.3 and the Cubwarden component is a Cubwarden there"
-          (fmap (\oid -> Set.toList (Projection.namesOf oid died)) (namedIn cubwardenName Zone.Graveyard died))
-          [[cubwardenName]]
-        Spec.assertEqWith s "setup: the merged permanent held the Cubwarden and the duplicate" (fmap (Seq.length . Game.componentsOf . Object.source) (Game.lookupObject host merged)) (Just 2)
-  -- The other side of CR 731.2: the duplicate is the mutating SPELL. A Clone
-  -- copies a Cubwarden, Sinister Reflections duplicates it, so the card in hand
-  -- is a Cubwarden printed Clone, and it is cast for its mutate cost over a
-  -- Goblin Piker. CR 731.2b takes the spell's object away, so what carries its
-  -- values through the merge is the component alone; destroyed, it is a
-  -- Cubwarden in the graveyard.
-  Spec.it s "CR 731.2/731.3 a duplicate of a Clone that merged as the spell is the Cubwarden again" $ do
-    (island, mountain, plains, piker, clone, reflections, cubwarden) <- duplicatePrintings s registry
-    let board0 = S.landsFor plains S.alice 8 (S.landsFor mountain S.alice 4 (S.landsInPlay island 4))
-        (cubwardenId, board1) = S.addPermanent cubwarden S.alice board0
-        (pikerId, board2) = S.addPermanent piker S.alice board1
-    case duplicateInHand clone reflections cubwardenId board2 of
-      Nothing -> Spec.assertFailure s "the Clone left the battlefield unexpectedly"
-      Just (duplicate, gone) -> do
-        let merged = mergingOnto pikerId gone duplicate
-            died = S.settleSba (S.runPure S.identityAnswer merged (Event.destroy (pure ()) Regenerability.Regenerable [pikerId]))
-        Spec.assertEqWith
-          s
-          "CR 731.3 the duplicate component is a Cubwarden in the graveyard, beside the original Clone"
-          (List.sort (fmap (\oid -> Set.toList (Projection.namesOf oid died)) (namedIn cloneName Zone.Graveyard died)))
-          (List.sort [[cloneName], [cubwardenName]])
-        Spec.assertEqWith s "setup: CR 731.2a the merged permanent was the Cubwarden on top" (Set.toList (Projection.namesOf pikerId merged)) [cubwardenName]
-        Spec.assertEqWith s "setup: and the Piker under it" (fmap (Seq.length . Game.componentsOf . Object.source) (Game.lookupObject pikerId merged)) (Just 2)
-  -- Pearl Collector ({2}{B} Creature -- Human Warlock 3/3, "Deathtouch,
-  -- Lifelink. At the beginning of your second main phase, if you gained 4 or
-  -- more life this turn, conjure a card named Mox Pearl into your hand. This
-  -- ability triggers only once. {2}{W}: Another target creature perpetually
-  -- gains lifelink."), the only conjure in the corpus behind CR 603.4's
-  -- intervening "if" -- and the threshold is the life GAINED this turn, so the
-  -- spell alice casts in her precombat main is what decides whether the ability
-  -- triggers at all.
-  --
-  -- The pair is one cast apart. Sun's Bounty ({1}{W} Instant, "You gain 4 life")
-  -- meets the threshold exactly; Morsel Theft ({2}{B}{B} Kindred Sorcery --
-  -- Rogue, "Target player loses 3 life and you gain 3 life") falls one short.
-  -- Both runs share one fixture -- the same Collector, the same six lands, both
-  -- spells in hand -- so the only difference between them is which spell was
-  -- cast, and an engine reading the threshold as three, or not reading the "if"
-  -- at all, would conjure in both.
-  --
-  -- The Mox is CAST, the Thopterist case's reason: conjure creates a CARD rather
-  -- than CR 111.1's token, and a token in a hand would be swept up by CR 111.7
-  -- before any cast. What this case adds is reading the permanent it became for
-  -- its own mana ability, which is what makes the assertion about the card the
-  -- file writes rather than about a name -- an empty face under the right name
-  -- would be castable too, and would offer nothing to tap.
-  Spec.it s "CR 603.4 conjure behind an intervening if: 4 life gained puts a castable Mox Pearl in hand" $ do
-    (bountyId, _, gs) <- pearlBoard s registry
-    let gained = S.runPure S.identityAnswer gs (S.cast S.alice bountyId >> Stack.resolveTop)
-        secondMain = postcombatMainOf gained
-        fired = oneStep secondMain
-        inHand = namedIn moxPearl Zone.Hand fired
-        -- CR 117.1a: a noninstant spell is cast during a main phase with the
-        -- stack empty, so the cast below is asked at one rather than in the step
-        -- Engine.runStep left the board in.
-        main_ =
-          fired
-            { GameState.turn =
-                (GameState.turn fired)
-                  { TurnRegisters.phase = Phase.PostcombatMain,
-                    TurnRegisters.priority = Just S.alice
-                  }
-            }
-        cast_ = case inHand of
-          oid : _ -> S.runPure S.identityAnswer main_ (S.cast S.alice oid >> Stack.resolveTop)
-          [] -> main_
-        tappable g oid = elem oid (Maybe.mapMaybe manaSource (Action.legalActions S.alice g))
-    Spec.assertEqWith
-      s
-      "the conjured Mox was cast and is a mana source alice may tap"
-      (fmap (tappable cast_) (namedIn moxPearl Zone.Battlefield cast_))
-      [True]
-    Spec.assertEqWith
-      s
-      "it was a card its owner could cast"
-      (fmap (\oid -> S.castable S.alice oid main_) inHand)
-      [True]
-    Spec.assertEqWith
-      s
-      "exactly one Mox Pearl reached alice's hand"
-      (length inHand)
-      1
-    Spec.assertEqWith
-      s
-      "the Bounty gained exactly the threshold, at a second main phase the trigger saw"
-      (S.lifeOf S.alice fired, TurnRegisters.phase (GameState.turn secondMain))
-      (Just 24, Phase.PostcombatMain)
-    Spec.assertEqWith
-      s
-      "the printed rider is spent, so a later second main phase has nothing left to fire"
-      (length (History.triggeredThisGame (GameState.history fired)))
-      1
   -- Fear of Change ({G}{U} Enchantment Creature -- Nightmare, 2/3, "When this
   -- creature enters or dies, exile another creature you control. If you do,
   -- conjure a duplicate of a random creature card with mana value X onto the
@@ -1004,56 +550,6 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
       "the reference offered no synthetic"
       (concatMap (filter synthetic) logged, length logged)
       ([], 1)
-  -- Smog Smasher ({4}{R} Creature -- Mutant Berserker, 4/4, "Menace / Start
-  -- your engines! / Whenever one or more creatures you control deal combat
-  -- damage to a player, conjure a duplicate of target nontoken creature into
-  -- exile. / Max speed -- At the beginning of combat on your turn, put all cards
-  -- exiled with this creature onto the battlefield. They gain haste. Sacrifice
-  -- them at the beginning of the next end step."), Oracle text verified on
-  -- Scryfall 2026-09-24. The EXILE arrival: the Smasher connects, and the
-  -- duplicate of bob's Hill Giant lands in alice's exile while the original
-  -- stays on bob's battlefield.
-  Spec.it s "conjure into exile puts the duplicate in the conjurer's exile, exiled with the conjuring creature" $ do
-    (final, smasher, giant) <- smogSmasherCombat s registry
-    let duplicates = namedIn hillGiant Zone.Exile final
-    Spec.assertEqWith
-      s
-      "one Hill Giant is in alice's exile, and it is no Hill Giant of bob's"
-      (length duplicates, fmap Object.zone (Game.lookupObject giant final))
-      (1, Just Zone.Battlefield)
-    -- CR 607.2a: exiled BY the ability, so "exiled with this creature" names it.
-    Spec.assertEqWith
-      s
-      "CR 607.2a it is exiled with Smog Smasher"
-      (fmap (fmap ExileLink.source . (`Map.lookup` GameState.exiledWith final)) duplicates)
-      [Just smasher]
-  -- The card the exile arm is for, the rest of its text: at max speed (CR
-  -- 702.178a) the beginning of alice's combat returns what the Smasher exiled,
-  -- with haste, and the next end step sacrifices it.
-  Spec.it s "CR 702.178a at max speed the Smasher returns the duplicate with haste, and the end step sacrifices it" $ do
-    (exiled, _, _) <- smogSmasherCombat s registry
-    let returned = stepBegins (Phase.Combat CombatStep.BeginningOfCombat) (atSpeed 4 exiled)
-        onBattlefield = namedIn hillGiant Zone.Battlefield returned
-        ended = stepBegins (Phase.Ending EndingStep.EndStep) returned
-    Spec.assertEqWith
-      s
-      "the duplicate entered alice's battlefield, hasty"
-      (fmap (\oid -> Projection.hasKeyword Keyword.Haste oid returned) onBattlefield, namedIn hillGiant Zone.Exile returned)
-      ([True], [])
-    Spec.assertEqWith
-      s
-      "and the end step sacrificed it into alice's graveyard"
-      (namedIn hillGiant Zone.Battlefield ended, length (namedIn hillGiant Zone.Graveyard ended))
-      ([], 1)
-  -- The pair: speed 3 is one short, so the Smasher has no such ability.
-  Spec.it s "CR 702.178a one short of max speed, the duplicate stays in exile" $ do
-    (exiled, _, _) <- smogSmasherCombat s registry
-    let returned = stepBegins (Phase.Combat CombatStep.BeginningOfCombat) (atSpeed 3 exiled)
-    Spec.assertEqWith
-      s
-      "the duplicate is still in alice's exile"
-      (length (namedIn hillGiant Zone.Exile returned), namedIn hillGiant Zone.Battlefield returned)
-      (1, [])
   -- Gyox, Brutal Carnivora ({1}{B}{G} Legendary Creature -- Phyrexian Warlock
   -- 2/4, "... Whenever a nontoken creature you control with one or more oil
   -- counters on it dies, conjure X duplicates of it into exile, where X is the
@@ -1154,9 +650,6 @@ spec s registry = Spec.describe s "Parun.Conjure" $ do
       (libraryIndexOf flametongueKavu final)
       (Just 2)
 
-moxPearl :: CardName.CardName
-moxPearl = CardName.MkCardName (Text.pack "Mox Pearl")
-
 fearOfChange :: CardName.CardName
 fearOfChange = CardName.MkCardName (Text.pack "Fear of Change")
 
@@ -1243,47 +736,6 @@ conjureDepthRun reference depth board =
       ((_, final), logged) = State.runState run []
    in (final, reverse logged)
 
--- Smog Smasher attacks bob alone, unblocked, beside bob's Hill Giant, and its
--- combat damage trigger aims at the Giant, FILTERED out of the offered
--- recipients. The finished board comes back with the Smasher's id and the
--- Giant's.
-smogSmasherCombat :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (GameState.GameState, ObjectId.ObjectId, ObjectId.ObjectId)
-smogSmasherCombat s registry = do
-  smasher <- S.printingOf s registry "Smog Smasher"
-  giant <- S.printingOf s registry "Hill Giant"
-  let (gs, mine, theirs) = S.combatBoardOf [smasher] [giant]
-      answer :: Prompt.Prompt r -> r
-      answer p = case p of
-        Prompt.DeclareAttackers _ _ ids -> ids
-        Prompt.DeclareBlockers {} -> Map.empty
-        _ -> aimingAtAll theirs p
-  case (mine, theirs) of
-    ([smasherId], [giantId]) -> pure (S.runCombat answer gs, smasherId, giantId)
-    _ -> Spec.assertFailure s "combatBoardOf placed one creature a side"
-
--- The step begins on alice's turn (CR 500.2's StepBegan is what a "beginning of"
--- trigger reads) and whatever triggered resolves.
-stepBegins :: Phase.Phase -> GameState.GameState -> GameState.GameState
-stepBegins phase gs =
-  settleTriggers
-    ( Event.recordEvent
-        (GameEvent.StepBegan (StepBegan.MkStepBegan phase S.alice))
-        ( gs
-            { GameState.turn =
-                (GameState.turn gs)
-                  { TurnRegisters.phase = phase,
-                    TurnRegisters.activePlayer = S.alice,
-                    TurnRegisters.priority = Just S.alice
-                  }
-            }
-        )
-    )
-
--- Parun.SpeedSpec's atSpeed: alice at exactly this speed.
-atSpeed :: Numeric.Natural.Natural -> GameState.GameState -> GameState.GameState
-atSpeed n gs =
-  gs {GameState.players = Map.adjust (\p -> p {Player.speed = Just n}) S.alice (GameState.players gs)}
-
 giantSpider :: CardName.CardName
 giantSpider = CardName.MkCardName (Text.pack "Giant Spider")
 
@@ -1323,57 +775,6 @@ fearOfChangeRun s registry withPiker lying = do
       ((_, final), logged) = State.runState run []
   pure (final, reverse logged)
 
--- Pearl Collector's fixture: the Collector on alice's battlefield, both
--- life-gain spells in her hand, and the six lands that pay for either, at the
--- precombat main of her own turn.
---
--- `remaining` is rewritten for Parun.EventTriggerSpec's reason: Setup.emptyGame
--- still holds the beginning phase and the precombat main, so stepping from a
--- board already set to the precombat main would begin it a SECOND time -- and CR
--- 505.1b counts the main phases that have begun, which would make the postcombat
--- main this turn's third.
-pearlBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (ObjectId.ObjectId, ObjectId.ObjectId, GameState.GameState)
-pearlBoard s registry = do
-  collector <- S.printingOf s registry "Pearl Collector"
-  bounty <- S.printingOf s registry "Sun's Bounty"
-  theft <- S.printingOf s registry "Morsel Theft"
-  plains <- S.printingOf s registry "Plains"
-  swamp <- S.printingOf s registry "Swamp"
-  let (_, withCollector) = S.addPermanent collector S.alice (Setup.emptyGame S.bothPlayers)
-      withLands = S.landsFor swamp S.alice 4 (S.landsFor plains S.alice 2 withCollector)
-      (bountyId, withBounty) = S.addHandCard bounty S.alice withLands
-      (theftId, withTheft) = S.addHandCard theft S.alice withBounty
-  pure
-    ( bountyId,
-      theftId,
-      withTheft
-        { GameState.turn =
-            (GameState.turn withTheft)
-              { TurnRegisters.phase = Phase.PrecombatMain,
-                TurnRegisters.remaining = Seq.drop 1 (Turn.dropRestOfPhase (Phase.Beginning BeginningStep.Upkeep) Turn.laterPhases),
-                TurnRegisters.activePlayer = S.alice,
-                TurnRegisters.priority = Just S.alice
-              }
-        }
-    )
-
--- Parun.EventTriggerSpec's stepUntil: run whole steps until the postcombat main
--- is the current phase and has NOT yet run -- Engine.runStep runs
--- TurnRegisters.phase and only then advances -- so a case can read the board as that
--- step begins. Bounded so a fixture that never reaches it ends rather than
--- hangs. S.identityAnswer declares no attackers, so nothing but the cast spell
--- moves a life total on the way.
-postcombatMainOf :: GameState.GameState -> GameState.GameState
-postcombatMainOf gs0 =
-  let go n g =
-        if n <= (0 :: Int) || TurnRegisters.phase (GameState.turn g) == Phase.PostcombatMain
-          then g
-          else go (n - 1) (oneStep g)
-   in go 24 gs0
-
-oneStep :: GameState.GameState -> GameState.GameState
-oneStep g = snd (Engine.runGamePure S.identityAnswer g Engine.runStep)
-
 goblinPiker :: CardName.CardName
 goblinPiker = CardName.MkCardName (Text.pack "Goblin Piker")
 
@@ -1387,62 +788,15 @@ hillGiant = CardName.MkCardName (Text.pack "Hill Giant")
 aimingAtAll :: [ObjectId.ObjectId] -> Prompt.Prompt r -> r
 aimingAtAll oids p = case p of
   Prompt.AnnounceTargets _ _ _ offers -> fmap (const (Natural.length oids)) offers
-  -- FILTERED out of the offered recipients rather than built, the Toralf's
-  -- Disciple case's reason: CR 608.2b re-reads the targets at resolution, and a
-  -- recipient assembled here would carry the wrong tag for the slot's pool.
+  -- FILTERED out of the offered recipients rather than built: CR 608.2b
+  -- re-reads the targets at resolution, and a recipient assembled here would
+  -- carry the wrong tag for the slot's pool.
   Prompt.ChooseTargets _ _ _ asked -> fmap (\(_, rs) -> Set.filter (maybe False (`elem` oids) . Recipient.objectOf) rs) asked
   _ -> S.identityAnswer p
 
--- Island, Mountain, Plains, Goblin Piker, Clone, Sinister Reflections and
--- Cubwarden, which the merge-split cases share.
-duplicatePrintings ::
-  (Monad m) =>
-  Spec.Spec m n ->
-  Registry.Registry m ->
-  m (Printing.Printing, Printing.Printing, Printing.Printing, Printing.Printing, Printing.Printing, Printing.Printing, Printing.Printing)
-duplicatePrintings s registry =
-  (,,,,,,)
-    <$> S.printingOf s registry "Island"
-    <*> S.printingOf s registry "Mountain"
-    <*> S.printingOf s registry "Plains"
-    <*> S.printingOf s registry "Goblin Piker"
-    <*> S.printingOf s registry "Clone"
-    <*> S.printingOf s registry "Sinister Reflections"
-    <*> S.printingOf s registry "Cubwarden"
-
--- The Piker case's board, with Cubwarden's printing beside it and the duplicate
--- of a Clone copying the Piker in alice's hand.
-duplicateFixture :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (Printing.Printing, Maybe (ObjectId.ObjectId, GameState.GameState))
-duplicateFixture s registry = do
-  (island, mountain, plains, piker, clone, reflections, cubwarden) <- duplicatePrintings s registry
-  let board0 = S.landsFor plains S.alice 8 (S.landsFor mountain S.alice 4 (S.landsInPlay island 4))
-      (pikerId, board1) = S.addPermanent piker S.alice board0
-  pure (cubwarden, duplicateInHand clone reflections pikerId board1)
-
--- The duplicate cast and resolved as the Piker, with Cubwarden then cast from
--- hand for its mutate cost OVER it: the merged permanent's id and the board.
-mergedOntoDuplicate :: (Printing.Printing, Maybe (ObjectId.ObjectId, GameState.GameState)) -> Maybe (ObjectId.ObjectId, GameState.GameState)
-mergedOntoDuplicate (cubwarden, found) = do
-  (duplicate, gone) <- found
-  let played = S.settleSba (S.runPure S.identityAnswer gone (S.cast S.alice duplicate >> Stack.resolveTop))
-  host <- Maybe.listToMaybe (clonesOnBattlefield played)
-  let (withCubwarden, spellId) = S.handOne cubwarden played
-  pure (host, mergingOnto host withCubwarden spellId)
-
--- A Clone resolved as a copy of `original`, duplicated into alice's hand by
--- Sinister Reflections, then `original` and the Clone destroyed, so the
--- duplicate's printed card says Clone and nothing left on the battlefield
--- carries the values it was conjured with. Nothing where the Clone did not stay.
-duplicateInHand :: Printing.Printing -> Printing.Printing -> ObjectId.ObjectId -> GameState.GameState -> Maybe (ObjectId.ObjectId, GameState.GameState)
-duplicateInHand clone reflections original board0 = do
-  (_, conjured) <- conjuredDuplicate clone reflections original board0
-  cloneId <- Maybe.listToMaybe (clonesOnBattlefield conjured)
-  let gone = S.settleSba (S.runPure S.identityAnswer conjured (Event.destroy (pure ()) Regenerability.Regenerable [original, cloneId]))
-  duplicate <- Maybe.listToMaybe (namedIn cloneName Zone.Hand gone)
-  pure (duplicate, gone)
-
--- duplicateInHand above short of the destruction: the original and the Clone
--- stay on the battlefield, and the one spell cast is Sinister Reflections.
+-- A Clone resolved as a copy of `original`, then duplicated into alice's hand
+-- by Sinister Reflections: the duplicate and the board, the original and the
+-- Clone still on the battlefield.
 conjuredDuplicate :: Printing.Printing -> Printing.Printing -> ObjectId.ObjectId -> GameState.GameState -> Maybe (ObjectId.ObjectId, GameState.GameState)
 conjuredDuplicate clone reflections original board0 = do
   let (_, staged) = S.spellOnStack clone S.alice board0
@@ -1459,31 +813,6 @@ conjuredDuplicate clone reflections original board0 = do
       resolved = S.settleSba (S.runPure (aimingAtAll [cloneId]) board (S.cast S.alice spell >> Stack.resolveTop))
   duplicate <- Maybe.listToMaybe (namedIn cloneName Zone.Hand resolved)
   pure (duplicate, resolved)
-
--- Casts `spellId` for Cubwarden's mutate cost at `host`, merging OVER, and
--- drains the stack. Parun.MutateSpec's `merging`, duplicated rather than hoisted:
--- the cost is NAMED rather than indexed and the target FILTERED out of the
--- offered set, since CR 608.2b's re-read drops a hand-built recipient.
-mergingOnto :: ObjectId.ObjectId -> GameState.GameState -> ObjectId.ObjectId -> GameState.GameState
-mergingOnto host board spellId =
-  let answer :: Prompt.Prompt r -> r
-      answer p = case p of
-        Prompt.ChooseCost _ _ _ candidates _ ->
-          Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just cubwardenMutateCost) . Cost.Type.mana . CandidateCost.cost) candidates)
-        Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just host) . Recipient.objectOf) . snd) sets
-        Prompt.ChooseMutateSide {} -> MutateSide.Over
-        _ -> S.identityAnswer p
-      cast = S.runPure answer board (S.cast S.alice spellId)
-   in S.runPure answer cast (Monad.replicateM_ 6 (Engine.settleForPriority >> Stack.resolveTop) >> Engine.settleForPriority)
-
--- Cubwarden's mutate cost, {2}{W}{W}, as the announcement names it.
-cubwardenMutateCost :: ManaCost.ManaCost
-cubwardenMutateCost = ManaCost.MkManaCost [ManaSymbol.Generic 2, white, white]
-  where
-    white = ManaSymbol.OfType (ManaType.Colored Color.White)
-
-cubwardenName :: CardName.CardName
-cubwardenName = CardName.MkCardName (Text.pack "Cubwarden")
 
 -- Resolves the staged Clone with its CR 614.12 as-enters copy pinned to the
 -- named permanent, Parun.CopySpec's copyNamed for its reason: a searching
@@ -1502,27 +831,6 @@ copyingPiker oid gs =
 clonesOnBattlefield :: GameState.GameState -> [ObjectId.ObjectId]
 clonesOnBattlefield gs = filter (\oid -> S.soleFaceName oid gs == cloneName) (Game.zoneMembers Zone.Battlefield S.alice gs)
 
--- A copier (Clone) resolved as a copy of `original`, then duplicated into
--- alice's hand by Sinister Reflections: the duplicate and the board. Found by
--- the board's difference rather than by name, since the copier offers the
--- copied card's faces.
-duplicateOfCopy :: Printing.Printing -> Printing.Printing -> ObjectId.ObjectId -> GameState.GameState -> Maybe (ObjectId.ObjectId, GameState.GameState)
-duplicateOfCopy copier reflections original board0 = do
-  let (_, staged) = S.spellOnStack copier S.alice board0
-      entered = S.settleSba (copyingPiker original staged)
-  copyId <- Maybe.listToMaybe (Set.toList (Set.difference (GameState.battlefield entered) (GameState.battlefield board0)))
-  duplicateOf reflections copyId entered
-
--- Sinister Reflections cast at `target` and resolved: the one card it added to
--- alice's hand, and the board.
-duplicateOf :: Printing.Printing -> ObjectId.ObjectId -> GameState.GameState -> Maybe (ObjectId.ObjectId, GameState.GameState)
-duplicateOf reflections target board0 = do
-  let (spell, board1) = S.addHandCard reflections S.alice board0
-      resolved = S.settleSba (S.runPure (aimingAtAll [target]) board1 (S.cast S.alice spell >> Stack.resolveTop))
-  case filter (`notElem` Game.zoneMembers Zone.Hand S.alice board1) (Game.zoneMembers Zone.Hand S.alice resolved) of
-    [duplicate] -> Just (duplicate, resolved)
-    _ -> Nothing
-
 -- Is casting this card as the named half among alice's legal actions, with
 -- priority hers? The offer, which Cast.castable asked of a name does not check.
 castOffered :: ObjectId.ObjectId -> CardName.CardName -> GameState.GameState -> Bool
@@ -1539,68 +847,12 @@ castOffered oid name gs =
           }
     )
 
-ainokTracker :: CardName.CardName
-ainokTracker = CardName.MkCardName (Text.pack "Ainok Tracker")
-
-welcomeHome :: CardName.CardName
-welcomeHome = CardName.MkCardName (Text.pack "Welcome Home")
-
-bearToken :: CardName.CardName
-bearToken = CardName.MkCardName (Text.pack "Bear Token")
-
-spikedCorridor :: CardName.CardName
-spikedCorridor = CardName.MkCardName (Text.pack "Spiked Corridor")
-
-torturePit :: CardName.CardName
-torturePit = CardName.MkCardName (Text.pack "Torture Pit")
-
 cloneName :: CardName.CardName
 cloneName = CardName.MkCardName (Text.pack "Clone")
 
-activationOf :: ObjectId.ObjectId -> Action.Action -> Bool
-activationOf oid action = case action of
-  Action.Activate o _ -> o == oid
-  _ -> False
-
--- The object a mana activation names, which `manaActivation` below only asks
--- the existence of: the tapped case reads WHICH permanents alice may tap.
+-- The object a mana activation names: the tapped case reads WHICH permanents
+-- alice may tap.
 manaSource :: Action.Action -> Maybe ObjectId.ObjectId
 manaSource action = case action of
   Action.ActivateManaAbility oid -> Just oid
   _ -> Nothing
-
-manaActivation :: Action.Action -> Bool
-manaActivation action = case action of
-  Action.ActivateManaAbility _ -> True
-  _ -> False
-
--- The cards a printing's SPELL conjures, conjuredBy's read one ability kind over.
-spellConjures :: Printing.Printing -> [Card.Card]
-spellConjures printing =
-  [ card
-  | face <- NonEmpty.toList (Card.faces (Printing.card printing)),
-    mode <- Foldable.toList (Modal.modes (Face.spell face)),
-    clause <- Foldable.toList (Mode.clauses mode),
-    Effect.Conjure conjure <- Foldable.toList (Clause.effects clause),
-    card <- ConjureCards.written (Conjure.cards conjure)
-  ]
-
--- Activates the Gate the first time its ability is offered, taps any OTHER land
--- for mana until it is, and pins the random pick to `who`, FILTERED out of the
--- offer rather than built, so a name the engine never offered cannot slip
--- through. Never the Gate's own mana ability, which would
--- tap away its {T} cost. A shuffle is answered REVERSED, so one the engine asked
--- for would show in the library's order.
-gateAnswer :: ObjectId.ObjectId -> ObjectId.ObjectId -> Prompt.Prompt r -> r
-gateAnswer gate who p = case p of
-  Prompt.ChooseAction _ _ actions -> case List.find (activationOf gate) actions of
-    Just action -> action
-    Nothing -> case List.find (maybe False (/= gate) . manaSource) actions of
-      Just action -> action
-      Nothing -> Action.Pass
-  Prompt.RandomObject offered -> Maybe.fromMaybe (NonEmpty.head offered) (List.find (== who) (NonEmpty.toList offered))
-  Prompt.Shuffle cards -> reverse cards
-  _ -> S.identityAnswer p
-
-gateToSeatower :: CardName.CardName
-gateToSeatower = CardName.MkCardName (Text.pack "Gate to Seatower")

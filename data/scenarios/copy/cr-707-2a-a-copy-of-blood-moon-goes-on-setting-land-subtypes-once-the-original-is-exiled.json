@@ -1,0 +1,50 @@
+{
+  "description": "CR 707.2a a copy of Blood Moon goes on setting land subtypes once the original is exiled",
+  "note": "Copy Enchantment enters as a copy of the Blood Moon, Angelic Edict exiles the original, and CR 305.7 has to go on applying from the copy alone. The original must go, and to exile: with two Blood Moons out the original answers for both, and every other zone is one a card's static abilities are still read from. Two victims, because CR 305.7's strip has two readers that must agree: Mutavault's printed activated abilities, and Urborg, Tomb of Yawgmoth's printed static one, so the Plains Urborg would otherwise make a Swamp is what says the copy was seen. The first checks are the preconditions with the printed Blood Moon still in hand: Urborg makes the Plains a Swamp, and Mutavault offers two activated abilities. Plains and Islands are basic, so neither Blood Moon touches them.",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "manaPool": "RRR",
+        "battlefield": [
+          { "card": "Plains", "label": "plains" },
+          { "card": "Plains", "label": "p1" },
+          { "card": "Plains", "label": "p2" },
+          { "card": "Plains", "label": "p3" },
+          { "card": "Plains", "label": "p4" },
+          { "card": "Plains", "label": "p5" },
+          { "card": "Island", "label": "i1" },
+          { "card": "Island", "label": "i2" },
+          { "card": "Island", "label": "i3" },
+          { "card": "Mutavault", "label": "mutavault" },
+          { "card": "Urborg, Tomb of Yawgmoth", "label": "urborg" }
+        ],
+        "hand": [
+          { "card": "Blood Moon", "label": "moon" },
+          { "card": "Copy Enchantment", "label": "copy" },
+          { "card": "Angelic Edict", "label": "edict" }
+        ]
+      },
+      { "name": "bob" }
+    ],
+    "active": "alice",
+    "step": "PrecombatMain"
+  },
+  "timeline": [
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$plains", "subtypes": ["Plains", "Swamp"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "Cast $moon", "Cast $copy", "Activate $mutavault", "ActivateManaAbility $plains", "ActivateManaAbility $p1", "ActivateManaAbility $p2", "ActivateManaAbility $p3", "ActivateManaAbility $p4", "ActivateManaAbility $p5", "ActivateManaAbility $i1", "ActivateManaAbility $i2", "ActivateManaAbility $i3", "ActivateManaAbility $mutavault", "ActivateManaAbility $urborg"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$moon", "mana": [null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$copy", "mana": ["$i1", "$i2", "$i3", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "ChooseCopyTarget": "Blood Moon" } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Cast": { "object": "$edict", "targets": ["Blood Moon"], "mana": ["$plains", "$p1", "$p2", "$p3", "$p4", null] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass" },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Count": { "player": "alice", "zone": "Exile", "card": "Blood Moon", "count": 1 } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$plains", "subtypes": ["Plains"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "Subtypes": { "object": "$mutavault", "subtypes": ["Mountain"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "Offered", "player": "alice", "is": ["Pass", "ActivateManaAbility $p5", "ActivateManaAbility $mutavault", "ActivateManaAbility $urborg"] } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "do": { "Take": { "action": "ActivateManaAbility $mutavault" } } },
+    { "turn": 1, "step": "PrecombatMain", "player": "alice", "check": { "View": { "of": "ManaPool", "player": "alice", "is": [{"manaType": {"type": "Colored", "value": "Red"}, "tags": [], "retention": "Ordinary", "restriction": null, "rider": null, "sourceChoices": null}] } } }
+  ]
+}

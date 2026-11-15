@@ -21,7 +21,7 @@
 -- Rider; and CR 707.9b's exception riding it, Multiversal
 -- Recruitment's "except it isn't legendary" read by CR 704.5j; CR 702.128a's
 -- embalm and CR 702.129a's eternalize, whose colour, mana-cost, subtype and P/T
--- exceptions a Clone of the token keeps -- graveyardTokenCopySpec) and its BecomeCopy arm (CR 707.4's
+-- exceptions a Clone of the token keeps -- data/scenarios/copy) and its BecomeCopy arm (CR 707.4's
 -- change of a permanent already on the battlefield, and CR 707.9a's "except it
 -- has this ability" riding it -- Unstable Shapeshifter, which copies twice
 -- because of it, and whose token copy copies again because CR 707.9a put the
@@ -53,7 +53,7 @@
 -- And Parun.Engine.Resolve's CopyStackObject arm (CR 707.10's copy of a spell on the
 -- stack, Twincast) with the CR 707.10c re-target prompt it raises -- including
 -- the announcement that prompt's offer is judged inside, CR 707.10's copied X
--- read by a copied Stir the Grave's own target slot (stirCopySpec) -- the CR
+-- read by a copied Stir the Grave's own target slot (data/scenarios/copy) -- the CR
 -- 704.5e state-based action in Parun.Engine.Sba that removes the resolved copy,
 -- and Parun.Engine.Stack's OfSpellCopy resolution arm.
 --
@@ -71,7 +71,7 @@
 -- And CR 613.2b's ordering of the two halves of layer 1, where a permanent is
 -- both a copy and face down: CR 708.2's listed characteristics win over what the
 -- copy effect stamped, read off an attack declaration a copied Silent Arbiter
--- would otherwise bound and off the projected 2/2 (faceDownCopySpec).
+-- would otherwise bound and off the projected 2/2 (data/scenarios/copy).
 --
 -- And CR 707.10d's and CR 707.10e's answers whole, end to end: Zada, Hedron
 -- Grinder's one copy per candidate and Ivy, Gleeful Spellthief's one copy on a
@@ -89,10 +89,10 @@
 -- encoded card: Last Thoughts (data/scenarios/copy).
 --
 -- And CR 707.13's copy of a card defined by NAME, created outside the game and
--- then cast: Garth One-Eye (garthSpec).
+-- then cast: Garth One-Eye (data/scenarios/copy, and garthSpec's unknown name).
 --
 -- And CR 707.14's copy of a card noted as it went face down: Magar of the
--- Magic Strings (magarSpec).
+-- Magic Strings (data/scenarios/copy).
 module Parun.CopySpec where
 
 import qualified Control.Monad.Trans.State.Strict as State
@@ -111,15 +111,11 @@ import qualified Parun.Engine.Activatable as Activatable
 import qualified Parun.Engine.Activate as Activate
 import qualified Parun.Engine.Ante as Ante
 import qualified Parun.Engine.Binding as Binding
-import qualified Parun.Engine.Cast as Cast
 import qualified Parun.Engine.Combat as Combat
-import qualified Parun.Engine.Cost as Cost
 import qualified Parun.Engine.Damage as Damage
 import qualified Parun.Engine.Engine as Engine
 import qualified Parun.Engine.Event as Event
 import qualified Parun.Engine.Game as Game
-import qualified Parun.Engine.Mana as Mana
-import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Setup as Setup
 import qualified Parun.Engine.Stack as Stack
@@ -130,7 +126,6 @@ import qualified Parun.Types.Action as A
 import qualified Parun.Types.ActivatedAbility as ActivatedAbility
 import qualified Parun.Types.AttackTarget as AttackTarget
 import qualified Parun.Types.BeginningStep as BeginningStep
-import qualified Parun.Types.CandidateCost as CandidateCost
 import qualified Parun.Types.Card as Card.Type
 import qualified Parun.Types.CardName as CardName
 import qualified Parun.Types.CardType as CardType
@@ -142,19 +137,13 @@ import qualified Parun.Types.CounterKind as CounterKind
 import qualified Parun.Types.DamageEvent as DamageEvent
 import qualified Parun.Types.DamageKind as DamageKind
 import qualified Parun.Types.Designation as Designation
-import qualified Parun.Types.EndingStep as EndingStep
 import qualified Parun.Types.Face as Face
-import qualified Parun.Types.Facing as Facing
 import qualified Parun.Types.GameEvent as GameEvent
 import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.GrantedAbility as GrantedAbility
 import qualified Parun.Types.KickerDecision as KickerDecision
-import qualified Parun.Types.Mana as Mana.Type
 import qualified Parun.Types.ManaCost as ManaCost
-import qualified Parun.Types.ManaRetention as ManaRetention
 import qualified Parun.Types.ManaSymbol as ManaSymbol
-import qualified Parun.Types.ManaType as ManaType
-import qualified Parun.Types.ManaUnit as ManaUnit
 import qualified Parun.Types.Modification as Modification
 import qualified Parun.Types.ModifyPowerToughness as ModifyPowerToughness
 import qualified Parun.Types.Object as Object
@@ -214,13 +203,6 @@ newest = Maybe.listToMaybe . List.sortOn Ord.Down
 -- the lying interpreter. legalCopyTargets is the ONLY thing enforcing CR
 -- 614.12a's same-batch exclusion, so an unchecked answer would let a Clone copy
 -- something it may not.
--- CR 601.2c's target, pinned to one named permanent -- copyNamed's posture for
--- copyNamed's reason.
-aimingAt :: ObjectId -> Prompt.Prompt r -> r
-aimingAt oid p = case p of
-  Prompt.ChooseTargets _ _ _ sets -> fmap (const (Set.singleton (Recipient.ToObject oid))) sets
-  _ -> S.identityAnswer p
-
 copyNamed :: ObjectId -> Prompt.Prompt r -> r
 copyNamed wanted p = case p of
   Prompt.ChooseCopyTarget {} -> Just wanted
@@ -267,21 +249,6 @@ aimByFiltering oid p = case p of
   Prompt.OrderTriggers _ _ entries -> zipWith const [0 ..] entries
   Prompt.OrderDamage _ _ events -> zipWith const [0 ..] events
   _ -> S.identityAnswer p
-
--- S.combatBoardOf's placement, applied to a board a resolution built rather than
--- a fixture: alice active in the declare attackers step, with bob already the
--- defending player (CR 506.2) and the rest of the turn's steps ahead.
-intoCombat :: GameState.GameState -> GameState.GameState
-intoCombat gs =
-  gs
-    { GameState.turn =
-        (GameState.turn gs)
-          { TurnRegisters.activePlayer = S.alice,
-            TurnRegisters.phase = Phase.Combat CombatStep.DeclareAttackers,
-            TurnRegisters.combat = Combat.emptyCombat {Combat.Type.defenders = [S.bob]},
-            TurnRegisters.remaining = S.phasesAfter (Phase.Combat CombatStep.DeclareAttackers)
-          }
-    }
 
 -- The tokens on the battlefield (CR 111.6), newest first.
 tokensOnBattlefield :: GameState.GameState -> [ObjectId]
@@ -687,63 +654,6 @@ spec s registry = Spec.describe s "Parun.Engine.Copy" $ do
         Spec.assertEqWith s "the excepted copy does not" (S.powerToughnessOf gargantuanId later) $ Just (7, 7)
       _ -> Spec.assertFailure s "the Clone and the Gargantuan should both be on the battlefield"
 
-  -- THE PROVING TEST for CR 604.3a's third criterion: an ability acquired
-  -- through a copy effect is CHARACTERISTIC-DEFINING. Omni-Changeling {3}{U}{U}
-  -- Creature -- Shapeshifter 0/0: "Changeling / Convoke / You may have this
-  -- creature enter as a copy of any creature on the battlefield, except it has
-  -- changeling."
-  --
-  -- Its convoke is transcribed and nothing below turns on the cost: the spell is
-  -- put on the stack rather than cast, so no cost is paid at all.
-  --
-  -- The copy's own printed changeling is GONE (CR 707.2 replaced it with the
-  -- Piker's text), so the exception is the only source of it. Lord of Atlantis
-  -- is the reader -- "other Merfolk get +1/+1 and have islandwalk", an affected
-  -- set read off the projection -- so a copy that is every creature type (CR
-  -- 702.73a) is a Merfolk and gets pumped.
-  --
-  -- Two controls on the one board, each 2/1 for its own reason: bob's Goblin
-  -- Piker is no Merfolk, and a Clone copying it is the copy WITHOUT the
-  -- exception. The token copy is where the CDA claim actually bites -- CR 707.2
-  -- copies the copiable values and leaves every CR 613 layer behind, so a
-  -- changeling GRANTED over the copy would produce a 2/1 token here.
-  Spec.it s "Omni-Changeling's copy is every creature type, and so is a token copy of it (CR 604.3a)" $ do
-    island <- S.printingOf s registry "Island"
-    piker <- S.printingOf s registry "Goblin Piker"
-    lord <- S.printingOf s registry "Lord of Atlantis"
-    clone <- S.printingOf s registry "Clone"
-    omni <- S.printingOf s registry "Omni-Changeling"
-    counterpart <- S.printingOf s registry "Cackling Counterpart"
-    let (_, withLord) = S.addPermanent lord S.alice (S.landsInPlay island 3)
-        (pikerId, board) = S.addPermanent piker S.bob withLord
-        (_, stagedClone) = S.spellOnStack clone S.alice board
-        withClone = resolveAndSettle (copyNamed pikerId) stagedClone
-        (_, stagedOmni) = S.spellOnStack omni S.alice withClone
-        entered = resolveAndSettle (copyNamed pikerId) stagedOmni
-    case (cloneOnBattlefield entered, newest (printedOnBattlefield "Omni-Changeling" entered)) of
-      (Just cloneId, Just omniId) -> do
-        -- The Counterpart is aimed at the excepted copy and at nothing else: an
-        -- unpinned answerer copies the lord instead, and a second lord makes
-        -- every creature on the board a size that proves nothing.
-        let resolved = castAndResolve (targeting omniId) counterpart entered
-        case tokensOnBattlefield resolved of
-          [tokenId] -> do
-            -- THE GAMEPLAY ASSERTION: the lord sees a Merfolk.
-            Spec.assertEqWith s "the excepted copy is a Merfolk, so 2/1 plus the lord" (S.powerToughnessOf omniId resolved) $ Just (3, 2)
-            -- CR 707.2 through CR 613.3: the token reads the copiable values, and
-            -- the changeling among them defines its types at layer 4 all over again.
-            Spec.assertEqWith s "and so is a token copy of it (CR 707.2)" (S.powerToughnessOf tokenId resolved) $ Just (3, 2)
-            -- The two controls, on the same board: neither is a changeling.
-            Spec.assertEqWith s "the copy without the exception is not a Merfolk" (S.powerToughnessOf cloneId resolved) $ Just (2, 1)
-            Spec.assertEqWith s "and neither is the Piker it copied" (S.powerToughnessOf pikerId resolved) $ Just (2, 1)
-            -- Diagnostics, after the behaviour: the copy is the Piker by name, and
-            -- the type it gained is one CR 205.3m lists rather than every subtype.
-            Spec.assertEqWith s "the excepted copy is the Piker by name (CR 707.2)" (Projection.namesOf omniId resolved) . Set.singleton . CardName.MkCardName $ Text.pack "Goblin Piker"
-            Spec.assertBool s (Set.member Subtype.Merfolk (Projection.subtypesOf omniId resolved)) "and a Merfolk among its creature types"
-            Spec.assertBool s (not (Set.member Subtype.Island (Projection.subtypesOf omniId resolved))) "and no land type (CR 205.3m)"
-          tokens -> Spec.assertFailure s ("expected exactly one token, got " <> show (length tokens))
-      _ -> Spec.assertFailure s "the Clone and the Omni-Changeling should both be on the battlefield"
-
   -- THE PROVING TEST for CR 707.9b's OTHER arm, the exception that adds a CARD
   -- TYPE. Phyrexian Metamorph {3}{U/P} Artifact Creature -- Phyrexian
   -- Shapeshifter 0/0: "You may have this creature enter as a copy of any
@@ -862,7 +772,7 @@ spec s registry = Spec.describe s "Parun.Engine.Copy" $ do
   -- text checked against api.scryfall.com, 2026-09-12. Scryfall o:"doesn't copy",
   -- 2026-09-12, returns this card and nothing else.)
   --
-  -- Doom Blade is the gameplay reader for colour, graveyardTokenCopySpec's:
+  -- Doom Blade is the gameplay reader for colour, as in the eternalize scenario:
   -- "Destroy target nonblack creature" is castable only while some creature on
   -- the board is not black. The Doppelganger copies a black Cabal Evangel (2/2),
   -- so the Blade has a target exactly when the copy kept its printed blue.
@@ -1034,54 +944,6 @@ spec s registry = Spec.describe s "Parun.Engine.Copy" $ do
         Spec.assertEqWith s "the first copy was the Hill Giant's 3/3" (S.powerToughnessOf shifterId afterFirst) $ Just (3, 3)
         Spec.assertEqWith s "with the Hill Giant's abilities plus the kept one" (length (Projection.triggeredAbilitiesOf shifterId afterFirst)) 1
 
-  -- CR 707.2a from the OTHER side of the same rule: the Blood Moon is the COPY.
-  -- Copy Enchantment enters as a copy of a Blood Moon, the original is exiled,
-  -- and CR 305.7 has to go on applying from the copy alone -- which it can only
-  -- do if Parun.Engine.Projection's set-subtype scan reads the copy's static
-  -- abilities rather than Copy Enchantment's printed face.
-  --
-  -- The original must go, and to EXILE: with two Blood Moons out the original
-  -- answers for both, and every other zone is one the projection still reads a
-  -- card's static abilities from. Angelic Edict ({4}{W} Sorcery, "Exile target
-  -- creature or enchantment") is the only pooled way an enchantment leaves.
-  --
-  -- TWO victims, because CR 305.7's strip has two readers that must agree.
-  -- Mutavault's printed ACTIVATED abilities go inside the layer fold, and Urborg,
-  -- Tomb of Yawgmoth's printed STATIC one goes through the hoisted set-subtype
-  -- scan that gates a land's own abilities from outside it -- so the Plains that
-  -- Urborg would otherwise make a Swamp is what says the scan saw the copy.
-  --
-  -- Plains pay for the Edict, and being basic they are untouched by either Blood
-  -- Moon.
-  Spec.it s "CR 707.2a a copy of Blood Moon goes on setting land subtypes once the original is exiled" $ do
-    plains <- S.printingOf s registry "Plains"
-    mutavault <- S.printingOf s registry "Mutavault"
-    urborg <- S.printingOf s registry "Urborg, Tomb of Yawgmoth"
-    bloodMoon <- S.printingOf s registry "Blood Moon"
-    copyEnchantment <- S.printingOf s registry "Copy Enchantment"
-    angelicEdict <- S.printingOf s registry "Angelic Edict"
-    let (plainsId, g0) = S.addPermanent plains S.alice (S.landsInPlay plains 6)
-        (mutavaultId, g1) = S.addPermanent mutavault S.alice g0
-        (_, moonless) = S.addPermanent urborg S.alice g1
-        (moonId, g2) = S.addPermanent bloodMoon S.alice moonless
-        (_, g3) = S.spellOnStack copyEnchantment S.alice g2
-        copied = S.settleSba (S.runPure (copyNamed moonId) g3 Stack.resolveTop)
-        (g4, edictId) = S.handOne angelicEdict copied
-        cast = S.runPure (aimingAt moonId) g4 (S.cast S.alice edictId)
-        exiled = S.settleSba (S.runPure (aimingAt moonId) cast Stack.resolveTop)
-        swampy gs = elem Subtype.Swamp (Set.toList (Projection.subtypesOf plainsId gs))
-    -- The gameplay-level assertions the case exists for, first: both halves of
-    -- CR 305.7 still apply with only the copy left.
-    Spec.assertBool s (not (swampy exiled)) "CR 707.2a the copy alone still strips Urborg, so the Plains is no Swamp"
-    Spec.assertBool s (elem Subtype.Mountain (Set.toList (Projection.subtypesOf mutavaultId exiled))) "and still makes Mutavault a Mountain"
-    Spec.assertEqWith s "CR 305.7 with Mutavault's printed abilities stripped, so it taps for red alone (CR 305.6)" (Mana.manaTypesOf mutavaultId exiled) [ManaType.Colored Color.Red]
-    Spec.assertEqWith s "and no activated ability of its own left" (Projection.abilitiesOf mutavaultId exiled) []
-    -- The preconditions: the original really is gone, and both victims really had
-    -- something to lose before any Blood Moon arrived.
-    Spec.assertEqWith s "the original Blood Moon was exiled" (Game.lookupObject moonId exiled) Nothing
-    Spec.assertBool s (swampy moonless) "with no Blood Moon out, Urborg makes the Plains a Swamp"
-    Spec.assertEqWith s "and Mutavault prints two activated abilities" (length (Projection.abilitiesOf mutavaultId moonless)) 2
-
 -- Append one card of `printing` to `pid`'s hand -- S.handOne overwrites alice's
 -- hand, so a second card in it must be appended. Group-local rather than in
 -- Parun.Support: Parun.CounterspellSpec keeps its own copy of the same shape, and
@@ -1143,34 +1005,6 @@ aimMimicry subjectId originalId p = case p of
 
 copySpellSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 copySpellSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
-  -- CR 707.2 / 716.3d: Synthetic Mimicry makes Battle Display, cast as an
-  -- Adventure at the Bonesplitter, a copy of the Bolt. Once it is one it is no
-  -- longer an Adventure, so it resolves into the graveyard rather than into
-  -- exile. CR 721.3d's Omen rider reads the same face.
-  Spec.it s "CR 707.2 an Adventure that becomes a copy of a Bolt goes to the graveyard" $ do
-    mountain <- S.printingOf s registry "Mountain"
-    island <- S.printingOf s registry "Island"
-    bolt <- S.printingOf s registry "Lightning Bolt"
-    shieldbreaker <- S.printingOf s registry "Embereth Shieldbreaker"
-    bonesplitter <- S.printingOf s registry "Bonesplitter"
-    mimicry <- S.printingOf s registry "Synthetic Mimicry"
-    let lands = S.landsFor island S.alice 2 (S.landsFor mountain S.alice 2 S.threePlayerGame)
-        withArtifact = snd (S.addPermanent bonesplitter S.alice lands)
-        (withBolt, boltId) = S.handOne bolt withArtifact
-        (displayId, withDisplay) = S.addHandCard shieldbreaker S.alice withBolt
-        (mimicryId, board) = S.addHandCard mimicry S.alice withDisplay
-        cast1 = snd (Engine.runGamePure S.identityAnswer board (Cast.castSpell S.manaPerformer S.alice displayId (CardName.MkCardName (Text.pack "Battle Display")) Facing.FaceUp))
-        cast2 = snd (Engine.runGamePure (pinTarget (Recipient.ToPlayer S.bob)) cast1 (S.cast S.alice boltId))
-        graveyardNames gs = Maybe.mapMaybe (\oid -> fmap Face.name (Game.faceOf oid gs)) (Game.zoneMembers Zone.Graveyard S.alice gs)
-    case (topOfStack cast1, topOfStack cast2) of
-      (Just displaySpell, Just boltSpell) | displaySpell /= boltSpell -> do
-        let cast3 = snd (Engine.runGamePure (aimMimicry displaySpell boltSpell) cast2 (S.cast S.alice mimicryId))
-            -- Mimicry, then the Bolt, then the copied Battle Display.
-            after = resolveOne S.identityAnswer (resolveOne S.identityAnswer (resolveOne S.identityAnswer cast3))
-        Spec.assertBool s (CardName.MkCardName (Text.pack "Embereth Shieldbreaker") `elem` graveyardNames after) "the card went to alice's graveyard, not into exile"
-        Spec.assertEqWith s "bob took the Bolt's 3 and the copy's 3" (S.lifeOf S.bob after) (Just 14)
-      _ -> Spec.assertFailure s "the spells never reached the stack"
-
   -- CR 707.2 with CR 702.174a: the opponent a gift was promised to is a choice
   -- made when casting, so a Divination that becomes a copy of Crumb and Get It
   -- promised to carol gives carol the copy's Food too.
@@ -1302,108 +1136,6 @@ drainStack answer =
         | fuel <= 0 || null (TurnRegisters.stack (GameState.turn gs)) = gs
         | otherwise = go (fuel - 1) (resolveOne answer gs)
    in go (10 :: Int)
-
--- alice holds Stir the Grave and Twincast with three Swamps and two Islands
--- untapped -- exactly {2}{B} and {U}{U}, so neither cast can fail for mana --
--- and her graveyard holds `cards` in the order given. Returns the two hand
--- cards, the graveyard ids and the board, in a main phase so the sorcery is
--- castable.
-stirCopyBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> [Printing.Printing] -> (ObjectId, ObjectId, [ObjectId], GameState.GameState)
-stirCopyBoard swamp island stir twincast cards =
-  let lands = S.landsFor island S.alice 2 (S.landsFor swamp S.alice 3 (Setup.emptyGame S.bothPlayers))
-      (withStir, stirId) = S.handOne stir lands
-      (twincastId, withBoth) = handAppend twincast S.alice withStir
-      add (acc, g) c = let (oid, g2) = S.addGraveyardCard c S.alice g in (acc <> [oid], g2)
-      (ids, board) = List.foldl' add ([], withBoth) cards
-   in ( stirId,
-        twincastId,
-        ids,
-        board
-          { GameState.turn =
-              (GameState.turn board)
-                { TurnRegisters.phase = Phase.PrecombatMain
-                }
-          }
-      )
-
--- Announce this X, and answer every target prompt by FILTERING the offered set
--- down to one recipient -- pinTarget's posture, with CR 601.2b's announcement in
--- front of it.
-announcing :: Natural.Natural -> Recipient.Recipient -> Prompt.Prompt r -> r
-announcing x recipient p = case p of
-  Prompt.ChooseX {} -> x
-  _ -> pinTarget recipient p
-
--- CR 707.10's copied announcement, read by the copy's own target slot.
---
--- Stir the Grave ({X}{B} Sorcery) is "return target creature card with mana value
--- X or less from your graveyard to the battlefield", so its slot carries a CR
--- 202.3 computed bound reading the X the caster announced (#2670 built the cast's
--- half). CR 707.10 copies "the value of X", and CR 707.10c then offers new
--- targets -- so the offer the copy's controller is given must be judged inside
--- that same announcement, which is what Resolve.chooseNewTargetsFor seeds from
--- Object.bindings.
---
--- One graveyard, four cards. alice announces X = 2 and names the Piker; the copy
--- is then offered the Evangel (the other mana value 2 creature card) and nothing
--- else. The case below and
--- data/scenarios/copy/cr-707-10c-the-copy-s-new-target-is-judged-against-the.json
--- differ in exactly one thing -- which recipient the copy's prompt is pinned
--- to -- and between them they fix the number at 2: the Evangel
--- is reachable, the mana value 3 card is not, and a bound left unanswered would
--- have admitted neither and elided CR 707.10c's prompt altogether.
---
--- THE NUMBER HAS TWO ROADS HERE, and the OBJECT one answers first, so the seed
--- has no mutation of its own: Quantity.InSlot asks the object the evaluation
--- names before it asks the context, and for a copy that object is the
--- announcement's own holder -- CR 707.10 stamped the value of X onto it, and
--- slotContext evaluates the bound with the copy's id, so `mOid >>= boundOn` is
--- what fires. Resolve.chooseNewTargetsFor also seeds those bindings into
--- Filter.boundAmounts, which is the CR-correct channel and the one every other
--- slot atom reads, but for the X it is dead code: neutralizing the seed leaves
--- this group green. Widening Filter's EnclosingAmount operand reddens the
--- case below, which is what makes this a proof of the BOUND rather than of
--- either road.
-stirCopySpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-stirCopySpec s registry =
-  let boardOf = do
-        swamp <- S.printingOf s registry "Swamp"
-        island <- S.printingOf s registry "Island"
-        stir <- S.printingOf s registry "Stir the Grave"
-        twincast <- S.printingOf s registry "Twincast"
-        cards <- traverse (S.printingOf s registry) ["Goblin Piker", "Cabal Evangel", "Kalakscion, Hunger Tyrant", "Russet Wolves"]
-        pure (stirCopyBoard swamp island stir twincast cards)
-      -- alice casts Stir the Grave for X = 2 at `pikerId`, then -- CR 117.3c,
-      -- still holding priority -- Twincast at it, and resolves Twincast so that
-      -- CR 707.10c's prompt reaches `retarget`. Then drains the stack: the copy
-      -- first, the original under it.
-      play retarget pikerId stirId twincastId board =
-        let castStir = S.runPure (announcing 2 (Recipient.ToObject pikerId)) board (S.cast S.alice stirId)
-         in do
-              stirSpell <- topOfStack castStir
-              let castTwincast = S.runPure (pinTarget (Recipient.ToObject stirSpell)) castStir (S.cast S.alice twincastId)
-              pure (drainStack S.identityAnswer (resolveOne (pinTarget retarget) castTwincast))
-   in Spec.describe s "Parun.Engine.Copy" $ do
-        -- The scenario's board and announcement, one recipient different: the
-        -- mana value 3 card is the FIRST one an announced 2 excludes, so pinning
-        -- the copy there is what fixes the number at 2 rather than at any bound
-        -- the Evangel also satisfies. It is never offered, the answer names a
-        -- recipient it was not shown, and reject-not-repair leaves the copy on the
-        -- Piker. A bound that had stopped narrowing reads this as the Tyrant
-        -- arriving.
-        Spec.it s "CR 707.10c a card the copied X does not reach is not offered" $ do
-          (stirId, twincastId, ids, board) <- boardOf
-          case ids of
-            [pikerId, _, tyrantId, _] ->
-              case play (Recipient.ToObject tyrantId) pikerId stirId twincastId board of
-                Nothing -> Spec.assertFailure s "Stir the Grave never reached the stack"
-                Just after -> do
-                  Spec.assertEqWith s "the mana value 3 creature card is still in the graveyard" (S.countOnBattlefieldByName (cardNamed "Kalakscion, Hunger Tyrant") S.alice after) 0
-                  Spec.assertEqWith s "nor did the mana value 4 one move" (S.countOnBattlefieldByName (cardNamed "Russet Wolves") S.alice after) 0
-                  Spec.assertEqWith s "the copy kept the Piker, which the original had also named, so it came back once" (S.countOnBattlefieldByName (cardNamed "Goblin Piker") S.alice after) 1
-                  Spec.assertEqWith s "and no other graveyard card came back" (S.countOnBattlefieldByName (cardNamed "Cabal Evangel") S.alice after) 0
-                  Spec.assertEqWith s "and everything resolved" (length (TurnRegisters.stack (GameState.turn after))) 0
-            _ -> Spec.assertFailure s "fixture should stock alice's graveyard with four cards"
 
 -- alice's Unstable Shapeshifter becomes a copy of `original`, and the original
 -- then LEAVES the battlefield.
@@ -1642,130 +1374,6 @@ copiedAbilitySpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
             Spec.assertBool s (S.onBattlefield copy2 final) "so CR 704.5v does not put it into the graveyard"
         Spec.assertEqWith s "the first copy entered with five too, while the original was out" (S.counterOf CounterKind.Defense copy1 withOriginal) 5
         Spec.assertEqWith s "and no printed battle is left on the battlefield for the second entry" (length (printedOnBattlefield "Invasion of Dominaria" gone)) 0
-
--- CR 707.10f / 608.3f: a copy of a PERMANENT spell resolves into a token
--- permanent. Lithoform Engine's third ability ("{4}, {T}: Copy target permanent
--- spell you control") is the pool's producer; copyAbilityOnStackSpec below drives
--- its first, and the {3} one is the spell copy Twincast already proves, so all
--- three legs of the printed card are exercised.
---
--- alice holds Nyxborn Rollicker -- data/cards/'s bestow card -- with the Engine
--- on the battlefield, so ONE board reaches both the creature-spell copy (CR
--- 707.10f) and the bestowed-Aura-spell copy (CR 702.103c, whose copy "is also a
--- bestowed Aura spell"). Seven Mountains: {1}{R} for the bestow cost, {4} for
--- the Engine, {R} for the Lightning Bolt the last case casts in response, so no
--- leg fails for mana.
---
--- TWO creatures to enchant, War Mammoth (3/3) and Goblin Piker (2/1), so CR
--- 601.2c's host is a choice and the copy carrying that choice (CR 707.10's "all
--- decisions made for it") is visible on the host it pumps and not on the other.
-lithoformBoard :: Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> Printing.Printing -> (ObjectId, ObjectId, ObjectId, ObjectId, ObjectId, GameState.GameState)
-lithoformBoard mountain engine piker mammoth rollicker bolt =
-  let base = S.landsInPlay mountain 7
-      (engineId, gs1) = S.addPermanent engine S.alice base
-      (bystander, gs2) = S.addPermanent piker S.alice gs1
-      (host, gs3) = S.addPermanent mammoth S.alice gs2
-      (gs4, spellId) = S.handOne rollicker gs3
-      (boltId, board) = S.addHandCard bolt S.alice gs4
-   in (engineId, bystander, host, spellId, boltId, board)
-
--- CR 601.2b's announcement answered by NAMING a cost, and CR 601.2c's target by
--- FILTERING the offered set -- pinTarget's reason. Parun.AuraSpec's castingFor,
--- duplicated rather than hoisted.
-castingRollicker :: [ManaSymbol.ManaSymbol] -> ObjectId -> Prompt.Prompt r -> r
-castingRollicker wanted host p = case p of
-  Prompt.ChooseCost _ _ _ candidates _ ->
-    Maybe.fromMaybe (Cost.firstOffered candidates) (List.find ((== Just (ManaCost.MkManaCost wanted)) . Cost.Type.mana . CandidateCost.cost) candidates)
-  Prompt.ChooseTargets _ _ _ sets -> fmap (Set.filter ((== Just host) . Recipient.objectOf) . snd) sets
-  _ -> S.identityAnswer p
-
-bestowingRollicker :: ObjectId -> Prompt.Prompt r -> r
-bestowingRollicker = castingRollicker [ManaSymbol.Generic 1, ManaSymbol.OfType (ManaType.Colored Color.Red)]
-
--- Every permanent named Nyxborn Rollicker alice has on the battlefield -- by
--- NAME rather than by Source, so a copy that never became a token and one that
--- became the wrong thing are both found and then told apart by Game.isToken.
-rollickersOn :: Printing.Printing -> GameState.GameState -> [ObjectId]
-rollickersOn printing gs =
-  filter
-    (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (S.printingName printing))
-    (Game.zoneMembers Zone.Battlefield S.alice gs)
-
--- alice casts `spellId` (`casting` answers its announcements -- bestowed or
--- printed for the Rollicker, CR 601.2b's Phyrexian route for Tamiyo), then -- CR
--- 117.3c, still holding priority -- activates the Engine's {4} ability at it and
--- resolves the ability. Returns the board with [copy, spell] on the stack.
---
--- The {4} ability is picked by its cost rather than by index, so a reordering of
--- the card file cannot silently aim the {3} one at a creature spell and have the
--- activation refuse for want of a target.
-copyPermanentSpell :: (forall r. Prompt.Prompt r -> r) -> ObjectId -> ObjectId -> GameState.GameState -> Maybe GameState.GameState
-copyPermanentSpell casting engineId spellId board =
-  let cast = S.runPure casting board (S.cast S.alice spellId)
-      ready =
-        cast
-          { GameState.turn =
-              (GameState.turn cast)
-                { TurnRegisters.priority = Just S.alice
-                }
-          }
-   in do
-        spell <- topOfStack cast
-        ability <- List.find ((== Just (ManaCost.MkManaCost [ManaSymbol.Generic 4])) . Cost.Type.mana . ActivatedAbility.cost) (Projection.abilitiesOf engineId ready)
-        let activated = S.runPure (pinTarget (Recipient.ToObject spell)) ready (Activate.activateAbility S.alice engineId ability)
-        pure (resolveOne S.identityAnswer activated)
-
-permanentCopySpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-permanentCopySpec s registry =
-  let boardOf = do
-        mountain <- S.printingOf s registry "Mountain"
-        engine <- S.printingOf s registry "Lithoform Engine"
-        piker <- S.printingOf s registry "Goblin Piker"
-        mammoth <- S.printingOf s registry "War Mammoth"
-        rollicker <- S.printingOf s registry "Nyxborn Rollicker"
-        bolt <- S.printingOf s registry "Lightning Bolt"
-        pure (rollicker, lithoformBoard mountain engine piker mammoth rollicker bolt)
-   in Spec.describe s "Parun.Engine.Copy" $ do
-        -- CR 702.103e on the COPY: its host is killed in response, so as the copy
-        -- begins resolving it ceases to be bestowed and resolves as a creature
-        -- spell -- a token creature, attached to nothing. The board is the case
-        -- above's plus one Bolt at the host after the ability has resolved.
-        Spec.it s "CR 702.103e a bestowed copy whose host died resolves as a token creature" $ do
-          (rollicker, (engineId, bystander, host, spellId, boltId, board)) <- boardOf
-          case copyPermanentSpell (bestowingRollicker host) engineId spellId board of
-            Nothing -> Spec.assertFailure s "the Rollicker never reached the stack, or the Engine offered no {4} ability"
-            Just copied -> do
-              let bolted =
-                    S.runPure
-                      (pinTarget (Recipient.ToCreature host))
-                      copied
-                        { GameState.turn =
-                            (GameState.turn copied)
-                              { TurnRegisters.priority = Just S.alice
-                              }
-                        }
-                      (S.cast S.alice boltId)
-                  -- The Bolt, then the copy, then the Rollicker itself.
-                  hostDead = resolveOne S.identityAnswer bolted
-                  afterCopy = resolveOne S.identityAnswer hostDead
-                  afterBoth = resolveOne S.identityAnswer afterCopy
-              Spec.assertEqWith s "the Bolt killed the host" (Game.lookupObject host hostDead) Nothing
-              Spec.assertEqWith
-                s
-                "CR 702.103e: the copy resolved as a creature token, attached to nothing"
-                (fmap (\oid -> (Game.isToken oid afterCopy, Projection.cardTypesOf oid afterCopy, Object.attachedTo =<< Game.lookupObject oid afterCopy)) (rollickersOn rollicker afterCopy))
-                [(True, Set.fromList [CardType.Creature, CardType.Enchantment], Nothing)]
-              Spec.assertEqWith
-                s
-                "keeping Satyr, since it is a creature again"
-                (fmap (\oid -> Projection.subtypesOf oid afterCopy) (rollickersOn rollicker afterCopy))
-                [Set.singleton Subtype.Satyr]
-              Spec.assertEqWith s "and the bystander was never enchanted" (S.powerToughnessOf bystander afterBoth) (Just (2, 1))
-              Spec.assertEqWith
-                s
-                "CR 608.3b: the card resolved as a creature beside it"
-                (List.sort (fmap (\oid -> Game.isToken oid afterBoth) (rollickersOn rollicker afterBoth)))
-                [False, True]
 
 -- Lithoform Engine's {2} ability, picked by its COST rather than by index, so a
 -- reordering of the card file cannot silently aim these cases at the
@@ -2290,75 +1898,6 @@ leylineOfResonanceSpec s registry =
         Spec.assertEqWith s "CR 115.1 bob's Piker is not, so no copy was made and both of alice's creatures stand" (standing othersRun) (True, True, False)
         Spec.assertBool s (spiderId /= berserkersId && berserkersId /= pikerId) "the three creatures are distinct objects"
 
--- CR 613.2b: layer 1b (face-down) applies after layer 1a (copy effects), so CR
--- 708.2's listed characteristics replace what a copy effect stamped rather than
--- being replaced by it. A permanent that is both a copy and face down therefore
--- has no name and no abilities, and its copy stamp rides underneath for CR 708.8
--- to revert to.
---
--- Silent Arbiter ({4} Artifact Creature -- Construct 1/5, "No more than one
--- creature can attack each combat. No more than one creature can block each
--- combat") is the card, and its attack bound is what makes the rule readable off
--- a DECLARATION: that bound is one of CR 613.11's fifteen rule-affecting families,
--- which Projection.ruleAbilitiesOf gathers off the copiable snapshot and no other
--- read reaches. Cyber Conversion ({U}{U} Instant, "Turn target creature face
--- down. It's a 2/2 Cyberman artifact creature") is the turner, chosen over
--- Ixidron because it names ONE creature: the two Goblin Pikers that carry the
--- declaration must stay face up, or their own facing would be a second thing the
--- pair of boards differs in.
---
--- THE PRINTED ARBITER IS DESTROYED before either leg runs. The bound is global
--- (Parun.CombatEffectSpec's BoundedDeclaration group proves that), so an Arbiter
--- left standing would hold alice to one attacker whatever the Clone answered.
-faceDownCopyBoard ::
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Printing.Printing ->
-  Maybe (GameState.GameState, ObjectId, ObjectId, ObjectId, ObjectId)
-faceDownCopyBoard island arbiter clone piker cyber =
-  let gs0 = S.landsFor island S.bob 2 (Setup.emptyGame S.bothPlayers)
-      (arbiterId, gs1) = S.addPermanent arbiter S.alice gs0
-      (one, gs2) = S.addPermanent piker S.alice gs1
-      (two, gs3) = S.addPermanent piker S.alice gs2
-      (_, staged) = S.spellOnStack clone S.alice gs3
-      resolved = resolveAndSettle (copyNamed arbiterId) staged
-      killed = S.runPure S.identityAnswer resolved (Event.destroy (pure ()) Regenerability.Regenerable [arbiterId])
-      -- CR 304.1: bob casts it, so it is in bob's hand.
-      (spell, withSpell) = S.addHandCard cyber S.bob killed
-   in fmap (\cloneId -> (withSpell, spell, cloneId, one, two)) (cloneOnBattlefield killed)
-
-faceDownCopySpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
-faceDownCopySpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
-  -- THE PROVING TEST for the fifteen rule-affecting families, read through
-  -- Parun.Engine.CombatRestriction off Projection.ruleAbilitiesOf.
-  --
-  -- THE PAIR: one board, one spell, and the only difference is whether bob's
-  -- Conversion resolved. The single-Piker declaration is asserted legal on BOTH
-  -- legs, so the refusal on the face-up leg is the bound talking rather than
-  -- summoning sickness, a tap or a missing defender.
-  Spec.it s "CR 708.2 a face-down copy of Silent Arbiter no longer bounds the attack" $ do
-    island <- S.printingOf s registry "Island"
-    arbiter <- S.printingOf s registry "Silent Arbiter"
-    clone <- S.printingOf s registry "Clone"
-    piker <- S.printingOf s registry "Goblin Piker"
-    cyber <- S.printingOf s registry "Cyber Conversion"
-    case faceDownCopyBoard island arbiter clone piker cyber of
-      Nothing -> Spec.assertFailure s "the Clone should be on the battlefield as a copy of the Arbiter"
-      Just (board, spell, cloneId, one, two) -> do
-        let down = intoCombat (S.runPure (aimByFiltering cloneId) board (S.cast S.bob spell >> Stack.resolveTop))
-            up = intoCombat board
-        Spec.assertBool s (Combat.legalAttackDeclaration S.alice [one, two] down) "CR 708.2 the face-down copy has no abilities, so both Pikers attack"
-        Spec.assertBool s (not (Combat.legalAttackDeclaration S.alice [one, two] up)) "CR 707.2a face up, the same copy holds alice to one attacker"
-        Spec.assertBool s (Combat.legalAttackDeclaration S.alice [one] down) "CR 508.1a one Piker attacks on the face-down board"
-        Spec.assertBool s (Combat.legalAttackDeclaration S.alice [one] up) "and on the face-up board too, so the refusal above is the bound"
-        -- The proxies, after the behaviours.
-        Spec.assertBool s (maybe False (Facing.isFaceDown . Object.facing) (Game.lookupObject cloneId down)) "setup: the Conversion turned the copy face down"
-        Spec.assertEqWith s "setup: and it is still face up on the other leg" (fmap Object.facing (Game.lookupObject cloneId up)) (Just Facing.FaceUp)
-        Spec.assertEqWith s "setup: the printed Arbiter is gone, so the bound on the face-up board is the copy's" (S.countOnBattlefieldByName (CardName.MkCardName (Text.pack "Silent Arbiter")) S.alice up) 0
-        Spec.assertBool s (Maybe.isJust (Binding.copyOf . Object.bindings =<< Game.lookupObject cloneId down)) "CR 708.8 the copy stamp rides through underneath the listing, ready to be reverted to"
-
 -- alice with one copy of `card` in her graveyard and `lands` untapped, holding
 -- priority in her main phase with an empty stack, so CR 602.5d's sorcery timing
 -- is met. `twins` more copies of `card` sit on her battlefield.
@@ -2379,23 +1918,13 @@ graveyardCopyBoard card land lands twins =
           }
       )
 
--- Activate the one ability the graveyard card offers and resolve it. The roster
--- is matched on exactly one ability, so a board that offered none or two comes
--- back unchanged and fails the token match rather than passing elsewhere.
-activateFromGraveyard :: ObjectId -> GameState.GameState -> GameState.GameState
-activateFromGraveyard = activateFromGraveyardWith S.identityAnswer
-
--- activateFromGraveyard under a given answerer, for a token whose own entry
--- asks something (Vizier of Many Faces' copy choice).
+-- Activate the one ability the graveyard card offers and resolve it, under a
+-- given answerer, for a token whose own entry asks something (Vizier of Many
+-- Faces' copy choice).
 activateFromGraveyardWith :: (forall r. Prompt.Prompt r -> r) -> ObjectId -> GameState.GameState -> GameState.GameState
 activateFromGraveyardWith answer gyId gs = case Activatable.abilitiesFor gyId gs of
   [ability] -> S.runPure answer gs (Activate.activateAbility S.alice gyId ability >> Stack.resolveTop)
   _ -> gs
-
-isActivationOf :: ObjectId -> A.Action -> Bool
-isActivationOf oid a = case a of
-  A.Activate o _ -> o == oid
-  _ -> False
 
 -- Is Doom Blade, sitting in alice's hand, castable? CR 601.2c: only with a legal
 -- target, and its one slot is "target nonblack creature".
@@ -2410,70 +1939,10 @@ doomBladeOffered bladeId gs =
 
 -- CR 702.128a and CR 702.129a, Parun.Engine.Keyword.graveyardTokenCopy: the card
 -- is exiled as a cost and a token copy of it is created with CR 707.9b's
--- exceptions -- colour, no mana cost, Zombie, and eternalize's 4/4.
---
--- Tah-Crop Skirmisher {1}{U} Creature -- Snake Warrior 2/1, "Embalm {3}{U}", and
--- Proven Combatant {U} Creature -- Human Warrior 1/1, "Eternalize {4}{U}{U}"
--- (Oracle text checked against Scryfall): blue cards with a mana cost, so the
--- white or black token with none differs on every excepted characteristic.
---
--- A Clone of each token is the copiable-values tripwire (CR 707.2 / 707.9b): it
--- takes the exceptions with it, where a Clone of the printed card beside it on
--- the same board is the control.
+-- exceptions. Embalm's and eternalize's own cases are
+-- data/scenarios/copy/cr-702-128a-* and cr-702-129a-*.
 graveyardTokenCopySpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
 graveyardTokenCopySpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
-  Spec.it s "CR 702.128a embalm exiles the card for a white Zombie token copy with no mana cost, and a Clone of it keeps all three" $ do
-    island <- S.printingOf s registry "Island"
-    skirmisher <- S.printingOf s registry "Tah-Crop Skirmisher"
-    clone <- S.printingOf s registry "Clone"
-    let (gyId, twinIds, board) = graveyardCopyBoard skirmisher island 8 1
-        embalmed = activateFromGraveyard gyId board
-        zombieSnakeWarrior = Set.fromList [Subtype.Snake, Subtype.Warrior, Subtype.Zombie]
-    Spec.assertBool s (any (isActivationOf gyId) (Action.legalActions S.alice board)) "embalm is offered from the graveyard"
-    -- CR 113.6m: the Skirmisher on the battlefield HAS the ability too, and the
-    -- same Islands would pay its mana, but its cost exiles a graveyard card.
-    Spec.assertBool s (not (any (\a -> any (`isActivationOf` a) twinIds) (Action.legalActions S.alice board))) "CR 113.6m but not from the battlefield"
-    -- CR 602.5d: the same board a step later, so only the timing differs.
-    Spec.assertBool
-      s
-      ( not
-          ( any
-              (isActivationOf gyId)
-              ( Action.legalActions
-                  S.alice
-                  ( board
-                      { GameState.turn =
-                          (GameState.turn board)
-                            { TurnRegisters.phase = Phase.Ending EndingStep.EndStep
-                            }
-                      }
-                  )
-              )
-          )
-      )
-      "CR 602.5d but not in the end step"
-    case (tokensOnBattlefield embalmed, twinIds) of
-      ([tokenId], [twinId]) -> do
-        Spec.assertEqWith s "CR 707.9b the token is white, not the card's blue" (Projection.colorsOf tokenId embalmed) (Set.singleton Color.White)
-        Spec.assertEqWith s "CR 202.3a with no mana cost its mana value is 0" (PC.manaValue (Projection.project tokenId embalmed)) (Just 0)
-        Spec.assertEqWith s "and it has no mana cost" (PC.manaCost (Projection.project tokenId embalmed)) Nothing
-        Spec.assertEqWith s "CR 205.1b a Zombie in addition to its other types" (Projection.subtypesOf tokenId embalmed) zombieSnakeWarrior
-        Spec.assertEqWith s "CR 707.2 otherwise the card: its 2/1" (S.powerToughnessOf tokenId embalmed) (Just (2, 1))
-        Spec.assertEqWith s "the card was exiled to pay the cost" (length (Game.zoneMembers Zone.Exile S.alice embalmed)) 1
-        Spec.assertEqWith s "and left the graveyard" (Game.zoneMembers Zone.Graveyard S.alice embalmed) []
-        let cloned = castAndResolve (copyNamed tokenId) clone embalmed
-            control = castAndResolve (copyNamed twinId) clone embalmed
-        case (cloneOnBattlefield cloned, cloneOnBattlefield control) of
-          (Just cloneId, Just controlId) -> do
-            Spec.assertEqWith s "CR 707.9b a Clone of the token is white" (Projection.colorsOf cloneId cloned) (Set.singleton Color.White)
-            Spec.assertEqWith s "CR 707.9b with mana value 0" (PC.manaValue (Projection.project cloneId cloned)) (Just 0)
-            Spec.assertEqWith s "CR 707.9b and a Zombie" (Projection.subtypesOf cloneId cloned) zombieSnakeWarrior
-            Spec.assertEqWith s "where a Clone of the card is blue" (Projection.colorsOf controlId control) (Set.singleton Color.Blue)
-            Spec.assertEqWith s "with mana value 2" (PC.manaValue (Projection.project controlId control)) (Just 2)
-            Spec.assertEqWith s "and no Zombie" (Projection.subtypesOf controlId control) (Set.fromList [Subtype.Snake, Subtype.Warrior])
-          _ -> Spec.assertFailure s "both Clones should be on the battlefield"
-      (tokens, _) -> Spec.assertFailure s ("expected exactly one token, got " <> show (length tokens))
-
   -- CR 202.3b asks whether a copy copies a BACK FACE, which is the copiable
   -- values' question and not the printed card's: a transformed Blightreaper
   -- Thallid that Mirrorweave then makes a Hill Giant has the Hill Giant's
@@ -2498,37 +1967,6 @@ graveyardTokenCopySpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
     Spec.assertEqWith s "CR 707.2 the Clone is a Hill Giant, mana value 4" (cloneOf woven) (Just (Set.singleton (CardName.MkCardName (Text.pack "Hill Giant")), Just 4))
     Spec.assertEqWith s "CR 202.3b without Mirrorweave it copies the back face, mana value 0" (cloneOf transformed) (Just (Set.singleton (CardName.MkCardName (Text.pack "Blightsower Thallid")), Just 0))
     Spec.assertEqWith s "setup: Mirrorweave made the transformed Thallid a Hill Giant" (Projection.namesOf thallidId woven) (Set.singleton (CardName.MkCardName (Text.pack "Hill Giant")))
-  -- Doom Blade is the gameplay reader for colour: "Destroy target nonblack
-  -- creature" has a target only while something on the board is not black. The
-  -- two boards differ in one Proven Combatant on the battlefield, which is what
-  -- makes the negative mean the tokens are black rather than that the Blade is
-  -- uncastable.
-  Spec.it s "CR 702.129a eternalize makes a black 4/4 Zombie token copy, and neither it nor a Clone of it is a Doom Blade target" $ do
-    island <- S.printingOf s registry "Island"
-    swamp <- S.printingOf s registry "Swamp"
-    combatant <- S.printingOf s registry "Proven Combatant"
-    clone <- S.printingOf s registry "Clone"
-    doomBlade <- S.printingOf s registry "Doom Blade"
-    let (gyId, _, board) = graveyardCopyBoard combatant island 10 0
-        eternalized = activateFromGraveyard gyId board
-    case tokensOnBattlefield eternalized of
-      [tokenId] -> do
-        let cloned = castAndResolve (copyNamed tokenId) clone eternalized
-            (withBlade, bladeId) = S.handOne doomBlade (S.landsFor swamp S.alice 2 cloned)
-            (_, withTwin) = S.addPermanent combatant S.alice withBlade
-        -- THE GAMEPLAY ASSERTIONS, ahead of every characteristic read.
-        Spec.assertBool s (not (doomBladeOffered bladeId withBlade)) "CR 707.9b the token and its Clone are black, so Doom Blade has no target"
-        Spec.assertBool s (doomBladeOffered bladeId withTwin) "where a Proven Combatant beside them is a target"
-        Spec.assertEqWith s "CR 707.9b the token is 4/4, not 1/1" (S.powerToughnessOf tokenId eternalized) (Just (4, 4))
-        Spec.assertEqWith s "CR 202.3a with mana value 0" (PC.manaValue (Projection.project tokenId eternalized)) (Just 0)
-        Spec.assertEqWith s "CR 205.1b and a Zombie Human Warrior" (Projection.subtypesOf tokenId eternalized) (Set.fromList [Subtype.Human, Subtype.Warrior, Subtype.Zombie])
-        case cloneOnBattlefield cloned of
-          Just cloneId -> do
-            Spec.assertEqWith s "CR 707.9b a Clone of the token is 4/4 too" (S.powerToughnessOf cloneId cloned) (Just (4, 4))
-            Spec.assertEqWith s "and has mana value 0" (PC.manaValue (Projection.project cloneId cloned)) (Just 0)
-          Nothing -> Spec.assertFailure s "the Clone should be on the battlefield"
-      tokens -> Spec.assertFailure s ("expected exactly one token, got " <> show (length tokens))
-
   -- CR 702.128b / 707.9f on Vizier of Many Faces {2}{U}{U}, "You may have this
   -- creature enter as a copy of any creature on the battlefield, except if this
   -- creature was embalmed, the token has no mana cost, it's white, and it's a
@@ -2603,54 +2041,16 @@ flamerushRiderSpec s registry = Spec.describe s "Parun.Engine.Copy" $ do
 -- hasn't been chosen from among Disenchant, Braingeyser, Terror, Shivan Dragon,
 -- Regrowth, and Black Lotus. Create a copy of the card with the chosen name. You
 -- may cast the copy. (You still pay its costs.)" (Oracle text and rulings checked
--- on Scryfall, 2026-09-23).
---
--- Black Lotus costs {0}, so every board has NO MANA: a copy the engine mistook
--- for a graveyard card would be taxed {2} by bob's Aven Interrupter and not be
--- castable at all, and Grafdigger's Cage would forbid it outright.
-garthSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+-- on Scryfall, 2026-09-23). The cast, declined and spent-name cases are
+-- data/scenarios/copy/cr-707-13-*; this one answers CR 108.1's lookup from a
+-- reference lacking the name, which no scenario's card data does.
+garthSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 garthSpec s registry = Spec.describe s "GarthOneEye" $ do
-  Spec.it s "CR 707.13 Garth One-Eye's cast copy of Black Lotus has Black Lotus's characteristics and resolves as a token" $ do
+  Spec.it s "CR 707.13 a name the reference does not know makes no copy" $ do
     garth <- S.printingOf s registry "Garth One-Eye"
-    lotus <- S.printingOf s registry "Black Lotus"
-    let reference = [lotus]
-        (garthId, board) = garthBoard garth (Setup.emptyGame S.bothPlayers)
-        cast = activateGarth (naming reference lotusName OptionalDecision.Exercises) garthId board
-        spell = List.find (\oid -> Maybe.isJust (Game.lookupObject oid cast)) (TurnRegisters.stack (GameState.turn cast))
-        resolved = S.settleSba (S.runPure (naming reference lotusName OptionalDecision.Exercises) cast Stack.resolveTop)
-        lotuses = filter (\oid -> PC.names (Projection.project oid resolved) == Set.singleton lotusName) (Set.toList (GameState.battlefield resolved))
-    Spec.assertEqWith
-      s
-      "the spell on the stack is Black Lotus: its name, its types and its {0}"
-      (fmap (\sid -> let pc = Projection.project sid cast in (PC.names pc, PC.cardTypes pc, PC.manaCost pc)) spell)
-      (Just (Set.singleton lotusName, Set.singleton CardType.Artifact, Just (ManaCost.MkManaCost [])))
-    Spec.assertEqWith s "CR 601.2a it was cast from no zone" (fmap (\sid -> Game.lookupObject sid cast >>= Object.castFrom) spell) (Just Nothing)
-    Spec.assertEqWith s "CR 608.3f the resolved Lotus is a token" (fmap (`Game.isToken` resolved) lotuses) [True]
-    Spec.assertEqWith s "and nothing is left outside the game" (GameState.outsideCopies resolved) Set.empty
-
-  Spec.it s "CR 707.13 a second activation of the same Garth does not offer Black Lotus again" $ do
-    garth <- S.printingOf s registry "Garth One-Eye"
-    lotus <- S.printingOf s registry "Black Lotus"
-    let reference = [lotus]
-        answer :: Prompt.Prompt r -> r
-        answer = naming reference lotusName OptionalDecision.Exercises
-        (garthId, board) = garthBoard garth (Setup.emptyGame S.bothPlayers)
-        first = S.runPure answer (activateGarth answer garthId board) Stack.resolveTop
-        untapped = first {GameState.objects = Map.adjust (\o -> o {Object.tapped = TapState.Untapped}) garthId (GameState.objects first)}
-        second = activateGarth answer garthId untapped
-    Spec.assertEqWith s "the first activation cast the Lotus copy" (lotusesOnStack first + length (lotusesOnBattlefield first)) 1
-    Spec.assertEqWith s "the second, named Black Lotus again, cast nothing" (lotusesOnStack second) 0
-    Spec.assertEqWith s "Black Lotus is remembered for this Garth" (Map.lookup garthId (GameState.namedCopyChoices second)) (Just (Set.singleton lotusName))
-
-  Spec.it s "CR 707.13 a declined copy leaves nothing behind, and a name the reference does not know makes no copy" $ do
-    garth <- S.printingOf s registry "Garth One-Eye"
-    lotus <- S.printingOf s registry "Black Lotus"
     let (garthId, board) = garthBoard garth (Setup.emptyGame S.bothPlayers)
-        declined = activateGarth (naming [lotus] lotusName OptionalDecision.Declines) garthId board
         unknown = activateGarth (naming [] lotusName OptionalDecision.Exercises) garthId board
         copies gs = filter (\o -> case Object.source o of Source.OfCardCopy _ -> True; _ -> False) (Map.elems (GameState.objects gs))
-    Spec.assertEqWith s "declined: no copy of a card exists anywhere" (length (copies declined), GameState.outsideCopies declined) (0, Set.empty)
-    Spec.assertEqWith s "declined: the name is still spent" (Map.lookup garthId (GameState.namedCopyChoices declined)) (Just (Set.singleton lotusName))
     Spec.assertEqWith s "unknown: nothing was cast" (length (TurnRegisters.stack (GameState.turn unknown)), length (copies unknown)) (0, 0)
 
 lotusName :: CardName.CardName
@@ -2686,96 +2086,6 @@ naming reference name decision p = case p of
   Prompt.OfferedCast {} -> decision
   _ -> S.identityAnswer p
 
-lotusesOnStack :: GameState.GameState -> Int
-lotusesOnStack gs = length (filter (\oid -> PC.names (Projection.project oid gs) == Set.singleton lotusName) (TurnRegisters.stack (GameState.turn gs)))
-
-lotusesOnBattlefield :: GameState.GameState -> [ObjectId.ObjectId]
-lotusesOnBattlefield gs = filter (\oid -> PC.names (Projection.project oid gs) == Set.singleton lotusName) (Set.toList (GameState.battlefield gs))
-
--- CR 707.14 on Magar of the Magic Strings {1}{B}{R}, "{1}{B}{R}: Note the name
--- of target instant or sorcery card in your graveyard and put it onto the
--- battlefield face down. It's a 3/3 creature with 'Whenever this creature deals
--- combat damage to a player, you may create a copy of the card with the noted
--- name. You may cast the copy without paying its mana cost' and 'If this
--- creature would leave the battlefield, exile it instead of putting it anywhere
--- else.'" (Oracle text and rulings checked on Scryfall, 2026-09-24).
---
--- alice's graveyard holds Divination and a Lightning Bolt, so the target is a
--- real choice; her library holds three Islands, so Divination's two draws are
--- what the hand counts.
-magarSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
-magarSpec s registry = Spec.describe s "MagarOfTheMagicStrings" $ do
-  Spec.it s "CR 707.14 the face-down Divination connects and alice casts a copy of Divination for free" $ do
-    (downId, board) <- magarBoard s registry
-    let after = S.runCombat (magarAnswer Nothing) board
-    Spec.assertEqWith s "CR 707.14 the copy resolved: alice drew two" (length (Game.zoneMembers Zone.Hand S.alice after)) 2
-    Spec.assertEqWith s "CR 601.2i alice cast one spell, the copy" (PlayerEffect.castsThisTurn S.alice after) (PlayerEffect.castsThisTurn S.alice board + 1)
-    Spec.assertEqWith s "CR 510.1b the 3/3 and Magar dealt 6 to bob" (S.lifeOf S.bob after) (Just 14)
-    Spec.assertEqWith s "the card itself stayed face down on the battlefield" (fmap Object.facing (Game.lookupObject downId after)) (fmap Object.facing (Game.lookupObject downId board))
-    Spec.assertEqWith s "and nothing is left outside the game" (GameState.outsideCopies after) Set.empty
-
-  Spec.it s "CR 708.2 the face-down permanent is a nameless 3/3 creature with the two listed abilities" $ do
-    (downId, board) <- magarBoard s registry
-    let pc = Projection.project downId board
-    Spec.assertEqWith s "no name, a creature" (PC.names pc, PC.cardTypes pc) (Set.empty, Set.singleton CardType.Creature)
-    Spec.assertEqWith s "3/3" (Projection.powerOf downId board, Projection.toughnessOf downId board) (Just 3, Just 3)
-    Spec.assertEqWith s "one triggered and one replacement ability" (length (PC.triggeredAbilities pc), length (PC.replacementEffects pc)) (1, 1)
-
-  -- The rulings' Clone case: the copy has both abilities (CR 708.2 makes them
-  -- copiable values) and no noted name. Only the Clone attacks, so a trigger
-  -- that copied the card under its source would cast a Clone.
-  Spec.it s "CR 707.14 a Clone of the face-down 3/3 connects and creates no copy" $ do
-    (downId, board) <- magarBoard s registry
-    clone <- S.printingOf s registry "Clone"
-    let resolved = cloneOnto clone downId board
-        entered = Set.toList (Set.difference (GameState.battlefield resolved) (GameState.battlefield board))
-    case entered of
-      [cloneId] -> do
-        let ready = settleObject cloneId resolved
-            pc = Projection.project cloneId ready
-            after = S.runCombat (magarAnswer (Just [cloneId])) ready
-        Spec.assertEqWith s "CR 708.2 the Clone is a nameless 3/3 with the trigger and the replacement" (PC.names pc, Projection.powerOf cloneId ready, length (PC.triggeredAbilities pc), length (PC.replacementEffects pc)) (Set.empty, Just 3, 1, 1)
-        Spec.assertEqWith s "CR 707.14 the Clone's trigger created nothing: alice cast no spell in combat" (PlayerEffect.castsThisTurn S.alice after) (PlayerEffect.castsThisTurn S.alice ready)
-        Spec.assertEqWith s "and her hand is empty" (length (Game.zoneMembers Zone.Hand S.alice after)) 0
-        Spec.assertEqWith s "CR 510.1b the Clone alone dealt bob 3" (S.lifeOf S.bob after) (Just 17)
-      other -> Spec.assertFailure s ("expected one Clone to enter, got " <> show (length other))
-
--- alice's settled Magar in combat's declare attackers step, bob defending, and
--- Magar's ability activated at Divination and resolved. Answers the face-down
--- permanent's id, settled -- CR 302.6 would otherwise keep it home, and settling
--- it is the one fixture step that is not the cards' own doing.
-magarBoard :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> m (ObjectId, GameState.GameState)
-magarBoard s registry = magarBoardAt s registry "Divination"
-
--- magarBoard with this card in Divination's place.
-magarBoardAt :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> String -> m (ObjectId, GameState.GameState)
-magarBoardAt s registry targetName = do
-  magar <- S.printingOf s registry "Magar of the Magic Strings"
-  divination <- S.printingOf s registry targetName
-  bolt <- S.printingOf s registry "Lightning Bolt"
-  island <- S.printingOf s registry "Island"
-  let (gs0, mine, _) = S.combatBoardOf [magar] []
-      (divinationId, gs1) = S.addGraveyardCard divination S.alice gs0
-      (_, gs2) = S.addGraveyardCard bolt S.alice gs1
-      stocked = List.foldl' (\g _ -> snd (S.addLibraryCard island S.alice g)) gs2 [1 :: Int .. 3]
-      funded =
-        stocked
-          { GameState.manaPool = Map.singleton S.alice (Mana.Type.MkMana [floating Color.Black, floating Color.Red, floating Color.Red]),
-            GameState.turn =
-              (GameState.turn stocked)
-                { TurnRegisters.priority = Just S.alice
-                }
-          }
-  case mine of
-    [magarId] -> case Activatable.abilitiesFor magarId funded of
-      [ability] -> do
-        let resolved = S.runPure (targetingCard divinationId) funded (Activate.activateAbility S.alice magarId ability >> Stack.resolveTop)
-        case Set.toList (Set.difference (GameState.battlefield resolved) (GameState.battlefield funded)) of
-          [downId] -> pure (downId, settleObject downId resolved)
-          _ -> pure (magarId, resolved)
-      _ -> pure (magarId, funded)
-    _ -> pure (ObjectId.MkObjectId 0, funded)
-
 -- alice casts Clone and copies `original` as it enters (CR 707.5).
 cloneOnto :: Printing.Printing -> ObjectId -> GameState.GameState -> GameState.GameState
 cloneOnto clone original board =
@@ -2792,34 +2102,6 @@ targetingCard :: ObjectId -> Prompt.Prompt r -> r
 targetingCard card p = case p of
   Prompt.ChooseTargets _ _ _ sets -> S.preferring ((== Just card) . Recipient.objectOf) sets
   _ -> S.identityAnswer p
-
--- One ordinary unit of floating mana of this colour.
-floating :: Color.Color -> ManaUnit.ManaUnit
-floating color =
-  ManaUnit.MkManaUnit
-    { ManaUnit.manaType = ManaType.Colored color,
-      ManaUnit.tags = Set.empty,
-      ManaUnit.retention = ManaRetention.Ordinary,
-      ManaUnit.restriction = Nothing,
-      ManaUnit.rider = Nothing,
-      ManaUnit.spendTrigger = Nothing,
-      ManaUnit.sourceChoices = Nothing,
-      ManaUnit.sourceLastExiled = Nothing,
-      ManaUnit.producer = Nothing
-    }
-
--- CR 302.6: as if the object had been under alice's control since her turn began.
-settleObject :: ObjectId -> GameState.GameState -> GameState.GameState
-settleObject oid gs = gs {GameState.objects = Map.adjust (\o -> o {Object.sickness = Sickness.Settled S.alice}) oid (GameState.objects gs)}
-
--- Attacks bob -- with everything, or with only the listed attackers -- and takes
--- every "may" and every offered cast.
-magarAnswer :: Maybe [ObjectId] -> Prompt.Prompt r -> r
-magarAnswer only p = case p of
-  Prompt.DeclareAttackers _ _ ids -> maybe ids (filter (`elem` ids)) only
-  Prompt.ChooseOptional {} -> OptionalDecision.Exercises
-  Prompt.OfferedCast {} -> OptionalDecision.Exercises
-  _ -> S.attackTo S.bob p
 
 -- CR 707.2c / 611.3a: Metamorphic Alteration's "Enchanted creature is a copy
 -- of the chosen creature", a static ability's copy effect. Its copiable values

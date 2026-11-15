@@ -333,39 +333,39 @@ out: grep for them.
 
 - CR 400.7j Calim's Breath cannot exile the discarded Calim as one of the two others | `move:ReferenceCards`
 - CR 400.7j Calim's Breath returns the Calim its cost discarded, tapped | `move:ReferenceCards`
-- CR 603.4 conjure behind an intervening if: 4 life gained puts a castable Mox Pearl in hand | `board:stage-no-card-named-mox-pearl`
-- CR 702.140e a duplicate of a mutated Headless Skaab owes the Skaab's additional cost | `board:source-ofmerge`
-- CR 702.178a at max speed the Smasher returns the duplicate with haste, and the end step sacrifices it | `board:exile-linked` `board:player-speed`
-- CR 702.178a one short of max speed, the duplicate stays in exile | `board:exile-linked` `board:player-speed`
-- CR 707.2/702.37e a duplicate of a Clone of Ainok Tracker is cast face down and turned up for its morph cost | `check:tapped-count`
-- CR 707.2/709.5b a duplicate of a copied Room is cast as a door
-- CR 707.2/716.2b a duplicate of a Clone of Flaxen Intruder is cast as Welcome Home | `check:tapped-count`
-- CR 716.3a a duplicate of Flaxen Intruder cast as Welcome Home costs Welcome Home's cost
-- CR 731.2/731.3 a duplicate of a Clone that merged as the spell is the Cubwarden again | `board:source-ofmerge`
-- CR 731.3/707.2 a duplicate of a Clone split out of a merge is the Piker again | `board:source-ofmerge`
-- Gate to Seatower's seek puts the nonland card randomness named into the hand, leaving the library's order | `board:stage-no-card-named-gate-to-seatower`
-- Kari Zev's Ragavan attacks without being declared and goes home at the next end step | `board:stage-no-card-named-ragavan-nimble-pilferer`
+- ~~CR 603.4 conjure behind an intervening if: 4 life gained puts a castable Mox Pearl in hand | `board:stage-no-card-named-mox-pearl`~~
+- ~~CR 702.140e a duplicate of a mutated Headless Skaab owes the Skaab's additional cost | `board:source-ofmerge`~~
+- ~~CR 702.178a at max speed the Smasher returns the duplicate with haste, and the end step sacrifices it | `board:exile-linked` `board:player-speed`~~
+- ~~CR 702.178a one short of max speed, the duplicate stays in exile | `board:exile-linked` `board:player-speed`~~
+- ~~CR 707.2/702.37e a duplicate of a Clone of Ainok Tracker is cast face down and turned up for its morph cost | `check:tapped-count`~~
+- ~~CR 707.2/709.5b a duplicate of a copied Room is cast as a door~~
+- ~~CR 707.2/716.2b a duplicate of a Clone of Flaxen Intruder is cast as Welcome Home | `check:tapped-count`~~
+- ~~CR 716.3a a duplicate of Flaxen Intruder cast as Welcome Home costs Welcome Home's cost~~
+- ~~CR 731.2/731.3 a duplicate of a Clone that merged as the spell is the Cubwarden again | `board:source-ofmerge`~~
+- ~~CR 731.3/707.2 a duplicate of a Clone split out of a merge is the Piker again | `board:source-ofmerge`~~
+- ~~Gate to Seatower's seek puts the nonland card randomness named into the hand, leaving the library's order | `board:stage-no-card-named-gate-to-seatower`~~
+- ~~Kari Zev's Ragavan attacks without being declared and goes home at the next end step | `board:stage-no-card-named-ragavan-nimble-pilferer`~~
 - a conjure from the file registry's reference never conjures a synthetic card | `move:ReferenceCards`
-- conjure into exile puts the duplicate in the conjurer's exile, exiled with the conjuring creature | `check:exile-linked`
+- ~~conjure into exile puts the duplicate in the conjurer's exile, exiled with the conjuring creature | `check:exile-linked`~~
 
 ### `CopySpec`
 
-- CR 702.103e a bestowed copy whose host died resolves as a token creature | `check:helper-rollickersOn` `check:other-Game.isToken`
-- CR 702.128a embalm exiles the card for a white Zombie token copy with no mana cost, and a Clone of it keeps all three | `check:mana-value`
-- CR 702.129a eternalize makes a black 4/4 Zombie token copy, and neither it nor a Clone of it is a Doom Blade target | `check:mana-value`
+- ~~CR 702.103e a bestowed copy whose host died resolves as a token creature | `check:helper-rollickersOn` `check:other-Game.isToken`~~
+- ~~CR 702.128a embalm exiles the card for a white Zombie token copy with no mana cost, and a Clone of it keeps all three | `check:mana-value`~~
+- ~~CR 702.129a eternalize makes a black 4/4 Zombie token copy, and neither it nor a Clone of it is a Doom Blade target | `check:mana-value`~~
 - CR 707.10b a copy of a triggered ability still counts once the original has been countered | `ref:stack-ability-occurrence`
 - CR 707.10b a copy of an activated ability still counts once the original has been countered | `ref:stack-ability-occurrence`
-- CR 707.10c a card the copied X does not reach is not offered | `check:legal-targets` `move:out-of-range-answer`
-- CR 707.13 Garth One-Eye's cast copy of Black Lotus has Black Lotus's characteristics and resolves as a token | `check:other-Object.castFrom` `check:other-GameState.outsideCopies`
-- CR 707.13 a declined copy leaves nothing behind, and a name the reference does not know makes no copy | `check:other-GameState.outsideCopies` `check:other-GameState.namedCopyChoices` `board:card-reference`
-- CR 707.13 a second activation of the same Garth does not offer Black Lotus again | `check:named-copy-choices`
-- CR 707.14 a Clone of the face-down 3/3 connects and creates no copy | `check:abilities`
-- CR 707.14 the face-down Divination connects and alice casts a copy of Divination for free | `check:outside-the-game`
-- CR 707.2 an Adventure that becomes a copy of a Bolt goes to the graveyard
-- CR 707.2a a copy of Blood Moon goes on setting land subtypes once the original is exiled | `check:mana-types` `check:abilities`
-- CR 708.2 a face-down copy of Silent Arbiter no longer bounds the attack | `check:face-down` `check:bindings`
-- CR 708.2 the face-down permanent is a nameless 3/3 creature with the two listed abilities | `check:abilities`
-- Omni-Changeling's copy is every creature type, and so is a token copy of it (CR 604.3a)
+- ~~CR 707.10c a card the copied X does not reach is not offered | `check:legal-targets` `move:out-of-range-answer`~~
+- ~~CR 707.13 Garth One-Eye's cast copy of Black Lotus has Black Lotus's characteristics and resolves as a token | `check:other-Object.castFrom` `check:other-GameState.outsideCopies`~~
+- ~~CR 707.13 a declined copy leaves nothing behind, and a name the reference does not know makes no copy | `check:other-GameState.outsideCopies` `check:other-GameState.namedCopyChoices` `board:card-reference`~~
+- ~~CR 707.13 a second activation of the same Garth does not offer Black Lotus again | `check:named-copy-choices`~~
+- ~~CR 707.14 a Clone of the face-down 3/3 connects and creates no copy | `check:abilities`~~
+- ~~CR 707.14 the face-down Divination connects and alice casts a copy of Divination for free | `check:outside-the-game`~~
+- ~~CR 707.2 an Adventure that becomes a copy of a Bolt goes to the graveyard~~
+- ~~CR 707.2a a copy of Blood Moon goes on setting land subtypes once the original is exiled | `check:mana-types` `check:abilities`~~
+- ~~CR 708.2 a face-down copy of Silent Arbiter no longer bounds the attack | `check:face-down` `check:bindings`~~
+- ~~CR 708.2 the face-down permanent is a nameless 3/3 creature with the two listed abilities | `check:abilities`~~
+- ~~Omni-Changeling's copy is every creature type, and so is a token copy of it (CR 604.3a)~~
 
 ### `CostSpec`
 

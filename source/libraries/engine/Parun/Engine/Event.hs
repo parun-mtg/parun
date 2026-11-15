@@ -8669,9 +8669,9 @@ changeZoneWithCause settle discarded asOf batch oid requestedDest requestedPosit
               --
               -- A cast copy of a CARD resolves the same way (CR 608.3f's "copy of
               -- a permanent spell"; Garth One-Eye's rulings, 2021-06-18), so its
-              -- arm is gated on leaving the stack. Parun.CopySpec's "Garth
-              -- One-Eye's cast copy of Black Lotus ... resolves as a token"
-              -- proves it.
+              -- arm is gated on leaving the stack. data/scenarios/copy's "CR
+              -- 707.13 Garth One-Eye's cast copy of Black Lotus ... resolves as
+              -- a token" proves it.
               becomesToken printingId =
                 -- CR 111.6: a token is no card.
                 (Game.setSource (Source.OfToken printingId) (Object.newIncarnation obj))
