@@ -142,6 +142,8 @@ data Quantity
     IsStartingPlayer PlayerRef.PlayerRef
   | -- | CR 102.1: 1 if that player is the active player, else 0.
     IsActivePlayer PlayerRef.PlayerRef
+  | -- | CR 500.7: how many turns of the game that player has begun, extra turns included.
+    TurnsBegun PlayerRef.PlayerRef
   | -- | CR 700.5: that player's devotion to the payload's colours -- how many
     -- mana symbols of any of them appear among the mana costs of the permanents
     -- they control.

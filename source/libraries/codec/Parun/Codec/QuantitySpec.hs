@@ -346,6 +346,13 @@ spec s = Spec.describe s "Parun.Codec.Quantity" $ do
       Quantity.codec
       (Quantity.IsActivePlayer (PlayerRef.InSlot (SlotName.MkSlotName (Text.pack "target"))))
       " {\"type\":\"IsActivePlayer\",\"value\":{\"type\":\"InSlot\",\"value\":\"target\"}} "
+  -- Starting Town's "your first, second, or third turn of the game".
+  Spec.it s "TurnsBegun" $
+    Common.assertCodec
+      s
+      Quantity.codec
+      (Quantity.TurnsBegun (PlayerRef.Relative PlayerRelation.You))
+      " {\"type\":\"TurnsBegun\",\"value\":{\"type\":\"Relative\",\"value\":\"You\"}} "
   -- CR 702.112b, CR 701.37b and CR 701.60b: WHICH designation is on the wire and
   -- nothing else, the object it is asked of riding the evaluation rather than a
   -- reference -- so this is Power's shape rather than IsMonarch's.

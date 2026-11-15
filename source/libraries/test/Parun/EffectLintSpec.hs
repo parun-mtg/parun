@@ -345,6 +345,7 @@ printedBoxQuantity quantity = case quantity of
   Quantity.Type.HasPlayerDesignation {} -> False
   Quantity.Type.IsStartingPlayer {} -> False
   Quantity.Type.IsActivePlayer {} -> False
+  Quantity.Type.TurnsBegun {} -> False
   Quantity.Type.PlayerCounters {} -> False
   -- CR 700.5 reads the board, which CR 208.2's printed box cannot name. Daxos,
   -- Blessed by the Sun's "toughness is equal to your devotion to white" is a

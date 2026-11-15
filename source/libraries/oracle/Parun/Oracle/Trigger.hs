@@ -400,11 +400,18 @@ condition context c = case c of
       (subject, _) <- holder context (LifeTally.player tally)
       [subject <> lifeChanged tally]
     _ -> []
+  -- CR 500.7: "it's your first, second, or third turn of the game" (Starting
+  -- Town).
+  Condition.All [Condition.Compares (Compares.MkCompares (Quantity.IsActivePlayer (PlayerRef.Relative PlayerRelation.You)) Comparison.Exactly (Quantity.Literal 1)), Condition.Compares (Compares.MkCompares (Quantity.TurnsBegun (PlayerRef.Relative PlayerRelation.You)) Comparison.AtMost (Quantity.Literal k))]
+    | k > 0 -> do
+        places <- traverse Prose.ordinal [1 .. k]
+        [Text.pack "it's your " <> Prose.listing "or" places <> Text.pack " turn of the game"]
   _ -> []
 
 -- | The condition holding exactly when this one fails, where the DSL can say
 -- it: a count of at least k and one of at most k - 1, either way, and a count
--- of exactly zero and one of at least one. An "unless"
+-- of exactly zero and one of at least one, whether it is a player's turn, and
+-- a disjunction of those as the conjunction of their complements. An "unless"
 -- (CR 614.1d's "enters tapped unless ...") is held as the condition under
 -- which its rewrite applies, so the words name this one's complement.
 unless :: Condition.Condition -> Maybe Condition.Condition
@@ -415,6 +422,9 @@ unless c = case c of
     | k >= 0 -> Just (Condition.Compares (Compares.MkCompares measured Comparison.AtLeast (Quantity.Literal (k + 1))))
   Condition.Compares (Compares.MkCompares measured@(Quantity.Count _) Comparison.Exactly (Quantity.Literal 0)) ->
     Just (Condition.Compares (Compares.MkCompares measured Comparison.AtLeast (Quantity.Literal 1)))
+  Condition.Compares (Compares.MkCompares measured@(Quantity.IsActivePlayer _) Comparison.Exactly (Quantity.Literal 0)) ->
+    Just (Condition.Compares (Compares.MkCompares measured Comparison.Exactly (Quantity.Literal 1)))
+  Condition.Any cs -> fmap Condition.All (traverse unless cs)
   _ -> Nothing
 
 -- | A life tally's predicate after its subject: " lost life last turn".

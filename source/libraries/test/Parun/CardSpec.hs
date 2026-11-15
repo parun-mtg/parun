@@ -3470,6 +3470,7 @@ quantityKindFilters quantity = case quantity of
   Quantity.Type.HasPlayerDesignation {} -> []
   Quantity.Type.IsStartingPlayer _ -> []
   Quantity.Type.IsActivePlayer _ -> []
+  Quantity.Type.TurnsBegun _ -> []
   Quantity.Type.HasDesignation _ -> []
   Quantity.Type.DesignationValue _ -> []
   Quantity.Type.StoredResultsOfSameValue -> []
