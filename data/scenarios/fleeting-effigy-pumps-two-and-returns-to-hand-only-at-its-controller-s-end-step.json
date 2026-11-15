@@ -1,0 +1,465 @@
+{
+  "description": "CR 602.2, 118.3, 611.2a, 514.2, 603.2, 502.1: Fleeting Effigy's {2}{R} gives +2/+0 until end of turn (once or twice), and it returns to its owner's hand at the beginning of its controller's end step only",
+  "note": "Turn 1: carol's Effigy cannot be pumped with three Wastes (no red); alice's goes 2/2 to 4/2; bob's Effigy is pumped twice to 6/2. At alice's end step hers returns to hand while bob's and carol's stay. Turn 2: bob's pump is gone (2/2) and his Effigy returns at his own end step while alice's stays in her hand.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Fleeting Effigy",
+            "label": "ae",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "am"
+          },
+          {
+            "card": "Wastes",
+            "label": "aw1"
+          },
+          {
+            "card": "Wastes",
+            "label": "aw2"
+          },
+          {
+            "card": "Wastes",
+            "label": "aw3"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Fleeting Effigy",
+            "label": "be",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "bm1"
+          },
+          {
+            "card": "Mountain",
+            "label": "bm2"
+          },
+          {
+            "card": "Wastes",
+            "label": "bw1"
+          },
+          {
+            "card": "Wastes",
+            "label": "bw2"
+          },
+          {
+            "card": "Wastes",
+            "label": "bw3"
+          },
+          {
+            "card": "Wastes",
+            "label": "bw4"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      },
+      {
+        "name": "carol",
+        "battlefield": [
+          {
+            "card": "Fleeting Effigy",
+            "label": "ce",
+            "ready": true
+          },
+          {
+            "card": "Wastes",
+            "label": "cw1"
+          },
+          {
+            "card": "Wastes",
+            "label": "cw2"
+          },
+          {
+            "card": "Wastes",
+            "label": "cw3"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$ae",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": {
+        "Activate": {
+          "object": "$ae",
+          "mana": [
+            "$am",
+            "$aw1",
+            "$aw2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$ae",
+          "power": 4,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "alice",
+      "check": {
+        "PowerToughness": {
+          "object": "$be",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Activate": {
+          "object": "$be",
+          "mana": [
+            "$bm1",
+            "$bw1",
+            "$bw2",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Activate": {
+          "object": "$be",
+          "mana": [
+            "$bm2",
+            "$bw3",
+            "$bw4",
+            null
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "PowerToughness": {
+          "object": "$be",
+          "power": 6,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "PowerToughness": {
+          "object": "$ae",
+          "power": 4,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "refuse": {
+        "Activate": {
+          "object": "$ce",
+          "mana": [
+            "$cw1",
+            "$cw2",
+            "$cw3"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "carol",
+      "check": {
+        "PowerToughness": {
+          "object": "$ce",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Fleeting Effigy",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Fleeting Effigy",
+          "count": 0,
+          "player": "alice",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Fleeting Effigy",
+          "count": 1,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Fleeting Effigy",
+          "count": 0,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndStep",
+      "player": "alice",
+      "check": {
+        "Count": {
+          "card": "Fleeting Effigy",
+          "count": 1,
+          "player": "carol",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "check": {
+        "PowerToughness": {
+          "object": "$be",
+          "power": 2,
+          "toughness": 2
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndStep",
+      "player": "bob",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "EndStep",
+      "player": "bob",
+      "check": {
+        "Count": {
+          "card": "Fleeting Effigy",
+          "count": 1,
+          "player": "bob",
+          "zone": "Hand"
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndStep",
+      "player": "bob",
+      "check": {
+        "Count": {
+          "card": "Fleeting Effigy",
+          "count": 0,
+          "player": "bob",
+          "zone": "Battlefield"
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "EndStep",
+      "player": "bob",
+      "check": {
+        "Count": {
+          "card": "Fleeting Effigy",
+          "count": 1,
+          "player": "alice",
+          "zone": "Hand"
+        }
+      }
+    }
+  ]
+}
