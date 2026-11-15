@@ -1,0 +1,31 @@
+{
+  "description": "CR 601.2b, 601.2h, 701.21a, 111.1, 603.2, 608.2c: Vile Mutilator's additional cost sacrifices a creature or an enchantment, and on entering each opponent sacrifices a nontoken enchantment of their choice, then a nontoken creature of their choice",
+  "note": "Alice pays the additional cost with Glorious Anthem (an enchantment), a Forest being refused. Bob holds two enchantments and two nontoken creatures beside a Lions token, and picks Crusade and Grizzly Bears. Carol holds one nontoken enchantment beside a Crusade token and one nontoken creature beside a Hill Giant token, so she is asked nothing: tokens are not candidates. Alice's own Bears and board are untouched.",
+  "board": {
+    "active": "alice",
+    "step": "PrecombatMain",
+    "seats": [
+      {"name": "alice", "battlefield": [{"card": "Glorious Anthem", "label": "anthem"}, {"card": "Grizzly Bears", "label": "abears"}, {"card": "Forest", "label": "forest"}, {"card": "Swamp", "label": "s1"}, {"card": "Swamp", "label": "s2"}, {"card": "Swamp", "label": "s3"}, {"card": "Swamp", "label": "s4"}, {"card": "Swamp", "label": "s5"}, {"card": "Swamp", "label": "s6"}, {"card": "Swamp", "label": "s7"}], "hand": [{"card": "Vile Mutilator", "label": "vile"}], "library": [{"card": "Swamp"}, {"card": "Swamp"}, {"card": "Swamp"}]},
+      {"name": "bob", "battlefield": [{"card": "Bad Moon", "label": "bmoon"}, {"card": "Crusade", "label": "bcrusade"}, {"card": "Hill Giant", "label": "bgiant"}, {"card": "Grizzly Bears", "label": "bbears"}, {"card": "Savannah Lions", "label": "blions", "token": true}], "library": [{"card": "Island"}, {"card": "Island"}, {"card": "Island"}]},
+      {"name": "carol", "battlefield": [{"card": "Bad Moon", "label": "cmoon"}, {"card": "Crusade", "label": "ccrusade", "token": true}, {"card": "Gray Ogre", "label": "cogre"}, {"card": "Hill Giant", "label": "cgiant", "token": true}], "library": [{"card": "Forest"}, {"card": "Forest"}, {"card": "Forest"}]}
+    ]
+  },
+  "timeline": [
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$vile", "mana": ["$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7", null]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "refuse": {"Answer": {"prompt": "ChooseSacrifices", "with": ["$forest"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Answer": {"prompt": "ChooseSacrifices", "with": ["$anthem"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Graveyard", "card": "Glorious Anthem", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "Vile Mutilator", "keyword": {"type": "Flying"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Keywords": {"object": "Vile Mutilator", "keyword": {"type": "Trample"}, "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Answer": {"prompt": "ChooseSacrifices", "with": ["$bcrusade"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "bob", "do": {"Answer": {"prompt": "ChooseSacrifices", "with": ["$bbears"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": []}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "bob", "zone": "Graveyard", "is": ["Crusade#2", "Grizzly Bears#2"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "bob", "zone": "Battlefield", "card": "Savannah Lions", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Zone", "player": "carol", "zone": "Graveyard", "is": ["Bad Moon#2", "Gray Ogre"]}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "carol", "zone": "Battlefield", "card": "Hill Giant", "count": 1}}},
+    {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"Count": {"player": "alice", "zone": "Battlefield", "card": "Grizzly Bears", "count": 1}}}
+  ]
+}
