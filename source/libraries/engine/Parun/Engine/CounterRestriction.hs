@@ -2,7 +2,7 @@
 -- on an object. One of the modules on the axis CR 613.11 reaches past the layer
 -- system (alongside Parun.Engine.PlayerEffect, Parun.Engine.BlockRequirement,
 -- Parun.Engine.AttackRequirement, Parun.Engine.CombatRestriction,
--- Parun.Engine.AttackCost, Parun.Engine.SacrificeRestriction,
+-- Parun.Engine.AttackCost, Parun.Engine.ObjectRestriction,
 -- Parun.Engine.UntapRestriction, Parun.Engine.AttachRestriction and
 -- Parun.Engine.EntryRestriction). None is a layer, and no layer of
 -- Parun.Engine.Projection rewrites them.
@@ -10,7 +10,7 @@
 -- The only reader of Parun.Types.CounterRestriction. Its callers ask a Bool about
 -- one object and one kind and never learn which card produced it.
 --
--- TWO places ask, for the reason Parun.Engine.SacrificeRestriction's header gives
+-- TWO places ask, for the reason Parun.Engine.ObjectRestriction's header gives
 -- about its own two: CR 101.2 makes the "can't" beat the "can", so a refused
 -- placement must neither be WRITTEN (CR 122.6's two roads: counters put on a
 -- permanent already on the battlefield, Parun.Engine.Event.putCountersWithin,

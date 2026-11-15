@@ -1,11 +1,13 @@
-module Parun.Types.SacrificeRestriction where
+module Parun.Types.ObjectRestriction where
 
 import qualified Parun.Types.Affected as Affected
+import qualified Parun.Types.RestrictedAction as RestrictedAction
 
--- | CR 701.21a / CR 101.2: one printed SACRIFICE PROHIBITION -- an effect saying
--- a permanent "can't be sacrificed". Garland, Royal Kidnapper's third clause
--- ("creatures you control but don't own get +2/+2 and can't be sacrificed") is
--- the pool's printing.
+-- | CR 101.2: one printed OBJECT PROHIBITION -- an effect saying a permanent
+-- can't undergo one game action. Garland, Royal Kidnapper's third clause
+-- ("creatures you control but don't own get +2/+2 and can't be sacrificed",
+-- CR 701.21a) and Unable to Scream's last ("it can't be turned face up", CR
+-- 708) are the pool's printings.
 --
 -- The NINTH carrier of a printed static ability, alongside
 -- Parun.Types.StaticAbility, Parun.Types.PlayerStaticAbility,
@@ -27,12 +29,14 @@ import qualified Parun.Types.Affected as Affected
 -- or directs something to happen, and another effect states that it can't
 -- happen, the 'can't' effect takes precedence". So it beats a cost that calls
 -- for a sacrifice (CR 118.3 then makes that cost unpayable), an edict, and CR
--- 704's own rule-mandated sacrifices alike.
+-- 704's own rule-mandated sacrifices alike; and CR 116.2b's special action and
+-- an effect turning a permanent face up alike.
 --
--- ONE field rather than a sum, where Parun.Types.CombatRestriction has five
+-- A record rather than a sum, where Parun.Types.CombatRestriction has five
 -- arms: those exist because CR 508.1c and CR 509.1b name two declarations and
--- three shapes to forbid, and CR 701.21a's sacrifice is one game action with
--- nothing to tell apart. A prohibition names a SUBJECT and nothing else.
+-- three shapes to forbid, where each action here is one game action with
+-- nothing to tell apart. A prohibition names an ACTION and a SUBJECT and
+-- nothing else.
 --
 -- NO "unless" gate beside the subject, where every CombatRestriction arm
 -- carries one: CR 508.1c writes the clause into the rule, and CR 701.21a has no
@@ -44,13 +48,15 @@ import qualified Parun.Types.Affected as Affected
 -- Gathered LIVE from the battlefield on every read and never captured, the
 -- posture all six siblings take -- so a Garland leaving the battlefield lifts
 -- its prohibition with nothing to unwind, and CR 101.2's "can't" is re-asked at
--- the moment each sacrifice is attempted.
+-- the moment each action is attempted.
 --
 -- Open-half card data, classified rather than identified:
--- Parun.Engine.SacrificeRestriction is the only module that may read it, and it
+-- Parun.Engine.ObjectRestriction is the only module that may read it, and it
 -- answers a set of ids.
-newtype SacrificeRestriction = MkSacrificeRestriction
-  { -- | Which permanents can't be sacrificed. An Affected, not a bare ObjectId,
+data ObjectRestriction = MkObjectRestriction
+  { -- | Which game action it forbids.
+    action :: RestrictedAction.RestrictedAction,
+    -- | Which permanents can't undergo it. An Affected, not a bare ObjectId,
     -- so the set is re-derived every time it is asked -- CR 611.3a's static
     -- effect is not locked in, which is exactly what Garland's set shows as
     -- control of a creature changes. The field name Parun.Types.CombatRestriction's arms

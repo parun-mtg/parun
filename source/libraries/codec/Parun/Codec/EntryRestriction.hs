@@ -9,7 +9,7 @@ import qualified Parun.JsonCodec.Common as Common
 import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.EntryRestriction as EntryRestriction
 
--- | An object with two named keys, Parun.Codec.SacrificeRestriction's shape plus
+-- | An object with two named keys, Parun.Codec.ObjectRestriction's shape plus
 -- the origin zones. Untagged for that codec's reason: Parun.Types.EntryRestriction
 -- is a product with no sum for a tag to discriminate.
 --

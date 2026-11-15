@@ -72,6 +72,7 @@ import qualified Parun.Types.ModeIndex as ModeIndex
 import qualified Parun.Types.ModeMemory as ModeMemory
 import qualified Parun.Types.ModeSelection as ModeSelection
 import qualified Parun.Types.Modification as Modification
+import qualified Parun.Types.ObjectRestriction as ObjectRestriction
 import qualified Parun.Types.PerCreature as PerCreature
 import qualified Parun.Types.PlayerEffect as PlayerEffect
 import qualified Parun.Types.PlayerRelation as PlayerRelation
@@ -85,9 +86,9 @@ import qualified Parun.Types.Quantity as Quantity
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.RequiredBlockers as RequiredBlockers
 import qualified Parun.Types.RequirementArity as RequirementArity
+import qualified Parun.Types.RestrictedAction as RestrictedAction
 import qualified Parun.Types.RulePermission as RulePermission
 import qualified Parun.Types.RuleWaiver as RuleWaiver
-import qualified Parun.Types.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Types.SpecialAction as SpecialAction
 import qualified Parun.Types.StackObjectKind as StackObjectKind
 import qualified Parun.Types.StaticAbility as StaticAbility
@@ -185,7 +186,7 @@ baseFace =
       Face.blockPermissions = [],
       Face.attackRequirements = [],
       Face.combatRestrictions = [],
-      Face.sacrificeRestrictions = [],
+      Face.objectRestrictions = [],
       Face.untapRestrictions = [],
       Face.attachRestrictions = [],
       Face.counterRestrictions = [],
@@ -266,7 +267,7 @@ minimalFace =
       Face.blockPermissions = [],
       Face.attackRequirements = [],
       Face.combatRestrictions = [],
-      Face.sacrificeRestrictions = [],
+      Face.objectRestrictions = [],
       Face.untapRestrictions = [],
       Face.attachRestrictions = [],
       Face.counterRestrictions = [],
@@ -325,7 +326,7 @@ populatedFace =
       Face.blockPermissions = [BlockPermission.MkBlockPermission Affected.Attached (Just (Quantity.Literal 1)) Nothing],
       Face.attackRequirements = [AttackRequirement.MkAttackRequirement Affected.Attached Nothing Nothing RequirementArity.EachSubject],
       Face.combatRestrictions = [CombatRestriction.CantAttack (AffectedUnless.MkAffectedUnless Affected.Attached Nothing Nothing Nothing)],
-      Face.sacrificeRestrictions = [SacrificeRestriction.MkSacrificeRestriction Affected.Attached],
+      Face.objectRestrictions = [ObjectRestriction.MkObjectRestriction RestrictedAction.Sacrifice Affected.Attached],
       Face.untapRestrictions = [UntapRestriction.MkUntapRestriction Affected.Attached UntapHold.Forbidden Nothing],
       Face.attachRestrictions = [AttachRestriction.MkAttachRestriction Affected.Attached (Filter.HasSubtype Subtype.Aura)],
       Face.counterRestrictions = [CounterRestriction.MkCounterRestriction Affected.Attached (Just CounterKind.MinusOneMinusOne)],
@@ -372,7 +373,7 @@ populatedFaceJson =
     <> "\"blockPermissions\":[{\"affected\":{\"type\":\"Attached\"},\"additional\":{\"type\":\"Literal\",\"value\":1}}],"
     <> "\"attackRequirements\":[{\"subject\":{\"type\":\"Attached\"}}],"
     <> "\"combatRestrictions\":[{\"type\":\"CantAttack\",\"value\":{\"affected\":{\"type\":\"Attached\"}}}],"
-    <> "\"sacrificeRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}],"
+    <> "\"objectRestrictions\":[{\"action\":\"Sacrifice\",\"affected\":{\"type\":\"Attached\"}}],"
     <> "\"untapRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}],"
     <> "\"attachRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"attachers\":{\"type\":\"HasSubtype\",\"value\":\"Aura\"}}],"
     <> "\"counterRestrictions\":[{\"affected\":{\"type\":\"Attached\"},\"kind\":{\"type\":\"MinusOneMinusOne\"}}],"
@@ -458,9 +459,9 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
     Spec.it s "combatRestrictions (CR 508.1c/509.1b) defaults to the empty list" $ do
       v <- Common.assertJson s baseFaceJson
       Spec.assertEq s (Face.combatRestrictions <$> decodeFace v) (Right [])
-    Spec.it s "sacrificeRestrictions (CR 701.21a/101.2) defaults to the empty list" $ do
+    Spec.it s "objectRestrictions (CR 701.21a/101.2) defaults to the empty list" $ do
       v <- Common.assertJson s baseFaceJson
-      Spec.assertEq s (Face.sacrificeRestrictions <$> decodeFace v) (Right [])
+      Spec.assertEq s (Face.objectRestrictions <$> decodeFace v) (Right [])
     Spec.it s "untapRestrictions (CR 502.3/101.2) defaults to the empty list" $ do
       v <- Common.assertJson s baseFaceJson
       Spec.assertEq s (Face.untapRestrictions <$> decodeFace v) (Right [])
@@ -600,13 +601,13 @@ spec s = Spec.describe s "Parun.Codec.Face" $ do
         decodeFace
         baseFace {Face.combatRestrictions = [CombatRestriction.CantAttack (AffectedUnless.MkAffectedUnless Affected.Attached Nothing Nothing Nothing)]}
         (init baseFaceJson <> ",\"combatRestrictions\":[{\"type\":\"CantAttack\",\"value\":{\"affected\":{\"type\":\"Attached\"}}}]}")
-    Spec.it s "sacrificeRestrictions" $
+    Spec.it s "objectRestrictions" $
       Common.assertJsonCodec
         s
         encodeFace
         decodeFace
-        baseFace {Face.sacrificeRestrictions = [SacrificeRestriction.MkSacrificeRestriction Affected.Attached]}
-        (init baseFaceJson <> ",\"sacrificeRestrictions\":[{\"affected\":{\"type\":\"Attached\"}}]}")
+        baseFace {Face.objectRestrictions = [ObjectRestriction.MkObjectRestriction RestrictedAction.Sacrifice Affected.Attached]}
+        (init baseFaceJson <> ",\"objectRestrictions\":[{\"action\":\"Sacrifice\",\"affected\":{\"type\":\"Attached\"}}]}")
     Spec.it s "untapRestrictions" $
       Common.assertJsonCodec
         s

@@ -451,7 +451,7 @@ applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
           GrantedAbility.Static sa -> case affected of
             Affected.TheseObjects _ -> pc
             _ -> pc {PC.grantedStaticAbilities = PC.grantedStaticAbilities pc <> [(stamp, sa)]}
-          -- Parun.SacrificeRestrictionSpec's Zurgo group proves it.
+          -- Parun.ObjectRestrictionSpec's Zurgo group proves it.
           GrantedAbility.Rules rules -> case affected of
             Affected.TheseObjects _ -> pc
             _ -> pc {PC.grantedRuleAbilities = PC.grantedRuleAbilities pc <> rules}

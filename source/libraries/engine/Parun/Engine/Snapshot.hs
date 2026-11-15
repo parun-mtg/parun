@@ -13,14 +13,15 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.KeywordCostRestriction as KeywordCostRestriction
+import qualified Parun.Engine.ObjectRestriction as ObjectRestriction
 import qualified Parun.Engine.Projection as Projection
 import qualified Parun.Engine.Projection.View as Projection
-import qualified Parun.Engine.SacrificeRestriction as SacrificeRestriction
 import Parun.Types.GameState (GameState)
 import qualified Parun.Types.GameState as GameState
 import Parun.Types.KeywordCostPart (KeywordCostPart)
 import Parun.Types.ObjectId (ObjectId)
 import Parun.Types.ProjectedCharacteristics (ProjectedCharacteristics)
+import qualified Parun.Types.RestrictedAction as RestrictedAction
 
 -- LAZY FIELDS: each is a thunk until a question forces it, so a caller that
 -- asks no projection question pays for no projection. Built by `given`,
@@ -37,7 +38,7 @@ data Snapshot = MkSnapshot
     -- Projection.viewsOf's answer, read off `projected` for a permanent.
     views :: ObjectId -> Filter.View,
     -- CR 101.2: the permanents an effect in force says can't be sacrificed
-    -- (SacrificeRestriction.cantBeSacrificed of the whole battlefield).
+    -- (ObjectRestriction.restricted of the whole battlefield).
     unsacrificeable :: Set ObjectId,
     -- CR 702.122d / 702.196b: per keyword cost part, the permanents an effect
     -- in force says can't pay it (KeywordCostRestriction.prohibited of the
@@ -60,7 +61,7 @@ given pcs grants_ gs =
           offBoard = Projection.projectEach (Set.difference (Map.keysSet (GameState.objects gs)) (GameState.battlefield gs)) gs,
           grants = grants_,
           views = \oid -> Maybe.fromMaybe (fresh oid) (Map.lookup oid viewed),
-          unsacrificeable = SacrificeRestriction.cantBeSacrificed battlefield gs,
+          unsacrificeable = ObjectRestriction.restricted RestrictedAction.Sacrifice battlefield gs,
           cantPayKeywordCost = Map.Lazy.fromSet (\part -> KeywordCostRestriction.prohibited part battlefield gs) (Set.fromList [minBound .. maxBound])
         }
 

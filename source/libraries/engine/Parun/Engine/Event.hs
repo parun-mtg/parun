@@ -56,6 +56,7 @@ import qualified Parun.Engine.Filter as Filter
 import qualified Parun.Engine.Game as Game
 import qualified Parun.Engine.Keyword as Keyword
 import qualified Parun.Engine.ManaRider as ManaRider
+import qualified Parun.Engine.ObjectRestriction as ObjectRestriction
 import qualified Parun.Engine.Plane as Plane
 import qualified Parun.Engine.PlayerEffect as PlayerEffect
 import qualified Parun.Engine.Players as Players
@@ -66,7 +67,6 @@ import qualified Parun.Engine.Quantity as Quantity
 import qualified Parun.Engine.Replacement as Replacement
 import qualified Parun.Engine.Restamp as Restamp
 import qualified Parun.Engine.RestrictedCreatures as RestrictedCreatures
-import qualified Parun.Engine.SacrificeRestriction as SacrificeRestriction
 import qualified Parun.Engine.Saga as Saga
 import qualified Parun.Engine.SpaceSculptor as SpaceSculptor
 import qualified Parun.Engine.Subtype as Subtype.Engine
@@ -285,6 +285,7 @@ import Parun.Types.ReplacementCandidate (ReplacementCandidate)
 import qualified Parun.Types.ReplacementCandidate as ReplacementCandidate
 import qualified Parun.Types.ReplacementEffect as ReplacementEffect
 import qualified Parun.Types.ReplacementOrigin as ReplacementOrigin
+import qualified Parun.Types.RestrictedAction as RestrictedAction
 import qualified Parun.Types.RevealCause as RevealCause
 import qualified Parun.Types.RevealObligation as RevealObligation
 import qualified Parun.Types.RevealTiming as RevealTiming
@@ -1066,10 +1067,11 @@ performTurnFaceUp pid road announcedX oid = do
 -- up if it's face down", with no cost, no procedure and no CR 116.2b special
 -- action anywhere in it.
 --
--- TWO guards and no more. It is a permanent, so a card the effect reached in
--- some other zone has no face to turn (CR 110.1); and it is FACE DOWN, which is
+-- THREE guards and no more. It is a permanent, so a card the effect reached in
+-- some other zone has no face to turn (CR 110.1); it is FACE DOWN, which is
 -- the card's own "if it's face down" -- CR 708.2b's mirror, and the same
--- conjunct FaceDown.canTurnFaceUp opens with. Nothing about a card type, a mana cost or a
+-- conjunct FaceDown.canTurnFaceUp opens with; and no effect says it can't be
+-- turned face up (CR 101.2), FaceDown.canTurnFaceUp's last conjunct. Nothing about a card type, a mana cost or a
 -- morph ability: those are CR 701.40b's and CR 702.37e's price lists and belong
 -- to the procedures, not to the turning-over. CR 701.40g is the one restriction
 -- that survives, and it lives in performTurnFaceUp because it is about the
@@ -1083,6 +1085,7 @@ turnFaceUpByEffect pid oid = do
   Monad.when
     ( Set.member oid (GameState.battlefield gs)
         && maybe False (Facing.isFaceDown . Object.facing) (Game.lookupObject oid gs)
+        && not (ObjectRestriction.prohibited RestrictedAction.TurnFaceUp oid gs)
     )
     (performTurnFaceUp pid Nothing Nothing oid)
 
@@ -10582,7 +10585,7 @@ sacrificeInBatch settle asOf = sacrificeIn settle (Just asOf)
 --
 -- TWO refusals live here, and the arms below cite each: CR 701.21a's "a permanent
 -- they don't control", and CR 101.2's "can't" beating a rule or effect's "can" --
--- a permanent under a Parun.Types.SacrificeRestriction. Both are asked at the
+-- a permanent under a Parun.Types.ObjectRestriction. Both are asked at the
 -- funnel, so a caller that named a victim without consulting
 -- Parun.Engine.Replacement.sacrificeCandidates cannot get past either.
 --
@@ -10640,7 +10643,7 @@ sacrificeIn settle asOf victims = simultaneously $ do
           -- Effect.Sacrifice names its victims through an ObjectRef and consults
           -- no candidate list at all, which is how Lightning Skelemental's "at the
           -- beginning of the end step, sacrifice this creature" reaches here.
-          -- Parun.SacrificeRestrictionSpec proves that path goes through this arm
+          -- Parun.ObjectRestrictionSpec proves that path goes through this arm
           -- and no other -- gating only the candidate list leaves it green.
           --
           -- The other two callers that name a victim outright answer CR 101.2
@@ -10648,7 +10651,7 @@ sacrificeIn settle asOf victims = simultaneously $ do
           -- Parun.Engine.Cost refuses the SacrificeThis cost so CR 118.3 is not
           -- broken, and Parun.Engine.Sba drops a CR 704.5s Saga so CR 704.3's
           -- repeat terminates. This arm is the backstop under both.
-          | SacrificeRestriction.prohibited oid gs -> pure ()
+          | ObjectRestriction.prohibited RestrictedAction.Sacrifice oid gs -> pure ()
           | otherwise -> do
               State.modify' (recordEvent (GameEvent.PermanentSacrificed (PermanentWasSacrificed.MkPermanentWasSacrificed pid oid)))
               changeZoneInBatch settle gs oid Zone.Graveyard

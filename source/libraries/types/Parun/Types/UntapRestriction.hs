@@ -19,7 +19,7 @@ import qualified Parun.Types.UntapHold as UntapHold
 -- Blossombind's "can't become untapped" is the one hold reaching past CR 502.3
 -- to every untap (UntapHold.Never).
 --
--- Parun.Types.SacrificeRestriction's shape and its filing, one turn-based action
+-- Parun.Types.ObjectRestriction's shape and its filing, one turn-based action
 -- over: CR 613.11 puts a continuous effect that "affects game rules rather than
 -- objects" outside the layer system, CR 101.2a holds rule 101.2 clear of adding
 -- abilities to objects and removing them, and no layer of Parun.Engine.Projection rewrites them.
@@ -32,7 +32,7 @@ import qualified Parun.Types.UntapHold as UntapHold
 -- untap step does not perform (Effect.Untap, CR 701.26b) is a different action,
 -- which this sentence does not name and so does not touch.
 --
--- A record rather than a sum, for SacrificeRestriction's reason: CR 502.3 is one
+-- A record rather than a sum, for ObjectRestriction's reason: CR 502.3 is one
 -- action, and a restriction names a subject and what holds it back -- an
 -- effect's "can't", a cap on how many, its controller's own choice, a chosen
 -- card type, or an untap in another player's step (Parun.Types.UntapHold) -- and the "as long as" it applies under (CR 611.3a,

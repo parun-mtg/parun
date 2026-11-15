@@ -11,7 +11,7 @@ import qualified Parun.JsonCodec.Fields as Fields
 import qualified Parun.Types.UntapHold as UntapHold.Type
 import qualified Parun.Types.UntapRestriction as UntapRestriction
 
--- | An object of named keys, Parun.Codec.SacrificeRestriction's shape and for its
+-- | An object of named keys, Parun.Codec.ObjectRestriction's shape and for its
 -- reason: Parun.Types.UntapRestriction is a record, so there is no sum for a tag
 -- to discriminate. `hold` is omitted at UntapHold.Forbidden, what every
 -- "doesn't untap" printing means, and `while` where the restriction always

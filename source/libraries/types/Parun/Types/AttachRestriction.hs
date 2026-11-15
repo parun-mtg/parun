@@ -19,11 +19,11 @@ import qualified Parun.Types.Keyword as Keyword
 -- Parun.Types.StaticAbility, Parun.Types.PlayerStaticAbility,
 -- Parun.Types.BlockRequirement, Parun.Types.AttackRequirement,
 -- Parun.Types.CombatRestriction, Parun.Types.AttackCost, Parun.Types.BlockCost,
--- Parun.Types.BlockPermission, Parun.Types.SacrificeRestriction and
+-- Parun.Types.BlockPermission, Parun.Types.ObjectRestriction and
 -- Parun.Types.UntapRestriction -- the ordinals those headers count with stopped
 -- at the ninth, so this one names the list instead. NOT a
 -- Parun.Types.Modification, and for the reason
--- Parun.Types.SacrificeRestriction states at length: every arm of Modification is
+-- Parun.Types.ObjectRestriction states at length: every arm of Modification is
 -- a CHARACTERISTIC change computed inside CR 613's layers, while CR 613.11 puts
 -- a prohibition in the class of continuous effects that "affect game rules
 -- rather than objects" -- and CR 101.2a holds rule 101.2 clear of exactly what
@@ -53,7 +53,7 @@ import qualified Parun.Types.Keyword as Keyword
 -- barred is exactly what 'attachers' spells. Consecrate Land writes the Aura
 -- subtype into that filter; Goblin Brawler writes the Equipment subtype.
 --
--- NO "unless" gate, the narrowing Parun.Types.SacrificeRestriction takes and for
+-- NO "unless" gate, the narrowing Parun.Types.ObjectRestriction takes and for
 -- its reason: CR 508.1c writes a gate into the rule Parun.Types.CombatRestriction
 -- serves, and CR 701.3a has no counterpart.
 --
@@ -72,7 +72,7 @@ data AttachRestriction = MkAttachRestriction
     -- ObjectId, so the set is re-derived on every read -- Consecrate Land's
     -- Affected.Attached follows the Aura as an effect moves it, and Goblin
     -- Brawler's Matching IsSource names the printing itself. The field name
-    -- Parun.Types.SacrificeRestriction and every Parun.Types.CombatRestriction arm
+    -- Parun.Types.ObjectRestriction and every Parun.Types.CombatRestriction arm
     -- spell, and for its reason: it names the RESTRICTED permanents, never
     -- something they act on.
     affected :: Affected.Affected,

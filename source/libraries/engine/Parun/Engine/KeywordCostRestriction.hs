@@ -4,13 +4,13 @@
 -- layer system (alongside Parun.Engine.PlayerEffect,
 -- Parun.Engine.BlockRequirement, Parun.Engine.AttackRequirement,
 -- Parun.Engine.CombatRestriction, Parun.Engine.AttackCost,
--- Parun.Engine.SacrificeRestriction and Parun.Engine.UntapRestriction). None is a
+-- Parun.Engine.ObjectRestriction and Parun.Engine.UntapRestriction). None is a
 -- layer, and no layer of Parun.Engine.Projection rewrites them.
 --
 -- The only reader of Parun.Types.KeywordCostRestriction. Its caller asks for a
 -- SET OF IDS and never learns which card produced it.
 --
--- ONE place asks, unlike Parun.Engine.SacrificeRestriction's two, and the reason
+-- ONE place asks, unlike Parun.Engine.ObjectRestriction's two, and the reason
 -- is that both rules name a COST rather than a game action: a creature is only
 -- ever tapped to crew by paying rule 702.122a's cost, or returned to beam up by
 -- paying rule 702.196a's, and Parun.Engine.Cost.tapCandidates (aliased as
@@ -36,7 +36,7 @@ import qualified Parun.Types.RuleAbilities as RuleAbilities
 -- `keywordCostRestrictions` in data/cards is the carrier, and this answers for
 -- every card that fills it.
 --
--- Parun.Engine.SacrificeRestriction.cantBeSacrificed's body, gate for gate, and
+-- Parun.Engine.ObjectRestriction.restricted's body, gate for gate, and
 -- every step of its argument holds here unchanged: the same CR 305.7 and CR
 -- 613.1f ability losses are asked of the SOURCE, the same CR 612.1 word swap is
 -- applied to its affected set, and CR 613.11 is why the set is read against the

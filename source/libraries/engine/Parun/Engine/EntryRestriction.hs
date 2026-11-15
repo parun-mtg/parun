@@ -3,7 +3,7 @@
 -- the layer system (alongside Parun.Engine.PlayerEffect,
 -- Parun.Engine.BlockRequirement, Parun.Engine.AttackRequirement,
 -- Parun.Engine.CombatRestriction, Parun.Engine.AttackCost,
--- Parun.Engine.SacrificeRestriction and Parun.Engine.UntapRestriction). None is a
+-- Parun.Engine.ObjectRestriction and Parun.Engine.UntapRestriction). None is a
 -- layer, and no layer of Parun.Engine.Projection rewrites them.
 --
 -- The only reader of Parun.Types.EntryRestriction. Each caller asks a Bool about
@@ -36,7 +36,7 @@ import Parun.Types.Zone (Zone)
 -- currently in `origin`, CAN'T ENTER THE BATTLEFIELD? Grafdigger's Cage's first
 -- sentence.
 --
--- Parun.Engine.SacrificeRestriction.cantBeSacrificed's body, gate for gate, and
+-- Parun.Engine.ObjectRestriction.restricted's body, gate for gate, and
 -- every step of its argument holds here unchanged: the same CR 305.7 and CR
 -- 613.1f ability losses are asked of the SOURCE, the same CR 612.1 word swap is
 -- applied to its affected set, and CR 613.11 is why the set is read against the
@@ -90,7 +90,7 @@ prohibited oid origin gs =
       -- any printing in the pool, none of which is a land, and no card in
       -- data/cards text-changes one of them, so dropping the CR
       -- 612.1 rewrite below leaves the suite green. They are copied from
-      -- Parun.Engine.SacrificeRestriction because the CR states them and an
+      -- Parun.Engine.ObjectRestriction because the CR states them and an
       -- inconsistency between five carriers is the worse answer. The CR 604.2
       -- ability-loss gate IS proven -- Parun.EntryRestrictionSpec's Titania's Song
       -- leg.

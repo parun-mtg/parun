@@ -1,7 +1,7 @@
 -- CR 602.5 / 101.2 / 613.11: the continuous effects that FORBID an activation,
 -- printed at an OBJECT. One of the modules on the axis CR 613.11 reaches past
 -- the layer system (alongside Parun.Engine.PlayerEffect,
--- Parun.Engine.CombatRestriction, Parun.Engine.SacrificeRestriction and its
+-- Parun.Engine.CombatRestriction, Parun.Engine.ObjectRestriction and its
 -- siblings). None is a layer, and no layer of Parun.Engine.Projection rewrites them.
 --
 -- The only reader of Parun.Types.ActivationProhibition, the PRINTED carrier, and
@@ -60,7 +60,7 @@ import qualified Parun.Types.TextWord as TextWord
 -- the reader's question rather than the walk's.
 gathered :: GameState -> [(ObjectId, [(TextWord.TextWord, TextWord.TextWord)], ActivationProhibition.ActivationProhibition)]
 gathered gs =
-  let -- Hoisted out of the walk as SacrificeRestriction.cantBeSacrificed hoists
+  let -- Hoisted out of the walk as ObjectRestriction.restricted hoists
       -- them, and both unforced until some permanent actually declares a
       -- prohibition.
       setEffs = Projection.setLandSubtypeEffects gs
@@ -74,7 +74,7 @@ gathered gs =
         -- Every permanent in almost every game.
         [] -> []
         prohibitions ->
-          -- The same two ability losses SacrificeRestriction.cantBeSacrificed
+          -- The same two ability losses ObjectRestriction.restricted
           -- asks about: CR 305.7's basic-land subtype set, and CR 604.2
           -- against a CR 613.1f layer-6 removal. Why CR 613.6 cannot rescue a
           -- prohibition that has started to apply is argued in

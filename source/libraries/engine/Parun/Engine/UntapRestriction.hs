@@ -5,7 +5,7 @@
 -- One of the modules on the axis CR 613.11 reaches past the layer system
 -- (alongside Parun.Engine.PlayerEffect, Parun.Engine.BlockRequirement,
 -- Parun.Engine.AttackRequirement, Parun.Engine.CombatRestriction,
--- Parun.Engine.AttackCost and Parun.Engine.SacrificeRestriction). None is a layer,
+-- Parun.Engine.AttackCost and Parun.Engine.ObjectRestriction). None is a layer,
 -- and no layer of Parun.Engine.Projection rewrites them.
 --
 -- The only reader of Parun.Types.UntapRestriction. Its caller asks for a SET OF
@@ -62,7 +62,7 @@ import qualified Parun.Types.UntapScope as UntapScope
 -- restriction rather than a union, because a cap counts its own set (CR 101.2:
 -- Static Orb and Winter Orb each hold, neither adding to the other).
 --
--- Parun.Engine.SacrificeRestriction.cantBeSacrificed's body, gate for gate, and
+-- Parun.Engine.ObjectRestriction.restricted's body, gate for gate, and
 -- every step of its argument holds here unchanged: the same CR 305.7 and CR
 -- 613.1f ability losses are asked of the SOURCE, the same CR 612.1 word swap is
 -- applied to its affected set, and CR 613.11 is why the set is read against the

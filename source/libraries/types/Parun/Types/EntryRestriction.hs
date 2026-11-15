@@ -17,7 +17,7 @@ import qualified Parun.Types.Zone as Zone
 -- prohibited manifest; both readings of "an object that can't enter" get the same
 -- answer, which is why this type answers only a Bool.
 --
--- Parun.Types.SacrificeRestriction's shape and its filing, one game action over:
+-- Parun.Types.ObjectRestriction's shape and its filing, one game action over:
 -- CR 613.11 puts a continuous effect that "affects game rules rather than
 -- objects" outside the layer system, CR 101.2a holds rule 101.2 clear of adding
 -- abilities to objects and removing them, and no layer of Parun.Engine.Projection rewrites them.

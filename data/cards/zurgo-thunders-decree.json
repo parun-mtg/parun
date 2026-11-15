@@ -88,8 +88,9 @@
               "value": {
                 "type": "Rules",
                 "value": {
-                  "sacrificeRestrictions": [
+                  "objectRestrictions": [
                     {
+                      "action": "Sacrifice",
                       "affected": {
                         "type": "Matching",
                         "value": {

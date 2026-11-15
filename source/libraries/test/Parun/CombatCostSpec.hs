@@ -563,8 +563,8 @@ blockCostSpec s registry = Spec.describe s "BlockCosts" $ do
 -- No reader in this module is left without one, Hollow Warrior having supplied
 -- the last thing missing: a cost to block printed on a nontoken creature, which
 -- is what Ashaya can animate. Parun.Engine.PlayerEffect's share is pinned in
--- Parun.PlayerEffectSpec and Parun.Engine.SacrificeRestriction's in
--- Parun.SacrificeRestrictionSpec.
+-- Parun.PlayerEffectSpec and Parun.Engine.ObjectRestriction's in
+-- Parun.ObjectRestrictionSpec.
 --
 -- A BOARD THAT CANNOT DISCRIMINATE, recorded because it looks like the obvious
 -- one: Glacial Crasher ("this creature can't attack unless you control a

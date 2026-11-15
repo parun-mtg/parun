@@ -594,6 +594,7 @@ import qualified Parun.Codec.ObjectCountSpec
 import qualified Parun.Codec.ObjectDamageSpec
 import qualified Parun.Codec.ObjectIdSpec
 import qualified Parun.Codec.ObjectRefSpec
+import qualified Parun.Codec.ObjectRestrictionSpec
 import qualified Parun.Codec.ObjectSnapshotSpec
 import qualified Parun.Codec.ObjectSpec
 import qualified Parun.Codec.ObjectViewSpec
@@ -732,6 +733,7 @@ import qualified Parun.Codec.RequiredDefenderSpec
 import qualified Parun.Codec.RequirementAritySpec
 import qualified Parun.Codec.ReselectAttackSpec
 import qualified Parun.Codec.RestartSignalSpec
+import qualified Parun.Codec.RestrictedActionSpec
 import qualified Parun.Codec.RestrictedCreaturesSpec
 import qualified Parun.Codec.ResultSpec
 import qualified Parun.Codec.ReturnEndingSpec
@@ -756,7 +758,6 @@ import qualified Parun.Codec.RulePermissionSpec
 import qualified Parun.Codec.RuleWaiverSpec
 import qualified Parun.Codec.SacrificeAnyNumberSpec
 import qualified Parun.Codec.SacrificeEffectSpec
-import qualified Parun.Codec.SacrificeRestrictionSpec
 import qualified Parun.Codec.SacrificeSpec
 import qualified Parun.Codec.SacrificeToEnterSpec
 import qualified Parun.Codec.SacrificerSpec
@@ -1013,6 +1014,7 @@ import qualified Parun.MoveCounterSpec
 import qualified Parun.MtgishSpec
 import qualified Parun.MulliganSpec
 import qualified Parun.MutateSpec
+import qualified Parun.ObjectRestrictionSpec
 import qualified Parun.OmenSpec
 import qualified Parun.OracleSpec
 import qualified Parun.OutsideTheGameSpec
@@ -1048,7 +1050,6 @@ import qualified Parun.RestampSpec
 import qualified Parun.ReversalSpec
 import qualified Parun.RingSpec
 import qualified Parun.RoomSpec
-import qualified Parun.SacrificeRestrictionSpec
 import qualified Parun.SaddleSpec
 import qualified Parun.SagaSpec
 import qualified Parun.ScenarioSpec
@@ -1855,7 +1856,7 @@ spec s reference corpus = do
   Parun.Codec.RuleAbilitiesSpec.spec s
   Parun.Codec.SacrificeAnyNumberSpec.spec s
   Parun.Codec.SacrificeEffectSpec.spec s
-  Parun.Codec.SacrificeRestrictionSpec.spec s
+  Parun.Codec.ObjectRestrictionSpec.spec s
   Parun.Codec.SacrificerSpec.spec s
   Parun.Codec.SacrificeSpec.spec s
   Parun.Codec.SacrificeToEnterSpec.spec s
@@ -1983,6 +1984,7 @@ spec s reference corpus = do
   Parun.Codec.UntapRestrictionSpec.spec s
   Parun.Codec.UntapRewriteSpec.spec s
   Parun.Codec.UntapScopeSpec.spec s
+  Parun.Codec.RestrictedActionSpec.spec s
   Parun.Codec.UntapRSpec.spec s
   Parun.Codec.UsesSpec.spec s
   Parun.Codec.VanguardSpec.spec s
@@ -2153,7 +2155,7 @@ spec s reference corpus = do
   Parun.ReversalSpec.spec s registry
   Parun.RingSpec.spec s registry
   Parun.RoomSpec.spec s registry
-  Parun.SacrificeRestrictionSpec.spec s registry
+  Parun.ObjectRestrictionSpec.spec s registry
   Parun.SaddleSpec.spec s registry
   Parun.SagaSpec.spec s registry
   Parun.ProtocolSpec.spec s registry

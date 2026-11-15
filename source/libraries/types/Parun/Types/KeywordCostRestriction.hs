@@ -8,7 +8,7 @@ import qualified Parun.Types.KeywordCostPart as KeywordCostPart
 -- (CR 702.122d; Revoke Privileges, Bound in Gold, Intercessor's Arrest) or
 -- "can't be beamed up" (CR 702.196b; Marooned).
 --
--- Parun.Types.SacrificeRestriction's shape and its filing, one game action over:
+-- Parun.Types.ObjectRestriction's shape and its filing, one game action over:
 -- CR 613.11 puts a continuous effect that "affects game rules rather than
 -- objects" outside the layer system, CR 101.2a holds rule 101.2 clear of adding
 -- abilities to objects and removing them, and no layer of Parun.Engine.Projection
