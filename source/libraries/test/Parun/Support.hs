@@ -2035,6 +2035,7 @@ stubView table oid =
                 Filter.canAttachToSubject = False,
                 Filter.hasEntryHost = False,
                 Filter.token = False,
+                Filter.isCard = False,
                 Filter.commander = False,
                 Filter.activatedAbility = Nothing,
                 Filter.activationCost = Nothing,

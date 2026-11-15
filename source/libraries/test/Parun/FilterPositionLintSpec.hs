@@ -15,7 +15,7 @@ import qualified Data.Monoid as Monoid
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), Surveyed, anyFace, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, costComponentFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, survey, surveyedFace, surveyedFilters, surveyedPool, triggerConditionFilters, turnUpRewriteFilters)
+import Parun.CardSpec (Framing (ActivationCostFramed, AffectedSetFramed, AttachDestination, ChosenSourceFramed, ClauseGateFramed, EntryAttachDestination, HandSweepFramed, InTargetSlot, InterveningFramed, KeywordFramed, LifeLossAmountFramed, ManaRestrictionFramed, MillTallyFramed, MintedTargetSlot, OutsideTheGameFramed, PlayerEffectFramed, RepeatGateFramed, ReplacementRowFramed, SearchFramed, SlotlessCostFramed, SourceHostFramed, SpentOnFramed, StandingHostFramed, StoredClassFramed, StoredPlayerEffectFramed, TriggerConditionFramed, Unframed), Surveyed, anyFace, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, conditionFilters, costComponentFilters, counterKindFilters, durationFilters, effectFilters, entryRewriteFilters, filterSlotsReadSingly, framedSlotsReadSingly, keywordFilters, modalFilters, objectRefFilters, oneEffectTrigger, oneFaced, payGateFilters, quantityFilters, replacementEffectFilters, riderFilters, survey, surveyedFace, surveyedFilters, surveyedPool, triggerConditionFilters, turnUpRewriteFilters)
 import qualified Parun.Codec.Card as Card
 import qualified Parun.Codec.Face as Face.Codec
 import qualified Parun.Codec.Filter as Filter.Codec
@@ -66,6 +66,7 @@ import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ChooseBetween as ChooseBetween
 import qualified Parun.Types.ChooseCardName as ChooseCardName
+import qualified Parun.Types.ChoosePermanents as ChoosePermanents
 import qualified Parun.Types.ChooseQuality as ChooseQuality
 import qualified Parun.Types.Chooser as Chooser
 import qualified Parun.Types.ChosenCardInGraveyard as ChosenCardInGraveyard
@@ -269,6 +270,7 @@ sourceFramed :: Framing -> Bool
 sourceFramed framing = case framing of
   SourceHostFramed -> True
   StandingHostFramed -> True
+  InterveningFramed -> True
   PlayerEffectFramed -> True
   ReplacementRowFramed -> True
   InTargetSlot -> True
@@ -1071,8 +1073,9 @@ framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Share
 -- How many CR 709.4a atoms this card carries in one of the ADMITTED positions
 -- -- a MODE's target slot filter (Harness the Storm), a CR 701.23 search filter
 -- (Bifurcate), a CR 608.2c hand sweep's (Hour of Glory), a CR 119.3 life
--- loss amount's Count filter (Grim Reminder) or an effect's own object
--- (Legion's End) -- and how many anywhere else. The second number is the offence.
+-- loss amount's Count filter (Grim Reminder), an effect's own object
+-- (Legion's End) or a CR 603.4 intervening "if" (Spellweaver Helix) -- and how
+-- many anywhere else. The second number is the offence.
 --
 -- An ALLOWLIST rather than "wherever Filter.Context.slotNames is filled",
 -- which is the wider set: every position a resolution
@@ -1083,16 +1086,26 @@ framedNameAtoms = decodedAtoms "Shares" (\atom -> case atom of Filter.Type.Share
 -- direction -- widen it when a card wants one of them, which is the posture sweptForSingularSlots takes at
 -- SlotlessCostFramed and what the hand sweep's own entry is.
 --
--- One position is admitted INSIDE a framing rather than as one: an activated
+-- Two positions are admitted INSIDE a framing rather than as one: an activated
 -- ability's CR 701.9a discard cost criterion (Key to the Side-Door), whose pool
 -- Parun.Engine.Cost.discardCandidates frames through
--- Parun.Engine.Projection.contextWithSlots. The rest of ActivationCostFramed is
+-- Parun.Engine.Projection.contextWithSlots, and a ChoosePermanents choice's
+-- filter (Spellweaver Helix, choiceCriteria). The rest of ActivationCostFramed is
 -- not, since Cost.xValue and Cost.tapForManaWith read a bare source context.
 framedNameCounts :: Surveyed -> (Int, Int)
 framedNameCounts card =
-  let total wanted = sum (fmap (\(_, f) -> framedNameAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, SearchFramed, HandSweepFramed, LifeLossAmountFramed, SourceHostFramed] == wanted) (surveyedFilters card)))
-      discarded = sum (fmap (framedNameAtoms . atomJson) (discardCostCriteria (surveyedFace card)))
-   in (total True + discarded, total False - discarded)
+  let total wanted = sum (fmap (\(_, f) -> framedNameAtoms (atomJson f)) (filter (\(framing, _) -> elem framing [InTargetSlot, SearchFramed, HandSweepFramed, LifeLossAmountFramed, SourceHostFramed, InterveningFramed] == wanted) (surveyedFilters card)))
+      inside = sum (fmap (framedNameAtoms . atomJson) (discardCostCriteria (surveyedFace card) <> choiceCriteria (surveyedFace card)))
+   in (total True + inside, total False - inside)
+
+-- The criteria of this face's ChoosePermanents choices, each among cardFilters'
+-- Unframed positions though Parun.Engine.Resolve.Slots.chosenCandidates matches
+-- them in effectContext, which frames the slots.
+choiceCriteria :: Face.Face Card.Type.Card -> [Filter.Type.Filter Keyword.Keyword]
+choiceCriteria card =
+  [ ChosenPermanents.filter choice
+  | Effect.ChoosePermanents (ChoosePermanents.MkChoosePermanents choice _ _ _) <- cardAuthoredEffects card
+  ]
 
 -- The criteria of this face's activated abilities' CR 701.9a discard costs,
 -- each also among cardFilters' ActivationCostFramed positions.
@@ -1296,6 +1309,7 @@ hostFramed :: Framing -> Bool
 hostFramed framing = case framing of
   SourceHostFramed -> True
   StandingHostFramed -> True
+  InterveningFramed -> True
   PlayerEffectFramed -> True
   ReplacementRowFramed -> True
   _ -> False
@@ -1760,7 +1774,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- battlefieldViews are filled (Projection.framedBySlots), and unanswerable --
   -- a silent False -- everywhere else. The positions ADMITTED here are a MODE's
   -- target slot, a CR 701.23 search filter, a CR 608.2c hand sweep's own filter,
-  -- a CR 119.3 life loss amount and an effect's own object, the last four since
+  -- a CR 119.3 life loss amount, an effect's own object and a CR 603.4
+  -- intervening "if" (framedByBindings, Spellweaver Helix), the four before it since
   -- their arms take their context from the resolution (Parun.ResolveSpec's
   -- Bifurcate, Hour of Glory and Grim Reminder cases; Legion's End's scenario),
   -- and an activated ability's discard cost criterion (framedNameCounts; Key to
@@ -1797,7 +1812,8 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Rat King, Verminister", 1), -- its return's object
         ("Pattern Matcher", 1), -- its search's filter, at AnyPermanent
         ("Seasinger", 1), -- its ability's target slot, Controller at AnyPermanent
-        ("Key to the Side-Door", 1) -- its ability's discard cost, at AnyPermanent
+        ("Key to the Side-Door", 1), -- its ability's discard cost, at AnyPermanent
+        ("Spellweaver Helix", 2) -- its intervening "if"'s Count filter and its choice's filter
       ]
     -- Both sides of the split, with room to spare under the pool's real figures:
     -- a traversal that had stopped walking, or a Framing that had stopped marking
@@ -2879,6 +2895,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         (InTargetSlot, [bound]),
         (SourceHostFramed, [bound]),
         (StandingHostFramed, [bound]),
+        (InterveningFramed, [bound]),
         (PlayerEffectFramed, [bound]),
         (StoredPlayerEffectFramed, [bound]),
         (SearchFramed, [bound]),

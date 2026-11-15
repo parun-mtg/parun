@@ -852,7 +852,7 @@ reachesCardComponents :: (ObjectId -> Filter.View) -> GameState -> ReplacementCa
 reachesCardComponents viewOf gs candidate filter_ oid =
   Filter.token (viewOf oid)
     && maybe False (not . all Game.componentIsToken . Game.componentsOf . Object.source) (Game.lookupObject oid gs)
-    && Filter.matches (candidateContext gs candidate) ((viewOf oid) {Filter.token = False}) filter_
+    && Filter.matches (candidateContext gs candidate) ((viewOf oid) {Filter.token = False, Filter.isCard = True}) filter_
 
 -- CR 731.3e: is this zone-change row applicable to the moving object only
 -- through its card components, so that it moves those and leaves the rest of
@@ -2083,7 +2083,7 @@ matchesTokenLot gs context filter_ pid lot =
         -- printed face rather than the object this lot would mint.
         Nothing ->
           let face = NonEmpty.head (Card.Type.faces (TokenLot.card lot))
-           in (Projection.viewOfCardLapsed (clausesOf (Projection.printedAbilitiesOf face)) face) {Filter.controller = Just pid, Filter.token = True}
+           in (Projection.viewOfCardLapsed (clausesOf (Projection.printedAbilitiesOf face)) face) {Filter.controller = Just pid, Filter.token = True, Filter.isCard = False}
    in Filter.matches context view filter_
 
 -- The counters `oid` is so far entering with, by putter, empty outside an entry

@@ -660,6 +660,12 @@ spec s = Spec.describe s "Parun.Codec.Filter" $ do
       codec
       Filter.IsToken
       " {\"type\":\"IsToken\"} "
+  Spec.it s "IsCard" $
+    Common.assertCodec
+      s
+      codec
+      Filter.IsCard
+      " {\"type\":\"IsCard\"} "
   Spec.it s "IsActivatedAbility" $
     Common.assertCodec
       s

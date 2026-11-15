@@ -260,6 +260,8 @@ viewOfCardLapsed lapsed face =
           -- CR 111.6: "A token isn't a card." CR 704.5d already made a token in
           -- any zone this builder describes cease to exist.
           Filter.token = False,
+          -- CR 108.2: a printed face is a card's.
+          Filter.isCard = True,
           -- CR 903.3's designation is made of a card in a DECK and answered of an
           -- object; a printed face carries neither, so IsCommander is vacuously
           -- False here, `token` above's posture.
@@ -800,6 +802,9 @@ viewOfCharacteristics peers oid pc controller counters gs =
       -- Count.lastKnownView gives CR 608.2h's answer over it for the
       -- readers owed one, exactly as `owner` above has it.
       Filter.token = Game.isToken oid gs,
+      -- CR 108.2, read off Object.source for `token` above's reason. False for
+      -- an id naming nothing; Count.lastKnownView answers over it.
+      Filter.isCard = Game.isCardObject oid gs,
       -- CR 903.3, read off the owner's designation for `token` above's reason: it
       -- is fixed before the game begins (CR 702.124a) and no rule rewrites it.
       -- False for an id naming nothing.
