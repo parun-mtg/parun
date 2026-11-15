@@ -2659,7 +2659,8 @@ unspentPermission pid source grant gs =
 -- Open without any of them where something else is CR 601.3's "rule or effect"
 -- allowing the cast: the rules for a card in its owner's hand, and a permission
 -- an exiled or graveyard card carries for itself (`open`;
--- Parun.Engine.Cast.castWays), a granted PlayFromGraveyard included
+-- Parun.Engine.Cast.castWays), a granted PlayFromGraveyard or bare
+-- CastFromGraveyard included
 -- (mayPlayFromOwnGraveyard). A cast an effect offers during resolution is not
 -- asked here at all (CR 608.2g; Parun.Engine.Cast.castSpellWith). A keyword's
 -- permission is not weighed here: it offers its own CR 601.2b candidate
@@ -2793,7 +2794,7 @@ landPermissionOptions rides pid oid gs = case Game.lookupObject oid gs of
   Nothing -> []
   Just obj ->
     let zone = Object.zone obj
-        free = (zone == Zone.Hand && Object.owner obj == pid) || elem (zone, Object.owner obj) (playLandPiles pid gs) || mayPlayByMayhem pid oid gs || mayPlayFromOwnGraveyard Map.empty pid oid gs
+        free = (zone == Zone.Hand && Object.owner obj == pid) || elem (zone, Object.owner obj) (playLandPiles pid gs) || mayPlayByMayhem pid oid gs || mayPlayFromOwnGraveyard Map.empty PermissionVerb.Play pid oid gs
      in permissionOptions rides free (landPermissionsFrom pid zone oid gs)
 
 -- CR 702.187c: may `pid` play `oid` out of their graveyard under the card's own
@@ -2817,19 +2818,29 @@ mayPlayByMayhem pid oid gs = case Game.lookupObject oid gs of
       && Game.discardedThisTurnBy pid oid gs
       && Keyword.hasCostlessMayhem (Map.keysSet (Projection.keywordsOf oid gs))
 
--- CR 601.3 / 305.1: may `pid` play `oid` out of their own graveyard under a
--- permission the card has there (CastingPermission.PlayFromGraveyard, Kethis,
--- the Hidden Hand's grant)? Read through the projection (CR 613.1f), so Yixlid
--- Jailer's "lose all abilities" takes it away. A per-CARD permission, as
+-- CR 601.3 / 305.1: may `pid` `verb` `oid` out of their own graveyard under a
+-- costless permission the card has there, stating no family, cost or counters:
+-- CastingPermission.PlayFromGraveyard (Kethis, the Hidden Hand's grant) for
+-- either verb, a bare CastFromGraveyard (Skaab Ruinator) for Cast alone. Read
+-- through the projection (CR 613.1f), so Yixlid Jailer's "lose all abilities"
+-- takes it away, and never through Cost.permissionsOf, whose bare
+-- CastFromGraveyard is a keyword's priced one. A per-CARD permission, as
 -- mayPlayByMayhem is. Read out of a Projection.projectEach map of the same
 -- state where the caller holds one (#6472), afresh otherwise.
-mayPlayFromOwnGraveyard :: Map ObjectId PC.ProjectedCharacteristics -> PlayerId -> ObjectId -> GameState -> Bool
-mayPlayFromOwnGraveyard offBoard pid oid gs = case Game.lookupObject oid gs of
+mayPlayFromOwnGraveyard :: Map ObjectId PC.ProjectedCharacteristics -> PermissionVerb.PermissionVerb -> PlayerId -> ObjectId -> GameState -> Bool
+mayPlayFromOwnGraveyard offBoard verb pid oid gs = case Game.lookupObject oid gs of
   Nothing -> False
   Just obj ->
     Object.zone obj == Zone.Graveyard
       && Object.owner obj == pid
-      && elem CastingPermission.PlayFromGraveyard (PC.castingPermissions (Projection.projectEachGiven offBoard oid gs))
+      && any admits (PC.castingPermissions (Projection.projectEachGiven offBoard oid gs))
+  where
+    admits permission = case permission of
+      CastingPermission.PlayFromGraveyard -> True
+      CastingPermission.CastFromGraveyard Nothing [] Nothing -> verb == PermissionVerb.Cast
+      CastingPermission.CastFromGraveyard {} -> False
+      CastingPermission.CastFromLibraryWhileSearching -> False
+      CastingPermission.CastAsThoughItHadFlash {} -> False
 
 -- CR 702.170f: the (zone, owner) piles some PlotFrom grant opens to `pid`, for
 -- Parun.Engine.Plot to draw candidates from, playPermissionPiles' shape; which of

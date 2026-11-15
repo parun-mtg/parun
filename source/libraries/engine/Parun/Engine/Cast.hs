@@ -3257,7 +3257,7 @@ castWays rides pid oid zone face gs castFor =
   let named = ownedBy pid oid gs && any (\family -> (castFor >>= Keyword.familyOf) == Just family) [family | CastingPermission.CastFromGraveyard (Just family) [] Nothing <- Cost.permissionsOf oid face gs]
       ownOpen = case zone of
         Zone.Exile -> exileOpen pid oid face gs
-        Zone.Graveyard -> permitsPlayUnderPermission pid oid gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty pid oid gs || named
+        Zone.Graveyard -> permitsPlayUnderPermission pid oid gs || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || named
         _ -> False
       -- CR 118.8: a cast an effect offers never asks, that offer being the
       -- permission it is made under (StickerSpec's "a stickered card offered

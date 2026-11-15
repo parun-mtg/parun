@@ -176,6 +176,7 @@ import qualified Parun.Types.PaymentMoment as PaymentMoment
 import qualified Parun.Types.PaymentSubject as PaymentSubject
 import qualified Parun.Types.PendingTrigger as PendingTrigger
 import qualified Parun.Types.PermissionCost as PermissionCost
+import qualified Parun.Types.PermissionVerb as PermissionVerb
 import qualified Parun.Types.Player as Player
 import qualified Parun.Types.PlayerActed as PlayerActed
 import qualified Parun.Types.PlayerAction as PlayerAction
@@ -1129,10 +1130,11 @@ candidateCostsGiven permitted pid name oid gs =
                         -- "Mayhem (You may play": Oscorp Industries alone).
                         -- A permission in Object.playPermissions open to
                         -- `pid` (Jace, Telepath Unbound's -3) states no cost
-                        -- either, and so does
+                        -- either, and so do
                         -- CastingPermission.PlayFromGraveyard (Kethis, the
-                        -- Hidden Hand's granted ability).
-                        <> ( if permitted || PlayerEffect.couldCastFrom pid Zone.Graveyard oid gs || PlayerEffect.mayPlayByMayhem pid oid gs || not (null (Expiry.openPermissions pid oid gs)) || elem CastingPermission.PlayFromGraveyard (permissionsOf oid face gs) || payingPermitted
+                        -- Hidden Hand's granted ability) and a bare
+                        -- CastFromGraveyard (Skaab Ruinator).
+                        <> ( if permitted || PlayerEffect.couldCastFrom pid Zone.Graveyard oid gs || PlayerEffect.mayPlayByMayhem pid oid gs || not (null (Expiry.openPermissions pid oid gs)) || PlayerEffect.mayPlayFromOwnGraveyard Map.empty PermissionVerb.Cast pid oid gs || payingPermitted
                                then ordinary
                                else filter usingPermitted ordinary
                            )

@@ -95,7 +95,8 @@
             {
               "type": "GainCastingPermission",
               "value": {
-                "type": "PlayFromGraveyard"
+                "type": "CastFromGraveyard",
+                "value": {}
               }
             }
           ]
