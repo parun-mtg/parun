@@ -379,7 +379,7 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent))
+      (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent TriggerFrequency.EveryTime))
       " {\"type\":\"CountersChange\",\"value\":{\"kind\":{\"type\":\"OfKind\",\"value\":{\"type\":\"Lore\"}},\"motion\":{\"type\":\"Put\",\"value\":\"AnyPlayer\"},\"threshold\":3}} "
   -- CR 717.2a. The payload is the bar's printed level number and nothing else:
   -- the ability is printed on the Class whose level changes, so there is nothing

@@ -592,6 +592,15 @@ countersMoved gs you counterTrigger event = case (CounterTrigger.motion counterT
       WhichCounters.OfKind named -> kind == named
       WhichCounters.OfAnyKind -> True
 
+-- CR 122.6: the first event this turn that put counters of any kind on this
+-- permanent, on the battlefield as countersMoved asks; Nothing for none.
+firstPlacementOn :: ObjectId -> GameState -> Maybe GameEvent
+firstPlacementOn oid gs =
+  let placedOnIt event = case event of
+        GameEvent.CountersPut placed -> CountersPlaced.object placed == oid && ObjectSnapshot.zone (CountersPlaced.snapshot placed) == Zone.Battlefield
+        _ -> False
+   in Foldable.find placedOnIt (fmap LoggedEvent.event (TurnRegisters.events (GameState.turn gs)))
+
 -- CR 603.6a: a permanent entered the battlefield, an entry that may trigger
 -- `you`'s abilities (`entryTriggers`), and it is the permanent the trigger
 -- watches. The subject, by ActingPermanent:
@@ -1564,6 +1573,16 @@ armMatches bindings board atEvent beforeEvent groupEvents gs bearer you cond eve
           (_, Nothing) -> True
           (CounterMotion.Put _, Just n) -> Saga.chapterTriggers (Saga.readAheadRestricted (Projection.project oid gs) gs oid) before after n
           (CounterMotion.Removed, Just n) -> after <= n && n < before
+        -- "If it's the first time counters have been put on that creature this
+        -- turn" (CR 603.4) asks about the triggering event, so it reads the same
+        -- on resolution and is matched here: the holder's first placement of any
+        -- kind in the log is in the matched event's group. An id names one
+        -- object (CR 400.7), and a later placement, the bonus counter
+        -- included, is never the first.
+        && case CounterTrigger.frequency counterTrigger of
+          TriggerFrequency.EveryTime -> True
+          TriggerFrequency.FirstTimeEachTurn ->
+            maybe True (`elem` (if event `elem` groupEvents then groupEvents else [event])) (firstPlacementOn oid gs)
   -- CR 717.2a: the BEARER's class level crossed N going up. "When this Class
   -- becomes level N" is printed inside the level-N section, so CR 717.2a's static
   -- half is what grants it, and CR 603.10 is what lets it see its own arrival:

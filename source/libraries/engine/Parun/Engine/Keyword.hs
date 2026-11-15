@@ -264,6 +264,7 @@ import qualified Parun.Types.TopOfLibraryUntil as TopOfLibraryUntil
 import qualified Parun.Types.Toughness as Toughness
 import qualified Parun.Types.Trait as Trait
 import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import Parun.Types.TriggeredAbility (TriggeredAbility)
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRole as TurnRole
@@ -8276,7 +8277,7 @@ suspendLastCounter keyword =
               OfferCast.slot = Nothing
             }
    in ( Mint.triggerIf
-          (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Time) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent))
+          (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Time) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent TriggerFrequency.EveryTime))
           stillExiled
           (Seq.singleton effect)
       )
@@ -8691,7 +8692,7 @@ timeCounterUpkeep =
 vanishingLastCounter :: TriggeredAbility Card (GrantedAbility.GrantedAbility Card)
 vanishingLastCounter =
   let effect = Effect.Sacrifice SacrificeEffect.MkSacrificeEffect {SacrificeEffect.ref = ObjectRef.InSlot Binding.triggerSource, SacrificeEffect.sacrificer = Sacrificer.EffectController, SacrificeEffect.sacrificed = Nothing}
-   in Mint.trigger (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Time) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent)) (Seq.singleton effect)
+   in Mint.trigger (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Time) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent TriggerFrequency.EveryTime)) (Seq.singleton effect)
 
 -- CR 702.176a's FOURTH ability: "at the beginning of your end step, if this
 -- permanent's impending cost was paid and it has a time counter on it, remove a

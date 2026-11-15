@@ -82,6 +82,7 @@ import qualified Parun.Types.Snapshots as Snapshots
 import qualified Parun.Types.StepBegan as StepBegan
 import qualified Parun.Types.StepBegins as StepBegins
 import qualified Parun.Types.TriggerCondition as TriggerCondition
+import qualified Parun.Types.TriggerFrequency as TriggerFrequency
 import qualified Parun.Types.TriggerSource as TriggerSource
 import qualified Parun.Types.TriggeredAbility as TriggeredAbility
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -379,7 +380,7 @@ vanishingSpec s registry =
         -- and a mint that dropped one of the pair would repair it silently.
         Spec.it s "CR 702.63c each instance is its own three abilities" $ do
           let counted = TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Beginning BeginningStep.Upkeep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)))
-              emptied = TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Time) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent)
+              emptied = TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Time) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent TriggerFrequency.EveryTime)
           Spec.assertEqWith
             s
             "vanishing 2 held twice mints four triggers, two of each kind"
@@ -405,7 +406,7 @@ numberlessVanishingSpec s _ =
     -- the absent number changes exactly one of the two lists.
     Spec.it s "CR 702.63b keeps both triggers and mints no entry rewrite" $ do
       let counted = TriggerCondition.StepBegins (StepBegins.MkStepBegins (Phase.Beginning BeginningStep.Upkeep) Nothing (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)))
-          emptied = TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Time) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent)
+          emptied = TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Time) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent TriggerFrequency.EveryTime)
       Spec.assertEqWith
         s
         "both of rule 702.63a's triggers, numberless"

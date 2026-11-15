@@ -2133,7 +2133,7 @@ representativeEvents cond =
         -- event really matches. With no threshold the removal does NOT reach
         -- zero, so a matcher that had read `after` anyway would find nothing
         -- and the eventBindingSlots pin below would see nothing stamped.
-        TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger which motion _ threshold _) ->
+        TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger which motion _ threshold _ _) ->
           -- Any kind admits a +1/+1 counter.
           let kind = case which of
                 WhichCounters.OfKind k -> k
@@ -2294,7 +2294,7 @@ representativeEvents cond =
                 AbilityTriggered.MkAbilityTriggered
                   { AbilityTriggered.source = TriggerSource.OfObject departed,
                     AbilityTriggered.controller = S.alice,
-                    AbilityTriggered.ability = bareAbility (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent)),
+                    AbilityTriggered.ability = bareAbility (TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 3) CounterGrouping.EachPermanent TriggerFrequency.EveryTime)),
                     AbilityTriggered.stackObject = Nothing,
                     AbilityTriggered.attackers = Set.singleton departed
                   }
@@ -2532,17 +2532,18 @@ everyTriggerCondition =
     TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.AnyPlayer)) Batching.EachOccurrence TriggerFrequency.EveryTime Nothing),
     TriggerCondition.LifeChanges (LifeTrigger.MkLifeTrigger LifeDirection.Lost PlayerRelation.Opponent (TurnScope.PlayersTurn (PlayerRef.Relative PlayerRelation.You)) Batching.OneOrMore TriggerFrequency.EveryTime Nothing),
     -- One per grouping, holder and threshold the pool prints, plus a
-    -- per-counter Permanent holder, whose `became` no printing claims yet, and
-    -- The Great Goblin's kind-free one.
-    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 1) CounterGrouping.EachPermanent),
+    -- per-counter Permanent holder, whose `became` no printing claims yet, The
+    -- Great Goblin's kind-free one and Stalwart Successor's first-time one.
+    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Lore) (CounterMotion.Put PlayerRelation.AnyPlayer) CounterHolder.Self (Just 1) CounterGrouping.EachPermanent TriggerFrequency.EveryTime),
     TriggerCondition.SelfBecomesClassLevel (ClassLevel.MkClassLevel 2),
-    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Defense) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent),
-    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Loyalty) CounterMotion.Removed CounterHolder.Self Nothing CounterGrouping.EachPermanent),
-    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.PlusOnePlusOne) CounterMotion.Removed CounterHolder.Self Nothing CounterGrouping.EachCounter),
-    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.MinusOneMinusOne) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.And [])) Nothing CounterGrouping.EachBatch),
-    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.MinusOneMinusOne) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.And [])) Nothing CounterGrouping.EachPermanent),
-    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.MinusOneMinusOne) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.And [])) Nothing CounterGrouping.EachCounter),
-    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger WhichCounters.OfAnyKind (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.And [])) Nothing CounterGrouping.EachPermanent),
+    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Defense) CounterMotion.Removed CounterHolder.Self (Just 0) CounterGrouping.EachPermanent TriggerFrequency.EveryTime),
+    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.Loyalty) CounterMotion.Removed CounterHolder.Self Nothing CounterGrouping.EachPermanent TriggerFrequency.EveryTime),
+    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.PlusOnePlusOne) CounterMotion.Removed CounterHolder.Self Nothing CounterGrouping.EachCounter TriggerFrequency.EveryTime),
+    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.MinusOneMinusOne) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.And [])) Nothing CounterGrouping.EachBatch TriggerFrequency.EveryTime),
+    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.MinusOneMinusOne) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.And [])) Nothing CounterGrouping.EachPermanent TriggerFrequency.EveryTime),
+    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger (WhichCounters.OfKind CounterKind.MinusOneMinusOne) (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.And [])) Nothing CounterGrouping.EachCounter TriggerFrequency.EveryTime),
+    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger WhichCounters.OfAnyKind (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.And [])) Nothing CounterGrouping.EachPermanent TriggerFrequency.EveryTime),
+    TriggerCondition.CountersChange (CounterTrigger.MkCounterTrigger WhichCounters.OfAnyKind (CounterMotion.Put PlayerRelation.AnyPlayer) (CounterHolder.Permanent (Filter.Type.And [])) Nothing CounterGrouping.EachPermanent TriggerFrequency.FirstTimeEachTurn),
     -- BOTH scopes, unlike StepBegins' one above: the TurnScope is new on this
     -- condition, and the pin below asserts eventBindingSlots against what
     -- eventBindings stamps for every event -- so an arm that had cased on the
