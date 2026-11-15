@@ -594,7 +594,8 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
       " {\"type\":\"Exploits\",\"value\":{}} "
   -- CR 702.122e's Vehicle side, carrying a frequency -- Mighty Servant of
   -- Leuk-o prints "for the first time each turn" -- and CR 702.122b's crewer
-  -- side. Parun.Codec.CrewRoleSpec has the payload.
+  -- side, naming crew or (CR 702.171c) saddle. Parun.Codec.CrewRoleSpec has
+  -- the payload.
   Spec.it s "Crews round-trips the Vehicle side" $
     Common.assertCodec
       s
@@ -605,8 +606,8 @@ spec s = Spec.describe s "Parun.Codec.TriggerCondition" $ do
     Common.assertCodec
       s
       TriggerCondition.codec
-      (TriggerCondition.Crews CrewRole.Crewer)
-      " {\"type\":\"Crews\",\"value\":{\"type\":\"Crewer\"}} "
+      (TriggerCondition.Crews (CrewRole.Crewer KeywordFamily.Saddle))
+      " {\"type\":\"Crews\",\"value\":{\"type\":\"Crewer\",\"value\":\"Saddle\"}} "
   -- CR 603.10a's sacrifice family, narrowed both ways: Vengeful Tracker's
   -- "whenever an opponent sacrifices an artifact".
   Spec.it s "PermanentSacrificed round-trips both halves" $

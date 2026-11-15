@@ -1662,7 +1662,7 @@ triggerConditionChildren c condition = case condition of
   TriggerCondition.Exploits (ExploitTrigger.MkExploitTrigger exploiter exploited) -> fmap TriggerCondition.Exploits (ExploitTrigger.MkExploitTrigger <$> actingChildren c exploiter <*> triggerFilter c exploited)
   TriggerCondition.Crews role -> case role of
     CrewRole.Vehicle frequency -> fmap (TriggerCondition.Crews . CrewRole.Vehicle) (triggerFrequency c HistoryRead.Crews frequency)
-    CrewRole.Crewer -> pure condition
+    CrewRole.Crewer _ -> pure condition
   TriggerCondition.PermanentSacrificed acts -> fmap TriggerCondition.PermanentSacrificed (playerActsOnChildren c acts)
   TriggerCondition.AbilityWatch _ -> pure condition
   TriggerCondition.PlayerBecomesMonarch _ -> pure condition

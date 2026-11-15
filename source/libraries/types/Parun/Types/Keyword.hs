@@ -757,7 +757,8 @@ data Keyword
     --
     -- CR 702.171c's "saddles" relation is GameEvent.Saddled, written by
     -- Parun.Engine.Activate as the cost is paid and read by
-    -- Filter.SaddledSourceThisTurn; Parun.SaddleSpec's "CR 702.171c the attacking
+    -- Filter.SaddledSourceThisTurn and CrewRole.Crewer's saddle trigger;
+    -- Parun.SaddleSpec's "CR 702.171c the attacking
     -- Beaver's counter goes on the creature that saddled it" is the proof.
     Saddle Natural.Natural
   | -- | 702.172a: "Choose one or more modes. As an additional cost to cast this

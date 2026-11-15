@@ -220,8 +220,9 @@ data TriggerCondition
     -- creatures under the exploited creature's toughness" is what proves the
     -- exploited creature's slot is readable.
     Exploits ExploitTrigger.ExploitTrigger
-  | -- | CR 702.122b / 702.122e: the bearer crewed a Vehicle (Gearshift Ace) or, as
-    -- a Vehicle, became crewed (Mobilizer Mech).
+  | -- | CR 702.122b / 702.122e / 702.171c: the bearer crewed a Vehicle (Gearshift
+    -- Ace) or saddled a Mount (Canyon Vaulter), or, as a Vehicle, became crewed
+    -- (Mobilizer Mech).
     --
     -- Rule 702.122e's last sentence is read off Parun.Engine.Binding.crewers,
     -- which Parun.Engine.Event.Binding stamps for every Vehicle match: an

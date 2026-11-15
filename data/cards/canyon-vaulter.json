@@ -1,0 +1,132 @@
+{
+  "faces": [
+    {
+      "manaCost": [
+        {
+          "type": "Generic",
+          "value": 1
+        },
+        {
+          "type": "OfType",
+          "value": {
+            "type": "Colored",
+            "value": "White"
+          }
+        }
+      ],
+      "name": "Canyon Vaulter",
+      "oracleText": "Whenever this creature saddles a Mount or crews a Vehicle during your main phase, that Mount or Vehicle gains flying until end of turn.",
+      "power": {
+        "type": "Literal",
+        "value": 3
+      },
+      "toughness": {
+        "type": "Literal",
+        "value": 1
+      },
+      "triggeredAbilities": [
+        {
+          "condition": {
+            "type": "AnyOf",
+            "value": [
+              {
+                "type": "Crews",
+                "value": {
+                  "type": "Crewer",
+                  "value": "Saddle"
+                }
+              },
+              {
+                "type": "Crews",
+                "value": {
+                  "type": "Crewer",
+                  "value": "Crew"
+                }
+              }
+            ]
+          },
+          "intervening": {
+            "type": "Any",
+            "value": [
+              {
+                "type": "During",
+                "value": {
+                  "scope": {
+                    "type": "PlayersTurn",
+                    "value": {
+                      "type": "Relative",
+                      "value": "You"
+                    }
+                  },
+                  "window": {
+                    "type": "Step",
+                    "value": {
+                      "type": "PrecombatMain"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "During",
+                "value": {
+                  "scope": {
+                    "type": "PlayersTurn",
+                    "value": {
+                      "type": "Relative",
+                      "value": "You"
+                    }
+                  },
+                  "window": {
+                    "type": "Step",
+                    "value": {
+                      "type": "PostcombatMain"
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "modal": {
+            "modes": [
+              {
+                "clauses": [
+                  {
+                    "effects": [
+                      {
+                        "type": "ModifyTarget",
+                        "value": {
+                          "duration": {
+                            "type": "UntilEndOfTurn"
+                          },
+                          "modification": {
+                            "type": "GainKeyword",
+                            "value": {
+                              "type": "Flying"
+                            }
+                          },
+                          "ref": {
+                            "type": "InSlot",
+                            "value": "thatCrewedOrSaddled"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "typeLine": {
+        "subtypes": [
+          "Kor",
+          "Pilot"
+        ],
+        "types": [
+          "Creature"
+        ]
+      }
+    }
+  ]
+}
