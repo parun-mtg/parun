@@ -343,7 +343,13 @@ applyWordSwaps swaps pc =
 -- Every other arm ignores it.
 applyModification :: (ObjectId -> ProjectedCharacteristics) -> Count.ViewOf -> ObjectId -> Timestamp -> GameState -> ObjectId -> Set CardType.CardType -> Affected.Affected -> Modification -> ProjectedCharacteristics -> ProjectedCharacteristics
 applyModification textBoxOf viewOf src stamp gs oid unitTypes affected m pc =
-  let context = SourceContext.sourceContext viewOf gs (controllerOf src gs) src
+  let -- CR 201.2a / 613.1f: the source's names as this layer stands, off the
+      -- same running board the candidates are read from (withCharacteristicsOf
+      -- cannot reach inside the fold), for Filter.Shares Name Source: Marvin,
+      -- Murderous Mimic's lenders. The scenarios under
+      -- data/scenarios/marvin-murderous-mimic prove the copied and the Spy
+      -- Kit-named source.
+      context = (SourceContext.sourceContext viewOf gs (controllerOf src gs) src) {Filter.sourceNames = foldMap Filter.names (viewOf src)}
       granting = grantingTo pc
       grantingTo receiver k =
         let granter = Game.lookupObject src gs

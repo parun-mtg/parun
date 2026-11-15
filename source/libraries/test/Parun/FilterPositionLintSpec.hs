@@ -62,6 +62,7 @@ import qualified Parun.Types.CandidateScope as CandidateScope
 import qualified Parun.Types.CantBeBlockedBy as CantBeBlockedBy
 import qualified Parun.Types.CantBlockCreatures as CantBlockCreatures
 import qualified Parun.Types.Card as Card.Type
+import qualified Parun.Types.CardAbilities as CardAbilities
 import qualified Parun.Types.CardType as CardType
 import qualified Parun.Types.CastFromZone as CastFromZone
 import qualified Parun.Types.ChooseBetween as ChooseBetween
@@ -2935,16 +2936,18 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
   -- colours (CR 702.78a's conspire) is answerable only where the CONTEXT
   -- supplies them: Parun.Engine.Projection.withCharacteristicsOf fills all three
   -- together, for every context Projection.sourceContext frames and for CR
-  -- 509.1b's pairwise walks, and they are empty inside the CR 613 layer fold and
-  -- in a bare Filter.contextFor -- so the atom in a card's affected set or static
-  -- condition would be a silent False. Outside a face's own pairwise position
+  -- 509.1b's pairwise walks, and they are empty inside the CR 613 layer fold
+  -- (but for the names Projection.applyModification fills, which Marvin,
+  -- Murderous Mimic's static lend reads) and in a bare Filter.contextFor -- so
+  -- the atom in a card's affected set or static condition would be a silent
+  -- False. Outside a face's own pairwise position
   -- (Spitfire Handler's, Ironclaw Curse's, Okk's company), a wish's filter (Synthetic Wishful
   -- Djinn's), a triggered ability's own condition (Kami of Mourning's) and a
   -- target slot's filter (Stone Giant's, which Parun.Engine.Target.slotContext
   -- frames through Projection.framedWith), an effect-stated alternative cost's
   -- payment (Dream Halls', which Parun.Engine.Cost.discardCandidates frames
-  -- through Projection.framedBy), only
-  -- Parun.Engine.Keyword's keywords and Parun.Engine.Ring's emblem write them, and
+  -- through Projection.framedBy) and a static lend's lenders, names only
+  -- (Marvin, Murderous Mimic's), only Parun.Engine.Keyword's keywords and Parun.Engine.Ring's emblem write them, and
   -- this is what keeps that true.
   Spec.it s "CR 702.134a / 702.60a / 702.78a no card compares against the source outside the positions that fill it" $ do
     let ofSource = Value.String (String.MkString (Text.pack "OfSource"))
@@ -2959,9 +2962,13 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
           _ -> []
         inSlots needle c = sum [occurrences needle (atomJson f) | (InTargetSlot, f) <- surveyedFilters c]
         inPayments needle c = sum [occurrences needle (atomJson f) | PlayerEffect.PayRatherThanManaCost grant <- fmap PlayerStaticAbility.effect (Face.playerAbilities (surveyedFace c)), f <- concatMap costComponentFilters (FreeCast.instead grant)]
+        -- A static lend's lenders, matched in Projection.applyModification's
+        -- context, which fills the source's names and nothing else of it.
+        sameName = atomJson (Filter.Type.Shares Trait.Name Anchor.Source)
+        inLends needle c = if needle /= sameName then 0 else sum [occurrences needle (atomJson (CardAbilities.cards lend)) | a <- Face.staticAbilities (surveyedFace c), Modification.GainCardAbilities lend <- NonEmpty.toList (StaticAbility.modifications a)]
         -- `e` is the face's encoding, made once however many needles read it.
-        admittedIn e needle c = (pairwise e needle c, wishFilterAtoms needle e, triggerConditionAtoms needle e, inSlots needle c, inPayments needle c)
-        outsideIn e needle c = let (p, w, t, i, a) = admittedIn e needle c in occurrences needle e - p - w - t - i - a
+        admittedIn e needle c = (pairwise e needle c, wishFilterAtoms needle e, triggerConditionAtoms needle e, inSlots needle c, inPayments needle c, inLends needle c)
+        outsideIn e needle c = let (p, w, t, i, a, l) = admittedIn e needle c in occurrences needle e - p - w - t - i - a - l
         admitted needle c = admittedIn (encoded c) needle c
         outside needle c = outsideIn (encoded c) needle c
         strays c = let e = encoded c in filter (\needle -> outsideIn e needle c /= 0) needles
@@ -2976,15 +2983,17 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
       s
       "the Djinn's is in a wish, the Kami's in a trigger condition, the Handler's pairwise, the Giant's in a target slot"
       (fmap (\p -> (admitted ofSource (survey (S.combinedFace p)), outside ofSource (survey (S.combinedFace p)))) [djinn, kami, spitfire, giant])
-      [((0, 1, 0, 0, 0), 0), ((0, 0, 1, 0, 0), 0), ((1, 0, 0, 0, 0), 0), ((0, 0, 0, 1, 0), 0)]
+      [((0, 1, 0, 0, 0, 0), 0), ((0, 0, 1, 0, 0, 0), 0), ((1, 0, 0, 0, 0, 0), 0), ((0, 0, 0, 1, 0, 0), 0)]
     halls <- S.printingOf s registry "Dream Halls"
     let sameColor = atomJson (Filter.Type.Shares Trait.Color Anchor.Source)
-    Spec.assertEqWith s "Dream Halls' is in an alternative cost's payment" (admitted sameColor (survey (S.combinedFace halls)), outside sameColor (survey (S.combinedFace halls))) ((0, 0, 0, 0, 1), 0)
+    Spec.assertEqWith s "Dream Halls' is in an alternative cost's payment" (admitted sameColor (survey (S.combinedFace halls)), outside sameColor (survey (S.combinedFace halls))) ((0, 0, 0, 0, 1, 0), 0)
+    marvin <- S.printingOf s registry "Marvin, Murderous Mimic"
+    Spec.assertEqWith s "Marvin, Murderous Mimic's is in a static lend's lenders" (admitted sameName (survey (S.combinedFace marvin)), outside sameName (survey (S.combinedFace marvin))) ((0, 0, 0, 0, 0, 1), 0)
     -- The resolved row's blocker filter is pairwise too, and Space Beleren's +1
     -- writes one there.
     beleren <- S.printingOf s registry "Space Beleren"
     let sameSector = atomJson (Filter.Type.Shares Trait.Sector Anchor.Source)
-    Spec.assertEqWith s "Space Beleren's is in a resolved evasion's blocker filter" (admitted sameSector (survey (S.combinedFace beleren)), outside sameSector (survey (S.combinedFace beleren))) ((1, 0, 0, 0, 0), 0)
+    Spec.assertEqWith s "Space Beleren's is in a resolved evasion's blocker filter" (admitted sameSector (survey (S.combinedFace beleren)), outside sameSector (survey (S.combinedFace beleren))) ((1, 0, 0, 0, 0, 0), 0)
     -- NOT vacuous the other way either: the same counter over a hand-built face
     -- that DOES carry each atom -- buried under all three combinators, in a
     -- static ability's affected set, whose Projection.affectedContext fills no
