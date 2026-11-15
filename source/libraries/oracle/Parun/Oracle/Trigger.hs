@@ -108,7 +108,10 @@ event context creature c = case c of
       "a land you control" -> ["Landfall \8212 "]
       "another creature you control" -> ["", "Alliance \8212 "]
       _ -> [""]
-    [other (opening' <> "Whenever " <> subject <> " enters") [(becameSlot, word)]]
+    -- Free without an ability word: "When" on a source that leaves with it
+    -- (Teeming Dragonstorm).
+    whenever <- if null opening' then recurring else ["Whenever"]
+    [other (opening' <> whenever <> " " <> subject <> " enters") [(becameSlot, word)]]
   -- A disjunction with a kind described further names each kind in full and
   -- spells CR 700.4's event out, Oracle text having no land "die": "another
   -- creature you control or a land you control is put into a graveyard from

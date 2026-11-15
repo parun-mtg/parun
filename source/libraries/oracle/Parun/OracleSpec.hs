@@ -434,8 +434,9 @@ spec s = Spec.describe s "Parun.Oracle" $ do
     Spec.assertBool s (Oracle.says essence spark (Text.pack "Whenever this creature is dealt combat damage, you gain that much life.")) "Wall of Essence's wording unsaid"
     Spec.assertBool s (not (Oracle.says essence spark (Text.pack "Enrage \8212 Whenever this creature is dealt combat damage, you gain that much life."))) "enrage said of combat damage alone"
 
-  -- CR 603.6a / 700.4 read by a bystander: "Whenever a [type] enters" or
-  -- "dies", the object "it" or "that creature"; landfall's ability word
+  -- CR 603.6a / 700.4 read by a bystander: "Whenever a [type] enters" (or
+  -- "When", Teeming Dragonstorm) or "dies", the object "it" or "that
+  -- creature"; landfall's ability word
   -- (CR 207.2c); a creature among the objects it watches named first
   -- (Zulaport Cutthroat), never a noncreature.
   Spec.it s "render prints a trigger on another object entering, dying or becoming blocked" $ do
@@ -443,9 +444,9 @@ spec s = Spec.describe s "Parun.Oracle" $ do
         others = Filter.And [Filter.HasCardType CardType.Creature, Filter.Not Filter.IsSource]
         mine = Filter.And [Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]
     Spec.assertEq s (Just (Text.pack "Whenever another creature enters, you gain 1 life.")) (Oracle.render (on [CardType.Creature] (TriggerCondition.Enters (EntersTrigger.matching others)) [gainLife 1]))
-    Spec.assertEq s [[Text.pack "Whenever a creature enters, Spark deals 2 damage to it.", Text.pack "Whenever a creature enters, Spark deals 2 damage to that creature."]] (Oracle.abilities (on [CardType.Enchantment] (TriggerCondition.Enters (EntersTrigger.matching (Filter.HasCardType CardType.Creature))) [damageBy [(ObjectRef.InSlot became, Quantity.Literal 2)]]))
+    Spec.assertEq s [[Text.pack "Whenever a creature enters, Spark deals 2 damage to it.", Text.pack "When a creature enters, Spark deals 2 damage to it.", Text.pack "Whenever a creature enters, Spark deals 2 damage to that creature.", Text.pack "When a creature enters, Spark deals 2 damage to that creature."]] (Oracle.abilities (on [CardType.Enchantment] (TriggerCondition.Enters (EntersTrigger.matching (Filter.HasCardType CardType.Creature))) [damageBy [(ObjectRef.InSlot became, Quantity.Literal 2)]]))
     Spec.assertEq s (Just (Text.pack "Landfall \8212 Whenever a land you control enters, you gain 1 life.")) (Oracle.render (on [CardType.Creature] (TriggerCondition.Enters (EntersTrigger.matching (Filter.And [Filter.HasCardType CardType.Land, Filter.HeldBy Holder.Controller PlayerRelation.You]))) [gainLife 1]))
-    Spec.assertEq s [[Text.pack "Whenever another creature you control enters, you gain 1 life.", Text.pack "Alliance \8212 Whenever another creature you control enters, you gain 1 life."]] (Oracle.abilities (on [CardType.Creature] (TriggerCondition.Enters (EntersTrigger.matching (Filter.And [Filter.Not Filter.IsSource, Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]))) [gainLife 1]))
+    Spec.assertEq s [[Text.pack "Whenever another creature you control enters, you gain 1 life.", Text.pack "Alliance \8212 Whenever another creature you control enters, you gain 1 life.", Text.pack "When another creature you control enters, you gain 1 life."]] (Oracle.abilities (on [CardType.Creature] (TriggerCondition.Enters (EntersTrigger.matching (Filter.And [Filter.Not Filter.IsSource, Filter.HasCardType CardType.Creature, Filter.HeldBy Holder.Controller PlayerRelation.You]))) [gainLife 1]))
     Spec.assertEq s [[Text.pack "Whenever a creature you control dies, you gain 1 life.", Text.pack "Whenever Spark or another creature you control dies, you gain 1 life."]] (Oracle.abilities (on [CardType.Creature] (TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching mine))) [gainLife 1]))
     Spec.assertEq s [[Text.pack "Whenever a creature you control dies, you gain 1 life."]] (Oracle.abilities (on [CardType.Artifact] (TriggerCondition.Leaves (LeavesTrigger.dies (LeavingPermanent.Matching mine))) [gainLife 1]))
     -- CR 700.4 spelled out, Oracle text having no land "die", for a
