@@ -1,0 +1,87 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Traveling Chocobo"
+          },
+          {
+            "card": "Soul Warden"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "hand": [
+          {
+            "card": "Birds of Paradise",
+            "label": "birds"
+          }
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "manaPool": "G",
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 603.2d / 109.5: Traveling Chocobo doesn't double alice's Soul Warden when bob's Bird enters, since \"a land or Bird you control\" is alice's",
+  "final": [
+    {
+      "Life": {
+        "life": 21,
+        "player": "alice"
+      }
+    },
+    {
+      "Life": {
+        "life": 20,
+        "player": "bob"
+      }
+    },
+    {
+      "Count": {
+        "card": "Birds of Paradise",
+        "count": 1,
+        "player": "bob",
+        "zone": "Battlefield"
+      }
+    }
+  ],
+  "note": "bob casts Birds of Paradise on his turn; alice's Warden triggers once and puts her at 21.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "object": "$birds"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
