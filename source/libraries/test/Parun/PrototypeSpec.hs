@@ -74,7 +74,7 @@ assemblerOn printing gs =
     (\oid -> fmap S.nameOf (Game.cardOf oid gs) == Just (S.printingName printing))
     (Game.zoneMembers Zone.Battlefield S.alice gs)
 
-spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+spec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Prototype" $ do
   -- CR 719.4: "in every zone except the stack or the battlefield, and while on the
   -- stack or the battlefield when not cast as a prototyped spell, a prototype card

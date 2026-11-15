@@ -149,7 +149,7 @@ spec s registry = Spec.describe s "Goad" $ do
   durationSpec s registry
 
 -- CR 701.15b's SECOND requirement, on the board where it can be obeyed.
-objectSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+objectSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 objectSpec s registry = Spec.describe s "Object" $ do
   Spec.it s "CR 701.15b attacking a planeswalker is not attacking a player" $ do
     (goaded, untouched, _, carolWalker, resolved) <- homunculusBoard s registry OptionalDecision.Exercises

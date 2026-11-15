@@ -145,7 +145,7 @@ spec s registry = Spec.describe s "Detain" $ do
   durationSpec s registry
 
 -- CR 701.35a's first clause, through CR 508.1c.
-attackSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+attackSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 attackSpec s registry = Spec.describe s "Attack" $ do
   Spec.it s "CR 701.35a a detained creature can't attack, and its undetained twin can" $ do
     (victim, control, resolved) <- arresterBoard s registry "Prodigal Sorcerer"

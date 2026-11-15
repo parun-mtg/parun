@@ -1831,7 +1831,7 @@ greenOnly = ManaCost.MkManaCost [ManaSymbol.OfType (ManaType.Colored Color.Green
 -- the PERMANENT, and what it asks about is the spell that became it, so the
 -- record has to survive the one zone change CR 400.7 otherwise forgets
 -- everything across.
-bergStriderSpec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+bergStriderSpec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 bergStriderSpec s registry = Spec.describe s "BergStrider" $ do
   -- The record itself, off the PERMANENT rather than off the spell -- CR 400.7d's
   -- exception, which data/scenarios/mana-symbol/cr-107-4h-whole-card-berg-*.json

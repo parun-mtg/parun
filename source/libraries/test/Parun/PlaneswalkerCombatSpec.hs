@@ -1082,8 +1082,8 @@ stillThere :: [ObjectId.ObjectId] -> GameState.GameState -> Int
 stillThere oids gs = length (filter (\oid -> Set.member oid (GameState.battlefield gs)) oids)
 
 -- Set a seat's life directly, so a toll's life route can be priced against a
--- total the fixture chose. Parun.PowerToughnessSpec's `atLife`, duplicated
--- rather than hoisted.
+-- total the fixture chose. Parun.CoinSpec's `atLife`, duplicated rather than
+-- hoisted.
 atLife :: PlayerId.PlayerId -> Integer -> GameState.GameState -> GameState.GameState
 atLife pid n gs =
   gs {GameState.players = Map.adjust (\p -> p {Player.life = n}) pid (GameState.players gs)}

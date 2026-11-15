@@ -43,7 +43,7 @@ choosingLast p = case p of
   Prompt.ChoosePermanent _ _ _ candidates _ -> NonEmpty.last candidates
   _ -> S.castAnswer p
 
-spec :: (Monad m, Monad n) => Spec.Spec m n -> Registry.Registry m -> n ()
+spec :: (Monad m) => Spec.Spec m n -> Registry.Registry m -> n ()
 spec s registry = Spec.describe s "Populate" $ do
   -- Two creature tokens of different printings, so WHICH one was copied is
   -- readable by name. The Ornithopter token is minted after the Piker, so it is

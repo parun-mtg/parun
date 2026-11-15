@@ -32,6 +32,7 @@ module Parun.CoinSpec where
 
 import qualified Control.Monad.Trans.State.Strict as State
 import qualified Data.Foldable as Foldable
+import qualified Data.Map.Strict as Map
 import qualified Data.Maybe as Maybe
 import qualified Data.Set as Set
 import qualified Data.Text as Text
@@ -51,6 +52,8 @@ import qualified Parun.Types.GameState as GameState
 import qualified Parun.Types.LoggedEvent as LoggedEvent
 import qualified Parun.Types.ObjectId as ObjectId
 import qualified Parun.Types.OptionalDecision as OptionalDecision
+import qualified Parun.Types.Player as Player
+import qualified Parun.Types.PlayerId as PlayerId
 import qualified Parun.Types.Prompt as Prompt
 import qualified Parun.Types.Recipient as Recipient
 import qualified Parun.Types.TurnRegisters as TurnRegisters
@@ -60,6 +63,20 @@ spec s registry = Spec.describe s "Parun.Engine.Coin" $ do
   faceReadingSpec s registry
   missesSpec s registry
   chaosSpec s registry
+
+atLife :: PlayerId.PlayerId -> Integer -> GameState.GameState -> GameState.GameState
+atLife pid n gs =
+  gs {GameState.players = Map.adjust (\p -> p {Player.life = n}) pid (GameState.players gs)}
+
+-- Pins BOTH of CR 705.2's questions by CONSTANT rather than by anything derived
+-- from the prompt, so the engine cannot repair the answer after a mutation, and
+-- never by whatever Replay.defaultAnswer would supply unasked -- which is Heads
+-- for both, and so a WIN.
+flipAnswer :: CoinFace.CoinFace -> CoinFace.CoinFace -> Prompt.Prompt r -> r
+flipAnswer face called p = case p of
+  Prompt.FlipCoin -> face
+  Prompt.CallCoin {} -> called
+  _ -> S.identityAnswer p
 
 -- The `i`th element, or a fallback past the end. The fallbacks are the answers
 -- that LOSE a flip -- a tails coin against a call of heads -- so a run that
