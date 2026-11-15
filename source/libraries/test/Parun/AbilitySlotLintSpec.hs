@@ -31,7 +31,7 @@ import qualified Data.Maybe as Maybe
 import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import qualified Data.Text as Text
-import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, effectCounts, effectWithNested, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
+import Parun.CardSpec (anyFace, anyFaceOrMinted, armedReads, cardAuthoredEffects, cardCounts, cardFilters, cardResolutionEffects, collectsEvidenceAsCost, createToken, declaresVariable, delayedDeclarations, discardsAsCost, effectCounts, effectWithNested, grantedActivatedAbilities, grantedTriggeredAbilities, instantLine, lintMode, mintingSpell, modalActivated, modalClauseConditions, modalSlotsOffend, oneEffectActivated, oneEffectTrigger, payGateBound, removesCountersAsCost, sacrificesAsCost, spellCostsOf, triggerConditionSlots, vanillaFace, waterbendsAsCost, withMinted)
 import qualified Parun.Engine.Binding as Binding
 import qualified Parun.Engine.Card as Card
 import qualified Parun.Engine.Children as Children
@@ -447,7 +447,8 @@ activatedAbilityOffendsGiven armed ability =
 -- Not offered on the CAST side (cardOffends below), though Cast.castSpell now
 -- folds a payment's slots onto the spell: no printing in `data/cards/` taps as an
 -- additional cost to cast, so the exemption would fence nothing. Living Destiny's
--- reveal and Fling's sacrifice are the cast-side payment slots that lint admits.
+-- reveal, Fling's sacrifice and Grab the Prize's discard are among the cast-side
+-- payment slots that lint admits.
 tapsAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
 tapsAsCost =
   let isTap component = case component of
@@ -511,18 +512,6 @@ exilesTotallingAsCost =
         CostComponent.ExileCardsTotalling {} -> True
         _ -> False
    in any isExile . Cost.Type.components
-
--- Does this cost DISCARD a card? exilesSelfAsCost's shape, for
--- Binding.discardedCard (Cost.payComponent's DiscardThis and DiscardCards
--- arms): Calim, Djinn Emperor's "return Calim from your graveyard", Necromancer's
--- Stockpile's "the discarded card".
-discardsAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
-discardsAsCost =
-  let isDiscard component = case component of
-        CostComponent.DiscardThis {} -> True
-        CostComponent.DiscardCards {} -> True
-        _ -> False
-   in any isDiscard . Cost.Type.components
 
 -- CR 603.7 / 109.5: does this card arm a delayed ability "on your next turn"
 -- whose condition is not scoped to its controller's turn?

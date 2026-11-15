@@ -1254,6 +1254,20 @@ sacrificesAsCost =
         _ -> False
    in any isSacrifice . Cost.Type.components
 
+-- Does this cost DISCARD a card? sacrificesAsCost's shape, for
+-- Binding.discardedCard (Parun.Engine.Cost.payComponent's DiscardThis and
+-- DiscardCards arms), folded on by Parun.Engine.Activate and Parun.Engine.Cast:
+-- Calim, Djinn Emperor's "return Calim from your graveyard", Necromancer's
+-- Stockpile's "the discarded card", and Grab the Prize's additional cost. Asked
+-- of both halves of the lint.
+discardsAsCost :: Cost.Type.Cost Keyword.Keyword -> Bool
+discardsAsCost =
+  let isDiscard component = case component of
+        CostComponent.DiscardThis {} -> True
+        CostComponent.DiscardCards {} -> True
+        _ -> False
+   in any isDiscard . Cost.Type.components
+
 -- Does this cost remove counters from permanents the payer CHOOSES?
 -- sacrificesAsCost's shape: CR 601.2h's payment binds how many under
 -- Binding.removedCounters (Parun.Engine.Cost.payComponent's
@@ -6040,6 +6054,9 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
         --     Parun.Engine.Resolve.Slots.effectViewOf, the permanent being in a
         --     graveyard by then. activatedAbilityOffends grants the same exemption
         --     against the same `sacrificesAsCost` for Jarad, Golgari Lich Lord.
+        --   * Binding.discardedCard, and only when the cost discards a card,
+        --     per `discardsAsCost`: Parun.Engine.Cast folds it onto the spell,
+        --     so Grab the Prize's "the discarded card" is an ordinary slot read.
         --   * the slot a CR 118.12 cost paid at resolution binds, per
         --     `payGateBound`.
         --   * Binding.printedAlternativeCost, and only when the face prints an
@@ -6063,6 +6080,10 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
                 if any sacrificesAsCost (spellCostsOf card)
                   then Set.singleton Binding.sacrificedPermanent
                   else Set.empty
+              discarded =
+                if any discardsAsCost (spellCostsOf card)
+                  then Set.singleton Binding.discardedCard
+                  else Set.empty
               recorded = Set.unions (fmap Cost.announcedRecords (spellCostsOf card))
               chooser =
                 if Face.modeChooser card /= PlayerRelation.You
@@ -6072,7 +6093,7 @@ lintSpec s registry corpus = Spec.describe s "Lint" $ do
                 if null (Face.alternativeCosts card)
                   then Set.empty
                   else Set.singleton Binding.printedAlternativeCost
-           in modalSlotsOffend (armedReads card) (Set.unions [Set.fromList [Binding.you, Binding.triggerSource], announcedX, revealed, sacrificed, recorded, chooser, alternative, payGateBound (Face.spell card)]) (Face.spell card)
+           in modalSlotsOffend (armedReads card) (Set.unions [Set.fromList [Binding.you, Binding.triggerSource], announcedX, revealed, sacrificed, discarded, recorded, chooser, alternative, payGateBound (Face.spell card)]) (Face.spell card)
         sweeps = anyFaceOrMinted cardOffends
         offenders = filter (sweeps . Printing.card) ps
         slot = SlotName.MkSlotName (Text.pack "creature")
