@@ -2287,6 +2287,7 @@ filterPositionLintSpec s registry corpus = Spec.describe s "Lint" $ do
         ("Regeneration", 1), -- a loop whose member its shield names
         ("Ring of Xathrid", 1), -- Regeneration's wording, through an Equipment
         ("Claustrophobia", 1), -- Bewitching Leechcraft's entering tap
+        ("Charmed Sleep", 1), -- Claustrophobia's wording
         ("Paralyze", 2), -- the entering tap and the paid untap
         ("Erosion", 1), -- the destroy a refused payment leaves
         ("Waterknot", 1), -- Claustrophobia's wording
