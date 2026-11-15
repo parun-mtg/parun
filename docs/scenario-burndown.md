@@ -493,19 +493,19 @@ out: grep for them.
 
 ### `DaytimeSpec`
 
-- CR 502.2 neither day nor night: the check does not happen | `check:other-GameState.daytime`
-- CR 502.2 night and only one spell last turn stays night | `board:daytime`
-- CR 502.2/702.145f night and two spells last turn becomes day | `board:daytime`
-- CR 603.4 two Wolves are not three, so it stays day | `board:daytime`
-- CR 608.2d an answer naming what was never offered turns nothing over | `board:daytime`
-- CR 608.2d naming nothing is a legal answer and turns nothing over | `board:daytime`
-- CR 608.2d the chooser names the Human Werewolf and it turns over | `board:daytime`
-- CR 702.145b by day the same spell enters front face up | `board:daytime`
-- CR 702.145d controlling a daybound permanent makes it day | `check:helper-faceNameOf` `check:helper-frontName` `check:other-GameState.daytime`
-- CR 712.10 by day that spell enters front face up | `board:daytime`
-- CR 732.1 a game with no daybound permanent stays neither day nor night | `check:other-GameState.daytime`
-- CR 732.1/702.145c Tovolar's upkeep trigger makes it night and transforms him | `board:daytime`
-- CR 732.2 the handoff records what the previous turn's active player cast | `check:other-Game.spellsCastLastTurn` `check:events`
+- ~~CR 502.2 neither day nor night: the check does not happen | `check:other-GameState.daytime`~~
+- ~~CR 502.2 night and only one spell last turn stays night | `board:daytime`~~
+- ~~CR 502.2/702.145f night and two spells last turn becomes day | `board:daytime`~~
+- ~~CR 603.4 two Wolves are not three, so it stays day | `board:daytime`~~
+- ~~CR 608.2d an answer naming what was never offered turns nothing over | `board:daytime`~~
+- ~~CR 608.2d naming nothing is a legal answer and turns nothing over | `board:daytime`~~
+- ~~CR 608.2d the chooser names the Human Werewolf and it turns over | `board:daytime`~~
+- ~~CR 702.145b by day the same spell enters front face up | `board:daytime`~~
+- ~~CR 702.145d controlling a daybound permanent makes it day | `check:helper-faceNameOf` `check:helper-frontName` `check:other-GameState.daytime`~~
+- ~~CR 712.10 by day that spell enters front face up | `board:daytime`~~
+- ~~CR 732.1 a game with no daybound permanent stays neither day nor night | `check:other-GameState.daytime`~~
+- ~~CR 732.1/702.145c Tovolar's upkeep trigger makes it night and transforms him | `board:daytime`~~
+- ~~CR 732.2 the handoff records what the previous turn's active player cast | `check:other-Game.spellsCastLastTurn` `check:events`~~
 
 ### `DepartureSpec`
 
@@ -530,7 +530,7 @@ out: grep for them.
 ### `DungeonSpec`
 
 - CR 118.12a Veils of Fear offers each player the discard and only the seats that declined lose the life | `board:dungeons`
-- CR 309.2 a deck's dungeon cards are recorded on its player and minted into no zone | `check:other-Game.printingOf` `check:other-GameState.objects` `check:other-GameState.players` `check:other-Player.dungeons`
+- ~~CR 309.2 a deck's dungeon cards are recorded on its player and minted into no zone | `check:other-Game.printingOf` `check:other-GameState.objects` `check:other-GameState.players` `check:other-Player.dungeons`~~
 - CR 309.2a a player owning two dungeons chooses which one to enter | `board:dungeons`
 - CR 309.4c / 701.22a Cave Entrance's Scry 1 puts the top card where its controller says | `board:dungeons`
 - CR 309.5a a room with two arrows asks which one to follow, and the answer decides the room | `board:dungeons`

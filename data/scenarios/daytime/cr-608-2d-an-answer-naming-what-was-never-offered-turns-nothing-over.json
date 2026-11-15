@@ -1,0 +1,168 @@
+{
+  "description": "CR 608.2d an answer naming what was never offered turns nothing over",
+  "note": "The offer is filtered, not trusted (`#222`): alice's answer names bob's Ranger, which was never offered, and is flagged unoffered and goes to the engine, which turns nothing over. bob's Ranger is the discriminating victim rather than the Russet Wolves: the Wolf is single-faced, so CR 701.27d withholds its turn whatever the engine did with the answer, where bob's Ranger would turn over the moment an answer was taken on trust. alice's own Ranger, which the answer did not name, stays up too, and the trigger ran all the same, so it is night. The board is four permanents' worth of nothing spare: Tovolar is the source, Russet Wolves is the third Wolf the trigger's intervening \"if\" counts (CR 603.4), and alice's Daybreak Ranger is the only permanent alice's half of the second sentence can reach. bob's Daybreak Ranger is an equally transformable Human Werewolf that \"you control\" excludes. Not Tovolar: he is daybound, so CR 702.145c has already turned him over by the time the second sentence runs and CR 702.145b's third static ability forbids turning him again. bob casts a Fog on his turn, which keeps both Rangers' own upkeep triggers from firing (a spell was cast last turn), so every turn the Ranger takes is the chosen one, and keeps alice's untap step from making it night (CR 502.2): the night is the trigger's. Day comes from Tovolar at the first settle (CR 702.145d). The Prompt check reads the offer: alice's Ranger alone.",
+  "board": {
+    "active": "bob",
+    "step": "PrecombatMain",
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Tovolar, Dire Overlord",
+            "label": "tovolar"
+          },
+          {
+            "card": "Daybreak Ranger",
+            "label": "ranger"
+          },
+          {
+            "card": "Russet Wolves"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Daybreak Ranger",
+            "label": "bob-ranger"
+          },
+          {
+            "card": "Forest",
+            "label": "b-forest"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Fog",
+            "label": "fog"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ]
+      }
+    ]
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "PrecombatMain",
+      "player": "bob",
+      "do": {
+        "Cast": {
+          "object": "$fog",
+          "mana": [
+            "$b-forest"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Stack",
+          "is": [
+            "trigger of $tovolar"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "do": "Pass"
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Prompt",
+          "is": {
+            "kind": "ChooseAnyNumberOfPermanents",
+            "offer": {
+              "source": "$tovolar",
+              "purpose": "Permanents",
+              "earlier": [],
+              "least": 0,
+              "among": [
+                "$ranger"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "do": {
+        "Answer": {
+          "prompt": "ChooseAnyNumberOfPermanents",
+          "with": [
+            "$bob-ranger"
+          ],
+          "unoffered": true
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$bob-ranger",
+          "names": [
+            "Daybreak Ranger"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "Names": {
+          "object": "$ranger",
+          "names": [
+            "Daybreak Ranger"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 2,
+      "step": "Upkeep",
+      "player": "alice",
+      "check": {
+        "View": {
+          "of": "Daytime",
+          "is": "Night"
+        }
+      }
+    }
+  ]
+}

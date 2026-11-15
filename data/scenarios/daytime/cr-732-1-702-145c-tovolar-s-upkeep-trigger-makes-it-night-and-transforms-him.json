@@ -1,0 +1,137 @@
+{
+  "board": {
+    "active": "bob",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tovolar, Dire Overlord",
+            "label": "tovolar"
+          },
+          {
+            "card": "Russet Wolves"
+          },
+          {
+            "card": "Russet Wolves"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Forest",
+            "label": "b-forest"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Fog",
+            "label": "fog"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 732.1/702.145c Tovolar's upkeep trigger makes it night and transforms him",
+  "note": "The whole card, driven through the engine: alice's upkeep begins, CR 603.4's intervening \"if\" holds (Tovolar is himself a Werewolf, so two Wolves make three), the trigger resolves, CR 732.1 makes it night, and CR 702.145c turns the daybound permanent over as that happens. Day comes from Tovolar at the first settle (CR 702.145d) on bob's turn; bob casts a Fog so alice's untap step leaves it day (CR 502.2), and the night is the trigger's alone. The day is read at alice's upkeep with the trigger on the stack.",
+  "timeline": [
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$b-forest"
+          ],
+          "object": "$fog"
+        }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "trigger of $tovolar"
+          ],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": "Day",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": "Night",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Tovolar, the Midnight Scourge"
+          ],
+          "object": "$tovolar"
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$tovolar",
+          "power": 4,
+          "toughness": 4
+        }
+      },
+      "player": "alice",
+      "step": "Upkeep",
+      "turn": 2
+    }
+  ]
+}

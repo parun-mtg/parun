@@ -1,0 +1,60 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Tovolar, Dire Overlord",
+            "label": "tovolar"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 702.145d controlling a daybound permanent makes it day",
+  "note": "CR 702.145d: any time a player controls a permanent with daybound and it is neither day nor night, it becomes day. Controlling Tovolar is the whole input: nothing is cast and nothing resolves, so the first settle is what makes it day. CR 702.145c does not fire on him: he is front face up and it is day, the designation daybound wants, so he stays a 3/3 Tovolar, Dire Overlord.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": "Day",
+          "of": "Daytime"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Names": {
+          "names": [
+            "Tovolar, Dire Overlord"
+          ],
+          "object": "$tovolar"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "PowerToughness": {
+          "object": "$tovolar",
+          "power": 3,
+          "toughness": 3
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    }
+  ]
+}
