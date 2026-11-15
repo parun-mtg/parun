@@ -4,6 +4,11 @@ Each `.json` file here, in any subdirectory, is one gameplay test: a board, a
 timeline of decisions and checks, and optional final checks. The test suite
 runs every one, and `parun scenario FILE...` runs any (a binary from `cabal
 list-bin parun` needs `parun_datadir=data` from the repository root). `parun
+scenario --perturb FILE...` runs each file as written, then once per change
+to one check's expected value (a number off by one, a tap state flipped, a
+set or list one element short or long, a null made something and back),
+naming each change the scenario still passes and each check it has no change
+for; it exits 1 when one passes or a file fails as written. `parun
 schema scenario` prints the schema. A test moved from a Haskell spec goes in a
 subdirectory named for that spec; `docs/scenario-burndown.md` lists the ones still to move.
 

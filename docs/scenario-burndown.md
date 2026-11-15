@@ -15,8 +15,10 @@ A unit of work is the first `###` section under "Tests", or part of it. Each
 listed test is read from its source and then converted (its Haskell block and
 the helpers it orphans deleted), deleted because an existing scenario already
 covers it, or kept in Haskell with its reason in the PR body; its line goes
-either way. The format gains a check, move or board feature (a type, a codec
-with a round-trip spec, a runner arm, a README line) only when that frees
+either way. A converted scenario must fail when any one of its checks is
+perturbed: `parun scenario --perturb FILE` proves it, and only a check it
+reports skipped is perturbed by hand. The format gains a check, move or board
+feature (a type, a codec with a round-trip spec, a runner arm, a README line) only when that frees
 several listed tests. The unit that empties the list deletes this doc.
 
 - `check:*` the test's board and moves already replay as a scenario; only

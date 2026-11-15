@@ -2476,6 +2476,7 @@ library scenario
     Parun.Scenario
     Parun.Scenario.Load
     Parun.Scenario.Offer
+    Parun.Scenario.Perturb
     Parun.Scenario.Prompt
     Parun.Scenario.Reply
 
