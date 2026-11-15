@@ -1,0 +1,136 @@
+{
+  "description": "CR 506.8b the window opens at the declaration and runs to the end of the combat phase",
+  "note": "",
+  "board": {
+    "seats": [
+      {
+        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Sacred Prey",
+            "label": "prey",
+            "ready": true
+          }
+        ]
+      },
+      {
+        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p0",
+            "ready": true
+          },
+          {
+            "card": "Plains",
+            "label": "p1",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Curtain of Light",
+            "label": "curtain"
+          },
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          }
+        ]
+      }
+    ],
+    "active": "alice",
+    "step": "DeclareAttackers"
+  },
+  "timeline": [
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "alice",
+      "do": {
+        "Attack": [
+          "$prey"
+        ]
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareAttackers",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "bob",
+          "is": [
+            "Pass"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "do": {
+        "Block": {}
+      }
+    },
+    {
+      "turn": 1,
+      "step": "DeclareBlockers",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "bob",
+          "is": [
+            "Pass"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "CombatDamage",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "bob",
+          "is": [
+            "Pass"
+          ]
+        }
+      }
+    },
+    {
+      "turn": 1,
+      "step": "EndOfCombat",
+      "player": "bob",
+      "check": {
+        "View": {
+          "of": "Offered",
+          "player": "bob",
+          "is": [
+            "Pass"
+          ]
+        }
+      }
+    }
+  ]
+}
