@@ -3669,7 +3669,7 @@ activationAdjustmentSpec s registry = Spec.describe s "CR 601.2f a mana ability'
   --
   -- Zirda's other two clauses are transcribed too: the Companion condition, proved
   -- by Parun.CompanionSpec, and "{1}, {T}: Target creature can't block this turn",
-  -- proved by Parun.CombatSpec's StoredBlockRestriction group. Neither bears on the
+  -- proved by data/scenarios/combat/'s Zirda scenarios. Neither bears on the
   -- sentence this case is about.
   --
   -- Proved at the PAYMENT and not at the offer, for the reason the Field's case

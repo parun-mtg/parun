@@ -499,8 +499,8 @@ canAttackGiven (Snapshot.MkSnapshot {Snapshot.projected = pcs, Snapshot.grants =
       && isCreatureObjectGiven pcs oid gs
       -- CR 508.1a's "they can't also be battles". A separate conjunct from the
       -- creature test above and not a consequence of it: CR 205.1b's "in addition
-      -- to its other types" leaves a permanent both, and Parun.CombatSpec's
-      -- "CR 508.1a a creature that is also a battle is not offered as an attacker"
+      -- to its other types" leaves a permanent both, and
+      -- data/scenarios/combat/cr-508-1a-a-creature-that-is-also-a-battle-is-not-offered-as-an-attacker.json
       -- is the board.
       && not (Projection.isBattleGiven pcs oid gs)
       -- CR 508.1c through CR 702.3b: a creature with defender can't attack. It may

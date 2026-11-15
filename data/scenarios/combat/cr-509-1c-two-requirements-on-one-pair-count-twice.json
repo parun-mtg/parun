@@ -1,0 +1,108 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "first",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "second",
+            "ready": true
+          },
+          {
+            "attached": "second",
+            "card": "Lure"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Razorgrass Screen",
+            "label": "screen",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 509.1c two requirements on ONE pair count twice",
+  "note": "CR 509.1c counts requirements obeyed, not the (blocker, attacker) pairs they name. The board of cr-509-1a-two-attackers-one-screen-blocking-either-attains.json and its -second twin, where either single block is legal, plus a Lure on the second Goblin Piker: blocking it obeys both the Screen's \"blocks each combat if able\" and the Lure, blocking the first obeys one, so declining and blocking the first are refused and only the Lured block stands. The Lure goes on the second attacker because a pair-counting reading breaks its tie toward the first.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$first",
+          "$second"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Block": {}
+      },
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Block": {
+          "$screen": [
+            "$first"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$screen": [
+            "$second"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$second",
+          "blockers": [
+            "$screen"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$first",
+          "blockers": null
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}

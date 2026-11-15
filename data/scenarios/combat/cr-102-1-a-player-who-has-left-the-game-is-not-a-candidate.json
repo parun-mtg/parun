@@ -1,0 +1,199 @@
+{
+  "board": {
+    "active": "alice",
+    "attackOption": null,
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Mountain",
+            "label": "mountain",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Lightning Bolt",
+            "label": "bolt"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "life": 3,
+        "name": "bob"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "carol"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "dave"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 102.1 a player who has left the game is not a candidate",
+  "note": "CR 507.1's choice of defending player among alice's opponents. Four seats, so two candidates survive one departure and \"filtered\" is told from \"truncated to one\". On turn 1 bob, carol and dave are offered; alice's Lightning Bolt then takes bob from 3 life to 0 and he leaves the game (CR 104.3b, 800.4a), and on her next turn only carol and dave are.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "ChooseDefender",
+            "offer": {
+              "players": [
+                "bob",
+                "carol",
+                "dave"
+              ]
+            }
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseDefender": "bob"
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Cast": {
+          "mana": [
+            "$mountain"
+          ],
+          "object": "$bolt",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [],
+          "of": "Stack"
+        }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
+    },
+    {
+      "do": {
+        "ChooseDefender": "dave"
+      },
+      "player": "carol",
+      "step": "BeginningOfCombat",
+      "turn": 2
+    },
+    {
+      "do": {
+        "ChooseDefender": "alice"
+      },
+      "player": "dave",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "ChooseDefender",
+            "offer": {
+              "players": [
+                "carol",
+                "dave"
+              ]
+            }
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 4
+    },
+    {
+      "do": {
+        "ChooseDefender": "carol"
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 4
+    },
+    {
+      "check": {
+        "Defenders": {
+          "players": [
+            "carol"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 4
+    }
+  ]
+}

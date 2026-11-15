@@ -1,0 +1,170 @@
+{
+  "board": {
+    "active": "alice",
+    "attackOption": null,
+    "seats": [
+      {
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Mindslaver",
+            "label": "slaver",
+            "ready": true
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
+          },
+          {
+            "card": "Mountain",
+            "label": "m2"
+          },
+          {
+            "card": "Mountain",
+            "label": "m3"
+          },
+          {
+            "card": "Mountain",
+            "label": "m4"
+          }
+        ],
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "carol"
+      },
+      {
+        "library": [
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          },
+          {
+            "card": "Plains"
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "PrecombatMain"
+  },
+  "description": "CR 724.1 a controlled active player's choice of defender routes to their controller",
+  "note": "carol's Mindslaver gives her control of bob during his next turn (CR 724.1), so she makes his choices (CR 724.5) while he stays the active player (CR 724.3). Three seats and CR 507.1's choice of one defending player, so bob's beginning of combat asks a real choice between alice and carol: it is asked of carol, and her answer stands. Asked of bob, the entry keyed to carol would never come.",
+  "timeline": [
+    {
+      "do": {
+        "ChooseDefender": "bob"
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Activate": {
+          "ability": 0,
+          "mana": [
+            "$m1",
+            "$m2",
+            "$m3",
+            "$m4"
+          ],
+          "object": "$slaver",
+          "targets": [
+            "$bob"
+          ]
+        }
+      },
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": "Pass",
+      "player": "carol",
+      "step": "PrecombatMain",
+      "turn": 2
+    },
+    {
+      "do": {
+        "ChooseDefender": "alice"
+      },
+      "player": "carol",
+      "step": "BeginningOfCombat",
+      "turn": 2
+    },
+    {
+      "check": {
+        "View": {
+          "is": "bob",
+          "of": "ActivePlayer"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 3
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "ChooseDefender",
+            "offer": {
+              "players": [
+                "alice",
+                "carol"
+              ]
+            }
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "carol",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "do": {
+        "ChooseDefender": "alice"
+      },
+      "player": "carol",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    },
+    {
+      "check": {
+        "Defenders": {
+          "players": [
+            "alice"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 3
+    }
+  ]
+}

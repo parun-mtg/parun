@@ -304,8 +304,8 @@ endOfNextTurnSpec s = Spec.describe s "DropAtEndOfTurnOf" $ do
 -- so every case here is about the half no sweep can answer: Parun.Engine.Expiry.begun,
 -- which is False for the whole stretch between the arming and the turn the pair
 -- names. A reader that asks only whether the row was swept sees it from the
--- moment it is stored, and Parun.CombatSpec's WindowAttackRestriction group is
--- where that is observable at the gameplay level.
+-- moment it is stored, and data/scenarios/combat/'s CR 611.2a Wall of Dust
+-- scenarios are where that is observable at the gameplay level.
 windowSpec :: (Monad m, Monad n) => Spec.Spec m n -> n ()
 windowSpec s = Spec.describe s "DuringTurnOf" $ do
   Spec.it s "CR 611.2a the window is shut on the arming turn and on every turn before the one it names" $ do

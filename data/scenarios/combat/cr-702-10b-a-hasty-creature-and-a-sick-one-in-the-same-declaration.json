@@ -1,0 +1,77 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Chariot",
+            "label": "chariot"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 702.10b a hasty creature and a sick one, in the same declaration",
+  "note": "Both creatures arrived this turn; only the Goblin Chariot has haste. The declare attackers offer holds the Chariot alone, so a blanket 'sickness ignored' bug would offer and accept both.",
+  "timeline": [
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "DeclareAttackers",
+            "offer": [
+              "$chariot"
+            ]
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "player": "alice",
+      "refuse": {
+        "Attack": [
+          "$chariot",
+          "$piker"
+        ]
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Attack": [
+          "$chariot"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Attackers": {
+          "attackers": {
+            "$chariot": "$bob"
+          }
+        }
+      },
+      "player": "alice",
+      "step": "EndOfCombat",
+      "turn": 1
+    }
+  ]
+}

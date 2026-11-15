@@ -1,0 +1,109 @@
+{
+  "board": {
+    "active": "alice",
+    "seats": [
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "attacker",
+            "ready": true
+          },
+          {
+            "attached": "pacified",
+            "card": "Pacifism"
+          }
+        ],
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "pacified",
+            "ready": true
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "other",
+            "ready": true
+          }
+        ],
+        "name": "bob"
+      }
+    ],
+    "step": "BeginningOfCombat"
+  },
+  "description": "CR 509.1b an enchanted creature can't block either, and the Piker beside it still can",
+  "note": "The blocking half of Pacifism's one line, on two identical Goblin Pikers of bob's, one enchanted: only the other is offered, a block by the enchanted one is refused and the other's stands. CR 702.3b's defender is the contrast: it stops an attack and says nothing about blocking.",
+  "timeline": [
+    {
+      "do": {
+        "Attack": [
+          "$attacker"
+        ]
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": {
+            "kind": "DeclareBlockers",
+            "offer": {
+              "blockers": [
+                "$other"
+              ],
+              "attackers": [
+                "$attacker"
+              ]
+            }
+          },
+          "of": "Prompt"
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "player": "bob",
+      "refuse": {
+        "Block": {
+          "$pacified": [
+            "$attacker"
+          ]
+        }
+      },
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "do": {
+        "Block": {
+          "$other": [
+            "$attacker"
+          ]
+        }
+      },
+      "player": "bob",
+      "step": "DeclareBlockers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Blockers": {
+          "attacker": "$attacker",
+          "blockers": [
+            "$other"
+          ]
+        }
+      },
+      "player": "alice",
+      "step": "DeclareBlockers",
+      "turn": 1
+    }
+  ]
+}

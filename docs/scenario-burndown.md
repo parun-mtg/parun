@@ -289,32 +289,32 @@ out: grep for them.
 
 ### `CombatSpec`
 
-- CR 102.1 a player who has left the game is not a candidate | `check:other-Combat.attackableOpponents`
-- CR 122.1b two decayed counters, announced as X, stop both creatures blocking
-- CR 302.6 a creature that just changed control is summoning sick (no haste) | `check:other-Combat.canAttack`
-- CR 507.1 with no opponents left the action does not happen at all | `check:combat` `check:other-Combat.Type.defenders`
-- CR 508.1a a creature that is also a battle is not offered as an attacker | `check:other-Combat.legalAttackers`
-- CR 508.1c aimed elsewhere, both of alice's twins attack | `board:attackprohibitions`
-- CR 508.1c the creature Netter en-Dal named cannot attack, and its twin still does | `board:attackprohibitions`
-- CR 509.1a a Mountain is not a legal blocker, flier or no flier | `check:other-Combat.legalBlockers`
-- CR 509.1a a creature that is also a battle is not offered as a blocker either | `check:other-Combat.legalBlockers`
-- CR 509.1b Wan Shi Tong's Spirit tokens can't block a non-Spirit, and can block a Spirit
-- CR 509.1b aimed elsewhere, both of bob's twins block | `board:objectprohibitions`
-- CR 509.1b an enchanted creature can't block either, and the Piker beside it still can | `check:other-Combat.canBlock` `check:other-Combat.legalBlockers`
-- CR 509.1b the creature Zirda named cannot block, and its twin still does | `board:objectprohibitions`
-- CR 509.1c a required blocker the restriction covers may decline after all | `board:objectprohibitions`
-- CR 509.1c a threshold blocking requirement bites only once the gate holds | `check:other-Combat.forcedBlockDeclaration`
-- CR 509.1c two requirements on ONE pair count twice | `check:other-Combat.forcedBlockDeclaration`
-- CR 514.2 the restriction ends at cleanup | `check:other-Combat.canBlock` `check:other-Expiry.dropAtCleanup` `check:other-StoredEffects.objectProhibitions`
-- CR 601.2c announcing X as one leaves the second creature blocking
-- CR 611.2a and cannot attack once that turn has begun | `board:attackprohibitions`
-- CR 611.2a the restriction outlasts every other seat's turn and ends as alice's begins | `check:other-StoredEffects.attackProhibitions`
-- CR 611.2a the window follows the Giant to bob, so it cannot attack on his turn | `board:attackprohibitions`
-- CR 702.10b a hasty creature and a sick one, in the same declaration | `check:helper-declaredAttackers`
-- CR 702.13b a COLOURLESS creature with intimidate may be blocked only by artifact creatures
-- CR 702.16k True-Name Nemesis can't be blocked by the chosen player's creature, and can by another's | `board:object-chosenplayer`
-- CR 724.1 a controlled active player's choice of defender routes to their controller
-- CR 802.3a the announcement, not the creature, is what the row refuses | `check:other-StoredEffects.attackProhibitions`
+- ~~CR 102.1 a player who has left the game is not a candidate | `check:other-Combat.attackableOpponents`~~
+- ~~CR 122.1b two decayed counters, announced as X, stop both creatures blocking~~
+- ~~CR 302.6 a creature that just changed control is summoning sick (no haste) | `check:other-Combat.canAttack`~~
+- ~~CR 507.1 with no opponents left the action does not happen at all | `check:combat` `check:other-Combat.Type.defenders`~~
+- ~~CR 508.1a a creature that is also a battle is not offered as an attacker | `check:other-Combat.legalAttackers`~~
+- ~~CR 508.1c aimed elsewhere, both of alice's twins attack | `board:attackprohibitions`~~
+- ~~CR 508.1c the creature Netter en-Dal named cannot attack, and its twin still does | `board:attackprohibitions`~~
+- ~~CR 509.1a a Mountain is not a legal blocker, flier or no flier | `check:other-Combat.legalBlockers`~~
+- ~~CR 509.1a a creature that is also a battle is not offered as a blocker either | `check:other-Combat.legalBlockers`~~
+- ~~CR 509.1b Wan Shi Tong's Spirit tokens can't block a non-Spirit, and can block a Spirit~~
+- ~~CR 509.1b aimed elsewhere, both of bob's twins block | `board:objectprohibitions`~~
+- ~~CR 509.1b an enchanted creature can't block either, and the Piker beside it still can | `check:other-Combat.canBlock` `check:other-Combat.legalBlockers`~~
+- ~~CR 509.1b the creature Zirda named cannot block, and its twin still does | `board:objectprohibitions`~~
+- ~~CR 509.1c a required blocker the restriction covers may decline after all | `board:objectprohibitions`~~
+- ~~CR 509.1c a threshold blocking requirement bites only once the gate holds | `check:other-Combat.forcedBlockDeclaration`~~
+- ~~CR 509.1c two requirements on ONE pair count twice | `check:other-Combat.forcedBlockDeclaration`~~
+- ~~CR 514.2 the restriction ends at cleanup | `check:other-Combat.canBlock` `check:other-Expiry.dropAtCleanup` `check:other-StoredEffects.objectProhibitions`~~
+- ~~CR 601.2c announcing X as one leaves the second creature blocking~~
+- ~~CR 611.2a and cannot attack once that turn has begun | `board:attackprohibitions`~~
+- ~~CR 611.2a the restriction outlasts every other seat's turn and ends as alice's begins | `check:other-StoredEffects.attackProhibitions`~~
+- ~~CR 611.2a the window follows the Giant to bob, so it cannot attack on his turn | `board:attackprohibitions`~~
+- ~~CR 702.10b a hasty creature and a sick one, in the same declaration | `check:helper-declaredAttackers`~~
+- ~~CR 702.13b a COLOURLESS creature with intimidate may be blocked only by artifact creatures~~
+- ~~CR 702.16k True-Name Nemesis can't be blocked by the chosen player's creature, and can by another's | `board:object-chosenplayer`~~
+- ~~CR 724.1 a controlled active player's choice of defender routes to their controller~~
+- ~~CR 802.3a the announcement, not the creature, is what the row refuses | `check:other-StoredEffects.attackProhibitions`~~
 
 ### `CommanderSpec`
 
@@ -1079,19 +1079,19 @@ out: grep for them.
 
 ### `SpecialActionSpec`
 
-- CR 116.2d paying the cost lets that player, and only that player, search
-- CR 514.2 the ignore ends at cleanup
-- CR 603.4 the free play is removed if the card has left exile by the time it resolves | `check:helper-interveningStillHolds`
-- CR 702.143a casting it costs the foretell cost | `board:foretold`
-- CR 702.143c a spell cast from a foretold card was foretold, and one cast from hand was not | `board:foretold`
-- CR 702.143d a card an effect makes foretold was not foretold by anyone | `check:foretold`
-- CR 702.143d an effect makes an exiled card foretold and gives it a foretell cost | `board:hypothetical` `check:foretold` `check:face-down`
-- CR 702.143d casting it costs the foretell cost the effect gave it | `board:foretold`
-- CR 702.143d the granted cost is the mana cost of the face being cast | `board:hypothetical`
-- CR 702.170d casting it costs nothing | `board:plotted`
-- CR 702.170f plotting the top card exiles it from the library, and it is cast free later | `check:plotted` `check:tapped-count`
-- CR 707.10 a copy of a foretold spell was not foretold | `board:foretold`
-- CR 712.8b casting the back face pays the back face's granted cost | `board:foretold`
+- ~~CR 116.2d paying the cost lets that player, and only that player, search~~
+- ~~CR 514.2 the ignore ends at cleanup~~
+- ~~CR 603.4 the free play is removed if the card has left exile by the time it resolves | `check:helper-interveningStillHolds`~~
+- ~~CR 702.143a casting it costs the foretell cost | `board:foretold`~~
+- ~~CR 702.143c a spell cast from a foretold card was foretold, and one cast from hand was not | `board:foretold`~~
+- ~~CR 702.143d a card an effect makes foretold was not foretold by anyone | `check:foretold`~~
+- ~~CR 702.143d an effect makes an exiled card foretold and gives it a foretell cost | `board:hypothetical` `check:foretold` `check:face-down`~~
+- ~~CR 702.143d casting it costs the foretell cost the effect gave it | `board:foretold`~~
+- ~~CR 702.143d the granted cost is the mana cost of the face being cast | `board:hypothetical`~~
+- ~~CR 702.170d casting it costs nothing | `board:plotted`~~
+- ~~CR 702.170f plotting the top card exiles it from the library, and it is cast free later | `check:plotted` `check:tapped-count`~~
+- ~~CR 707.10 a copy of a foretold spell was not foretold | `board:foretold`~~
+- ~~CR 712.8b casting the back face pays the back face's granted cost | `board:foretold`~~
 
 ### `SpeedSpec`
 
