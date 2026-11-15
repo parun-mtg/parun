@@ -91,6 +91,17 @@
         }
       },
       "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Life": {
+          "life": 21,
+          "player": "alice"
+        }
+      },
+      "player": "alice",
       "step": "PostcombatMain",
       "turn": 1
     },

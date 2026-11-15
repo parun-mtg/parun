@@ -1,12 +1,20 @@
 {
-  "description": "CR 603.6a, 115.1, 109.5, 702.11b, 611.2a, 514.2: when Plumecreed Escort enters, target creature its controller controls gains hexproof until end of turn",
-  "note": "Bob's Hill Giant is refused as the trigger's target; the Escort itself is also legal, so the target is asked. Grizzly Bears gains hexproof and the Escort does not: at beginning of combat bob's Lightning Bolt can't target the Bears and kills the Escort. At bob's upkeep the Bears has no hexproof.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Plumecreed Escort",
+            "label": "escort"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -28,21 +36,25 @@
           }
         ],
         "manaPool": "UU",
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
-            "card": "Grizzly Bears",
-            "label": "bears"
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Mountain",
+            "label": "m1"
           }
         ],
         "hand": [
           {
-            "card": "Plumecreed Escort",
-            "label": "escort"
+            "card": "Lightning Bolt",
+            "label": "bolt"
           }
-        ]
-      },
-      {
-        "name": "bob",
+        ],
         "library": [
           {
             "card": "Island"
@@ -63,45 +75,31 @@
             "card": "Island"
           }
         ],
-        "battlefield": [
-          {
-            "card": "Hill Giant",
-            "label": "giant"
-          },
-          {
-            "card": "Mountain",
-            "label": "m1"
-          }
-        ],
-        "hand": [
-          {
-            "card": "Lightning Bolt",
-            "label": "bolt"
-          }
-        ]
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 603.6a, 115.1, 109.5, 702.11b, 611.2a, 514.2: when Plumecreed Escort enters, target creature its controller controls gains hexproof until end of turn",
+  "note": "Bob's Hill Giant is refused as the trigger's target; the Escort itself is also legal, so the target is asked. Grizzly Bears gains hexproof and the Escort does not: at beginning of combat bob's Lightning Bolt can't target the Bears and kills the Escort. At bob's upkeep the Bears has no hexproof.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$escort"
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -109,116 +107,115 @@
             "$giant"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "ChooseTargets": {
           "target": [
             "$bears"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$bears",
+          "count": 1,
           "keyword": {
             "type": "Hexproof"
           },
-          "count": 1
+          "object": "$bears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "Plumecreed Escort",
+          "count": 0,
           "keyword": {
             "type": "Hexproof"
           },
-          "count": 0
+          "object": "Plumecreed Escort"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$giant",
+          "count": 0,
           "keyword": {
             "type": "Hexproof"
           },
-          "count": 0
+          "object": "$giant"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
       "player": "bob",
       "refuse": {
         "Cast": {
+          "mana": [
+            "$m1"
+          ],
           "object": "$bolt",
           "targets": [
             "$bears"
-          ],
-          "mana": [
-            "$m1"
           ]
         }
-      }
+      },
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "bob",
       "do": {
         "Cast": {
+          "mana": [
+            "$m1"
+          ],
           "object": "$bolt",
           "targets": [
             "Plumecreed Escort"
-          ],
-          "mana": [
-            "$m1"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Plumecreed Escort",
@@ -226,12 +223,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -239,29 +236,24 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "DeclareAttackers",
+      },
       "player": "alice",
-      "do": {
-        "Attack": []
-      }
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "Keywords": {
-          "object": "$bears",
+          "count": 0,
           "keyword": {
             "type": "Hexproof"
           },
-          "count": 0
+          "object": "$bears"
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     }
   ]
 }

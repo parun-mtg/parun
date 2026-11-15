@@ -1,12 +1,28 @@
 {
-  "description": "CR 603.6a, 115.1, 109.5, 702.9a, 122.1a: when Pileated Provisioner enters, it puts a +1/+1 counter on target creature its controller controls without flying",
-  "note": "Alice's Birds of Paradise (flying) and bob's Hill Giant are refused as targets; Goblin Piker and Grizzly Bears are both legal, so the target is asked. The Bears gets the counter (3/3) and the Piker, Birds and Giant none.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          },
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Birds of Paradise",
+            "label": "bop"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Pileated Provisioner",
+            "label": "pp"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -28,29 +44,15 @@
           }
         ],
         "manaPool": "WWWWW",
-        "battlefield": [
-          {
-            "card": "Grizzly Bears",
-            "label": "bears"
-          },
-          {
-            "card": "Goblin Piker",
-            "label": "piker"
-          },
-          {
-            "card": "Birds of Paradise",
-            "label": "bop"
-          }
-        ],
-        "hand": [
-          {
-            "card": "Pileated Provisioner",
-            "label": "pp"
-          }
-        ]
+        "name": "alice"
       },
       {
-        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -71,35 +73,31 @@
             "card": "Island"
           }
         ],
-        "battlefield": [
-          {
-            "card": "Hill Giant",
-            "label": "giant"
-          }
-        ]
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 603.6a, 115.1, 109.5, 702.9a, 122.1a: when Pileated Provisioner enters, it puts a +1/+1 counter on target creature its controller controls without flying",
+  "note": "Alice's Birds of Paradise (flying) and bob's Hill Giant are refused as targets; Goblin Piker and Grizzly Bears are both legal, so the target is asked. The Bears gets the counter (3/3) and the Piker, Birds and Giant none.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$pp"
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -107,11 +105,11 @@
             "$bop"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -119,11 +117,11 @@
             "$giant"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -131,107 +129,109 @@
             "Pileated Provisioner"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "ChooseTargets": {
           "target": [
             "$bears"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$bears",
+          "count": 1,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 1
+          "object": "$bears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 3,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$piker",
+          "count": 0,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 0
+          "object": "$piker"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$bop",
+          "count": 0,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 0
+          "object": "$bop"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "$giant",
+          "count": 0,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 0
+          "object": "$giant"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Counters": {
-          "object": "Pileated Provisioner",
+          "count": 0,
           "kind": {
             "type": "PlusOnePlusOne"
           },
-          "count": 0
+          "object": "Pileated Provisioner"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }

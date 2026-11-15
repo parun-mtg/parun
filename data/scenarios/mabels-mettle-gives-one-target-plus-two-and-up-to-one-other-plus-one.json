@@ -1,12 +1,28 @@
 {
-  "description": "CR 115.1, 115.3, 601.2c, 611.2a, 514.2: Mabel's Mettle gives target creature +2/+2 and up to one other target creature +1/+1 until end of turn; the second target can't be the first, and may be left out",
-  "note": "The same Goblin Piker in both slots is refused. The first Mettle makes alice's Piker 4/3 and bob's Hill Giant 4/4; the second, with no second target, makes bob's Craw Wurm 8/6 and leaves alice's Grizzly Bears 2/2. At bob's upkeep all are back to printed size.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Goblin Piker",
+            "label": "piker"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
+        "hand": [
+          {
+            "card": "Mabel's Mettle",
+            "label": "m1"
+          },
+          {
+            "card": "Mabel's Mettle",
+            "label": "m2"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -28,29 +44,19 @@
           }
         ],
         "manaPool": "WWWW",
-        "battlefield": [
-          {
-            "card": "Goblin Piker",
-            "label": "piker"
-          },
-          {
-            "card": "Grizzly Bears",
-            "label": "bears"
-          }
-        ],
-        "hand": [
-          {
-            "card": "Mabel's Mettle",
-            "label": "m1"
-          },
-          {
-            "card": "Mabel's Mettle",
-            "label": "m2"
-          }
-        ]
+        "name": "alice"
       },
       {
-        "name": "bob",
+        "battlefield": [
+          {
+            "card": "Hill Giant",
+            "label": "giant"
+          },
+          {
+            "card": "Craw Wurm",
+            "label": "wurm"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -71,23 +77,15 @@
             "card": "Island"
           }
         ],
-        "battlefield": [
-          {
-            "card": "Hill Giant",
-            "label": "giant"
-          },
-          {
-            "card": "Craw Wurm",
-            "label": "wurm"
-          }
-        ]
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 115.1, 115.3, 601.2c, 611.2a, 514.2: Mabel's Mettle gives target creature +2/+2 and up to one other target creature +1/+1 until end of turn; the second target can't be the first, and may be left out",
+  "note": "The same Goblin Piker in both slots is refused. The first Mettle makes alice's Piker 4/3 and bob's Hill Giant 4/4; the second, with no second target, makes bob's Craw Wurm 8/6 and leaves alice's Grizzly Bears 2/2. At bob's upkeep all are back to printed size.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Cast": {
@@ -101,12 +99,11 @@
             ]
           }
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$m1",
@@ -119,66 +116,66 @@
             ]
           }
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$piker",
           "power": 4,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$giant",
           "power": 4,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$wurm",
           "power": 6,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$m2",
@@ -189,97 +186,100 @@
             "target2": []
           }
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$wurm",
           "power": 8,
           "toughness": 6
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$piker",
           "power": 4,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$giant",
           "power": 4,
           "toughness": 4
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "PowerToughness": {
           "object": "$piker",
           "power": 2,
           "toughness": 1
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "PowerToughness": {
           "object": "$giant",
           "power": 3,
           "toughness": 3
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "PowerToughness": {
           "object": "$wurm",
           "power": 6,
           "toughness": 4
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     }
   ]
 }

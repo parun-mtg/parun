@@ -29,8 +29,9 @@
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": {"Cast": {"object": "$goblin", "mana": ["$m2"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Raging Goblin"]}}},
     {"turn": 1, "step": "PrecombatMain", "player": "alice", "do": "Pass"},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "BeginningOfCombat", "player": "bob", "do": {"Cast": {"object": "$bshock", "targets": ["$alice"], "mana": ["$bm"]}}},
-    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Shock"]}}},
+    {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "check": {"View": {"of": "Stack", "is": ["Shock#2"]}}},
     {"turn": 1, "step": "BeginningOfCombat", "player": "alice", "do": "Pass"},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"Life": {"player": "alice", "life": 18}}},
     {"turn": 1, "step": "DeclareAttackers", "player": "alice", "check": {"PowerToughness": {"object": "$bears", "power": 3, "toughness": 3}}},
@@ -40,6 +41,7 @@
     {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Blockers": {"attacker": "$bears", "blockers": null}}},
     {"turn": 1, "step": "DeclareBlockers", "player": "alice", "check": {"Blockers": {"attacker": "$bria", "blockers": ["$giant"]}}},
     {"turn": 1, "step": "EndOfCombat", "player": "alice", "check": {"Life": {"player": "bob", "life": 15}}},
+    {"turn": 2, "step": "DeclareAttackers", "player": "bob", "do": {"Attack": []}},
     {"turn": 3, "step": "DeclareAttackers", "player": "alice", "do": {"Attack": ["$bears"]}},
     {"turn": 3, "step": "DeclareBlockers", "player": "bob", "do": {"Block": {"$giant2": ["$bears"]}}},
     {"turn": 3, "step": "DeclareBlockers", "player": "alice", "check": {"Blockers": {"attacker": "$bears", "blockers": ["$giant2"]}}}

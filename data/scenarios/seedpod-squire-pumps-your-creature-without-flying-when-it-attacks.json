@@ -1,32 +1,8 @@
 {
-  "description": "CR 508.1m, 508.3a, 115.1, 109.5, 702.9a, 611.2a, 514.2: whenever Seedpod Squire attacks, target creature its controller controls without flying gets +1/+1 until end of turn",
-  "note": "Alice's Birds of Paradise (flying) and bob's Hill Giant are refused; Grizzly Bears and Goblin Piker are both legal, so the target is asked. The Piker becomes 3/2 and the Bears stays 2/2; the Squire hits bob for 3 alone. At bob's upkeep the Piker is 2/1.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
         "battlefield": [
           {
             "card": "Seedpod Squire",
@@ -48,10 +24,7 @@
             "label": "bop",
             "ready": true
           }
-        ]
-      },
-      {
-        "name": "bob",
+        ],
         "library": [
           {
             "card": "Island"
@@ -72,29 +45,54 @@
             "card": "Island"
           }
         ],
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
             "card": "Hill Giant",
             "label": "giant"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 508.1m, 508.3a, 115.1, 109.5, 702.9a, 611.2a, 514.2: whenever Seedpod Squire attacks, target creature its controller controls without flying gets +1/+1 until end of turn",
+  "note": "Alice's Birds of Paradise (flying) and bob's Hill Giant are refused; Grizzly Bears and Goblin Piker are both legal, so the target is asked. The Piker becomes 3/2 and the Bears stays 2/2; the Squire hits bob for 3 alone. At bob's upkeep the Piker is 2/1.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "Attack": [
           "$squire"
         ]
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -102,11 +100,11 @@
             "$bop"
           ]
         }
-      }
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -114,11 +112,11 @@
             "$giant"
           ]
         }
-      }
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
       "player": "alice",
       "refuse": {
         "ChooseTargets": {
@@ -126,108 +124,110 @@
             "$squire"
           ]
         }
-      }
+      },
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "do": {
         "ChooseTargets": {
           "target": [
             "$piker"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$piker",
           "power": 3,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bop",
           "power": 0,
           "toughness": 1
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$giant",
           "power": 3,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$squire",
           "power": 3,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "DeclareAttackers",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 17
+          "life": 17,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "PowerToughness": {
           "object": "$piker",
           "power": 2,
           "toughness": 1
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     }
   ]
 }

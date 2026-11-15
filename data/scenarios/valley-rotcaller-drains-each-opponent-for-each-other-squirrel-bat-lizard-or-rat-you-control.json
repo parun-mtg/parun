@@ -122,6 +122,15 @@
       "turn": 1
     },
     {
+      "do": {
+        "ChooseAttackTarget": "$bob"
+      },
+      "player": "alice",
+      "source": "$rot",
+      "step": "DeclareAttackers",
+      "turn": 1
+    },
+    {
       "do": "Pass",
       "player": "alice",
       "step": "DeclareAttackers",

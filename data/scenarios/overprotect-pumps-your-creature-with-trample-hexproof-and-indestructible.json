@@ -1,33 +1,8 @@
 {
-  "description": "CR 115.1, 109.5, 611.2a, 702.19a, 702.11b, 702.12b, 514.2: Overprotect gives target creature you control +3/+3, trample, hexproof and indestructible until end of turn, and can't target another player's creature",
-  "note": "Overprotect aimed at bob's Hill Giant is refused with the mana to pay. On Grizzly Bears it makes a 5/5 with one each of trample, hexproof and indestructible while Goblin Piker gets none; alice's own Fell then fails to destroy the Bears. At bob's upkeep the Bears is 2/2 with none of the three.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
-        "manaPool": "GGBB",
         "battlefield": [
           {
             "card": "Grizzly Bears",
@@ -36,6 +11,22 @@
           {
             "card": "Goblin Piker",
             "label": "piker"
+          },
+          {
+            "card": "Forest",
+            "label": "f1"
+          },
+          {
+            "card": "Forest",
+            "label": "f2"
+          },
+          {
+            "card": "Swamp",
+            "label": "s1"
+          },
+          {
+            "card": "Swamp",
+            "label": "s2"
           }
         ],
         "hand": [
@@ -47,10 +38,7 @@
             "card": "Fell",
             "label": "fell"
           }
-        ]
-      },
-      {
-        "name": "bob",
+        ],
         "library": [
           {
             "card": "Island"
@@ -71,205 +59,243 @@
             "card": "Island"
           }
         ],
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
             "card": "Hill Giant",
             "label": "giant"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 115.1, 109.5, 611.2a, 702.19a, 702.11b, 702.12b, 514.2: Overprotect gives target creature you control +3/+3, trample, hexproof and indestructible until end of turn, and can't target another player's creature",
+  "note": "Overprotect aimed at bob's Hill Giant is refused with the mana to pay. On Grizzly Bears it makes a 5/5 with one each of trample, hexproof and indestructible while Goblin Piker gets none; alice's own Fell then fails to destroy the Bears. At bob's upkeep the Bears is 2/2 with none of the three.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            null
+          ],
           "object": "$op",
           "targets": [
             "$giant"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
+          "mana": [
+            "$f1",
+            "$f2",
+            null
+          ],
           "object": "$op",
           "targets": [
             "$bears"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 5,
           "toughness": 5
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$bears",
+          "count": 1,
           "keyword": {
             "type": "Trample"
           },
-          "count": 1
+          "object": "$bears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$bears",
+          "count": 1,
           "keyword": {
             "type": "Hexproof"
           },
-          "count": 1
+          "object": "$bears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$bears",
+          "count": 1,
           "keyword": {
             "type": "Indestructible"
           },
-          "count": 1
+          "object": "$bears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$piker",
           "power": 2,
           "toughness": 1
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$piker",
+          "count": 0,
           "keyword": {
             "type": "Trample"
           },
-          "count": 0
+          "object": "$piker"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$piker",
+          "count": 0,
           "keyword": {
             "type": "Hexproof"
           },
-          "count": 0
+          "object": "$piker"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$piker",
+          "count": 0,
           "keyword": {
             "type": "Indestructible"
           },
-          "count": 0
+          "object": "$piker"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$giant",
           "power": 3,
           "toughness": 3
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Keywords": {
-          "object": "$giant",
+          "count": 0,
           "keyword": {
             "type": "Hexproof"
           },
-          "count": 0
+          "object": "$giant"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
+          "mana": [
+            "$s1",
+            "$s2"
+          ],
           "object": "$fell",
           "targets": [
             "$bears"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fell",
@@ -277,12 +303,12 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -290,61 +316,64 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "PowerToughness": {
           "object": "$bears",
           "power": 2,
           "toughness": 2
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "Keywords": {
-          "object": "$bears",
+          "count": 0,
           "keyword": {
             "type": "Trample"
           },
-          "count": 0
+          "object": "$bears"
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "Keywords": {
-          "object": "$bears",
+          "count": 0,
           "keyword": {
             "type": "Hexproof"
           },
-          "count": 0
+          "object": "$bears"
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     },
     {
-      "turn": 2,
-      "step": "Upkeep",
-      "player": "bob",
       "check": {
         "Keywords": {
-          "object": "$bears",
+          "count": 0,
           "keyword": {
             "type": "Indestructible"
           },
-          "count": 0
+          "object": "$bears"
         }
-      }
+      },
+      "player": "bob",
+      "step": "Upkeep",
+      "turn": 2
     }
   ]
 }

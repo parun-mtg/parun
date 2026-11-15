@@ -1,37 +1,32 @@
 {
-  "description": "CR 603.2, 603.6a, 111.1: Knightfisher creates a 1/1 blue Fish when another nontoken Bird its controller controls enters, not for itself, a non-Bird, a Bird token or an opponent's Bird",
-  "note": "Knightfisher entering makes no Fish; Birds of Paradise makes one; Grizzly Bears makes none; Lightning Bolt kills alice's Roc Egg, whose 3/3 Bird token makes none; bob flashes in Plumecreed Escort (a nontoken Bird he controls) at beginning of combat and alice still has one Fish.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
-        "library": [
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          },
-          {
-            "card": "Island"
-          }
-        ],
-        "manaPool": "UUUUU",
         "battlefield": [
           {
             "card": "Roc Egg",
             "label": "egg"
+          },
+          {
+            "card": "Island",
+            "label": "i1"
+          },
+          {
+            "card": "Island",
+            "label": "i2"
+          },
+          {
+            "card": "Island",
+            "label": "i3"
+          },
+          {
+            "card": "Island",
+            "label": "i4"
+          },
+          {
+            "card": "Island",
+            "label": "i5"
           },
           {
             "card": "Forest",
@@ -67,10 +62,7 @@
             "card": "Lightning Bolt",
             "label": "bolt"
           }
-        ]
-      },
-      {
-        "name": "bob",
+        ],
         "library": [
           {
             "card": "Island"
@@ -91,37 +83,78 @@
             "card": "Island"
           }
         ],
-        "manaPool": "UU",
+        "name": "alice"
+      },
+      {
+        "battlefield": [
+          {
+            "card": "Island",
+            "label": "bi1"
+          },
+          {
+            "card": "Island",
+            "label": "bi2"
+          }
+        ],
         "hand": [
           {
             "card": "Plumecreed Escort",
             "label": "escort"
           }
-        ]
+        ],
+        "library": [
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          },
+          {
+            "card": "Island"
+          }
+        ],
+        "name": "bob"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 603.2, 603.6a, 111.1: Knightfisher creates a 1/1 blue Fish when another nontoken Bird its controller controls enters, not for itself, a non-Bird, a Bird token or an opponent's Bird",
+  "note": "Knightfisher entering makes no Fish; Birds of Paradise makes one; Grizzly Bears makes none; Lightning Bolt kills alice's Roc Egg, whose 3/3 Bird token makes none; bob flashes in Plumecreed Escort (a nontoken Bird he controls) at beginning of combat and alice still has one Fish.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
+          "mana": [
+            "$i1",
+            "$i2",
+            "$i3",
+            "$i4",
+            "$i5",
+            null
+          ],
           "object": "$kf"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Knightfisher",
@@ -129,12 +162,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fish Token",
@@ -142,37 +175,38 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
-          "object": "$bop",
           "mana": [
-            "$f1"
-          ]
+            "$f1",
+            null
+          ],
+          "object": "$bop"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Birds of Paradise",
@@ -180,12 +214,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fish Token",
@@ -193,32 +227,85 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "check": {
+        "PowerToughness": {
+          "object": "Fish Token",
+          "power": 1,
+          "toughness": 1
+        }
+      },
       "player": "alice",
-      "do": {
-        "Cast": {
-          "object": "$bears",
-          "mana": [
-            "$f2",
-            "$f3"
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "View": {
+          "is": [
+            "Blue"
+          ],
+          "object": "Fish Token",
+          "of": "Colors"
+        }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "check": {
+        "Subtypes": {
+          "object": "Fish Token",
+          "subtypes": [
+            "Fish"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "check": {
+        "Types": {
+          "object": "Fish Token",
+          "types": [
+            "Creature"
+          ]
+        }
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": {
+        "Cast": {
+          "mana": [
+            "$f2",
+            "$f3",
+            null
+          ],
+          "object": "$bears"
+        }
+      },
       "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
+      "do": "Pass",
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
+    },
+    {
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -226,12 +313,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fish Token",
@@ -239,34 +326,34 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
+          "mana": [
+            "$m1"
+          ],
           "object": "$bolt",
           "targets": [
             "$egg"
-          ],
-          "mana": [
-            "$m1"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Roc Egg",
@@ -274,18 +361,18 @@
           "player": "alice",
           "zone": "Graveyard"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Bird Token",
@@ -293,12 +380,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fish Token",
@@ -306,30 +393,26 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "BeginningOfCombat",
-      "player": "bob",
       "do": {
         "Cast": {
+          "mana": [
+            "$bi1",
+            "$bi2"
+          ],
           "object": "$escort"
         }
-      }
+      },
+      "player": "bob",
+      "step": "BeginningOfCombat",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "DeclareAttackers",
-      "player": "alice",
-      "do": {
-        "Attack": []
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Plumecreed Escort",
@@ -337,12 +420,12 @@
           "player": "bob",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fish Token",
@@ -350,12 +433,12 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PostcombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Fish Token",
@@ -363,7 +446,10 @@
           "player": "bob",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PostcombatMain",
+      "turn": 1
     }
   ]
 }

@@ -136,13 +136,14 @@
     "step": "PrecombatMain"
   },
   "description": "CR 603.6a, 603.2, 205.3, 122.1, 109.4: Valley Mightcaller gets a +1/+1 counter whenever another Frog, Rabbit, Raccoon or Squirrel its controller controls enters",
-  "note": "The Mightcaller, a Frog, gets nothing for its own entering. Alice's Witch's Familiar (Frog), Warren Elder (Rabbit), Raccoon Rallier (Raccoon) and Squirrelanoids (Squirrel) each add a counter; her Grizzly Bears add none, nor does bob's Squirrelanoids on his turn: four counters, a 5/5.",
+  "note": "The Mightcaller, a Frog, gets nothing for its own entering. Alice's Witch's Familiar (Frog), Warren Elder (Rabbit), Raccoon Rallier (Raccoon) and Squirrelanoids (Squirrel) each add a counter; her Grizzly Bears add none, nor does bob's Squirrelanoids on his turn, checked after his main phase so a trigger would have resolved: four counters, a 5/5.",
   "timeline": [
     {
       "do": {
         "Cast": {
           "mana": [
-            "$g1"
+            "$g1",
+            null
           ],
           "object": "$vm"
         }
@@ -177,7 +178,8 @@
           "mana": [
             "$b1",
             "$i1",
-            "$i2"
+            "$i2",
+            null
           ],
           "object": "$frog"
         }
@@ -203,7 +205,8 @@
         "Cast": {
           "mana": [
             "$w",
-            "$i3"
+            "$i3",
+            null
           ],
           "object": "$rabbit"
         }
@@ -229,7 +232,8 @@
         "Cast": {
           "mana": [
             "$r",
-            "$i4"
+            "$i4",
+            null
           ],
           "object": "$raccoon"
         }
@@ -254,7 +258,8 @@
       "do": {
         "Cast": {
           "mana": [
-            "$b2"
+            "$b2",
+            null
           ],
           "object": "$squirrel"
         }
@@ -351,7 +356,7 @@
         }
       },
       "player": "bob",
-      "step": "PrecombatMain",
+      "step": "PostcombatMain",
       "turn": 2
     },
     {
@@ -365,7 +370,7 @@
         }
       },
       "player": "bob",
-      "step": "PrecombatMain",
+      "step": "PostcombatMain",
       "turn": 2
     },
     {
@@ -377,7 +382,7 @@
         }
       },
       "player": "bob",
-      "step": "PrecombatMain",
+      "step": "PostcombatMain",
       "turn": 2
     }
   ]

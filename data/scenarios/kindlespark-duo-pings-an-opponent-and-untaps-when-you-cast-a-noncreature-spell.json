@@ -1,12 +1,25 @@
 {
-  "description": "CR 602.2, 115.1, 102.3, 120.3a, 603.2, 701.26b: Kindlespark Duo's {T} deals 1 damage to target opponent only, and it untaps whenever its controller casts a noncreature spell, not for a creature spell or an opponent's spell",
-  "note": "Three seats, so 'target opponent' has two candidates and alice herself is refused. The Duo is tapped for carol (20 to 19) and stays tapped through bob's Giant Growth; alice's Giant Growth untaps it, it pings bob (20 to 19), and alice's Grizzly Bears leaves it tapped.",
   "board": {
     "active": "alice",
-    "step": "PrecombatMain",
     "seats": [
       {
-        "name": "alice",
+        "battlefield": [
+          {
+            "card": "Kindlespark Duo",
+            "label": "duo",
+            "ready": true
+          }
+        ],
+        "hand": [
+          {
+            "card": "Giant Growth",
+            "label": "gga"
+          },
+          {
+            "card": "Grizzly Bears",
+            "label": "bears"
+          }
+        ],
         "library": [
           {
             "card": "Island"
@@ -28,26 +41,21 @@
           }
         ],
         "manaPool": "GGG",
+        "name": "alice"
+      },
+      {
         "battlefield": [
           {
-            "card": "Kindlespark Duo",
-            "label": "duo",
-            "ready": true
+            "card": "Hill Giant",
+            "label": "giant"
           }
         ],
         "hand": [
           {
             "card": "Giant Growth",
-            "label": "gga"
-          },
-          {
-            "card": "Grizzly Bears",
-            "label": "bears"
+            "label": "ggb"
           }
-        ]
-      },
-      {
-        "name": "bob",
+        ],
         "library": [
           {
             "card": "Island"
@@ -69,21 +77,9 @@
           }
         ],
         "manaPool": "G",
-        "battlefield": [
-          {
-            "card": "Hill Giant",
-            "label": "giant"
-          }
-        ],
-        "hand": [
-          {
-            "card": "Giant Growth",
-            "label": "ggb"
-          }
-        ]
+        "name": "bob"
       },
       {
-        "name": "carol",
         "library": [
           {
             "card": "Island"
@@ -103,14 +99,16 @@
           {
             "card": "Island"
           }
-        ]
+        ],
+        "name": "carol"
       }
-    ]
+    ],
+    "step": "PrecombatMain"
   },
+  "description": "CR 602.2, 115.1, 102.3, 120.3a, 603.2, 701.26b: Kindlespark Duo's {T} deals 1 damage to target opponent only, and it untaps whenever its controller casts a noncreature spell, not for a creature spell or an opponent's spell",
+  "note": "Three seats, so 'target opponent' has two candidates and alice herself is refused. The Duo is tapped for carol (20 to 19) and stays tapped through bob's Giant Growth; alice's Giant Growth untaps it, it pings bob (20 to 19), and alice's Grizzly Bears leaves it tapped.",
   "timeline": [
     {
-      "turn": 1,
-      "step": "PrecombatMain",
       "player": "alice",
       "refuse": {
         "Activate": {
@@ -119,23 +117,22 @@
             "$alice"
           ]
         }
-      }
+      },
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$duo",
           "tapped": false
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$duo",
@@ -143,18 +140,18 @@
             "$carol"
           ]
         }
-      }
-    },
-    {
-      "turn": 1,
-      "step": "PrecombatMain",
+      },
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
+      "do": "Pass",
+      "player": "alice",
       "step": "PrecombatMain",
-      "player": "bob",
+      "turn": 1
+    },
+    {
       "do": {
         "Cast": {
           "object": "$ggb",
@@ -162,91 +159,91 @@
             "$giant"
           ]
         }
-      }
+      },
+      "player": "bob",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$duo",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "carol",
-          "life": 19
+          "life": 19,
+          "player": "carol"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 20
+          "life": 20,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "alice",
-          "life": 20
+          "life": 20,
+          "player": "alice"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$giant",
           "power": 6,
           "toughness": 6
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$duo",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$gga",
@@ -254,47 +251,47 @@
             "$duo"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$duo",
           "tapped": false
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "PowerToughness": {
           "object": "$duo",
           "power": 4,
           "toughness": 6
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Activate": {
           "object": "$duo",
@@ -302,67 +299,67 @@
             "$bob"
           ]
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "bob",
-          "life": 19
+          "life": 19,
+          "player": "bob"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Life": {
-          "player": "carol",
-          "life": 19
+          "life": 19,
+          "player": "carol"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$duo",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "do": {
         "Cast": {
           "object": "$bears"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
+      "do": "Pass",
       "player": "alice",
-      "do": "Pass"
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Count": {
           "card": "Grizzly Bears",
@@ -370,18 +367,21 @@
           "player": "alice",
           "zone": "Battlefield"
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     },
     {
-      "turn": 1,
-      "step": "PrecombatMain",
-      "player": "alice",
       "check": {
         "Tapped": {
           "object": "$duo",
           "tapped": true
         }
-      }
+      },
+      "player": "alice",
+      "step": "PrecombatMain",
+      "turn": 1
     }
   ]
 }
